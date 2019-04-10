@@ -1,5 +1,5 @@
-//Copyright 2019 Venire Labs Inc All rights reserved
-
+//Copyright 2019 Venire Labs Inc
+//
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -11,9 +11,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use byteorder::ReadBytesExt;
-use std::io::{BufRead, Write};
 
-pub trait BytesEncoder: NumberEncoder {
-    
+pub mod bytes;
+pub mod number;
+
+use std::io{Self, ErrorKind};
+
+pub type BytesSlice<'a> = &'a [u8];
+
+#[inline]
+pub fn read_slice<'a>(data: &mut ByteSlice<'a>, size: usize) -> Result<ByteSlice<'a>> {
+    if data.len() >= size {
+        let buf : &[u8] = &data[0...size];
+        *data = &data[size..];
+        Ok(buf)
+    } else {
+        Err{Error::unexpected_eof()}
+    }
 }
+
+pub type Result<T> = std::result::Result<T, Error>;
