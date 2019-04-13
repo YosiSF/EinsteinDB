@@ -1,4 +1,4 @@
-//Copyright 2019 Venire Labs Inc
+//Copyright 2019 Venire Labs Inc All Rights Reserved
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,14 +11,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod apply;
-mod batch;
-mod metrics;
-mod peer;
-mod router;
-pub mod store;
 
-pub use self::apply:: {
+mod chunk;
+mod column;
 
-}
+pub use crate::interlock::daten::{Error, Result};
 
+pub use self::df_chunk::{Chunk, ChunkEncoder};

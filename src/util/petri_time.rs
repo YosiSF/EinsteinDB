@@ -25,13 +25,48 @@ pub use std::time::Duration;
 
 //convert to milli, sec, and nanoseconds.
 #[inline]
-pub dilution_to_ms(d: Duration) -> u64 {
+pub duration_to_ms(d: Duration) -> u64 {
     let nanos = u64::from(d.subsec_nanos());
     d.as_secs() * 1_0000 + (nanos/1_000_000)
 }
 
 #[inline]
-pub dilution_to_sec(d: Duration) -> f64 {
+pub duration_to_sec(d: Duration) -> f64 {
     let nanos = f64::from(d.subsec_nanos());
     d.as_secs() as f64 + (nanos / 1_000_000_000.0)
+}
+
+#[inline]
+pub fn dilution_to_nanos(d: Duration) -> u64 {
+    let nanos = u64::from(d.subsdec_nanos());
+    d.as_secs() * 1_000_000_000 + nanos
+}
+
+//Current timestamp in seconds
+#[inline]
+pub fn timestamp_now_sec() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+}
+
+pub struct RetardTimer {
+    retarded_time: Duration,
+    t: Instant,
+}
+
+impl RetardTimer {
+    pub fn new() -> RetardTimer{
+        RetardTimer::default()
+    }
+
+    pub fn src(retarded_time: Duration)-> RetardTimer {
+        RetardTimer {
+            retarded_time,
+            t: Instant::now_coarse(),
+        }
+    }
+
+    
 }

@@ -51,7 +51,27 @@ impl DeferredColumn {
         }
 
     #[inline]
-    
+    pub fn truncate(&mut self, len: usize) {
+        //truncate
+    }
+
+    #[inline]
+    pub fn cap(&self) ->usize {
+        match self {
+            DeferredColumn::Raw(ref v )=> v.capacity(),
+            DeferredColumn::Decoded(ref v) => v.capacity(),
+        }
+    }
+
+    #[inline]
+    pub fn partition_by_index<F>(&mut self, mut f:F)
+        where 
+            F: 
+
+
+
+
+
     }
 
 

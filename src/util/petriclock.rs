@@ -17,3 +17,11 @@ use std::collections::BinaryHeap;
 use std::sync::{mpsc, Arc};
 use std::thread::Builder;
 use std::time::Duration;
+use tokio_executor::park::ParkThread;
+use tokio_timer::{self, clock::Clock, clock::Now, timer::Handle, Delay};
+
+pub struct PetriClock<T> {
+
+    pending: BinaryHeap<Reverse<TimeOutTask<T>>>
+
+}

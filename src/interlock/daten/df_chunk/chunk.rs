@@ -1,4 +1,4 @@
-//Copyright 2019 Venire Labs Inc
+//Copyright 2019 Venire Labs Inc All Rights Reserved
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,14 +11,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod apply;
-mod batch;
-mod metrics;
-mod peer;
-mod router;
-pub mod store;
 
-pub use self::apply:: {
+use super::column::{Column, ColumnEncoder};
+use super::Result;
+use crate::interlock::daten::Daten;
 
+/// 'Chunk' stores multiple rows or cells in appended fashion.
+/// reuse allocated memory by resetting it.
+pub struct Chunk {
+    columns: Vec<Column>,
 }
 
+impl Chunk {
+    //create a chunk with field types and capacity.
+    pub fn new()
+}
