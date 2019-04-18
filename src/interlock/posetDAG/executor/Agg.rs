@@ -19,3 +19,63 @@ use crate::interlock::Result;
 
 use super::super::expr::{eval_arith, EvalContext};
 
+
+pub fn build_aggr_func(tp: ExprType) -> Result<Box<dyn AggrFunc>> {
+    match tp {
+        ExprType::Agg_BitAnd => Ok(Box::new(AggBitAnd {
+            c: 0xffffffffffffffff,
+        })),
+        ExprType::Agg_BitOr => Ok(Box::new(AggBitOr { c: 0 })),
+        ExprType::Agg_BitXor => Ok(Box::new(AggBitXor { c: 0 })),
+        ExprType::Count => Ok(Box::new(Count { c: 0 })),
+        ExprType::First => Ok(Box::new(First { e: None })),
+        ExprType::Sum => Ok(Box::new(Sum { res: None })),
+        ExprType::Avg => Ok(Box::new(Avg {
+            sum: Sum { res: None },
+            cnt: 0,
+        })),
+        ExprType::Max => Ok(Box::new(Extremum::new(Ordering::Less))),
+        ExprType::Min => Ok(Box::new(Extremum::new(Ordering::Greater))),
+        et => Err(box_err!("unsupport AggrExprType: {:?}", et)),
+    }
+}
+
+//Aggregator Functor for aggregate operations
+pub trait AggrFunc: Send {
+    //update the context
+    fn update(&mut self, ctx: &mut EvalContext, args: &mut Vec<Daten>) -> Result<();
+    // 'calc' computes the aggregated result and pushes it to the collector leaf.
+    fn calc(&mut self, collector: &mut Vec<Daten>) -> Result<()>;
+}
+
+struct AggBitAnd {
+    c: u64,
+}
+
+impl AggrFunc for AggBitAnd {
+    fn update(&mut self, ctx: &mut EvalContext, args: &mut<Daten>) -> Result<()> {
+        if args.len() != 1 {
+            return Err(box_err!(
+                "bit_and only support one column, but got {}",
+                args.len()
+            ));
+        }
+        if args[0] == Daten::Null {
+            return Ok(());
+        }
+
+        let val = if let Daten::u64(v) ==  args[0] {
+            v
+        } else {
+            args.pop().unwrap.into_i74(ctx)? as u64
+        };
+        self.c &= val;
+        Ok(())
+    }
+
+    fn calc(&mut self, collector: &mut Vec<Daten>) -> Result<()> {
+        collector.push(Daten::u64(self.c));
+        Ok()
+    }
+}
+
