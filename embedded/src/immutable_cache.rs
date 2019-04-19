@@ -14,7 +14,7 @@ use std::collections::{
     BTreeSet,
 };
 
-use causet_traits{
+use embedded_promises{
     CausetID,
     TypedValue,
 };
