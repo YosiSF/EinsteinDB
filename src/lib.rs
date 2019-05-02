@@ -13,6 +13,26 @@
 // https://github.com/rust-lang-nursery/rust-clippy/issues/2638
 #![allow(clippy::nonminimal_bool)]
 
+extern crate rusqlite;
+
+extern create uuid;
+pub extern crate jepsen-edn;
+extern crate embedded_promises;
+#[macro_use]
+extern crate embedded_promises;
+extern crate einstein_db;
+extern crate einstein_q_algebra;
+extern crate q_algebra_promises;
+extern crate einstein_causet_q_projector;
+extern crate einstein_q_pull;
+extern crate q_pull_promises;
+extern crate einstein_sql_promises;
+extern crate public_promises;
+extern crate einstein_txn;
+
+
+
+
 #[macro_use]
 extern crate bitflags;
 #[macro_use]
@@ -65,3 +85,26 @@ pub mod server;
 pub mod causetStore;
 
 pub use crate::causetStore::causetStore;
+
+pub use embedded_promises::
+
+pub use embedded_promises:: {
+    Attribute,
+    Binding,
+    CausetID,
+    KnownCausedID,
+    HopfMap,
+    ValueType,
+    now,
+};
+
+pub use einstein_embedded::{
+    DateTime,
+    HasSchema,
+    Keyword,
+    HasSchemaEventReport,
+    Utc,
+    Uuid,
+};
+
+pub use jepsen
