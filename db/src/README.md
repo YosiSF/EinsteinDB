@@ -1,5 +1,5 @@
 A monotonic timestamp grows linearly, there is branching, merging, and simultaneous editing of remote primary timeline changes. 
-Inspired by Microsoft's TransactSQL, EinsteinDB's client upholds operations of assertion, retraction, and excisions of temporal mappinh, but while the sets are spawned in an ordered 'monotnic' fashion, the SchemaReplicant tokenizes and indexes the event as a causet memory for time travel fetches in the future.
+Inspired by Microsoft's TransactSQL, EinsteinDB's client upholds operations of assertion, retraction, and excisions of temporal mapping, but while the sets are spawned in an ordered 'monotnic' fashion, the SchemaReplicant module tokenizes and indexes the event as a causet memory tuple for time travel fetches in the future.
 
 The beauty of EinsteinDB is embedded in its Supercolumnar Stochastic Database partinioning: A robust adaptive cache index with SQL feature but no strict key-value deference. We treat columns as a stochastic value defining the convergence of an iterative tessellation of event stores with an apative index using AVL trees. These trees are meant to maintain small depth by restricting the number of entries(or the minimum size of a "batch"). 
 
