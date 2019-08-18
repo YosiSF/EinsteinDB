@@ -148,13 +148,13 @@ pub fn remove_db_id<V: TransacblockValue>(map: &mut entmod::MapNotation<V>) -> R
 
     let db_id: Option<entmod::SolitonPlace<V>> = if let Some(id) = map.remove(&db_id_key) {
         match id {
-            entmod::ValuePlace::Causetid(e) => Some(entmod::SolitonPlace::Causetid(e)),
-            entmod::ValuePlace::LookupRef(e) => Some(entmod::SolitonPlace::LookupRef(e)),
-            entmod::ValuePlace::TempId(e) => Some(entmod::SolitonPlace::TempId(e)),
-            entmod::ValuePlace::TxFunction(e) => Some(entmod::SolitonPlace::TxFunction(e)),
-            entmod::ValuePlace::Atom(v) => Some(v.into_Soliton_place()?),
-            entmod::ValuePlace::Vector(_) |
-            entmod::ValuePlace::MapNotation(_) => {
+            solmod::ValuePlace::Causetid(e) => Some(solmod::SolitonPlace::Causetid(e)),
+            solmod::ValuePlace::LookupRef(e) => Some(solmod::SolitonPlace::LookupRef(e)),
+            solmod::ValuePlace::TempId(e) => Some(solmod::SolitonPlace::TempId(e)),
+            solmod::ValuePlace::TxFunction(e) => Some(solmod::SolitonPlace::TxFunction(e)),
+            solmod::ValuePlace::Atom(v) => Some(v.into_Soliton_place()?),
+            solmod::ValuePlace::Vector(_) |
+            solmod::ValuePlace::MapNotation(_) => {
                 bail!(DbErrorKind::InputError(errors::InputError::BadDbId))
             },
         }
@@ -226,11 +226,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
         Ok(tempids)
     }
 
-    /// Pipeline stage 1: convert `Soliton` instances into `Term` instances, ready for term
-    /// rewriting.
-    ///
-    /// The `Term` instances produce share interned TempId and LookupRef handles, and we return the
-    /// interned handle sets so that consumers can ensure all handles are used appropriately.
+    
     fn solitons_into_terms_with_temp_ids_and_lookup_refs<I, V: TransacblockValue>(&self, solitons: I) -> Result<(Vec<TermWithTempIdsAndLookupRefs>, InternSet<TempId>, InternSet<AVPair>)> where I: IntoIterator<Item=Soliton<V>> {
         struct InProcess<'a> {
             partition_map: &'a PartitionMap,
@@ -282,12 +278,12 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
 
             /// Allocate private internal tempids reserved for EinsteinDB.  Internal tempids just need to be
             /// unique within one transaction; they should never escape a transaction.
-            fn allocate_EinsteinDB_id<W: TransacblockValue>(&mut self) -> entmod::SolitonPlace<W> {
+            fn allocate_EinsteinDB_id<W: TransacblockValue>(&mut self) -> solmod::SolitonPlace<W> {
                 self.EinsteinDB_id_count += 1;
                 entmod::SolitonPlace::TempId(TempId::Internal(self.EinsteinDB_id_count).into())
             }
 
-            fn Soliton_e_into_term_e<W: TransacblockValue>(&mut self, x: entmod::SolitonPlace<W>) -> Result<KnownCausetidOr<LookupRefOrTempId>> {
+            fn Soliton_e_into_term_e<W: TransacblockValue>(&mut self, x: solmod::SolitonPlace<W>) -> Result<KnownCausetidOr<LookupRefOrTempId>> {
                 match x {
                     entmod::SolitonPlace::Causetid(e) => {
                         let e = match e {
@@ -301,11 +297,11 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
                         Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.intern(e))))
                     },
 
-                    entmod::SolitonPlace::LookupRef(ref lookup_ref) => {
+                    solmod::SolitonPlace::LookupRef(ref lookup_ref) => {
                         Ok(Either::Right(LookupRefOrTempId::LookupRef(self.intern_lookup_ref(lookup_ref)?)))
                     },
 
-                    entmod::SolitonPlace::TxFunction(ref tx_function) => {
+                    solmod::SolitonPlace::TxFunction(ref tx_function) => {
                         match tx_function.op.0.as_str() {
                             "transaction-tx" => Ok(Either::Left(self.tx_id)),
                             unknown @ _ => bail!(DbErrorKind::NotYetImplemented(format!("Unknown transaction function {}", unknown))),
@@ -314,10 +310,10 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
                 }
             }
 
-            fn Soliton_a_into_term_a(&mut self, x: entmod::CausetidOrIdent) -> Result<Causetid> {
+            fn Soliton_a_into_term_a(&mut self, x: solmod::CausetidOrIdent) -> Result<Causetid> {
                 let a = match x {
-                    entmod::CausetidOrIdent::Causetid(ref a) => *a,
-                    entmod::CausetidOrIdent::Ident(ref a) => self.schema.require_Causetid(&a)?.into(),
+                    solmod::CausetidOrIdent::Causetid(ref a) => *a,
+                    solmod::CausetidOrIdent::Ident(ref a) => self.schema.require_Causetid(&a)?.into(),
                 };
                 Ok(a)
             }
@@ -339,7 +335,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
                         }
 
                         match x {
-                            entmod::ValuePlace::Atom(v) => {
+                            solmod::ValuePlace::Atom(v) => {
                                 // Here is where we do schema-aware typechecking: we either assert
                                 // that the given value is in the Building's value set, or (in
                                 // limited cases) coerce the value into the Building's value set.
