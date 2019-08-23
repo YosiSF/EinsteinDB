@@ -9,27 +9,32 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use std::cell::Cell;
+
 use std::rc::Rc;
+
+use std::sync::atomic::{
+    AtomicUsize,
+    Ordering,
+}
+
 
 #[derive(Clone)]
 pub struct RcPosetCounter {
-    c: Rc<Cell<usize>>,
+    c: Rc<AtomicUsize>,
 }
 
 impl RcPosetCounter {
     pub fn with_initial(value: usize)-> Self{
-        RcPosetCounter { c: Rc::new(Cell::new(value)) }
+        RcPosetCounter { c: Rc::new(AtomicUsize::new(value)) }
 
     }
 
     pub fn new()-> Self{
-        RcPosetCounter { c: Rc::new(Cell::new(0)) }
+        RcPosetCounter { c: Rc::new(AtomicUSize::new(0)) }
     }
 
     pub fn next(&self) -> usize {
-        let current = self.c.get();
-        self.c.replace(current+1)
+       self.c.fetch_add(1, Ordering::SeqCst)
 
     }
 
