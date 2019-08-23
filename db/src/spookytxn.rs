@@ -36,7 +36,7 @@ use db_traits::errors::{
 };
 use internal_types::{
     AddAndRetract,
-    AEVTrie,
+    ARATrie,
     KnownCausetidOr,
     LookupRef,
     LookupRefOrTempId,
@@ -98,14 +98,14 @@ use observer::{
 
 /// Defines transactor's high level behaviour.
 pub(crate) enum TransactorAction {
-    /// Serialize transaction into 'datoms' and metadata
+    /// Serialize transaction into 'causets' and metadata
     /// views, but do not commit it into 'transactions' block.
     /// Use this if you need transaction's "side-effects", but
     /// don't want its by-products to end-up in the transaction log,
     /// e.g. when rewinding.
     Serialize,
 
-    /// Serialize transaction into 'datoms' and metadata
+    /// Serialize transaction into 'causets' and metadata
     /// views, and also commit it into the 'transactions' block.
     /// Use this for regular transactions.
     SerializeAndCommit,
@@ -167,7 +167,7 @@ pub fn remove_db_id<V: TransacblockValue>(map: &mut entmod::MapNotation<V>) -> R
 
 impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
     pub fn new(
-        store: &'conn rusqlite::Connection,
+        store: &'conn postgres::Connection,
         partition_map: PartitionMap,
         schema_for_mutation: &'a Schema,
         schema: &'a Schema,
@@ -183,7 +183,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
         }
     }
 
-    /// Given a collection of tempids and the [a v] pairs that they might upsert to, resolve exactly
+    /// Given a collection of tempids and the [ARA v] pairs that they might upsert to, resolve exactly
     /// which [a v] pairs do upsert to causetids, and map each tempid that upserts to the upserted
     /// Causetid.  The keys of the resulting map are exactly those tempids that upserted.
     pub(crate) fn resolve_temp_id_avs<'b>(&self, temp_id_avs: &'b [(TempIdHandle, AVPair)]) -> Result<TempIdMap> {
@@ -192,15 +192,15 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
         }
 
         // Map [a v]->Causetid.
-        let mut av_pairs: Vec<&AVPair> = vec![];
+        let mut ara_pairs: Vec<&ARAPair> = vec![];
         for i in 0..temp_id_avs.len() {
             av_pairs.push(&temp_id_avs[i].1);
         }
 
         // Lookup in the store.
-        let av_map: AVMap = self.store.resolve_avs(&av_pairs[..])?;
+        let av_map: ARAMap = self.store.resolve_avs(&av_pairs[..])?;
 
-        debug!("looked up avs {:?}", av_map);
+        debug!("looked up avs {:?}", ara_map);
 
         // Map id->Causetid.
         let mut tempids: TempIdMap = TempIdMap::default();
@@ -336,9 +336,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
 
                         match x {
                             solmod::ValuePlace::Atom(v) => {
-                                // Here is where we do schema-aware typechecking: we either assert
-                                // that the given value is in the Building's value set, or (in
-                                // limited cases) coerce the value into the Building's value set.
+                           
                                 match v.as_tempid() {
                                     Some(tempid) => Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.intern(tempid)))),
                                     None => {
@@ -352,16 +350,16 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: Transactobserver {
                                 }
                             },
 
-                            entmod::ValuePlace::Causetid(Causetid) =>
+                            solmod::ValuePlace::Causetid(Causetid) =>
                                 Ok(Either::Left(KnownCausetid(self.Soliton_a_into_term_a(Causetid)?))),
 
-                            entmod::ValuePlace::TempId(tempid) =>
+                            solmod::ValuePlace::TempId(tempid) =>
                                 Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.intern(tempid)))),
 
-                            entmod::ValuePlace::LookupRef(ref lookup_ref) =>
+                            solmod::ValuePlace::LookupRef(ref lookup_ref) =>
                                 Ok(Either::Right(LookupRefOrTempId::LookupRef(self.intern_lookup_ref(lookup_ref)?))),
 
-                            entmod::ValuePlace::TxFunction(ref tx_function) => {
+                            solmod::ValuePlace::TxFunction(ref tx_function) => {
                                 match tx_function.op.0.as_str() {
                                     "transaction-tx" => Ok(Either::Left(KnownCausetid(self.tx_id.0))),
                                     unknown @ _ => bail!(DbErrorKind::NotYetImplemented(format!("Unknown transaction function {}", unknown))),
