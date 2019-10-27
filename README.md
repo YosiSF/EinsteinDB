@@ -1,5 +1,5 @@
 
-EinsteinDB - The world's first open-source, distributed, relativistic serializable, Byzantine Fault-Tolerant, Transactional APIs with traditional SQL Hybrid OLAP/OLTP for HTAP workloads. 
+EinsteinDB - The world's first open-source, distributed; causal consistent and relativistic serializable, Byzantine Fault-Tolerant, Transactional with traditional SQL Hybrid OLAP/OLTP Database for HTAP workloads. 
 
 Built with Crossbeam, Tokio, and a re-designed epoch mechanism: EinsteinDB provides a unified strategy for storing new data and moving it between devices, across the spectrum of time (a la postgres), spearheading a proliferation of stores and strategies within a robust mechanism for syncing subsets of data collected (guaranteeing low-latency and partition fault-tolerance). EinsteinDB is borne out of the needs of modern-day cloud-native infrastructure: portable, performant, persistent, and embedded. ACID complaint.
 
