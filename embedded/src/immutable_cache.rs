@@ -1,4 +1,4 @@
-//Copyright 2019 Venire Labs Inc
+//Copyright 2019 EinsteinDB
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -15,7 +15,7 @@ use std::collections::{
 };
 
 use embedded_promises{
-    CausetID,
+    CausetId,
     TypedValue,
 };
 
@@ -24,21 +24,21 @@ use ::{
 };
 
 pub trait ImmutableCachedAttributes {
-    fn is_attr_cached_reverse(&self, causetid: CausetID) -> bool;
-    fn is_attr_cached_forward(&self, causetid: CausetID)->bool;
+    fn is_attr_cached_reverse(&self, causetid: CausetId) -> bool;
+    fn is_attr_cached_forward(&self, causetid: CausetId)->bool;
     fn has_cached_attr(&self) -> bool;
 
-    fn get_val_for_causetid(&self, schema: &Schema, attribute: CausetID, causetid: CausetID) -> Option<&Vec<TypedValue>>;
-    fn get_val_for_causetid(&self, schema: &Schema, attribute: CausetID, causetid: CausetID) -> Option<&TypedValue>;
+    fn get_val_for_causetid(&self, schema: &Schema, attribute: CausetId, causetid: CausetId) -> Option<&Vec<TypedValue>>;
+    fn get_val_for_causetid(&self, schema: &Schema, attribute: CausetId, causetid: CausetId) -> Option<&TypedValue>;
 
     //now do the opposite
-    fn get_causetid_for_value(&self, attribute: CausetID, value: &TypedValue) -> Optiopn<CausetID>;
-    fn get_causetid_for_value(&self, attribute: CausetID, value: &TypedValue) -> Optiopn<&BTreeSet<CausetID>>;
+    fn get_causetid_for_value(&self, attribute: CausetId, value: &TypedValue) -> Optiopn<CausetId>;
+    fn get_causetid_for_value(&self, attribute: CausetId, value: &TypedValue) -> Optiopn<&BTreeSet<CausetId>>;
 
 }
 
 pub trait UpdateableImmutableCache<E> {
     fn update<T><(&mut self, schema: &schema, retractions: I, assertions:I) -> Result<(), E>
-    where I: Iterator<Item=(CausetID, CausetID, TypedValue)>;
+    where I: Iterator<Item=(CausetId, CausetId, TypedValue)>;
      
 }
