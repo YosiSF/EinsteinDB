@@ -1,0 +1,69 @@
+[package]
+authors = [
+    "Karl Whitford <venirelabsinc@gmail.com>",
+    "Josh Leder <slushie@gmail.com>",
+]
+
+name = "einsteindb"
+license = "Apache-2.0"
+keywords = ["embedded", "distributed-systems", "BFTRaft" ]
+version = "0.11.1"
+build = "build/version.rs"
+edition = "2018"
+
+[lib]
+name = "einsteindb"
+
+[dependencies]
+log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
+slog = { version = "2.3", features = ["max_level_trace", "release_max_level_debug"] }
+slog-async = { version = "2.3", default-features = false }
+slog-global = { version = "0.1", git = "https://github.com/breeswish/slog-global.git", rev = "0e23a5baff302a9d7bccd85f8f31e43339c2f2c1" }
+slog-term = "2.4"
+slog_derive = "0.1"
+byteorder = "1.2"
+rand = "0.6.5"
+quick-error = "1.2.2"
+tempfile = "3.0"
+time = "0.1"
+toml = "0.4"
+libc = "0.2"
+crc = "1.8"
+fs2 = "0.4"
+spin = "0.5"
+protobuf = "2.8"
+nix = "0.11"
+utime = "0.2"
+chrono = "0.4"
+lazy_static = "1.3"
+backtrace = "0.3.9"
+url = "2"
+sys-info = "0.5.7"
+futures = "0.1"
+futures-cpupool = "0.1"
+futures-locks = "0.1"
+tokio-core = "0.1"
+tokio-timer = "0.2"
+tokio-executor = "0.1"
+tokio-sync = "0.1.7"
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+zipf = "5.0.1"
+bitflags = "1.0.1"
+fail = "0.3"
+uuid = { version = "0.7", features = [ "serde", "v4" ] }
+grpcio = { version = "0.5.0-alpha.3", features = [ "openssl-vendored" ] }
+raft = "0.6.0-alpha"
+crossbeam = "0.7.2"
+derive_more = "0.15.0"
+hex = "0.3"
+more-asserts = "0.1"
+hyper = { version = "0.12", default-features = false, features = ["runtime"] }
+tokio-threadpool = "0.1.13"
+tokio-fs = "0.1.6"
+tokio-io = "0.1.12"
+vlog = "0.1.4"
+mime = "0.3.13"
+farmhash = "1.1.5"
+failure = "0.1"
