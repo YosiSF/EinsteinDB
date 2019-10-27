@@ -16,6 +16,7 @@ extern crate uuid;
 
 #[cfg(feature = "serde_support")]
 extern crate serde;
+
 #[cfg(feature = "serde_support")]
 #[macro_use]
 extern crate serde_derive;
