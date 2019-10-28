@@ -1,4 +1,5 @@
 use std::fs;
+use crate::event::{}
 use std::ops::Deref;
 use std::path::Path;
 use std::sync::Arc;
@@ -10,12 +11,20 @@ use std::io::Read;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
-use engine_embedded::{  Error, IterOptions, Iterable, KvEngine, Mutable, Peekable, ReadOptions, Result, WriteOptions,};
 
-use yosh::{YoshIt, YoshWri, yosh };
 
+use yosh::{YoshIt, YoshWri, yosh, yoshWriBat as NakedBatch};
+
+//copy in
 #[derive(Clone, Debug)]
 #[repr(transparent)]
+pub struct ReplicateTo<yosh>(pub yosh);
+
+
 
 //yosh references Yosh. See: Reflection
-pub struct Yosh<Arc<yosh>>
+pub struct Yosh(Arc<yosh>);
+
+impl Yosh<> {
+    pub fn from_edb(edb: Arc<yosh>)
+}
