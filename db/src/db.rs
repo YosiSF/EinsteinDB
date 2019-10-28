@@ -51,19 +51,7 @@ use failure:: {
     ResultExt,
 };
 
-use super::{util, YosiIter, YosiWri, yosi};
-use crate::{IterOption, Iterable, Mutable, Peekable, Result};
 
-impl Peekable for yosi {
-  fn get_value(&self, key:&[u8]) -> Result<Option<YosiVec>> {
-    let v = self.get(key)?;
-    Ok(v)
-  }
-
-  fn get_value_rcu(&self, rcuf: &str, key: &[u8]) -> Result<Option<YosiVec>> {
-    let 
-  }
-}
 
 use std::collections::HashMap;
 use std::collections::hash_map::{
@@ -85,6 +73,20 @@ use einstein_core::{
     ToMicros,
     ValueRc,
 };
+
+use super::{util, YosiIter, YosiWri, yosi};
+use crate::{IterOption, Iterable, Mutable, Peekable, Result};
+
+impl Peekable for yosi {
+  fn get_value(&self, key:&[u8]) -> Result<Option<YosiVec>> {
+    let v = self.get(key)?;
+    Ok(v)
+  }
+
+  fn get_value_rcu(&self, rcuf: &str, key: &[u8]) -> Result<Option<YosiVec>> {
+    let rcults = util::get_rcu_handle(self, rcuf)?;
+  }
+}
 
 
 //SQLLite + PostgresQL engine with Yosi wrappers
