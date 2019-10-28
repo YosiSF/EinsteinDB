@@ -1,4 +1,4 @@
-//Copyright 2019 Venire Labs Inc
+//Copyright 2019 Venire Labs Inc - EinsteinDB 
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -8,19 +8,18 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-
-use std::{
-
-}
-
-use failure:: {
-    ResultExt,
-};
-
+use std::fs;
+use sdd::ops::Deref;
+use std::path::Path;
+use std::sync::Arc;
 use std::collections::HashMap;
 use std::collections::hash_map::{
     Entry,
 };
+
+use itertools;
+use itertools::Itertools;
+
 use std::iter::{once, repeat};
 use std::ops::Range;
 use std::path::Path;
@@ -33,6 +32,72 @@ use einstein_core::{
     ToMicros,
     ValueRc,
 };
+use std::option::Option
+
+use futures::FutureExt;
+use native_tls::{Self, Certificate};
+use tokio::net::TcpStream;
+use tokio_postgres::tls::TlsConnect;
+
+#[cfg(feature = "runtime")]
+use crate::MakeTlsConnector;
+use crate::TlsConnector;
+
+use std::{
+
+}
+
+use failure:: {
+    ResultExt,
+};
+
+use super::{util, YosiIter, YosiWri, yosi};
+use crate::{IterOption, Iterable, Mutable, Peekable, Result};
+
+impl Peekable for yosi {
+  fn get_value(&self, key:&[u8]) -> Result<Option<YosiVec>> {
+    let v = self.get(key)?;
+    Ok(v)
+  }
+
+  fn get_value_rcu(&self, rcuf: &str, key: &[u8]) -> Result<Option<YosiVec>> {
+    let 
+  }
+}
+
+use std::collections::HashMap;
+use std::collections::hash_map::{
+    Entry,
+};
+
+use itertools;
+use itertools::Itertools;
+
+use std::iter::{once, repeat};
+use std::ops::Range;
+use std::path::Path;
+
+use einstein_core::{
+    HopfAttributeMap,
+    FromMicros,
+    IdentMap,
+    Schema,
+    ToMicros,
+    ValueRc,
+};
+
+
+//SQLLite + PostgresQL engine with Yosi wrappers
+pub trait EinsteinStoring {
+  ///Given a slice of [a v] lookup-refs, look up the corresponding [e a v] triples.
+  ///
+   /// It is assumed that the attribute `a` in each lookup-ref is `:db/unique`, so that at most one
+    /// matching [e a v] triple exists.  (If this is not true, some matching entid `e` will be
+    /// chosen non-deterministically, if one exists.)
+    /// Returns a map &(a, v) -> e, to avoid cloning potentially large values.  The keys of the map
+    /// are exactly those (a, v) pairs that have an assertion [e a v] in the store.
+    fn resolve_avs<`a>(&self, avs: [&'a AVPair]) -> Result<AVMap<'a>>;
+}
 
 lazy_static! {
     /// SQL statements to be executed, in order, to create the EinsteinDB SQL schema (version 1).
