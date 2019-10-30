@@ -10,6 +10,19 @@ use std::io;
 use std::io::Read;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::{fmt, io};
+use tokio::io::{AsyncRead, AsyncWrite};
+
+use std::option::Option;
+
+use super::{util, YosiIt, YosiVec, YosiWri, yosi};
+
+
+//copy in
+#[derive(Clone, Debug)]
+#[repr(transparent)]
+pub struct ReplicateTo<yosi>(pub yosi);
+
 
 //TLS handshake.
 pub struct EinsteinBinding {
@@ -23,24 +36,22 @@ impl EinsteinWrapper {
     /// Creates a `EinsteinWrapper` containing no information.
     pub fn none() -> EinsteinWrapper {
         EinsteinWrapper {
-            tls_server_end_point: None,
+            //toggle null
+            tls_ep: None,
         }
     }
 
-    /// Creates a `EinsteinWrapper` containing `tls-server-end-point` channel binding information.
+    /// Creates an `EinsteinWrapper` containing `tls-server-end-point` channel binding information.
     pub fn tls_server_end_point(tls_server_end_point: Vec<u8>) -> EinsteinWrapper {
         EinsteinWrapper {
-            tls_server_end_point: Some(tls_server_end_point),
+            //Toggle left-over, if any.
+            tls_ep: Some(tls_server_end_point),
         }
     }
 }
 
 use yosh::{YoshIt, YoshWri, yosh, yoshWriBat as NakedBatch};
 
-//copy in
-#[derive(Clone, Debug)]
-#[repr(transparent)]
-pub struct ReplicateTo<yosh>(pub yosh);
 
 
 

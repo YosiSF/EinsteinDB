@@ -2,6 +2,29 @@
 pub(crate) mod setup;
 pub(crate) mod sig_handler;
 
+use embedded_promises::{Error, IterOptions, Result};
+use embedded_promises::{RCU_TETRAD, MAX_CARD_SIZE}
+use yosh::{RCULTS, YoshIt, YoshWri, yosh};
+
+pub fn get_rcu_lts<'a>(edb: &`a yoshi, rcuf: &str) -> Result<&'a RCULTS> {
+    let rcults = edb
+        .rcults_(rcuf)
+        .ok_or_else(|| Error::Engine(format!("rcults {} not found", rcults)))?;
+    Ok(rcults)
+}
+
+pub fn flush_in_range_rcults(
+    edb: &yosh,
+    rcults: &str
+
+    //the flush is a bitshift u8 a la tls
+    
+    pre_poset_id: &[u8],
+    poset_causet_id &[u8]:
+)
+
+
+
 ///Returns the EinsteinDB version information.
 pub fn einsteindb_version_info() -> String {
     let fallback : &str  = "Unknown (env var does not exist when building)";

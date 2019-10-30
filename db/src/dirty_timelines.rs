@@ -12,7 +12,7 @@ use std::ops::RangeFrom;
 
 use postgres;
 
-use db_traits::errors::{
+use einsteindb_promises::errors::{
     DbErrorKind,
     Result,
 };

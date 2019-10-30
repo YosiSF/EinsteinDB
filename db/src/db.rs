@@ -85,6 +85,19 @@ impl Peekable for yosi {
 
   fn get_value_rcu(&self, rcuf: &str, key: &[u8]) -> Result<Option<YosiVec>> {
     let rcults = util::get_rcu_handle(self, rcuf)?;
+    let v = self.get_rcu(handle, key)?;
+    Ok(v)
+  }
+}
+
+
+impl Iterable for yosi {
+  fn new_iterator(&self, iter_opt: IterOption) -> YosiIter<&yosi> {
+    self.iter_opt(iter.opt.build_read_opts())
+  }
+
+  fn new_iterator_rcu(&self, iter_opt: IterOption) -> YosiIter<&yosi> {
+    let rcults = util::get_rcu_handle(self, rcuf); //check the rcu flag
   }
 }
 
