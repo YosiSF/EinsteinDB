@@ -1,4 +1,4 @@
-//Copyright 2019 Venire Labs Inc
+//Copyright 2019 EinsteinBSD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@ use std::borrow::ToOwned;
 use std::process;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use chrono
-use clag::ArgMatches
+use chrono;
+use clag::ArgMatches;
 
 use einsteindb::config::{MetricConfig, EinsteinDBConfig};
 use einsteindb::util::collections::HashMap;
 use einsteindb::util::{self, logger};
+
+mod deferred_column;
 
 //checks if log is init
 pub static LOG_INITIALIZED: AtomicBool = AtomicBool::new(v: false);

@@ -1,5 +1,5 @@
 use std::fs;
-use crate::event::{}
+use crate::event::{};
 use std::ops::Deref;
 use std::path::Path;
 use std::sync::Arc;

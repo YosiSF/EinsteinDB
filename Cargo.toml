@@ -10,6 +10,7 @@ keywords = ["embedded", "distributed-systems", "BFTRaft" ]
 version = "0.11.1"
 build = "build/version.rs"
 edition = "2018"
+publish = "false"
 
 [lib]
 name = "einsteindb"
@@ -67,3 +68,14 @@ vlog = "0.1.4"
 mime = "0.3.13"
 farmhash = "1.1.5"
 failure = "0.1.1"
+
+[dependencies.rusqlite]
+version = "0.13"
+features = ["limits"]
+
+[dependencies.edb]
+path = "edb"
+
+[dependencies.embedded_promises]
+path = "embedded-promises"
+
