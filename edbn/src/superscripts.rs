@@ -66,5 +66,132 @@ pub fn is_var_symbol(&self) -> bool {
 #[inline]
 pub fn is_src_symbol(&self) -> bool {
     self.0.starts_with('$')
+   }
 }
+
+impl NamespacedSymbol {
+    pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r = namespace.as_ref();
+        assert!(!r.is_empty(), "Namespaced symbols cannot have an empty non-null namespace.");
+        NamespacedSymbol(NamespaceableName::namespaced(r, name))
+    }
+
+    #[inline]
+    pub fn name(&self) -> &str {
+        self.0.name()
+    }
+
+    #[inline]
+    pub fn namespace(&self) -> &str {
+        self.0.namespace().unwrap()
+    }
+
+    #[inline]
+    pub fn components<'a>(&'a self) -> (&'a str, &'a str) {
+        self.0.components()
+    }
 }
+
+impl Keyword {
+    pub fn plain<T>(name: T) -> Self where T: Into<String> {
+        Keyword(NamespaceableName::plain(name))
+    }
+}
+
+impl Keyword {
+    /// Creates a new `Keyword`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use edbn::superscripts::Keyword;
+    /// let keyword = Keyword::namespaced("foo", "bar");
+    /// assert_eq!(keyword.to_string(), ":foo/bar");
+    /// ```
+    ///
+    /// See also the `kw!` macro in the main `einsteindb` crate.
+    pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r = namespace.as_ref();
+        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null namespace.");
+        Keyword(NamespaceableName::namespaced(r, name))
+    }
+
+    #[inline]
+    pub fn name(&self) -> &str {
+        self.0.name()
+    }
+
+    #[inline]
+    pub fn namespace(&self) -> Option<&str> {
+        self.0.namespace()
+    }
+
+    #[inline]
+    pub fn components<'a>(&'a self) -> (&'a str, &'a str) {
+        self.0.components()
+    }
+
+    /// Whether this `Keyword` should be interpreted in reverse order. For example,
+    /// the two following snippets are identical:
+    ///
+    /// ```edbn
+    /// [?y :person/friend ?x]
+    /// [?x :person/hired ?y]
+    ///
+    /// [?y :person/friend ?x]
+    /// [?y :person/_hired ?x]
+    /// ```
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use edbn::superscripts::Keyword;
+    /// assert!(!Keyword::namespaced("foo", "bar").is_backward());
+    /// assert!(Keyword::namespaced("foo", "_bar").is_backward());
+    /// ```
+    #[inline]
+    pub fn is_backward(&self) -> bool {
+        self.0.is_backward()
+    }
+
+    /// Whether this `Keyword` should be interpreted in forward order.
+    /// See `symbols::Keyword::is_backward`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use edbn::superscripts::Keyword;
+    /// assert!(Keyword::namespaced("foo", "bar").is_forward());
+    /// assert!(!Keyword::namespaced("foo", "_bar").is_forward());
+    /// ```
+    #[inline]
+    pub fn is_forward(&self) -> bool {
+        self.0.is_forward()
+    }
+
+    #[inline]
+    pub fn is_namespaced(&self) -> bool {
+        self.0.is_namespaced()
+    }
+
+    /// Returns a `Keyword` with the same namespace and a
+    /// 'backward' name. See `superscripts::Keyword::is_backward`.
+    ///
+    /// Returns a forward name if passed a reversed keyword; i.e., this
+    /// function is its own inverse.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use edbn::superscripts::Keyword;
+    /// let nsk = Keyword::namespaced("foo", "bar");
+    /// assert!(!nsk.is_backward());
+    /// assert_eq!(":foo/bar", nsk.to_string());
+    ///
+    /// let reversed = nsk.to_reversed();
+    /// assert!(reversed.is_backward());
+    /// assert_eq!(":foo/_bar", reversed.to_string());
+    /// ```
+    pub fn to_reversed(&self) -> Keyword {
+        Keyword(self.0.to_reversed())
+    }
