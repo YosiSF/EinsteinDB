@@ -8,6 +8,25 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use std::borrow::{
+    Borrow,
+};
+
+use std::collections::{
+    BTreeMap,
+};
+
+use std::sync::{
+    Arc,
+    Mutex,
+};
+
+use rusqlite;
+use rusqlite::{
+    TransactionBehavior,
+};
+
+
 pub struct Conn {
     /// `Mutex` since all reads and writes need to be exclusive.  Internally, owned data for the
     /// volatile parts (generation and partition map), and `Arc` for the infrequently changing parts
