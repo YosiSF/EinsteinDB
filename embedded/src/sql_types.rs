@@ -26,6 +26,6 @@ pub trait SQLValueType {
 
 
      /// ValueType::Long and ValueType::Double).
-    
+
      fn sql_representation(&self) -> (ValueTypeTag, Option<SQLTypeAffinity>);
  }
