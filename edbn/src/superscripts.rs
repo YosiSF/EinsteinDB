@@ -195,3 +195,25 @@ impl Keyword {
     pub fn to_reversed(&self) -> Keyword {
         Keyword(self.0.to_reversed())
     }
+    pub fn unreversed(&self) -> Option<Keyword> {
+        if self.is_backward() {
+            Some(self.to_reversed())
+        } else {
+            None
+        }
+    }
+}
+
+impl Display for PlainSymbol {
+    /// Print the symbol in EDBN format.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use edbn::superscripts::PlainSymbol;
+    /// assert_eq!("baz", PlainSymbol::plain("baz").to_string());
+    /// ```
+    fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
