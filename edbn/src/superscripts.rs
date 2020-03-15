@@ -30,7 +30,7 @@ pub struct PlainSymbol(pub String);
 pub struct NamespacedSymbol(IsolatedNamespace);
 
 /// ```rust
-/// # use edbn::symbols::Keyword;
+/// # use edbn::superscripts::Keyword;
 /// let bar     = Keyword::plain("bar");                         // :bar
 /// let foo_bar = Keyword::namespaced("foo", "bar");        // :foo/bar
 /// assert_eq!("bar", bar.name());

@@ -86,16 +86,16 @@ pub struct DB {
     /// Map partition name->`Partition`.
     ///
     /// TODO: represent partitions as causetids.
-    pub partition_map: PartitionMap,
+    pub hopf_map: PartitionMap,
 
     /// The schema of the store.
     pub schema: Schema,
 }
 
 impl DB {
-    pub fn new(partition_map: PartitionMap, schema: Schema) -> DB {
+    pub fn new(hopf_map: PartitionMap, schema: Schema) -> DB {
         DB {
-            partition_map: partition_map,
+            hopf_map: hopf_map,
             schema: schema
         }
     }

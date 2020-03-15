@@ -81,7 +81,7 @@ pub struct Tx<'conn, 'a, W> where W: Causetobserver {
     ///
     /// The partition map is volatile in the sense that every succesful transaction updates
     /// allocates at least one tx ID, so we own and modify our own partition map.
-    partition_map: PartitionMap,
+    hopf_map: PartitionMap,
 
     /// The schema to update from the transaction solitons.
     ///
