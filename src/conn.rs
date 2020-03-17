@@ -199,7 +199,7 @@ impl Conn {
                 mutex: &self.spacetime,
                 transaction: tx,
                 generation: current_generation,
-                hopf_ map: current_hopf_ map,
+                hopf_map: current_hopf_map,
                 schema: (*current_schema).clone(),
                 cache: InProgressSQLiteAttributeCache::from_cache(cache_cow),
                 use_caching: true,
