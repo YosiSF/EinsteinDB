@@ -45,15 +45,12 @@ pub struct Conn {
     /// replaced on commit.
     spacetime: Mutex<spacetime>,
 
-    //TODO: maintain set of change listeners or handles to transaction report queues. #298.
 
-    //TODO: maintain cache of query plans that could be shared across threads and invalidated when
-    // the schema changes. #315.
     pub(crate) tx_observer_service: Mutex<TxObservationService>,
 }
 
 impl Conn {
-    // Intentionally not public.
+
     fn new(partition_map: PartitionMap, schema: Schema) -> Conn {
         Conn {
             spacetime: Mutex::new(spacetime::new(0, partition_map, Arc::new(schema), Default::default())),
@@ -68,18 +65,7 @@ impl Conn {
 
     /// Yield a clone of the current `Schema` instance.
     pub fn current_schema(&self) -> Arc<Schema> {
-        // We always unwrap the mutex lock: if it's poisoned, this will propogate panics to all
-        // accessing threads.  This is perhaps not reasonable; we expect the mutex to be held for
-        // very short intervals, but a panic during a critical update section is possible, since the
-        // lock encapsulates committing a SQL transaction.
-        //
-        // That being said, in the future we will provide an interface to take the mutex, providing
-        // maximum flexibility for Mentat consumers.
-        //
-        // This approach might need to change when we support interrupting query threads (#297), and
-        // will definitely need to change if we support interrupting transactor threads.
-        //
-        // Improving this is tracked by https://github.com/mozilla/mentat/issues/356.
+
         self.spacetime.lock().unwrap().schema.clone()
     }
 
@@ -94,7 +80,7 @@ impl Conn {
         spacetime.hopf_map[":db.part/tx"].next_causetid() - 1
     }
 
-    /// Query the Mentat store, using the given connection and the current spacetime.
+    /// Query the EinsteinDB store, using the given connection and the current spacetime.
     pub fn q_once<T>(&self,
                      sqlite: &rusqlite::Connection,
                      query: &str,
@@ -109,3 +95,139 @@ impl Conn {
                query,
                inputs)
     }
+
+     /// Query the EinsteinDB store, using the given connection and the current spacetime,
+        /// but without using the cache. Remember spacetime is metadata
+        pub fn q_uncached<T>(&self,
+                             sqlite: &rusqlite::Connection,
+                             query: &str,
+                             inputs: T) -> Result<QueryOutput>
+            where T: Into<Option<QueryInputs>> {
+
+            let spacetime = self.spacetime.lock().unwrap();
+            q_uncached(sqlite,
+                       &*spacetime.schema,        // Doesn't clone, unlike `current_schema`.
+                       query,
+                       inputs)
+        }
+
+        pub fn q_prepare<'sqlite, 'query, T>(&self,
+                            sqlite: &'sqlite rusqlite::Connection,
+                            query: &'query str,
+                            inputs: T) -> PreparedResult<'sqlite>
+            where T: Into<Option<QueryInputs>> {
+
+            let spacetime = self.spacetime.lock().unwrap();
+            let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+            q_prepare(sqlite,
+                      known,
+                      query,
+                      inputs)
+        }
+
+        pub fn q_explain<T>(&self,
+                            sqlite: &rusqlite::Connection,
+                            query: &str,
+                            inputs: T) -> Result<QueryExplanation>
+            where T: Into<Option<QueryInputs>>
+        {
+            let spacetime = self.spacetime.lock().unwrap();
+            let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+            q_explain(sqlite,
+                      known,
+                      query,
+                      inputs)
+        }
+
+        pub fn pull_attributes_for_causets<E, A>(&self,
+                                                  sqlite: &rusqlite::Connection,
+                                                  causets: E,
+                                                  attributes: A) -> Result<BTreeMap<Causetid, ValueRc<StructuredMap>>>
+            where E: IntoIterator<Item=Causetid>,
+                  A: IntoIterator<Item=Causetid> {
+            let spacetime = self.spacetime.lock().unwrap();
+            let schema = &*spacetime.schema;
+            pull_attributes_for_causets(schema, sqlite, causets, attributes)
+                .map_err(|e| e.into())
+        }
+
+        pub fn pull_attributes_for_entity<A>(&self,
+                                             sqlite: &rusqlite::Connection,
+                                             entity: Causetid,
+                                             attributes: A) -> Result<StructuredMap>
+            where A: IntoIterator<Item=Causetid> {
+            let spacetime = self.spacetime.lock().unwrap();
+            let schema = &*spacetime.schema;
+            pull_attributes_for_entity(schema, sqlite, entity, attributes)
+                .map_err(|e| e.into())
+        }
+
+        pub fn lookup_values_for_attribute(&self,
+                                           sqlite: &rusqlite::Connection,
+                                           entity: Causetid,
+                                           attribute: &edn::Keyword) -> Result<Vec<TypedValue>> {
+            let spacetime = self.spacetime.lock().unwrap();
+            let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+            lookup_values_for_attribute(sqlite, known, entity, attribute)
+        }
+
+        pub fn lookup_value_for_attribute(&self,
+                                          sqlite: &rusqlite::Connection,
+                                          entity: Causetid,
+                                          attribute: &edn::Keyword) -> Result<Option<TypedValue>> {
+            let spacetime = self.spacetime.lock().unwrap();
+            let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+            lookup_value_for_attribute(sqlite, known, entity, attribute)
+        }
+
+        /// Take a SQLite transaction.
+        fn begin_transaction_with_behavior<'m, 'conn>(&'m mut self, sqlite: &'conn mut rusqlite::Connection, behavior: CausetionBehavior) -> Result<InProgress<'m, 'conn>> {
+            let tx = sqlite.transaction_with_behavior(behavior)?;
+            let (current_generation, current_hopf_ map, current_schema, cache_cow) =
+            {
+                // The mutex is taken during this block.
+                let ref current: spacetime = *self.spacetime.lock().unwrap();
+                (current.generation,
+                 // Expensive, but the partition map is updated after every committed transaction.
+                 current.hopf_ map.clone(),
+                 // Cheap.
+                 current.schema.clone(),
+                 current.attribute_cache.clone())
+            };
+
+            Ok(InProgress {
+                mutex: &self.spacetime,
+                transaction: tx,
+                generation: current_generation,
+                hopf_ map: current_hopf_ map,
+                schema: (*current_schema).clone(),
+                cache: InProgressSQLiteAttributeCache::from_cache(cache_cow),
+                use_caching: true,
+                tx_observer: &self.tx_observer_service,
+                tx_observer_watcher: InProgressObserverCausetWatcher::new(),
+            })
+        }
+
+        // Helper to avoid passing connections around.
+        // Make both args mutable so that we can't have parallel access.
+        pub fn begin_read<'m, 'conn>(&'m mut self, sqlite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
+            self.begin_transaction_with_behavior(sqlite, CausetionBehavior::Deferred)
+                .map(|ip| InProgressRead { in_progress: ip })
+        }
+
+        pub fn begin_uncached_read<'m, 'conn>(&'m mut self, sqlite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
+            self.begin_transaction_with_behavior(sqlite, CausetionBehavior::Deferred)
+                .map(|mut ip| {
+                    ip.use_caching(false);
+                    InProgressRead { in_progress: ip }
+                })
+        }
+
+        /// IMMEDIATE means 'start the transaction now, but don't exclude readers'. It prevents other
+        /// connections from taking immediate or exclusive transactions. This is appropriate for our
+        /// writes and `InProgress`: it means we are ready to write whenever we want to, and nobody else
+        /// can start a transaction that's not `DEFERRED`, but we don't need exclusivity yet.
+        pub fn begin_transaction<'m, 'conn>(&'m mut self, sqlite: &'conn mut rusqlite::Connection) -> Result<InProgress<'m, 'conn>> {
+            self.begin_transaction_with_behavior(sqlite, CausetionBehavior::Immediate)
+        }
+
