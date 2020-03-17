@@ -37,3 +37,39 @@ impl<K, V> Default for TimestepEvaluation<K, V> where K: Ord {
 }
 
 */
+
+pub fn pull_attributes_for_entity<A>(schema: &Schema,
+                                     db: &rusqlite::Connection,
+                                     entity: Causetid,
+                                     attributes: A) -> Result<StructuredMap>
+    where A: IntoIterator<Item=Causetid> {
+    let attrs = attributes.into_iter()
+                          .map(|e| PullAttributeSpec::Attribute(PullConcreteAttribute::Causetid(e).into()))
+                          .collect();
+    Puller::prepare(schema, attrs)?
+        .pull(schema, db, once(entity))
+        .map(|m| m.into_iter()
+                  .next()
+                  .map(|(k, vs)| {
+                      assert_eq!(k, entity);
+                      vs.cloned()
+                  })
+                  .unwrap_or_else(StructuredMap::default))
+}
+
+pub fn pull_attributes_for_causets<E, A>(schema: &Schema,
+                                          db: &rusqlite::Connection,
+                                          causets: E,
+                                          attributes: A) -> Result<PullResults>
+    where E: IntoIterator<Item=Causetid>,
+          A: IntoIterator<Item=Causetid> {
+    let attrs = attributes.into_iter()
+                          .map(|e| PullAttributeSpec::Attribute(PullConcreteAttribute::Causetid(e).into()))
+                          .collect();
+    Puller::prepare(schema, attrs)?
+        .pull(schema, db, causets)
+}
+
+
+
+
