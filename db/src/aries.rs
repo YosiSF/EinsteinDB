@@ -10,8 +10,12 @@
 
 #![allow(dead_code)]
 
+
+use std::collections::BTreeMap;
+
+
 use edbn;
-use edb_promises::errors::{
+use edbn_promises::errors::{
     DbErrorKind,
     Result,
 };
@@ -24,7 +28,7 @@ use std::collections::BTreeMap;
 
 use embedded_promises::{
     Causetid,
-   KnownCausetid,
+    KnownCausetid,
 }
 
 /// The first transaction ID applied to the knowledge base.
@@ -175,8 +179,7 @@ pub struct TimestepEvaluation<K, V> {
 }
 
 impl<K, V> Default for TimestepEvaluation<K, V> where K: Ord {
-    fn default() -> TimestepEvaluation
-<K, V> {
+    fn default() -> TimestepEvaluation<K, V> {
         TimestepEvaluation
      {
             lightlike: BTreeMap::default(),
@@ -184,4 +187,23 @@ impl<K, V> Default for TimestepEvaluation<K, V> where K: Ord {
             timelike: BTreeMap::default(),
         }
     }
+
+    impl<K, V> TimestepEvaluation<K, V> where K: Ord {
+        pub fn witness(&mut self, key: K, value: V, added: bool) {
+            if added {
+                if let Some(spacelike_value) = self.spacelike.remove(&key) {
+                    self.timelike.insert(key, (spacelike_value, value));
+                } else {
+                    self.lightlike.insert(key, value);
+                }
+            } else {
+                if let Some(lightlike_value) = self.lightlike.remove(&key) {
+                    self.timelike.insert(key, (value, lightlike_value));
+                } else {
+                    self.spacelike.insert(key, value);
+                }
+            }
+        }
+
+
 }
