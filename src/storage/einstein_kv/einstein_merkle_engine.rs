@@ -1,4 +1,4 @@
-//Copyright Venire Labs Inc 2019
+//WHTCORPS INC 2020 ALL RIGHTS RESERVED.
 
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
