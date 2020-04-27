@@ -31,32 +31,57 @@
       StoreError,
   };
 
-use ::causetC;
+use crate::causetC;
+
+lazy_static! {
+    //One open universe.
+    static ref MANIFOLD: RwLock<<Manifold> = RwLock::new(Manifold::new());
+
+}
 
 pub struct Manifold {
 
     persist: Mutex<BTreeMap<Pathbuf, Arc<RwLock<causetC>>>>,
 }
 
+
+//Don't open environments directly.
 impl Manifold {
     fn new() -> Manifold {
         Manifold {
-            persist: Mutex::new(Default::default()),
+            persist: Default::default(),
         }
     }
+
+
+    //Now we can handle manifold as an instance of shareable.
+    pub fn turing() -> &'static RwLock<Manifold> {
+        &MANIFOLD
+    }
+
 
     //We leave causet stores to be holographic in that they are pluggable
     //Berkeley instances with key value stores for every solitondID we
     //percolate via our Coset Poset of all bundles around a root.
 
-    pub fn get<'p, P>(&self, path: P) -> Result<Option<Arc<RwLock<causetC>>>> persistError>
-    where P: Into<&' Path> {
-        let canonical = path.into().canonicalize()?;
-        Ok(self.persist.lock().unwrap().get(&canonical).cloned())
+    pub fn get<'p, P>(&self, path: P) -> Result<Option<Arc<RwLock<causetC>>>, ::std::io::Error>
+    where
+        P: Into<&'p Path>,
+    {
+
+        let canonical = normalize_path(path)?; //at least one path.
+        //pipeline the environment and handle it as a manifold of manifolds
+        //Ok(self.persist.lock().unwrap().get(&canonical).cloned())
     }
 
     //If the open persist cell at Path is indeed entangled
-    pub fn get_or_create<'p, F, P>(&mut self, path: P, f :F) -> Result<Arc<RwLock<causetC>>>
-
+    pub fn get_or_create<'p, F, P>(&mut self, path: P, f :F) -> Result<Arc<RwLock<causetC>>, persistError>
+    where
+        F: FnOnce(&Path) -> Result<causetC, PersistError>,
+        P: Into<&'p Path>,
+    {
+        let canonical = normalize_path(path)?;
+        Ok(math self.)
+    }
 
 }
