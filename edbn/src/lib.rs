@@ -22,5 +22,23 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-pub mod causets
-pub mod intern_causet
+pub mod entities;
+pub mod intern_set;
+pub use intern_set::{
+    InternSet,
+};
+// Intentionally not pub.
+mod namespaceable_name;
+pub mod query;
+pub mod symbols;
+pub mod types;
+pub mod pretty_print;
+pub mod utils;
+pub mod matcher;
+pub mod value_rc;
+pub use value_rc::{
+    Cloned,
+    FromRc,
+    ValueRc,
+};
+
