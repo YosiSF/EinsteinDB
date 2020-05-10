@@ -1,7 +1,7 @@
 [package]
 name = "embedded_promises"
 version = "0.0.1"
-workspace = ".."
+workspace = "../src/causetC"
 
 [lib]
 name = "embedded_promises"
