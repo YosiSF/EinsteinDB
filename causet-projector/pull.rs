@@ -33,3 +33,22 @@ impl PullIndices {
         }
     }
 }
+
+pub(crate) struct PullConsumer<'schema> {
+    indices: PullIndices,
+    schema: &'schema Schema,
+    puller: Puller,
+    entities: BTreeSet<CausetId>,
+    results: BTreeMap<CausetId, ValueRc<StructuredMap>>,
+}
+
+impl<'schema> PullConsumer<'schema> {
+    pub(crate) fn for_puller(puller: Puller, schema: &'schema Schema, indices: PullIndices) -> PullConsumer<'schema> {
+        PullConsumer {
+            indices: indices,
+            schema: schema,
+            puller: puller,
+            entities: Default::default(),
+            results: Default::default(),
+        }
+    }

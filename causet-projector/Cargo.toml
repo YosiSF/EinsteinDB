@@ -3,3 +3,43 @@ name = "causet_projector"
 version = "0.0.1"
 workspace = ".."
 
+[features]
+sqlcipher = ["rusqlite/sqlcipher"]
+
+[dependencies]
+failure = "0.1.1"
+indexmap = "1"
+
+[dependencies.rusqlite]
+version = "0.13"
+features = ["limits"]
+
+[dependencies.edn]
+path = "../edbn"
+
+[dependencies.einsteindb_embedded]
+path = "../core"
+
+[dependencies.einsteindb_db]
+path = "../db"
+
+[dependencies.db_promises]
+path = "../db-traits"
+
+[dependencies.einsteindb_causet_algebrizer]
+path = "../query-algebrizer"
+
+[dependencies.einsteindb_query_pull]
+path = "../query-pull"
+
+[dependencies.query_pull_traits]
+path = "../query-pull-traits"
+
+[dependencies.causet_projector_traits]
+path = "../query-projector-traits"
+
+[dependencies.einstein_query_sql]
+path = "../query-sql"
+
+[dev-dependencies.mentat_sql]
+path = "../sql"
