@@ -42,3 +42,14 @@ pub use value_rc::{
     ValueRc,
 };
 
+pub mod parse {
+    include!(concat!(env!("OUT_DIR"), "/edbn.rs"));
+}
+
+// Re-export the types we use.
+pub use chrono::{DateTime, Utc};
+pub use num::BigInt;
+pub use ordered_float::OrderedFloat;
+pub use uuid::Uuid;
+
+
