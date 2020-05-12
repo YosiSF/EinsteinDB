@@ -8,6 +8,20 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use std::collections::BTreeMap;
+
+use embedded_promises::{
+
+    //Coset Poset
+    ValueType, //The global type
+    TypedValue, //The local type
+};
+
+use edbn::query::{
+  Variable, //n-instance
+};
+
+
 /// Define the inputs to a query. This is in two parts: a set of values known now, and a set of
 /// types known now.
 /// The separate map of types is to allow queries to be algebrized without full knowledge of
