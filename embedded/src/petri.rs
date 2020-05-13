@@ -12,26 +12,26 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 #[derive(Clone)]
-pub struct RcCounter {
+pub struct RcPetri {
     c: Rc<Cell<usize>>,
 }
 
-/// A simple shared counter.
-impl RcCounter {
+/// A simple shared Petri.
+impl RcPetri {
     pub fn with_initial(value: usize) -> Self {
-        RcCounter { c: Rc::new(Cell::new(value)) }
+        RcPetri { c: Rc::new(Cell::new(value)) }
     }
 
     pub fn new() -> Self {
-        RcCounter { c: Rc::new(Cell::new(0)) }
+        RcPetri { c: Rc::new(Cell::new(0)) }
     }
 
     /// Return the next value in the sequence.
     ///
     /// ```
-    /// use einsteindb_embedded::petri::RcCounter;
+    /// use einsteindb_embedded::petri::RcPetri;
     ///
-    /// let c = RcCounter::with_initial(3);
+    /// let c = RcPetri::with_initial(3);
     /// assert_eq!(c.next(), 3);
     /// assert_eq!(c.next(), 4);
     /// let d = c.clone();
