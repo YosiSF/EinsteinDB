@@ -17,7 +17,7 @@ use einsteindb_promises::errors::{
     Result,
 };
 
-use embedded_traits::{
+use embedded_promises::{
     Causetid,
     KnownCausetid,
     TypedValue,

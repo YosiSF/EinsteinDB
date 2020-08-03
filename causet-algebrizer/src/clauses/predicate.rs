@@ -8,7 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use core_traits::{
+use core_promises::{
     ValueType,
     ValueTypeSet,
 };
@@ -28,7 +28,7 @@ use clauses::ConjoiningClauses;
 
 use clauses::convert::ValueTypes;
 
-use causet_algebrizer_traits::errors::{
+use causet_algebrizer_promises::errors::{
     AlgebrizerError,
     Result,
 };

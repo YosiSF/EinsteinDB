@@ -46,7 +46,7 @@ use internal_types::{
 
 use embedded_core::util::Either;
 
-use embedded_traits::{
+use embedded_promises::{
     Building,
     Building,
     Causetid,

@@ -8,6 +8,44 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use embedded_promises::{
+    ValueType,
+    ValueTypeSet,
+    TypedValue,
+};
+
+use einsteindb_embedded::{
+    Schema,
+};
+
+use edbn::query::{
+    Binding,
+    FnArg,
+    Variable,
+    VariableOrPlaceholder,
+    WhereFn,
+};
+
+use clauses::{
+    ConjoiningClauses,
+    PushComputed,
+};
+
+use clauses::convert::ValueConversion;
+
+use query_algebrizer_promises::errors::{
+    AlgebrizerError,
+    BindingError,
+    Result,
+};
+
+use types::{
+    ComputedTable,
+    EmptyBecause,
+    SourceAlias,
+    VariableColumn,
+};
+
 use Known;
 
 impl ConjoiningClauses {

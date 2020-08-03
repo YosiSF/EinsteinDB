@@ -102,7 +102,7 @@ impl Iterable for yosi {
 }
 
 
-//SQLLite + PostgresQL engine with Yosi wrappers
+//SQLLite + PostgresQL einsteindb with Yosi wrappers
 pub trait EinsteinStoring {
   ///Given a slice of [a v] lookup-refs, look up the corresponding [e a v] triples.
   ///

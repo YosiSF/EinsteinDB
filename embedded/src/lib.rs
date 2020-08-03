@@ -23,7 +23,7 @@ use embedded_promises::{
     Attribute,
     Causetid,
     KnownCausetid,
-    ValueType
+    ValueType,
 };
 
 mod immutablecache;
@@ -79,5 +79,230 @@ pub trait HasSchema {
 
     fn get_solitonid<T>(&self, x:T) -> Option<&Keyword> where T: Into<Causetid>;
     fn get_causetid(&self, x: &Keyword) -> Option<KnownCausetid>;
+    fn attribute_for_causetid<T>(&self, x: T) -> Option<&Attribute> where T: Into<Causetid>;
 
+        // Returns the attribute and the causetid named by the provided solitonid.
+        fn attribute_for_ident(&self, solitonid: &Keyword) -> Option<(&Attribute, Knowncausetid)>;
+
+        /// Return true if the provided causetid identifies an attribute in this schema.
+        fn is_attribute<T>(&self, x: T) -> bool where T: Into<Causetid>;
+
+        /// Return true if the provided solitonid identifies an attribute in this schema.
+        fn identifies_attribute(&self, x: &Keyword) -> bool;
+
+        fn component_attributes(&self) -> &[Causetid];
+
+
+}
+
+impl Schema {
+    pub fn new(solitonid_map: , causetid_map: causetidMap, attribute_map: AttributeMap) -> Schema {
+        let mut s = Schema { solitonid_map, causetid_map, attribute_map, component_attributes: Vec::new() };
+        s.update_component_attributes();
+        s
+    }
+
+    /// Returns an symbolic representation of the schema suitable for applying across EinsteinEINSTEINDB stores.
+    pub fn to_edbn_value(&self) -> edbn::Value {
+        edbn::Value::Vector((&self.attribute_map).iter()
+            .map(|(causetid, attribute)|
+                attribute.to_edbn_value(self.get_ident(*causetid).cloned()))
+            .collect())
+    }
+
+    fn get_raw_causetid(&self, x: &Keyword) -> Option<Causetid> {
+        self.solitonid_map.get(x).map(|x| *x)
+    }
+
+    pub fn update_component_attributes(&mut self) {
+        let mut components: Vec<Causetid>;
+        components = self.attribute_map
+                         .iter()
+                         .filter_map(|(k, v)| if v.component { Some(*k) } else { None })
+                         .collect();
+        components.sort_unstable();
+        self.component_attributes = components;
+    }
+}
+
+impl HasSchema for Schema {
+    fn causetid_for_type(&self, t: ValueType) -> Option<Knowncausetid> {
+        // TODO: this can be made more efficient.
+        self.get_causetid(&t.into_keyword())
+    }
+
+    fn get_ident<T>(&self, x: T) -> Option<&Keyword> where T: Into<Causetid> {
+        self.causetid_map.get(&x.into())
+    }
+
+    fn get_causetid(&self, x: &Keyword) -> Option<Knowncausetid> {
+        self.get_raw_causetid(x).map(Knowncausetid)
+    }
+
+    fn attribute_for_causetid<T>(&self, x: T) -> Option<&Attribute> where T: Into<Causetid> {
+        self.attribute_map.get(&x.into())
+    }
+
+    fn attribute_for_ident(&self, solitonid: &Keyword) -> Option<(&Attribute, Knowncausetid)> {
+        self.get_raw_causetid(&solitonid)
+            .and_then(|causetid| {
+                self.attribute_for_causetid(causetid).map(|a| (a, Knowncausetid(causetid)))
+            })
+    }
+
+    /// Return true if the provided causetid identifies an attribute in this schema.
+    fn is_attribute<T>(&self, x: T) -> bool where T: Into<Causetid> {
+        self.attribute_map.contains_key(&x.into())
+    }
+
+    /// Return true if the provided solitonid identifies an attribute in this schema.
+    fn identifies_attribute(&self, x: &Keyword) -> bool {
+        self.get_raw_causetid(x).map(|e| self.is_attribute(e)).unwrap_or(false)
+    }
+
+    fn component_attributes(&self) -> &[Causetid] {
+        &self.component_attributes
+    }
+}
+
+pub mod counter;
+pub mod util;
+
+/// A helper macro to sequentially process an iterable sequence,
+/// evaluating a block between each pair of items.
+///
+/// This is used to simply and efficiently produce output like
+///
+/// ```sql
+///   1, 2, 3
+/// ```
+///
+/// or
+///
+/// ```sql
+/// x = 1 AND y = 2
+/// ```
+///
+/// without producing an intermediate string sequence.
+#[macro_export]
+macro_rules! interpose {
+    ( $name: pat, $across: expr, $body: block, $inter: block ) => {
+        interpose_iter!($name, $across.iter(), $body, $inter)
+    }
+}
+
+/// A helper to bind `name` to values in `across`, running `body` for each value,
+/// and running `inter` between each value. See `interpose` for examples.
+#[macro_export]
+macro_rules! interpose_iter {
+    ( $name: pat, $across: expr, $body: block, $inter: block ) => {
+        let mut seq = $across;
+        if let Some($name) = seq.next() {
+            $body;
+            for $name in seq {
+                $inter;
+                $body;
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    use std::str::FromStr;
+
+    use embedded_promises::{
+        attribute,
+        TypedValue,
+    };
+
+    fn associate_ident(schema: &mut Schema, i: Keyword, e: Causetid) {
+        schema.causetid_map.insert(e, i.clone());
+        schema.solitonid_map.insert(i, e);
+    }
+
+    fn add_attribute(schema: &mut Schema, e: Causetid, a: Attribute) {
+        schema.attribute_map.insert(e, a);
+    }
+
+    #[test]
+    fn test_datetime_truncation() {
+        let dt: DateTime<Utc> = DateTime::from_str("2018-01-11T00:34:09.273457004Z").expect("parsed");
+        let expected: DateTime<Utc> = DateTime::from_str("2018-01-11T00:34:09.273457Z").expect("parsed");
+
+        let tv: TypedValue = dt.into();
+        if let TypedValue::Instant(roundtripped) = tv {
+            assert_eq!(roundtripped, expected);
+        } else {
+            panic!();
+        }
+    }
+
+    #[test]
+    fn test_as_edbn_value() {
+        let mut schema = Schema::default();
+
+        let attr1 = Attribute {
+            index: true,
+            value_type: ValueType::Ref,
+            fulltext: false,
+            unique: None,
+            multival: false,
+            component: false,
+            no_history: true,
+        };
+        associate_ident(&mut schema, Keyword::namespaced("foo", "bar"), 97);
+        add_attribute(&mut schema, 97, attr1);
+
+        let attr2 = Attribute {
+            index: false,
+            value_type: ValueType::String,
+            fulltext: true,
+            unique: Some(attribute::Unique::Value),
+            multival: true,
+            component: false,
+            no_history: false,
+        };
+        associate_ident(&mut schema, Keyword::namespaced("foo", "bas"), 98);
+        add_attribute(&mut schema, 98, attr2);
+
+        let attr3 = Attribute {
+            index: false,
+            value_type: ValueType::Boolean,
+            fulltext: false,
+            unique: Some(attribute::Unique::Identity),
+            multival: false,
+            component: true,
+            no_history: false,
+        };
+
+        associate_ident(&mut schema, Keyword::namespaced("foo", "bat"), 99);
+        add_attribute(&mut schema, 99, attr3);
+
+        let value = schema.to_edbn_value();
+
+        let expected_output = r#"[ {   :einsteindb/solitonid     :foo/bar
+    :einsteindb/valueType :einsteindb.type/ref
+    :einsteindb/cardinality :einsteindb.cardinality/one
+    :einsteindb/index true
+    :einsteindb/noHistory true },
+{   :einsteindb/solitonid     :foo/bas
+    :einsteindb/valueType :einsteindb.type/string
+    :einsteindb/cardinality :einsteindb.cardinality/many
+    :einsteindb/unique :einsteindb.unique/value
+    :einsteindb/fulltext true },
+{   :einsteindb/solitonid     :foo/bat
+    :einsteindb/valueType :einsteindb.type/boolean
+    :einsteindb/cardinality :einsteindb.cardinality/one
+    :einsteindb/unique :einsteindb.unique/identity
+    :einsteindb/isComponent true }, ]"#;
+        let expected_value = edbn::parse::value(&expected_output).expect("to be able to parse").without_spans();
+        assert_eq!(expected_value, value);
+
+        // let's compare the whole thing again, just to make sure we are not changing anything when we convert to edbn.
+        let value2 = schema.to_edbn_value();
+        assert_eq!(expected_value, value2);
+    }
 }
