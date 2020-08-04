@@ -1,4 +1,6 @@
 pub enum ColumnOrExpression {
+
+
     Column(QualifiedAlias),
     ExistingColumn(Name),
     Causetid(Causetid),       // Because it's so common.
