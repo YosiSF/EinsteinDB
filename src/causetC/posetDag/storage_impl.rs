@@ -5,7 +5,7 @@ pub use self::storage_impl::EinsteinDBStorage;
 use async_trait::async_trait;
 use ekvproto::interlock::{KeyRange, Response};
 use protobuf::Message;
-use MilevaDB_query_common::storage::IntervalRange;
+use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
 use fidelpb::{PosetDagRequest, SelectResponse, StreamResponse};
 
 use crate::interlock::metrics::*;
@@ -178,11 +178,11 @@ impl RequestHandler for BatchPOSETDAGHandler {
 }
 
 fn handle_qe_response(
-    result: MilevaDB_query_common::Result<SelectResponse>,
+    result: allegroeinstein-prolog-causet-sql::Result<SelectResponse>,
     can_be_cached: bool,
     data_version: Option<u64>,
 ) -> Result<Response> {
-    use MilevaDB_query_common::error::ErrorInner;
+    use allegroeinstein-prolog-causet-sql::error::ErrorInner;
 
     match result {
         Ok(sel_resp) => {
@@ -212,9 +212,9 @@ fn handle_qe_response(
 }
 
 fn handle_qe_stream_response(
-    result: MilevaDB_query_common::Result<(Option<(StreamResponse, IntervalRange)>, bool)>,
+    result: allegroeinstein-prolog-causet-sql::Result<(Option<(StreamResponse, IntervalRange)>, bool)>,
 ) -> Result<(Option<Response>, bool)> {
-    use MilevaDB_query_common::error::ErrorInner;
+    use allegroeinstein-prolog-causet-sql::error::ErrorInner;
 
     match result {
         Ok((Some((s_resp, range)), finished)) => {

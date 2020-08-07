@@ -128,7 +128,7 @@ impl VectorValue {
         &self,
         ctx: &mut EvalContext,
         outputs: &mut [bool],
-    ) -> MilevaDB_query_common::error::Result<()> {
+    ) -> allegroeinstein-prolog-causet-sql::error::Result<()> {
         assert!(outputs.len() >= self.len());
         match_template_evaluable! {
             TT, match self {

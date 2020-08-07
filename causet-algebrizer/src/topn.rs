@@ -10,9 +10,9 @@ use einsteindbpb::TopN;
 
 use super::topn_heap::TopNHeap;
 use super::{Executor, ExprColumnRefVisitor, Row};
-use MilevaDB_query_common::execute_stats::ExecuteStats;
-use MilevaDB_query_common::storage::IntervalRange;
-use MilevaDB_query_common::Result;
+use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;
+use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
+use allegroeinstein-prolog-causet-sql::Result;
 use causet_algebrizer::MilevaDB_query_datatype::codec::datum::Datum;
 use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
 use MilevaDB_query_normal_expr::Expression;

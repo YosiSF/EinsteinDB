@@ -13,7 +13,7 @@ extern crate EinsteinDB_util;
 extern crate test;
 
 #[macro_use(other_err)]
-extern crate MilevaDB_query_common;
+extern crate allegroeinstein-prolog-causet-sql;
 
 mod aggregate;
 mod aggregation;
@@ -44,9 +44,9 @@ use EinsteinDB_util::collections::HashSet;
 use einsteindbpb::ColumnInfo;
 use einsteindbpb::{Expr, ExprType};
 
-use MilevaDB_query_common::execute_stats::*;
-use MilevaDB_query_common::storage::IntervalRange;
-use MilevaDB_query_common::Result;
+use allegroeinstein-prolog-causet-sql::execute_stats::*;
+use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
+use allegroeinstein-prolog-causet-sql::Result;
 use causet_algebrizer::MilevaDB_query_datatype::codec::datum::{self, Datum, DatumEncoder};
 use causet_algebrizer::MilevaDB_query_datatype::codec::table::{self, RowColsDict};
 use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalContext, EvalWarnings};
@@ -390,7 +390,7 @@ pub mod tests {
     use super::{Executor, TableScanExecutor};
     use codec::prelude::NumberEncoder;
     use ekvproto::interlock::KeyRange;
-    use MilevaDB_query_common::storage::test_fixture::FixtureStorage;
+    use allegroeinstein-prolog-causet-sql::storage::test_fixture::FixtureStorage;
     use causet_algebrizer::MilevaDB_query_datatype::codec::{datum, table, Datum};
     use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
     use causet_algebrizer::MilevaDB_query_datatype::{FieldTypeAccessor, FieldTypeTp};
@@ -439,7 +439,7 @@ pub mod tests {
     pub fn get_point_range(table_id: i64, handle: i64) -> KeyRange {
         let start_key = table::encode_row_key(table_id, handle);
         let mut end = start_key.clone();
-        MilevaDB_query_common::util::convert_to_prefix_next(&mut end);
+        allegroeinstein-prolog-causet-sql::util::convert_to_prefix_next(&mut end);
         let mut key_range = KeyRange::default();
         key_range.set_start(start_key);
         key_range.set_end(end);

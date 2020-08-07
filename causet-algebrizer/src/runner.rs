@@ -10,10 +10,10 @@ use einsteindbpb::{Chunk, PosetDagRequest, SelectResponse, StreamResponse};
 use EinsteinDB_util::deadline::Deadline;
 
 use super::Executor;
-use MilevaDB_query_common::execute_stats::*;
-use MilevaDB_query_common::metrics::*;
-use MilevaDB_query_common::storage::{IntervalRange, Storage};
-use MilevaDB_query_common::Result;
+use allegroeinstein-prolog-causet-sql::execute_stats::*;
+use allegroeinstein-prolog-causet-sql::metrics::*;
+use allegroeinstein-prolog-causet-sql::storage::{IntervalRange, Storage};
+use allegroeinstein-prolog-causet-sql::Result;
 use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext};
 
 pub struct ExecutorsRunner<SS> {

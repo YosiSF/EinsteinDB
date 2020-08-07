@@ -166,11 +166,7 @@ lazy_static! {
          }
 
 
-/// Witness assertions and retractions, folding (assertion, retraction) pairs into alterations.
-/// Assumes that no assertion or retraction will be witnessed more than once.
-///
-/// This keeps track of when we see a :db/add, a :db/retract, or both :db/add and :db/retract in
-/// some order.
+
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub struct TimestepEvaluation<K, V> {
     pub lightlike: BTreeMap<K, V>,

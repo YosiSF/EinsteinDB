@@ -3,8 +3,8 @@
 use einsteindbpb::FieldType;
 
 use crate::interface::*;
-use MilevaDB_query_common::storage::IntervalRange;
-use MilevaDB_query_common::Result;
+use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
+use allegroeinstein-prolog-causet-sql::Result;
 
 /// Executor that retrieves rows from the source executor
 /// and only produces part of the rows.

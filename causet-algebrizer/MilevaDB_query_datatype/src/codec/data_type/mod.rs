@@ -20,7 +20,7 @@ use crate::EvalType;
 
 use crate::codec::convert::ConvertTo;
 use crate::expr::EvalContext;
-use MilevaDB_query_common::error::Result;
+use allegroeinstein-prolog-causet-sql::error::Result;
 
 
 pub trait AsMySQLBool {

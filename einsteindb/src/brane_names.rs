@@ -1,16 +1,16 @@
 use crate::db_options::LMDBEinsteinDBOptions;
 use einsteindb_promises::BlackBraneOptions;
-use einstein_merkle::BlackBraneOptions as RawCFOptions;
+use einstein_merkle::BlackBraneOptions as RawBRANEOptions;
 
 #[derive(Clone)]
-pub struct LmdbBlackBraneOptions(RawCFOptions);
+pub struct LmdbBlackBraneOptions(RawBRANEOptions);
 
 impl LmdbBlackBraneOptions {
-    pub fn from_raw(raw: RawCFOptions) -> LmdbBlackBraneOptions {
+    pub fn from_raw(raw: RawBRANEOptions) -> LmdbBlackBraneOptions {
         LmdbBlackBraneOptions(raw)
     }
 
-    pub fn into_raw(self) -> RawCFOptions {
+    pub fn into_raw(self) -> RawBRANEOptions {
         self.0
     }
 }

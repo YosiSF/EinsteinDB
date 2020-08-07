@@ -11,8 +11,8 @@ use fidelpb::IndexScan;
 use super::util::scan_executor::*;
 use crate::interface::*;
 use codec::prelude::NumberDecoder;
-use MilevaDB_query_common::storage::{IntervalRange, Storage};
-use MilevaDB_query_common::Result;
+use allegroeinstein-prolog-causet-sql::storage::{IntervalRange, Storage};
+use allegroeinstein-prolog-causet-sql::Result;
 use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
 use causet_algebrizer::MilevaDB_query_datatype::codec::table::{check_index_key, MAX_OLD_ENCODED_VALUE_LEN};
 use causet_algebrizer::MilevaDB_query_datatype::codec::{datum, table};
@@ -283,8 +283,8 @@ mod tests {
     use causet_algebrizer::MilevaDB_query_datatype::{FieldTypeAccessor, FieldTypeTp};
     use fidelpb::ColumnInfo;
 
-    use MilevaDB_query_common::storage::test_fixture::FixtureStorage;
-    use MilevaDB_query_common::util::convert_to_prefix_next;
+    use allegroeinstein-prolog-causet-sql::storage::test_fixture::FixtureStorage;
+    use allegroeinstein-prolog-causet-sql::util::convert_to_prefix_next;
     use causet_algebrizer::MilevaDB_query_datatype::codec::data_type::*;
     use causet_algebrizer::MilevaDB_query_datatype::codec::{datum, table, Datum};
     use causet_algebrizer::MilevaDB_query_datatype::expr::EvalConfig;

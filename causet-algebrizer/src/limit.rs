@@ -3,9 +3,9 @@
 use einsteindbpb::Limit;
 
 use crate::{Executor, Row};
-use MilevaDB_query_common::execute_stats::ExecuteStats;
-use MilevaDB_query_common::storage::IntervalRange;
-use MilevaDB_query_common::Result;
+use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;
+use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
+use allegroeinstein-prolog-causet-sql::Result;
 use causet_algebrizer::MilevaDB_query_datatype::expr::EvalWarnings;
 
 /// Retrieves rows from the source executor and only produces part of the rows.

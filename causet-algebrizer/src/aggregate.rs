@@ -3,7 +3,7 @@
 use std::cmp::Ordering;
 use einsteindbpb::ExprType;
 
-use MilevaDB_query_common::Result;
+use allegroeinstein-prolog-causet-sql::Result;
 use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::Decimal;
 use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
 

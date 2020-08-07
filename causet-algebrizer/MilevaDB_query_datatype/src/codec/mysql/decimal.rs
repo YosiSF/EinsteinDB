@@ -1932,7 +1932,7 @@ impl Display for Decimal {
 
 impl crate::codec::data_type::AsMySQLBool for Decimal {
     #[inline]
-    fn as_mysql_bool(&self, _ctx: &mut EvalContext) -> MilevaDB_query_common::error::Result<bool> {
+    fn as_mysql_bool(&self, _ctx: &mut EvalContext) -> allegroeinstein-prolog-causet-sql::error::Result<bool> {
         Ok(!self.is_zero())
     }
 }

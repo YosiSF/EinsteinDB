@@ -6,7 +6,7 @@ use causet_algebrizer::MilevaDB_query_datatype::builder::FieldTypeBuilder;
 use causet_algebrizer::MilevaDB_query_datatype::{EvalType, FieldTypeAccessor, FieldTypeTp};
 use einsteindbpb::{Expr, FieldType};
 
-use MilevaDB_query_common::Result;
+use allegroeinstein-prolog-causet-sql::Result;
 use MilevaDB_query_vec_expr::impl_cast::get_cast_fn_rpn_node;
 use MilevaDB_query_vec_expr::{RpnExpression, RpnExpressionBuilder};
 

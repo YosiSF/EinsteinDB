@@ -1717,7 +1717,7 @@ impl crate::codec::data_type::AsMySQLBool for Time {
     fn as_mysql_bool(
         &self,
         _context: &mut crate::expr::EvalContext,
-    ) -> MilevaDB_query_common::error::Result<bool> {
+    ) -> allegroeinstein-prolog-causet-sql::error::Result<bool> {
         Ok(!self.is_zero())
     }
 }

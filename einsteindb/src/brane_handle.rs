@@ -8,6 +8,9 @@ use einsteindb_promises::{Error, Result};
 use einstein_merkle::BRANEHandle as RawBRANEHandle;
 
 impl BRANEHandleExt for EinsteinMerkleEngine {
+
+    //The Lmdb instance gives us a datalog entity laden actor programmatic instance of
+    //a group of columns; grouped by topic.
     type BRANEHandle = LmdbBRANEHandle;
     type BlackBraneOptions = LmdbBlackBraneOptions;
 
@@ -29,11 +32,7 @@ impl BRANEHandleExt for EinsteinMerkleEngine {
     }
 }
 
-// FIXME: This nasty representation with pointer casting is due to the lack of
-// generic associated types in Rust. See comment on the KvEngine::BRANEHandle
-// associated type. This could also be fixed if the BRANEHandle impl was defined
-// inside the rust-einstein_merkle crate where the RawBRANEHandles are managed, but that
-// would be an ugly abstraction violation.
+
 #[repr(transparent)]
 pub struct LmdbBRANEHandle(RawBRANEHandle);
 
