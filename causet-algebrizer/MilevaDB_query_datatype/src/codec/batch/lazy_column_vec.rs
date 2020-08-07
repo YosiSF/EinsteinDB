@@ -1,43 +1,43 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use tipb::FieldType;
+use einsteindbpb::FieldType;
 
-use super::LazyBatchColumn;
+use super::QuiesceBatchColumn;
 use crate::codec::data_type::VectorValue;
 use crate::codec::Result;
 use crate::expr::EvalContext;
 
-/// Stores multiple `LazyBatchColumn`s. Each column has an equal length.
+/// Stores multiple `QuiesceBatchColumn`s. Each column has an equal length.
 #[derive(Clone, Debug)]
-pub struct LazyBatchColumnVec {
+pub struct QuiesceBatchColumnVec {
     /// Multiple lazy batch columns. Each column is either decoded, or not decoded.
     ///
     /// For decoded columns, they may be in different types. If the column is in
-    /// type `LazyBatchColumn::Raw`, it means that it is not decoded.
-    columns: Vec<LazyBatchColumn>,
+    /// type `QuiesceBatchColumn::Raw`, it means that it is not decoded.
+    columns: Vec<QuiesceBatchColumn>,
 }
 
-impl From<Vec<LazyBatchColumn>> for LazyBatchColumnVec {
+impl From<Vec<QuiesceBatchColumn>> for QuiesceBatchColumnVec {
     #[inline]
-    fn from(columns: Vec<LazyBatchColumn>) -> Self {
-        LazyBatchColumnVec { columns }
+    fn from(columns: Vec<QuiesceBatchColumn>) -> Self {
+        QuiesceBatchColumnVec { columns }
     }
 }
 
-impl From<Vec<VectorValue>> for LazyBatchColumnVec {
+impl From<Vec<VectorValue>> for QuiesceBatchColumnVec {
     #[inline]
     fn from(columns: Vec<VectorValue>) -> Self {
-        LazyBatchColumnVec {
+        QuiesceBatchColumnVec {
             columns: columns
                 .into_iter()
-                .map(|v| LazyBatchColumn::from(v))
+                .map(|v| QuiesceBatchColumn::from(v))
                 .collect(),
         }
     }
 }
 
-impl LazyBatchColumnVec {
-    /// Creates a new empty `LazyBatchColumnVec`, which does not have columns and rows.
+impl QuiesceBatchColumnVec {
+    /// Creates a new empty `QuiesceBatchColumnVec`, which does not have columns and rows.
     ///
     /// Because column numbers won't change, it means constructed instance will be always empty.
     #[inline]
@@ -47,7 +47,7 @@ impl LazyBatchColumnVec {
         }
     }
 
-    /// Creates a new empty `LazyBatchColumnVec` with the same number of columns and schema.
+    /// Creates a new empty `QuiesceBatchColumnVec` with the same number of columns and schema.
     #[inline]
     pub fn clone_empty(&self, capacity: usize) -> Self {
         Self {
@@ -59,12 +59,12 @@ impl LazyBatchColumnVec {
         }
     }
 
-    /// Creates a new `LazyBatchColumnVec`, which contains `columns_count` number of raw columns.
+    /// Creates a new `QuiesceBatchColumnVec`, which contains `columns_count` number of raw columns.
     #[braneg(test)]
     pub fn with_raw_columns(columns_count: usize) -> Self {
         let mut columns = Vec::with_capacity(columns_count);
         for _ in 0..columns_count {
-            let column = LazyBatchColumn::raw_with_capacity(0);
+            let column = QuiesceBatchColumn::raw_with_capacity(0);
             columns.push(column);
         }
         Self { columns }
@@ -172,29 +172,29 @@ impl LazyBatchColumnVec {
     }
 
     /// Returns the inner columns as a slice.
-    pub fn as_slice(&self) -> &[LazyBatchColumn] {
+    pub fn as_slice(&self) -> &[QuiesceBatchColumn] {
         self.columns.as_slice()
     }
 
     /// Returns the inner columns as a mutable slice.
-    pub fn as_mut_slice(&mut self) -> &mut [LazyBatchColumn] {
+    pub fn as_mut_slice(&mut self) -> &mut [QuiesceBatchColumn] {
         self.columns.as_mut_slice()
     }
 }
 
 // Do not implement Deref, since we want to forbid some misleading function calls like
-// `LazyBatchColumnVec.len()`.
+// `QuiesceBatchColumnVec.len()`.
 
-impl std::ops::Index<usize> for LazyBatchColumnVec {
-    type Output = LazyBatchColumn;
+impl std::ops::Index<usize> for QuiesceBatchColumnVec {
+    type Output = QuiesceBatchColumn;
 
-    fn index(&self, index: usize) -> &LazyBatchColumn {
+    fn index(&self, index: usize) -> &QuiesceBatchColumn {
         &self.columns[index]
     }
 }
 
-impl std::ops::IndexMut<usize> for LazyBatchColumnVec {
-    fn index_mut(&mut self, index: usize) -> &mut LazyBatchColumn {
+impl std::ops::IndexMut<usize> for QuiesceBatchColumnVec {
+    fn index_mut(&mut self, index: usize) -> &mut QuiesceBatchColumn {
         &mut self.columns[index]
     }
 }

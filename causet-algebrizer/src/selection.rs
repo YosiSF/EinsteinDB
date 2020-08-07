@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use tipb::Selection;
+use einsteindbpb::Selection;
 
 use super::{Executor, ExprColumnRefVisitor, Row};
 use MilevaDB_query_common::execute_stats::ExecuteStats;
@@ -94,7 +94,7 @@ mod tests {
 
     use codec::prelude::NumberEncoder;
     use causet_algebrizer::MilevaDB_query_datatype::FieldTypeTp;
-    use tipb::{Expr, ExprType, ScalarFuncSig};
+    use einsteindbpb::{Expr, ExprType, ScalarFuncSig};
 
     use super::super::tests::*;
     use super::*;

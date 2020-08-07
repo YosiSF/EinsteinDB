@@ -41,8 +41,8 @@ use codec::prelude::NumberDecoder;
 use causet_algebrizer::MilevaDB_query_datatype::prelude::*;
 use causet_algebrizer::MilevaDB_query_datatype::FieldTypeFlag;
 use EinsteinDB_util::collections::HashSet;
-use tipb::ColumnInfo;
-use tipb::{Expr, ExprType};
+use einsteindbpb::ColumnInfo;
+use einsteindbpb::{Expr, ExprType};
 
 use MilevaDB_query_common::execute_stats::*;
 use MilevaDB_query_common::storage::IntervalRange;
@@ -396,9 +396,9 @@ pub mod tests {
     use causet_algebrizer::MilevaDB_query_datatype::{FieldTypeAccessor, FieldTypeTp};
     use EinsteinDB_util::collections::HashMap;
     use EinsteinDB_util::map;
-    use tipb::ColumnInfo;
-    use tipb::TableScan;
-    use tipb::{Expr, ExprType};
+    use einsteindbpb::ColumnInfo;
+    use einsteindbpb::TableScan;
+    use einsteindbpb::{Expr, ExprType};
 
     pub fn build_expr(tp: ExprType, id: Option<i64>, child: Option<Expr>) -> Expr {
         let mut expr = Expr::default();

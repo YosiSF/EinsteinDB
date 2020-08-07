@@ -13,7 +13,7 @@ use crate::interface::*;
 use codec::prelude::NumberDecoder;
 use MilevaDB_query_common::storage::{IntervalRange, Storage};
 use MilevaDB_query_common::Result;
-use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{LazyBatchColumn, LazyBatchColumnVec};
+use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
 use causet_algebrizer::MilevaDB_query_datatype::codec::table::{check_index_key, MAX_OLD_ENCODED_VALUE_LEN};
 use causet_algebrizer::MilevaDB_query_datatype::codec::{datum, table};
 use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext};
@@ -129,29 +129,29 @@ impl ScanExecutorImpl for IndexScanExecutorImpl {
         &mut self.context
     }
 
-    fn build_column_vec(&self, scan_rows: usize) -> LazyBatchColumnVec {
+    fn build_column_vec(&self, scan_rows: usize) -> QuiesceBatchColumnVec {
         let columns_len = self.schema.len();
         let mut columns = Vec::with_capacity(columns_len);
         for _ in 0..self.columns_id_without_handle.len() {
-            columns.push(LazyBatchColumn::raw_with_capacity(scan_rows));
+            columns.push(QuiesceBatchColumn::raw_with_capacity(scan_rows));
         }
         if self.decode_handle {
 
-            columns.push(LazyBatchColumn::decoded_with_capacity_and_tp(
+            columns.push(QuiesceBatchColumn::decoded_with_capacity_and_tp(
                 scan_rows,
                 EvalType::Int,
             ));
         }
 
         assert_eq!(columns.len(), columns_len);
-        LazyBatchColumnVec::from(columns)
+        QuiesceBatchColumnVec::from(columns)
     }
 
     fn process_ekv_pair(
         &mut self,
         key: &[u8],
         value: &[u8],
-        columns: &mut LazyBatchColumnVec,
+        columns: &mut QuiesceBatchColumnVec,
     ) -> Result<()> {
         if value.len() > MAX_OLD_ENCODED_VALUE_LEN {
             self.process_ekv_pair_new(key, value, columns)
@@ -195,7 +195,7 @@ impl IndexScanExecutorImpl {
         &mut self,
         key: &[u8],
         mut value: &[u8],
-        columns: &mut LazyBatchColumnVec,
+        columns: &mut QuiesceBatchColumnVec,
     ) -> Result<()> {
         use causet_algebrizer::MilevaDB_query_datatype::codec::row::v2::{RowSlice, V1CompatibleEncoder};
         let tail_len = value[0];
@@ -237,7 +237,7 @@ impl IndexScanExecutorImpl {
         &mut self,
         key: &[u8],
         value: &[u8],
-        columns: &mut LazyBatchColumnVec,
+        columns: &mut QuiesceBatchColumnVec,
     ) -> Result<()> {
         check_index_key(key)?;
         // The payload part of the key

@@ -22,8 +22,7 @@ use crate::codec::convert::ConvertTo;
 use crate::expr::EvalContext;
 use MilevaDB_query_common::error::Result;
 
-/// A trait of evaluating current concrete eval type into a MySQL logic value, represented by
-/// Rust's `bool` type.
+
 pub trait AsMySQLBool {
     /// Evaluates into a MySQL logic value.
     fn as_mysql_bool(&self, context: &mut EvalContext) -> Result<bool>;

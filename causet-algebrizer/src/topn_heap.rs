@@ -5,7 +5,7 @@ use std::cmp::{self, Ordering};
 use std::collections::BinaryHeap;
 use std::sync::Arc;
 use std::usize;
-use tipb::ByItem;
+use einsteindbpb::ByItem;
 
 use crate::OriginCols;
 use causet_algebrizer::MilevaDB_query_datatype::codec::datum::Datum;
@@ -173,7 +173,7 @@ mod tests {
     use std::cell::RefCell;
     use std::sync::Arc;
 
-    use tipb::{ByItem, Expr, ExprType};
+    use einsteindbpb::{ByItem, Expr, ExprType};
 
     use crate::OriginCols;
     use codec::prelude::NumberEncoder;

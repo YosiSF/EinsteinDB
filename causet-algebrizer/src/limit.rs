@@ -1,6 +1,6 @@
 // Copyright 2017 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use tipb::Limit;
+use einsteindbpb::Limit;
 
 use crate::{Executor, Row};
 use MilevaDB_query_common::execute_stats::ExecuteStats;

@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 use ekvproto::interlock::KeyRange;
 use EinsteinDB_util::collections::HashSet;
-use tipb::ColumnInfo;
-use tipb::TableScan;
+use einsteindbpb::ColumnInfo;
+use einsteindbpb::TableScan;
 
 use super::{scan::InnerExecutor, Row, ScanExecutor, ScanExecutorOptions};
 use MilevaDB_query_common::storage::Storage;
@@ -80,7 +80,7 @@ mod tests {
     use std::i64;
 
     use ekvproto::interlock::KeyRange;
-    use tipb::{ColumnInfo, TableScan};
+    use einsteindbpb::{ColumnInfo, TableScan};
 
     use super::super::tests::*;
     use super::super::Executor;

@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use ekvproto::interlock::KeyRange;
-use tipb::ColumnInfo;
+use einsteindbpb::ColumnInfo;
 
 use super::{Executor, Row};
 use MilevaDB_query_common::execute_stats::ExecuteStats;

@@ -10,7 +10,7 @@ import Control.Lens hiding (Index)
 import Control.Monad.RWS
 import Data.Binary
 import Data.Foldable (traverse_)
-import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Quiesce as B
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 

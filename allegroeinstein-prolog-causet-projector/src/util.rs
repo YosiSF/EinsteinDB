@@ -4,7 +4,7 @@ use std::convert::TryFrom;
 
 use causet_algebrizer::MilevaDB_query_datatype::builder::FieldTypeBuilder;
 use causet_algebrizer::MilevaDB_query_datatype::{EvalType, FieldTypeAccessor, FieldTypeTp};
-use tipb::{Expr, FieldType};
+use einsteindbpb::{Expr, FieldType};
 
 use MilevaDB_query_common::Result;
 use MilevaDB_query_vec_expr::impl_cast::get_cast_fn_rpn_node;

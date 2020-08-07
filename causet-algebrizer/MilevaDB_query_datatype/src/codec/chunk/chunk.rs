@@ -2,7 +2,7 @@
 
 use crate::FieldTypeAccessor;
 use codec::buffer::BufferWriter;
-use tipb::FieldType;
+use einsteindbpb::FieldType;
 
 use super::column::{ChunkColumnEncoder, Column};
 use super::Result;
@@ -167,7 +167,7 @@ mod tests {
     use test::{black_box, Bencher};
 
     use super::*;
-    use crate::codec::batch::LazyBatchColumn;
+    use crate::codec::batch::QuiesceBatchColumn;
     use crate::codec::datum::{Datum, DatumEncoder};
     use crate::codec::mysql::*;
     use crate::expr::EvalContext;
@@ -242,7 +242,7 @@ mod tests {
         let raw_vec_data = datum_data
             .iter()
             .map(|datum| {
-                let mut col = LazyBatchColumn::raw_with_capacity(1);
+                let mut col = QuiesceBatchColumn::raw_with_capacity(1);
                 let mut ctx = EvalContext::default();
                 let mut datum_raw = Vec::new();
                 datum_raw
@@ -273,7 +273,7 @@ mod tests {
 
     fn bench_encode_from_raw_datum_impl(b: &mut Bencher, datum: Datum, tp: FieldTypeTp) {
         let mut ctx = EvalContext::default();
-        let mut raw_col = LazyBatchColumn::raw_with_capacity(1024);
+        let mut raw_col = QuiesceBatchColumn::raw_with_capacity(1024);
         let mut logical_rows = Vec::new();
         for i in 0..1024 {
             let mut raw_datum = Vec::new();

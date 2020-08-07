@@ -27,7 +27,7 @@ use std::str;
 use codec::prelude::NumberDecoder;
 use causet_algebrizer::MilevaDB_query_datatype::prelude::*;
 use causet_algebrizer::MilevaDB_query_datatype::FieldTypeFlag;
-use tipb::{Expr, ExprType, FieldType, ScalarFuncSig};
+use einsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
 
 use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::charset;
 use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::{
@@ -332,7 +332,7 @@ mod tests {
     use std::{i64, u64};
 
     use causet_algebrizer::MilevaDB_query_datatype::{self, Collation, FieldTypeAccessor, FieldTypeFlag, FieldTypeTp};
-    use tipb::{Expr, ExprType, FieldType, ScalarFuncSig};
+    use einsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
 
     use crate::Expression;
     use codec::{number, prelude::NumberEncoder};

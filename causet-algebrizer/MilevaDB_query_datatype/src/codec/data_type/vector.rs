@@ -1,7 +1,7 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::{EvalType, FieldTypeAccessor};
-use tipb::FieldType;
+use einsteindbpb::FieldType;
 
 use super::scalar::ScalarValueRef;
 use super::*;

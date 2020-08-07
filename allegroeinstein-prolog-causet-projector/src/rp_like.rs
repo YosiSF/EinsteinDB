@@ -45,7 +45,7 @@ mod tests {
     use crate::Expression;
     use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
     use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-    use tipb::ScalarFuncSig;
+    use einsteindbpb::ScalarFuncSig;
 
     #[test]
     fn test_like() {

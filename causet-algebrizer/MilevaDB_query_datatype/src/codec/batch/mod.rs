@@ -3,5 +3,5 @@
 mod lazy_column;
 mod lazy_column_vec;
 
-pub use self::lazy_column::LazyBatchColumn;
-pub use self::lazy_column_vec::LazyBatchColumnVec;
+pub use self::lazy_column::QuiesceBatchColumn;
+pub use self::lazy_column_vec::QuiesceBatchColumnVec;

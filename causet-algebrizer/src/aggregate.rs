@@ -1,7 +1,7 @@
 // Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::cmp::Ordering;
-use tipb::ExprType;
+use einsteindbpb::ExprType;
 
 use MilevaDB_query_common::Result;
 use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::Decimal;

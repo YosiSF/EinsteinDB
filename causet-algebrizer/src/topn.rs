@@ -5,8 +5,8 @@ use std::sync::Arc;
 use std::usize;
 use std::vec::IntoIter;
 
-use tipb::ByItem;
-use tipb::TopN;
+use einsteindbpb::ByItem;
+use einsteindbpb::TopN;
 
 use super::topn_heap::TopNHeap;
 use super::{Executor, ExprColumnRefVisitor, Row};
@@ -162,7 +162,7 @@ pub mod tests {
     use codec::prelude::NumberEncoder;
     use causet_algebrizer::MilevaDB_query_datatype::FieldTypeTp;
     use EinsteinDB_util::collections::HashMap;
-    use tipb::{Expr, ExprType};
+    use einsteindbpb::{Expr, ExprType};
 
     use crate::OriginCols;
     use causet_algebrizer::MilevaDB_query_datatype::codec::table::RowColsDict;

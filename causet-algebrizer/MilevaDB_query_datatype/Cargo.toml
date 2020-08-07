@@ -8,11 +8,11 @@ description = "Data type of a query engine to run MilevaDB pushed down executors
 [features]
 protobuf-codec = [
   "ekvproto/protobuf-codec",
-  "tipb/protobuf-codec",
+  "einsteindbpb/protobuf-codec",
 ]
 prost-codec = [
   "ekvproto/prost-codec",
-  "tipb/prost-codec",
+  "einsteindbpb/prost-codec",
 ]
 
 [dependencies]
@@ -40,7 +40,7 @@ serde_json = "1.0"
 slog = { version = "2.3", features = ["max_level_trace", "release_max_level_debug"] }
 slog-global = { version = "0.1", git = "https://github.com/breeswish/slog-global.git", rev = "0e23a5baff302a9d7bccd85f8f31e43339c2f2c1" }
 EinsteinDB_util = { path = "../EinsteinDB_util" }
-tipb = { git = "https://github.com/pingcap/tipb.git", default-features = false }
+einsteindbpb = { git = "https://github.com/pingcap/einsteindbpb.git", default-features = false }
 static_assertions = { version = "1.0", features = ["nightly"] }
 MilevaDB_query_common = { path = "../MilevaDB_query_common" }
 EinsteinDB_alloc = { path = "../EinsteinDB_alloc" }

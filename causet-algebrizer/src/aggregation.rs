@@ -4,7 +4,7 @@ use std::cmp::Ordering;
 use std::mem;
 use std::sync::Arc;
 
-use tipb::{Aggregation, Expr, ExprType};
+use einsteindbpb::{Aggregation, Expr, ExprType};
 
 use indexmap::map::Entry as OrderMapEntry;
 use indexmap::IndexMap as OrderMap;
@@ -426,8 +426,8 @@ mod tests {
 
     use causet_algebrizer::MilevaDB_query_datatype::FieldTypeTp;
     use EinsteinDB_util::collections::HashMap;
-    use tipb::ColumnInfo;
-    use tipb::{Expr, ExprType};
+    use einsteindbpb::ColumnInfo;
+    use einsteindbpb::{Expr, ExprType};
 
     use super::super::index_scan::tests::IndexTestWrapper;
     use super::super::index_scan::IndexScanExecutor;

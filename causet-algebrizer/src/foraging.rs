@@ -16,7 +16,7 @@ use crate::util::aggr_executor::*;
 use crate::util::hash_aggr_helper::HashAggregationHelper;
 use MilevaDB_query_common::storage::IntervalRange;
 use MilevaDB_query_common::Result;
-use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{LazyBatchColumn, LazyBatchColumnVec};
+use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
 use causet_algebrizer::MilevaDB_query_datatype::codec::collation::{match_template_collator, SortKey};
 use causet_algebrizer::MilevaDB_query_datatype::codec::data_type::*;
 use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext};
@@ -234,7 +234,7 @@ impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImp
     fn process_batch_input(
         &mut self,
         entities: &mut Entities<Src>,
-        mut input_physical_columns: LazyBatchColumnVec,
+        mut input_physical_columns: QuiesceBatchColumnVec,
         input_logical_rows: &[usize],
     ) -> Result<()> {
         // 1. Calculate which group each src row belongs to.
@@ -346,11 +346,11 @@ impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImp
         entities: &mut Entities<Src>,
         src_is_drained: bool,
         mut iteratee: impl FnMut(&mut Entities<Src>, &[Box<dyn AggrFunctionState>]) -> Result<()>,
-    ) -> Result<Vec<LazyBatchColumn>> {
+    ) -> Result<Vec<QuiesceBatchColumn>> {
         assert!(src_is_drained);
 
         let aggr_fns_len = entities.each_aggr_fn.len();
-        let mut group_by_column = LazyBatchColumn::decoded_with_capacity_and_tp(
+        let mut group_by_column = QuiesceBatchColumn::decoded_with_capacity_and_tp(
             self.groups.len(),
             self.groups.eval_type(),
         );
@@ -903,13 +903,13 @@ mod tests {
                 vec![FieldTypeTp::LongLong.into()],
                 vec![
                     BatchExecuteResult {
-                        physical_columns: LazyBatchColumnVec::empty(),
+                        physical_columns: QuiesceBatchColumnVec::empty(),
                         logical_rows: Vec::new(),
                         warnings: EvalWarnings::default(),
                         is_drained: Ok(false),
                     },
                     BatchExecuteResult {
-                        physical_columns: LazyBatchColumnVec::empty(),
+                        physical_columns: QuiesceBatchColumnVec::empty(),
                         logical_rows: Vec::new(),
                         warnings: EvalWarnings::default(),
                         is_drained: Ok(true),

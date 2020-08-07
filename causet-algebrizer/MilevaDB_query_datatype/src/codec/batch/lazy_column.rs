@@ -4,7 +4,7 @@ use std::convert::TryFrom;
 
 use crate::{EvalType, FieldTypeAccessor};
 use EinsteinDB_util::buffer_vec::BufferVec;
-use tipb::FieldType;
+use einsteindbpb::FieldType;
 
 use crate::codec::chunk::{ChunkColumnEncoder, Column};
 use crate::codec::data_type::{match_template_evaluable, VectorValue};
@@ -21,114 +21,114 @@ use crate::expr::EvalContext;
 /// respond all data in Chunk format which is different to the format in storage. At that time,
 /// this structure is no longer useful and should be removed.
 #[derive(Clone, Debug)]
-pub enum LazyBatchColumn {
+pub enum QuiesceBatchColumn {
     Raw(BufferVec),
     Decoded(VectorValue),
 }
 
-impl From<VectorValue> for LazyBatchColumn {
+impl From<VectorValue> for QuiesceBatchColumn {
     #[inline]
     fn from(vec: VectorValue) -> Self {
-        LazyBatchColumn::Decoded(vec)
+        QuiesceBatchColumn::Decoded(vec)
     }
 }
 
-impl LazyBatchColumn {
-    /// Creates a new `LazyBatchColumn::Raw` with specified capacity.
+impl QuiesceBatchColumn {
+    /// Creates a new `QuiesceBatchColumn::Raw` with specified capacity.
     #[inline]
     pub fn raw_with_capacity(capacity: usize) -> Self {
         use codec::number::MAX_VARINT64_LENGTH;
         // We assume that each element *may* has a size of MAX_VAR_INT_LEN + Datum Flag (1 byte).
-        LazyBatchColumn::Raw(BufferVec::with_capacity(
+        QuiesceBatchColumn::Raw(BufferVec::with_capacity(
             capacity,
             capacity * (MAX_VARINT64_LENGTH + 1),
         ))
     }
 
-    /// Creates a new `LazyBatchColumn::Decoded` with specified capacity and eval type.
+    /// Creates a new `QuiesceBatchColumn::Decoded` with specified capacity and eval type.
     #[inline]
     pub fn decoded_with_capacity_and_tp(capacity: usize, eval_tp: EvalType) -> Self {
-        LazyBatchColumn::Decoded(VectorValue::with_capacity(capacity, eval_tp))
+        QuiesceBatchColumn::Decoded(VectorValue::with_capacity(capacity, eval_tp))
     }
 
-    /// Creates a new empty `LazyBatchColumn` with the same schema.
+    /// Creates a new empty `QuiesceBatchColumn` with the same schema.
     #[inline]
     pub fn clone_empty(&self, capacity: usize) -> Self {
         match self {
-            LazyBatchColumn::Raw(_) => Self::raw_with_capacity(capacity),
-            LazyBatchColumn::Decoded(v) => LazyBatchColumn::Decoded(v.clone_empty(capacity)),
+            QuiesceBatchColumn::Raw(_) => Self::raw_with_capacity(capacity),
+            QuiesceBatchColumn::Decoded(v) => QuiesceBatchColumn::Decoded(v.clone_empty(capacity)),
         }
     }
 
     #[inline]
     pub fn is_raw(&self) -> bool {
         match self {
-            LazyBatchColumn::Raw(_) => true,
-            LazyBatchColumn::Decoded(_) => false,
+            QuiesceBatchColumn::Raw(_) => true,
+            QuiesceBatchColumn::Decoded(_) => false,
         }
     }
 
     #[inline]
     pub fn is_decoded(&self) -> bool {
         match self {
-            LazyBatchColumn::Raw(_) => false,
-            LazyBatchColumn::Decoded(_) => true,
+            QuiesceBatchColumn::Raw(_) => false,
+            QuiesceBatchColumn::Decoded(_) => true,
         }
     }
 
     #[inline]
     pub fn decoded(&self) -> &VectorValue {
         match self {
-            LazyBatchColumn::Raw(_) => panic!("LazyBatchColumn is not decoded"),
-            LazyBatchColumn::Decoded(v) => v,
+            QuiesceBatchColumn::Raw(_) => panic!("QuiesceBatchColumn is not decoded"),
+            QuiesceBatchColumn::Decoded(v) => v,
         }
     }
 
     #[inline]
     pub fn mut_decoded(&mut self) -> &mut VectorValue {
         match self {
-            LazyBatchColumn::Raw(_) => panic!("LazyBatchColumn is not decoded"),
-            LazyBatchColumn::Decoded(v) => v,
+            QuiesceBatchColumn::Raw(_) => panic!("QuiesceBatchColumn is not decoded"),
+            QuiesceBatchColumn::Decoded(v) => v,
         }
     }
 
     #[inline]
     pub fn raw(&self) -> &BufferVec {
         match self {
-            LazyBatchColumn::Raw(v) => v,
-            LazyBatchColumn::Decoded(_) => panic!("LazyBatchColumn is already decoded"),
+            QuiesceBatchColumn::Raw(v) => v,
+            QuiesceBatchColumn::Decoded(_) => panic!("QuiesceBatchColumn is already decoded"),
         }
     }
 
     #[inline]
     pub fn mut_raw(&mut self) -> &mut BufferVec {
         match self {
-            LazyBatchColumn::Raw(v) => v,
-            LazyBatchColumn::Decoded(_) => panic!("LazyBatchColumn is already decoded"),
+            QuiesceBatchColumn::Raw(v) => v,
+            QuiesceBatchColumn::Decoded(_) => panic!("QuiesceBatchColumn is already decoded"),
         }
     }
 
     #[inline]
     pub fn len(&self) -> usize {
         match self {
-            LazyBatchColumn::Raw(v) => v.len(),
-            LazyBatchColumn::Decoded(v) => v.len(),
+            QuiesceBatchColumn::Raw(v) => v.len(),
+            QuiesceBatchColumn::Decoded(v) => v.len(),
         }
     }
 
     #[inline]
     pub fn truncate(&mut self, len: usize) {
         match self {
-            LazyBatchColumn::Raw(v) => v.truncate(len),
-            LazyBatchColumn::Decoded(v) => v.truncate(len),
+            QuiesceBatchColumn::Raw(v) => v.truncate(len),
+            QuiesceBatchColumn::Decoded(v) => v.truncate(len),
         };
     }
 
     #[inline]
     pub fn clear(&mut self) {
         match self {
-            LazyBatchColumn::Raw(v) => v.clear(),
-            LazyBatchColumn::Decoded(v) => v.clear(),
+            QuiesceBatchColumn::Raw(v) => v.clear(),
+            QuiesceBatchColumn::Decoded(v) => v.clear(),
         };
     }
 
@@ -140,19 +140,12 @@ impl LazyBatchColumn {
     #[inline]
     pub fn capacity(&self) -> usize {
         match self {
-            LazyBatchColumn::Raw(v) => v.capacity(),
-            LazyBatchColumn::Decoded(v) => v.capacity(),
+            QuiesceBatchColumn::Raw(v) => v.capacity(),
+            QuiesceBatchColumn::Decoded(v) => v.capacity(),
         }
     }
 
-    /// Decodes this column if the column is not decoded, according to the given logical rows map.
-    /// After decoding, the decoded column will have the same physical layout as the encoded one
-    /// (i.e. the same logical rows), but elements in unnecessary positions will not be decoded
-    /// and will be `None`.
-    ///
-    /// The field type is needed because we use the same `DateTime` structure when handling
-    /// Date, Time or Timestamp.
-    // TODO: Maybe it's a better idea to assign different eval types for different date types.
+
     pub fn ensure_decoded(
         &mut self,
         ctx: &mut EvalContext,
@@ -181,7 +174,7 @@ impl LazyBatchColumn {
             }
         }
 
-        *self = LazyBatchColumn::Decoded(decoded_column);
+        *self = QuiesceBatchColumn::Decoded(decoded_column);
 
         Ok(())
     }
@@ -198,21 +191,19 @@ impl LazyBatchColumn {
     /// Returns maximum encoded size.
     pub fn maximum_encoded_size(&self, logical_rows: &[usize]) -> usize {
         match self {
-            LazyBatchColumn::Raw(v) => v.total_len(),
-            LazyBatchColumn::Decoded(v) => v.maximum_encoded_size(logical_rows),
+            QuiesceBatchColumn::Raw(v) => v.total_len(),
+            QuiesceBatchColumn::Decoded(v) => v.maximum_encoded_size(logical_rows),
         }
     }
 
     /// Returns maximum encoded size in chunk format.
     pub fn maximum_encoded_size_chunk(&self, logical_rows: &[usize]) -> usize {
         match self {
-            LazyBatchColumn::Raw(v) => v.total_len() * 2,
-            LazyBatchColumn::Decoded(v) => v.maximum_encoded_size_chunk(logical_rows),
+            QuiesceBatchColumn::Raw(v) => v.total_len() * 2,
+            QuiesceBatchColumn::Decoded(v) => v.maximum_encoded_size_chunk(logical_rows),
         }
     }
 
-    /// Encodes into binary format.
-    // FIXME: Use BufferWriter.
     pub fn encode(
         &self,
         row_index: usize,
@@ -221,11 +212,11 @@ impl LazyBatchColumn {
         output: &mut Vec<u8>,
     ) -> Result<()> {
         match self {
-            LazyBatchColumn::Raw(v) => {
+            QuiesceBatchColumn::Raw(v) => {
                 output.extend_from_slice(&v[row_index]);
                 Ok(())
             }
-            LazyBatchColumn::Decoded(ref v) => v.encode(row_index, field_type, ctx, output),
+            QuiesceBatchColumn::Decoded(ref v) => v.encode(row_index, field_type, ctx, output),
         }
     }
 
@@ -239,8 +230,8 @@ impl LazyBatchColumn {
         output: &mut Vec<u8>,
     ) -> Result<()> {
         let column = match self {
-            LazyBatchColumn::Raw(v) => Column::from_raw_datums(field_type, v, logical_rows, ctx)?,
-            LazyBatchColumn::Decoded(ref v) => {
+            QuiesceBatchColumn::Raw(v) => Column::from_raw_datums(field_type, v, logical_rows, ctx)?,
+            QuiesceBatchColumn::Decoded(ref v) => {
                 Column::from_vector_value(field_type, v, logical_rows)?
             }
         };
@@ -258,14 +249,14 @@ mod tests {
     fn test_basic() {
         use crate::FieldTypeTp;
 
-        let mut col = LazyBatchColumn::raw_with_capacity(5);
+        let mut col = QuiesceBatchColumn::raw_with_capacity(5);
         let mut ctx = EvalContext::default();
         assert!(col.is_raw());
         assert_eq!(col.len(), 0);
         assert_eq!(col.capacity(), 5);
         assert_eq!(col.raw().len(), 0);
         {
-            // Clone empty raw LazyBatchColumn.
+            // Clone empty raw QuiesceBatchColumn.
             let col = col.clone();
             assert!(col.is_raw());
             assert_eq!(col.len(), 0);
@@ -316,7 +307,7 @@ mod tests {
         assert_eq!(&col.raw()[1], datum_raw_2.as_slice());
         assert_eq!(&col.raw()[2], datum_raw_3.as_slice());
         {
-            // Clone non-empty raw LazyBatchColumn.
+            // Clone non-empty raw QuiesceBatchColumn.
             let col = col.clone();
             assert!(col.is_raw());
             assert_eq!(col.len(), 3);
@@ -337,7 +328,7 @@ mod tests {
         assert_eq!(col.decoded().as_int_slice(), &[Some(32), None, Some(10)]);
 
         {
-            // Clone non-empty decoded LazyBatchColumn.
+            // Clone non-empty decoded QuiesceBatchColumn.
             let col = col.clone();
             assert!(col.is_decoded());
             assert_eq!(col.len(), 3);
@@ -361,7 +352,7 @@ mod benches {
 
     #[bench]
     fn bench_lazy_batch_column_push_raw_4bytes(b: &mut test::Bencher) {
-        let mut column = LazyBatchColumn::raw_with_capacity(1000);
+        let mut column = QuiesceBatchColumn::raw_with_capacity(1000);
         let val = vec![0; 4];
         b.iter(|| {
             let column = test::black_box(&mut column);
@@ -380,7 +371,7 @@ mod benches {
         use crate::codec::datum::{Datum, DatumEncoder};
         use crate::FieldTypeTp;
 
-        let mut column = LazyBatchColumn::raw_with_capacity(1000);
+        let mut column = QuiesceBatchColumn::raw_with_capacity(1000);
 
         let mut ctx = EvalContext::default();
         let mut datum_raw: Vec<u8> = Vec::new();
@@ -411,7 +402,7 @@ mod benches {
         use crate::FieldTypeTp;
 
         let mut ctx = EvalContext::default();
-        let mut column = LazyBatchColumn::raw_with_capacity(1000);
+        let mut column = QuiesceBatchColumn::raw_with_capacity(1000);
 
         let mut datum_raw: Vec<u8> = Vec::new();
         datum_raw
@@ -436,15 +427,13 @@ mod benches {
         });
     }
 
-    /// Bench performance of decoding a decoded lazy batch column.
-    ///
-    /// Note that there is a clone in the bench suite, whose cost should be excluded.
+
     #[bench]
     fn bench_lazy_batch_column_clone_and_decode_decoded(b: &mut test::Bencher) {
         use crate::codec::datum::{Datum, DatumEncoder};
         use crate::FieldTypeTp;
 
-        let mut column = LazyBatchColumn::raw_with_capacity(1000);
+        let mut column = QuiesceBatchColumn::raw_with_capacity(1000);
 
         let mut ctx = EvalContext::default();
         let mut datum_raw: Vec<u8> = Vec::new();
@@ -473,14 +462,14 @@ mod benches {
         });
     }
 
-    /// A vector based LazyBatchColumn
+    /// A vector based QuiesceBatchColumn
     #[derive(Clone)]
-    struct VectorLazyBatchColumn(Vec<Vec<u8>>);
+    struct VectorQuiesceBatchColumn(Vec<Vec<u8>>);
 
-    impl VectorLazyBatchColumn {
+    impl VectorQuiesceBatchColumn {
         #[inline]
         pub fn raw_with_capacity(capacity: usize) -> Self {
-            VectorLazyBatchColumn(Vec::with_capacity(capacity))
+            VectorQuiesceBatchColumn(Vec::with_capacity(capacity))
         }
 
         #[inline]
@@ -494,10 +483,10 @@ mod benches {
         }
     }
 
-    /// Bench performance of pushing 10 bytes to a vector based LazyBatchColumn.
+
     #[bench]
     fn bench_lazy_batch_column_by_vec_push_raw_10bytes(b: &mut test::Bencher) {
-        let mut column = VectorLazyBatchColumn::raw_with_capacity(1000);
+        let mut column = VectorQuiesceBatchColumn::raw_with_capacity(1000);
         let val = vec![0; 10];
         b.iter(|| {
             let column = test::black_box(&mut column);
@@ -510,10 +499,10 @@ mod benches {
         });
     }
 
-    /// Bench performance of cloning a raw vector based LazyBatchColumn.
+    /// Bench performance of cloning a raw vector based QuiesceBatchColumn.
     #[bench]
     fn bench_lazy_batch_column_by_vec_clone(b: &mut test::Bencher) {
-        let mut column = VectorLazyBatchColumn::raw_with_capacity(1000);
+        let mut column = VectorQuiesceBatchColumn::raw_with_capacity(1000);
         let val = vec![0; 10];
         for _ in 0..1000 {
             column.push_raw(&val);

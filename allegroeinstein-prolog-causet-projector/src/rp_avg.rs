@@ -165,7 +165,7 @@ mod tests {
     use fidelpb_helper::ExprDefBuilder;
 
     use crate::parser::AggrDefinitionParser;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{LazyBatchColumn, LazyBatchColumnVec};
+    use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
 
     #[test]
     fn test_uFIDelate() {
@@ -222,8 +222,8 @@ mod tests {
         AggrFnDefinitionParserAvg.check_supported(&expr).unwrap();
 
         let src_schema = [FieldTypeTp::LongLong.into()];
-        let mut columns = LazyBatchColumnVec::from(vec![{
-            let mut col = LazyBatchColumn::decoded_with_capacity_and_tp(0, EvalType::Int);
+        let mut columns = QuiesceBatchColumnVec::from(vec![{
+            let mut col = QuiesceBatchColumn::decoded_with_capacity_and_tp(0, EvalType::Int);
             col.mut_decoded().push_int(Some(100));
             col.mut_decoded().push_int(Some(1));
             col.mut_decoded().push_int(None);

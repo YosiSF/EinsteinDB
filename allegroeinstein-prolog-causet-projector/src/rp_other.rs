@@ -39,7 +39,7 @@ mod tests {
     use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
     use causet_algebrizer::MilevaDB_query_datatype::expr::Flag;
     use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext};
-    use tipb::ScalarFuncSig;
+    use einsteindbpb::ScalarFuncSig;
 
     #[test]
     fn test_bit_count() {

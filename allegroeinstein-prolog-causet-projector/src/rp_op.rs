@@ -262,7 +262,7 @@ mod tests {
     use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::Duration;
     use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
     use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-    use tipb::ScalarFuncSig;
+    use einsteindbpb::ScalarFuncSig;
 
     #[test]
     fn test_logic_op() {

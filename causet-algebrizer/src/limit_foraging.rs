@@ -1,6 +1,6 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use tipb::FieldType;
+use einsteindbpb::FieldType;
 
 use crate::interface::*;
 use MilevaDB_query_common::storage::IntervalRange;
@@ -73,7 +73,7 @@ mod tests {
     use causet_algebrizer::MilevaDB_query_datatype::FieldTypeTp;
 
     use crate::util::mock_executor::MockExecutor;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::batch::LazyBatchColumnVec;
+    use causet_algebrizer::MilevaDB_query_datatype::codec::batch::QuiesceBatchColumnVec;
     use causet_algebrizer::MilevaDB_query_datatype::codec::data_type::VectorValue;
     use causet_algebrizer::MilevaDB_query_datatype::expr::EvalWarnings;
 
@@ -82,7 +82,7 @@ mod tests {
         let src_exec = MockExecutor::new(
             vec![FieldTypeTp::LongLong.into()],
             vec![BatchExecuteResult {
-                physical_columns: LazyBatchColumnVec::from(vec![VectorValue::Int(
+                physical_columns: QuiesceBatchColumnVec::from(vec![VectorValue::Int(
                     vec![None, Some(50), None].into(),
                 )]),
                 logical_rows: vec![1, 2],
@@ -104,7 +104,7 @@ mod tests {
         let src_exec = MockExecutor::new(
             vec![FieldTypeTp::LongLong.into()],
             vec![BatchExecuteResult {
-                physical_columns: LazyBatchColumnVec::from(vec![VectorValue::Int(
+                physical_columns: QuiesceBatchColumnVec::from(vec![VectorValue::Int(
                     vec![None, Some(50), None].into(),
                 )]),
                 logical_rows: vec![1, 2],
@@ -127,7 +127,7 @@ mod tests {
             vec![FieldTypeTp::LongLong.into()],
             vec![
                 BatchExecuteResult {
-                    physical_columns: LazyBatchColumnVec::from(vec![VectorValue::Int(
+                    physical_columns: QuiesceBatchColumnVec::from(vec![VectorValue::Int(
                         vec![Some(-5), None, None].into(),
                     )]),
                     logical_rows: Vec::new(),
@@ -135,7 +135,7 @@ mod tests {
                     is_drained: Ok(false),
                 },
                 BatchExecuteResult {
-                    physical_columns: LazyBatchColumnVec::from(vec![VectorValue::Int(
+                    physical_columns: QuiesceBatchColumnVec::from(vec![VectorValue::Int(
                         vec![None, Some(50), None].into(),
                     )]),
                     logical_rows: vec![1, 2],
@@ -164,7 +164,7 @@ mod tests {
             vec![FieldTypeTp::LongLong.into()],
             vec![
                 BatchExecuteResult {
-                    physical_columns: LazyBatchColumnVec::from(vec![VectorValue::Int(
+                    physical_columns: QuiesceBatchColumnVec::from(vec![VectorValue::Int(
                         vec![Some(-5), Some(-1), None].into(),
                     )]),
                     logical_rows: vec![1, 2],
@@ -172,7 +172,7 @@ mod tests {
                     is_drained: Ok(false),
                 },
                 BatchExecuteResult {
-                    physical_columns: LazyBatchColumnVec::from(vec![VectorValue::Int(
+                    physical_columns: QuiesceBatchColumnVec::from(vec![VectorValue::Int(
                         vec![None, Some(50), None].into(),
                     )]),
                     logical_rows: vec![0, 2],
@@ -201,7 +201,7 @@ mod tests {
             vec![FieldTypeTp::LongLong.into()],
             vec![
                 BatchExecuteResult {
-                    physical_columns: LazyBatchColumnVec::from(vec![VectorValue::Int(
+                    physical_columns: QuiesceBatchColumnVec::from(vec![VectorValue::Int(
                         vec![Some(-5), Some(-1), None].into(),
                     )]),
                     logical_rows: vec![1, 2],
@@ -209,13 +209,13 @@ mod tests {
                     is_drained: Ok(false),
                 },
                 BatchExecuteResult {
-                    physical_columns: LazyBatchColumnVec::empty(),
+                    physical_columns: QuiesceBatchColumnVec::empty(),
                     logical_rows: Vec::new(),
                     warnings: EvalWarnings::default(),
                     is_drained: Ok(false),
                 },
                 BatchExecuteResult {
-                    physical_columns: LazyBatchColumnVec::from(vec![VectorValue::Int(
+                    physical_columns: QuiesceBatchColumnVec::from(vec![VectorValue::Int(
                         vec![None, Some(50), None, None, Some(1)].into(),
                     )]),
                     logical_rows: vec![0, 4, 1, 3],
