@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use ekvproto::interlock::{KeyRange, Response};
 use protobuf::Message;
 use MilevaDB_query_common::storage::IntervalRange;
-use tipb::{PosetDagRequest, SelectResponse, StreamResponse};
+use fidelpb::{PosetDagRequest, SelectResponse, StreamResponse};
 
 use crate::interlock::metrics::*;
 use crate::interlock::{Deadline, RequestHandler, Result};
@@ -123,7 +123,7 @@ impl POSETDAGHandler {
 
 #[async_trait]
 impl RequestHandler for POSETDAGHandler {
-    #[minitrace::trace_async(tipb::Event::EinsteinDBCoprExecutePosetDagRunner as u32)]
+    #[minitrace::trace_async(fidelpb::Event::EinsteinDBCoprExecutePosetDagRunner as u32)]
     async fn handle_request(&mut self) -> Result<Response> {
         let result = self.runner.handle_request();
         handle_qe_response(result, self.runner.can_be_cached(), self.data_version)
@@ -166,7 +166,7 @@ impl BatchPOSETDAGHandler {
 
 #[async_trait]
 impl RequestHandler for BatchPOSETDAGHandler {
-    #[minitrace::trace_async(tipb::Event::EinsteinDBCoprExecuteBatchPosetDagRunner as u32)]
+    #[minitrace::trace_async(fidelpb::Event::EinsteinDBCoprExecuteBatchPosetDagRunner as u32)]
     async fn handle_request(&mut self) -> Result<Response> {
         let result = self.runner.handle_request().await;
         handle_qe_response(result, self.runner.can_be_cached(), self.data_version)

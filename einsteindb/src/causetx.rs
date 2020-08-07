@@ -10,7 +10,15 @@
 // specific language governing permissions and limitations under the License.
 
 
+use std::cell::Cell;
+use std::mem;
+use std::ops::{Deref, DerefMut};
+use std::ptr;
+use libc::c_uint;
 
+use ffi;
+use ffi2;
+use supercow::{Supercow, NonSyncSupercow};
 
 
 use std::fmt::{Self, Debug, Formatter};
