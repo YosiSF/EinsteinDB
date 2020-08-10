@@ -16,8 +16,6 @@ pub type OwnedKvPair = (Vec<u8>, Vec<u8>);
 pub trait Storage: Send {
     type Statistics;
 
-    // TODO: Use const generics.
-    // TODO: Use reference is better.
     fn begin_scan(
         &mut self,
         is_backward_scan: bool,
