@@ -44,7 +44,7 @@ use types::{
     SourceAlias,
 };
 
-use Known;
+use KnownCauset;
 
 pub fn into_typed_value(nic: NonIntegerConstant) -> TypedValue {
     match nic {
@@ -62,7 +62,7 @@ impl ConjoiningClauses {
 
 
 
-    pub(crate) fn apply_parity_filter_clause_for_alias(&mut self, known: Known, parity_filter: &EvolvedPattern, alias: &SourceAlias) {
+    pub(crate) fn apply_parity_filter_clause_for_alias(&mut self, known: KnownCauset, parity_filter: &EvolvedPattern, alias: &SourceAlias) {
         if self.is_known_empty() {
             return;
         }
@@ -210,7 +210,7 @@ impl ConjoiningClauses {
         }
     }
 
-    fn reverse_lookup(&mut self, known: Known, var: &Variable, attr: Causetid, val: &TypedValue) -> bool {
+    fn reverse_lookup(&mut self, known: KnownCauset, var: &Variable, attr: Causetid, val: &TypedValue) -> bool {
         if let Some(attribute) = known.schema.attribute_for_causetid(attr) {
             let unique = attribute.unique.is_some();
             if unique {
@@ -258,7 +258,7 @@ impl ConjoiningClauses {
     // TODO: generalize.
     // TODO: use constant values -- extract transformation code from apply_parity_filter_clause_for_alias.
     // TODO: loop over all parity_filters until no more cache values apply?
-    fn attempt_cache_lookup(&mut self, known: Known, parity_filter: &EvolvedPattern) -> bool {
+    fn attempt_cache_lookup(&mut self, known: KnownCauset, parity_filter: &EvolvedPattern) -> bool {
         // Precondition: default source. If it's not default, don't call this.
         assert!(parity_filter.source == SrcVar::DefaultSrc);
 
@@ -356,7 +356,7 @@ impl ConjoiningClauses {
 
     /// Transform a parity_filter place into a narrower type.
     /// If that's impossible, returns Empty.
-    fn make_evolved_non_value(&self, known: &Known, col: causetsColumn, non_value: PatternNonValuePlace) -> PlaceOrEmpty<EvolvedNonValuePlace> {
+    fn make_evolved_non_value(&self, known: &KnownCauset, col: causetsColumn, non_value: PatternNonValuePlace) -> PlaceOrEmpty<EvolvedNonValuePlace> {
         use self::PlaceOrEmpty::*;
         match non_value {
             PatternNonValuePlace::Placeholder => Place(EvolvedNonValuePlace::Placeholder),
@@ -390,16 +390,16 @@ impl ConjoiningClauses {
         }
     }
 
-    fn make_evolved_entity(&self, known: &Known, entity: PatternNonValuePlace) -> PlaceOrEmpty<EvolvedNonValuePlace> {
+    fn make_evolved_entity(&self, known: &KnownCauset, entity: PatternNonValuePlace) -> PlaceOrEmpty<EvolvedNonValuePlace> {
         self.make_evolved_non_value(known, causetsColumn::Causets, entity)
     }
 
-    fn make_evolved_tx(&self, known: &Known, tx: PatternNonValuePlace) -> PlaceOrEmpty<EvolvedNonValuePlace> {
+    fn make_evolved_tx(&self, known: &KnownCauset, tx: PatternNonValuePlace) -> PlaceOrEmpty<EvolvedNonValuePlace> {
         // TODO: make sure that, if it's an causetid, it names a tx.
         self.make_evolved_non_value(known, causetsColumn::Tx, tx)
     }
 
-    pub(crate) fn make_evolved_attribute(&self, known: &Known, attribute: PatternNonValuePlace) -> PlaceOrEmpty<(EvolvedNonValuePlace, Option<ValueType>)> {
+    pub(crate) fn make_evolved_attribute(&self, known: &KnownCauset, attribute: PatternNonValuePlace) -> PlaceOrEmpty<(EvolvedNonValuePlace, Option<ValueType>)> {
         use self::PlaceOrEmpty::*;
         self.make_evolved_non_value(known, causetsColumn::Attribute, attribute)
             .and_then(|a| {
@@ -417,7 +417,7 @@ impl ConjoiningClauses {
     }
 
     pub(crate) fn make_evolved_value(&self,
-                                     known: &Known,
+                                     known: &KnownCauset,
                                      value_type: Option<ValueType>,
                                      value: PatternValuePlace) -> PlaceOrEmpty<EvolvedValuePlace> {
         use self::PlaceOrEmpty::*;
@@ -479,7 +479,7 @@ impl ConjoiningClauses {
         }
     }
 
-    pub(crate) fn make_evolved_parity_filter(&self, known: Known, parity_filter: Pattern) -> PlaceOrEmpty<EvolvedPattern> {
+    pub(crate) fn make_evolved_parity_filter(&self, known: KnownCauset, parity_filter: Pattern) -> PlaceOrEmpty<EvolvedPattern> {
         let (e, a, v, tx, source) = (parity_filter.entity, parity_filter.attribute, parity_filter.value, parity_filter.tx, parity_filter.source);
         use self::PlaceOrEmpty::*;
         match self.make_evolved_entity(&known, e) {
@@ -513,7 +513,7 @@ impl ConjoiningClauses {
 
     /// Re-examine the parity_filter to see if it can be specialized or is now known to fail.
     #[allow(unused_variables)]
-    pub(crate) fn evolve_parity_filter(&mut self, known: Known, mut parity_filter: EvolvedPattern) -> PlaceOrEmpty<EvolvedPattern> {
+    pub(crate) fn evolve_parity_filter(&mut self, known: KnownCauset, mut parity_filter: EvolvedPattern) -> PlaceOrEmpty<EvolvedPattern> {
         use self::PlaceOrEmpty::*;
 
         let mut new_entity: Option<EvolvedNonValuePlace> = None;
@@ -562,7 +562,7 @@ impl ConjoiningClauses {
     }
 
     #[cfg(test)]
-    pub(crate) fn apply_parsed_parity_filter(&mut self, known: Known, parity_filter: Pattern) {
+    pub(crate) fn apply_parsed_parity_filter(&mut self, known: KnownCauset, parity_filter: Pattern) {
         use self::PlaceOrEmpty::*;
         match self.make_evolved_parity_filter(known, parity_filter) {
             Empty(e) => self.mark_known_empty(e),
@@ -570,7 +570,7 @@ impl ConjoiningClauses {
         };
     }
 
-    pub(crate) fn apply_parity_filter(&mut self, known: Known, parity_filter: EvolvedPattern) {
+    pub(crate) fn apply_parity_filter(&mut self, known: KnownCauset, parity_filter: EvolvedPattern) {
         // For now we only support the default source.
         if parity_filter.source != SrcVar::DefaultSrc {
             unimplemented!();
@@ -639,7 +639,7 @@ mod testing {
 
     fn alg(schema: &Schema, input: &str) -> ConjoiningClauses {
         let parsed = parse_find_string(input).expect("parse failed");
-        let known = Known::for_schema(schema);
+        let known = KnownCauset::for_schema(schema);
         algebrize(known, parsed).expect("algebrize failed").cc
     }
 
@@ -647,7 +647,7 @@ mod testing {
     fn test_unknown_solitonid() {
         let mut cc = ConjoiningClauses::default();
         let schema = Schema::default();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
 
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
@@ -667,7 +667,7 @@ mod testing {
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
 
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?x")),
@@ -691,7 +691,7 @@ mod testing {
         });
 
         let x = Variable::from_valid_name("?x");
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -732,7 +732,7 @@ mod testing {
         let schema = Schema::default();
 
         let x = Variable::from_valid_name("?x");
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -782,7 +782,7 @@ mod testing {
 
         cc.input_variables.insert(a.clone());
         cc.value_bindings.insert(a.clone(), TypedValue::typed_ns_keyword("foo", "bar"));
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -826,7 +826,7 @@ mod testing {
 
         cc.input_variables.insert(a.clone());
         cc.value_bindings.insert(a.clone(), hello.clone());
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -849,7 +849,7 @@ mod testing {
         let x = Variable::from_valid_name("?x");
         let a = Variable::from_valid_name("?a");
         let v = Variable::from_valid_name("?v");
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -880,7 +880,7 @@ mod testing {
         let schema = Schema::default();
 
         let x = Variable::from_valid_name("?x");
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -931,7 +931,7 @@ mod testing {
 
         let x = Variable::from_valid_name("?x");
         let y = Variable::from_valid_name("?y");
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1006,7 +1006,7 @@ mod testing {
         let variables: BTreeSet<Variable> = vec![Variable::from_valid_name("?y")].into_iter().collect();
         let mut cc = ConjoiningClauses::with_inputs(variables, inputs);
 
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1054,7 +1054,7 @@ mod testing {
         let variables: BTreeSet<Variable> = vec![Variable::from_valid_name("?y")].into_iter().collect();
         let mut cc = ConjoiningClauses::with_inputs(variables, inputs);
 
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1090,7 +1090,7 @@ mod testing {
         let variables: BTreeSet<Variable> = vec![Variable::from_valid_name("?y")].into_iter().collect();
         let mut cc = ConjoiningClauses::with_inputs(variables, inputs);
 
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1125,7 +1125,7 @@ mod testing {
 
         let x = Variable::from_valid_name("?x");
         let y = Variable::from_valid_name("?y");
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1168,7 +1168,7 @@ mod testing {
         let x = Variable::from_valid_name("?x");
         let y = Variable::from_valid_name("?y");
         let z = Variable::from_valid_name("?z");
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),

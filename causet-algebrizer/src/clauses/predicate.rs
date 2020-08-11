@@ -40,9 +40,9 @@ use types::{
     QueryValue,
 };
 
-use Known;
+use KnownCauset;
 
-pub(crate) fn apply_predicate(&mut self, known: Known, predicate: Predicate) -> Result<()> {
+pub(crate) fn apply_predicate(&mut self, known: KnownCauset, predicate: Predicate) -> Result<()> {
     // Because we'll be growing the set of built-in predicates, handling each differently,
     // and ultimately allowing user-specified predicates, we match on the predicate name first.
     if let Some(op) = Inequality::from_datalog_operator(predicate.operator.0.as_str()) {

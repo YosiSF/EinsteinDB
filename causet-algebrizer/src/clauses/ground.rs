@@ -46,7 +46,7 @@ use types::{
     VariableColumn,
 };
 
-use Known;
+use KnownCauset;
 
 impl ConjoiningClauses {
     /// Take a relation: a matrix of values which will successively bind to named variables of

@@ -112,21 +112,21 @@ pub use types::{
 /// of the cache. If performance becomes a concern, we should hard-code specific kinds of
 /// cache right here, and/or eliminate the Option.
 #[derive(Clone, Copy)]
-pub struct Known<'s, 'c> {
+pub struct KnownCauset<'s, 'c> {
     pub schema: &'s Schema,
     pub cache: Option<&'c CachedAttributes>,
 }
 
-impl<'s, 'c> Known<'s, 'c> {
-    pub fn for_schema(s: &'s Schema) -> Known<'s, 'static> {
-        Known {
+impl<'s, 'c> KnownCauset<'s, 'c> {
+    pub fn for_schema(s: &'s Schema) -> KnownCauset<'s, 'static> {
+        KnownCauset {
             schema: s,
             cache: None,
         }
     }
 
-    pub fn new(s: &'s Schema, c: Option<&'c CachedAttributes>) -> Known<'s, 'c> {
-        Known {
+    pub fn new(s: &'s Schema, c: Option<&'c CachedAttributes>) -> KnownCauset<'s, 'c> {
+        KnownCauset {
             schema: s,
             cache: c,
         }
@@ -134,8 +134,8 @@ impl<'s, 'c> Known<'s, 'c> {
 }
 
 /// This is `CachedAttributes`, but with handy generic parameters.
-/// Why not make the trait generic? Because then we can't use it as a trait object in `Known`.
-impl<'s, 'c> Known<'s, 'c> {
+/// Why not make the trait generic? Because then we can't use it as a trait object in `KnownCauset`.
+impl<'s, 'c> KnownCauset<'s, 'c> {
     pub fn is_attribute_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
         self.cache
             .map(|cache| cache.is_attribute_cached_reverse(causetid.into()))
@@ -231,11 +231,11 @@ impl AlgebraicQuery {
     }
 }
 
-pub fn algebrize_with_counter(known: Known, parsed: FindQuery, counter: usize) -> Result<AlgebraicQuery> {
+pub fn algebrize_with_counter(known: KnownCauset, parsed: FindQuery, counter: usize) -> Result<AlgebraicQuery> {
     algebrize_with_inputs(known, parsed, counter, QueryInputs::default())
 }
 
-pub fn algebrize(known: Known, parsed: FindQuery) -> Result<AlgebraicQuery> {
+pub fn algebrize(known: KnownCauset, parsed: FindQuery) -> Result<AlgebraicQuery> {
     algebrize_with_inputs(known, parsed, 0, QueryInputs::default())
 }
 
@@ -314,7 +314,7 @@ fn simplify_limit(mut query: AlgebraicQuery) -> Result<AlgebraicQuery> {
     Ok(query)
 }
 
-pub fn algebrize_with_inputs(known: Known,
+pub fn algebrize_with_inputs(known: KnownCauset,
                              parsed: FindQuery,
                              counter: usize,
                              inputs: QueryInputs) -> Result<AlgebraicQuery> {

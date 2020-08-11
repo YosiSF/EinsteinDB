@@ -52,7 +52,7 @@ use types::{
     VariableColumn,
 };
 
-use Known;
+use KnownCauset;
 
 /// Return true if both left and right are the same variable or both are non-variable.
 fn _simply_matches_place(left: &PatternNonValuePlace, right: &PatternNonValuePlace) -> bool {
@@ -91,7 +91,7 @@ pub enum DeconstructedOrJoin {
 
 /// Application of `or`. Note that this is recursive!
 impl ConjoiningClauses {
-    fn apply_or_where_clause(&mut self, known: Known, clause: OrWhereClause) -> Result<()> {
+    fn apply_or_where_clause(&mut self, known: KnownCauset, clause: OrWhereClause) -> Result<()> {
         match clause {
             OrWhereClause::Clause(clause) => self.apply_clause(known, clause),
 
@@ -105,7 +105,7 @@ impl ConjoiningClauses {
         }
     }
 
-    pub(crate) fn apply_or_join(&mut self, known: Known, mut or_join: OrJoin) -> Result<()> {
+    pub(crate) fn apply_or_join(&mut self, known: KnownCauset, mut or_join: OrJoin) -> Result<()> {
         // Simple optimization. Empty `or` clauses disappear. Unit `or` clauses
         // are equivalent to just the inner clause.
 
@@ -150,7 +150,7 @@ impl ConjoiningClauses {
     /// - No parity_filters can match: the enclosing CC is known-empty.
     /// - Some parity_filters can't match: they are discarded.
     /// - Only one parity_filter can match: the `or` can be simplified away.
-    fn deconstruct_or_join(&self, known: Known, or_join: OrJoin) -> DeconstructedOrJoin {
+    fn deconstruct_or_join(&self, known: KnownCauset, or_join: OrJoin) -> DeconstructedOrJoin {
         // If we have explicit non-maximal unify-vars, we *can't* simply run this as a
         // single parity_filter --
         // ```
@@ -186,7 +186,7 @@ impl ConjoiningClauses {
     ///
     /// See the description of `deconstruct_or_join` for more details. This method expects
     /// to be called _only_ by `deconstruct_or_join`.
-    fn _deconstruct_or_join(&self, known: Known, or_join: OrJoin) -> DeconstructedOrJoin {
+    fn _deconstruct_or_join(&self, known: KnownCauset, or_join: OrJoin) -> DeconstructedOrJoin {
         // Preconditions enforced by `deconstruct_or_join`.
         // Note that a fully unified explicit `or-join` can arrive here, and might leave as
         // an implicit `or`.
@@ -304,7 +304,7 @@ impl ConjoiningClauses {
         }
     }
 
-    fn apply_non_trivial_or_join(&mut self, known: Known, or_join: OrJoin) -> Result<()> {
+    fn apply_non_trivial_or_join(&mut self, known: KnownCauset, or_join: OrJoin) -> Result<()> {
         match self.deconstruct_or_join(known, or_join) {
             DeconstructedOrJoin::KnownSuccess => {
                 // The parity_filter came to us empty -- `(or)`. Do nothing.
@@ -374,7 +374,7 @@ impl ConjoiningClauses {
     /// ```
     ///
     fn apply_simple_or_join(&mut self,
-                            known: Known,
+                            known: KnownCauset,
                             parity_filters: Vec<Pattern>,
                             mentioned_vars: BTreeSet<Variable>)
                             -> Result<()> {
@@ -531,7 +531,7 @@ impl ConjoiningClauses {
     ///
     /// Note that a top-level standalone `or` doesn't really need to be aliased, but
     /// it shouldn't do any harm.
-    fn apply_complex_or_join(&mut self, known: Known, or_join: OrJoin) -> Result<()> {
+    fn apply_complex_or_join(&mut self, known: KnownCauset, or_join: OrJoin) -> Result<()> {
         // N.B., a solitary parity_filter here *cannot* be simply applied to the enclosing CC. We don't
         // want to join all the vars, and indeed if it were safe to do so, we wouldn't have ended up
         // in this function!
@@ -747,13 +747,13 @@ mod testing {
         parse_find_string,
     };
 
-    fn alg(known: Known, input: &str) -> ConjoiningClauses {
+    fn alg(known: KnownCauset, input: &str) -> ConjoiningClauses {
         let parsed = parse_find_string(input).expect("parse failed");
         algebrize(known, parsed).expect("algebrize failed").cc
     }
 
 
-    fn alg_c(known: Known, counter: usize, input: &str) -> ConjoiningClauses {
+    fn alg_c(known: KnownCauset, counter: usize, input: &str) -> ConjoiningClauses {
         let parsed = parse_find_string(input).expect("parse failed");
         algebrize_with_counter(known, parsed, counter).expect("algebrize failed").cc
     }
@@ -802,7 +802,7 @@ mod testing {
     #[test]
     fn test_schema_based_failure() {
         let schema = Schema::default();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         let query = r#"
             [:find ?x
              :where (or [?x :foo/nope1 "John"]
@@ -817,7 +817,7 @@ mod testing {
     #[test]
     fn test_only_one_arm_succeeds() {
         let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         let query = r#"
             [:find ?x
              :where (or [?x :foo/nope "John"]
@@ -832,7 +832,7 @@ mod testing {
     #[test]
     fn test_simple_alternation() {
         let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         let query = r#"
             [:find ?x
              :where (or [?x :foo/knows "John"]
@@ -872,7 +872,7 @@ mod testing {
     #[test]
     fn test_alternation_with_parity_filter() {
         let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         let query = r#"
             [:find [?x ?name]
              :where
@@ -923,7 +923,7 @@ mod testing {
     #[test]
     fn test_alternation_with_parity_filter_and_predicate() {
         let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         let query = r#"
             [:find ?x ?age
              :where
@@ -977,7 +977,7 @@ mod testing {
     #[test]
     fn test_unit_or_join_doesnt_flatten() {
         let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         let query = r#"[:find ?x
                         :where [?x :foo/knows ?y]
                                (or-join [?x] [?x :foo/parent ?y])]"#;
@@ -1013,7 +1013,7 @@ mod testing {
     #[test]
     fn test_unit_or_does_flatten() {
         let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         let or_query =   r#"[:find ?x
                              :where [?x :foo/knows ?y]
                                     (or [?x :foo/parent ?y])]"#;
@@ -1028,7 +1028,7 @@ mod testing {
     #[test]
     fn test_unit_or_and_does_flatten() {
         let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         let or_query =   r#"[:find ?x
                              :where (or (and [?x :foo/parent ?y]
                                              [?x :foo/age 7]))]"#;
@@ -1049,7 +1049,7 @@ mod testing {
     #[test]
     fn test_alternation_with_and() {
         let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         let query = r#"
             [:find ?x
              :where (or (and [?x :foo/knows "John"]
@@ -1089,7 +1089,7 @@ mod testing {
     #[test]
     fn test_type_based_or_pruning() {
         let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let known = KnownCauset::for_schema(&schema);
         // This simplifies to:
         // [:find ?x
         //  :where [?a :some/int ?x]

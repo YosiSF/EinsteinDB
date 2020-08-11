@@ -26,28 +26,28 @@ mod clauses;
 
 
 #[derive(Clone, Copy)]
-pub struct Known<'s, 'c> {
+pub struct KnownCauset<'s, 'c> {
     pub schema: &'s Schema,
     pub cache: Option<&'c CachedAttributes>,
 }
 
-impl<'s, 'c> Known<'s, 'c> {
-    pub fn for_schema(s: &'s Schema) -> Known<'s, 'static> {
-        Known {
+impl<'s, 'c> KnownCauset<'s, 'c> {
+    pub fn for_schema(s: &'s Schema) -> KnownCauset<'s, 'static> {
+        KnownCauset {
             schema: s,
             cache: None,
         }
     }
 
-    pub fn new(s: &'s Schema, c: Option<&'c CachedAttributes>) -> Known<'s, 'c> {
-        Known {
+    pub fn new(s: &'s Schema, c: Option<&'c CachedAttributes>) -> KnownCauset<'s, 'c> {
+        KnownCauset {
             schema: s,
             cache: c,
         }
     }
 }
 
-impl<'s, 'c> Known<'s, 'c> {
+impl<'s, 'c> KnownCauset<'s, 'c> {
     pub fn is_attribute_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<causetid> {
         self.cache
             .map(|cache| cache.is_attribute_cached_reverse(causetid.into()))

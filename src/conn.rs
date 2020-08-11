@@ -89,7 +89,7 @@ impl Conn {
 
         // Doesn't clone, unlike `current_schema`.
         let spacetime = self.spacetime.lock().unwrap();
-        let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
         q_once(sqlite,
                known,
                query,
@@ -118,7 +118,7 @@ impl Conn {
             where T: Into<Option<QueryInputs>> {
 
             let spacetime = self.spacetime.lock().unwrap();
-            let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+            let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
             q_prepare(sqlite,
                       known,
                       query,
@@ -132,7 +132,7 @@ impl Conn {
             where T: Into<Option<QueryInputs>>
         {
             let spacetime = self.spacetime.lock().unwrap();
-            let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+            let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
             q_explain(sqlite,
                       known,
                       query,
@@ -167,7 +167,7 @@ impl Conn {
                                            entity: Causetid,
                                            attribute: &edn::Keyword) -> Result<Vec<TypedValue>> {
             let spacetime = self.spacetime.lock().unwrap();
-            let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+            let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
             lookup_values_for_attribute(sqlite, known, entity, attribute)
         }
 
@@ -176,7 +176,7 @@ impl Conn {
                                           entity: Causetid,
                                           attribute: &edn::Keyword) -> Result<Option<TypedValue>> {
             let spacetime = self.spacetime.lock().unwrap();
-            let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+            let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
             lookup_value_for_attribute(sqlite, known, entity, attribute)
         }
 
