@@ -111,8 +111,8 @@ impl Iterable for EinsteinMerkleEngine {
         )))
     }
 
-    fn iterator_cf_opt(&self, cf: &str, opts: IterOptions) -> Result<Self::Iterator> {
-        let handle = get_cf_handle(&self.0, cf)?;
+    fn iterator_cf_opt(&self, brane: &str, opts: IterOptions) -> Result<Self::Iterator> {
+        let handle = get_cf_handle(&self.0, brane)?;
         let opt: EinsteinMerkleReadOptions = opts.into();
         Ok(EinsteinMerkleEngineIterator::from_raw(DBIterator::new_cf(
             self.0.clone(),
@@ -134,11 +134,11 @@ impl Peekable for EinsteinMerkleEngine {
     fn get_value_cf_opt(
         &self,
         opts: &ReadOptions,
-        cf: &str,
+        brane: &str,
         key: &[u8],
     ) -> Result<Option<einstein_merkleVector>> {
         let opt: EinsteinMerkleReadOptions = opts.into();
-        let handle = get_cf_handle(&self.0, cf)?;
+        let handle = get_cf_handle(&self.0, brane)?;
         let v = self.0.get_cf_opt(handle, key, &opt.into_raw())?;
         Ok(v.map(einstein_merkleVector::from_raw))
     }
@@ -149,8 +149,8 @@ impl SyncMutable for EinsteinMerkleEngine {
         self.0.put(key, value).map_err(Error::Engine)
     }
 
-    fn put_cf(&self, cf: &str, key: &[u8], value: &[u8]) -> Result<()> {
-        let handle = get_cf_handle(&self.0, cf)?;
+    fn put_cf(&self, brane: &str, key: &[u8], value: &[u8]) -> Result<()> {
+        let handle = get_cf_handle(&self.0, brane)?;
         self.0.put_cf(handle, key, value).map_err(Error::Engine)
     }
 
@@ -158,13 +158,13 @@ impl SyncMutable for EinsteinMerkleEngine {
         self.0.delete(key).map_err(Error::Engine)
     }
 
-    fn delete_cf(&self, cf: &str, key: &[u8]) -> Result<()> {
-        let handle = get_cf_handle(&self.0, cf)?;
+    fn delete_cf(&self, brane: &str, key: &[u8]) -> Result<()> {
+        let handle = get_cf_handle(&self.0, brane)?;
         self.0.delete_cf(handle, key).map_err(Error::Engine)
     }
 
-    fn delete_range_cf(&self, cf: &str, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
-        let handle = get_cf_handle(&self.0, cf)?;
+    fn delete_range_cf(&self, brane: &str, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
+        let handle = get_cf_handle(&self.0, brane)?;
         self.0
             .delete_range_cf(handle, begin_key, end_key)
             .map_err(Error::Engine)
@@ -184,9 +184,9 @@ mod tests {
     #[test]
     fn test_base() {
         let path = Builder::new().prefix("var").temFIDelir().unwrap();
-        let cf = "cf";
+        let brane = "brane";
         let einsteindb = EinsteinMerkleEngine::from_db(Arc::new(
-            raw_util::new_einsteindb(path.path().to_str().unwrap(), None, &[cf], None).unwrap(),
+            raw_util::new_einsteindb(path.path().to_str().unwrap(), None, &[brane], None).unwrap(),
         ));
 
         let mut r = Region::default();
@@ -194,18 +194,18 @@ mod tests {
 
         let key = b"key";
         einsteindb.put_msg(key, &r).unwrap();
-        einsteindb.put_msg_cf(cf, key, &r).unwrap();
+        einsteindb.put_msg_cf(brane, key, &r).unwrap();
 
         let snap = einsteindb.snapshot();
 
         let mut r1: Region = einsteindb.get_msg(key).unwrap().unwrap();
         assert_eq!(r, r1);
-        let r1_cf: Region = einsteindb.get_msg_cf(cf, key).unwrap().unwrap();
+        let r1_cf: Region = einsteindb.get_msg_cf(brane, key).unwrap().unwrap();
         assert_eq!(r, r1_cf);
 
         let mut r2: Region = snap.get_msg(key).unwrap().unwrap();
         assert_eq!(r, r2);
-        let r2_cf: Region = snap.get_msg_cf(cf, key).unwrap().unwrap();
+        let r2_cf: Region = snap.get_msg_cf(brane, key).unwrap().unwrap();
         assert_eq!(r, r2_cf);
 
         r.set_id(11);
@@ -221,31 +221,31 @@ mod tests {
     #[test]
     fn test_peekable() {
         let path = Builder::new().prefix("var").temFIDelir().unwrap();
-        let cf = "cf";
+        let brane = "brane";
         let einsteindb = EinsteinMerkleEngine::from_db(Arc::new(
-            raw_util::new_einsteindb(path.path().to_str().unwrap(), None, &[cf], None).unwrap(),
+            raw_util::new_einsteindb(path.path().to_str().unwrap(), None, &[brane], None).unwrap(),
         ));
 
         einsteindb.put(b"k1", b"v1").unwrap();
-        einsteindb.put_cf(cf, b"k1", b"v2").unwrap();
+        einsteindb.put_cf(brane, b"k1", b"v2").unwrap();
 
         assert_eq!(&*einsteindb.get_value(b"k1").unwrap().unwrap(), b"v1");
         assert!(einsteindb.get_value_cf("foo", b"k1").is_err());
-        assert_eq!(&*einsteindb.get_value_cf(cf, b"k1").unwrap().unwrap(), b"v2");
+        assert_eq!(&*einsteindb.get_value_cf(brane, b"k1").unwrap().unwrap(), b"v2");
     }
 
     #[test]
     fn test_scan() {
         let path = Builder::new().prefix("var").temFIDelir().unwrap();
-        let cf = "cf";
+        let brane = "brane";
         let einsteindb = EinsteinMerkleEngine::from_db(Arc::new(
-            raw_util::new_einsteindb(path.path().to_str().unwrap(), None, &[cf], None).unwrap(),
+            raw_util::new_einsteindb(path.path().to_str().unwrap(), None, &[brane], None).unwrap(),
         ));
 
         einsteindb.put(b"a1", b"v1").unwrap();
         einsteindb.put(b"a2", b"v2").unwrap();
-        einsteindb.put_cf(cf, b"a1", b"v1").unwrap();
-        einsteindb.put_cf(cf, b"a2", b"v22").unwrap();
+        einsteindb.put_cf(brane, b"a1", b"v1").unwrap();
+        einsteindb.put_cf(brane, b"a2", b"v22").unwrap();
 
         let mut data = vec![];
         einsteindb
@@ -264,7 +264,7 @@ mod tests {
         data.clear();
 
         einsteindb
-            .scan_cf(cf, b"", &[0xFF, 0xFF], false, |key, value| {
+            .scan_cf(brane, b"", &[0xFF, 0xFF], false, |key, value| {
                 data.push((key.to_vec(), value.to_vec()));
                 Ok(true)
             })
@@ -281,9 +281,9 @@ mod tests {
         let pair = einsteindb.seek(b"a1").unwrap().unwrap();
         assert_eq!(pair, (b"a1".to_vec(), b"v1".to_vec()));
         assert!(einsteindb.seek(b"a3").unwrap().is_none());
-        let pair_cf = einsteindb.seek_cf(cf, b"a1").unwrap().unwrap();
+        let pair_cf = einsteindb.seek_cf(brane, b"a1").unwrap().unwrap();
         assert_eq!(pair_cf, (b"a1".to_vec(), b"v1".to_vec()));
-        assert!(einsteindb.seek_cf(cf, b"a3").unwrap().is_none());
+        assert!(einsteindb.seek_cf(brane, b"a3").unwrap().is_none());
 
         let mut index = 0;
         einsteindb

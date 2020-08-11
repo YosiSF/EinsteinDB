@@ -29,7 +29,7 @@ impl TablePropertiesExt for LmdbEngine {
 
     fn get_properties_of_tables_in_range(
         &self,
-        brane: &Self::CFHandle,
+        brane: &Self::BRANEHandle,
         ranges: &[Range],
     ) -> Result<Self::TablePropertiesCollection> {
         // FIXME: extra allocation
