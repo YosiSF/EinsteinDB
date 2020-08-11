@@ -5,7 +5,7 @@ authors = ["Josh Leder <slushie@gmail.com>", "Karl Whitford<whitford@einsteindbs
 workspace = ".."
 
 license = "Apache-2.0"
-repository = "https://github.com/YosiSF/EinsteinDB"
+repository = "https://github.com/yosisf/EinsteinDB"
 description = "Prolog parser for EinsteinDB"
 build = "build.rs"
 readme = "./README.md"

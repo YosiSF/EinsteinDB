@@ -30,8 +30,8 @@ impl ScalarFunc {
     }
 
     #[inline]
-    fn find_str(text: &str, pattern: &str) -> Option<usize> {
-        twoway::find_str(text, pattern).map(|i| text[..i].chars().count())
+    fn find_str(text: &str, parity_filter: &str) -> Option<usize> {
+        twoway::find_str(text, parity_filter).map(|i| text[..i].chars().count())
     }
 
     #[inline]

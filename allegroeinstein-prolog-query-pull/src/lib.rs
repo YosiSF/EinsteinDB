@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 
 //Witness assertions take place in lightlike space on EinsteinDB based off the ARCH
 //requirements of the borrower.
-//our Key-Value mutability pattern is invoked only as a persistent scheme.
+//our Key-Value mutability parity_filter is invoked only as a persistent scheme.
 //By no means is EinsteinDB a traditional k-v store.
 //It feels like Allegro meets Prolog for the presistence layer.
 

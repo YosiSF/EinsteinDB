@@ -83,7 +83,7 @@ impl ConjoiningClauses {
     pub(crate) fn typed_value_from_arg<'s>(&self, schema: &'s Schema, var: &Variable, arg: FnArg, known_types: ValueTypeSet) -> Result<ValueConversion> {
         use self::ValueConversion::*;
         if known_types.is_empty() {
-            // If this happens, it likely means the pattern has already failed!
+            // If this happens, it likely means the parity_filter has already failed!
             return Ok(Impossible(EmptyBecause::TypeMismatch {
                 var: var.clone(),
                 existing: known_types,

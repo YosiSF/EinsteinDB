@@ -67,7 +67,7 @@ use edbn::{
     FromRc,
 };
 
-use edbn::entities::{
+use edbn::causets::{
     AttributePlace,
     EntityPlace,
     CausetidOrSolitonid,

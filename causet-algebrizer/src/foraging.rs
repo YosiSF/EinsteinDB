@@ -1,4 +1,12 @@
-// Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
+//Copyright 2020 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
+// AUTHORS: WHITFORD LEDER
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
 
 use std::convert::TryFrom;
 use std::hash::Hash;
@@ -226,22 +234,22 @@ pub struct FastHashAggregationImpl {
 
 impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImpl {
     #[inline]
-    fn prepare_entities(&mut self, entities: &mut Entities<Src>) {
-        entities.schema.push(self.group_by_field_type.clone());
+    fn prepare_causets(&mut self, causets: &mut causets<Src>) {
+        causets.schema.push(self.group_by_field_type.clone());
     }
 
     #[inline]
     fn process_batch_input(
         &mut self,
-        entities: &mut Entities<Src>,
+        causets: &mut causets<Src>,
         mut input_physical_columns: QuiesceBatchColumnVec,
         input_logical_rows: &[usize],
     ) -> Result<()> {
         // 1. Calculate which group each src row belongs to.
         self.states_offset_each_logical_row.clear();
         let group_by_result = self.group_by_exp.eval(
-            &mut entities.context,
-            entities.src.schema(),
+            &mut causets.context,
+            causets.src.schema(),
             &mut input_physical_columns,
             input_logical_rows,
             input_logical_rows.len(),
@@ -256,7 +264,7 @@ impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImp
                             if let Groups::TT(group) = &mut self.groups {
                                 handle_scalar_group_each_row(
                                     v,
-                                    &entities.each_aggr_fn,
+                                    &causets.each_aggr_fn,
                                     group,
                                     &mut self.states,
                                     input_logical_rows.len(),
@@ -282,7 +290,7 @@ impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImp
                                 calc_groups_each_row(
                                     v,
                                     group_by_logical_rows,
-                                    &entities.each_aggr_fn,
+                                    &causets.each_aggr_fn,
                                     group,
                                     &mut self.states,
                                     &mut self.states_offset_each_logical_row,
@@ -304,7 +312,7 @@ impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImp
                                             calc_groups_each_row(
                                                 v,
                                                 group_by_logical_rows,
-                                                &entities.each_aggr_fn,
+                                                &causets.each_aggr_fn,
                                                 group,
                                                 &mut self.states,
                                                 &mut self.states_offset_each_logical_row,
@@ -325,7 +333,7 @@ impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImp
 
         // 2. UFIDelate states according to the group.
         HashAggregationHelper::uFIDelate_each_row_states_by_offset(
-            entities,
+            causets,
             &mut input_physical_columns,
             input_logical_rows,
             &mut self.states,
@@ -343,13 +351,13 @@ impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImp
     #[inline]
     fn iterate_available_groups(
         &mut self,
-        entities: &mut Entities<Src>,
+        causets: &mut causets<Src>,
         src_is_drained: bool,
-        mut iteratee: impl FnMut(&mut Entities<Src>, &[Box<dyn AggrFunctionState>]) -> Result<()>,
+        mut iteratee: impl FnMut(&mut causets<Src>, &[Box<dyn AggrFunctionState>]) -> Result<()>,
     ) -> Result<Vec<QuiesceBatchColumn>> {
         assert!(src_is_drained);
 
-        let aggr_fns_len = entities.each_aggr_fn.len();
+        let aggr_fns_len = causets.each_aggr_fn.len();
         let mut group_by_column = QuiesceBatchColumn::decoded_with_capacity_and_tp(
             self.groups.len(),
             self.groups.eval_type(),
@@ -363,7 +371,7 @@ impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImp
                     // TODO: Verify performance difference.
                     let groups = std::mem::take(groups);
                     for (group_key, states_offset) in groups {
-                        iteratee(entities, &self.states[states_offset..states_offset + aggr_fns_len])?;
+                        iteratee(causets, &self.states[states_offset..states_offset + aggr_fns_len])?;
                         group_by_column.mut_decoded().push(group_key);
                     }
                 }

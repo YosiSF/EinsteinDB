@@ -1428,15 +1428,15 @@ impl Time {
 
     pub fn date_format(self, layout: &str) -> Result<String> {
         let mut ret = String::new();
-        let mut pattern_match = false;
+        let mut parity_filter_match = false;
         for b in layout.chars() {
-            if pattern_match {
+            if parity_filter_match {
                 self.write_date_format_segment(b, &mut ret)?;
-                pattern_match = false;
+                parity_filter_match = false;
                 continue;
             }
             if b == '%' {
-                pattern_match = true;
+                parity_filter_match = true;
             } else {
                 ret.push(b);
             }

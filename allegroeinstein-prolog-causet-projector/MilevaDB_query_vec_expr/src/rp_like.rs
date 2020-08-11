@@ -12,30 +12,30 @@ use allegroeinstein-prolog-causet-projector::MilevaDB_query_shared_expr::*;
 impl ScalarFunc {
     pub fn like(&self, ctx: &mut EvalContext, row: &[Datum]) -> Result<Option<i64>> {
         let target = try_opt!(self.children[0].eval_string(ctx, row));
-        let pattern = try_opt!(self.children[1].eval_string(ctx, row));
+        let parity_filter = try_opt!(self.children[1].eval_string(ctx, row));
         let escape = try_opt!(self.children[2].eval_int(ctx, row)) as u32;
         Ok(Some(match_template_collator! {
             TT, match self.field_type.collation()? {
-                Collation::TT => like::like::<TT>(&target, &pattern, escape)?
+                Collation::TT => like::like::<TT>(&target, &parity_filter, escape)?
             }
         } as i64))
     }
 
     pub fn regexp_utf8(&self, ctx: &mut EvalContext, row: &[Datum]) -> Result<Option<i64>> {
         let target = try_opt!(self.children[0].eval_string_and_decode(ctx, row));
-        let pattern = try_opt!(self.children[1].eval_string_and_decode(ctx, row));
-        let pattern = format!("(?i){}", &pattern);
+        let parity_filter = try_opt!(self.children[1].eval_string_and_decode(ctx, row));
+        let parity_filter = format!("(?i){}", &parity_filter);
 
         // TODO: cache compiled result
-        Ok(Some(Regex::new(&pattern)?.is_match(&target) as i64))
+        Ok(Some(Regex::new(&parity_filter)?.is_match(&target) as i64))
     }
 
     pub fn regexp(&self, ctx: &mut EvalContext, row: &[Datum]) -> Result<Option<i64>> {
         let target = try_opt!(self.children[0].eval_string(ctx, row));
-        let pattern = try_opt!(self.children[1].eval_string_and_decode(ctx, row));
+        let parity_filter = try_opt!(self.children[1].eval_string_and_decode(ctx, row));
 
         // TODO: cache compiled result
-        Ok(Some(BytesRegex::new(&pattern)?.is_match(&target) as i64))
+        Ok(Some(BytesRegex::new(&parity_filter)?.is_match(&target) as i64))
     }
 }
 
@@ -82,15 +82,15 @@ mod tests {
             (r#"3hello"#, r#"%_hello"#, '%', true),
         ];
         let mut ctx = EvalContext::default();
-        for (target_str, pattern_str, escape, exp) in cases {
+        for (target_str, parity_filter_str, escape, exp) in cases {
             let target = datum_expr(Datum::Bytes(target_str.as_bytes().to_vec()));
-            let pattern = datum_expr(Datum::Bytes(pattern_str.as_bytes().to_vec()));
+            let parity_filter = datum_expr(Datum::Bytes(parity_filter_str.as_bytes().to_vec()));
             let escape = datum_expr(Datum::I64(escape as i64));
-            let op = scalar_func_expr(ScalarFuncSig::LikeSig, &[target, pattern, escape]);
+            let op = scalar_func_expr(ScalarFuncSig::LikeSig, &[target, parity_filter, escape]);
             let op = Expression::build(&mut ctx, op).unwrap();
             let got = op.eval(&mut ctx, &[]).unwrap();
             let exp = Datum::from(exp);
-            assert_eq!(got, exp, "{:?} like {:?}", target_str, pattern_str);
+            assert_eq!(got, exp, "{:?} like {:?}", target_str, parity_filter_str);
         }
     }
 
@@ -112,14 +112,14 @@ mod tests {
             ("你好", r"^您好$", false),
         ];
         let mut ctx = EvalContext::default();
-        for (target_str, pattern_str, exp) in cases {
+        for (target_str, parity_filter_str, exp) in cases {
             let target = datum_expr(Datum::Bytes(target_str.as_bytes().to_vec()));
-            let pattern = datum_expr(Datum::Bytes(pattern_str.as_bytes().to_vec()));
-            let op = scalar_func_expr(ScalarFuncSig::RegexpUtf8Sig, &[target, pattern]);
+            let parity_filter = datum_expr(Datum::Bytes(parity_filter_str.as_bytes().to_vec()));
+            let op = scalar_func_expr(ScalarFuncSig::RegexpUtf8Sig, &[target, parity_filter]);
             let op = Expression::build(&mut ctx, op).unwrap();
             let got = op.eval(&mut ctx, &[]).unwrap();
             let exp = Datum::from(exp);
-            assert_eq!(got, exp, "{:?} rlike {:?}", target_str, pattern_str);
+            assert_eq!(got, exp, "{:?} rlike {:?}", target_str, parity_filter_str);
         }
     }
 
@@ -149,14 +149,14 @@ mod tests {
             ),
         ];
         let mut ctx = EvalContext::default();
-        for (target_str, pattern_str, exp) in cases {
+        for (target_str, parity_filter_str, exp) in cases {
             let target = datum_expr(Datum::Bytes(target_str.clone()));
-            let pattern = datum_expr(Datum::Bytes(pattern_str.as_bytes().to_vec()));
-            let op = scalar_func_expr(ScalarFuncSig::RegexpSig, &[target, pattern]);
+            let parity_filter = datum_expr(Datum::Bytes(parity_filter_str.as_bytes().to_vec()));
+            let op = scalar_func_expr(ScalarFuncSig::RegexpSig, &[target, parity_filter]);
             let op = Expression::build(&mut ctx, op).unwrap();
             let got = op.eval(&mut ctx, &[]).unwrap();
             let exp = Datum::from(exp);
-            assert_eq!(got, exp, "{:?} binary rlike {:?}", target_str, pattern_str);
+            assert_eq!(got, exp, "{:?} binary rlike {:?}", target_str, parity_filter_str);
         }
     }
 }

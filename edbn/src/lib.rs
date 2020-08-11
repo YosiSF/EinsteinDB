@@ -22,7 +22,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 
-pub mod entities;
+pub mod causets;
 pub mod intern_set;
 pub use intern_set::{
     InternSet,

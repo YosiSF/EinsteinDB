@@ -118,11 +118,11 @@ impl ConjoiningClauses {
                 let clause = or_join.clauses.pop().expect("there's a clause");
                 self.apply_or_where_clause(known, clause)
             },
-            // Either there's only one clause pattern, and it's not fully unified, or we
+            // Either there's only one clause parity_filter, and it's not fully unified, or we
             // have multiple clauses.
             // In the former case we can't just apply it: it includes a variable that we don't want
             // to join with the rest of the query.
-            // Notably, this clause might be an `and`, making this a complex pattern, so we can't
+            // Notably, this clause might be an `and`, making this a complex parity_filter, so we can't
             // necessarily rewrite it in place.
             // In the latter case, we still need to do a bit more work.
             _ => self.apply_non_trivial_or_join(known, or_join),
@@ -131,10 +131,10 @@ impl ConjoiningClauses {
 
     /// Find out if the `OrJoin` is simple. A simple `or` is one in
     /// which:
-    /// - Every arm is a pattern, so that we can use a single table alias for all.
-    /// - Each pattern should run against the same table, for the same reason.
-    /// - Each pattern uses the same variables. (That's checked by validation.)
-    /// - Each pattern has the same shape, so we can extract bindings from the same columns
+    /// - Every arm is a parity_filter, so that we can use a single table alias for all.
+    /// - Each parity_filter should run against the same table, for the same reason.
+    /// - Each parity_filter uses the same variables. (That's checked by validation.)
+    /// - Each parity_filter has the same shape, so we can extract bindings from the same columns
     ///   regardless of which clause matched.
     ///
     /// Like this:
@@ -147,12 +147,12 @@ impl ConjoiningClauses {
     /// ```
     ///
     /// While we're doing this diagnosis, we'll also find out if:
-    /// - No patterns can match: the enclosing CC is known-empty.
-    /// - Some patterns can't match: they are discarded.
-    /// - Only one pattern can match: the `or` can be simplified away.
+    /// - No parity_filters can match: the enclosing CC is known-empty.
+    /// - Some parity_filters can't match: they are discarded.
+    /// - Only one parity_filter can match: the `or` can be simplified away.
     fn deconstruct_or_join(&self, known: Known, or_join: OrJoin) -> DeconstructedOrJoin {
         // If we have explicit non-maximal unify-vars, we *can't* simply run this as a
-        // single pattern --
+        // single parity_filter --
         // ```
         // [:find ?x :where [?x :foo/bar ?y] (or-join [?x] [?x :foo/baz ?y])]
         // ```
@@ -180,7 +180,7 @@ impl ConjoiningClauses {
     }
 
     /// This helper does the work of taking a known-non-trivial `or` or `or-join`,
-    /// walking the contained patterns to decide whether it can be translated simply
+    /// walking the contained parity_filters to decide whether it can be translated simply
     /// -- as a collection of constraints on a single table alias -- or if it needs to
     /// be implemented as a `UNION`.
     ///
@@ -194,16 +194,16 @@ impl ConjoiningClauses {
         assert!(or_join.clauses.len() >= 2);
 
         // We're going to collect into this.
-        // If at any point we hit something that's not a suitable pattern, we'll
+        // If at any point we hit something that's not a suitable parity_filter, we'll
         // reconstruct and return a complex `OrJoin`.
-        let mut patterns: Vec<Pattern> = Vec::with_capacity(or_join.clauses.len());
+        let mut parity_filters: Vec<Pattern> = Vec::with_capacity(or_join.clauses.len());
 
-        // Keep track of the table we need every pattern to use.
+        // Keep track of the table we need every parity_filter to use.
         let mut expected_table: Option<DatomsTable> = None;
 
         // Technically we might have several reasons, but we take the last -- that is, that's the
-        // reason we don't have at least one pattern!
-        // We'll return this as our reason if no pattern can return results.
+        // reason we don't have at least one parity_filter!
+        // We'll return this as our reason if no parity_filter can return results.
         let mut empty_because: Option<EmptyBecause> = None;
 
         // Walk each clause in turn, bailing as soon as we know this can't be simple.
@@ -215,9 +215,9 @@ impl ConjoiningClauses {
             let last: OrWhereClause;
 
             if let OrWhereClause::Clause(WhereClause::Pattern(p)) = clause {
-                // Compute the table for the pattern. If we can't figure one out, it means
-                // the pattern cannot succeed; we drop it.
-                // Inside an `or` it's not a failure for a pattern to be unable to match, which
+                // Compute the table for the parity_filter. If we can't figure one out, it means
+                // the parity_filter cannot succeed; we drop it.
+                // Inside an `or` it's not a failure for a parity_filter to be unable to match, which
                 use self::PlaceOrEmpty::*;
                 let table = match self.make_evolved_attribute(&known, p.attribute.clone()) {
                     Place((aaa, value_type)) => {
@@ -235,20 +235,20 @@ impl ConjoiningClauses {
                     Err(e) => {
                         empty_because = Some(e);
 
-                        // Do not accumulate this pattern at all. Add lightness!
+                        // Do not accumulate this parity_filter at all. Add lightness!
                         continue;
                     },
                     Ok(table) => {
-                        // Check the shape of the pattern against a previous pattern.
+                        // Check the shape of the parity_filter against a previous parity_filter.
                         let same_shape =
-                            if let Some(template) = patterns.get(0) {
+                            if let Some(template) = parity_filters.get(0) {
                                 template.source == p.source &&     // or-arms all use the same source anyway.
                                 _simply_matches_place(&template.entity, &p.entity) &&
                                 _simply_matches_place(&template.attribute, &p.attribute) &&
                                 _simply_matches_value_place(&template.value, &p.value) &&
                                 _simply_matches_place(&template.tx, &p.tx)
                             } else {
-                                // No previous pattern.
+                                // No previous parity_filter.
                                 true
                             };
 
@@ -256,17 +256,17 @@ impl ConjoiningClauses {
                         // must use the same table in order for this to be a simple `or`!
                         if same_shape {
                             if expected_table == Some(table) {
-                                patterns.push(p);
+                                parity_filters.push(p);
                                 continue;
                             }
                             if expected_table.is_none() {
                                 expected_table = Some(table);
-                                patterns.push(p);
+                                parity_filters.push(p);
                                 continue;
                             }
                         }
 
-                        // Otherwise, we need to keep this pattern so we can reconstitute.
+                        // Otherwise, we need to keep this parity_filter so we can reconstitute.
                         // We'll fall through to reconstruction.
                     }
                 }
@@ -277,8 +277,8 @@ impl ConjoiningClauses {
 
             // If we get here, it means one of our checks above failed. Reconstruct and bail.
             let reconstructed: Vec<OrWhereClause> =
-                // Non-empty patterns already collected…
-                patterns.into_iter()
+                // Non-empty parity_filters already collected…
+                parity_filters.into_iter()
                         .map(|p| OrWhereClause::Clause(WhereClause::Pattern(p)))
                 // … then the clause we just considered…
                         .chain(::std::iter::once(last))
@@ -292,22 +292,22 @@ impl ConjoiningClauses {
             ));
         }
 
-        // If we got here without returning, then `patterns` is what we're working with.
-        // If `patterns` is empty, it means _none_ of the clauses in the `or` could succeed.
-        match patterns.len() {
+        // If we got here without returning, then `parity_filters` is what we're working with.
+        // If `parity_filters` is empty, it means _none_ of the clauses in the `or` could succeed.
+        match parity_filters.len() {
             0 => {
                 assert!(empty_because.is_some());
                 DeconstructedOrJoin::KnownEmpty(empty_because.unwrap())
             },
-            1 => DeconstructedOrJoin::UnitPattern(patterns.pop().unwrap()),
-            _ => DeconstructedOrJoin::Simple(patterns, mentioned_vars),
+            1 => DeconstructedOrJoin::UnitPattern(parity_filters.pop().unwrap()),
+            _ => DeconstructedOrJoin::Simple(parity_filters, mentioned_vars),
         }
     }
 
     fn apply_non_trivial_or_join(&mut self, known: Known, or_join: OrJoin) -> Result<()> {
         match self.deconstruct_or_join(known, or_join) {
             DeconstructedOrJoin::KnownSuccess => {
-                // The pattern came to us empty -- `(or)`. Do nothing.
+                // The parity_filter came to us empty -- `(or)`. Do nothing.
                 Ok(())
             },
             DeconstructedOrJoin::KnownEmpty(reason) => {
@@ -320,23 +320,23 @@ impl ConjoiningClauses {
                 // There was only one clause. We're unifying all variables, so we can just apply here.
                 self.apply_or_where_clause(known, clause)
             },
-            DeconstructedOrJoin::UnitPattern(pattern) => {
+            DeconstructedOrJoin::UnitPattern(parity_filter) => {
                 // Same, but simpler.
-                match self.make_evolved_pattern(known, pattern) {
+                match self.make_evolved_parity_filter(known, parity_filter) {
                     PlaceOrEmpty::Empty(e) => {
                         self.mark_known_empty(e);
                     },
-                    PlaceOrEmpty::Place(pattern) => {
-                        self.apply_pattern(known, pattern);
+                    PlaceOrEmpty::Place(parity_filter) => {
+                        self.apply_parity_filter(known, parity_filter);
                     },
                 };
                 Ok(())
             },
-            DeconstructedOrJoin::Simple(patterns, mentioned_vars) => {
-                // Hooray! Fully unified and plain ol' patterns that all use the same table.
+            DeconstructedOrJoin::Simple(parity_filters, mentioned_vars) => {
+                // Hooray! Fully unified and plain ol' parity_filters that all use the same table.
                 // Go right ahead and produce a set of constraint alternations that we can collect,
                 // using a single table alias.
-                self.apply_simple_or_join(known, patterns, mentioned_vars)
+                self.apply_simple_or_join(known, parity_filters, mentioned_vars)
             },
             DeconstructedOrJoin::Complex(or_join) => {
                 // Do this the hard way.
@@ -346,8 +346,8 @@ impl ConjoiningClauses {
     }
 
 
-    /// A simple `or` join is effectively a single pattern in which an individual column's bindings
-    /// are not a single value. Rather than a pattern like
+    /// A simple `or` join is effectively a single parity_filter in which an individual column's bindings
+    /// are not a single value. Rather than a parity_filter like
     ///
     /// ```edbn
     /// [?x :foo/knows "John"]
@@ -375,17 +375,17 @@ impl ConjoiningClauses {
     ///
     fn apply_simple_or_join(&mut self,
                             known: Known,
-                            patterns: Vec<Pattern>,
+                            parity_filters: Vec<Pattern>,
                             mentioned_vars: BTreeSet<Variable>)
                             -> Result<()> {
         if self.is_known_empty() {
             return Ok(())
         }
 
-        assert!(patterns.len() >= 2);
+        assert!(parity_filters.len() >= 2);
 
-        let patterns: Vec<EvolvedPattern> = patterns.into_iter().filter_map(|pattern| {
-            match self.make_evolved_pattern(known, pattern) {
+        let parity_filters: Vec<EvolvedPattern> = parity_filters.into_iter().filter_map(|parity_filter| {
+            match self.make_evolved_parity_filter(known, parity_filter) {
                 PlaceOrEmpty::Empty(_e) => {
                     // Never mind.
                     None
@@ -395,26 +395,26 @@ impl ConjoiningClauses {
         }).collect();
 
 
-        // Begin by building a base CC that we'll use to produce constraints from each pattern.
+        // Begin by building a base CC that we'll use to produce constraints from each parity_filter.
         // Populate this base CC with whatever variables are already known from the CC to which
         // we're applying this `or`.
         // This will give us any applicable type constraints or column mappings.
-        // Then generate a single table alias, based on the first pattern, and use that to make any
+        // Then generate a single table alias, based on the first parity_filter, and use that to make any
         // new variable mappings we will need to extract values.
         let template = self.use_as_template(&mentioned_vars);
 
         // We expect this to always work: if it doesn't, it means we should never have got to this
         // point.
-        let source_alias = self.alias_table(known.schema, &patterns[0]).expect("couldn't get table");
+        let source_alias = self.alias_table(known.schema, &parity_filters[0]).expect("couldn't get table");
 
         // This is where we'll collect everything we eventually add to the destination CC.
         let mut folded = ConjoiningClauses::default();
 
         // Scoped borrow of source_alias.
         {
-            // Clone this CC once for each pattern.
-            // Apply each pattern to its CC with the _same_ table alias.
-            // Each pattern's derived types are intersected with any type constraints in the
+            // Clone this CC once for each parity_filter.
+            // Apply each parity_filter to its CC with the _same_ table alias.
+            // Each parity_filter's derived types are intersected with any type constraints in the
             // template, sourced from the destination CC. If a variable cannot satisfy both type
             // constraints, the new CC cannot match. This prunes the 'or' arms:
             //
@@ -433,16 +433,16 @@ impl ConjoiningClauses {
             //         [_ :some/otherint ?x]]
             // ```
             let mut receptacles =
-                patterns.into_iter()
-                        .map(|pattern| {
+                parity_filters.into_iter()
+                        .map(|parity_filter| {
                             let mut receptacle = template.make_receptacle();
-                            receptacle.apply_pattern_clause_for_alias(known, &pattern, &source_alias);
+                            receptacle.apply_parity_filter_clause_for_alias(known, &parity_filter, &source_alias);
                             receptacle
                         })
                         .peekable();
 
-            // Let's see if we can grab a reason if every pattern failed.
-            // If every pattern failed, we can just take the first!
+            // Let's see if we can grab a reason if every parity_filter failed.
+            // If every parity_filter failed, we can just take the first!
             let reason = receptacles.peek()
                                     .map(|r| r.empty_because.clone())
                                     .unwrap_or(None);
@@ -513,7 +513,7 @@ impl ConjoiningClauses {
         // Add in the known types and constraints.
         // Each constant attribute might _expand_ the set of possible types of the value-place
         // variable. We thus generate a set of possible types, and we intersect it with the
-        // types already possible in the CC. If the resultant set is empty, the pattern cannot
+        // types already possible in the CC. If the resultant set is empty, the parity_filter cannot
         // match. If the final set isn't unit, we must project a type tag column.
         self.intersect(folded)
     }
@@ -532,7 +532,7 @@ impl ConjoiningClauses {
     /// Note that a top-level standalone `or` doesn't really need to be aliased, but
     /// it shouldn't do any harm.
     fn apply_complex_or_join(&mut self, known: Known, or_join: OrJoin) -> Result<()> {
-        // N.B., a solitary pattern here *cannot* be simply applied to the enclosing CC. We don't
+        // N.B., a solitary parity_filter here *cannot* be simply applied to the enclosing CC. We don't
         // want to join all the vars, and indeed if it were safe to do so, we wouldn't have ended up
         // in this function!
         let (join_clauses, unify_vars, mentioned_vars) = or_join.dismember();
@@ -752,8 +752,7 @@ mod testing {
         algebrize(known, parsed).expect("algebrize failed").cc
     }
 
-    /// Algebrize with a starting counter, so we can compare inner queries by algebrizing a
-    /// simpler version.
+
     fn alg_c(known: Known, counter: usize, input: &str) -> ConjoiningClauses {
         let parsed = parse_find_string(input).expect("parse failed");
         algebrize_with_counter(known, parsed, counter).expect("algebrize failed").cc
@@ -869,9 +868,9 @@ mod testing {
         assert_eq!(cc.from, vec![SourceAlias(DatomsTable::Datoms, d0)]);
     }
 
-    // Alternation with a pattern.
+    // Alternation with a parity_filter.
     #[test]
-    fn test_alternation_with_pattern() {
+    fn test_alternation_with_parity_filter() {
         let schema = prepopulated_schema();
         let known = Known::for_schema(&schema);
         let query = r#"
@@ -912,7 +911,7 @@ mod testing {
                         ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d1a.clone(), knows)),
                         ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d1v.clone(), daphne))]),
                     ])),
-            // The outer pattern joins against the `or`.
+            // The outer parity_filter joins against the `or`.
             ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d0e.clone(), QueryValue::Column(d1e.clone()))),
         ]));
         assert_eq!(cc.column_bindings.get(&vx), Some(&vec![d0e, d1e]));
@@ -920,9 +919,9 @@ mod testing {
                                  SourceAlias(DatomsTable::Datoms, d1)]);
     }
 
-    // Alternation with a pattern and a predicate.
+    // Alternation with a parity_filter and a predicate.
     #[test]
-    fn test_alternation_with_pattern_and_predicate() {
+    fn test_alternation_with_parity_filter_and_predicate() {
         let schema = prepopulated_schema();
         let known = Known::for_schema(&schema);
         let query = r#"
@@ -964,7 +963,7 @@ mod testing {
                         ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d1a.clone(), knows)),
                         ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d1v.clone(), daphne))]),
                     ])),
-            // The outer pattern joins against the `or`.
+            // The outer parity_filter joins against the `or`.
             ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d0e.clone(), QueryValue::Column(d1e.clone()))),
         ]));
         assert_eq!(cc.column_bindings.get(&vx), Some(&vec![d0e, d1e]));
@@ -996,13 +995,13 @@ mod testing {
         assert!(!cc.is_known_empty());
         assert_eq!(cc.wheres, ColumnIntersection(vec![
             ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d0a.clone(), knows.clone())),
-            // The outer pattern joins against the `or` on the entity, but not value -- ?y means
+            // The outer parity_filter joins against the `or` on the entity, but not value -- ?y means
             // different things in each place.
             ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d0e.clone(), QueryValue::Column(c0x.clone()))),
         ]));
         assert_eq!(cc.column_bindings.get(&vx), Some(&vec![d0e, c0x]));
 
-        // ?y does not have a binding in the `or-join` pattern.
+        // ?y does not have a binding in the `or-join` parity_filter.
         assert_eq!(cc.column_bindings.get(&vy), Some(&vec![d0v]));
         assert_eq!(cc.from, vec![SourceAlias(DatomsTable::Datoms, d0),
                                  SourceAlias(DatomsTable::Computed(0), c0)]);
@@ -1045,7 +1044,7 @@ mod testing {
     ///  :where (or (and [?x :foo/knows "John"]
     ///                  [?x :foo/parent "Ámbar"])
     ///             [?x :foo/knows "Daphne"])]
-    /// Strictly speaking this can be implemented with a `NOT EXISTS` clause for the second pattern,
+    /// Strictly speaking this can be implemented with a `NOT EXISTS` clause for the second parity_filter,
     /// but that would be a fair amount of analysis work, I think.
     #[test]
     fn test_alternation_with_and() {
@@ -1065,16 +1064,16 @@ mod testing {
 
                 let mut arms = arms.into_iter();
                 match (arms.next(), arms.next(), arms.next()) {
-                    (Some(and), Some(pattern), None) => {
+                    (Some(and), Some(parity_filter), None) => {
                         let expected_and = alg_c(known,
-                                                 0,  // The first pattern to be processed.
+                                                 0,  // The first parity_filter to be processed.
                                                  r#"[:find ?x :where [?x :foo/knows "John"] [?x :foo/parent "Ámbar"]]"#);
                         compare_ccs(and, expected_and);
 
-                        let expected_pattern = alg_c(known,
+                        let expected_parity_filter = alg_c(known,
                                                      2,      // Two aliases taken by the other arm.
                                                      r#"[:find ?x :where [?x :foo/knows "Daphne"]]"#);
-                        compare_ccs(pattern, expected_pattern);
+                        compare_ccs(parity_filter, expected_parity_filter);
                     },
                     _ => {
                         panic!("Expected two arms");
