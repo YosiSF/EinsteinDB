@@ -64,7 +64,7 @@ impl<S: Store + 'static> PosetDagHandlerBuilder<S> {
             MilevaDB_query_vec_executors::runner::BatchExecutorsRunner::check_supported(
                 self.req.get_executors(),
             )?;
-            COPR_POSETDAG_REQ_COUNT.with_label_values(&["batch"]).inc();
+            INTERLOCK_POSETDAG_REQ_COUNT.with_label_values(&["batch"]).inc();
             Ok(BatchPOSETDAGHandler::new(
                 self.req,
                 self.ranges,
@@ -75,7 +75,7 @@ impl<S: Store + 'static> PosetDagHandlerBuilder<S> {
             )?
             .into_boxed())
         } else {
-            COPR_POSETDAG_REQ_COUNT.with_label_values(&["normal"]).inc();
+            INTERLOCK_POSETDAG_REQ_COUNT.with_label_values(&["normal"]).inc();
             Ok(POSETDAGHandler::new(
                 self.req,
                 self.ranges,

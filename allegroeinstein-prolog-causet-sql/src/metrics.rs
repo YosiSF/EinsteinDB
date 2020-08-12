@@ -37,7 +37,7 @@ make_auto_flush_static_metric! {
 }
 
 lazy_static::lazy_static! {
-    static ref COPR_EXECUTOR_COUNT: IntCounterVec = register_int_counter_vec!(
+    static ref INTERLOCK_EXECUTOR_COUNT: IntCounterVec = register_int_counter_vec!(
         "EinsteinDB_interlock_executor_count",
         "Total number of each executor",
         &["type"]
@@ -47,5 +47,5 @@ lazy_static::lazy_static! {
 
 lazy_static::lazy_static! {
     pub static ref EXECUTOR_COUNT_METRICS: LocalCoprExecutorCount =
-        auto_flush_from!(COPR_EXECUTOR_COUNT, LocalCoprExecutorCount);
+        auto_flush_from!(INTERLOCK_EXECUTOR_COUNT, LocalCoprExecutorCount);
 }

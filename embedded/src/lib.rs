@@ -50,6 +50,53 @@ pub use relativity_sql_types::{
     SQLValueTypeSet,
 };
 
+//! A fast two-way bijective map.
+//! TO-DO
+//! A bimap is a [bijective map] between values of type `L`, called left values,
+//! and values of type `R`, called right values. This means every left value is
+//! associated with exactly one right value and vice versa. Compare this to a
+//! [`HashMap`] or [`BTreeMap`], where every key is associated with exactly one
+//! value but a value can be associated with more than one key.
+//!
+//! This crate provides two kinds of bimap: a [`BiHashMap`] and a
+//! [`BiBTreeMap`]. Internally, each one is composed of two maps, one for the
+//! left-to-right direction and one for right-to-left. As such, the big-O
+//! performance of the `get`, `remove`, `insert`, and `contains` methods are the
+//! same as those of the backing map.
+//!
+//! For convenience, the type definition [`BiMap`] corresponds to a `BiHashMap`.
+//! If you're using this crate without the standard library, it instead
+//! corresponds to a `BiBTreeMap`.
+
+//! // create two Foos that are equal but have different data
+//! let foo1 = Foo {
+//!     important: 'a',
+//!     unimportant: 1,
+//! };
+//! let foo2 = Foo {
+//!     important: 'a',
+//!     unimportant: 2,
+//! };
+//! assert_eq!(foo1, foo2);
+//!
+//! // insert both Foos into a bimap
+//! let mut bimap = BiMap::new();
+//! bimap.insert(foo1, 99);
+//! let overwritten = bimap.insert(foo2, 100);
+//!
+//! // foo1 is overwritten and returned
+//! match overwritten {
+//!     Overwritten::Left(foo, 99) => assert_eq!(foo.unimportant, foo1.unimportant),
+//!     _ => unreachable!(),
+//! };
+//!
+//! // foo2 is in the bimap
+//! assert_eq!(
+//!     bimap.get_by_right(&100).unwrap().unimportant,
+//!     foo2.unimportant
+//! );
+//! ```
+
 ///Map `Keyword` solitonid(`:db/solitonid`) to positive integer causetids(`1`).
 pub type SolitonidMap = BTreeMap<Keyword, Causetid>;
 
@@ -102,7 +149,6 @@ impl Schema {
         s
     }
 
-    /// Returns an symbolic representation of the schema suitable for applying across EinsteinEINSTEINDB stores.
     pub fn to_edbn_value(&self) -> edbn::Value {
         edbn::Value::Vector((&self.attribute_map).iter()
             .map(|(causetid, attribute)|
