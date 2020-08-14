@@ -1,19 +1,21 @@
-mod storage_impl;
+// Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-pub use self::storage_impl::EinsteinDBStorage;
+mod causetStorage_impl;
+
+pub use self::causetStorage_impl::EinsteinDBStorage;
 
 use async_trait::async_trait;
 use ekvproto::interlock::{KeyRange, Response};
 use protobuf::Message;
-use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
-use fidelpb::{PosetDagRequest, SelectResponse, StreamResponse};
+use milevadb_query_common::causetStorage::IntervalRange;
+use fidelpb::{DagRequest, SelectResponse, StreamResponse};
 
 use crate::interlock::metrics::*;
 use crate::interlock::{Deadline, RequestHandler, Result};
-use crate::storage::{Statistics, Store};
+use crate::causetStorage::{Statistics, Store};
 
-pub struct PosetDagHandlerBuilder<S: Store + 'static> {
-    req: PosetDagRequest,
+pub struct DagHandlerBuilder<S: Store + 'static> {
+    req: DagRequest,
     ranges: Vec<KeyRange>,
     store: S,
     data_version: Option<u64>,
@@ -24,9 +26,9 @@ pub struct PosetDagHandlerBuilder<S: Store + 'static> {
     enable_batch_if_possible: bool,
 }
 
-impl<S: Store + 'static> PosetDagHandlerBuilder<S> {
+impl<S: Store + 'static> DagHandlerBuilder<S> {
     pub fn new(
-        req: PosetDagRequest,
+        req: DagRequest,
         ranges: Vec<KeyRange>,
         store: S,
         deadline: Deadline,
@@ -34,7 +36,7 @@ impl<S: Store + 'static> PosetDagHandlerBuilder<S> {
         is_streaming: bool,
         is_cache_enabled: bool,
     ) -> Self {
-        PosetDagHandlerBuilder {
+        DagHandlerBuilder {
             req,
             ranges,
             store,
@@ -61,11 +63,11 @@ impl<S: Store + 'static> PosetDagHandlerBuilder<S> {
         // TODO: support batch executor while handling server-side streaming requests
         // https://github.com/EinsteinDB/EinsteinDB/pull/5945
         if self.enable_batch_if_possible && !self.is_streaming {
-            MilevaDB_query_vec_executors::runner::BatchExecutorsRunner::check_supported(
+            milevadb_query_vec_executors::runner::BatchExecutorsRunner::check_supported(
                 self.req.get_executors(),
             )?;
-            INTERLOCK_POSETDAG_REQ_COUNT.with_label_values(&["batch"]).inc();
-            Ok(BatchPOSETDAGHandler::new(
+            COPR_DAG_REQ_COUNT.with_label_values(&["batch"]).inc();
+            Ok(BatchDAGHandler::new(
                 self.req,
                 self.ranges,
                 self.store,
@@ -75,8 +77,8 @@ impl<S: Store + 'static> PosetDagHandlerBuilder<S> {
             )?
             .into_boxed())
         } else {
-            INTERLOCK_POSETDAG_REQ_COUNT.with_label_values(&["normal"]).inc();
-            Ok(POSETDAGHandler::new(
+            COPR_DAG_REQ_COUNT.with_label_values(&["normal"]).inc();
+            Ok(DAGHandler::new(
                 self.req,
                 self.ranges,
                 self.store,
@@ -91,14 +93,14 @@ impl<S: Store + 'static> PosetDagHandlerBuilder<S> {
     }
 }
 
-pub struct POSETDAGHandler {
-    runner: MilevaDB_query_normal_executors::ExecutorsRunner<Statistics>,
+pub struct DAGHandler {
+    runner: milevadb_query_normal_executors::ExecutorsRunner<Statistics>,
     data_version: Option<u64>,
 }
 
-impl POSETDAGHandler {
+impl DAGHandler {
     pub fn new<S: Store + 'static>(
-        req: PosetDagRequest,
+        req: DagRequest,
         ranges: Vec<KeyRange>,
         store: S,
         data_version: Option<u64>,
@@ -108,7 +110,7 @@ impl POSETDAGHandler {
         is_cache_enabled: bool,
     ) -> Result<Self> {
         Ok(Self {
-            runner: MilevaDB_query_normal_executors::ExecutorsRunner::from_request(
+            runner: milevadb_query_normal_executors::ExecutorsRunner::from_request(
                 req,
                 ranges,
                 EinsteinDBStorage::new(store, is_cache_enabled),
@@ -122,8 +124,8 @@ impl POSETDAGHandler {
 }
 
 #[async_trait]
-impl RequestHandler for POSETDAGHandler {
-    #[minitrace::trace_async(fidelpb::Event::EinsteinDBCoprExecutePosetDagRunner as u32)]
+impl RequestHandler for DAGHandler {
+    #[minitrace::trace_async(fidelpb::Event::EinsteinDBCoprExecuteDagRunner as u32)]
     async fn handle_request(&mut self) -> Result<Response> {
         let result = self.runner.handle_request();
         handle_qe_response(result, self.runner.can_be_cached(), self.data_version)
@@ -134,18 +136,18 @@ impl RequestHandler for POSETDAGHandler {
     }
 
     fn collect_scan_statistics(&mut self, dest: &mut Statistics) {
-        self.runner.collect_storage_stats(dest);
+        self.runner.collect_causetStorage_stats(dest);
     }
 }
 
-pub struct BatchPOSETDAGHandler {
-    runner: MilevaDB_query_vec_executors::runner::BatchExecutorsRunner<Statistics>,
+pub struct BatchDAGHandler {
+    runner: milevadb_query_vec_executors::runner::BatchExecutorsRunner<Statistics>,
     data_version: Option<u64>,
 }
 
-impl BatchPOSETDAGHandler {
+impl BatchDAGHandler {
     pub fn new<S: Store + 'static>(
-        req: PosetDagRequest,
+        req: DagRequest,
         ranges: Vec<KeyRange>,
         store: S,
         data_version: Option<u64>,
@@ -153,7 +155,7 @@ impl BatchPOSETDAGHandler {
         is_cache_enabled: bool,
     ) -> Result<Self> {
         Ok(Self {
-            runner: MilevaDB_query_vec_executors::runner::BatchExecutorsRunner::from_request(
+            runner: milevadb_query_vec_executors::runner::BatchExecutorsRunner::from_request(
                 req,
                 ranges,
                 EinsteinDBStorage::new(store, is_cache_enabled),
@@ -165,24 +167,24 @@ impl BatchPOSETDAGHandler {
 }
 
 #[async_trait]
-impl RequestHandler for BatchPOSETDAGHandler {
-    #[minitrace::trace_async(fidelpb::Event::EinsteinDBCoprExecuteBatchPosetDagRunner as u32)]
+impl RequestHandler for BatchDAGHandler {
+    #[minitrace::trace_async(fidelpb::Event::EinsteinDBCoprExecuteBatchDagRunner as u32)]
     async fn handle_request(&mut self) -> Result<Response> {
         let result = self.runner.handle_request().await;
         handle_qe_response(result, self.runner.can_be_cached(), self.data_version)
     }
 
     fn collect_scan_statistics(&mut self, dest: &mut Statistics) {
-        self.runner.collect_storage_stats(dest);
+        self.runner.collect_causetStorage_stats(dest);
     }
 }
 
 fn handle_qe_response(
-    result: allegroeinstein-prolog-causet-sql::Result<SelectResponse>,
+    result: milevadb_query_common::Result<SelectResponse>,
     can_be_cached: bool,
     data_version: Option<u64>,
 ) -> Result<Response> {
-    use allegroeinstein-prolog-causet-sql::error::ErrorInner;
+    use milevadb_query_common::error::ErrorInner;
 
     match result {
         Ok(sel_resp) => {
@@ -212,9 +214,9 @@ fn handle_qe_response(
 }
 
 fn handle_qe_stream_response(
-    result: allegroeinstein-prolog-causet-sql::Result<(Option<(StreamResponse, IntervalRange)>, bool)>,
+    result: milevadb_query_common::Result<(Option<(StreamResponse, IntervalRange)>, bool)>,
 ) -> Result<(Option<Response>, bool)> {
-    use allegroeinstein-prolog-causet-sql::error::ErrorInner;
+    use milevadb_query_common::error::ErrorInner;
 
     match result {
         Ok((Some((s_resp, range)), finished)) => {

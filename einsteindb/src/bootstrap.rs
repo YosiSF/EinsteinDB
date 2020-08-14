@@ -27,7 +27,7 @@ use embedded_promises::{
 };
 
 use EinsteinDB_embedded::{
-    ,
+    CausetIDMap,
     Schema,
 };
 use schema::SchemaBuilding;
