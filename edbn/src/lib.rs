@@ -28,7 +28,7 @@ pub use intern_set::{
     InternSet,
 };
 // Intentionally not pub.
-mod namespaceable_name;
+mod isolatednamespace;
 pub mod query;
 pub mod symbols;
 pub mod types;
