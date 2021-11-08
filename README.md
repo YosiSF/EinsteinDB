@@ -8,5 +8,11 @@ EinsteinDB is a database that was built with Rust, Go, and Haskell and it's used
 
 It also has a two-pronged Append-Merge Pull mechanism which means that both MilevaDB and EinsteinDB work together to make sure the data is safe and accessible at all times. The Append-Merge Pull mechanism works like an appending process where new information gets added to the end of a file, then merged with other files.
 
+EinsteinDB and MilevaDB interact with SQLite, PostgresQL for middle-out memristive persistence, and FoundationDB's Iterator implementation.
+
+EinsteinDB is designed to be different from other databases because it supports Write-Optimized Copy-on-Write Semantics (WOSCOW), Repeatable Read isolation guarantees for HTAP, column cracking, and vectorized SIMD for OLAP/OLTP SparkQL streams.
+
+Update Oct 2021: We have partnered with OpenAI in San Francisco, wherein we have launched einst.a.i an Index Advisor and Expert System to help us from debugging, programming, testing, and deploying optimized rust, go, haskell, cython/python, et al. More info: www.einst.ai
+
 
 
