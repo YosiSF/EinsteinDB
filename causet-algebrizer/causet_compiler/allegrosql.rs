@@ -1,10 +1,10 @@
-/*Here's what the below class is doing:
+/* Here's what the below class is doing:
 1. It first defines an empty statement, which is just an empty string.
 2. It then defines an identifier name, which is a string that starts with a letter or underscore, and is followed by any number of letters, numbers, or underscores.
 3. It then defines an attribute list, which is a comma-separated list of identifier names.
 4. It then defines a not last attribute, which is an identifier name followed by a comma and an attribute list.
-*/
 5. It then defines a last attribute, which is just an identifier name.
+*/
 
 
 pub struct datalog_parser;
