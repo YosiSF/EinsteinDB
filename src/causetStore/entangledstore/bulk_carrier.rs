@@ -23,21 +23,114 @@ pub fn bulk_transient<'a, F: Future + 'a>(
     BulkCarrier::new(semaphore.acquire(), fut, time_limit_without_permit)
 }
 
+
 #[pin_project]
-struct BulkCarrier<'a, PF, F>
+struct BulkCarrier<'a, F: Future> {
+    #[pin]
+    fut: F,
+    permit: Option<SemaphorePermit<'a>>,
+    time_limit_without_permit: Duration,
+    #[pin]
+    start_time: Option<Instant>,
+}
+
+impl<'a, F: Future> BulkCarrier<'a, F> {
+    fn new(
+        permit: SemaphorePermit<'a>,
+        fut: F,
+        time_limit_without_permit: Duration,
+    ) -> Self {
+        Self {
+            fut,
+            permit: Some(permit),
+            time_limit_without_permit,
+            start_time: None,
+        }
+    }
+}
+
+impl<'a, F: Future> Future for BulkCarrier<'a, F> {
+    type Output = F::Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        if let Some(start_time) = this.start_time {
+            if start_time.elapsed() >= *this.time_limit_without_permit {
+                // Time limit reached, force acquiring a permit.
+                match this.permit.as_mut().unwrap().poll_acquire(cx) {
+                    Poll::Ready(()) => {}
+                    Poll::Pending => {
+                        // The permit is not available, just skip this time.
+                        return Poll::Pending;
+                    }
+                }
+            }
+        } else {
+            // Record the start time.
+            *this.start_time = Some(Instant::now());
+        }
+
+        // Poll the future `fut`.
+        let output = futures::ready!(this.fut.poll(cx));
+        // Release the permit.
+        this.permit.as_mut().unwrap().release();
+        Poll::Ready(output)
+    }
+}
+
+impl<'a, F: Future> Future for BulkCarrier<'a, F> {
+    type Output = F::Output;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        let this = self.project();
+        if let Some(start_time) = this.start_time {
+            if start_time.elapsed() >= *this.time_limit_without_permit {
+                // Time limit reached, force acquiring a permit.
+                match this.permit.as_mut().unwrap().poll_acquire(cx) {
+                    Poll::Ready(()) => {}
+                    Poll::Pending => {
+                        // The permit is not available, just skip this time.
+                        return Poll::Pending;
+                    }
+                }
+            }
+        } else {
+            // Record the start time.
+            *this.start_time = Some(Instant::now());
+        }
+
+        // Poll the future `fut`.
+        let output = futures::ready!(this.fut.poll(cx));
+        // Release the permit.
+        this.permit.as_mut().unwrap().release();
+        Poll::Ready(output)
+    }
+}
+
+enum LimitationState<'a> {
+    NotLimited,
+    Acquiring,
+    Acuqired(SemaphorePermit<'a>),
+}
+
+impl<'a, PF, F> BulkCarrier<'a, PF, F>
 where
     PF: Future<Output = SemaphorePermit<'a>>,
     F: Future,
 {
-    #[pin]
-    permit_fut: PF,
-    #[pin]
-    fut: F,
-    time_limit_without_permit: Duration,
-    execution_time: Duration,
-    state: LimitationState<'a>,
-    _phantom: PhantomData<&'a ()>,
+    fn new(permit_fut: PF, fut: F, time_limit_without_permit: Duration) -> Self {
+        BulkCarrier {
+            permit_fut,
+            fut,
+            time_limit_without_permit,
+            execution_time: Duration::default(),
+            state: LimitationState::NotLimited,
+            _phantom: PhantomData,
+        }
+    }
 }
+
+
 
 enum LimitationState<'a> {
     NotLimited,
