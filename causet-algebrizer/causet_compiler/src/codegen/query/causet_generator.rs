@@ -20,6 +20,38 @@ pub fn detect_transitive_closure(qp: &QueryPlan, db: &DBInstance) -> bool {
         return Ok();
     }
 
+    ### crates a new query plan with the transitive closure added
+    pub fn add_transitive_closure(qp: &QueryPlan, db: &DBInstance) -> QueryPlan {
+        let mut new_qp = qp.clone();
+        let mut new_ghd = new_qp.ghd.clone();
+        let mut new_nprr = new_ghd.last().nprr.clone();
+        let mut new_nprr_last = new_nprr.last_mut().unwrap();
+        let mut new_nprr_last_aggregation = new_nprr_last.aggregation.as_mut().unwrap();
+        new_nprr_last_aggregation.operation = "<".to_string();
+        new_nprr_last_aggregation.convergence_value = "0".to_string();
+        new_nprr_last_aggregation.input = "e".to_string();
+        new_nprr_last_aggregation.criteria = "=".to_string();
+        new_nprr_last_aggregation.output = "i".to_string();
+        new_nprr_last_aggregation.recursion = Some(Recursion {
+            input: "e".to_string(),
+            criteria: "=".to_string(),
+            convergence_value: "0".to_string(),
+            output: "i".to_string(),
+            recursion: None,
+        });
+        new_nprr.push(Nprr {
+            selection: vec![],
+            aggregation: None,
+            recursion: None,
+        });
+        new_ghd.push(Ghd {
+            relations: vec![],
+            nprr: new_nprr,
+        });
+        new_qp.ghd = new_ghd;
+        return new_qp;
+    }
+
 let mut cpp_code = String::new();
 let mut include_code = String::new();
 
@@ -90,7 +122,7 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
 
                 outputEncodings += (bag.name -> bag_output) cppCode.append(bag_code) i += 1
             }
-            )
+            );/*
             } else{
                 val base_case = qp.ghd.head;
                 val input = base_case.relations.head.name + "_" + base_case.relations.head.ordering.mkString("_");
@@ -146,3 +178,4 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
 //3. Add support for multiple relations in the join case
 //4. Add support for multiple relations in the join case
 
+*/
