@@ -1,10 +1,18 @@
-EinsteinDB is an embedded knwoledge base on relativistic sidecars: multi-consumer, multi-producer; console agnostic HTAP.
+___****EinsteinDB is an embedded knwoledge base on relativistic sidecars***____
 
-EinsteinDB as presented herein is a community edition DB-a-a-S built with Rust, Haskell, Docker, Kubernetes, Ansible and ❤️ 
-Along with MilevaDB, both components make up a cost-optimized distributed-SQL cluster with prolog querying, proto-buff generating, and regular
-expression querying of Cold, Warm, and Hot Data Chunks. EinsteinDB implements a two-pronged Append-Merge Pull mechanism (similar to git). Because of EinsteinDB's Homomorphic Keyspace, MilevaDB can transmute key-value pairs as lock-free version-sharing secondary indices but for dirty pages pointing to trees. We define an einstein_merkle tree as the BtreeMapEngine invariant (or the HashMap) for B+Trees but guaranteeing better read-heavy throughpu.
+The core innovation of EinsteinDB is its merge-append-commit protocol. The protocol is friendly and does not require more than two parties to agree on the order of events. It is also relativistic and can tolerate clock and network lag and drag.
 
-EinsteinDB and MilevaDB interact with SQLite(at the top layer), PostgresQL for persistence(middle layer), and LMDB's Iterator implementation (bottom layer). Designed for Write-Optimized Copy-on-Write Semantics, Repeatable Read isolation guarantees for HTAP, column cracking, and vectorized SIMD for OLAP/OLTP SparkQL streams. VioletaBFT is EinsteinDB's distributed consensus protocol implemented with Haskell.
+EinsteinDB is a distributed data storage system that provides linearizability against concurrent write-operations. 
 
-VioletaBFT is a Byzantine Fault Tolerant HoneyBadger/Raft protocol which provides consistency guarantees and maintains consensus between replicas. Unlike most of the competitors, VioletaBFT compiles to Rust (From Haskell) and pipelines a JIT Automatic failover with Partition persistence.
+EinsteinDB is a database that was built with Rust, Go, and Haskell and it's used for storing data without timezones using information theory detour and 4-clique ear-cut within the IPAM infrastructure. The database can be stored on the computer or in the cloud, depending on what you need. EinsteinDB has a lot of features, but one of them is that it can store data from different types of information so you don't have to keep switching between databases.
+
+It also has a two-pronged Append-Merge Pull mechanism which means that both MilevaDB and EinsteinDB work together to make sure the data is safe and accessible at all times. The Append-Merge Pull mechanism works like an appending process where new information gets added to the end of a file, then merged with other files.
+
+EinsteinDB and MilevaDB interact with SQLite, PostgresQL for middle-out memristive persistence, and FoundationDB's Iterator implementation.
+
+EinsteinDB is designed to be different from other databases because it supports Write-Optimized Copy-on-Write Semantics (WOSCOW), Repeatable Read isolation guarantees for HTAP, column cracking, and vectorized SIMD for OLAP/OLTP SparkQL streams.
+
+Update Oct 2021: We have partnered with OpenAI in San Francisco, wherein we have launched einst.a.i an Index Advisor and Expert System to help us from debugging, programming, testing, and deploying optimized rust, go, haskell, cython/python, et al. More info: www.einst.ai
+
+
 
