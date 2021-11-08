@@ -1,4 +1,6 @@
-___****EinsteinDB is an embedded knwoledge base on relativistic sidecars***____
+<img src="https://github.com/whtcorpsinc/einsteindb-prod/images/EinsteinDBLogo.png" alt="einsteindb_logo" width="600"/>
+
+## [Website](https://www.einsteindb.com) | 
 
 The core innovation of EinsteinDB is its merge-append-commit protocol. The protocol is friendly and does not require more than two parties to agree on the order of events. It is also relativistic and can tolerate clock and network lag and drag.
 
