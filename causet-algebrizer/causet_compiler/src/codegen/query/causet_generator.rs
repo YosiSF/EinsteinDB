@@ -72,8 +72,7 @@ let mut distinct_load_relations = HashMap::new();
 //dump output at the end, rest just in a loop
 let mut output_encodings:HashMap<String,Schema> = HashMap::new();
 
-
-        /spit out output for each query in global vars
+//spit out output for each query in global vars
 //find all distinct relations
         let single_source_tc = detectTransitiveClosure(qp,db);
         qp.relations.iter().for_each(|r| {
@@ -105,26 +104,42 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
 
                 cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList));
                 cppCode.append("let num_rows_reducer = par::reducer::<usize>::new(0, |a, b| a + b);");
-                cppCode.append("\n//\n//query plan\n//\n") cppCode.append("let query_timer = timer::start_clock();")
-                var i = 1 if(!single_source_tc){ qp.ghd.foreach(bag => { val (bag_code, bag_output) = emitNPRR(bag, outputEncodings.toMap);
+                cppCode.append("\n//\n//query plan\n//\n") cppCode.append("let query_timer = timer::start_clock()");
+                let mut i: i32 = 1;
+                if !single_source_tc {
+                    for bag in qp.ghd.iter() {
+                        let (bag_code, bag_output) = emitNPRR(bag, outputEncodings.to_map());
+                        outputEncodings.insert(bag.name.clone(), bag_output);
+                        cppCode.push_str(&bag_code);
+                       let i: i32 = '1';
+                    }
 
-                    outputEncodings += (bag.name -> bag_output) cppCode.append(bag_code) i += 1
-                }
-                )
                 } else{
-                    val base_case = qp.ghd.head;
-                    val input = base_case.relations.head.name + "_" + base_case.relations.head.ordering.mkString("_");
-                    val init = base_case.nprr.head.aggregation.get.init;
-                    val source = base_case.nprr.head.selection.head.expression;
-                    val expression = qp.ghd.last.nprr.last.aggregation.get.expression;
+                    let base_case = qp.ghd.head;
+                    let input = base_case.relations.head.name + "_" + base_case.relations.head.ordering.mkString("_");
+                    let init = base_case.nprr.head.aggregation.get.init;
+                    let source = base_case.nprr.head.selection.head.expression;
+                    let expression = qp.ghd.last.nprr.last.aggregation.get.expression;
 
-                    val encoding = db.relationMap(base_case.relations.head.name).schema.attributeTypes.distinct.head;
-                    val recordering = (0 until
-                    let x1 = qp.ghd.last.attributes.values.length;).toList.mkString("_");
+                    let encoding = db.relationMap(base_case.relations.head.name).schema.attributeTypes.distinct.head;
+                    let recordering = (0..qp.ghd.last.attributes.values.len()).map(|_| "").collect::<String>();
 
                     cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList));
                     cppCode.append("let num_rows_reducer = par::reducer::<usize>::new(0, |a, b| a + b);");
-                    cppCode.append("\n//\n//query plan\n//\n") cppCode.append("let query_timer = timer::
+                    cppCode.append("\n//\n//query plan\n//\n") cppCode.append("let query_timer = timer::start_clock();");
+                    var i = 1 if(!single_source_tc){ qp.ghd.foreach(bag => { val (bag_code, bag_output) = emitNPRR(bag, outputEncodings.toMap);
+
+                        outputEncodings += (bag.name -> bag_output) cppCode.append(bag_code) i += 1
+                    }
+                    )
+                    } else{
+                        val base_case = qp.ghd.head;
+                        val input = base_case.relations.head.name + "_" + base_case.relations.head.ordering.mkString("_");
+                        val init = base_case.nprr.head.aggregation.get.init;
+                        val source = base_case.nprr.head.selection.head.expression;
+                        val expression = qp.ghd.last.nprr.last.aggregation.get.expression;
+
+                        val encoding = db.relationMap(base_case.relations.head.name).schema.attributeTypes.distinct.head
 
   //1. Add support for multiple relations in the base case
 //2. Add support for multiple relations in the join case
