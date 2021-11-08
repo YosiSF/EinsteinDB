@@ -1,4 +1,4 @@
-<img src="images/EinsteinDBLogo.png" alt="einsteindb_logo" width="600"/>
+<img src="https://www.github.com/whtcorpsinc/einsteindb-prod/images/Transparent.png" alt="einsteindb_logo" width="600"/>
 
 ## [Website](https://www.einsteindb.com) | 
 
