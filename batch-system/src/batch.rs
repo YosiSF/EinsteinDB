@@ -1,3 +1,7 @@
+//Copyright 2021 EinsteinDB Project Authors, WHTCORPS INC; EINST.AI -- LICENSED UNDER APACHE 2.0
+
+
+
 use crate::config::Config;
 use crate::fsm::{Fsm, FsmScheduler};
 use crate::mailbox::BasicMailbox;
@@ -13,11 +17,10 @@ use EinsteinDB_util::time::Instant;
 enum FsmTypes<N, C> {
     Normal(Box<N>),
     Control(Box<C>),
-    // Used as a signal that scheduler should be shutdown.
     Empty,
 }
 
-// A macro to introduce common definition of scheduler.
+
 macro_rules! impl_sched {
     ($name:ident, $ty:path, Fsm = $fsm:tt) => {
         pub struct $name<N, C> {
@@ -106,11 +109,6 @@ impl<N: Fsm, C: Fsm> Batch<N, C> {
         self.control.take();
     }
 
-    /// Put back the FSM located at index.
-    ///
-    /// Only when channel length is larger than `checked_len` will trigger
-    /// further notification. This function may fail if channel length is
-    /// larger than the given value before FSM is released.
     pub fn release(&mut self, index: usize, checked_len: usize) {
         let mut fsm = self.normals.swap_remove(index);
         let mailbox = fsm.take_mailbox().unwrap();

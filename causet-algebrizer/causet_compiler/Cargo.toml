@@ -1,0 +1,12 @@
+[package]
+name = "causet_compiler"
+version = "0.0.1"
+edition = "2018"
+publish = false
+description = "SIMD Vector Quantization of an algebrized query with optimal joins  "
+
+[dependencies]
+match_template = { path = "../match_template" }
+milevadb_query_codegen = { path = "../../causet_algebrizer" }
+milevadb_query_datatype = { path = "../../milevadb_query_datatype", default-features = false }
+
