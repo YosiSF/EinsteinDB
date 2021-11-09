@@ -2,7 +2,7 @@
 name = "edbn"
 version = "0.1.0"
 authors = ["Josh Leder <slushie@gmail.com>", "Karl Whitford<karl@einsteindb.com>"]
-workspace = ".."
+workspace = "../.."
 
 license = "Apache-2.0"
 repository = "https://github.com/yosisf/EinsteinDB"

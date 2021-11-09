@@ -45,25 +45,37 @@ pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: A
 
     let boundary = ns.len();
 
-     {
-        components: dest,
-        boundary: boundary,
-    }
+
+        components: dest;
+        boundary: boundary;
+
 }
+
 
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct IsolatedNamespace {
+
 
     //bytes that make up the namespace followed directly by
     //solidus partitions
     components: String,
 
     //If zero, this isn't a namespaced component.
-    // 1. `boundary` must always be less than or equal to `components.len()`.    
+    // 1. `boundary` must always be less than or equal to `components.len()`.
     // 2. `boundary` must be a byte index that points to a character boundary,
     //     and not point into the middle of a UTF-8 codepoint. That is,
-     //    `components.is_char_boundary(boundary)` must always be true.
+    //    `components.is_char_boundary(boundary)` must always be true.
     boundary: usize,
+
+    //if zero, we don't have a separator
+    // 1. `separator` must always be less than or equal to `boundary`.
+    // 2. `separator` must be a byte index that points to a character boundary,
+    //     and not point into the middle of a UTF-8 codepoint. That is,
+    //    `components.is_char_boundary(separator)` must always be true.
+
+    separator: usize,
+}
+
 
 
 /*
