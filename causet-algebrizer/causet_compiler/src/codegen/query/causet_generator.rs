@@ -177,18 +177,19 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
                             i += 1
                         }
                         )
+
+
+                        //1. Add support for multiple relations in the base case
+//2. Add support for multiple relations in the join case
+//3. Add support for multiple relations in the join case
+//4. Add support for multiple relations in the join case
                     } else {
                         let mut base_case = qp.ghd.head.clone();
                         let mut input = base_case.relations.head.name + "_" + base_case.relations.head.ordering.mkString("_");
                         let mut init = base_case.nprr.head.aggregation.get.init;
                         let mut source = base_case.nprr.head.selection.head.expression;
                         let mut expression = qp.ghd.last.nprr.last.aggregation.get.expression;
-                        let mut encoding = db.relationMap(base_case.relations.head.name).schema.attributeTypes.distinct.head;
 
-                        //1. Add support for multiple relations in the base case
-//2. Add support for multiple relations in the join case
-//3. Add support for multiple relations in the join case
-//4. Add support for multiple relations in the join case
                     };
 
 

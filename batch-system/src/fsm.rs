@@ -44,6 +44,7 @@ pub trait Fsm {
     }
 }
 
+
 pub struct FsmState<N> {
     status: AtomicUsize,
     data: AtomicPtr<N>,

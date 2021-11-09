@@ -7,7 +7,7 @@
 */
 
 
-pub struct datalog_parser;
+
 
 impl DatalogParser {
     pub fn run(&self, line: &str) -> IR {
