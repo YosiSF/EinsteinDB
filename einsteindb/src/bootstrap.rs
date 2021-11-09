@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021-2023 WHTCORPS INC
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -179,7 +179,15 @@ fn solitonids_to_assertions(solitonids: &[(symbols::Keyword, i64)]) -> Vec<Value
         .collect()
 }
 
-/// Convert an solitonid list into [:einsteindb/add :einsteindb.schema/embedded :einsteindb.schema/attribute solitonid] `Value` instances.
+
+/// Convert {:solitonid {:key :value ...} ...} to
+/// vec![(symbols::Keyword(:solitonid), symbols::Keyword(:key), TypedValue(:value)), ...].
+///
+/// Such triples are closer to what the transactor will produce when processing attribute
+/// assertions.
+///
+
+/// Convert a solitonid list into [:einsteindb/add :einsteindb.schema/embedded :einsteindb.schema/attribute solitonid] `Value` instances.
 fn schema_attrs_to_assertions(version: u32, solitonids: &[symbols::Keyword]) -> Vec<Value> {
     let schema_embedded = Value::Keyword(ns_keyword!("db.schema", "embedded"));
     let schema_attr = Value::Keyword(ns_keyword!("db.schema", "attribute"));
@@ -194,9 +202,9 @@ fn schema_attrs_to_assertions(version: u32, solitonids: &[symbols::Keyword]) -> 
                                value])
         })
         .chain(::std::iter::once(Value::Vector(vec![values::EINSTEINDB_ADD.clone(),
-                                             schema_embedded.clone(),
-                                             schema_version,
-                                             Value::Integer(version as i64)])))
+                                                    schema_embedded.clone(),
+                                                    schema_version,
+                                                    Value::Integer(version as i64)])))
         .collect()
 }
 
@@ -205,8 +213,51 @@ fn schema_attrs_to_assertions(version: u32, solitonids: &[symbols::Keyword]) -> 
 ///
 /// Such triples are closer to what the transactor will produce when processing attribute
 /// assertions.
+
+
+fn solitonid_attrs_to_triples(solitonid: &symbols::Keyword, attrs: &Value) -> Vec<(symbols::Keyword, symbols::Keyword, TypedValue)> {
+    match *attrs {
+        Value::Map(ref map) => map
+            .iter()
+            .map(|&(ref key, ref value)| {
+                let k = key.as_keyword().unwrap();
+                let v = value.to_typed_value();
+                (solitonid.clone(), k.clone(), v)
+            })
+            .collect(),
+        _ => panic!("Expected {:solitonid {:key :value ...} ...} map, but got {:?}", solitonid, attrs),
+    }
+}
+
+/// Convert {:solitonid {:key :value ...} ...} to
+/// vec![(symbols::Keyword(:solitonid), symbols::Keyword(:key), TypedValue(:value)), ...].
+///
+/// Such triples are closer to what the transactor will produce when processing attribute
+/// assertions.
+
+fn solitonid_attrs_to_triples_vec(solitonid: &symbols::Keyword, attrs: &Value) -> Vec<(symbols::Keyword, symbols::Keyword, TypedValue)> {
+    match *attrs {
+        Value::Vector(ref vec) => vec
+            .iter()
+            .map(|&value| {
+                let k = value.as_keyword().unwrap();
+                let v = value.to_typed_value();
+                (solitonid.clone(), k.clone(), v)
+            })
+            .collect(),
+        _ => panic!("Expected {:solitonid {:key :value ...} ...} map, but got {:?}", solitonid, attrs),
+    }
+}
+
+/// Convert {:solitonid {:key :value ...} ...} to
+/// vec![(symbols::Keyword(:solitonid), symbols::Keyword(:key), TypedValue(:value)), ...].
+///
+/// Such triples are closer to what the transactor will produce when processing attribute
+/// assertions.
+
+/*fn solitonid_attrs_to_triples_vec_by_key(solitonid: &symbols::Keyword, attrs: &Value, key: &symbols::Keyword) -> Vec<(symbols::Keyword, symbols::Keyword, TypedValue)
 fn symbolic_schema_to_triples(solitonid_map: &, symbolic_schema: &Value) -> Result<Vec<(symbols::Keyword, symbols::Keyword, TypedValue)>> {
-    // Failure here is a coding error, not a runtime error.
+    /* Failure here is a coding error, not a runtime error. */
     let mut triples: Vec<(symbols::Keyword, symbols::Keyword, TypedValue)> = vec![];
     // TODO: Consider `flat_map` and `map` rather than loop.
     match *symbolic_schema {
@@ -245,6 +296,8 @@ fn symbolic_schema_to_triples(solitonid_map: &, symbolic_schema: &Value) -> Resu
     Ok(triples)
 }
 
+ */
+
 /// Convert {solitonid {:key :value ...} ...} to [[:einsteindb/add solitonid :key :value] ...].
 fn symbolic_schema_to_assertions(symbolic_schema: &Value) -> Result<Vec<Value>> {
     // Failure here is a coding error, not a runtime error.
@@ -276,11 +329,6 @@ pub(crate) fn bootstrap_partition_map() -> PartitionMap {
             .collect()
 }
 
-pub(crate) fn bootstrap_solitonid_map() ->  {
-    V1_solitonidS.iter()
-             .map(|&(ref solitonid, causetid)| (solitonid.clone(), causetid))
-             .collect()
-}
 
 pub(crate) fn bootstrap_schema() -> Schema {
     let solitonid_map = bootstrap_solitonid_map();

@@ -1,10 +1,10 @@
-// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 //! This crate implements a simple SQL query engine to work with MilevaDB pushed down executors.
 //!
 //! The query engine is able to scan and understand rows stored by MilevaDB, run against a
 //! series of executors and then return the execution result. The query engine is provided via
-//! EinsteinDB interlock interface. However standalone UDF functions are also exported and can be used
+//! EinsteinDB interlocking_dir interface. However standalone UDF functions are also exported and can be used
 //! standalone.
 
 #![feature(proc_macro_hygiene)]

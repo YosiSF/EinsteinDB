@@ -1,4 +1,4 @@
-//Copyright WHTCORPS INC 2020 LICENSED WITH APACHE 2.0.
+//Copyright WHTCORPS INC 2021-2023 LICENSED WITH APACHE 2.0.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -371,7 +371,7 @@ impl<I: Iterator> Cursor<I> {
     #[inline(never)]
     fn handle_error_status(&self, e: Error) -> Result<()> {
         // Split out the error case to reduce hot-path code size.
-        CRITICAL_ERROR.with_label_values(&["rocksdb iter"]).inc();
+        CRITICAL_ERROR.with_label_values(&["foundationdb iter"]).inc();
         if panic_when_unexpected_key_or_data() {
             set_panic_mark();
             panic!(

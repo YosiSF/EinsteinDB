@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
+//Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
 // AUTHORS: WHITFORD LEDER
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -25,7 +25,7 @@ use crate::expr::EvalContext;
 ///
 /// TODO:
 /// Since currently the data format in response can be the same as in storage, we use this structure
-/// to avoid unnecessary repeated serialization / deserialization. In future, interlock will
+/// to avoid unnecessary repeated serialization / deserialization. In future, interlocking_dir will
 /// respond all data in Chunk format which is different to the format in storage. At that time,
 /// this structure is no longer useful and should be removed.
 #[derive(Clone, Debug)]

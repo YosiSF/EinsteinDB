@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021-2023 WHTCORPS INC
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -186,7 +186,7 @@ impl ConjoiningClauses {
                 //
                 // - A long. This is handled by causetidOrInteger.
                 // - A boolean. This is unambiguous.
-                // - A double. This is currently unambiguous, though note that SQLite will equate 5.0 with 5.
+                // - A double. This is currently unambiguous, though note that BerolinaSQL will equate 5.0 with 5.
                 // - A string. This is unambiguous.
                 // - A keyword. This is unambiguous.
                 //

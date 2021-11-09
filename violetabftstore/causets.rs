@@ -1,4 +1,4 @@
-// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::fmt;
 use std::sync::Arc;
@@ -9,7 +9,7 @@ use futures::future::Future;
 use ekvproto::ccpb::*;
 use ekvproto::ekvrpcpb::ExtraOp;
 use ekvproto::metapb::Region;
-use FIDel_client::FIDelClient;
+use fidelio::FIDelClient;
 use violetabftstore::interlock::CmdBatch;
 use violetabftstore::router::violetabftStoreRouter;
 use violetabftstore::store::fsm::{ChangeCmd, ObserveID};
@@ -208,7 +208,7 @@ pub struct Endpoint<T> {
     violetabft_router: T,
     observer: CdcObserver,
 
-    FIDel_client: Arc<dyn FIDelClient>,
+    fidelio: Arc<dyn FIDelClient>,
     timer: SteadyTimer,
     min_ts_interval: Duration,
     scan_batch_size: usize,
@@ -222,7 +222,7 @@ pub struct Endpoint<T> {
 
 impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
     pub fn new(
-        FIDel_client: Arc<dyn FIDelClient>,
+        fidelio: Arc<dyn FIDelClient>,
         scheduler: Scheduler<Task>,
         violetabft_router: T,
         observer: CdcObserver,
@@ -233,7 +233,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
             capture_regions: HashMap::default(),
             connections: HashMap::default(),
             scheduler,
-            FIDel_client,
+            fidelio,
             tso_worker,
             timer: SteadyTimer::default(),
             workers,
@@ -557,7 +557,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
 
     fn register_min_ts_event(&self) {
         let timeout = self.timer.delay(self.min_ts_interval);
-        let tso = self.FIDel_client.get_tso();
+        let tso = self.fidelio.get_tso();
         let scheduler = self.scheduler.clone();
         let violetabft_router = self.violetabft_router.clone();
         let regions: Vec<(u64, ObserveID)> = self
@@ -566,7 +566,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
             .map(|(region_id, delegate)| (*region_id, delegate.id))
             .collect();
         let fut = tso.join(timeout.map_err(|_| unreachable!())).then(
-            move |tso: FIDel_client::Result<(TimeStamp, ())>| {
+            move |tso: fidelio::Result<(TimeStamp, ())>| {
                 // Ignore get tso errors since we will retry every `min_ts_interval`.
                 let (min_ts, _) = tso.unwrap_or((TimeStamp::default(), ()));
                 // TODO: send a message to violetabftstore would consume too much cpu time,
@@ -869,7 +869,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> RunnableWithTimer<Task, (
 #[braneg(test)]
 mod tests {
     use super::*;
-    use einsteindb_promises::DATA_BRANES;
+    use einsteindb_promises::DATA_branes;
     #[braneg(feature = "prost-codec")]
     use ekvproto::ccpb::event::Event as Event_oneof_event;
     use ekvproto::errorpb::Error as ErrorHeader;
@@ -941,7 +941,7 @@ mod tests {
         let temp = TemFIDelir::new().unwrap();
         let engine = TestEngineBuilder::new()
             .path(temp.path())
-            .branes(DATA_BRANES)
+            .branes(DATA_branes)
             .build()
             .unwrap();
 
@@ -1024,8 +1024,8 @@ mod tests {
         let (task_sched, task_rx) = dummy_scheduler();
         let violetabft_router = MocekvioletabftStoreRouter::new();
         let observer = CdcObserver::new(task_sched.clone());
-        let FIDel_client = Arc::new(TestFIDelClient::new(0, true));
-        let mut ep = Endpoint::new(FIDel_client, task_sched, violetabft_router.clone(), observer);
+        let fidelio = Arc::new(TestFIDelClient::new(0, true));
+        let mut ep = Endpoint::new(fidelio, task_sched, violetabft_router.clone(), observer);
         let (tx, _rx) = batch::unbounded(1);
 
         // Fill the channel.
@@ -1075,8 +1075,8 @@ mod tests {
         let violetabft_router = MocekvioletabftStoreRouter::new();
         let _violetabft_rx = violetabft_router.add_region(1 /* region id */, 100 /* cap */);
         let observer = CdcObserver::new(task_sched.clone());
-        let FIDel_client = Arc::new(TestFIDelClient::new(0, true));
-        let mut ep = Endpoint::new(FIDel_client, task_sched, violetabft_router, observer);
+        let fidelio = Arc::new(TestFIDelClient::new(0, true));
+        let mut ep = Endpoint::new(fidelio, task_sched, violetabft_router, observer);
         let (tx, rx) = batch::unbounded(1);
 
         let conn = Conn::new(tx);

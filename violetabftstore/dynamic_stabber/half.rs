@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021-2023 WHTCORPS INC
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -68,7 +68,7 @@ where
 #[derive(Clone)]
 pub struct HalfCheckObserver;
 
-impl Coprocessor for HalfCheckObserver {}
+impl interlocking_directorate for HalfCheckObserver {}
 
 impl<E> SplitCheckObserver<E> for HalfCheckObserver
 where
@@ -142,7 +142,7 @@ mod tests {
     use lmdb::raw::{BraneOptions, DBOptions};
     use lmdb::raw_util::{new_engine_opt, BRANEOptions};
     use lmdb::Compat;
-    use engine_traits::{ALL_BRANES, BRANE_DEFAULT, LARGE_BRANES};
+    use engine_traits::{ALL_branes, BRANE_DEFAULT, LARGE_branes};
     use ekvproto::metapb::Peer;
     use ekvproto::metapb::Region;
     use ekvproto::pdpb::CheckPolicy;
@@ -157,14 +157,14 @@ mod tests {
 
     use super::super::size::tests::must_split_at;
     use super::*;
-    use crate::coprocessor::{Config, CoprocessorHost};
+    use crate::interlocking_directorate::{Config, interlocking_directorateHost};
 
     #[test]
     fn test_split_check() {
         let path = Builder::new().prefix("test-violetabftstore").tempdir().unwrap();
         let path_str = path.path().to_str().unwrap();
         let db_opts = DBOptions::new();
-        let cfs_opts = ALL_BRANES
+        let cfs_opts = ALL_branes
             .iter()
             .map(|brane| {
                 let mut cf_opts = BraneOptions::new();
@@ -187,7 +187,7 @@ mod tests {
         let mut runnable = SplitCheckRunner::new(
             engine.c().clone(),
             tx.clone(),
-            CoprocessorHost::new(tx),
+            interlocking_directorateHost::new(tx),
             cfg,
         );
 
@@ -228,7 +228,7 @@ mod tests {
         cf_opts.set_level_zero_file_num_compaction_trigger(10);
         let f = Box::new(RangePropertiesCollectorFactory::default());
         cf_opts.add_table_properties_collector_factory("einsteindb.size-collector", f);
-        let cfs_opts = LARGE_BRANES
+        let cfs_opts = LARGE_branes
             .iter()
             .map(|brane| BRANEOptions::new(brane, cf_opts.clone()))
             .collect();

@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS
+//Copyright 2021 WHTCORPS INC ALL RIGHTS RESERVED
 
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -108,3 +108,4 @@ impl Variable {
             write!(f, "{}", self.0)
         }
     }
+}

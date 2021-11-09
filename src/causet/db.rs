@@ -21,7 +21,7 @@ use super::{util, YosiIt, YosiVec, YosiWri, yosi};
 //copy in
 #[derive(Clone, Debug)]
 #[repr(transparent)]
-pub struct ReplicateTo<yosi>(pub yosi);
+pub struct ReplicateTo<Yosi>(pub Yosi);
 
 
 //TLS handshake.
@@ -51,8 +51,6 @@ impl EinsteinWrapper {
 }
 
 use yosh::{YoshIt, YoshWri, yosh, yoshWriBat as NakedBatch};
-
-
 
 
 //yosh references Yosh. See: Reflection

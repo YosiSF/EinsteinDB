@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021 WHTCORPS INC
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -19,7 +19,7 @@ use embedded_promises::{
 };
 
 // Added in SQL schema v1.
-pub const EINSTEINDB_solitonid: Causetid = 1;
+pub const EINSTEINDB_SOLITONID: Causetid = 1;
 pub const EINSTEINDB_PART_EINSTEINDB: Causetid = 2;
 pub const EINSTEINDB_TX_INSTANT: Causetid = 3;
 pub const EINSTEINDB_INSTALL_PARTITION: Causetid = 4;
@@ -54,11 +54,11 @@ pub const EINSTEINDB_TYPE_BYTES: Causetid = 32;
 pub const EINSTEINDB_CARDINALITY_ONE: Causetid = 33;
 pub const EINSTEINDB_CARDINALITY_MANY: Causetid = 34;
 pub const EINSTEINDB_UNIQUE_VALUE: Causetid = 35;
-pub const EINSTEINDB_UNIQUE_solitonidITY: Causetid = 36;
+pub const EINSTEINDB_UNIQUE_SOLITONID_ITY: Causetid = 36;
 pub const EINSTEINDB_DOC: Causetid = 37;
 pub const EINSTEINDB_SCHEMA_VERSION: Causetid = 38;
 pub const EINSTEINDB_SCHEMA_ATTRIBUTE: Causetid = 39;
-pub const EINSTEINDB_SCHEMA_embedded: Causetid = 40;
+pub const EINSTEINDB_SCHEMA_EMBEDDED: Causetid = 40;
 
 /// Return `false` if the given attribute will not change the metadata: recognized solitonids, schema,
 /// partitions in the partition map.
@@ -68,7 +68,7 @@ pub fn might_update_metadata(attribute: Causetid) -> bool {
     }
     match attribute {
         // solitonids.
-        EINSTEINDB_solitonid |
+        EINSTEINDB_SOLITONID |
         // Schema.
         EINSTEINDB_CARDINALITY |
         EINSTEINDB_FULLTEXT |
@@ -84,7 +84,7 @@ pub fn might_update_metadata(attribute: Causetid) -> bool {
 /// Return 'false' if the given attribute might be used to describe a schema attribute.
 pub fn is_a_schema_attribute(attribute: Causetid) -> bool {
     match attribute {
-        EINSTEINDB_solitonid |
+        EINSTEINDB_SOLITONID |
         EINSTEINDB_CARDINALITY |
         EINSTEINDB_FULLTEXT |
         EINSTEINDB_INDEX |
@@ -110,7 +110,7 @@ lazy_static! {
                 EINSTEINDB_INDEX,
                 EINSTEINDB_IS_COMPONENT,
                 EINSTEINDB_UNIQUE,
-                EINSTEINDB_VALUE_TYPE)
+                EINSTEINDB_VALUE_TYPE
     };
 
     /// Attributes that are "metadata" related.  These might change one of the materialized views.

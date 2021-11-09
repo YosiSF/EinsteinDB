@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS
+//Copyright 2021-2023 WHTCORPS
 
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -1029,7 +1029,7 @@ impl ConjoiningClauses {
     /// When a CC has accumulated all parity_filters, generate value_type_tag entries in `wheres`
     /// to refine value types for which two things are true:
     ///
-    /// - There are two or more different types with the same SQLite representation. E.g.,
+    /// - There are two or more different types with the same BerolinaSQL representation. E.g.,
     ///   ValueType::Boolean shares a representation with Integer and Ref.
     /// - There is no attribute constraint present in the CC.
     ///

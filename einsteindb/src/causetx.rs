@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC All Rights Reserved
+//Copyright 2021-2023 WHTCORPS INC All Rights Reserved
 
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -581,7 +581,7 @@ pub(crate) enum CausetAction {
 #[derive(Debug)]
 pub struct Tx<'conn, 'a, W> where W: Causetobserver {
     /// The storage to apply against.  In the future, this will be a EinsteinDB connection.
-    store: &'conn rusqlite::Connection, // TODO: db::EinsteinDBStoring,
+    store: &'conn berolinasql::Connection, // TODO: db::EinsteinDBStoring,
 
     /// The partition map to allocate causetids from.
     ///

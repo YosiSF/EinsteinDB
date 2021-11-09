@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021-2023 WHTCORPS INC
 
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -8,7 +8,10 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-extern crate chrono;
+
+
+
+extern crate chronos;
 extern crate itertools;
 extern crate num;
 extern crate ordered_float;
@@ -27,29 +30,5 @@ pub mod intern_set;
 pub use intern_set::{
     InternSet,
 };
-// Intentionally not pub.
-mod isolatednamespace;
-pub mod query;
-pub mod symbols;
-pub mod types;
-pub mod pretty_print;
-pub mod utils;
-pub mod matcher;
-pub mod value_rc;
-pub use value_rc::{
-    Cloned,
-    FromRc,
-    ValueRc,
-};
-
-pub mod parse {
-    include!(concat!(env!("OUT_DIR"), "/edbn.rs"));
-}
-
-// Re-export the types we use.
-pub use chrono::{DateTime, Utc};
-pub use num::BigInt;
-pub use ordered_float::OrderedFloat;
-pub use uuid::Uuid;
 
 

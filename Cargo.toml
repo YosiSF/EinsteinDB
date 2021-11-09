@@ -2,12 +2,13 @@
 authors = [
     "Karl Whitford <venirelabsinc@gmail.com>",
     "Josh Leder <slushie@gmail.com>",
+    "'The lone gunman' <whtcorpsinc> <whtcorpsarpanet@gmail.com>"
 ]
 
 name = "einsteindb"
 license = "Apache-2.0"
 keywords = ["embedded", "distributed-systems", "BFTRaft" ]
-version = "0.11.1"
+version = "0.4.1"
 build = "build/version.rs"
 edition = "2018"
 publish = "false"
@@ -19,6 +20,65 @@ name = "einsteindb"
 rustc_version = "0.2"
 
 [dependencies]
+
+bytes = "0.4"
+chan = "0.1.21"
+chan-signal = "0.3.1"
+crc = "1.5.0"
+crossbeam = "0.7"
+either = "1.3"
+error-chain = "0.12.1"
+fasthash = "0.3"
+flate2 = "1.0.2"
+lazy_static = "1.0"
+log = "0.4"
+memmap = "0.6"
+num_cpus = "1.10.0"
+rand = "0.5"
+regex = "0.2"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+smallvec = "0.6.9"
+thread_local = "0.3"
+unicode_reader = "0.1.1"
+num-traits = "0.2"
+byteorder = "1"
+crunchy = "0.2.2"
+default = ["test-foundation-db", "cloud-aws", "cloud-gcp"]
+tcmalloc = ["memcam/tcmalloc"]
+jemalloc = ["memcam/jemalloc", "foundation_db/jemalloc"]
+mimalloc = ["memcam/mimalloc"]
+snmalloc = ["memcam/snmalloc"]
+portable = ["foundation_db/portable"]
+sse = ["foundation_db/sse"]
+mem-profiling = ["memcam/mem-profiling"]
+failpoints = [
+    "fail/failpoints",
+    "raftstore/failpoints",
+    "tikv_util/failpoints",
+    "foundation_db/failpoints"
+]
+cloud-aws = [
+    "encryption_export/cloud-aws",
+    "sst_importer/cloud-aws",
+]
+cloud-gcp = [
+    "encryption_export/cloud-gcp",
+    "sst_importer/cloud-gcp",
+]
+testexport = ["raftstore/testexport"]
+test-engines-foundationdb = [
+    "engine_test/test-engines-foundationdb",
+]
+test-engines-panic = [
+    "engine_test/test-engines-panic",
+]
+bcc-iosnoop = [
+    "file_system/bcc-iosnoop",
+]
+cloud-storage-grpc = ["sst_importer/cloud-storage-grpc"]
+cloud-storage-dylib = ["sst_importer/cloud-storage-dylib"]
 log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 slog = { version = "2.3", features = ["max_level_trace", "release_max_level_debug"] }
 slog-async = { version = "2.3", default-features = false }
@@ -72,7 +132,7 @@ mime = "0.3.13"
 farmhash = "1.1.5"
 failure = "0.1.1"
 
-[dependencies.rusqlite]
+[dependencies.berolinasql]
 version = "0.13"
 features = ["limits"]
 

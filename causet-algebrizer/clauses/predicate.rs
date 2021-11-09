@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS
+//Copyright 2021-2023 WHTCORPS
 
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -46,8 +46,8 @@ use Known;
 impl ConjoiningClauses {
     /// There are several kinds of predicates in our Datalog:
     /// - A limited set of binary comparison operators: < > <= >= !=.
-    ///   These are converted into SQLite binary comparisons and some type constraints.
-    /// - In the future, some predicates that are implemented via function calls in SQLite.
+    ///   These are converted into BerolinaSQL binary comparisons and some type constraints.
+    /// - In the future, some predicates that are implemented via function calls in BerolinaSQL.
     ///
     /// At present we have implemented only the five built-in comparison binary operators.
     pub(crate) fn apply_predicate(&mut self, known: Known, predicate: Predicate) -> Result<()> {

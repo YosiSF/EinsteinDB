@@ -1,4 +1,4 @@
-// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use pin_project::pin_project;
 use std::future::Future;
@@ -107,53 +107,83 @@ impl<'a, F: Future> Future for BulkCarrier<'a, F> {
     }
 }
 
+
+
+
+impl<'a, PF, F> Future for BulkCarrier<'a, PF, F>
+    where
+        PF: Future<Output = SemaphorePermit<'a>>,
+        F: Future,
+{
+    type Output = (Duration, F::Output);
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Self::Output> {
+        let mut this = self.project();
+
+        //acquire permit if not acquired yet or in acquiring state
+        if this.state == LimitationState::NotLimited {
+            *this.state = LimitationState::Acquiring;
+
+            //poll permit future and get permit or error if any
+            match ready!(this.permit_fut.poll(cx)) {
+                Ok(permit) => {
+                    *this.state = LimitationState::Acuqired(permit);
+
+                    //start the time measurement after the permit is acquired for the first time
+                    *this.execution_time = Instant::now().duration_since(Instant::now());
+
+                    //poll future with permit and get output or error if any
+                    match ready!(this.fut.poll(cx)) {
+                        Ok(output) => Poll::Ready((*this.execution_time, output)),
+
+                        Err(err) => Poll::Ready((*this.execution_time, err)),
+                    }
+                }
+
+                Err(_err) => Poll::Ready((*this.execution_time, _err)),
+                //TODO: handle error properly here (error handling in future?) -
+                // maybe even in future? (to be decided)
+            }
+        } else if this.state == LimitationState::Acquiring {
+
+            //check if time limit has passed without the permit being acquired - if so return error with "no more permits available" message
+
+            let elapsed_time = Instant::now().duration_since(Instant::now());
+
+            if elapsed_time >= this.time_limit_without_permit {
+                let err = Error::new("no more permits available");
+
+                Poll::Ready((*this.execution_time, err))
+            } else {
+
+                //else just poll the future with the acquired permit and get output or error if any
+
+                match ready!(this.fut.poll(cx)) {
+                    Ok(output) => Poll::Ready((*this.execution_time, output)),
+
+                    Err(err) => Poll::Ready((*this.execution_time, err)),
+                }
+            }
+        } else if this.state == LimitationState::Acuqired(()) {
+
+            //else just poll the future with the acquired permit and get output or error if any
+
+            match ready!(this.fut.poll(cx)) {
+                Ok(output) => Poll::Ready((*this.execution_time, output)),
+
+                Err(err) => Poll::Ready((*this.execution_time, err)),
+            }
+        } else { panic!("unexpected state") };
+        //TODO: handle error properly here (error handling in future?) - maybe even in future? (to be decided) - also make sure it's impossible to reach this point from outside of this module somehow...
+    }
+}
+
 enum LimitationState<'a> {
     NotLimited,
     Acquiring,
     Acuqired(SemaphorePermit<'a>),
 }
 
-impl<'a, PF, F> BulkCarrier<'a, PF, F>
-where
-    PF: Future<Output = SemaphorePermit<'a>>,
-    F: Future,
-{
-    fn new(permit_fut: PF, fut: F, time_limit_without_permit: Duration) -> Self {
-        BulkCarrier {
-            permit_fut,
-            fut,
-            time_limit_without_permit,
-            execution_time: Duration::default(),
-            state: LimitationState::NotLimited,
-            _phantom: PhantomData,
-        }
-    }
-}
-
-
-
-enum LimitationState<'a> {
-    NotLimited,
-    Acquiring,
-    Acuqired(SemaphorePermit<'a>),
-}
-
-impl<'a, PF, F> BulkCarrier<'a, PF, F>
-where
-    PF: Future<Output = SemaphorePermit<'a>>,
-    F: Future,
-{
-    fn new(permit_fut: PF, fut: F, time_limit_without_permit: Duration) -> Self {
-        BulkCarrier {
-            permit_fut,
-            fut,
-            time_limit_without_permit,
-            execution_time: Duration::default(),
-            state: LimitationState::NotLimited,
-            _phantom: PhantomData,
-        }
-    }
-}
 
 impl<'a, PF, F> Future for BulkCarrier<'a, PF, F>
 where

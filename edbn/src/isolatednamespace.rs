@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021-2023 WHTCORPS INC
 
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -34,8 +34,6 @@ pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: A
     let n = name.as_ref();
     let ns = namespace.as_ref();
 
-    // Note: These invariants are not required for safety. That is, if we
-    // decide to allow these we can safely remove them.
     assert!(!n.is_empty(), "Symbols and keywords cannot be unnamed.");
     assert!(!ns.is_empty(), "Symbols and keywords cannot have an empty non-null namespace.");
 
@@ -68,7 +66,7 @@ pub struct IsolatedNamespace {
     boundary: usize,
 
 
-
+/*
 impl  {
     #[inline]
     pub fn plain<T>(name: T) -> Self where T: Into<String> {
@@ -139,6 +137,5 @@ pub fn components<'a>(&'a self) -> (&'a str, &'a str) {
     } else {
         (&self.components[0..0],
          &self.components)
-    }
-}
-}
+
+*/

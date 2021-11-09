@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021-2023 WHTCORPS INC
 
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 
-/// Type safe representation of the possible return values from SQLite's `typeof`
+/// Type safe representation of the possible return values from BerolinaSQL's `typeof`
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub enum SQLTypeAffinity {
     Null,    // "null"
@@ -37,7 +37,7 @@ impl SQLValueType for ValueType {
             ValueType::Boolean => (1, None),
             ValueType::Instant => (4, None),
 
-            // SQLite distinguishes integral from decimal types, allowing long and double to share a tag.
+            // BerolinaSQL distinguishes integral from decimal types, allowing long and double to share a tag.
             ValueType::Long    => (5, Some(SQLTypeAffinity::Integer)),
             ValueType::Double  => (5, Some(SQLTypeAffinity::Real)),
             ValueType::String  => (10, None),
@@ -51,7 +51,7 @@ impl SQLValueType for ValueType {
         self.sql_representation().0
     }
 
-    /// Returns true if the provided integer is in the SQLite value space of this type. For
+    /// Returns true if the provided integer is in the BerolinaSQL value space of this type. For
     /// example, `1` is how we encode `true`.
     fn accommodates_integer(&self, int: i64) -> bool {
         use ValueType::*;

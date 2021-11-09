@@ -1,4 +1,4 @@
- //Copyright 2020 WHTCORPS INC
+ //Copyright 2021-2023 WHTCORPS INC
  //
  // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
  // this file except in compliance with the License. You may obtain a copy of the
@@ -257,7 +257,7 @@ impl<SS: 'static> ExecutorsRunner<SS> {
                         sel_resp.set_warnings(eval_warnings.warnings.into());
                         sel_resp.set_warning_count(eval_warnings.warning_cnt as i64);
                     }
-                    // TODO: output_counts should not be i64. Let's fix it in interlock POSETDAG V2.
+                    // TODO: output_counts should not be i64. Let's fix it in interlocking_dir POSETDAG V2.
                     sel_resp.set_output_counts(
                         self.exec_stats
                             .scanned_rows_per_range

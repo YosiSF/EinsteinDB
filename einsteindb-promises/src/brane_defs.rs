@@ -6,17 +6,17 @@ pub const BRANE_LOCK: BRANEName = "lock";
 pub const BRANE_WRITE: BRANEName = "write";
 pub const BRANE_VIOLETABFT: BRANEName = "violetabft";
 pub const BRANE_VER_DEFAULT: BRANEName = "ver_default";
-// BRANEs that should be very large generally.
-pub const LARGE_BRANES: &[BRANEName] = &[BRANE_DEFAULT, BRANE_LOCK, BRANE_WRITE];
-pub const ALL_BRANES: &[BRANEName] = &[BRANE_DEFAULT, BRANE_LOCK, BRANE_WRITE, BRANE_VIOLETABFT];
-pub const DATA_BRANES: &[BRANEName] = &[BRANE_DEFAULT, BRANE_LOCK, BRANE_WRITE];
+// branes that should be very large generally.
+pub const LARGE_branes: &[BRANEName] = &[BRANE_DEFAULT, BRANE_LOCK, BRANE_WRITE];
+pub const ALL_branes: &[BRANEName] = &[BRANE_DEFAULT, BRANE_LOCK, BRANE_WRITE, BRANE_VIOLETABFT];
+pub const DATA_branes: &[BRANEName] = &[BRANE_DEFAULT, BRANE_LOCK, BRANE_WRITE];
 
 /*
 pub fn name_to_brane(name: &str) -> Option<BRANEName> {
     if name.is_empty() {
         return Some(BRANE_DEFAULT);
     }
-    for c in ALL_BRANES {
+    for c in ALL_branes {
         if name == *c {
             return Some(c);
         }
@@ -67,13 +67,13 @@ impl BRANEParams {
     }
 }
 
-pub struct BRANES {
+pub struct branes {
     pub branes: Vec<BRANEParams>,
 }
 
-impl Default for BRANES {
-    fn default() -> BRANES {
-        BRANES {
+impl Default for branes {
+    fn default() -> branes {
+        branes {
             branes: vec![
                 BRANEParams::new(BRANE_DEFAULT, 0),
                 BRANEParams::new(BRANE_LOCK, 0),
@@ -85,7 +85,7 @@ impl Default for BRANES {
     }
 }
 
-impl BRANES {
+impl branes {
     pub fn get_brane_params(&self, brane_name: BRANEName) -> Option<&BRANEParams> {
         self.branes.iter().find(|t| t.name == brane_name)
     }

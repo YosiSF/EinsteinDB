@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021-2023 WHTCORPS INC
 
 
 
@@ -84,7 +84,7 @@ pub(crate) struct PullOperation(pub(crate) Vec<PullAttributeSpec>);
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct PullIndices {
-    pub(crate) sql_index: Index,                   // SQLite column index.
+    pub(crate) sql_index: Index,                   // BerolinaSQL column index.
     pub(crate) output_index: usize,
 }
 
@@ -132,15 +132,15 @@ impl<'schema> PullConsumer<'schema> {
         Ok(PullConsumer::for_puller(puller, schema, PullIndices::zero()))
     }
 
-    pub(crate) fn collect_causet<'a, 'stmt>(&mut self, row: &rusqlite::Row<'a, 'stmt>) -> Causetid {
+    pub(crate) fn collect_causet<'a, 'stmt>(&mut self, row: &berolinasql::Row<'a, 'stmt>) -> Causetid {
         let entity = row.get(self.indices.sql_index);
         self.causets.insert(entity);
         entity
     }
 
-    pub(crate) fn pull(&mut self, sqlite: &rusqlite::Connection) -> Result<()> {
+    pub(crate) fn pull(&mut self, berolinasql: &berolinasql::Connection) -> Result<()> {
         let causets: Vec<Causetid> = self.causets.iter().cloned().collect();
-        self.results = self.puller.pull(self.schema, sqlite, causets)?;
+        self.results = self.puller.pull(self.schema, berolinasql, causets)?;
         Ok(())
     }
 

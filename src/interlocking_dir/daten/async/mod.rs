@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+/*
 use std::borrow::ToOwned;
 use std::process;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -26,7 +26,7 @@ use einsteindb::util::{self, logger};
 mod deferred_column;
 
 //checks if log is init
-pub static LOG_INITIALIZED: AtomicBool = AtomicBool::new(v: false);
+pub static LOG_INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 macro_rules! fatal {
     ($lvl:expr, $($arg::tt)+) => ({
@@ -65,10 +65,5 @@ pub fn initial_logger(config: &EinsteinDBConfig) {
         });
     };
     LOG_INITIALIZED.store(true, Ordering::SeqCst);
-}
 
-
-        }
-    }
-
-}
+*/

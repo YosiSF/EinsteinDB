@@ -1,4 +1,4 @@
-//Copyright WHTCORPS INC 2020 LICENSED WITH APACHE 2.0.
+//Copyright WHTCORPS INC 2021-2023 LICENSED WITH APACHE 2.0.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // limitations under the License.
 
 
-// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use pin_project::pin_project;
 use std::future::Future;
@@ -29,6 +29,7 @@ use crate::interlock::metrics::*;
 ///
 /// The future `fut` can always run for at least `time_limit_without_permit`,
 /// but it needs to acquire a permit from the semaphore before it can continue.
+///
 pub fn bulk_transient<'a, F: Future + 'a>(
     fut: F,
     semaphore: &'a Semaphore,
@@ -164,9 +165,7 @@ mod tests {
         smp.add_permits(1);
         let smp2 = smp.clone();
         let mut t1 =
-            tokio::spawn(
-                async move { bulk_transient(work(8), &*smp2, Duration::default()).await },
-            )
+            tokio::spawn(async move { bulk_transient(work(8), &*smp2, Duration::default()).await },)
             .fuse();
 
         delay_for(Duration::from_millis(100)).await;

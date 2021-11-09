@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021-2023 WHTCORPS INC
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -13,13 +13,13 @@ use super::{
     Schema,
     QueryOutput,
     Rows,
-    rusqlite,
+    berolinasql,
 };
 
 
 
 pub trait Projector {
-    fn project<'stmt, 's>(&self, schema: &Schema, sqlite: &'s rusqlite::Connection, rows: Rows<'stmt>) -> Result<QueryOutput>;
+    fn project<'stmt, 's>(&self, schema: &Schema, berolinasql: &'s berolinasql::Connection, rows: Rows<'stmt>) -> Result<QueryOutput>;
     fn columns<'s>(&'s self) -> Box<Iterator<Item=&Element> + 's>;
 }
 

@@ -15,7 +15,7 @@ use ::{
     QueryResults,
     Rows,
     Schema,
-    rusqlite,
+    berolinasql,
 };
 
 use allegroeinstein_prolog_causet_projector::errors::{

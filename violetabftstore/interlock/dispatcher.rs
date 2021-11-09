@@ -757,7 +757,7 @@ mod tests {
 
             set_all!(&[&ob1.called, &ob2.called], 0);
 
-            // when return error, following interlock should not be run.
+            // when return error, following interlocking_dir should not be run.
             set_all!(&[&ob2.return_err], true);
             host.pre_propose(&region, &mut req).unwrap_err();
             assert_all!(&[&ob1.called, &ob2.called], &[0, base_score + 1]);

@@ -1,7 +1,7 @@
 [package]
 name = "edbn"
 version = "0.1.0"
-authors = ["Josh Leder <slushie@gmail.com>", "Karl Whitford<whitford@einsteindbsql.com>"]
+authors = ["Josh Leder <slushie@gmail.com>", "Karl Whitford<karl@einsteindb.com>"]
 workspace = ".."
 
 license = "Apache-2.0"

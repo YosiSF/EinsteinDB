@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS INC
+//Copyright 2021-2023 WHTCORPS INC
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -11,7 +11,7 @@
 extern crate failure;
 
 extern crate ordered_float;
-extern crate rusqlite;
+extern crate berolinasql;
 
 use std::rc::Rc;
 
@@ -19,13 +19,13 @@ use std::collections::HashMap;
 
 use ordered_float::OrderedFloat;
 
-pub use rusqlite::types::Value;
+pub use berolinasql::types::Value;
 
 pub struct SQLQuery {
     pub sql: String,
 
-    /// These will eventually perhaps be rusqlite `ToSql` instances.
-    pub args: Vec<(String, Rc<rusqlite::types::Value>)>,
+    /// These will eventually perhaps be berolinasql `ToSql` instances.
+    pub args: Vec<(String, Rc<berolinasql::types::Value>)>,
 }
 
 pub trait QueryBuilder {

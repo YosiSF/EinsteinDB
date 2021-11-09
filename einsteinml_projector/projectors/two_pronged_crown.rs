@@ -25,7 +25,7 @@ use ::{
     Rows,
     Schema,
     TypedIndex,
-    rusqlite,
+    berolinasql,
 };
 
 use ::pull::{
@@ -169,13 +169,13 @@ impl ScalarTwoProngedCrownProjector {
 }
 
 impl Projector for ScalarTwoProngedCrownProjector {
-    fn project<'stmt, 's>(&self, schema: &Schema, sqlite: &'s rusqlite::Connection, mut rows: Rows<'stmt>) -> Result<QueryOutput> {
+    fn project<'stmt, 's>(&self, schema: &Schema, berolinasql: &'s berolinasql::Connection, mut rows: Rows<'stmt>) -> Result<QueryOutput> {
         // Scalar is pretty straightforward -- zero or one entity, do the pull directly.
         let results =
             if let Some(r) = rows.next() {
                 let row = r?;
                 let entity: Causetid = row.get(0);          // This will always be 0 and a ref.
-                let bindings = self.puller.pull(schema, sqlite, once(entity))?;
+                let bindings = self.puller.pull(schema, berolinasql, once(entity))?;
                 let m = Binding::Map(bindings.get(&entity).cloned().unwrap_or_else(Default::default));
                 QueryResults::Scalar(Some(m))
             } else {
@@ -231,7 +231,7 @@ impl TupleTwoProngedCrownProjector {
 }
 
 impl Projector for TupleTwoProngedCrownProjector {
-    fn project<'stmt, 's>(&self, schema: &Schema, sqlite: &'s rusqlite::Connection, mut rows: Rows<'stmt>) -> Result<QueryOutput> {
+    fn project<'stmt, 's>(&self, schema: &Schema, berolinasql: &'s berolinasql::Connection, mut rows: Rows<'stmt>) -> Result<QueryOutput> {
         let results =
             if let Some(r) = rows.next() {
                 let row = r?;
@@ -252,7 +252,7 @@ impl Projector for TupleTwoProngedCrownProjector {
 
                 // Run the pull expressions for the collected IDs.
                 for mut p in pull_consumers.iter_mut() {
-                    p.pull(sqlite)?;
+                    p.pull(berolinasql)?;
                 }
 
                 // Expand the pull expressions back into the results vector.
@@ -327,7 +327,7 @@ impl RelTwoProngedCrownProjector {
 }
 
 impl Projector for RelTwoProngedCrownProjector {
-    fn project<'stmt, 's>(&self, schema: &Schema, sqlite: &'s rusqlite::Connection, mut rows: Rows<'stmt>) -> Result<QueryOutput> {
+    fn project<'stmt, 's>(&self, schema: &Schema, berolinasql: &'s berolinasql::Connection, mut rows: Rows<'stmt>) -> Result<QueryOutput> {
         // Allocate space for five rows to start.
         // This is better than starting off by doubling the buffer a couple of times, and will
         // rapidly grow to support larger query results.
@@ -351,7 +351,7 @@ impl Projector for RelTwoProngedCrownProjector {
 
         // Run the pull expressions for the collected IDs.
         for mut p in pull_consumers.iter_mut() {
-            p.pull(sqlite)?;
+            p.pull(berolinasql)?;
         }
 
         // Expand the pull expressions back into the results vector.
@@ -400,7 +400,7 @@ impl CollTwoProngedCrownProjector {
 }
 
 impl Projector for CollTwoProngedCrownProjector {
-    fn project<'stmt, 's>(&self, schema: &Schema, sqlite: &'s rusqlite::Connection, mut rows: Rows<'stmt>) -> Result<QueryOutput> {
+    fn project<'stmt, 's>(&self, schema: &Schema, berolinasql: &'s berolinasql::Connection, mut rows: Rows<'stmt>) -> Result<QueryOutput> {
         let mut pull_consumer = PullConsumer::for_operation(schema, &self.pull)?;
 
         while let Some(r) = rows.next() {
@@ -409,7 +409,7 @@ impl Projector for CollTwoProngedCrownProjector {
         }
 
         // Run the pull expressions for the collected IDs.
-        pull_consumer.pull(sqlite)?;
+        pull_consumer.pull(berolinasql)?;
 
         // Expand the pull expressions into a results vector.
         let out = pull_consumer.into_coll_results();

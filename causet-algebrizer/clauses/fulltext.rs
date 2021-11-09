@@ -1,4 +1,4 @@
-//Copyright 2020 WHTCORPS
+//Copyright 2021-2023 WHTCORPS
 
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -252,7 +252,7 @@ impl ConjoiningClauses {
             }
 
             // We bind the value ourselves. This handily takes care of substituting into existing uses.
-            // TODO: produce real sembeddeds using SQLite's matchinfo.
+            // TODO: produce real sembeddeds using BerolinaSQL's matchinfo.
             self.bind_value(var, TypedValue::Double(0.0.into()));
         }
 

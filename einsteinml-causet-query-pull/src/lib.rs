@@ -1,4 +1,4 @@
-//Copyright WHTCORPS INC 2020 All Rights Reserved.
+//Copyright WHTCORPS INC 2021-2023 All Rights Reserved.
 //#![allow(dead_code)]
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -39,7 +39,7 @@ impl<K, V> Default for TimestepEvaluation<K, V> where K: Ord {
 */
 
 pub fn pull_attributes_for_entity<A>(schema: &Schema,
-                                     db: &rusqlite::Connection,
+                                     db: &berolinasql::Connection,
                                      entity: Causetid,
                                      attributes: A) -> Result<StructuredMap>
     where A: IntoIterator<Item=Causetid> {
@@ -58,7 +58,7 @@ pub fn pull_attributes_for_entity<A>(schema: &Schema,
 }
 
 pub fn pull_attributes_for_causets<E, A>(schema: &Schema,
-                                          db: &rusqlite::Connection,
+                                          db: &berolinasql::Connection,
                                           causets: E,
                                           attributes: A) -> Result<PullResults>
     where E: IntoIterator<Item=Causetid>,
