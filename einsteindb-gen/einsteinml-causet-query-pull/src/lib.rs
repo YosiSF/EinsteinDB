@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 //By no means is EinsteinDB a traditional k-v store.
 //It feels like Allegro meets Prolog for the presistence layer.
 
-/*
+
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub struct TimestepEvaluation<K, V> {
     pub lightlike: BTreeMap<K, V>,
@@ -36,7 +36,7 @@ impl<K, V> Default for TimestepEvaluation<K, V> where K: Ord {
     }
 }
 
-*/
+
 
 pub fn pull_attributes_for_entity<A>(schema: &Schema,
                                      db: &berolinasql::Connection,
@@ -54,15 +54,14 @@ pub fn pull_attributes_for_entity<A>(schema: &Schema,
                       assert_eq!(k, entity);
                       vs.cloned()
                   })
-                  .unwrap_or_else(StructuredMap::default))
+                  .unwrap_or_else(StructuredMap::default));
 }
 
 pub fn pull_attributes_for_causets<E, A>(schema: &Schema,
                                           db: &berolinasql::Connection,
                                           causets: E,
                                           attributes: A) -> Result<PullResults>
-    where E: IntoIterator<Item=Causetid>,
-          A: IntoIterator<Item=Causetid> {
+    where E: IntoIterator<Item=Causetid>, A: IntoIterator<Item=Causetid> {
     let attrs = attributes.into_iter()
                           .map(|e| PullAttributeSpec::Attribute(PullConcreteAttribute::Causetid(e).into()))
                           .collect();

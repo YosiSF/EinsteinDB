@@ -4,7 +4,7 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
 
-use engine_lmdb::LmdbSnapshot;
+use engine_foundationdb::foundationdbSnapshot;
 use futures::future::Future;
 use ekvproto::ccpb::*;
 use ekvproto::ekvrpcpb::ExtraOp;
@@ -220,7 +220,7 @@ pub struct Endpoint<T> {
     min_ts_region_id: u64,
 }
 
-impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> Endpoint<T> {
     pub fn new(
         fidelio: Arc<dyn FIDelClient>,
         scheduler: Scheduler<Task>,
@@ -641,7 +641,7 @@ struct Initializer {
 }
 
 impl Initializer {
-    fn on_change_cmd(&self, mut resp: ReadResponse<LmdbSnapshot>) {
+    fn on_change_cmd(&self, mut resp: ReadResponse<foundationdbSnapshot>) {
         if let Some(region_snapshot) = resp.snapshot {
             assert_eq!(self.region_id, region_snapshot.get_region().get_id());
             let region = region_snapshot.get_region().clone();
@@ -809,7 +809,7 @@ impl Initializer {
     }
 }
 
-impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Runnable<Task> for Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> Runnable<Task> for Endpoint<T> {
     fn run(&mut self, task: Task) {
         debug!("run cc task"; "task" => %task);
         match task {
@@ -852,7 +852,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Runnable<Task> for Endpoi
     }
 }
 
-impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> RunnableWithTimer<Task, ()> for Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> RunnableWithTimer<Task, ()> for Endpoint<T> {
     fn on_timeout(&mut self, timer: &mut Timer<()>, _: ()) {
         CC_CAPTURED_REGION_COUNT.set(self.capture_regions.len() as i64);
         if self.min_resolved_ts != TimeStamp::max() {

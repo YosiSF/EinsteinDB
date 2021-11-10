@@ -101,23 +101,23 @@ impl std::ops::Deref for SplitCheckConfigManager {
     }
 }
 
-#[braneg(test)]
+#[brane(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_config_validate() {
-        let mut braneg = Config::default();
-        braneg.validate().unwrap();
+        let mut brane = Config::default();
+        brane.validate().unwrap();
+
+        brane = Config::default();
+        brane.region_max_size = ReadableSize(10);
+        brane.region_split_size = ReadableSize(20);
+        assert!(brane.validate().is_err());
 
         braneg = Config::default();
-        braneg.region_max_size = ReadableSize(10);
-        braneg.region_split_size = ReadableSize(20);
-        assert!(braneg.validate().is_err());
-
-        braneg = Config::default();
-        braneg.region_max_keys = 10;
-        braneg.region_split_keys = 20;
-        assert!(braneg.validate().is_err());
+        brane.region_max_keys = 10;
+        brane.region_split_keys = 20;
+        assert!(brane.validate().is_err());
     }
 }

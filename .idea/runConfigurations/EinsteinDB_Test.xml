@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="EinsteinDB-Test" type="RustScratchRunConfiguration" factoryName="Rust Scratch" singleton="false">
+    <option name="command" value="play" />
+    <option name="isFromRun" value="true" />
+    <option name="options" value="" />
+    <option name="sources" value="" />
+    <option name="runtimeArgs" value="" />
+    <option name="isPlayRun" value="true" />
+    <option name="backtraceMode" value="FULL" />
+    <envs />
+    <option name="workingDirectory" value="file://$APPLICATION_CONFIG_DIR$/scratches" />
+    <option name="withSudo" value="true" />
+    <method v="2" />
+  </configuration>
+</component>

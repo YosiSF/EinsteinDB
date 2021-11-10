@@ -20,11 +20,11 @@ use crate::{
     },
     value::Value,
 };
-use lmdb::{
+use foundationdb::{
     Cursor,
     Database,
-    Iter as LmdbIter,
-    //    IterDup as LmdbIterDup,
+    Iter as foundationdbIter,
+    //    IterDup as foundationdbIterDup,
     RoCursor,
     WriteFlags,
 };
@@ -35,7 +35,7 @@ pub struct MultiStore {
 }
 
 pub struct Iter<'env> {
-    iter: LmdbIter<'env>,
+    iter: foundationdbIter<'env>,
     cursor: RoCursor<'env>,
 }
 
@@ -90,7 +90,7 @@ impl MultiStore {
      *        we are producing iterators from MultiIter
     /// Provides an iterator starting at the lexographically smallest value in the store
     pub fn iter_start(&self, store: MultiStore) -> Result<MultiIter, StoreError> {
-        let mut cursor = self.tx.open_ro_cursor(store.0).map_err(StoreError::LmdbError)?;
+        let mut cursor = self.tx.open_ro_cursor(store.0).map_err(StoreError::foundationdbError)?;
 
         // We call Cursor.iter() instead of Cursor.iter_start() because
         // the latter panics at "called `Result::unwrap()` on an `Err` value:
@@ -115,11 +115,11 @@ impl MultiStore {
 }
 
 /*
-fn read_transform_owned(val: Result<&[u8], lmdb::Error>) -> Result<Option<OwnedValue>, StoreError> {
+fn read_transform_owned(val: Result<&[u8], foundationdb::Error>) -> Result<Option<OwnedValue>, StoreError> {
     match val {
         Ok(bytes) => Value::from_tagged_slice(bytes).map(|v| Some(OwnedValue::from(&v))).map_err(StoreError::DataError),
-        Err(lmdb::Error::NotFound) => Ok(None),
-        Err(e) => Err(StoreError::LmdbError(e)),
+        Err(foundationdb::Error::NotFound) => Ok(None),
+        Err(e) => Err(StoreError::foundationdbError(e)),
     }
 }
 
@@ -148,7 +148,7 @@ impl<'env> Iterator for Iter<'env> {
                 Ok(val) => Some(Ok((key, val))),
                 Err(err) => Some(Err(err)),
             },
-            Some(Err(err)) => Some(Err(StoreError::LmdbError(err))),
+            Some(Err(err)) => Some(Err(StoreError::foundationdbError(err))),
         }
     }
 }

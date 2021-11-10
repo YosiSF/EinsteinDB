@@ -76,78 +76,100 @@ pub struct IsolatedNamespace {
     separator: usize,
 }
 
-
-
-/*
-impl  {
+impl IsolatedNamespace {
     #[inline]
-    pub fn plain<T>(name: T) -> Self where T: Into<String> {
-        let n = name.into();
-        assert!(!n.is_empty(), "Symbols and keywords cannot be unnamed.");
+    pub fn namespace(&self) -> &str {
+        let ns = self.components.as_bytes();
 
-         {
-            components: n,
-            boundary: 0,
+        unsafe {
+            let len: usize = self.boundary;
+
+            //ensure that our slice is at least as long as the index we're looking up, and that it's a valid UTF-8 slice,
+            // or else unwrap will panic when we try to use it to construct a string slice from it.
+            assert!(len <= ns.len(), "Boundary must not extend past end of namespace.");
+
+            std::str::from_utf8_unchecked(&ns[..len])
+        }
+    }
+    //end name()
+    #[inline]
+    pub fn name(&self) -> &str {
+        let ns = self.components.as_bytes();
+
+        unsafe {
+            let len = self.boundary;
+            let sep = self.separator;
+
+            //ensure that our slice is at least as long as the index we're looking up, and that it's a valid UTF-8 slice, or else unwrap will panic when we try to use it to construct a string slice from it.
+            assert!(len <= sep && sep <= ns.len(), "Boundary must not extend past end of namespace.");
+
+            std::str::from_utf8_unchecked(&ns[sep..len])
+        }
+    }  //end name() method
+
+    #[inline]
+    pub fn is_namespace(&self) -> bool {
+        !self.is_keyword() && !self.is_symbol()
+    }
+    /*//&& self.boundary == 0  (removed) because now we can have null namespaces with no separator, eek!    */
+
+
+    #[inline]
+    pub fn components<'a>(&'a self) -> (&'a str, &'a str) {
+        if self.boundary > 0 {
+            (&self.components[0..self.boundary],
+             &self.components[(self.boundary + 1)..])
+        } else {
+            (&self.components[0..0],
+             &self.components);
         }
     }
 
-fn new<N, T>(namespace: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-    if let Some(ns) = namespace {
-        Self::namespaced(ns, name)
-    } else {
-        Self::plain(name.as_ref())
+
+
+
+            pub fn plain<T>(name: T) -> Self where T: Into<String> {
+                let n = name.into();
+                assert!(!n.is_empty(), "Symbols and keywords cannot be unnamed.");
+            }
+
+
+
+
+
+        fn new<N, T>(namespace: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+            if let Some(ns) = namespace {
+                Self::namespaced(ns, name)
+            } else {
+                Self::plain(name.as_ref())
+            }
+        }
+
+
+        pub fn is_namespaced(&self) -> bool {
+            self.boundary > 0
+        }
+
+        #[inline]
+        pub fn is_backward(&self) -> bool {
+            self.name().starts_with('_')
+        }
+
+        #[inline]
+        pub fn is_forward(&self) -> bool {
+            !self.is_backward()
+        }
+
+        pub fn to_reversed(&self) -> bool {
+            let name = self.name();
+
+            if name.starts_with('_') {
+                Self::new(self.namespace(), &name[1..])
+            } else {
+                Self::new(self.namespace(), &format!("_{}", name))
+            }
+        }
     }
-}
 
-pub fn is_namespaced(&self) -> bool {
-    self.boundary > 0
-}
 
-#[inline]
-pub fn is_backward(&self) -> bool {
-    self.name().starts_with('_')
-}
 
-#[inline]
-pub fn is_forward(&self) -> bool {
-    !self.is_backward()
-}
-
-pub fn to_reversed(&self) ->  {
-    let name = self.name();
-
-    if name.starts_with('_') {
-        Self::new(self.namespace(), &name[1..])
-    } else {
-        Self::new(self.namespace(), &format!("_{}", name))
-    }
-}
-
-#[inline]
-pub fn namespace(&self) -> Option<&str> {
-    if self.boundary > 0 {
-        Some(&self.components[0..self.boundary])
-    } else {
-        None
-    }
-}
-
-#[inline]
-pub fn name(&self) -> &str {
-    if self.boundary == 0 {
-        &self.components
-    } else {
-        &self.components[(self.boundary + 1)..]
-    }
-}
-
-#[inline]
-pub fn components<'a>(&'a self) -> (&'a str, &'a str) {
-    if self.boundary > 0 {
-        (&self.components[0..self.boundary],
-         &self.components[(self.boundary + 1)..])
-    } else {
-        (&self.components[0..0],
-         &self.components)
-
-*/

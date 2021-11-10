@@ -1,8 +1,8 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-mod causetStorage_impl;
+mod storage_impl;
 
-pub use self::causetStorage_impl::EinsteinDBStorage;
+pub use self::storage_impl::EinsteinDBStorage;
 
 use async_trait::async_trait;
 use ekvproto::interlock::{KeyRange, Response};

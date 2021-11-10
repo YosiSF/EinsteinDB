@@ -9,8 +9,8 @@
 // specific language governing permissions and limitations under the License.
 
 use configuration::ConfigValue;
-pub use lmdb::PerfLevel;
-use lmdb::{DBCompressionType, DBInfoLogLevel, DBEinstenDBBlobRunMode};
+pub use foundationdb::PerfLevel;
+use foundationdb::{DBCompressionType, DBInfoLogLevel, DBEinstenDBBlobRunMode};
 use std::str::FromStr;
 
 #[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -70,7 +70,7 @@ pub mod compression_type_level_serde {
     use serde::ser::SerializeSeq;
     use serde::{Deserializer, Serializer};
 
-    use lmdb::DBCompressionType;
+    use foundationdb::DBCompressionType;
 
     pub fn serialize<S>(ts: &[DBCompressionType; 7], serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -210,7 +210,7 @@ macro_rules! numeric_enum_mod {
 
             use serde::{Serializer, Deserializer};
             use serde::de::{self, Unexpected, Visitor};
-            use lmdb::$enum;
+            use foundationdb::$enum;
 
             pub fn serialize<S>(mode: &$enum, serializer: S) -> Result<S::Ok, S::Error>
                 where S: Serializer
@@ -246,7 +246,7 @@ macro_rules! numeric_enum_mod {
             #[braneg(test)]
             mod tests {
                 use toml;
-                use lmdb::$enum;
+                use foundationdb::$enum;
 
                 #[test]
                 fn test_serde() {
@@ -311,7 +311,7 @@ numeric_enum_mod! {perf_level_serde PerfLevel {
 #[braneg(test)]
 mod tests {
     use super::*;
-    use lmdb::DBCompressionType;
+    use foundationdb::DBCompressionType;
 
     #[test]
     fn test_parse_compression_type() {

@@ -17,7 +17,7 @@ use bincode::serialize;
 
 use serde::Serialize;
 
-use lmdb::Database;
+use foundationdb::Database;
 
 use crate::error::{
     DataError,

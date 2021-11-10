@@ -8,16 +8,16 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use crate::db_options::LMDBEinsteinDBOptions;
+use crate::db_options::foundationdbEinsteinDBOptions;
 use einsteindb_promises::BlackBraneOptions;
 use einstein_merkle::BlackBraneOptions as RawBRANEOptions;
 
 #[derive(Clone)]
-pub struct LmdbBlackBraneOptions(RawBRANEOptions);
+pub struct foundationdbBlackBraneOptions(RawBRANEOptions);
 
-impl LmdbBlackBraneOptions {
-    pub fn from_raw(raw: RawBRANEOptions) -> LmdbBlackBraneOptions {
-        LmdbBlackBraneOptions(raw)
+impl foundationdbBlackBraneOptions {
+    pub fn from_raw(raw: RawBRANEOptions) -> foundationdbBlackBraneOptions {
+        foundationdbBlackBraneOptions(raw)
     }
 
     pub fn into_raw(self) -> RawBRANEOptions {
@@ -25,11 +25,11 @@ impl LmdbBlackBraneOptions {
     }
 }
 
-impl BlackBraneOptions for LmdbBlackBraneOptions {
-    type EinstenDBOptions = LMDBEinsteinDBOptions;
+impl BlackBraneOptions for foundationdbBlackBraneOptions {
+    type EinstenDBOptions = foundationdbEinsteinDBOptions;
 
     fn new() -> Self {
-        LmdbBlackBraneOptions::from_raw(RawBRANEOptions::new())
+        foundationdbBlackBraneOptions::from_raw(RawBRANEOptions::new())
     }
 
     fn get_level_zero_slowdown_writes_trigger(&self) -> u32 {

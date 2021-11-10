@@ -90,9 +90,7 @@ pub struct LookupRef<V> {
 /// A natural next step might be to expose the current transaction instant `(transaction-instant)`,
 /// but that's more difficult: the transaction itself can set the transaction instant (with some
 /// restrictions), so the transaction function must be late-binding.  Right now, that's difficult to
-/// arrange in the transactor.
-///
-/// In the future, we might accept arguments; for example, perhaps we might expose `(ancestor
+/// arrange in the transactor. perhaps we might expose `(ancestor
 /// (transaction-tx) n)` to find the n-th ancestor of the current transaction.  If we do accept
 /// arguments, then the special case of `(lookup-ref a v)` should be handled as part of the
 /// generalization.

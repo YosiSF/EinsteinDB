@@ -270,29 +270,29 @@ macro_rules! loop_ob {
 
 /// Admin and invoke all interlocks.
 #[derive(Clone)]
-pub struct interlockHost<E>
+pub struct InterlockHost<E>
 where
     E: 'static,
 {
     pub registry: Registry<E>,
 }
 
-impl<E> Default for interlockHost<E>
+impl<E> Default for InterlockHost<E>
 where
     E: 'static,
 {
     fn default() -> Self {
-        interlockHost {
+        InterlockHost {
             registry: Default::default(),
         }
     }
 }
 
-impl<E> interlockHost<E>
+impl<E> InterlockHost<E>
 where
     E: KvEngine,
 {
-    pub fn new<C: CasualRouter<E::Snapshot> + Clone + Send + 'static>(ch: C) -> interlockHost<E> {
+    pub fn new<C: CasualRouter<E::Snapshot> + Clone + Send + 'static>(ch: C) -> InterlockHost<E> {
         let mut registry = Registry::default();
         registry.register_split_check_observer(
             200,
@@ -308,7 +308,7 @@ where
             400,
             BoxSplitCheckObserver::new(TableCheckObserver::default()),
         );
-        interlockHost { registry }
+        InterlockHost { registry }
     }
 
     /// Call all propose hooks until bypass is set to true.
@@ -513,7 +513,7 @@ mod tests {
     use std::sync::atomic::*;
     use std::sync::Arc;
 
-    use engine_lmdb::LmdbEngine;
+    use engine_foundationdb::foundationdbEngine;
     use ekvproto::metapb::Region;
     use ekvproto::violetabft_cmdpb::{
         AdminRequest, AdminResponse, violetabftCmdRequest, violetabftCmdResponse, Request, Response,
@@ -644,7 +644,7 @@ mod tests {
 
     #[test]
     fn test_trigger_right_hook() {
-        let mut host = interlockHost::<LmdbEngine>::default();
+        let mut host = interlockHost::<foundationdbEngine>::default();
         let ob = Testinterlock::default();
         host.registry
             .register_admin_observer(1, BoxAdminObserver::new(ob.clone()));
@@ -706,7 +706,7 @@ mod tests {
 
     #[test]
     fn test_order() {
-        let mut host = interlockHost::<LmdbEngine>::default();
+        let mut host = interlockHost::<foundationdbEngine>::default();
 
         let ob1 = Testinterlock::default();
         host.registry

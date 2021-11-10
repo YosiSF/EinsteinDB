@@ -138,10 +138,10 @@ mod tests {
     use std::sync::mpsc;
     use std::sync::Arc;
 
-    use lmdb::raw::Writable;
-    use lmdb::raw::{BraneOptions, DBOptions};
-    use lmdb::raw_util::{new_engine_opt, BRANEOptions};
-    use lmdb::Compat;
+    use foundationdb::raw::Writable;
+    use foundationdb::raw::{BraneOptions, DBOptions};
+    use foundationdb::raw_util::{new_engine_opt, BRANEOptions};
+    use foundationdb::Compat;
     use engine_traits::{ALL_branes, BRANE_DEFAULT, LARGE_branes};
     use ekvproto::metapb::Peer;
     use ekvproto::metapb::Region;
@@ -149,7 +149,7 @@ mod tests {
     use tempfile::Builder;
 
     use crate::store::{SplitCheckRunner, SplitCheckTask};
-    use lmdb::properties::RangePropertiesCollectorFactory;
+    use foundationdb::properties::RangePropertiesCollectorFactory;
     use einsteindb_util::config::ReadableSize;
     use einsteindb_util::escape;
     use einsteindb_util::worker::Runnable;
@@ -233,7 +233,7 @@ mod tests {
             .map(|brane| BRANEOptions::new(brane, cf_opts.clone()))
             .collect();
         let engine =
-            Arc::new(lmdb::raw_util::new_engine_opt(path, db_opts, cfs_opts).unwrap());
+            Arc::new(foundationdb::raw_util::new_engine_opt(path, db_opts, cfs_opts).unwrap());
 
         let cf_handle = engine.cf_handle(BRANE_DEFAULT).unwrap();
         let mut big_value = Vec::with_capacity(256);

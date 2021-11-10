@@ -8,7 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use crate::brane_options::LmdbBlackBraneOptions;
+use crate::brane_options::foundationdbBlackBraneOptions;
 use crate::einsteindb::EinsteinMerkleEngine;
 use einsteindb_promises::BRANEHandle;
 use einsteindb_promises::BRANEHandleExt;
@@ -17,20 +17,20 @@ use einstein_merkle::BRANEHandle as RawBRANEHandle;
 
 impl BRANEHandleExt for EinsteinMerkleEngine {
 
-    //The Lmdb instance gives us a datalog entity laden actor programmatic instance of
+    //The foundationdb instance gives us a datalog entity laden actor programmatic instance of
     //a group of columns; grouped by topic.
-    type BRANEHandle = LmdbBRANEHandle;
-    type BlackBraneOptions = LmdbBlackBraneOptions;
+    type BRANEHandle = foundationdbBRANEHandle;
+    type BlackBraneOptions = foundationdbBlackBraneOptions;
 
     fn brane_handle(&self, name: &str) -> Result<&Self::BRANEHandle> {
         self.as_inner()
             .brane_handle(name)
-            .map(LmdbBRANEHandle::from_raw)
+            .map(foundationdbBRANEHandle::from_raw)
             .ok_or_else(|| Error::BRANEName(name.to_string()))
     }
 
     fn get_options_brane(&self, brane: &Self::BRANEHandle) -> Self::BlackBraneOptions {
-        LmdbBlackBraneOptions::from_raw(self.as_inner().get_options_brane(brane.as_inner()))
+        foundationdbBlackBraneOptions::from_raw(self.as_inner().get_options_brane(brane.as_inner()))
     }
 
     fn set_options_brane(&self, brane: &Self::BRANEHandle, options: &[(&str, &str)]) -> Result<()> {
@@ -42,10 +42,10 @@ impl BRANEHandleExt for EinsteinMerkleEngine {
 
 
 #[repr(transparent)]
-pub struct LmdbBRANEHandle(RawBRANEHandle);
+pub struct foundationdbBRANEHandle(RawBRANEHandle);
 
-impl LmdbBRANEHandle {
-    pub fn from_raw(raw: &RawBRANEHandle) -> &LmdbBRANEHandle {
+impl foundationdbBRANEHandle {
+    pub fn from_raw(raw: &RawBRANEHandle) -> &foundationdbBRANEHandle {
         unsafe { &*(raw as *const _ as *const _) }
     }
 
@@ -54,4 +54,4 @@ impl LmdbBRANEHandle {
     }
 }
 
-impl BRANEHandle for LmdbBRANEHandle {}
+impl BRANEHandle for foundationdbBRANEHandle {}

@@ -4,7 +4,7 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
 
-use engine_lmdb::LmdbSnapshot;
+use engine_foundationdb::foundationdbSnapshot;
 use futures::future::Future;
 use ekvproto::ccpb::*;
 use ekvproto::ekvrpcpb::ExtraOp;
@@ -201,26 +201,9 @@ impl fmt::Debug for Task {
 
 const METRICS_FLUSH_INTERVAL: u64 = 10_000; // 10s
 
-pub struct Endpoint<T> {
-    capture_regions: HashMap<u64, Delegate>,
-    connections: HashMap<ConnID, Conn>,
-    scheduler: Scheduler<Task>,
-    violetabft_router: T,
-    observer: CdcObserver,
+pub struct Endpoint<T> (HashMap<u64, Delegate>, HashMap<ConnID, Conn>, Scheduler<Task>, T, CdcObserver, Arc<dyn FIDelClient>, SteadyTimer, Duration, usize, ThreadPool, ThreadPool, TimeStamp, u64);
 
-    fidelio: Arc<dyn FIDelClient>,
-    timer: SteadyTimer,
-    min_ts_interval: Duration,
-    scan_batch_size: usize,
-    tso_worker: ThreadPool,
-
-    workers: ThreadPool,
-
-    min_resolved_ts: TimeStamp,
-    min_ts_region_id: u64,
-}
-
-impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> Endpoint<T> {
     pub fn new(
         fidelio: Arc<dyn FIDelClient>,
         scheduler: Scheduler<Task>,
@@ -229,21 +212,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
     ) -> Endpoint<T> {
         let workers = Builder::new().name_prefix("ccwkr").pool_size(4).build();
         let tso_worker = Builder::new().name_prefix("tso").pool_size(1).build();
-        let ep = Endpoint {
-            capture_regions: HashMap::default(),
-            connections: HashMap::default(),
-            scheduler,
-            fidelio,
-            tso_worker,
-            timer: SteadyTimer::default(),
-            workers,
-            violetabft_router,
-            observer,
-            scan_batch_size: 1024,
-            min_ts_interval: Duration::from_secs(1),
-            min_resolved_ts: TimeStamp::max(),
-            min_ts_region_id: 0,
-        };
+        let ep = Endpoint(HashMap::default(), HashMap::default(), scheduler, violetabft_router, observer, fidelio, SteadyTimer::default(), Duration::from_secs(1), 1024, tso_worker, workers, TimeStamp::max(), 0);
         ep.register_min_ts_event();
         ep
     }
@@ -257,11 +226,11 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
     }
 
     pub fn set_min_ts_interval(&mut self, dur: Duration) {
-        self.min_ts_interval = dur;
+        self.7 = dur;
     }
 
     pub fn set_scan_batch_size(&mut self, scan_batch_size: usize) {
-        self.scan_batch_size = scan_batch_size;
+        self.8 = scan_batch_size;
     }
 
     fn on_deregister(&mut self, deregister: Deregister) {
@@ -275,10 +244,10 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
             } => {
                 // The peer wants to deregister
                 let mut is_last = false;
-                if let Some(delegate) = self.capture_regions.get_mut(&region_id) {
+                if let Some(delegate) = self.0.get_mut(&region_id) {
                     is_last = delegate.unsubscribe(downstream_id, err);
                 }
-                if let Some(conn) = self.connections.get_mut(&conn_id) {
+                if let Some(conn) = self.1.get_mut(&conn_id) {
                     if let Some(id) = conn.downstream_id(region_id) {
                         if downstream_id == id {
                             conn.unsubscribe(region_id);
@@ -286,9 +255,9 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
                     }
                 }
                 if is_last {
-                    let delegate = self.capture_regions.remove(&region_id).unwrap();
+                    let delegate = self.0.remove(&region_id).unwrap();
                     // Do not continue to observe the events of the region.
-                    let oid = self.observer.unsubscribe_region(region_id, delegate.id);
+                    let oid = self.4.unsubscribe_region(region_id, delegate.id);
                     assert!(
                         oid.is_some(),
                         "unsubscribe region {} failed, ObserveID {:?}",
@@ -306,19 +275,19 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
 
                 // To avoid ABA problem, we must check the unique ObserveID.
                 let need_remove = self
-                    .capture_regions
+                    .0
                     .get(&region_id)
                     .map_or(false, |d| d.id == observe_id);
                 if need_remove {
-                    if let Some(mut delegate) = self.capture_regions.remove(&region_id) {
+                    if let Some(mut delegate) = self.0.remove(&region_id) {
                         delegate.stop(err);
                     }
-                    self.connections
+                    self.1
                         .iter_mut()
                         .for_each(|(_, conn)| conn.unsubscribe(region_id));
                 }
                 // Do not continue to observe the events of the region.
-                let oid = self.observer.unsubscribe_region(region_id, observe_id);
+                let oid = self.4.unsubscribe_region(region_id, observe_id);
                 assert_eq!(
                     need_remove,
                     oid.is_some(),
@@ -329,16 +298,16 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
             }
             Deregister::Conn(conn_id) => {
                 // The connection is closed, deregister all downstreams of the connection.
-                if let Some(conn) = self.connections.remove(&conn_id) {
+                if let Some(conn) = self.1.remove(&conn_id) {
                     conn.take_downstreams()
                         .into_iter()
                         .for_each(|(region_id, downstream_id)| {
-                            if let Some(delegate) = self.capture_regions.get_mut(&region_id) {
+                            if let Some(delegate) = self.0.get_mut(&region_id) {
                                 if delegate.unsubscribe(downstream_id, None) {
-                                    let delegate = self.capture_regions.remove(&region_id).unwrap();
+                                    let delegate = self.0.remove(&region_id).unwrap();
                                     // Do not continue to observe the events of the region.
                                     let oid =
-                                        self.observer.unsubscribe_region(region_id, delegate.id);
+                                        self.4.unsubscribe_region(region_id, delegate.id);
                                     assert!(
                                         oid.is_some(),
                                         "unsubscribe region {} failed, ObserveID {:?}",
@@ -360,7 +329,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
         conn_id: ConnID,
     ) {
         let region_id = request.region_id;
-        let conn = match self.connections.get_mut(&conn_id) {
+        let conn = match self.1.get_mut(&conn_id) {
             Some(conn) => conn,
             None => {
                 error!("register for a nonexistent connection";
@@ -385,7 +354,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
             "req_id" => request.get_request_id(),
             "downstream_id" => ?downstream.get_id());
         let mut is_new_delegate = false;
-        let delegate = self.capture_regions.entry(region_id).or_insert_with(|| {
+        let delegate = self.0.entry(region_id).or_insert_with(|| {
             let d = Delegate::new(region_id);
             is_new_delegate = true;
             d
@@ -394,8 +363,8 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
         let downstream_id = downstream.get_id();
         let downstream_state = downstream.get_state();
         let checkpoint_ts = request.checkpoint_ts;
-        let sched = self.scheduler.clone();
-        let batch_size = self.scan_batch_size;
+        let sched = self.2.clone();
+        let batch_size = self.8;
 
         let init = Initializer {
             sched,
@@ -411,14 +380,14 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
         if !delegate.subscribe(downstream) {
             conn.unsubscribe(request.get_region_id());
             if is_new_delegate {
-                self.capture_regions.remove(&request.get_region_id());
+                self.0.remove(&request.get_region_id());
             }
             return;
         }
         let change_cmd = if is_new_delegate {
             // The region has never been registered.
             // Subscribe the change events of the region.
-            let old_id = self.observer.subscribe_region(region_id, delegate.id);
+            let old_id = self.4.subscribe_region(region_id, delegate.id);
             assert!(
                 old_id.is_none(),
                 "region {} must not be observed twice, old ObserveID {:?}, new ObserveID {:?}",
@@ -439,7 +408,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
             }
         };
         let (cb, fut) = EinsteinDB_util::future::paired_future_callback();
-        let scheduler = self.scheduler.clone();
+        let scheduler = self.2.clone();
         let deregister_downstream = move |err| {
             warn!("cc send capture change cmd failed"; "region_id" => region_id, "error" => ?err);
             let deregister = Deregister::Downstream {
@@ -452,8 +421,8 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
                 error!("schedule cc task failed"; "error" => ?e);
             }
         };
-        let scheduler = self.scheduler.clone();
-        if let Err(e) = self.violetabft_router.significant_send(
+        let scheduler = self.2.clone();
+        if let Err(e) = self.3.significant_send(
             region_id,
             SignificantMsg::CaptureChange {
                 cmd: change_cmd,
@@ -474,7 +443,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
             deregister_downstream(Error::Request(e.into()));
             return;
         }
-        self.workers.spawn(fut.then(move |res| {
+        self.10.spawn(fut.then(move |res| {
             match res {
                 Ok(resp) => init.on_change_cmd(resp),
                 Err(e) => deregister_downstream(Error::Other(box_err!(e))),
@@ -487,7 +456,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
         for batch in multi {
             let region_id = batch.region_id;
             let mut deregister = None;
-            if let Some(delegate) = self.capture_regions.get_mut(&region_id) {
+            if let Some(delegate) = self.0.get_mut(&region_id) {
                 if delegate.has_failed() {
                     // Skip the batch if the delegate has failed.
                     continue;
@@ -514,7 +483,7 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
         downstream_id: DownstreamID,
         entries: Vec<Option<TxnEntry>>,
     ) {
-        if let Some(delegate) = self.capture_regions.get_mut(&region_id) {
+        if let Some(delegate) = self.0.get_mut(&region_id) {
             delegate.on_scan(downstream_id, entries);
         } else {
             warn!("region not found on incremental scan"; "region_id" => region_id);
@@ -523,12 +492,12 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
 
     fn on_region_ready(&mut self, observe_id: ObserveID, resolver: Resolver, region: Region) {
         let region_id = region.get_id();
-        if let Some(delegate) = self.capture_regions.get_mut(&region_id) {
+        if let Some(delegate) = self.0.get_mut(&region_id) {
             if delegate.id == observe_id {
                 for downstream in delegate.on_region_ready(resolver, region) {
                     let conn_id = downstream.get_conn_id();
                     if !delegate.subscribe(downstream) {
-                        let conn = self.connections.get_mut(&conn_id).unwrap();
+                        let conn = self.1.get_mut(&conn_id).unwrap();
                         conn.unsubscribe(region_id);
                     }
                 }
@@ -545,23 +514,23 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
     }
 
     fn on_min_ts(&mut self, region_id: u64, min_ts: TimeStamp) {
-        if let Some(delegate) = self.capture_regions.get_mut(&region_id) {
+        if let Some(delegate) = self.0.get_mut(&region_id) {
             if let Some(resolved_ts) = delegate.on_min_ts(min_ts) {
-                if resolved_ts < self.min_resolved_ts {
-                    self.min_resolved_ts = resolved_ts;
-                    self.min_ts_region_id = region_id;
+                if resolved_ts < self.11 {
+                    self.11 = resolved_ts;
+                    self.12 = region_id;
                 }
             }
         }
     }
 
     fn register_min_ts_event(&self) {
-        let timeout = self.timer.delay(self.min_ts_interval);
-        let tso = self.fidelio.get_tso();
-        let scheduler = self.scheduler.clone();
-        let violetabft_router = self.violetabft_router.clone();
+        let timeout = self.6.delay(self.7);
+        let tso = self.5.get_tso();
+        let scheduler = self.2.clone();
+        let violetabft_router = self.3.clone();
         let regions: Vec<(u64, ObserveID)> = self
-            .capture_regions
+            .0
             .iter()
             .map(|(region_id, delegate)| (*region_id, delegate.id))
             .collect();
@@ -614,15 +583,15 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Endpoint<T> {
                 Ok(())
             },
         );
-        self.tso_worker.spawn(fut);
+        self.9.spawn(fut);
     }
 
     fn on_open_conn(&mut self, conn: Conn) {
-        self.connections.insert(conn.get_id(), conn);
+        self.1.insert(conn.get_id(), conn);
     }
 
     fn flush_all(&self) {
-        self.connections.iter().for_each(|(_, conn)| conn.flush());
+        self.1.iter().for_each(|(_, conn)| conn.flush());
     }
 }
 
@@ -641,7 +610,7 @@ struct Initializer {
 }
 
 impl Initializer {
-    fn on_change_cmd(&self, mut resp: ReadResponse<LmdbSnapshot>) {
+    fn on_change_cmd(&self, mut resp: ReadResponse<foundationdbSnapshot>) {
         if let Some(region_snapshot) = resp.snapshot {
             assert_eq!(self.region_id, region_snapshot.get_region().get_id());
             let region = region_snapshot.get_region().clone();
@@ -809,7 +778,7 @@ impl Initializer {
     }
 }
 
-impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Runnable<Task> for Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> Runnable<Task> for Endpoint<T> {
     fn run(&mut self, task: Task) {
         debug!("run cc task"; "task" => %task);
         match task {
@@ -845,22 +814,22 @@ impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> Runnable<Task> for Endpoi
                 cb();
             }
             Task::Validate(region_id, validate) => {
-                validate(self.capture_regions.get(&region_id));
+                validate(self.0.get(&region_id));
             }
         }
         self.flush_all();
     }
 }
 
-impl<T: 'static + violetabftStoreRouter<LmdbSnapshot>> RunnableWithTimer<Task, ()> for Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> RunnableWithTimer<Task, ()> for Endpoint<T> {
     fn on_timeout(&mut self, timer: &mut Timer<()>, _: ()) {
-        CC_CAPTURED_REGION_COUNT.set(self.capture_regions.len() as i64);
-        if self.min_resolved_ts != TimeStamp::max() {
-            CC_MIN_RESOLVED_TS_REGION.set(self.min_ts_region_id as i64);
-            CC_MIN_RESOLVED_TS.set(self.min_resolved_ts.physical() as i64);
+        CC_CAPTURED_REGION_COUNT.set(self.0.len() as i64);
+        if self.11 != TimeStamp::max() {
+            CC_MIN_RESOLVED_TS_REGION.set(self.12 as i64);
+            CC_MIN_RESOLVED_TS.set(self.11.physical() as i64);
         }
-        self.min_resolved_ts = TimeStamp::max();
-        self.min_ts_region_id = 0;
+        self.11 = TimeStamp::max();
+        self.12 = 0;
 
         timer.add_task(Duration::from_millis(METRICS_FLUSH_INTERVAL), ());
     }

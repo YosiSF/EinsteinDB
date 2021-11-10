@@ -8,7 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use crate::engine::LmdbEngine;
+use crate::engine::foundationdbEngine;
 use crate::util;
 use einsteindb_promises::DecodeProperties;
 use einsteindb_promises::Range;
@@ -17,15 +17,15 @@ use einsteindb_promises::{
     TableProperties, TablePropertiesCollectionIter, TablePropertiesKey, UserCollectedProperties,
 };
 use einsteindb_promises::{TablePropertiesCollection, TablePropertiesExt};
-use lmdb::table_properties_rc as raw;
+use foundationdb::table_properties_rc as raw;
 use std::ops::Deref;
 
-impl TablePropertiesExt for LmdbEngine {
-    type TablePropertiesCollection = LmdbTablePropertiesCollection;
-    type TablePropertiesCollectionIter = LmdbTablePropertiesCollectionIter;
-    type TablePropertiesKey = LmdbTablePropertiesKey;
-    type TableProperties = LmdbTableProperties;
-    type UserCollectedProperties = LmdbUserCollectedProperties;
+impl TablePropertiesExt for foundationdbEngine {
+    type TablePropertiesCollection = foundationdbTablePropertiesCollection;
+    type TablePropertiesCollectionIter = foundationdbTablePropertiesCollectionIter;
+    type TablePropertiesKey = foundationdbTablePropertiesKey;
+    type TableProperties = foundationdbTableProperties;
+    type UserCollectedProperties = foundationdbUserCollectedProperties;
 
     fn get_properties_of_tables_in_range(
         &self,
@@ -33,33 +33,33 @@ impl TablePropertiesExt for LmdbEngine {
         ranges: &[Range],
     ) -> Result<Self::TablePropertiesCollection> {
         // FIXME: extra allocation
-        let ranges: Vec<_> = ranges.iter().map(util::range_to_lmdb_range).collect();
+        let ranges: Vec<_> = ranges.iter().map(util::range_to_foundationdb_range).collect();
         let raw = self
             .as_inner()
             .get_properties_of_tables_in_range_rc(brane.as_inner(), &ranges);
         let raw = raw.map_err(Error::Engine)?;
-        Ok(LmdbTablePropertiesCollection::from_raw(raw))
+        Ok(foundationdbTablePropertiesCollection::from_raw(raw))
     }
 }
 
-pub struct LmdbTablePropertiesCollection(raw::TablePropertiesCollection);
+pub struct foundationdbTablePropertiesCollection(raw::TablePropertiesCollection);
 
-impl LmdbTablePropertiesCollection {
-    fn from_raw(raw: raw::TablePropertiesCollection) -> LmdbTablePropertiesCollection {
-        LmdbTablePropertiesCollection(raw)
+impl foundationdbTablePropertiesCollection {
+    fn from_raw(raw: raw::TablePropertiesCollection) -> foundationdbTablePropertiesCollection {
+        foundationdbTablePropertiesCollection(raw)
     }
 }
 
 impl
     TablePropertiesCollection<
-        LmdbTablePropertiesCollectionIter,
-        LmdbTablePropertiesKey,
-        LmdbTableProperties,
-        LmdbUserCollectedProperties,
-    > for LmdbTablePropertiesCollection
+        foundationdbTablePropertiesCollectionIter,
+        foundationdbTablePropertiesKey,
+        foundationdbTableProperties,
+        foundationdbUserCollectedProperties,
+    > for foundationdbTablePropertiesCollection
 {
-    fn iter(&self) -> LmdbTablePropertiesCollectionIter {
-        LmdbTablePropertiesCollectionIter(self.0.iter())
+    fn iter(&self) -> foundationdbTablePropertiesCollectionIter {
+        foundationdbTablePropertiesCollectionIter(self.0.iter())
     }
 
     fn len(&self) -> usize {
@@ -67,32 +67,32 @@ impl
     }
 }
 
-pub struct LmdbTablePropertiesCollectionIter(raw::TablePropertiesCollectionIter);
+pub struct foundationdbTablePropertiesCollectionIter(raw::TablePropertiesCollectionIter);
 
 impl
     TablePropertiesCollectionIter<
-        LmdbTablePropertiesKey,
-        LmdbTableProperties,
-        LmdbUserCollectedProperties,
-    > for LmdbTablePropertiesCollectionIter
+        foundationdbTablePropertiesKey,
+        foundationdbTableProperties,
+        foundationdbUserCollectedProperties,
+    > for foundationdbTablePropertiesCollectionIter
 {
 }
 
-impl Iterator for LmdbTablePropertiesCollectionIter {
-    type Item = (LmdbTablePropertiesKey, LmdbTableProperties);
+impl Iterator for foundationdbTablePropertiesCollectionIter {
+    type Item = (foundationdbTablePropertiesKey, foundationdbTableProperties);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0
             .next()
-            .map(|(key, props)| (LmdbTablePropertiesKey(key), LmdbTableProperties(props)))
+            .map(|(key, props)| (foundationdbTablePropertiesKey(key), foundationdbTableProperties(props)))
     }
 }
 
-pub struct LmdbTablePropertiesKey(raw::TablePropertiesKey);
+pub struct foundationdbTablePropertiesKey(raw::TablePropertiesKey);
 
-impl TablePropertiesKey for LmdbTablePropertiesKey {}
+impl TablePropertiesKey for foundationdbTablePropertiesKey {}
 
-impl Deref for LmdbTablePropertiesKey {
+impl Deref for foundationdbTablePropertiesKey {
     type Target = str;
 
     fn deref(&self) -> &str {
@@ -100,21 +100,21 @@ impl Deref for LmdbTablePropertiesKey {
     }
 }
 
-pub struct LmdbTableProperties(raw::TableProperties);
+pub struct foundationdbTableProperties(raw::TableProperties);
 
-impl TableProperties<LmdbUserCollectedProperties> for LmdbTableProperties {
+impl TableProperties<foundationdbUserCollectedProperties> for foundationdbTableProperties {
     fn num_entries(&self) -> u64 {
         self.0.num_entries()
     }
 
-    fn user_collected_properties(&self) -> LmdbUserCollectedProperties {
-        LmdbUserCollectedProperties(self.0.user_collected_properties())
+    fn user_collected_properties(&self) -> foundationdbUserCollectedProperties {
+        foundationdbUserCollectedProperties(self.0.user_collected_properties())
     }
 }
 
-pub struct LmdbUserCollectedProperties(raw::UserCollectedProperties);
+pub struct foundationdbUserCollectedProperties(raw::UserCollectedProperties);
 
-impl UserCollectedProperties for LmdbUserCollectedProperties {
+impl UserCollectedProperties for foundationdbUserCollectedProperties {
     fn get(&self, index: &[u8]) -> Option<&[u8]> {
         self.0.get(index)
     }
@@ -124,7 +124,7 @@ impl UserCollectedProperties for LmdbUserCollectedProperties {
     }
 }
 
-impl DecodeProperties for LmdbUserCollectedProperties {
+impl DecodeProperties for foundationdbUserCollectedProperties {
     fn decode(&self, k: &str) -> EinsteinDB_util::codec::Result<&[u8]> {
         self.get(k.as_bytes())
             .ok_or(EinsteinDB_util::codec::Error::KeyNotFound)

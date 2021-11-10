@@ -75,10 +75,23 @@ impl Variable {
 
 pub trait FromValue<T> {
     ///This climbs upward from object reference to formal mapping.
-    fn from_value(v: &::ValueAndSpan) -> Option<T>;
+    fn from_value<'a>(v: &'a ::ValueAndSpan) -> Option<T>;
 }
 
 impl FromValue<Variable> for Variable {
+    ///
+    ///
+    /// # Arguments
+    ///
+    /// * `v`:
+    ///
+    /// returns: <unknown>
+    ///
+    /// # Examples
+    ///
+    /// ```
+    ///
+    /// ```
     fn from_value(v: &::ValueAndSpan) -> Option<Variable> {
         if let ::SpannedValue::PlainSymbol(ref s) = v.inner {
             Variable::from_symbol(s)
@@ -96,6 +109,7 @@ impl Variable {
             None
         }
     }
+}
 
     impl fmt::Debug for Variable {
         fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -108,4 +122,4 @@ impl Variable {
             write!(f, "{}", self.0)
         }
     }
-}
+

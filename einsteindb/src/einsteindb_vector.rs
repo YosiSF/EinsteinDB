@@ -1,19 +1,19 @@
 use einsteindb_promises::DBVector;
-use lmdb::DBVector as RawDBVector;
+use foundationdb::DBVector as RawDBVector;
 use std::fmt::{self, Debug, Formatter};
 use std::ops::Deref;
 
-pub struct lmdbVector(RawDBVector);
+pub struct foundationdbVector(RawDBVector);
 
-impl lmdbVector {
-    pub fn from_raw(raw: RawDBVector) -> lmdbVector {
-        lmdbVector(raw)
+impl foundationdbVector {
+    pub fn from_raw(raw: RawDBVector) -> foundationdbVector {
+        foundationdbVector(raw)
     }
 }
 
-impl DBVector for lmdbVector {}
+impl DBVector for foundationdbVector {}
 
-impl Deref for lmdbVector {
+impl Deref for foundationdbVector {
     type Target = [u8];
 
     fn deref(&self) -> &[u8] {
@@ -21,13 +21,13 @@ impl Deref for lmdbVector {
     }
 }
 
-impl Debug for lmdbVector {
+impl Debug for foundationdbVector {
     fn fmt(&self, formatter: &mut Formatter) -> fmt::Result {
         write!(formatter, "{:?}", &**self)
     }
 }
 
-impl<'a> PartialEq<&'a [u8]> for lmdbVector {
+impl<'a> PartialEq<&'a [u8]> for foundationdbVector {
     fn eq(&self, rhs: &&[u8]) -> bool {
         **rhs == **self
     }

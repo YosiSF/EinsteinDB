@@ -1,24 +1,24 @@
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::lmdb_metrics::*;
-use lmdb::{
+use crate::foundationdb_metrics::*;
+use foundationdb::{
     CompactionJobInfo, DBBackgroundErrorReason, FlushJobInfo, IngestionInfo, WriteStallInfo,
 };
 use EinsteinDB_util::set_panic_mark;
 
-pub struct LmdbEventListener {
+pub struct foundationdbEventListener {
     db_name: String,
 }
 
-impl LmdbEventListener {
-    pub fn new(db_name: &str) -> LmdbEventListener {
-        LmdbEventListener {
+impl foundationdbEventListener {
+    pub fn new(db_name: &str) -> foundationdbEventListener {
+        foundationdbEventListener {
             db_name: db_name.to_owned(),
         }
     }
 }
 
-impl lmdb::EventListener for LmdbEventListener {
+impl foundationdb::EventListener for foundationdbEventListener {
     fn on_flush_completed(&self, info: &FlushJobInfo) {
         STORE_ENGINE_EVENT_COUNTER_VEC
             .with_label_values(&[&self.db_name, info.brane_name(), "flush"])
@@ -59,12 +59,12 @@ impl lmdb::EventListener for LmdbEventListener {
                 DBBackgroundErrorReason::WriteCallback => "write_callback",
                 DBBackgroundErrorReason::MemTable => "memtable",
             };
-            // Avoid EinsteinDB from restarting if lmdb get corruption.
+            // Avoid EinsteinDB from restarting if foundationdb get corruption.
             if err.starts_with("Corruption") {
                 set_panic_mark();
             }
             panic!(
-                "lmdb background error. db: {}, reason: {}, error: {}",
+                "foundationdb background error. db: {}, reason: {}, error: {}",
                 self.db_name, r, err
             );
         }

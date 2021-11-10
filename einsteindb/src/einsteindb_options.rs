@@ -9,18 +9,20 @@
 // specific language governing permissions and limitations under the License.
 
 use crate::einsteindb::EinsteinMerkleEngine;
-use einsteindb_promises::DBOptions;
-use einsteindb_promises::DBOptionsExt;
-use einsteindb_promises::Result;
-use einsteindb_promises::EinsteinMerkleDBOptions;
+use einsteindbgen::einsteindb_promises::{
+    DBOptions,
+    DBOptionsExt,
+    Result,
+    EinsteinMerkleDBOptions
+};
 use einstein_merkle::DBOptions as RawDBOptions;
 use einstein_merkle::EinsteinMerkleDBOptions as RawEinsteinMerkleDBOptions;
 
 impl DBOptionsExt for EinsteinMerkleEngine {
-    type DBOptions = einstein_merkleOptions;
+    type DBOptions = EinsteinMerkleOptions;
 
     fn get_db_options(&self) -> Self::DBOptions {
-        einstein_merkleOptions::from_raw(self.as_inner().get_db_options())
+        EinsteinMerkleOptions::from_raw(self.as_inner().get_db_options())
     }
     fn set_db_options(&self, options: &[(&str, &str)]) -> Result<()> {
         self.as_inner()
@@ -29,11 +31,11 @@ impl DBOptionsExt for EinsteinMerkleEngine {
     }
 }
 
-pub struct einstein_merkleOptions(RawDBOptions);
+pub struct EinsteinMerkleOptions(RawDBOptions);
 
-impl einstein_merkleOptions {
-    pub fn from_raw(raw: RawDBOptions) -> einstein_merkleOptions {
-        einstein_merkleOptions(raw)
+impl EinsteinMerkleOptions {
+    pub fn from_raw(raw: RawDBOptions) -> EinsteinMerkleOptions {
+        EinsteinMerkleOptions(raw)
     }
 
     pub fn into_raw(self) -> RawDBOptions {
@@ -41,11 +43,11 @@ impl einstein_merkleOptions {
     }
 }
 
-impl DBOptions for einstein_merkleOptions {
-    type EinsteinMerkleDBOptions = LmdbEinsteinMerkleDBOptions;
+impl DBOptions for EinsteinMerkleOptions {
+    type EinsteinMerkleDBOptions = FoundationdbEinsteinMerkleDboptions;
 
     fn new() -> Self {
-        einstein_merkleOptions::from_raw(RawDBOptions::new())
+        EinsteinMerkleOptions::from_raw(RawDBOptions::new())
     }
 
     fn get_max_background_jobs(&self) -> i32 {
@@ -62,16 +64,16 @@ impl DBOptions for einstein_merkleOptions {
             .map_err(|e| box_err!(e))
     }
 
-    fn set_EinsteinMerkledb_options(&mut self, opts: &Self::EinsteinMerkleDBOptions) {
+    fn set_einstein_merkledb_options(&mut self, opts: &Self::EinsteinMerkleDBOptions) {
         self.0.set_EinsteinMerkledb_options(opts.as_raw())
     }
 }
 
-pub struct LmdbEinsteinMerkleDBOptions(RawEinsteinMerkleDBOptions);
+pub struct FoundationdbEinsteinMerkleDboptions(RawEinsteinMerkleDBOptions);
 
-impl LmdbEinsteinMerkleDBOptions {
-    pub fn from_raw(raw: RawEinsteinMerkleDBOptions) -> LmdbEinsteinMerkleDBOptions {
-        LmdbEinsteinMerkleDBOptions(raw)
+impl FoundationdbEinsteinMerkleDboptions {
+    pub fn from_raw(raw: RawEinsteinMerkleDBOptions) -> FoundationdbEinsteinMerkleDboptions {
+        FoundationdbEinsteinMerkleDboptions(raw)
     }
 
     pub fn as_raw(&self) -> &RawEinsteinMerkleDBOptions {
@@ -79,9 +81,9 @@ impl LmdbEinsteinMerkleDBOptions {
     }
 }
 
-impl EinsteinMerkleDBOptions for LmdbEinsteinMerkleDBOptions {
+impl EinsteinMerkleDBOptions for FoundationdbEinsteinMerkleDboptions {
     fn new() -> Self {
-        LmdbEinsteinMerkleDBOptions::from_raw(RawEinsteinMerkleDBOptions::new())
+        FoundationdbEinsteinMerkleDboptions::from_raw(RawEinsteinMerkleDBOptions::new())
     }
 
     fn set_min_blob_size(&mut self, size: u64) {

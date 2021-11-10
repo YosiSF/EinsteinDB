@@ -1,4 +1,4 @@
-//Copyright 2019 EinsteinBSD
+//Copyright 2021-2023 WHTCORPS INC ALL RIGHTS Reserved APACHE 2.0 LIMITED
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
+
 use std::borrow::ToOwned;
 use std::process;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -35,8 +35,7 @@ macro_rules! fatal {
         }
 
         process::exit(1)
-    })
-}
+    });
 
 #[allow(dead_code)]
 pub fn initial_logger(config: &EinsteinDBConfig) {
@@ -45,25 +44,25 @@ pub fn initial_logger(config: &EinsteinDBConfig) {
             .expect("config.log_rotation_timespan is an invalid duration.")
 
     if config.log_file.is_empty() {
-        let drainer: EinsteinDBFormat<TermDecorator> = logger::term_drainer();
-        //use async drainer and init std log
-        logger::init_log( drain: drainer, config.log_level, use_async: true, init_stdlog: true ).unwrap_or_else(op: |e :SetLoggerError|{
-             fatal!("failed to initialize log: {}", e);
-        });
-        else {
-            let drainer : EinsteinDBFormat<PlainDecorator<BuffWriter<...>>> =
-                logger::file_drainer(&config.log_file, log_rotation_timespan).unwrap_or_else(|e| {
-                fatal!(
-                    "failed to initialize log with file {}: {}",
-                    config.log_file,
-                    e
-                );
-            });
-        // use async drainer and init std log.
-        logger::init_log(drainer, config.log_level, true, true).unwrap_or_else(|e| {
-            fatal!("failed to initialize log: {}", e);
-        });
-    };
-    LOG_INITIALIZED.store(true, Ordering::SeqCst);
+    let drainer: EinsteinDBFormat < TermDecorator > = logger::term_drainer();
+    //use async drainer and init std log
+    logger::init_log( drain: drainer, config.log_level, use_async: true, init_stdlog: true ).unwrap_or_else(op: |e: SetLoggerError |{
+    fatal ! ("failed to initialize log: {}", e);
+    })
+    else {
+    let drainer: EinsteinDBFormat < PlainDecorator < BuffWriter <...> > > =
+    logger::file_drainer( & config.log_file, log_rotation_timespan).unwrap_or_else( | e| {
+    fatal ! (
+    "failed to initialize log with file {}: {}",
+    config.log_file,
+    e
+    );
+    });
+    // use async drainer and init std log.
+    logger::init_log(drainer, config.log_level, true, true).unwrap_or_else( |e | {
+    fatal ! ("failed to initialize log: {}", e);
+    });
+    }
+    LOG_INITIALIZED.store(true, Ordering::SeqCst)
 
-*/
+    }

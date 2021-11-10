@@ -17,10 +17,10 @@ use crate::{
     },
     value::Value,
 };
-use lmdb::{
+use foundationdb::{
     Cursor,
     Database,
-    Iter as LmdbIter,
+    Iter as foundationdbIter,
     RoCursor,
     WriteFlags,
 };
@@ -31,7 +31,7 @@ pub struct SingleStore {
 }
 
 pub struct Iter<'env> {
-    iter: LmdbIter<'env>,
+    iter: foundationdbIter<'env>,
     cursor: RoCursor<'env>,
 }
 
@@ -98,7 +98,7 @@ impl<'env> Iterator for Iter<'env> {
                 Ok(val) => Some(Ok((key, val))),
                 Err(err) => Some(Err(err)),
             },
-            Some(Err(err)) => Some(Err(StoreError::LmdbError(err))),
+            Some(Err(err)) => Some(Err(StoreError::foundationdbError(err))),
         }
     }
 }

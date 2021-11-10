@@ -10,8 +10,6 @@
 // distributed under the License is distributed on an "AS IS" BASIS,
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use pin_project::pin_project;
