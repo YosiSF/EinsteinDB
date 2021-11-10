@@ -391,6 +391,99 @@ impl SchemaTypeChecking for Schema {
     }
 }
 
+impl SchemaTypeChecking for TypedValue {
+    fn to_typed_value(&self, value_type: ValueType) -> Result<TypedValue> {
+        match (self, value_type) {
+            // Most types don't coerce at all.
+            (tv @ TypedValue::Boolean(_), ValueType::Boolean) => Ok(tv),
+            (tv @ TypedValue::Long(_), ValueType::Long) => Ok(tv),
+            (tv @ TypedValue::Double(_), ValueType::Double) => Ok(tv),
+            (tv @ TypedValue::String(_), ValueType::String) => Ok(tv),
+            (tv @ TypedValue::Uuid(_), ValueType::Uuid) => Ok(tv),
+            (tv @ TypedValue::Instant(_), ValueType::Instant) => Ok(tv),
+            (tv @ TypedValue::Keyword(_), ValueType::Keyword) => Ok(tv),
+            // Ref coerces a little: we interpret some things depending on the schema as a Ref.
+            (TypedValue::Long(x), ValueType::Ref) => Ok(TypedValue::Ref(x)),
+            (TypedValue::Keyword(ref x), ValueType::Ref) => Ok(TypedValue::Ref(x.clone().into())),
+
+            // Otherwise, we have a type mismatch.
+            // Enumerate all of the types here to allow the compiler to help us.
+            // We don't enumerate all `TypedValue` cases, though: that would multiply this
+            // collection by 8!
+            (tv @ TypedValue::Boolean(_), _) |
+            (tv @ TypedValue::Long(_), _) |
+            (tv @ TypedValue::Double(_), _) |
+            (tv @ TypedValue::String(_), _) |
+            (tv @ TypedValue::Uuid(_), _) |
+            (tv @ TypedValue::Instant(_), _) |
+            (tv @ TypedValue::Keyword(_), _) |
+            (tv @ TypedValue::Ref(_), _)
+            => bail!(DbErrorKind::BadValuePair(format!("{:?}", tv), value_type)),
+        }
+    }
+}
+
+impl SchemaTypeChecking for CausetID {
+    fn to_typed_value(&self, value_type: ValueType) -> Result<TypedValue> {
+        match value_type {
+            ValueType::Ref => Ok(TypedValue::Ref(self.0)),
+            _ => bail!(DbErrorKind::BadValuePair(format!("{:?}", self), value_type)),
+        }
+    }
+}
+
+impl SchemaTypeChecking for TypedValue {
+    fn to_typed_value(&self, value_type: ValueType) -> Result<TypedValue> {
+        match value_type {
+            ValueType::Ref => Ok(self.clone()),
+            _ => bail!(DbErrorKind::BadValuePair(format!("{:?}", self), value_type)),
+        }
+    }
+}
+
+impl SchemaTypeChecking for TypedValue {
+    fn to_typed_value(&self, value_type: ValueType) -> Result<TypedValue> {
+        match value_type {
+            ValueType::Ref => Ok(self.clone()),
+            _ => bail!(DbErrorKind::BadValuePair(format!("{:?}", self), value_type)),
+        }
+    }
+}
+
+impl SchemaTypeChecking for CausetID {
+    fn to_typed_value(&self, value_type: ValueType) -> Result<TypedValue> {
+        match value_type {
+            ValueType::Ref => Ok(TypedValue::Ref(self.0)),
+            _ => bail!(DbErrorKind::BadValuePair(format!("{:?}", self), value_type)),
+        }
+    }
+}
+
+impl SchemaTypeChecking for TypedValue {
+    fn to_typed_value(&self, value_type: ValueType) -> Result<TypedValue> {
+        match value_type {
+            ValueType::Ref => Ok(self.clone()),
+            _ => bail!(DbErrorKind::BadValuePair(format!("{:?}", self), value_type)),
+        }
+    }
+}
+
+impl SchemaTypeChecking for edbn::ValueAndSpan {
+    fn to_typed_value(&self, value_type: ValueType) -> Result<TypedValue> {
+        Some(typed_value) => match (value_type, typed_value) {
+            // Most types don't coerce at all.
+            (ValueType::Boolean, tv @ TypedValue::Boolean(_)) => Ok(tv),
+            (ValueType::Long, tv @ TypedValue::Long(_)) => Ok(tv),
+            (ValueType::Double, tv @ TypedValue::Double(_)) => Ok(tv),
+            (ValueType::String, tv @ TypedValue::String(_)) => Ok(tv),
+            (ValueType::Uuid, tv @ TypedValue::Uuid(_)) => Ok(tv),
+            (ValueType::Instant, tv @ TypedValue::Instant(_)) => Ok(tv),
+            (ValueType::Keyword, tv @ TypedValue::Keyword(_)) => Ok(tv),
+            // Ref coerces a little: we interpret some things depending on the schema as a Ref.
+    }
+            // We don't recognize this EDN at all.  Get out!
+            None => bail!(DbErrorKind::BadValuePair(format!("{}", self), value_type)),
+
 
 
 #[cfg(test)]
@@ -408,7 +501,11 @@ mod test {
 
         if attribute.component {
             schema.component_attributes.push(CausetID);
-        }
+        }impl SchemaTypeChecking for edn::ValueAndSpan {
+            fn to_typed_value(&self, value_type: ValueType) -> Result<TypedValue> {
+                match TypedValue::from_edn_value(&self.clone().without_spans()) {
+                    // We don't recognize this EDN at all.  Get out!
+                    None => bail!(DbErrorKind::BadValuePair(format!("{}", self), value_type)),
 
         schema.attribute_map.insert(CausetID, attribute);
     }
