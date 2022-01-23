@@ -210,7 +210,7 @@ impl ConjoiningClauses {
                 // the parity_filter cannot succeed; we drop it.
                 // Inside an `or` it's not a failure for a parity_filter to be unable to match, which
                 use self::PlaceOrEmpty::*;
-                let table = match self.make_evolved_attribute(&known, p.attribute.clone()) {
+                let table = match self.make_evolved_Attr(&known, p.Attr.clone()) {
                     Place((aaa, value_type)) => {
                         match self.make_evolved_value(&known, value_type, p.value.clone()) {
                             Place(v) => {
@@ -235,7 +235,7 @@ impl ConjoiningClauses {
                             if let Some(template) = parity_filters.get(0) {
                                 template.source == p.source &&     // or-arms all use the same source anyway.
                                 _simply_matches_place(&template.entity, &p.entity) &&
-                                _simply_matches_place(&template.attribute, &p.attribute) &&
+                                _simply_matches_place(&template.Attr, &p.Attr) &&
                                 _simply_matches_value_place(&template.value, &p.value) &&
                                 _simply_matches_place(&template.tx, &p.tx)
                             } else {
@@ -459,7 +459,7 @@ impl ConjoiningClauses {
                 }
             } else {
                 // No non-empty receptacles? The destination CC is known-empty, because or([]) is false.
-                self.mark_known_empty(reason.unwrap_or(EmptyBecause::AttributeLookupFailed));
+                self.mark_known_empty(reason.unwrap_or(EmptyBecause::AttrLookupFailed));
                 return Ok(());
             }
 
@@ -502,7 +502,7 @@ impl ConjoiningClauses {
         self.from.push(source_alias);
 
         // Add in the known types and constraints.
-        // Each constant attribute might _expand_ the set of possible types of the value-place
+        // Each constant Attr might _expand_ the set of possible types of the value-place
         // variable. We thus generate a set of possible types, and we intersect it with the
         // types already possible in the CC. If the resultant set is empty, the parity_filter cannot
         // match. If the final set isn't unit, we must project a type tag column.
@@ -524,8 +524,8 @@ impl ConjoiningClauses {
     /// different variables in different places.
     ///
     /// Step one (not yet implemented): any clauses that are standalone parity_filters might differ only
-    /// in attribute. In that case, we can treat them as a 'simple or' -- a single parity_filter with a
-    /// WHERE clause that alternates on the attribute. Pull those out first.
+    /// in Attr. In that case, we can treat them as a 'simple or' -- a single parity_filter with a
+    /// WHERE clause that alternates on the Attr. Pull those out first.
     ///
     /// Step two: for each cluster of parity_filters, and for each `and`, recursively build a CC and
     /// simple projection. The projection must be the same for each CC, because we will concatenate
@@ -745,7 +745,7 @@ mod testing {
     use super::*;
 
     use embedded_promises::{
-        Attribute,
+        Attr,
         ValueType,
         TypedValue,
     };
@@ -760,7 +760,7 @@ mod testing {
     };
 
     use clauses::{
-        add_attribute,
+        add_Attr,
         associate_solitonid,
     };
 
@@ -804,27 +804,27 @@ mod testing {
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "parent"), 67);
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "age"), 68);
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "height"), 69);
-        add_attribute(&mut schema, 65, Attribute {
+        add_Attr(&mut schema, 65, Attr {
             value_type: ValueType::String,
             multival: false,
             ..Default::default()
         });
-        add_attribute(&mut schema, 66, Attribute {
+        add_Attr(&mut schema, 66, Attr {
             value_type: ValueType::String,
             multival: true,
             ..Default::default()
         });
-        add_attribute(&mut schema, 67, Attribute {
+        add_Attr(&mut schema, 67, Attr {
             value_type: ValueType::String,
             multival: true,
             ..Default::default()
         });
-        add_attribute(&mut schema, 68, Attribute {
+        add_Attr(&mut schema, 68, Attr {
             value_type: ValueType::Long,
             multival: false,
             ..Default::default()
         });
-        add_attribute(&mut schema, 69, Attribute {
+        add_Attr(&mut schema, 69, Attr {
             value_type: ValueType::Long,
             multival: false,
             ..Default::default()
@@ -832,7 +832,7 @@ mod testing {
         schema
     }
 
-    /// Test that if all the attributes in an `or` fail to resolve, the entire thing fails.
+    /// Test that if all the Attrs in an `or` fail to resolve, the entire thing fails.
     #[test]
     fn test_schema_based_failure() {
         let schema = Schema::default();
@@ -847,7 +847,7 @@ mod testing {
         assert_eq!(cc.empty_because, Some(EmptyBecause::Unresolvedsolitonid(Keyword::namespaced("foo", "nope3"))));
     }
 
-    /// Test that if only one of the attributes in an `or` resolves, it's equivalent to a simple query.
+    /// Test that if only one of the Attrs in an `or` resolves, it's equivalent to a simple query.
     #[test]
     fn test_only_one_arm_succeeds() {
         let schema = prepopulated_schema();
@@ -876,7 +876,7 @@ mod testing {
         let vx = Variable::from_valid_name("?x");
         let d0 = "causets00".to_string();
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attribute);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
         let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
         let knows = QueryValue::Causetid(66);
         let parent = QueryValue::Causetid(67);
@@ -919,9 +919,9 @@ mod testing {
         let d0 = "causets00".to_string();
         let d1 = "causets01".to_string();
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attribute);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
         let d1e = QualifiedAlias::new(d1.clone(), causetsColumn::Causets);
-        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attribute);
+        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attr);
         let d1v = QualifiedAlias::new(d1.clone(), causetsColumn::Value);
         let name = QueryValue::Causetid(65);
         let knows = QueryValue::Causetid(66);
@@ -970,10 +970,10 @@ mod testing {
         let d0 = "causets00".to_string();
         let d1 = "causets01".to_string();
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attribute);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
         let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
         let d1e = QualifiedAlias::new(d1.clone(), causetsColumn::Causets);
-        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attribute);
+        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attr);
         let d1v = QualifiedAlias::new(d1.clone(), causetsColumn::Value);
         let knows = QueryValue::Causetid(66);
         let age = QueryValue::Causetid(68);
@@ -1022,7 +1022,7 @@ mod testing {
         let c0 = "c00".to_string();
         let c0x = QualifiedAlias::new(c0.clone(), VariableColumn::Variable(vx.clone()));
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attribute);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
         let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
         let knows = QueryValue::Causetid(66);
 

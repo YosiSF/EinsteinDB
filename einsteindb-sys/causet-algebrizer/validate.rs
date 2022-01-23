@@ -141,7 +141,7 @@ mod tests {
                     OrWhereClause::Clause(WhereClause::Pattern(Pattern {
                         source: None,
                         entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?artist")),
-                        attribute: solitonid("artist", "type"),
+                        Attr: solitonid("artist", "type"),
                         value: value_solitonid("artist.type", "group"),
                         tx: PatternNonValuePlace::Placeholder,
                     })));
@@ -152,14 +152,14 @@ mod tests {
                             WhereClause::Pattern(Pattern {
                                 source: None,
                                 entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?artist")),
-                                attribute: solitonid("artist", "type"),
+                                Attr: solitonid("artist", "type"),
                                 value: value_solitonid("artist.type", "person"),
                                 tx: PatternNonValuePlace::Placeholder,
                             }),
                             WhereClause::Pattern(Pattern {
                                 source: None,
                                 entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?artist")),
-                                attribute: solitonid("artist", "gender"),
+                                Attr: solitonid("artist", "gender"),
                                 value: value_solitonid("artist.gender", "female"),
                                 tx: PatternNonValuePlace::Placeholder,
                             }),
@@ -203,7 +203,7 @@ mod tests {
                     OrWhereClause::Clause(WhereClause::Pattern(Pattern {
                         source: None,
                         entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?artist")),
-                        attribute: solitonid("artist", "type"),
+                        Attr: solitonid("artist", "type"),
                         value: value_solitonid("artist.type", "group"),
                         tx: PatternNonValuePlace::Placeholder,
                     })));
@@ -214,14 +214,14 @@ mod tests {
                             WhereClause::Pattern(Pattern {
                                 source: None,
                                 entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?artist")),
-                                attribute: solitonid("artist", "type"),
+                                Attr: solitonid("artist", "type"),
                                 value: PatternValuePlace::Variable(Variable::from_valid_name("?type")),
                                 tx: PatternNonValuePlace::Placeholder,
                             }),
                             WhereClause::Pattern(Pattern {
                                 source: None,
                                 entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?type")),
-                                attribute: solitonid("artist", "role"),
+                                Attr: solitonid("artist", "role"),
                                 value: value_solitonid("artist.role", "parody"),
                                 tx: PatternNonValuePlace::Placeholder,
                             }),
@@ -276,7 +276,7 @@ mod tests {
                     WhereClause::Pattern(Pattern {
                         source: None,
                         entity: id.clone(),
-                        attribute: artist_country.clone(),
+                        Attr: artist_country.clone(),
                         value: value_solitonid("country", "CA"),
                         tx: PatternNonValuePlace::Placeholder,
                     }));
@@ -285,7 +285,7 @@ mod tests {
                     WhereClause::Pattern(Pattern {
                         source: None,
                         entity: id,
-                        attribute: artist_country,
+                        Attr: artist_country,
                         value: value_solitonid("country", "GB"),
                         tx: PatternNonValuePlace::Placeholder,
                     }));
@@ -315,7 +315,7 @@ mod tests {
                     WhereClause::Pattern(Pattern {
                         source: None,
                         entity: release.clone(),
-                        attribute: solitonid("release", "artists"),
+                        Attr: solitonid("release", "artists"),
                         value: artist,
                         tx: PatternNonValuePlace::Placeholder,
                     }));
@@ -324,7 +324,7 @@ mod tests {
                     WhereClause::Pattern(Pattern {
                         source: None,
                         entity: release,
-                        attribute: solitonid("release", "year"),
+                        Attr: solitonid("release", "year"),
                         value: PatternValuePlace::causetidOrInteger(1970),
                         tx: PatternNonValuePlace::Placeholder,
                     }));

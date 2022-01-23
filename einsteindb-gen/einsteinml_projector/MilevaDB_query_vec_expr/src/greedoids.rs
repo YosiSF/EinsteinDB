@@ -80,7 +80,7 @@ fn candidate_column(cc: &ConjoiningClauses, var: &Variable) -> Result<(ColumnOrE
 }
 
 #[derive(Clone, Debug)]
-pub(crate) struct PullOperation(pub(crate) Vec<PullAttributeSpec>);
+pub(crate) struct PullOperation(pub(crate) Vec<PullAttrSpec>);
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct PullIndices {

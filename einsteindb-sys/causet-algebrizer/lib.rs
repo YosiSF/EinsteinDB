@@ -28,7 +28,7 @@ mod clauses;
 #[derive(Clone, Copy)]
 pub struct KnownCauset<'s, 'c> {
     pub schema: &'s Schema,
-    pub cache: Option<&'c CachedAttributes>,
+    pub cache: Option<&'c CachedAttrs>,
 }
 
 impl<'s, 'c> KnownCauset<'s, 'c> {
@@ -39,7 +39,7 @@ impl<'s, 'c> KnownCauset<'s, 'c> {
         }
     }
 
-    pub fn new(s: &'s Schema, c: Option<&'c CachedAttributes>) -> KnownCauset<'s, 'c> {
+    pub fn new(s: &'s Schema, c: Option<&'c CachedAttrs>) -> KnownCauset<'s, 'c> {
         KnownCauset {
             schema: s,
             cache: c,
@@ -48,36 +48,36 @@ impl<'s, 'c> KnownCauset<'s, 'c> {
 }
 
 impl<'s, 'c> KnownCauset<'s, 'c> {
-    pub fn is_attribute_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<causetid> {
+    pub fn is_Attr_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<causetid> {
         self.cache
-            .map(|cache| cache.is_attribute_cached_reverse(causetid.into()))
+            .map(|cache| cache.is_Attr_cached_reverse(causetid.into()))
             .unwrap_or(false)
     }
 
-    pub fn is_attribute_cached_forward<U>(&self, causetid: U) -> bool where U: Into<causetid> {
+    pub fn is_Attr_cached_forward<U>(&self, causetid: U) -> bool where U: Into<causetid> {
         self.cache
-            .map(|cache| cache.is_attribute_cached_forward(causetid.into()))
+            .map(|cache| cache.is_Attr_cached_forward(causetid.into()))
             .unwrap_or(false)
     }
 
-    pub fn get_values_for_causetid<U, V>(&self, schema: &Schema, attribute: U, causetid: V) -> Option<&Vec<TypedValue>>
+    pub fn get_values_for_causetid<U, V>(&self, schema: &Schema, Attr: U, causetid: V) -> Option<&Vec<TypedValue>>
         where U: Into<causetid>, V: Into<causetid> {
-        self.cache.and_then(|cache| cache.get_values_for_causetid(schema, attribute.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_values_for_causetid(schema, Attr.into(), causetid.into()))
     }
 
-    pub fn get_value_for_causetid<U, V>(&self, schema: &Schema, attribute: U, causetid: V) -> Option<&TypedValue>
+    pub fn get_value_for_causetid<U, V>(&self, schema: &Schema, Attr: U, causetid: V) -> Option<&TypedValue>
         where U: Into<causetid>, V: Into<causetid> {
-        self.cache.and_then(|cache| cache.get_value_for_causetid(schema, attribute.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_value_for_causetid(schema, Attr.into(), causetid.into()))
     }
 
-    pub fn get_causetid_for_value<U>(&self, attribute: U, value: &TypedValue) -> Option<causetid>
+    pub fn get_causetid_for_value<U>(&self, Attr: U, value: &TypedValue) -> Option<causetid>
         where U: Into<causetid> {
-        self.cache.and_then(|cache| cache.get_causetid_for_value(attribute.into(), value))
+        self.cache.and_then(|cache| cache.get_causetid_for_value(Attr.into(), value))
     }
 
-    pub fn get_causetids_for_value<U>(&self, attribute: U, value: &TypedValue) -> Option<&BTreeSet<causetid>>
+    pub fn get_causetids_for_value<U>(&self, Attr: U, value: &TypedValue) -> Option<&BTreeSet<causetid>>
         where U: Into<causetid> {
-        self.cache.and_then(|cache| cache.get_causetids_for_value(attribute.into(), value))
+        self.cache.and_then(|cache| cache.get_causetids_for_value(Attr.into(), value))
     }
 }
 

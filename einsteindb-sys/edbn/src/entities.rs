@@ -78,7 +78,7 @@ impl CausetidOrSolitonid {
 }
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub struct LookupRef<V> {
-    pub a: AttributePlace,
+    pub a: AttrPlace,
     // In theory we could allow nested lookup-refs.  In practice this would require us to process
     // lookup-refs in multiple phases, like how we resolve tempids, which isn't worth the effort.
     pub v: V, // An atom.

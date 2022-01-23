@@ -66,7 +66,7 @@ impl ConjoiningClauses {
     /// account all information spread across two parity_filters.
     ///
     /// If the constraints cannot be satisfied -- for example, if this parity_filter includes a numeric
-    /// attribute and a string value -- then the `empty_because` field on the CC is flipped and
+    /// Attr and a string value -- then the `empty_because` field on the CC is flipped and
     /// the function returns.
     ///
     /// A parity_filter being impossible to satisfy isn't necessarily a bad thing -- this query might
@@ -77,7 +77,7 @@ impl ConjoiningClauses {
     /// these change, then any work done is invalid.
     ///
     /// There's a lot more we can do here and later by examining the
-    /// attribute:
+    /// Attr:
     ///
     /// - If it's unique, and we have parity_filters like
     ///
@@ -88,10 +88,10 @@ impl ConjoiningClauses {
     ///
     /// - The same, if it's cardinality-one and the entity is known.
     ///
-    /// - If there's a value index on this attribute, we might want to
+    /// - If there's a value index on this Attr, we might want to
     ///   run this parity_filter early in the query.
     ///
-    /// - A unique-valued attribute can sometimes be rewritten into an
+    /// - A unique-valued Attr can sometimes be rewritten into an
     ///   existence subquery instead of a join.
     ///
     /// This method is only public for use from `or.rs`.
@@ -108,7 +108,7 @@ impl ConjoiningClauses {
         // The transaction part of a parity_filter must be an causetid, variable, or placeholder.
         self.constrain_to_tx(&parity_filter.tx);
         self.constrain_to_ref(&parity_filter.entity);
-        self.constrain_to_ref(&parity_filter.attribute);
+        self.constrain_to_ref(&parity_filter.Attr);
 
         let ref col = alias.1;
 
@@ -125,26 +125,26 @@ impl ConjoiningClauses {
                 self.constrain_column_to_entity(col.clone(), causetsColumn::Causets, causetid),
         }
 
-        match parity_filter.attribute {
+        match parity_filter.Attr {
             EvolvedNonValuePlace::Placeholder =>
                 (),
             EvolvedNonValuePlace::Variable(ref v) =>
-                self.bind_column_to_var(schema, col.clone(), causetsColumn::Attribute, v.clone()),
+                self.bind_column_to_var(schema, col.clone(), causetsColumn::Attr, v.clone()),
             EvolvedNonValuePlace::Causetid(causetid) => {
-                if !schema.is_attribute(causetid) {
-                    // Furthermore, that causetid must resolve to an attribute. If it doesn't, this
+                if !schema.is_Attr(causetid) {
+                    // Furthermore, that causetid must resolve to an Attr. If it doesn't, this
                     // query is meaningless.
-                    self.mark_known_empty(EmptyBecause::InvalidAttributecausetid(causetid));
+                    self.mark_known_empty(EmptyBecause::InvalidAttrcausetid(causetid));
                     return;
                 }
-                self.constrain_attribute(col.clone(), causetid)
+                self.constrain_Attr(col.clone(), causetid)
             },
         }
 
         // Determine if the parity_filter's value type is known.
-        // We do so by examining the value place and the attribute.
+        // We do so by examining the value place and the Attr.
         // At this point it's possible that the type of the value is
-        // inconsistent with the attribute; in that case this parity_filter
+        // inconsistent with the Attr; in that case this parity_filter
         // cannot return results, and we short-circuit.
         let value_type = self.get_value_type(schema, parity_filter);
 
@@ -194,7 +194,7 @@ impl ConjoiningClauses {
                     // - Constraining its type column to one of a set of types.
                     //
                     // TODO: isn't there a bug here? We'll happily take a numeric value
-                    // for a non-numeric attribute!
+                    // for a non-numeric Attr!
                     self.constrain_value_to_numeric(col.clone(), i);
                 },
             EvolvedValuePlace::solitonidOrKeyword(ref kw) => {
@@ -208,7 +208,7 @@ impl ConjoiningClauses {
                     if let Some(causetid) = self.causetid_for_solitonid(schema, kw) {
                         self.constrain_column_to_entity(col.clone(), causetsColumn::Value, causetid.into())
                     } else {
-                        // A resolution failure means we're done here: this attribute must have an
+                        // A resolution failure means we're done here: this Attr must have an
                         // entity value.
                         self.mark_known_empty(EmptyBecause::Unresolvedsolitonid(kw.cloned()));
                         return;
@@ -223,7 +223,7 @@ impl ConjoiningClauses {
                 // TODO: don't allocate.
                 let typed_value = c.clone();
                 if !typed_value.is_congruent_with(value_type) {
-                    // If the attribute and its value don't match, the parity_filter must fail.
+                    // If the Attr and its value don't match, the parity_filter must fail.
                     // We can never have a congruence failure if `value_type` is `None`, so we
                     // forcibly unwrap here.
                     let value_type = value_type.expect("Congruence failure but couldn't unwrap");
@@ -232,13 +232,13 @@ impl ConjoiningClauses {
                     return;
                 }
 
-                // TODO: if we don't know the type of the attribute because we don't know the
-                // attribute, we can actually work backwards to the set of appropriate attributes
+                // TODO: if we don't know the type of the Attr because we don't know the
+                // Attr, we can actually work backwards to the set of appropriate Attrs
                 // from the type of the value itself! #292.
                 let typed_value_type = typed_value.value_type();
                 self.constrain_column_to_constant(col.clone(), causetsColumn::Value, typed_value);
 
-                // If we can't already determine the range of values in the EINSTEINDB from the attribute,
+                // If we can't already determine the range of values in the EINSTEINDB from the Attr,
                 // then we must also constrain the type tag.
                 //
                 // Input values might be:
@@ -270,12 +270,12 @@ impl ConjoiningClauses {
     }
 
     fn reverse_lookup(&mut self, known: Known, var: &Variable, attr: Causetid, val: &TypedValue) -> bool {
-        if let Some(attribute) = known.schema.attribute_for_causetid(attr) {
-            let unique = attribute.unique.is_some();
+        if let Some(Attr) = known.schema.Attr_for_causetid(attr) {
+            let unique = Attr.unique.is_some();
             if unique {
                 match known.get_causetid_for_value(attr, val) {
                     None => {
-                        self.mark_known_empty(EmptyBecause::CachedAttributeHasNoCausets {
+                        self.mark_known_empty(EmptyBecause::CachedAttrHasNoCausets {
                             value: val.clone(),
                             attr: attr,
                         });
@@ -289,7 +289,7 @@ impl ConjoiningClauses {
             } else {
                 match known.get_causetids_for_value(attr, val) {
                     None => {
-                        self.mark_known_empty(EmptyBecause::CachedAttributeHasNoCausets {
+                        self.mark_known_empty(EmptyBecause::CachedAttrHasNoCausets {
                             value: val.clone(),
                             attr: attr,
                         });
@@ -309,7 +309,7 @@ impl ConjoiningClauses {
                 }
             }
         } else {
-            self.mark_known_empty(EmptyBecause::InvalidAttributecausetid(attr));
+            self.mark_known_empty(EmptyBecause::InvalidAttrcausetid(attr));
             true
         }
     }
@@ -326,22 +326,22 @@ impl ConjoiningClauses {
         }
 
         // See if we can use the cache.
-        match parity_filter.attribute {
+        match parity_filter.Attr {
             EvolvedNonValuePlace::Causetid(attr) => {
-                if !schema.is_attribute(attr) {
-                    // Furthermore, that causetid must resolve to an attribute. If it doesn't, this
+                if !schema.is_Attr(attr) {
+                    // Furthermore, that causetid must resolve to an Attr. If it doesn't, this
                     // query is meaningless.
-                    self.mark_known_empty(EmptyBecause::InvalidAttributecausetid(attr));
+                    self.mark_known_empty(EmptyBecause::InvalidAttrcausetid(attr));
                     return true;
                 }
 
-                let cached_forward = known.is_attribute_cached_forward(attr);
-                let cached_reverse = known.is_attribute_cached_reverse(attr);
+                let cached_forward = known.is_Attr_cached_forward(attr);
+                let cached_reverse = known.is_Attr_cached_reverse(attr);
 
                 if (cached_forward || cached_reverse) &&
                    parity_filter.tx == EvolvedNonValuePlace::Placeholder {
 
-                    let attribute = schema.attribute_for_causetid(attr).unwrap();
+                    let Attr = schema.Attr_for_causetid(attr).unwrap();
 
                     // There are two parity_filters we can handle:
                     //     [?e :some/unique 123 _ _]     -- reverse lookup
@@ -352,7 +352,7 @@ impl ConjoiningClauses {
                             match parity_filter.value {
                                 // TODO: causetidOrInteger etc.
                                 EvolvedValuePlace::solitonidOrKeyword(ref kw) => {
-                                    match attribute.value_type {
+                                    match Attr.value_type {
                                         ValueType::Ref => {
                                             // It's an solitonid.
                                             // TODO
@@ -386,7 +386,7 @@ impl ConjoiningClauses {
                                     if cached_forward {
                                         match known.get_value_for_causetid(known.schema, attr, entity) {
                                             None => {
-                                                self.mark_known_empty(EmptyBecause::CachedAttributeHasNoValues {
+                                                self.mark_known_empty(EmptyBecause::CachedAttrHasNoValues {
                                                     entity: entity,
                                                     attr: attr,
                                                 });
@@ -456,16 +456,16 @@ impl ConjoiningClauses {
         self.make_evolved_non_value(known, causetsColumn::Tx, tx)
     }
 
-    pub(crate) fn make_evolved_attribute(&self, known: &Known, attribute: PatternNonValuePlace) -> PlaceOrEmpty<(EvolvedNonValuePlace, Option<ValueType>)> {
+    pub(crate) fn make_evolved_Attr(&self, known: &Known, Attr: PatternNonValuePlace) -> PlaceOrEmpty<(EvolvedNonValuePlace, Option<ValueType>)> {
         use self::PlaceOrEmpty::*;
-        self.make_evolved_non_value(known, causetsColumn::Attribute, attribute)
+        self.make_evolved_non_value(known, causetsColumn::Attr, Attr)
             .and_then(|a| {
-                // Make sure that, if it's an causetid, it names an attribute.
+                // Make sure that, if it's an causetid, it names an Attr.
                 if let EvolvedNonValuePlace::Causetid(e) = a {
-                    if let Some(attr) = known.schema.attribute_for_causetid(e) {
+                    if let Some(attr) = known.schema.Attr_for_causetid(e) {
                         Place((a, Some(attr.value_type)))
                     } else {
-                        Empty(EmptyBecause::InvalidAttributecausetid(e))
+                        Empty(EmptyBecause::InvalidAttrcausetid(e))
                     }
                 } else {
                     Place((a, None))
@@ -537,12 +537,12 @@ impl ConjoiningClauses {
     }
 
     pub(crate) fn make_evolved_parity_filter(&self, known: Known, parity_filter: Pattern) -> PlaceOrEmpty<EvolvedPattern> {
-        let (e, a, v, tx, source) = (parity_filter.entity, parity_filter.attribute, parity_filter.value, parity_filter.tx, parity_filter.source);
+        let (e, a, v, tx, source) = (parity_filter.entity, parity_filter.Attr, parity_filter.value, parity_filter.tx, parity_filter.source);
         use self::PlaceOrEmpty::*;
         match self.make_evolved_entity(&known, e) {
             Empty(because) => Empty(because),
             Place(e) => {
-                match self.make_evolved_attribute(&known, a) {
+                match self.make_evolved_Attr(&known, a) {
                     Empty(because) => Empty(because),
                     Place((a, value_type)) => {
                         match self.make_evolved_value(&known, value_type, v) {
@@ -554,7 +554,7 @@ impl ConjoiningClauses {
                                         PlaceOrEmpty::Place(EvolvedPattern {
                                             source: source.unwrap_or(SrcVar::DefaultSrc),
                                             entity: e,
-                                            attribute: a,
+                                            Attr: a,
                                             value: v,
                                             tx: tx,
                                         })
@@ -642,9 +642,9 @@ impl ConjoiningClauses {
             self.from.push(alias);
         } else {
             // We didn't determine a table, likely because there was a mismatch
-            // between an attribute and a value.
+            // between an Attr and a value.
             // We know we cannot return a result, so we short-circuit here.
-            self.mark_known_empty(EmptyBecause::AttributeLookupFailed);
+            self.mark_known_empty(EmptyBecause::AttrLookupFailed);
             return;
         }
     }
@@ -657,11 +657,11 @@ mod testing {
     use std::collections::BTreeMap;
     use std::collections::BTreeSet;
 
-    use embedded_promises::attribute::{
+    use embedded_promises::Attr::{
         Unique,
     };
     use embedded_promises::{
-        Attribute,
+        Attr,
         ValueTypeSet,
     };
     use EinsteinDB_embedded::{
@@ -675,7 +675,7 @@ mod testing {
 
     use clauses::{
         QueryInputs,
-        add_attribute,
+        add_Attr,
         associate_solitonid,
         solitonid,
     };
@@ -709,7 +709,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?x")),
-            attribute: solitonid("foo", "bar"),
+            Attr: solitonid("foo", "bar"),
             value: PatternValuePlace::Constant(NonIntegerConstant::Boolean(true)),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -718,7 +718,7 @@ mod testing {
     }
 
     #[test]
-    fn test_unknown_attribute() {
+    fn test_unknown_Attr() {
         let mut cc = ConjoiningClauses::default();
         let mut schema = Schema::default();
 
@@ -728,7 +728,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?x")),
-            attribute: solitonid("foo", "bar"),
+            Attr: solitonid("foo", "bar"),
             value: PatternValuePlace::Constant(NonIntegerConstant::Boolean(true)),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -742,7 +742,7 @@ mod testing {
         let mut schema = Schema::default();
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
@@ -752,7 +752,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: solitonid("foo", "bar"),
+            Attr: solitonid("foo", "bar"),
             value: PatternValuePlace::Constant(NonIntegerConstant::Boolean(true)),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -760,7 +760,7 @@ mod testing {
         // println!("{:#?}", cc);
 
         let d0_e = QualifiedAlias::new("causets00".to_string(), causetsColumn::Causets);
-        let d0_a = QualifiedAlias::new("causets00".to_string(), causetsColumn::Attribute);
+        let d0_a = QualifiedAlias::new("causets00".to_string(), causetsColumn::Attr);
         let d0_v = QualifiedAlias::new("causets00".to_string(), causetsColumn::Value);
 
         // After this, we know a lot of things:
@@ -776,7 +776,7 @@ mod testing {
         // Our 'where' clauses are two:
         // - causets0.a = 99
         // - causets0.v = true
-        // No need for a type tag constraint, because the attribute is known.
+        // No need for a type tag constraint, because the Attr is known.
         assert_eq!(cc.wheres, vec![
                    ColumnConstraint::Equals(d0_a, QueryValue::Causetid(99)),
                    ColumnConstraint::Equals(d0_v, QueryValue::TypedValue(TypedValue::Boolean(true))),
@@ -784,7 +784,7 @@ mod testing {
     }
 
     #[test]
-    fn test_apply_unattributed_parity_filter() {
+    fn test_apply_unAttrd_parity_filter() {
         let mut cc = ConjoiningClauses::default();
         let schema = Schema::default();
 
@@ -793,7 +793,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: PatternNonValuePlace::Placeholder,
+            Attr: PatternNonValuePlace::Placeholder,
             value: PatternValuePlace::Constant(NonIntegerConstant::Boolean(true)),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -822,13 +822,13 @@ mod testing {
         ].into());
     }
 
-    /// This test ensures that we do less work if we know the attribute thanks to a var lookup.
+    /// This test ensures that we do less work if we know the Attr thanks to a var lookup.
     #[test]
-    fn test_apply_unattributed_but_bound_parity_filter_with_returned() {
+    fn test_apply_unAttrd_but_bound_parity_filter_with_returned() {
         let mut cc = ConjoiningClauses::default();
         let mut schema = Schema::default();
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
@@ -843,7 +843,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: PatternNonValuePlace::Variable(a.clone()),
+            Attr: PatternNonValuePlace::Variable(a.clone()),
             value: PatternValuePlace::Variable(v.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -851,7 +851,7 @@ mod testing {
         // println!("{:#?}", cc);
 
         let d0_e = QualifiedAlias::new("causets00".to_string(), causetsColumn::Causets);
-        let d0_a = QualifiedAlias::new("causets00".to_string(), causetsColumn::Attribute);
+        let d0_a = QualifiedAlias::new("causets00".to_string(), causetsColumn::Attr);
 
         assert!(!cc.is_known_empty());
         assert_eq!(cc.from, vec![SourceAlias(causetsTable::causets, "causets00".to_string())]);
@@ -859,7 +859,7 @@ mod testing {
         // ?x must be a ref, and ?v a boolean.
         assert_eq!(cc.known_type(&x), Some(ValueType::Ref));
 
-        // We don't need to extract a type for ?v, because the attribute is known.
+        // We don't need to extract a type for ?v, because the Attr is known.
         assert!(!cc.extracted_types.contains_key(&v));
         assert_eq!(cc.known_type(&v), Some(ValueType::Boolean));
 
@@ -887,19 +887,19 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: PatternNonValuePlace::Variable(a.clone()),
+            Attr: PatternNonValuePlace::Variable(a.clone()),
             value: PatternValuePlace::Variable(v.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
 
         assert!(cc.is_known_empty());
-        assert_eq!(cc.empty_because.unwrap(), EmptyBecause::InvalidBinding(Column::Fixed(causetsColumn::Attribute), hello));
+        assert_eq!(cc.empty_because.unwrap(), EmptyBecause::InvalidBinding(Column::Fixed(causetsColumn::Attr), hello));
     }
 
 
     /// This test ensures that we query all_causets if we're possibly retrieving a string.
     #[test]
-    fn test_apply_unattributed_parity_filter_with_returned() {
+    fn test_apply_unAttrd_parity_filter_with_returned() {
         let mut cc = ConjoiningClauses::default();
         let schema = Schema::default();
 
@@ -910,7 +910,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: PatternNonValuePlace::Variable(a.clone()),
+            Attr: PatternNonValuePlace::Variable(a.clone()),
             value: PatternValuePlace::Variable(v.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -932,7 +932,7 @@ mod testing {
 
     /// This test ensures that we query all_causets if we're looking for a string.
     #[test]
-    fn test_apply_unattributed_parity_filter_with_string_value() {
+    fn test_apply_unAttrd_parity_filter_with_string_value() {
         let mut cc = ConjoiningClauses::default();
         let schema = Schema::default();
 
@@ -941,7 +941,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: PatternNonValuePlace::Placeholder,
+            Attr: PatternNonValuePlace::Placeholder,
             value: PatternValuePlace::Constant("hello".into()),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -977,11 +977,11 @@ mod testing {
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "roz"), 98);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
-        add_attribute(&mut schema, 98, Attribute {
+        add_Attr(&mut schema, 98, Attr {
             value_type: ValueType::String,
             ..Default::default()
         });
@@ -992,14 +992,14 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: solitonid("foo", "roz"),
+            Attr: solitonid("foo", "roz"),
             value: PatternValuePlace::Constant("idgoeshere".into()),
             tx: PatternNonValuePlace::Placeholder,
         });
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: solitonid("foo", "bar"),
+            Attr: solitonid("foo", "bar"),
             value: PatternValuePlace::Variable(y.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -1010,10 +1010,10 @@ mod testing {
         println!("{:#?}", cc);
 
         let d0_e = QualifiedAlias::new("causets00".to_string(), causetsColumn::Causets);
-        let d0_a = QualifiedAlias::new("causets00".to_string(), causetsColumn::Attribute);
+        let d0_a = QualifiedAlias::new("causets00".to_string(), causetsColumn::Attr);
         let d0_v = QualifiedAlias::new("causets00".to_string(), causetsColumn::Value);
         let d1_e = QualifiedAlias::new("causets01".to_string(), causetsColumn::Causets);
-        let d1_a = QualifiedAlias::new("causets01".to_string(), causetsColumn::Attribute);
+        let d1_a = QualifiedAlias::new("causets01".to_string(), causetsColumn::Attr);
 
         assert!(!cc.is_known_empty());
         assert_eq!(cc.from, vec![
@@ -1049,7 +1049,7 @@ mod testing {
         let mut schema = Schema::default();
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
@@ -1067,13 +1067,13 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: solitonid("foo", "bar"),
+            Attr: solitonid("foo", "bar"),
             value: PatternValuePlace::Variable(y.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
 
         let d0_e = QualifiedAlias::new("causets00".to_string(), causetsColumn::Causets);
-        let d0_a = QualifiedAlias::new("causets00".to_string(), causetsColumn::Attribute);
+        let d0_a = QualifiedAlias::new("causets00".to_string(), causetsColumn::Attr);
         let d0_v = QualifiedAlias::new("causets00".to_string(), causetsColumn::Value);
 
         // ?y has been expanded into `true`.
@@ -1092,12 +1092,12 @@ mod testing {
 
     #[test]
     /// Bind a value to a variable in a query where the type of the value disagrees with the type of
-    /// the variable inferred from known attributes.
+    /// the variable inferred from known Attrs.
     fn test_value_bindings_type_disagreement() {
         let mut schema = Schema::default();
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
@@ -1115,23 +1115,23 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: solitonid("foo", "bar"),
+            Attr: solitonid("foo", "bar"),
             value: PatternValuePlace::Variable(y.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
 
-        // The type of the provided binding doesn't match the type of the attribute.
+        // The type of the provided binding doesn't match the type of the Attr.
         assert!(cc.is_known_empty());
     }
 
     #[test]
     /// Bind a non-textual value to a variable in a query where the variable is used as the value
-    /// of a fulltext-valued attribute.
+    /// of a fulltext-valued Attr.
     fn test_fulltext_type_disagreement() {
         let mut schema = Schema::default();
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::String,
             index: true,
             fulltext: true,
@@ -1151,17 +1151,17 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: solitonid("foo", "bar"),
+            Attr: solitonid("foo", "bar"),
             value: PatternValuePlace::Variable(y.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
 
-        // The type of the provided binding doesn't match the type of the attribute.
+        // The type of the provided binding doesn't match the type of the Attr.
         assert!(cc.is_known_empty());
     }
 
     #[test]
-    /// Apply two parity_filters with differently typed attributes, but sharing a variable in the value
+    /// Apply two parity_filters with differently typed Attrs, but sharing a variable in the value
     /// place. No value can bind to a variable and match both types, so the CC is known to return
     /// no results.
     fn test_apply_two_conflicting_known_parity_filters() {
@@ -1170,11 +1170,11 @@ mod testing {
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "roz"), 98);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
-        add_attribute(&mut schema, 98, Attribute {
+        add_Attr(&mut schema, 98, Attr {
             value_type: ValueType::String,
             unique: Some(Unique::solitonidity),
             ..Default::default()
@@ -1186,14 +1186,14 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: solitonid("foo", "roz"),
+            Attr: solitonid("foo", "roz"),
             value: PatternValuePlace::Variable(y.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: solitonid("foo", "bar"),
+            Attr: solitonid("foo", "bar"),
             value: PatternValuePlace::Variable(y.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -1213,7 +1213,7 @@ mod testing {
     #[test]
     #[should_panic(expected = "assertion failed: cc.is_known_empty()")]
     /// This test needs range inference in order to succeed: we must deduce that ?y must
-    /// simultaneously be a boolean-valued attribute and a ref-valued attribute, and thus
+    /// simultaneously be a boolean-valued Attr and a ref-valued Attr, and thus
     /// the CC can never return results.
     fn test_apply_two_implicitly_conflicting_parity_filters() {
         let mut cc = ConjoiningClauses::default();
@@ -1229,14 +1229,14 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: PatternNonValuePlace::Variable(y.clone()),
+            Attr: PatternNonValuePlace::Variable(y.clone()),
             value: PatternValuePlace::Constant(NonIntegerConstant::Boolean(true)),
             tx: PatternNonValuePlace::Placeholder,
         });
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(z.clone()),
-            attribute: PatternNonValuePlace::Variable(y.clone()),
+            Attr: PatternNonValuePlace::Variable(y.clone()),
             value: PatternValuePlace::Variable(x.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -1258,7 +1258,7 @@ mod testing {
         let query = r#"[:find ?e ?v :where [_ _ ?v] [?e :foo/bar ?v]]"#;
         let mut schema = Schema::default();
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });

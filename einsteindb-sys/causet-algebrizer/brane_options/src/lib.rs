@@ -71,7 +71,7 @@ use embedded_promises::{
 };
 
 use EinsteinDB_embedded::{
-    CachedAttributes,
+    CachedAttrs,
     Schema,
     parse_query,
 };
@@ -108,7 +108,7 @@ pub use types::{
 #[derive(Clone, Copy)]
 pub struct Known<'s, 'c> {
     pub schema: &'s Schema,
-    pub cache: Option<&'c CachedAttributes>,
+    pub cache: Option<&'c CachedAttrs>,
 }
 
 impl<'s, 'c> Known<'s, 'c> {
@@ -119,7 +119,7 @@ impl<'s, 'c> Known<'s, 'c> {
         }
     }
 
-    pub fn new(s: &'s Schema, c: Option<&'c CachedAttributes>) -> Known<'s, 'c> {
+    pub fn new(s: &'s Schema, c: Option<&'c CachedAttrs>) -> Known<'s, 'c> {
         Known {
             schema: s,
             cache: c,
@@ -127,39 +127,39 @@ impl<'s, 'c> Known<'s, 'c> {
     }
 }
 
-/// This is `CachedAttributes`, but with handy generic parameters.
+/// This is `CachedAttrs`, but with handy generic parameters.
 /// Why not make the trait generic? Because then we can't use it as a trait object in `Known`.
 impl<'s, 'c> Known<'s, 'c> {
-    pub fn is_attribute_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
+    pub fn is_Attr_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
         self.cache
-            .map(|cache| cache.is_attribute_cached_reverse(causetid.into()))
+            .map(|cache| cache.is_Attr_cached_reverse(causetid.into()))
             .unwrap_or(false)
     }
 
-    pub fn is_attribute_cached_forward<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
+    pub fn is_Attr_cached_forward<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
         self.cache
-            .map(|cache| cache.is_attribute_cached_forward(causetid.into()))
+            .map(|cache| cache.is_Attr_cached_forward(causetid.into()))
             .unwrap_or(false)
     }
 
-    pub fn get_values_for_causetid<U, V>(&self, schema: &Schema, attribute: U, causetid: V) -> Option<&Vec<TypedValue>>
+    pub fn get_values_for_causetid<U, V>(&self, schema: &Schema, Attr: U, causetid: V) -> Option<&Vec<TypedValue>>
     where U: Into<Causetid>, V: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_values_for_causetid(schema, attribute.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_values_for_causetid(schema, Attr.into(), causetid.into()))
     }
 
-    pub fn get_value_for_causetid<U, V>(&self, schema: &Schema, attribute: U, causetid: V) -> Option<&TypedValue>
+    pub fn get_value_for_causetid<U, V>(&self, schema: &Schema, Attr: U, causetid: V) -> Option<&TypedValue>
     where U: Into<Causetid>, V: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_value_for_causetid(schema, attribute.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_value_for_causetid(schema, Attr.into(), causetid.into()))
     }
 
-    pub fn get_causetid_for_value<U>(&self, attribute: U, value: &TypedValue) -> Option<Causetid>
+    pub fn get_causetid_for_value<U>(&self, Attr: U, value: &TypedValue) -> Option<Causetid>
     where U: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_causetid_for_value(attribute.into(), value))
+        self.cache.and_then(|cache| cache.get_causetid_for_value(Attr.into(), value))
     }
 
-    pub fn get_causetids_for_value<U>(&self, attribute: U, value: &TypedValue) -> Option<&BTreeSet<Causetid>>
+    pub fn get_causetids_for_value<U>(&self, Attr: U, value: &TypedValue) -> Option<&BTreeSet<Causetid>>
     where U: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_causetids_for_value(attribute.into(), value))
+        self.cache.and_then(|cache| cache.get_causetids_for_value(Attr.into(), value))
     }
 }
 

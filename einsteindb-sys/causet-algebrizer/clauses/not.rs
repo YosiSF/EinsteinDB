@@ -91,7 +91,7 @@ mod testing {
     use super::*;
 
     use embedded_promises::{
-        Attribute,
+        Attr,
         TypedValue,
         ValueType,
         ValueTypeSet,
@@ -109,7 +109,7 @@ mod testing {
 
     use clauses::{
         QueryInputs,
-        add_attribute,
+        add_Attr,
         associate_solitonid,
     };
 
@@ -155,37 +155,37 @@ mod testing {
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "parent"), 67);
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "age"), 68);
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "height"), 69);
-        add_attribute(&mut schema,
+        add_Attr(&mut schema,
                       65,
-                      Attribute {
+                      Attr {
                           value_type: ValueType::String,
                           multival: false,
                           ..Default::default()
                       });
-        add_attribute(&mut schema,
+        add_Attr(&mut schema,
                       66,
-                      Attribute {
+                      Attr {
                           value_type: ValueType::String,
                           multival: true,
                           ..Default::default()
                       });
-        add_attribute(&mut schema,
+        add_Attr(&mut schema,
                       67,
-                      Attribute {
+                      Attr {
                           value_type: ValueType::String,
                           multival: true,
                           ..Default::default()
                       });
-        add_attribute(&mut schema,
+        add_Attr(&mut schema,
                       68,
-                      Attribute {
+                      Attr {
                           value_type: ValueType::Long,
                           multival: false,
                           ..Default::default()
                       });
-        add_attribute(&mut schema,
+        add_Attr(&mut schema,
                       69,
-                      Attribute {
+                      Attr {
                           value_type: ValueType::Long,
                           multival: false,
                           ..Default::default()
@@ -213,17 +213,17 @@ mod testing {
 
         let d0 = "causets00".to_string();
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attribute);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
         let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
 
         let d1 = "causets01".to_string();
         let d1e = QualifiedAlias::new(d1.clone(), causetsColumn::Causets);
-        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attribute);
+        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attr);
         let d1v = QualifiedAlias::new(d1.clone(), causetsColumn::Value);
 
         let d2 = "causets02".to_string();
         let d2e = QualifiedAlias::new(d2.clone(), causetsColumn::Causets);
-        let d2a = QualifiedAlias::new(d2.clone(), causetsColumn::Attribute);
+        let d2a = QualifiedAlias::new(d2.clone(), causetsColumn::Attr);
         let d2v = QualifiedAlias::new(d2.clone(), causetsColumn::Value);
 
         let knows = QueryValue::Causetid(66);
@@ -274,22 +274,22 @@ mod testing {
 
         let d0 = "causets00".to_string();
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attribute);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
         let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
 
         let d1 = "causets01".to_string();
         let d1e = QualifiedAlias::new(d1.clone(), causetsColumn::Causets);
-        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attribute);
+        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attr);
         let d1v = QualifiedAlias::new(d1.clone(), causetsColumn::Value);
 
         let d2 = "causets02".to_string();
         let d2e = QualifiedAlias::new(d2.clone(), causetsColumn::Causets);
-        let d2a = QualifiedAlias::new(d2.clone(), causetsColumn::Attribute);
+        let d2a = QualifiedAlias::new(d2.clone(), causetsColumn::Attr);
         let d2v = QualifiedAlias::new(d2.clone(), causetsColumn::Value);
 
         let d3 = "causets03".to_string();
         let d3e = QualifiedAlias::new(d3.clone(), causetsColumn::Causets);
-        let d3a = QualifiedAlias::new(d3.clone(), causetsColumn::Attribute);
+        let d3a = QualifiedAlias::new(d3.clone(), causetsColumn::Attr);
         let d3v = QualifiedAlias::new(d3.clone(), causetsColumn::Value);
 
         let name = QueryValue::Causetid(65);
@@ -346,17 +346,17 @@ mod testing {
 
         let d0 = "causets00".to_string();
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attribute);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
         let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
 
         let d1 = "causets01".to_string();
         let d1e = QualifiedAlias::new(d1.clone(), causetsColumn::Causets);
-        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attribute);
+        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attr);
         let d1v = QualifiedAlias::new(d1.clone(), causetsColumn::Value);
 
         let d2 = "causets02".to_string();
         let d2e = QualifiedAlias::new(d2.clone(), causetsColumn::Causets);
-        let d2a = QualifiedAlias::new(d2.clone(), causetsColumn::Attribute);
+        let d2a = QualifiedAlias::new(d2.clone(), causetsColumn::Attr);
         let d2v = QualifiedAlias::new(d2.clone(), causetsColumn::Value);
 
         let knows = QueryValue::Causetid(66);
@@ -406,17 +406,17 @@ mod testing {
 
         let d0 = "causets00".to_string();
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attribute);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
         let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
 
         let d1 = "causets01".to_string();
         let d1e = QualifiedAlias::new(d1.clone(), causetsColumn::Causets);
-        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attribute);
+        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attr);
         let d1v = QualifiedAlias::new(d1.clone(), causetsColumn::Value);
 
         let d2 = "causets02".to_string();
         let d2e = QualifiedAlias::new(d2.clone(), causetsColumn::Causets);
-        let d2a = QualifiedAlias::new(d2.clone(), causetsColumn::Attribute);
+        let d2a = QualifiedAlias::new(d2.clone(), causetsColumn::Attr);
         let d2v = QualifiedAlias::new(d2.clone(), causetsColumn::Value);
 
         let vx = Variable::from_valid_name("?x");
@@ -482,12 +482,12 @@ mod testing {
 
         let d0 = "causets00".to_string();
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attribute);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
         let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
 
         let d1 = "causets01".to_string();
         let d1e = QualifiedAlias::new(d1.clone(), causetsColumn::Causets);
-        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attribute);
+        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attr);
         let d1v = QualifiedAlias::new(d1.clone(), causetsColumn::Value);
 
         let mut subquery = ConjoiningClauses::default();
@@ -530,7 +530,7 @@ mod testing {
                         r#"[:find ?x :where [?x :foo/knows "Bill"]]"#));
     }
 
-    /// Test that if all the attributes in an `not` fail to resolve, the `cc` isn't considered empty.
+    /// Test that if all the Attrs in an `not` fail to resolve, the `cc` isn't considered empty.
     #[test]
     fn test_no_clauses_succeed() {
         let schema = prepopulated_schema();
