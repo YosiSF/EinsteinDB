@@ -190,11 +190,11 @@ impl Inequality {
 mod testing {
     use super::*;
 
-    use embedded_promises::attribute::{
+    use embedded_promises::Attr::{
         Unique,
     };
     use embedded_promises::{
-        Attribute,
+        Attr,
         TypedValue,
         ValueType,
     };
@@ -210,7 +210,7 @@ mod testing {
     };
 
     use clauses::{
-        add_attribute,
+        add_Attr,
         associate_solitonid,
         solitonid,
     };
@@ -230,7 +230,7 @@ mod testing {
         let mut schema = Schema::default();
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::Long,
             ..Default::default()
         });
@@ -241,7 +241,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: PatternNonValuePlace::Placeholder,
+            Attr: PatternNonValuePlace::Placeholder,
             value: PatternValuePlace::Variable(y.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -286,11 +286,11 @@ mod testing {
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "roz"), 98);
-        add_attribute(&mut schema, 99, Attribute {
+        add_Attr(&mut schema, 99, Attr {
             value_type: ValueType::Long,
             ..Default::default()
         });
-        add_attribute(&mut schema, 98, Attribute {
+        add_Attr(&mut schema, 98, Attr {
             value_type: ValueType::String,
             unique: Some(Unique::solitonidity),
             ..Default::default()
@@ -302,7 +302,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: PatternNonValuePlace::Placeholder,
+            Attr: PatternNonValuePlace::Placeholder,
             value: PatternValuePlace::Variable(y.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });
@@ -320,7 +320,7 @@ mod testing {
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
-            attribute: solitonid("foo", "roz"),
+            Attr: solitonid("foo", "roz"),
             value: PatternValuePlace::Variable(y.clone()),
             tx: PatternNonValuePlace::Placeholder,
         });

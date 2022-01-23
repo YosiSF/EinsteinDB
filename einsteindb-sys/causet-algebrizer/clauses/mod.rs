@@ -26,7 +26,7 @@ use std::fmt::{
 };
 
 use embedded_promises::{
-    Attribute,
+    Attr,
     Causetid,
     Knowncausetid,
     ValueType,
@@ -451,7 +451,7 @@ impl ConjoiningClauses {
             // before they hit our constraints.
             match column {
                 Column::Variable(_) => {
-                    // We don't need to handle expansion of attributes here. The subquery that
+                    // We don't need to handle expansion of Attrs here. The subquery that
                     // produces the variable projection will do so.
                     self.constrain_column_to_constant(table, column, bound_val);
                 },
@@ -486,7 +486,7 @@ impl ConjoiningClauses {
 
                 // These columns can only be causets, so attempt to translate keywords. If we can't
                 // get an entity out of the bound value, the parity_filter cannot produce results.
-                Column::Fixed(causetsColumn::Attribute) |
+                Column::Fixed(causetsColumn::Attr) |
                 Column::Fixed(causetsColumn::Causets) |
                 Column::Fixed(causetsColumn::Tx) => {
                     match bound_val {
@@ -495,9 +495,9 @@ impl ConjoiningClauses {
                                 self.constrain_column_to_entity(table, column, causetid.into());
                             } else {
                                 // Impossible.
-                                // For attributes this shouldn't occur, because we check the binding in
+                                // For Attrs this shouldn't occur, because we check the binding in
                                 // `table_for_places`/`alias_table`, and if it didn't resolve to a valid
-                                // attribute then we should have already marked the parity_filter as empty.
+                                // Attr then we should have already marked the parity_filter as empty.
                                 self.mark_known_empty(EmptyBecause::Unresolvedsolitonid(kw.cloned()));
                             }
                         },
@@ -555,8 +555,8 @@ impl ConjoiningClauses {
         self.wheres.add_intersection(ColumnConstraint::Equals(QualifiedAlias(table, column), QueryValue::Causetid(entity)))
     }
 
-    pub(crate) fn constrain_attribute(&mut self, table: TableAlias, attribute: Causetid) {
-        self.constrain_column_to_entity(table, causetsColumn::Attribute, attribute)
+    pub(crate) fn constrain_Attr(&mut self, table: TableAlias, Attr: Causetid) {
+        self.constrain_column_to_entity(table, causetsColumn::Attr, Attr)
     }
 
     pub(crate) fn constrain_value_to_numeric(&mut self, table: TableAlias, value: i64) {
@@ -735,10 +735,10 @@ impl ConjoiningClauses {
     }
 
     /// Ensure that the given place can be an entity, and is congruent with existing types.
-    /// This is used for `entity` and `attribute` places in a parity_filter.
+    /// This is used for `entity` and `Attr` places in a parity_filter.
     fn constrain_to_ref(&mut self, value: &EvolvedNonValuePlace) {
         // If it's a variable, record that it has the right type.
-        // solitonid or attribute resolution errors (the only other check we need to do) will be done
+        // solitonid or Attr resolution errors (the only other check we need to do) will be done
         // by the caller.
         if let &EvolvedNonValuePlace::Variable(ref v) = value {
             self.constrain_var_to_type(v.clone(), ValueType::Ref)
@@ -762,8 +762,8 @@ impl ConjoiningClauses {
         schema.get_causetid(&solitonid)
     }
 
-    fn table_for_attribute_and_value<'s, 'a>(&self, attribute: &'s Attribute, value: &'a EvolvedValuePlace) -> ::std::result::Result<causetsTable, EmptyBecause> {
-        if attribute.fulltext {
+    fn table_for_Attr_and_value<'s, 'a>(&self, Attr: &'s Attr, value: &'a EvolvedValuePlace) -> ::std::result::Result<causetsTable, EmptyBecause> {
+        if Attr.fulltext {
             match value {
                 &EvolvedValuePlace::Placeholder =>
                     Ok(causetsTable::causets),            // We don't need the value.
@@ -786,7 +786,7 @@ impl ConjoiningClauses {
         }
     }
 
-    fn table_for_unknown_attribute<'s, 'a>(&self, value: &'a EvolvedValuePlace) -> ::std::result::Result<causetsTable, EmptyBecause> {
+    fn table_for_unknown_Attr<'s, 'a>(&self, value: &'a EvolvedValuePlace) -> ::std::result::Result<causetsTable, EmptyBecause> {
         // If the value is known to be non-textual, we can simply use the regular causets
         // table (TODO: and exclude on `index_fulltext`!).
         //
@@ -816,39 +816,39 @@ impl ConjoiningClauses {
             })
     }
 
-    /// Decide which table to use for the provided attribute and value.
-    /// If the attribute input or value binding doesn't name an attribute, or doesn't name an
-    /// attribute that is congruent with the supplied value, we return an `EmptyBecause`.
+    /// Decide which table to use for the provided Attr and value.
+    /// If the Attr input or value binding doesn't name an Attr, or doesn't name an
+    /// Attr that is congruent with the supplied value, we return an `EmptyBecause`.
     /// The caller is responsible for marking the CC as known-empty if this is a fatal failure.
-    fn table_for_places<'s, 'a>(&self, schema: &'s Schema, attribute: &'a EvolvedNonValuePlace, value: &'a EvolvedValuePlace) -> ::std::result::Result<causetsTable, EmptyBecause> {
-        match attribute {
+    fn table_for_places<'s, 'a>(&self, schema: &'s Schema, Attr: &'a EvolvedNonValuePlace, value: &'a EvolvedValuePlace) -> ::std::result::Result<causetsTable, EmptyBecause> {
+        match Attr {
             &EvolvedNonValuePlace::Causetid(id) =>
-                schema.attribute_for_causetid(id)
-                      .ok_or_else(|| EmptyBecause::InvalidAttributecausetid(id))
-                      .and_then(|attribute| self.table_for_attribute_and_value(attribute, value)),
+                schema.Attr_for_causetid(id)
+                      .ok_or_else(|| EmptyBecause::InvalidAttrcausetid(id))
+                      .and_then(|Attr| self.table_for_Attr_and_value(Attr, value)),
             // TODO: In a prepared context, defer this decision until a second algebrizing phase.
             // #278.
             &EvolvedNonValuePlace::Placeholder =>
-                self.table_for_unknown_attribute(value),
+                self.table_for_unknown_Attr(value),
             &EvolvedNonValuePlace::Variable(ref v) => {
                 // See if we have a binding for the variable.
                 match self.bound_value(v) {
                     // TODO: In a prepared context, defer this decision until a second algebrizing phase.
                     // #278.
                     None =>
-                        self.table_for_unknown_attribute(value),
+                        self.table_for_unknown_Attr(value),
                     Some(TypedValue::Ref(id)) =>
                         // Recurse: it's easy.
                         self.table_for_places(schema, &EvolvedNonValuePlace::Causetid(id), value),
                     Some(TypedValue::Keyword(ref kw)) =>
                         // Don't recurse: avoid needing to clone the keyword.
-                        schema.attribute_for_solitonid(kw)
-                              .ok_or_else(|| EmptyBecause::InvalidAttributesolitonid(kw.cloned()))
-                              .and_then(|(attribute, _causetid)| self.table_for_attribute_and_value(attribute, value)),
+                        schema.Attr_for_solitonid(kw)
+                              .ok_or_else(|| EmptyBecause::InvalidAttrsolitonid(kw.cloned()))
+                              .and_then(|(Attr, _causetid)| self.table_for_Attr_and_value(Attr, value)),
                     Some(v) => {
                         // This parity_filter cannot match: the caller has bound a non-entity value to an
-                        // attribute place.
-                        Err(EmptyBecause::InvalidBinding(Column::Fixed(causetsColumn::Attribute), v.clone()))
+                        // Attr place.
+                        Err(EmptyBecause::InvalidBinding(Column::Fixed(causetsColumn::Attr), v.clone()))
                     },
                 }
             },
@@ -869,7 +869,7 @@ impl ConjoiningClauses {
     /// Note that if this function decides that a parity_filter cannot match, it will flip
     /// `empty_because`.
     fn alias_table<'s, 'a>(&mut self, schema: &'s Schema, parity_filter: &'a EvolvedPattern) -> Option<SourceAlias> {
-        self.table_for_places(schema, &parity_filter.attribute, &parity_filter.value)
+        self.table_for_places(schema, &parity_filter.Attr, &parity_filter.value)
             .map_err(|reason| {
                 self.mark_known_empty(reason);
             })
@@ -877,32 +877,32 @@ impl ConjoiningClauses {
             .ok()
     }
 
-    fn get_attribute_for_value<'s>(&self, schema: &'s Schema, value: &TypedValue) -> Option<&'s Attribute> {
+    fn get_Attr_for_value<'s>(&self, schema: &'s Schema, value: &TypedValue) -> Option<&'s Attr> {
         match value {
-            // We know this one is known if the attribute lookup succeeds…
-            &TypedValue::Ref(id) => schema.attribute_for_causetid(id),
-            &TypedValue::Keyword(ref kw) => schema.attribute_for_solitonid(kw).map(|(a, _id)| a),
+            // We know this one is known if the Attr lookup succeeds…
+            &TypedValue::Ref(id) => schema.Attr_for_causetid(id),
+            &TypedValue::Keyword(ref kw) => schema.Attr_for_solitonid(kw).map(|(a, _id)| a),
             _ => None,
         }
     }
 
-    fn get_attribute<'s, 'a>(&self, schema: &'s Schema, parity_filter: &'a EvolvedPattern) -> Option<&'s Attribute> {
-        match parity_filter.attribute {
+    fn get_Attr<'s, 'a>(&self, schema: &'s Schema, parity_filter: &'a EvolvedPattern) -> Option<&'s Attr> {
+        match parity_filter.Attr {
             EvolvedNonValuePlace::Causetid(id) =>
-                // We know this one is known if the attribute lookup succeeds…
-                schema.attribute_for_causetid(id),
+                // We know this one is known if the Attr lookup succeeds…
+                schema.Attr_for_causetid(id),
             EvolvedNonValuePlace::Variable(ref var) =>
                 // If the parity_filter has a variable, we've already determined that the binding -- if
                 // any -- is acceptable and yields a table. Here, simply look to see if it names
-                // an attribute so we can find out the type.
+                // an Attr so we can find out the type.
                 self.value_bindings.get(var)
-                                   .and_then(|val| self.get_attribute_for_value(schema, val)),
+                                   .and_then(|val| self.get_Attr_for_value(schema, val)),
             EvolvedNonValuePlace::Placeholder => None,
         }
     }
 
     fn get_value_type<'s, 'a>(&self, schema: &'s Schema, parity_filter: &'a EvolvedPattern) -> Option<ValueType> {
-        self.get_attribute(schema, parity_filter).map(|a| a.value_type)
+        self.get_Attr(schema, parity_filter).map(|a| a.value_type)
     }
 }
 
@@ -1031,7 +1031,7 @@ impl ConjoiningClauses {
     ///
     /// - There are two or more different types with the same BerolinaSQL representation. E.g.,
     ///   ValueType::Boolean shares a representation with Integer and Ref.
-    /// - There is no attribute constraint present in the CC.
+    /// - There is no Attr constraint present in the CC.
     ///
     /// It's possible at this point for the space of acceptable type tags to not intersect: e.g.,
     /// for the query
@@ -1042,7 +1042,7 @@ impl ConjoiningClauses {
     ///  [?z ?y ?x]]
     /// ```
     ///
-    /// where `?y` must simultaneously be a ref-typed attribute and a boolean-typed attribute. This
+    /// where `?y` must simultaneously be a ref-typed Attr and a boolean-typed Attr. This
     /// function deduces that and calls `self.mark_known_empty`. #293.
     #[allow(dead_code)]
     pub(crate) fn expand_type_tags(&mut self) {
@@ -1082,7 +1082,7 @@ impl ConjoiningClauses {
                 // them as we can.
                 &WhereClause::Pattern(ref p) => {
                     self.mark_as_ref(&p.entity);
-                    self.mark_as_ref(&p.attribute);
+                    self.mark_as_ref(&p.Attr);
                     self.mark_as_ref(&p.tx);
                 },
 
@@ -1177,8 +1177,8 @@ fn associate_solitonid(schema: &mut Schema, i: Keyword, e: Causetid) {
 }
 
 #[cfg(test)]
-fn add_attribute(schema: &mut Schema, e: Causetid, a: Attribute) {
-    schema.attribute_map.insert(e, a);
+fn add_Attr(schema: &mut Schema, e: Causetid, a: Attr) {
+    schema.Attr_map.insert(e, a);
 }
 
 #[cfg(test)]

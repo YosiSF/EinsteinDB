@@ -135,11 +135,11 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
                 expression = qp.ghd.last.nprr.last.aggregation.get.expression;
 
                 val
-                encoding = db.relationMap(base_case.relations.head.name).schema.attributeTypes.distinct.head;
+                encoding = db.relationMap(base_case.relations.head.name).schema.AttrTypes.distinct.head;
                 val
                 recordering = (0
                 until
-                let x1 = qp.ghd.last.attributes.values.length;).toList.mkString("_");
+                let x1 = qp.ghd.last.Attrs.values.length;).toList.mkString("_");
 
                 cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList));
                 cppCode.append("let num_rows_reducer = par::reducer::<usize>::new(0, |a, b| a + b);");
@@ -160,8 +160,8 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
                     let source = base_case.nprr.head.selection.head.expression;
                     let expression = qp.ghd.last.nprr.last.aggregation.get.expression;
 
-                    let encoding = db.relationMap(base_case.relations.head.name).schema.attributeTypes.distinct.head;
-                    let recordering = (0..qp.ghd.last.attributes.values.len()).map(|_| "").collect::<String>();
+                    let encoding = db.relationMap(base_case.relations.head.name).schema.AttrTypes.distinct.head;
+                    let recordering = (0..qp.ghd.last.Attrs.values.len()).map(|_| "").collect::<String>();
 
                     cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList));
                     cppCode.append("let num_rows_reducer = par::reducer::<usize>::new(0, |a, b| a + b);");

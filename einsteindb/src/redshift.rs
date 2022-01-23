@@ -24,8 +24,8 @@ pub trait CausetWatcher {
     fn datom(&mut self, op: OpType, e: Causetid, a: Causetid, v: &TypedValue);
 
     /// Only return an error if you want to interrupt the transact!
-    /// Called with the schema _prior to_ the transact -- any attributes or
-    /// attribute changes transacted during this transact are not reflected in
+    /// Called with the schema _prior to_ the transact -- any Attrs or
+    /// Attr changes transacted during this transact are not reflected in
     /// the schema.
     fn done(&mut self, t: &Causetid, schema: &Schema) -> Result<()>;
 }

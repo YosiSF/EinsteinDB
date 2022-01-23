@@ -38,13 +38,13 @@ impl<K, V> Default for TimestepEvaluation<K, V> where K: Ord {
 
 
 
-pub fn pull_attributes_for_entity<A>(schema: &Schema,
+pub fn pull_Attrs_for_entity<A>(schema: &Schema,
                                      db: &berolinasql::Connection,
                                      entity: Causetid,
-                                     attributes: A) -> Result<StructuredMap>
+                                     Attrs: A) -> Result<StructuredMap>
     where A: IntoIterator<Item=Causetid> {
-    let attrs = attributes.into_iter()
-                          .map(|e| PullAttributeSpec::Attribute(PullConcreteAttribute::Causetid(e).into()))
+    let attrs = Attrs.into_iter()
+                          .map(|e| PullAttrSpec::Attr(PullConcreteAttr::Causetid(e).into()))
                           .collect();
     Puller::prepare(schema, attrs)?
         .pull(schema, db, once(entity))
@@ -57,13 +57,13 @@ pub fn pull_attributes_for_entity<A>(schema: &Schema,
                   .unwrap_or_else(StructuredMap::default));
 }
 
-pub fn pull_attributes_for_causets<E, A>(schema: &Schema,
+pub fn pull_Attrs_for_causets<E, A>(schema: &Schema,
                                           db: &berolinasql::Connection,
                                           causets: E,
-                                          attributes: A) -> Result<PullResults>
+                                          Attrs: A) -> Result<PullResults>
     where E: IntoIterator<Item=Causetid>, A: IntoIterator<Item=Causetid> {
-    let attrs = attributes.into_iter()
-                          .map(|e| PullAttributeSpec::Attribute(PullConcreteAttribute::Causetid(e).into()))
+    let attrs = Attrs.into_iter()
+                          .map(|e| PullAttrSpec::Attr(PullConcreteAttr::Causetid(e).into()))
                           .collect();
     Puller::prepare(schema, attrs)?
         .pull(schema, db, causets)

@@ -51,7 +51,7 @@ lazy_static! {
              (ns_keyword!("einsteindb", "txInstant"),         causetids::EINSTEINDB_TX_INSTANT),
              (ns_keyword!("db.install", "partition"), causetids::EINSTEINDB_INSTALL_PARTITION),
              (ns_keyword!("db.install", "valueType"), causetids::EINSTEINDB_INSTALL_VALUE_TYPE),
-             (ns_keyword!("db.install", "attribute"), causetids::EINSTEINDB_INSTALL_ATTRIBUTE),
+             (ns_keyword!("db.install", "Attr"), causetids::EINSTEINDB_INSTALL_Attr),
              (ns_keyword!("einsteindb", "valueType"),         causetids::EINSTEINDB_VALUE_TYPE),
              (ns_keyword!("einsteindb", "cardinality"),       causetids::EINSTEINDB_CARDINALITY),
              (ns_keyword!("einsteindb", "unique"),            causetids::EINSTEINDB_UNIQUE),
@@ -67,7 +67,7 @@ lazy_static! {
              (ns_keyword!("db.excise", "attrs"),      causetids::EINSTEINDB_EXCISE_ATTRS),
              (ns_keyword!("db.excise", "beforeT"),    causetids::EINSTEINDB_EXCISE_BEFORE_T),
              (ns_keyword!("db.excise", "before"),     causetids::EINSTEINDB_EXCISE_BEFORE),
-             (ns_keyword!("db.alter", "attribute"),   causetids::EINSTEINDB_ALTER_ATTRIBUTE),
+             (ns_keyword!("db.alter", "Attr"),   causetids::EINSTEINDB_ALTER_Attr),
              (ns_keyword!("db.type", "ref"),          causetids::EINSTEINDB_TYPE_REF),
              (ns_keyword!("db.type", "keyword"),      causetids::EINSTEINDB_TYPE_KEYWORD),
              (ns_keyword!("db.type", "long"),         causetids::EINSTEINDB_TYPE_LONG),
@@ -84,7 +84,7 @@ lazy_static! {
              (ns_keyword!("db.unique", "solitonidity"),   causetids::EINSTEINDB_UNIQUE_solitonidITY),
              (ns_keyword!("einsteindb", "doc"),               causetids::EINSTEINDB_DOC),
              (ns_keyword!("db.schema", "version"),    causetids::EINSTEINDB_SCHEMA_VERSION),
-             (ns_keyword!("db.schema", "attribute"),  causetids::EINSTEINDB_SCHEMA_ATTRIBUTE),
+             (ns_keyword!("db.schema", "Attr"),  causetids::EINSTEINDB_SCHEMA_Attr),
              (ns_keyword!("db.schema", "embedded"),       causetids::EINSTEINDB_SCHEMA_embedded),
         ]
     };
@@ -100,7 +100,7 @@ lazy_static! {
             [(ns_keyword!("einsteindb", "solitonid")),
              (ns_keyword!("db.install", "partition")),
              (ns_keyword!("db.install", "valueType")),
-             (ns_keyword!("db.install", "attribute")),
+             (ns_keyword!("db.install", "Attr")),
              (ns_keyword!("einsteindb", "txInstant")),
              (ns_keyword!("einsteindb", "valueType")),
              (ns_keyword!("einsteindb", "cardinality")),
@@ -110,9 +110,9 @@ lazy_static! {
              (ns_keyword!("einsteindb", "index")),
              (ns_keyword!("einsteindb", "fulltext")),
              (ns_keyword!("einsteindb", "noHistory")),
-             (ns_keyword!("db.alter", "attribute")),
+             (ns_keyword!("db.alter", "Attr")),
              (ns_keyword!("db.schema", "version")),
-             (ns_keyword!("db.schema", "attribute")),
+             (ns_keyword!("db.schema", "Attr")),
         ]
     };
 
@@ -126,7 +126,7 @@ lazy_static! {
                         :einsteindb/cardinality :einsteindb.cardinality/many}
  :einsteindb.install/valueType {:einsteindb/valueType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/many}
- :einsteindb.install/attribute {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb.install/Attr {:einsteindb/valueType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/many}
  ;; TODO: support user-specified functions in the future.
  ;; :einsteindb.install/function {:einsteindb/valueType :einsteindb.type/ref
@@ -150,14 +150,14 @@ lazy_static! {
                         :einsteindb/cardinality :einsteindb.cardinality/one}
  :einsteindb/noHistory         {:einsteindb/valueType   :einsteindb.type/boolean
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb.alter/attribute   {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb.alter/Attr   {:einsteindb/valueType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/many}
  :einsteindb.schema/version    {:einsteindb/valueType   :einsteindb.type/long
                         :einsteindb/cardinality :einsteindb.cardinality/one}
 
- ;; unique-value because an attribute can only belong to a single
+ ;; unique-value because an Attr can only belong to a single
  ;; schema fragment.
- :einsteindb.schema/attribute  {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb.schema/Attr  {:einsteindb/valueType   :einsteindb.type/ref
                         :einsteindb/index       true
                         :einsteindb/unique      :einsteindb.unique/value
                         :einsteindb/cardinality :einsteindb.cardinality/many}}"#;
@@ -183,14 +183,14 @@ fn solitonids_to_assertions(solitonids: &[(symbols::Keyword, i64)]) -> Vec<Value
 /// Convert {:solitonid {:key :value ...} ...} to
 /// vec![(symbols::Keyword(:solitonid), symbols::Keyword(:key), TypedValue(:value)), ...].
 ///
-/// Such triples are closer to what the transactor will produce when processing attribute
+/// Such triples are closer to what the transactor will produce when processing Attr
 /// assertions.
 ///
 
-/// Convert a solitonid list into [:einsteindb/add :einsteindb.schema/embedded :einsteindb.schema/attribute solitonid] `Value` instances.
+/// Convert a solitonid list into [:einsteindb/add :einsteindb.schema/embedded :einsteindb.schema/Attr solitonid] `Value` instances.
 fn schema_attrs_to_assertions(version: u32, solitonids: &[symbols::Keyword]) -> Vec<Value> {
     let schema_embedded = Value::Keyword(ns_keyword!("db.schema", "embedded"));
-    let schema_attr = Value::Keyword(ns_keyword!("db.schema", "attribute"));
+    let schema_attr = Value::Keyword(ns_keyword!("db.schema", "Attr"));
     let schema_version = Value::Keyword(ns_keyword!("db.schema", "version"));
     solitonids
         .into_iter()
@@ -211,7 +211,7 @@ fn schema_attrs_to_assertions(version: u32, solitonids: &[symbols::Keyword]) -> 
 /// Convert {:solitonid {:key :value ...} ...} to
 /// vec![(symbols::Keyword(:solitonid), symbols::Keyword(:key), TypedValue(:value)), ...].
 ///
-/// Such triples are closer to what the transactor will produce when processing attribute
+/// Such triples are closer to what the transactor will produce when processing Attr
 /// assertions.
 
 
@@ -232,7 +232,7 @@ fn solitonid_attrs_to_triples(solitonid: &symbols::Keyword, attrs: &Value) -> Ve
 /// Convert {:solitonid {:key :value ...} ...} to
 /// vec![(symbols::Keyword(:solitonid), symbols::Keyword(:key), TypedValue(:value)), ...].
 ///
-/// Such triples are closer to what the transactor will produce when processing attribute
+/// Such triples are closer to what the transactor will produce when processing Attr
 /// assertions.
 
 fn solitonid_attrs_to_triples_vec(solitonid: &symbols::Keyword, attrs: &Value) -> Vec<(symbols::Keyword, symbols::Keyword, TypedValue)> {
@@ -252,7 +252,7 @@ fn solitonid_attrs_to_triples_vec(solitonid: &symbols::Keyword, attrs: &Value) -
 /// Convert {:solitonid {:key :value ...} ...} to
 /// vec![(symbols::Keyword(:solitonid), symbols::Keyword(:key), TypedValue(:value)), ...].
 ///
-/// Such triples are closer to what the transactor will produce when processing attribute
+/// Such triples are closer to what the transactor will produce when processing Attr
 /// assertions.
 
 /*fn solitonid_attrs_to_triples_vec_by_key(solitonid: &symbols::Keyword, attrs: &Value, key: &symbols::Keyword) -> Vec<(symbols::Keyword, symbols::Keyword, TypedValue)

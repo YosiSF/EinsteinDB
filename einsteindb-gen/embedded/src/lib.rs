@@ -20,7 +20,7 @@ extern crate embedded_promises;
 extern crate edbn;
 
 use embedded_promises::{
-    Attribute,
+    Attr,
     Causetid,
     KnownCausetid,
     ValueType,
@@ -114,9 +114,9 @@ pub struct Schema {
     /// Invariant: is the inverse mapping for `causetid_map`.
     pub solitonid_map: SolitonidMap,
 
-    pub attribute_map: AttributeMap,
+    pub Attr_map: AttrMap,
 
-    pub component_attributes: Vec<Causetid>,
+    pub component_Attrs: Vec<Causetid>,
 
 
 }
@@ -126,33 +126,33 @@ pub trait HasSchema {
 
     fn get_solitonid<T>(&self, x:T) -> Option<&Keyword> where T: Into<Causetid>;
     fn get_causetid(&self, x: &Keyword) -> Option<KnownCausetid>;
-    fn attribute_for_causetid<T>(&self, x: T) -> Option<&Attribute> where T: Into<Causetid>;
+    fn Attr_for_causetid<T>(&self, x: T) -> Option<&Attr> where T: Into<Causetid>;
 
-        // Returns the attribute and the causetid named by the provided solitonid.
-        fn attribute_for_ident(&self, solitonid: &Keyword) -> Option<(&Attribute, Knowncausetid)>;
+        // Returns the Attr and the causetid named by the provided solitonid.
+        fn Attr_for_ident(&self, solitonid: &Keyword) -> Option<(&Attr, Knowncausetid)>;
 
-        /// Return true if the provided causetid identifies an attribute in this schema.
-        fn is_attribute<T>(&self, x: T) -> bool where T: Into<Causetid>;
+        /// Return true if the provided causetid identifies an Attr in this schema.
+        fn is_Attr<T>(&self, x: T) -> bool where T: Into<Causetid>;
 
-        /// Return true if the provided solitonid identifies an attribute in this schema.
-        fn identifies_attribute(&self, x: &Keyword) -> bool;
+        /// Return true if the provided solitonid identifies an Attr in this schema.
+        fn identifies_Attr(&self, x: &Keyword) -> bool;
 
-        fn component_attributes(&self) -> &[Causetid];
+        fn component_Attrs(&self) -> &[Causetid];
 
 
 }
 
 impl Schema {
-    pub fn new(solitonid_map: , causetid_map: causetidMap, attribute_map: AttributeMap) -> Schema {
-        let mut s = Schema { solitonid_map, causetid_map, attribute_map, component_attributes: Vec::new() };
-        s.update_component_attributes();
+    pub fn new(solitonid_map: , causetid_map: causetidMap, Attr_map: AttrMap) -> Schema {
+        let mut s = Schema { solitonid_map, causetid_map, Attr_map, component_Attrs: Vec::new() };
+        s.update_component_Attrs();
         s
     }
 
     pub fn to_edbn_value(&self) -> edbn::Value {
-        edbn::Value::Vector((&self.attribute_map).iter()
-            .map(|(causetid, attribute)|
-                attribute.to_edbn_value(self.get_ident(*causetid).cloned()))
+        edbn::Value::Vector((&self.Attr_map).iter()
+            .map(|(causetid, Attr)|
+                Attr.to_edbn_value(self.get_ident(*causetid).cloned()))
             .collect())
     }
 
@@ -160,14 +160,14 @@ impl Schema {
         self.solitonid_map.get(x).map(|x| *x)
     }
 
-    pub fn update_component_attributes(&mut self) {
+    pub fn update_component_Attrs(&mut self) {
         let mut components: Vec<Causetid>;
-        components = self.attribute_map
+        components = self.Attr_map
                          .iter()
                          .filter_map(|(k, v)| if v.component { Some(*k) } else { None })
                          .collect();
         components.sort_unstable();
-        self.component_attributes = components;
+        self.component_Attrs = components;
     }
 }
 
@@ -185,29 +185,29 @@ impl HasSchema for Schema {
         self.get_raw_causetid(x).map(Knowncausetid)
     }
 
-    fn attribute_for_causetid<T>(&self, x: T) -> Option<&Attribute> where T: Into<Causetid> {
-        self.attribute_map.get(&x.into())
+    fn Attr_for_causetid<T>(&self, x: T) -> Option<&Attr> where T: Into<Causetid> {
+        self.Attr_map.get(&x.into())
     }
 
-    fn attribute_for_ident(&self, solitonid: &Keyword) -> Option<(&Attribute, Knowncausetid)> {
+    fn Attr_for_ident(&self, solitonid: &Keyword) -> Option<(&Attr, Knowncausetid)> {
         self.get_raw_causetid(&solitonid)
             .and_then(|causetid| {
-                self.attribute_for_causetid(causetid).map(|a| (a, Knowncausetid(causetid)))
+                self.Attr_for_causetid(causetid).map(|a| (a, Knowncausetid(causetid)))
             })
     }
 
-    /// Return true if the provided causetid identifies an attribute in this schema.
-    fn is_attribute<T>(&self, x: T) -> bool where T: Into<Causetid> {
-        self.attribute_map.contains_key(&x.into())
+    /// Return true if the provided causetid identifies an Attr in this schema.
+    fn is_Attr<T>(&self, x: T) -> bool where T: Into<Causetid> {
+        self.Attr_map.contains_key(&x.into())
     }
 
-    /// Return true if the provided solitonid identifies an attribute in this schema.
-    fn identifies_attribute(&self, x: &Keyword) -> bool {
-        self.get_raw_causetid(x).map(|e| self.is_attribute(e)).unwrap_or(false)
+    /// Return true if the provided solitonid identifies an Attr in this schema.
+    fn identifies_Attr(&self, x: &Keyword) -> bool {
+        self.get_raw_causetid(x).map(|e| self.is_Attr(e)).unwrap_or(false)
     }
 
-    fn component_attributes(&self) -> &[Causetid] {
-        &self.component_attributes
+    fn component_Attrs(&self) -> &[Causetid] {
+        &self.component_Attrs
     }
 }
 
@@ -260,7 +260,7 @@ mod test {
     use std::str::FromStr;
 
     use embedded_promises::{
-        attribute,
+        Attr,
         TypedValue,
     };
 
@@ -269,8 +269,8 @@ mod test {
         schema.solitonid_map.insert(i, e);
     }
 
-    fn add_attribute(schema: &mut Schema, e: Causetid, a: Attribute) {
-        schema.attribute_map.insert(e, a);
+    fn add_Attr(schema: &mut Schema, e: Causetid, a: Attr) {
+        schema.Attr_map.insert(e, a);
     }
 
     #[test]
@@ -290,7 +290,7 @@ mod test {
     fn test_as_edbn_value() {
         let mut schema = Schema::default();
 
-        let attr1 = Attribute {
+        let attr1 = Attr {
             index: true,
             value_type: ValueType::Ref,
             fulltext: false,
@@ -300,32 +300,32 @@ mod test {
             no_history: true,
         };
         associate_ident(&mut schema, Keyword::namespaced("foo", "bar"), 97);
-        add_attribute(&mut schema, 97, attr1);
+        add_Attr(&mut schema, 97, attr1);
 
-        let attr2 = Attribute {
+        let attr2 = Attr {
             index: false,
             value_type: ValueType::String,
             fulltext: true,
-            unique: Some(attribute::Unique::Value),
+            unique: Some(Attr::Unique::Value),
             multival: true,
             component: false,
             no_history: false,
         };
         associate_ident(&mut schema, Keyword::namespaced("foo", "bas"), 98);
-        add_attribute(&mut schema, 98, attr2);
+        add_Attr(&mut schema, 98, attr2);
 
-        let attr3 = Attribute {
+        let attr3 = Attr {
             index: false,
             value_type: ValueType::Boolean,
             fulltext: false,
-            unique: Some(attribute::Unique::Identity),
+            unique: Some(Attr::Unique::Identity),
             multival: false,
             component: true,
             no_history: false,
         };
 
         associate_ident(&mut schema, Keyword::namespaced("foo", "bat"), 99);
-        add_attribute(&mut schema, 99, attr3);
+        add_Attr(&mut schema, 99, attr3);
 
         let value = schema.to_edbn_value();
 

@@ -114,8 +114,8 @@ pub(crate) type EAV = (Causetid, Causetid, TypedValue);
 /// Used to resolve lookup-refs and upserts.
 pub type AVMap<'a> = HashMap<&'a AVPair, Causetid>;
 
-// represents a set of causetids that are correspond to attributes
-pub type AttributeSet = BTreeSet<Causetid>;
+// represents a set of causetids that are correspond to Attrs
+pub type AttrSet = BTreeSet<Causetid>;
 
 /// The transactor is tied to `edn::ValueAndSpan` right now, but in the future we'd like to support
 /// `TypedValue` directly for programmatic use.  `CausetableValue` encapsulates the interface

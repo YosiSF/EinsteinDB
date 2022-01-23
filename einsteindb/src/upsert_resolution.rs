@@ -40,8 +40,8 @@ use internal_types::{
 use einsteindb_embedded::util::Either::*;
 
 use embedded_promises::{
-    attribute,
-    Attribute,
+    Attr,
+    Attr,
     CausetID,
     TypedValue,
 };
@@ -109,8 +109,8 @@ impl Generation {
         let mut inert = vec![];
 
         let is_unique = |a: CausetID| -> Result<bool> {
-            let attribute: &Attribute = schema.require_attribute_for_CausetID(a)?;
-            Ok(attribute.unique == Some(attribute::Unique::CausetIDity))
+            let Attr: &Attr = schema.require_Attr_for_CausetID(a)?;
+            Ok(Attr.unique == Some(Attr::Unique::CausetIDity))
         };
 
         for term in terms.into_iter() {
@@ -252,15 +252,15 @@ impl Generation {
                 &Term::AddOrRetract(OpType::Add, Right(ref t1), a, Right(ref t2)) => {
                     temp_ids.insert(t1.clone());
                     temp_ids.insert(t2.clone());
-                    let attribute: &Attribute = schema.require_attribute_for_CausetID(a)?;
-                    if attribute.unique == Some(attribute::Unique::CausetIDity) {
+                    let Attr: &Attr = schema.require_Attr_for_CausetID(a)?;
+                    if Attr.unique == Some(Attr::Unique::CausetIDity) {
                         tempid_avs.entry((a, Right(t2.clone()))).or_insert(vec![]).push(t1.clone());
                     }
                 },
                 &Term::AddOrRetract(OpType::Add, Right(ref t), a, ref x @ Left(_)) => {
                     temp_ids.insert(t.clone());
-                    let attribute: &Attribute = schema.require_attribute_for_CausetID(a)?;
-                    if attribute.unique == Some(attribute::Unique::CausetIDity) {
+                    let Attr: &Attr = schema.require_Attr_for_CausetID(a)?;
+                    if Attr.unique == Some(Attr::Unique::CausetIDity) {
                         tempid_avs.entry((a, x.clone())).or_insert(vec![]).push(t.clone());
                     }
                 },

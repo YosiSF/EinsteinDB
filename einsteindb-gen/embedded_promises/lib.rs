@@ -68,7 +68,7 @@ use edbn::{
 };
 
 use edbn::causets::{
-    AttributePlace,
+    AttrPlace,
     EntityPlace,
     CausetidOrSolitonid,
     ValuePlace,

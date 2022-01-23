@@ -315,7 +315,7 @@ mod testing {
     use super::*;
 
     use embedded_promises::{
-        Attribute,
+        Attr,
         ValueType,
     };
 
@@ -328,7 +328,7 @@ mod testing {
     };
 
     use clauses::{
-        add_attribute,
+        add_Attr,
         associate_solitonid,
     };
 
@@ -340,7 +340,7 @@ mod testing {
         let mut schema = Schema::default();
 
         associate_solitonid(&mut schema, Keyword::namespaced("foo", "fts"), 100);
-        add_attribute(&mut schema, 100, Attribute {
+        add_Attr(&mut schema, 100, Attr {
             value_type: ValueType::String,
             index: true,
             fulltext: true,

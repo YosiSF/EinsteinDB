@@ -21,17 +21,17 @@ use ::{
     Schema,
 };
 
-pub trait CachedAttributes {
-    fn is_attribute_cached_reverse(&self, causetid: Causetid) -> bool; //light cone is the future
-    fn is_attribute_cached_forward(&self, causetid: Causetid) -> bool; //time cone is the past.
-    fn has_cached_attributes(&self) -> bool;
+pub trait CachedAttrs {
+    fn is_Attr_cached_reverse(&self, causetid: Causetid) -> bool; //light cone is the future
+    fn is_Attr_cached_forward(&self, causetid: Causetid) -> bool; //time cone is the past.
+    fn has_cached_Attrs(&self) -> bool;
 
-    fn get_values_for_causetid(&self, schema: &Schema, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>>;
-    fn get_value_for_causetid(&self, schema: &Schema, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue>;
+    fn get_values_for_causetid(&self, schema: &Schema, Attr: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>>;
+    fn get_value_for_causetid(&self, schema: &Schema, Attr: Causetid, causetid: Causetid) -> Option<&TypedValue>;
 
     /// Reverse lookup.
-    fn get_causetid_for_value(&self, attribute: Causetid, value: &TypedValue) -> Option<Causetid>;
-    fn get_causetids_for_value(&self, attribute: Causetid, value: &TypedValue) -> Option<&BTreeSet<Causetid>>;
+    fn get_causetid_for_value(&self, Attr: Causetid, value: &TypedValue) -> Option<Causetid>;
+    fn get_causetids_for_value(&self, Attr: Causetid, value: &TypedValue) -> Option<&BTreeSet<Causetid>>;
 }
 
 pub trait UpdateableCache<E> {

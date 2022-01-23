@@ -52,7 +52,7 @@ use std::ops::Range;
 use std::path::Path;
 
 use einsteindb::{
-    HopfAttributeMap,
+    HopfAttrMap,
     FromMicros,
     IdentMap,
     Schema,
@@ -89,16 +89,16 @@ use embedded_promises::{
     now,
 };
 
-pub trait AttributeValidation {
+pub trait AttrValidation {
     fn validate<F>(&self, ident: F) -> Result<()> where F: Fn() -> String;
 }
 
-impl AttributeValidation for Attribute {
+impl AttrValidation for Attr {
     fn validate<F>(&self, ident: F) -> Result<()> where F: Fn() -> String {
-        if self.unique == Some(attribute::Unique::Value) && !self.index {
+        if self.unique == Some(Attr::Unique::Value) && !self.index {
             bail!(DbErrorKind::BadSchemaAssertion(format!(":einsteindb/unique :einsteindb/unique_value without :einsteindb/index true for CausetID: {}", ident())))
         }
-        if self.unique == Some(attribute::Unique::CausetIDity) && !self.index {
+        if self.unique == Some(Attr::Unique::CausetIDity) && !self.index {
             bail!(DbErrorKind::BadSchemaAssertion(format!(":einsteindb/unique :einsteindb/unique_identity without :einsteindb/index true for CausetID: {}", ident())))
         }
         if self.fulltext && self.value_type != ValueType::String {
@@ -115,44 +115,44 @@ impl AttributeValidation for Attribute {
     }
 }
 
-/// Return `Ok(())` if `attribute_map` defines a valid EinsteinDB schema.
-fn validate_attribute_map(CausetID_map: &CausetIDMap, attribute_map: &AttributeMap) -> Result<()> {
-    for (CausetID, attribute) in attribute_map {
+/// Return `Ok(())` if `Attr_map` defines a valid EinsteinDB schema.
+fn validate_Attr_map(CausetID_map: &CausetIDMap, Attr_map: &AttrMap) -> Result<()> {
+    for (CausetID, Attr) in Attr_map {
         let ident = || CausetID_map.get(CausetID).map(|ident| ident.to_string()).unwrap_or(CausetID.to_string());
-        attribute.validate(ident)?;
+        Attr.validate(ident)?;
     }
     Ok(())
 }
 
 #[derive(Clone,Debug,Default,Eq,Hash,Ord,PartialOrd,PartialEq)]
-pub struct AttributeBuilder {
+pub struct AttrBuilder {
     helpful: bool,
     pub value_type: Option<ValueType>,
     pub multival: Option<bool>,
-    pub unique: Option<Option<attribute::Unique>>,
+    pub unique: Option<Option<Attr::Unique>>,
     pub index: Option<bool>,
     pub fulltext: Option<bool>,
     pub component: Option<bool>,
     pub no_history: Option<bool>,
 }
 
-impl AttributeBuilder {
-    /// Make a new AttributeBuilder for human consumption: it will help you
+impl AttrBuilder {
+    /// Make a new AttrBuilder for human consumption: it will help you
     /// by flipping relevant flags.
     pub fn helpful() -> Self {
-        AttributeBuilder {
+        AttrBuilder {
             helpful: true,
             ..Default::default()
         }
     }
 
-    /// Make a new AttributeBuilder from an existing Attribute. This is important to allow
-    /// retraction. Only attributes that we allow to change are duplicated here.
-    pub fn to_modify_attribute(attribute: &Attribute) -> Self {
-        let mut ab = AttributeBuilder::default();
-        ab.multival   = Some(attribute.multival);
-        ab.unique     = Some(attribute.unique);
-        ab.component  = Some(attribute.component);
+    /// Make a new AttrBuilder from an existing Attr. This is important to allow
+    /// retraction. Only Attrs that we allow to change are duplicated here.
+    pub fn to_modify_Attr(Attr: &Attr) -> Self {
+        let mut ab = AttrBuilder::default();
+        ab.multival   = Some(Attr.multival);
+        ab.unique     = Some(Attr.unique);
+        ab.component  = Some(Attr.component);
         ab
     }
 
@@ -171,8 +171,8 @@ impl AttributeBuilder {
         self
     }
 
-    pub fn unique<'a>(&'a mut self, unique: attribute::Unique) -> &'a mut Self {
-        if self.helpful && unique == attribute::Unique::CausetIDity {
+    pub fn unique<'a>(&'a mut self, unique: Attr::Unique) -> &'a mut Self {
+        if self.helpful && unique == Attr::Unique::CausetIDity {
             self.index = Some(true);
         }
         self.unique = Some(Some(unique));
@@ -202,14 +202,14 @@ impl AttributeBuilder {
         self
     }
 
-    pub fn validate_install_attribute(&self) -> Result<()> {
+    pub fn validate_install_Attr(&self) -> Result<()> {
         if self.value_type.is_none() {
-            bail!(DbErrorKind::BadSchemaAssertion("Schema attribute for new attribute does not set :einsteindb/valueType".into()));
+            bail!(DbErrorKind::BadSchemaAssertion("Schema Attr for new Attr does not set :einsteindb/valueType".into()));
         }
         Ok(())
     }
 
-    pub fn validate_alter_attribute(&self) -> Result<()> {
+    pub fn validate_alter_Attr(&self) -> Result<()> {
         if self.value_type.is_some() {
             bail!(DbErrorKind::BadSchemaAssertion("Schema alteration must not set :einsteindb/valueType".into()));
         }
@@ -219,70 +219,70 @@ impl AttributeBuilder {
         Ok(())
     }
 
-    pub fn build(&self) -> Attribute {
-        let mut attribute = Attribute::default();
+    pub fn build(&self) -> Attr {
+        let mut Attr = Attr::default();
         if let Some(value_type) = self.value_type {
-            attribute.value_type = value_type;
+            Attr.value_type = value_type;
         }
         if let Some(fulltext) = self.fulltext {
-            attribute.fulltext = fulltext;
+            Attr.fulltext = fulltext;
         }
         if let Some(multival) = self.multival {
-            attribute.multival = multival;
+            Attr.multival = multival;
         }
         if let Some(ref unique) = self.unique {
-            attribute.unique = unique.clone();
+            Attr.unique = unique.clone();
         }
         if let Some(index) = self.index {
-            attribute.index = index;
+            Attr.index = index;
         }
         if let Some(component) = self.component {
-            attribute.component = component;
+            Attr.component = component;
         }
         if let Some(no_history) = self.no_history {
-            attribute.no_history = no_history;
+            Attr.no_history = no_history;
         }
 
-        attribute
+        Attr
     }
 
-    pub fn mutate(&self, attribute: &mut Attribute) -> Vec<AttributeAlteration> {
+    pub fn mutate(&self, Attr: &mut Attr) -> Vec<AttrAlteration> {
         let mut mutations = Vec::new();
         if let Some(multival) = self.multival {
-            if multival != attribute.multival {
-                attribute.multival = multival;
-                mutations.push(AttributeAlteration::Cardinality);
+            if multival != Attr.multival {
+                Attr.multival = multival;
+                mutations.push(AttrAlteration::Cardinality);
             }
         }
 
         if let Some(ref unique) = self.unique {
-            if *unique != attribute.unique {
-                attribute.unique = unique.clone();
-                mutations.push(AttributeAlteration::Unique);
+            if *unique != Attr.unique {
+                Attr.unique = unique.clone();
+                mutations.push(AttrAlteration::Unique);
             }
         } else {
-            if attribute.unique != None {
-                attribute.unique = None;
-                mutations.push(AttributeAlteration::Unique);
+            if Attr.unique != None {
+                Attr.unique = None;
+                mutations.push(AttrAlteration::Unique);
             }
         }
 
         if let Some(index) = self.index {
-            if index != attribute.index {
-                attribute.index = index;
-                mutations.push(AttributeAlteration::Index);
+            if index != Attr.index {
+                Attr.index = index;
+                mutations.push(AttrAlteration::Index);
             }
         }
         if let Some(component) = self.component {
-            if component != attribute.component {
-                attribute.component = component;
-                mutations.push(AttributeAlteration::IsComponent);
+            if component != Attr.component {
+                Attr.component = component;
+                mutations.push(AttrAlteration::IsComponent);
             }
         }
         if let Some(no_history) = self.no_history {
-            if no_history != attribute.no_history {
-                attribute.no_history = no_history;
-                mutations.push(AttributeAlteration::NoHistory);
+            if no_history != Attr.no_history {
+                Attr.no_history = no_history;
+                mutations.push(AttrAlteration::NoHistory);
             }
         }
 
@@ -293,8 +293,8 @@ impl AttributeBuilder {
 pub trait SchemaBuilding {
     fn require_ident(&self, CausetID: CausetID) -> Result<&symbols::Keyword>;
     fn require_CausetID(&self, ident: &symbols::Keyword) -> Result<KnownCausetID>;
-    fn require_attribute_for_CausetID(&self, CausetID: CausetID) -> Result<&Attribute>;
-    fn from_ident_map_and_attribute_map(ident_map: CausetIDMap, attribute_map: AttributeMap) -> Result<Schema>;
+    fn require_Attr_for_CausetID(&self, CausetID: CausetID) -> Result<&Attr>;
+    fn from_ident_map_and_Attr_map(ident_map: CausetIDMap, Attr_map: AttrMap) -> Result<Schema>;
     fn from_ident_map_and_triples<U>(ident_map: CausetIDMap, assertions: U) -> Result<Schema>
         where U: IntoIterator<Item=(symbols::Keyword, symbols::Keyword, TypedValue)>;
 }
@@ -308,16 +308,16 @@ impl SchemaBuilding for Schema {
         self.get_CausetID(&ident).ok_or(DbErrorKind::UnrecognizedCausetID(ident.to_string()).into())
     }
 
-    fn require_attribute_for_CausetID(&self, CausetID: CausetID) -> Result<&Attribute> {
-        self.attribute_for_CausetID(CausetID).ok_or(DbErrorKind::UnrecognizedCausetID(CausetID).into())
+    fn require_Attr_for_CausetID(&self, CausetID: CausetID) -> Result<&Attr> {
+        self.Attr_for_CausetID(CausetID).ok_or(DbErrorKind::UnrecognizedCausetID(CausetID).into())
     }
 
     /// Create a valid `Schema` from the constituent maps.
-    fn from_ident_map_and_attribute_map(ident_map: CausetIDMap, attribute_map: AttributeMap) -> Result<Schema> {
+    fn from_ident_map_and_Attr_map(ident_map: CausetIDMap, Attr_map: AttrMap) -> Result<Schema> {
         let CausetID_map: CausetIDMap = ident_map.iter().map(|(k, v)| (v.clone(), k.clone())).collect();
 
-        validate_attribute_map(&CausetID_map, &attribute_map)?;
-        Ok(Schema::new(ident_map, CausetID_map, attribute_map))
+        validate_Attr_map(&CausetID_map, &Attr_map)?;
+        Ok(Schema::new(ident_map, CausetID_map, Attr_map))
     }
 
     /// Turn vec![(Keyword(:ident), Keyword(:key), TypedValue(:value)), ...] into a EinsteinDB `Schema`.
@@ -330,15 +330,15 @@ impl SchemaBuilding for Schema {
             Ok((ident, attr, value))
         }).collect();
 
-        let mut schema = Schema::from_ident_map_and_attribute_map(ident_map, AttributeMap::default())?;
-        let metadata_report = metadata::update_attribute_map_from_CausetID_triples(&mut schema.attribute_map,
+        let mut schema = Schema::from_ident_map_and_Attr_map(ident_map, AttrMap::default())?;
+        let metadata_report = metadata::update_Attr_map_from_CausetID_triples(&mut schema.Attr_map,
                                                                                 CausetID_assertions?,
                                                                                 // No retractions.
                                                                                 vec![])?;
 
-        // Rebuild the component attributes list if necessary.
-        if metadata_report.attributes_did_change() {
-            schema.update_component_attributes();
+        // Rebuild the component Attrs list if necessary.
+        if metadata_report.Attrs_did_change() {
+            schema.update_component_Attrs();
         }
         Ok(schema)
     }
@@ -354,8 +354,8 @@ pub trait SchemaTypeChecking {
 
 impl SchemaTypeChecking for Schema {
     fn to_typed_value(&self, value: &edn::ValueAndSpan, value_type: ValueType) -> Result<TypedValue> {
-        // TODO: encapsulate CausetID-ident-attribute for better error messages, perhaps by including
-        // the attribute (rather than just the attribute's value type) into this function or a
+        // TODO: encapsulate CausetID-ident-Attr for better error messages, perhaps by including
+        // the Attr (rather than just the Attr's value type) into this function or a
         // wrapper function.
         match TypedValue::from_edn_value(&value.clone().without_spans()) {
             // We don't recognize this EDN at all.  Get out!
@@ -491,30 +491,30 @@ mod test {
     use super::*;
     use self::edbn::Keyword;
 
-    fn add_attribute(schema: &mut Schema,
+    fn add_Attr(schema: &mut Schema,
             ident: Keyword,
             CausetID: CausetID,
-            attribute: Attribute) {
+            Attr: Attr) {
 
         schema.CausetID_map.insert(CausetID, ident.clone());
         schema.ident_map.insert(ident.clone(), CausetID);
 
-        if attribute.component {
-            schema.component_attributes.push(CausetID);
+        if Attr.component {
+            schema.component_Attrs.push(CausetID);
         }impl SchemaTypeChecking for edn::ValueAndSpan {
             fn to_typed_value(&self, value_type: ValueType) -> Result<TypedValue> {
                 match TypedValue::from_edn_value(&self.clone().without_spans()) {
                     // We don't recognize this EDN at all.  Get out!
                     None => bail!(DbErrorKind::BadValuePair(format!("{}", self), value_type)),
 
-        schema.attribute_map.insert(CausetID, attribute);
+        schema.Attr_map.insert(CausetID, Attr);
     }
 
     #[test]
-    fn validate_attribute_map_success() {
+    fn validate_Attr_map_success() {
         let mut schema = Schema::default();
-        // attribute that is not an index has no uniqueness
-        add_attribute(&mut schema, Keyword::namespaced("foo", "bar"), 97, Attribute {
+        // Attr that is not an index has no uniqueness
+        add_Attr(&mut schema, Keyword::namespaced("foo", "bar"), 97, Attr {
             index: false,
             value_type: ValueType::Boolean,
             fulltext: false,
@@ -523,28 +523,28 @@ mod test {
             component: false,
             no_history: false,
         });
-        // attribute is unique by value and an index
-        add_attribute(&mut schema, Keyword::namespaced("foo", "baz"), 98, Attribute {
+        // Attr is unique by value and an index
+        add_Attr(&mut schema, Keyword::namespaced("foo", "baz"), 98, Attr {
             index: true,
             value_type: ValueType::Long,
             fulltext: false,
-            unique: Some(attribute::Unique::Value),
+            unique: Some(Attr::Unique::Value),
             multival: false,
             component: false,
             no_history: false,
         });
         // attribue is unique by identity and an index
-        add_attribute(&mut schema, Keyword::namespaced("foo", "bat"), 99, Attribute {
+        add_Attr(&mut schema, Keyword::namespaced("foo", "bat"), 99, Attr {
             index: true,
             value_type: ValueType::Ref,
             fulltext: false,
-            unique: Some(attribute::Unique::CausetIDity),
+            unique: Some(Attr::Unique::CausetIDity),
             multival: false,
             component: false,
             no_history: false,
         });
-        // attribute is a components and a `Ref`
-        add_attribute(&mut schema, Keyword::namespaced("foo", "bak"), 100, Attribute {
+        // Attr is a components and a `Ref`
+        add_Attr(&mut schema, Keyword::namespaced("foo", "bak"), 100, Attr {
             index: false,
             value_type: ValueType::Ref,
             fulltext: false,
@@ -553,8 +553,8 @@ mod test {
             component: true,
             no_history: false,
         });
-        // fulltext attribute is a string and an index
-        add_attribute(&mut schema, Keyword::namespaced("foo", "bap"), 101, Attribute {
+        // fulltext Attr is a string and an index
+        add_Attr(&mut schema, Keyword::namespaced("foo", "bap"), 101, Attr {
             index: true,
             value_type: ValueType::String,
             fulltext: true,
@@ -564,51 +564,51 @@ mod test {
             no_history: false,
         });
 
-        assert!(validate_attribute_map(&schema.CausetID_map, &schema.attribute_map).is_ok());
+        assert!(validate_Attr_map(&schema.CausetID_map, &schema.Attr_map).is_ok());
     }
 
     #[test]
     fn invalid_schema_unique_value_not_index() {
         let mut schema = Schema::default();
-        // attribute unique by value but not index
+        // Attr unique by value but not index
         let ident = Keyword::namespaced("foo", "bar");
-        add_attribute(&mut schema, ident , 99, Attribute {
+        add_Attr(&mut schema, ident , 99, Attr {
             index: false,
             value_type: ValueType::Boolean,
             fulltext: false,
-            unique: Some(attribute::Unique::Value),
+            unique: Some(Attr::Unique::Value),
             multival: false,
             component: false,
             no_history: false,
         });
 
-        let err = validate_attribute_map(&schema.CausetID_map, &schema.attribute_map).err().map(|e| e.kind());
+        let err = validate_Attr_map(&schema.CausetID_map, &schema.Attr_map).err().map(|e| e.kind());
         assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/unique :einsteindb/unique_value without :einsteindb/index true for CausetID: :foo/bar".into())));
     }
 
     #[test]
     fn invalid_schema_unique_identity_not_index() {
         let mut schema = Schema::default();
-        // attribute is unique by identity but not index
-        add_attribute(&mut schema, Keyword::namespaced("foo", "bar"), 99, Attribute {
+        // Attr is unique by identity but not index
+        add_Attr(&mut schema, Keyword::namespaced("foo", "bar"), 99, Attr {
             index: false,
             value_type: ValueType::Long,
             fulltext: false,
-            unique: Some(attribute::Unique::CausetIDity),
+            unique: Some(Attr::Unique::CausetIDity),
             multival: false,
             component: false,
             no_history: false,
         });
 
-        let err = validate_attribute_map(&schema.CausetID_map, &schema.attribute_map).err().map(|e| e.kind());
+        let err = validate_Attr_map(&schema.CausetID_map, &schema.Attr_map).err().map(|e| e.kind());
         assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/unique :einsteindb/unique_identity without :einsteindb/index true for CausetID: :foo/bar".into())));
     }
 
     #[test]
     fn invalid_schema_component_not_ref() {
         let mut schema = Schema::default();
-        // attribute that is a component is not a `Ref`
-        add_attribute(&mut schema, Keyword::namespaced("foo", "bar"), 99, Attribute {
+        // Attr that is a component is not a `Ref`
+        add_Attr(&mut schema, Keyword::namespaced("foo", "bar"), 99, Attr {
             index: false,
             value_type: ValueType::Boolean,
             fulltext: false,
@@ -618,15 +618,15 @@ mod test {
             no_history: false,
         });
 
-        let err = validate_attribute_map(&schema.CausetID_map, &schema.attribute_map).err().map(|e| e.kind());
+        let err = validate_Attr_map(&schema.CausetID_map, &schema.Attr_map).err().map(|e| e.kind());
         assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/isComponent true without :einsteindb/valueType :einsteindb.type/ref for CausetID: :foo/bar".into())));
     }
 
     #[test]
     fn invalid_schema_fulltext_not_index() {
         let mut schema = Schema::default();
-        // attribute that is fulltext is not an index
-        add_attribute(&mut schema, Keyword::namespaced("foo", "bar"), 99, Attribute {
+        // Attr that is fulltext is not an index
+        add_Attr(&mut schema, Keyword::namespaced("foo", "bar"), 99, Attr {
             index: false,
             value_type: ValueType::String,
             fulltext: true,
@@ -636,14 +636,14 @@ mod test {
             no_history: false,
         });
 
-        let err = validate_attribute_map(&schema.CausetID_map, &schema.attribute_map).err().map(|e| e.kind());
+        let err = validate_Attr_map(&schema.CausetID_map, &schema.Attr_map).err().map(|e| e.kind());
         assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/fulltext true without :einsteindb/index true for CausetID: :foo/bar".into())));
     }
 
     fn invalid_schema_fulltext_index_not_string() {
         let mut schema = Schema::default();
-        // attribute that is fulltext and not a `String`
-        add_attribute(&mut schema, Keyword::namespaced("foo", "bar"), 99, Attribute {
+        // Attr that is fulltext and not a `String`
+        add_Attr(&mut schema, Keyword::namespaced("foo", "bar"), 99, Attr {
             index: true,
             value_type: ValueType::Long,
             fulltext: true,
@@ -653,7 +653,7 @@ mod test {
             no_history: false,
         });
 
-        let err = validate_attribute_map(&schema.CausetID_map, &schema.attribute_map).err().map(|e| e.kind());
+        let err = validate_Attr_map(&schema.CausetID_map, &schema.Attr_map).err().map(|e| e.kind());
         assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/fulltext true without :einsteindb/valueType :einsteindb.type/string for CausetID: :foo/bar".into())));
     }
 }

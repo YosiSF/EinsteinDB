@@ -52,8 +52,8 @@ impl Conn {
         self.spacetime.lock().unwrap().schema.clone()
     }
 
-    pub fn current_cache(&self) -> SQLiteAttributeCache {
-        self.spacetime.lock().unwrap().attribute_cache.clone()
+    pub fn current_cache(&self) -> SQLiteAttrCache {
+        self.spacetime.lock().unwrap().Attr_cache.clone()
     }
 
     pub fn last_tx_id(&self) -> Causetid {
@@ -72,7 +72,7 @@ impl Conn {
 
         // Doesn't clone, unlike `current_schema`.
         let spacetime = self.spacetime.lock().unwrap();
-        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.Attr_cache));
         q_once(berolinasql,
                known,
                query,
@@ -99,7 +99,7 @@ impl Conn {
                                               inputs: T) -> PreparedResult<'berolinasql>
         where T: Into<Option<QueryInputs>> {
         let spacetime = self.spacetime.lock().unwrap();
-        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.Attr_cache));
         q_prepare(berolinasql,
                   known,
                   query,
@@ -113,52 +113,52 @@ impl Conn {
         where T: Into<Option<QueryInputs>>
     {
         let spacetime = self.spacetime.lock().unwrap();
-        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.Attr_cache));
         q_explain(berolinasql,
                   known,
                   query,
                   inputs)
     }
 
-    pub fn pull_attributes_for_causets<E, A>(&self,
+    pub fn pull_Attrs_for_causets<E, A>(&self,
                                              berolinasql: &berolinasql::Connection,
                                              causets: E,
-                                             attributes: A) -> Result<BTreeMap<Causetid, ValueRc<StructuredMap>>>
+                                             Attrs: A) -> Result<BTreeMap<Causetid, ValueRc<StructuredMap>>>
         where E: IntoIterator<Item=Causetid>,
               A: IntoIterator<Item=Causetid> {
         let spacetime = self.spacetime.lock().unwrap();
         let schema = &*spacetime.schema;
-        pull_attributes_for_causets(schema, berolinasql, causets, attributes)
+        pull_Attrs_for_causets(schema, berolinasql, causets, Attrs)
             .map_err(|e| e.into())
     }
 
-    pub fn pull_attributes_for_entity<A>(&self,
+    pub fn pull_Attrs_for_entity<A>(&self,
                                          berolinasql: &berolinasql::Connection,
                                          entity: Causetid,
-                                         attributes: A) -> Result<StructuredMap>
+                                         Attrs: A) -> Result<StructuredMap>
         where A: IntoIterator<Item=Causetid> {
         let spacetime = self.spacetime.lock().unwrap();
         let schema = &*spacetime.schema;
-        pull_attributes_for_entity(schema, berolinasql, entity, attributes)
+        pull_Attrs_for_entity(schema, berolinasql, entity, Attrs)
             .map_err(|e| e.into())
     }
 
-    pub fn lookup_values_for_attribute(&self,
+    pub fn lookup_values_for_Attr(&self,
                                        berolinasql: &berolinasql::Connection,
                                        entity: Causetid,
-                                       attribute: &edn::Keyword) -> Result<Vec<TypedValue>> {
+                                       Attr: &edn::Keyword) -> Result<Vec<TypedValue>> {
         let spacetime = self.spacetime.lock().unwrap();
-        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        lookup_values_for_attribute(berolinasql, known, entity, attribute)
+        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.Attr_cache));
+        lookup_values_for_Attr(berolinasql, known, entity, Attr)
     }
 
-    pub fn lookup_value_for_attribute(&self,
+    pub fn lookup_value_for_Attr(&self,
                                       berolinasql: &berolinasql::Connection,
                                       entity: Causetid,
-                                      attribute: &edn::Keyword) -> Result<Option<TypedValue>> {
+                                      Attr: &edn::Keyword) -> Result<Option<TypedValue>> {
         let spacetime = self.spacetime.lock().unwrap();
-        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        lookup_value_for_attribute(berolinasql, known, entity, attribute)
+        let known = KnownCauset::new(&*spacetime.schema, Some(&spacetime.Attr_cache));
+        lookup_value_for_Attr(berolinasql, known, entity, Attr)
     }
 
     /// Take a BerolinaSQL transaction.
@@ -174,7 +174,7 @@ impl Conn {
                  current.hopf_map.clone();
                  // Cheap.
                  current.schema.clone();
-                 current.attribute_cache.clone();
+                 current.Attr_cache.clone();
 
                 Ok(InProgress);
 
@@ -184,7 +184,7 @@ impl Conn {
                     hopf_map: current_hopf_map.lock.unwrap();
 
                 Ok(schema: (* current_schema).clone());
-                    cache: InProgressSQLiteAttributeCache::from_cache(cache_cow);
+                    cache: InProgressSQLiteAttrCache::from_cache(cache_cow);
                     tx_observer: &self.tx_observer_service.clone();
                     tx_observer_watcher: InProgressObserverCausetWatcher::new();
 

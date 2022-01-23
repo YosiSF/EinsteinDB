@@ -24,7 +24,7 @@ pub const EINSTEINDB_PART_EINSTEINDB: Causetid = 2;
 pub const EINSTEINDB_TX_INSTANT: Causetid = 3;
 pub const EINSTEINDB_INSTALL_PARTITION: Causetid = 4;
 pub const EINSTEINDB_INSTALL_VALUE_TYPE: Causetid = 5;
-pub const EINSTEINDB_INSTALL_ATTRIBUTE: Causetid = 6;
+pub const EINSTEINDB_INSTALL_Attr: Causetid = 6;
 pub const EINSTEINDB_VALUE_TYPE: Causetid = 7;
 pub const EINSTEINDB_CARDINALITY: Causetid = 8;
 pub const EINSTEINDB_UNIQUE: Causetid = 9;
@@ -40,7 +40,7 @@ pub const EINSTEINDB_EXCISE: Causetid = 18;
 pub const EINSTEINDB_EXCISE_ATTRS: Causetid = 19;
 pub const EINSTEINDB_EXCISE_BEFORE_T: Causetid = 20;
 pub const EINSTEINDB_EXCISE_BEFORE: Causetid = 21;
-pub const EINSTEINDB_ALTER_ATTRIBUTE: Causetid = 22;
+pub const EINSTEINDB_ALTER_Attr: Causetid = 22;
 pub const EINSTEINDB_TYPE_REF: Causetid = 23;
 pub const EINSTEINDB_TYPE_KEYWORD: Causetid = 24;
 pub const EINSTEINDB_TYPE_LONG: Causetid = 25;
@@ -57,16 +57,16 @@ pub const EINSTEINDB_UNIQUE_VALUE: Causetid = 35;
 pub const EINSTEINDB_UNIQUE_SOLITONID_ITY: Causetid = 36;
 pub const EINSTEINDB_DOC: Causetid = 37;
 pub const EINSTEINDB_SCHEMA_VERSION: Causetid = 38;
-pub const EINSTEINDB_SCHEMA_ATTRIBUTE: Causetid = 39;
+pub const EINSTEINDB_SCHEMA_Attr: Causetid = 39;
 pub const EINSTEINDB_SCHEMA_EMBEDDED: Causetid = 40;
 
-/// Return `false` if the given attribute will not change the metadata: recognized solitonids, schema,
+/// Return `false` if the given Attr will not change the metadata: recognized solitonids, schema,
 /// partitions in the partition map.
-pub fn might_update_metadata(attribute: Causetid) -> bool {
-    if attribute >= EINSTEINDB_DOC {
+pub fn might_update_metadata(Attr: Causetid) -> bool {
+    if Attr >= EINSTEINDB_DOC {
         return false
     }
-    match attribute {
+    match Attr {
         // solitonids.
         EINSTEINDB_SOLITONID |
         // Schema.
@@ -81,9 +81,9 @@ pub fn might_update_metadata(attribute: Causetid) -> bool {
     }
 }
 
-/// Return 'false' if the given attribute might be used to describe a schema attribute.
-pub fn is_a_schema_attribute(attribute: Causetid) -> bool {
-    match attribute {
+/// Return 'false' if the given Attr might be used to describe a schema Attr.
+pub fn is_a_schema_Attr(Attr: Causetid) -> bool {
+    match Attr {
         EINSTEINDB_SOLITONID |
         EINSTEINDB_CARDINALITY |
         EINSTEINDB_FULLTEXT |
@@ -97,13 +97,13 @@ pub fn is_a_schema_attribute(attribute: Causetid) -> bool {
 }
 
 lazy_static! {
-    /// Attributes that are "solitonid related".  These might change the "solitonids" materialized view.
+    /// Attrs that are "solitonid related".  These might change the "solitonids" materialized view.
     pub static ref solitonidS_SQL_LIST: String = {
         format!("({})",
                 EINSTEINDB_solitonid)
     };
 
-    /// Attributes that are "schema related".  These might change the "schema" materialized view.
+    /// Attrs that are "schema related".  These might change the "schema" materialized view.
     pub static ref SCHEMA_SQL_LIST: String = {
                 EINSTEINDB_CARDINALITY,
                 EINSTEINDB_FULLTEXT,
@@ -113,7 +113,7 @@ lazy_static! {
                 EINSTEINDB_VALUE_TYPE
     };
 
-    /// Attributes that are "metadata" related.  These might change one of the materialized views.
+    /// Attrs that are "metadata" related.  These might change one of the materialized views.
     pub static ref METADATA_SQL_LIST: String = {
         format!("({}, {}, {}, {}, {}, {}, {})",
                 EINSTEINDB_CARDINALITY,
