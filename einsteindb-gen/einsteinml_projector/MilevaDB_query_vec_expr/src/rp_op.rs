@@ -12,9 +12,9 @@ use std::borrow::Cow;
 use std::i64;
 
 use crate::ScalarFunc;
-use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::Decimal;
-use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{Error, EvalContext, Result};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::Decimal;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{Error, EvalContext, Result};
 
 impl ScalarFunc {
     pub fn logical_and(&self, ctx: &mut EvalContext, row: &[Datum]) -> Result<Option<i64>> {
@@ -267,10 +267,10 @@ mod tests {
     use crate::tests::{check_overflow, datum_expr, scalar_func_expr, str2dec};
     use crate::Expression;
     use std::i64;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::Duration;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-    use einsteindbpb::ScalarFuncSig;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::Duration;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+    use einsteineinsteindbpb::ScalarFuncSig;
 
     #[test]
     fn test_logic_op() {

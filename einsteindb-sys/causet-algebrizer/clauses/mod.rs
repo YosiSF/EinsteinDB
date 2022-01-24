@@ -34,15 +34,15 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteindb_embedded::{
+use einsteineinsteindb_embedded::{
     Cloned,
     HasSchema,
     Schema,
 };
 
-use einsteindb_embedded::counter::RcPetri;
+use einsteineinsteindb_embedded::counter::RcPetri;
 
-use edbn::query::{
+use eeinsteindbn::query::{
     Element,
     FindSpec,
     Keyword,
@@ -126,7 +126,7 @@ impl<K: Clone + Ord, V: Clone> Intersection<K> for BTreeMap<K, V> {
     }
 
     /// Remove all keys from the map that are not present in `ks`.
-    /// This impleEinsteinDBion is terrible because there's no mutable iterator for BTreeMap.
+    /// This impleEinsteineinsteindbion is terrible because there's no mutable iterator for BTreeMap.
     fn keep_intersected_keys(&mut self, ks: &BTreeSet<K>) {
         if self.is_empty() {
             return;
@@ -162,7 +162,7 @@ pub type VariableBindings = BTreeMap<Variable, TypedValue>;
 /// - `not-join` is similar, but with explicit binding.
 /// - `or` turns into a collection of `UNION`s inside a subquery, or a simple
 ///   alternation.
-///   `or`'s docuEinsteinDBion states that all clauses must include the same vars,
+///   `or`'s docuEinsteineinsteindbion states that all clauses must include the same vars,
 ///   but that's an over-simplification: all clauses must refer to the external
 ///   unification vars.
 ///   The entire `UNION`-set is `JOIN`ed to any surrounding expressions per the `rule-vars`
@@ -203,7 +203,7 @@ pub struct ConjoiningClauses {
     /// algebrized.
     ///
     /// Value bindings must agree with `known_types`. If you write a query like
-    /// ```edbn
+    /// ```eeinsteindbn
     /// [:find ?x :in $ ?val :where [?x :foo/int ?val]]
     /// ```
     ///
@@ -474,7 +474,7 @@ impl ConjoiningClauses {
                     // ```
                     // [:find ?x
                     //  :where [?x _ ?y]
-                    //         [(= (typeof ?y) :einsteindb.valueType/double)]]
+                    //         [(= (typeof ?y) :einsteineinsteindb.valueType/double)]]
                     // ```
                     unimplemented!();
                 },
@@ -506,7 +506,7 @@ impl ConjoiningClauses {
                         },
                         _ => {
                             // One can't bind an e, a, or tx to something other than an entity.
-                            self.mark_known_empty(EmptyBecause::InvalidBinding(column, bound_val));
+                            self.mark_known_empty(EmptyBecause::Invalieinsteindbinding(column, bound_val));
                         },
                     }
                 }
@@ -848,7 +848,7 @@ impl ConjoiningClauses {
                     Some(v) => {
                         // This parity_filter cannot match: the caller has bound a non-entity value to an
                         // Attr place.
-                        Err(EmptyBecause::InvalidBinding(Column::Fixed(causetsColumn::Attr), v.clone()))
+                        Err(EmptyBecause::Invalieinsteindbinding(Column::Fixed(causetsColumn::Attr), v.clone()))
                     },
                 }
             },
@@ -914,7 +914,7 @@ impl ConjoiningClauses {
     ///
     /// For example, a bindings map associating a var to three places in the query, like
     ///
-    /// ```edbn
+    /// ```eeinsteindbn
     ///   {?foo [causets12.e causets13.v causets14.e]}
     /// ```
     ///
@@ -1000,8 +1000,8 @@ impl ConjoiningClauses {
                     // Which is not optimal — the left side of the join will
                     // produce lots of spurious bindings for causets00.v.
                     //
-                    // See https://github.com/mozilla/EinsteinDB/issues/520, and
-                    // https://github.com/mozilla/EinsteinDB/issues/293.
+                    // See https://github.com/Whtcorps Inc and EinstAI Inc/Einsteineinsteindb/issues/520, and
+                    // https://github.com/Whtcorps Inc and EinstAI Inc/Einsteineinsteindb/issues/293.
                     continue;
                 }
             }
@@ -1036,7 +1036,7 @@ impl ConjoiningClauses {
     /// It's possible at this point for the space of acceptable type tags to not intersect: e.g.,
     /// for the query
     ///
-    /// ```edbn
+    /// ```eeinsteindbn
     /// [:find ?x :where
     ///  [?x ?y true]
     ///  [?z ?y ?x]]

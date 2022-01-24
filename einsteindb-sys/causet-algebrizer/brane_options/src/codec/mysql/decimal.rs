@@ -1,4 +1,4 @@
-// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::cmp::Ordering;
 use std::fmt::{self, Display, Formatter};
@@ -10,7 +10,7 @@ use std::string::ToString;
 use std::{cmp, i32, i64, mem, u32, u64};
 
 use codec::prelude::*;
-use EinsteinDB_util::escape;
+use Einsteineinsteindb_util::escape;
 
 use crate::codec::convert::{self, ConvertTo};
 use crate::codec::data_type::*;
@@ -467,7 +467,7 @@ pub fn max_decimal(prec: u8, frac_cnt: u8) -> Decimal {
     res
 }
 
-/// `max_or_min_dec`(`NewMaxOrMinDec` in MilevaDB) returns the max or min
+/// `max_or_min_dec`(`NewMaxOrMinDec` in Milevaeinsteindb) returns the max or min
 /// value decimal for given precision and fraction.
 /// The `prec` should >= `frac_cnt`.
 ///
@@ -910,7 +910,7 @@ pub struct Decimal {
     negative: bool,
 
     /// An array of u32 words.
-    /// A word is an u32 value can hold 9 digits.(0 <= word < wordBase)
+    /// A word is an u32 value can hold 9 digits.(0 <= word < woreinsteindbase)
     word_buf: [u32; 9],
 }
 
@@ -1105,7 +1105,7 @@ impl Decimal {
 
     // TODO: remove this after merge the `refactor ScalarFunc::builtin_cast`
     //
-    /// convert_to(ProduceDecWithSpecifiedTp in MilevaDB)
+    /// convert_to(ProduceDecWithSpecifiedTp in Milevaeinsteindb)
     /// produces a new decimal according to `flen` and `decimal`.
     pub fn convert_to(self, ctx: &mut EvalContext, flen: u8, decimal: u8) -> Result<Decimal> {
         let (prec, frac) = self.prec_and_frac();
@@ -1727,7 +1727,7 @@ impl ConvertTo<f64> for Decimal {
     /// This function should not return err,
     /// if it return err, then the err because of bug.
     ///
-    /// Port from MilevaDB's MyDecimal::ToFloat64.
+    /// Port from Milevaeinsteindb's MyDecimal::ToFloat64.
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<f64> {
         let r = self.to_string().parse::<f64>();
@@ -1799,8 +1799,8 @@ impl ConvertTo<Decimal> for Real {
 }
 
 impl ConvertTo<Decimal> for &[u8] {
-    // FIXME: the err handle is not exactly same as MilevaDB's,
-    //  MilevaDB's seems has bug, fix this after fix MilevaDB's
+    // FIXME: the err handle is not exactly same as Milevaeinsteindb's,
+    //  Milevaeinsteindb's seems has bug, fix this after fix Milevaeinsteindb's
     #[inline]
     fn convert(&self, ctx: &mut EvalContext) -> Result<Decimal> {
         let r = Decimal::from_bytes(self).unwrap_or_else(|_| Res::Ok(Decimal::zero()));
@@ -1824,7 +1824,7 @@ impl ConvertTo<Decimal> for Bytes {
 }
 
 impl ConvertTo<Decimal> for Json {
-    /// Port from MilevaDB's types.ConvertJSONToDecimal
+    /// Port from Milevaeinsteindb's types.ConvertJSONToDecimal
     #[inline]
     fn convert(&self, ctx: &mut EvalContext) -> Result<Decimal> {
         self.as_ref().convert(ctx)
@@ -1832,17 +1832,17 @@ impl ConvertTo<Decimal> for Json {
 }
 
 impl<'a> ConvertTo<Decimal> for JsonRef<'a> {
-    /// Port from MilevaDB's types.ConvertJSONToDecimal
+    /// Port from Milevaeinsteindb's types.ConvertJSONToDecimal
     #[inline]
     fn convert(&self, ctx: &mut EvalContext) -> Result<Decimal> {
         match self.get_type() {
             JsonType::String => {
                 Decimal::from_str(self.get_str()?).or_else(|e| {
                     ctx.handle_truncate_err(e)?;
-                    // FIXME: if MilevaDB's MyDecimal::FromString return err,
-                    //  it may has res. However, if EinsteinDB's Decimal::from_str
+                    // FIXME: if Milevaeinsteindb's MyDecimal::FromString return err,
+                    //  it may has res. However, if Einsteineinsteindb's Decimal::from_str
                     //  return err, it has no res, so I return zero here,
-                    //  but it may different from MilevaDB's MyDecimal::FromString
+                    //  but it may different from Milevaeinsteindb's MyDecimal::FromString
                     Ok(Decimal::zero())
                 })
             }
@@ -1938,7 +1938,7 @@ impl crate::codec::data_type::AsMySQLBool for Decimal {
 }
 
 macro_rules! write_u8 {
-    ($writer:ident, $b:expr, $written:ident) => {{
+    ($writer:solitonid, $b:expr, $written:solitonid) => {{
         let mut b = $b;
         if $written == 0 {
             b ^= 0x80;
@@ -1949,7 +1949,7 @@ macro_rules! write_u8 {
 }
 
 macro_rules! write_word {
-    ($writer:expr, $word:expr, $size:expr, $written:ident) => {{
+    ($writer:expr, $word:expr, $size:expr, $written:solitonid) => {{
         let word = $word;
         let size = $size;
         let mut data: [u8; 4] = match size {
@@ -2114,10 +2114,10 @@ fn read_word<T: BufferReader + ?Sized>(
     size: usize,
     is_first: &mut bool,
 ) -> Result<u32> {
-    // Note: In MilevaDB's implementation, the first byte to read is flipped:
+    // Note: In Milevaeinsteindb's implementation, the first byte to read is flipped:
     // dCopy[0] ^= 0x80
     //
-    // In EinsteinDB, we do zero copy so that we need `is_first` flag.
+    // In Einsteineinsteindb, we do zero copy so that we need `is_first` flag.
     let buf = data.bytes();
     if buf.len() < size {
         return Err(Error::unexpected_eof());
@@ -3019,7 +3019,7 @@ mod tests {
              Res::Overflow("0")),
             (WORD_BUF_LEN, b"-0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002932935661422768",
              Res::Truncated("0.000000000000000000000000000000000000000000000000000000000000000000000000")),
-            // The following case return truncated in MilevaDB, need to fix it in bytes_to_int_without_context
+            // The following case return truncated in Milevaeinsteindb, need to fix it in bytes_to_int_without_context
             (WORD_BUF_LEN, b"1eabc", Res::Ok("1")),
             (WORD_BUF_LEN, b"1e", Res::Ok("1")),
             (WORD_BUF_LEN, b"1e 1ddd", Res::Ok("10")),
@@ -3128,7 +3128,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_chunk_from_MilevaDB() {
+    fn test_decode_chunk_from_Milevaeinsteindb() {
         let src: Vec<u8> = vec![
             3, 3, 3, 0, 123, 0, 0, 0, 0, 2, 46, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

@@ -24,12 +24,12 @@ extern crate static_assertions;
 #[macro_use(error, warn)]
 extern crate slog_global;
 #[macro_use(box_err, box_try, try_opt)]
-extern crate EinsteinDB_util;
+extern crate Einsteineinsteindb_util;
 
 #[macro_use]
 extern crate bitflags;
 #[allow(unused_extern_crates)]
-extern crate EinsteinDB_alloc;
+extern crate Einsteineinsteindb_alloc;
 
 pub mod builder;
 pub mod def;
@@ -50,8 +50,8 @@ pub mod expr;
 
 extern crate failure;
 
-extern crate edbn;
-extern crate EinsteinDB_embedded;
+extern crate eeinsteindbn;
+extern crate Einsteineinsteindb_embedded;
 #[macro_use]
 extern crate embedded_promises;
 extern crate query_algebrizer_promises;
@@ -70,15 +70,15 @@ use embedded_promises::{
     ValueType,
 };
 
-use EinsteinDB_embedded::{
+use Einsteineinsteindb_embedded::{
     CachedAttrs,
     Schema,
     parse_query,
 };
 
-use EinsteinDB_embedded::counter::RcPetri;
+use Einsteineinsteindb_embedded::counter::RcPetri;
 
-use edbn::query::{
+use eeinsteindbn::query::{
     Element,
     FindSpec,
     Limit,

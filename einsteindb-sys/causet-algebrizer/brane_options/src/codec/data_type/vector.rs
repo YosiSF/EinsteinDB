@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 use crate::{EvalType, FieldTypeAccessor};
-use einsteindbpb::FieldType;
+use einsteineinsteindbpb::FieldType;
 
 use super::scalar::ScalarValueRef;
 use super::*;
@@ -394,7 +394,7 @@ impl VectorValue {
 }
 
 macro_rules! impl_as_slice {
-    ($ty:tt, $name:ident) => {
+    ($ty:tt, $name:solitonid) => {
         impl VectorValue {
             /// Extracts a slice of values in specified concrete type from current column.
             ///
@@ -439,7 +439,7 @@ pub trait VectorValueExt<T: EvaluableRet> {
 }
 
 macro_rules! impl_ext {
-    ($ty:tt, $push_name:ident) => {
+    ($ty:tt, $push_name:solitonid) => {
         // Explicit version
 
         impl VectorValue {

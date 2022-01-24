@@ -70,22 +70,22 @@
 
 
 #[derive(Debug)]
-pub struct CreateDB{
-  pub db:DBInstance,
+pub struct Createeinsteindb{
+  pub einsteindb:einsteindbInstance,
   pub hash:String,
 }
 
-impl CreateDB{
-  pub fn new(db:DBInstance,hash:String)->CreateDB{
-    CreateDB{
-      db:db,
+impl Createeinsteindb{
+  pub fn new(einsteindb:einsteindbInstance,hash:String)->Createeinsteindb{
+    Createeinsteindb{
+      einsteindb:einsteindb,
       hash:hash,
     }
   }
   pub fn loadAndEncode(&self){
-    let ehhome = std::env::var("EINSTEIN_DB").unwrap();
+    let ehhome = std::env::var("EINSTEIN_einsteindb").unwrap();
     let mvdir = std::process::Command::new("cp")
-      .args(&["-rf",&format!("{}/codegen/create/createDB", einsteindb_home),&self.db.folder])
+      .args(&["-rf",&format!("{}/codegen/create/createeinsteindb", einsteineinsteindb_home),&self.einsteindb.folder])
       .output()
       .unwrap();
     let os = std::env::var("OS").unwrap();
@@ -93,13 +93,13 @@ impl CreateDB{
       let sed = std::process::Command::new("sed")
         .args(&["-i",".bak",
           &format!("s/#DFMap#/DFMap_{}/g",self.hash),
-          &format!("{}/libs/createDB/DFMap.rs",self.db.folder),
-          &format!("{}/libs/createDB/setup.rs",self.db.folder)])
+          &format!("{}/libs/createeinsteindb/DFMap.rs",self.einsteindb.folder),
+          &format!("{}/libs/createeinsteindb/setup.rs",self.einsteindb.folder)])
         .output()
         .unwrap();
       let mv = std::process::Command::new("mv")
-        .args(&[&format!("{}/libs/createDB/DFMap.rs",self.db.folder),
-          &format!("{}/libs/createDB/DFMap_{}.rs",self.db.folder,self.hash)])
+        .args(&[&format!("{}/libs/createeinsteindb/DFMap.rs",self.einsteindb.folder),
+          &format!("{}/libs/createeinsteindb/DFMap_{}.rs",self.einsteindb.folder,self.hash)])
         .output()
         .unwrap();
     }
@@ -142,12 +142,12 @@ impl CreateDB{
         let mut ${r.name}_dims_encoding_map_encoding_map_encoding_map_indices = Vec::new();
 
 
-    fn genBuild(db:DBInstance) -> String {
+    fn genBuild(einsteindb:einsteindbInstance) -> String {
         let mut code = String::new();
 
-        code.push_str(buildWrapper(db));
+        code.push_str(buildWrapper(einsteindb));
 
-        let cppFilepath = db.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createdb.rs";
+        let cppFilepath = einsteindb.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createeinsteindb.rs";
         let file = File::create(cppFilepath).unwrap();
         let mut bw = BufWriter::new(file);
         bw.write(code.as_bytes()).unwrap();
@@ -157,12 +157,12 @@ impl CreateDB{
         code
     }
 
-    fn genLoadAndEncode(db:DBInstance) -> String {
+    fn genLoadAndEncode(einsteindb:einsteindbInstance) -> String {
         let mut code = String::new();
 
-        code.push_str(loadAndEncodeWrapper(db));
+        code.push_str(loadAndEncodeWrapper(einsteindb));
 
-        let bsdFilepath = db.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createdb/";
+        let bsdFilepath = einsteindb.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createeinsteindb/";
         let mut file = File::create(cppFilepath).unwrap();
         let mut bw = BufWriter::new(file);
         bw.write(code.as_bytes()).unwrap();

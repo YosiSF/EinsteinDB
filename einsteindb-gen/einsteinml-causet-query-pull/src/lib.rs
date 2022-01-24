@@ -10,10 +10,10 @@
 
 use std::collections::BTreeMap;
 
-//Witness assertions take place in lightlike space on EinsteinDB based off the ARCH
+//Witness assertions take place in lightlike space on Einsteineinsteindb based off the ARCH
 //requirements of the borrower.
 //our Key-Value mutability parity_filter is invoked only as a persistent scheme.
-//By no means is EinsteinDB a traditional k-v store.
+//By no means is Einsteineinsteindb a traditional k-v store.
 //It feels like Allegro meets Prolog for the presistence layer.
 
 
@@ -39,7 +39,7 @@ impl<K, V> Default for TimestepEvaluation<K, V> where K: Ord {
 
 
 pub fn pull_Attrs_for_entity<A>(schema: &Schema,
-                                     db: &berolinasql::Connection,
+                                     einsteindb: &berolinasql::Connection,
                                      entity: Causetid,
                                      Attrs: A) -> Result<StructuredMap>
     where A: IntoIterator<Item=Causetid> {
@@ -47,7 +47,7 @@ pub fn pull_Attrs_for_entity<A>(schema: &Schema,
                           .map(|e| PullAttrSpec::Attr(PullConcreteAttr::Causetid(e).into()))
                           .collect();
     Puller::prepare(schema, attrs)?
-        .pull(schema, db, once(entity))
+        .pull(schema, einsteindb, once(entity))
         .map(|m| m.into_iter()
                   .next()
                   .map(|(k, vs)| {
@@ -58,7 +58,7 @@ pub fn pull_Attrs_for_entity<A>(schema: &Schema,
 }
 
 pub fn pull_Attrs_for_causets<E, A>(schema: &Schema,
-                                          db: &berolinasql::Connection,
+                                          einsteindb: &berolinasql::Connection,
                                           causets: E,
                                           Attrs: A) -> Result<PullResults>
     where E: IntoIterator<Item=Causetid>, A: IntoIterator<Item=Causetid> {
@@ -66,7 +66,7 @@ pub fn pull_Attrs_for_causets<E, A>(schema: &Schema,
                           .map(|e| PullAttrSpec::Attr(PullConcreteAttr::Causetid(e).into()))
                           .collect();
     Puller::prepare(schema, attrs)?
-        .pull(schema, db, causets)
+        .pull(schema, einsteindb, causets)
 }
 
 

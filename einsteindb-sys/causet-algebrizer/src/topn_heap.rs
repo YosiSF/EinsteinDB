@@ -13,11 +13,11 @@ use std::cmp::{self, Ordering};
 use std::collections::BinaryHeap;
 use std::sync::Arc;
 use std::usize;
-use einsteindbpb::ByItem;
+use einsteineinsteindbpb::ByItem;
 
 use crate::OriginCols;
-use causet_algebrizer::MilevaDB_query_datatype::codec::datum::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalContext, Result};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, Result};
 
 const HEAP_MAX_CAPACITY: usize = 1024;
 
@@ -181,14 +181,14 @@ mod tests {
     use std::cell::RefCell;
     use std::sync::Arc;
 
-    use einsteindbpb::{ByItem, Expr, ExprType};
+    use einsteineinsteindbpb::{ByItem, Expr, ExprType};
 
     use crate::OriginCols;
     use codec::prelude::NumberEncoder;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::table::RowColsDict;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-    use EinsteinDB_util::collections::HashMap;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::RowColsDict;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+    use Einsteineinsteindb_util::collections::HashMap;
 
     use super::*;
 

@@ -1,4 +1,4 @@
-// Copyright 2018 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 Whtcorps Inc and EinstAI Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -31,7 +31,7 @@ use core_traits::{
     TypedValue,
 };
 
-use einsteindb_core::{
+use einsteineinsteindb_core::{
     Schema,
 };
 
@@ -39,7 +39,7 @@ use einsteinml::causets::{
     OpType,
 };
 
-use einsteindb_traits::errors::{
+use einsteineinsteindb_traits::errors::{
     Result,
 };
 

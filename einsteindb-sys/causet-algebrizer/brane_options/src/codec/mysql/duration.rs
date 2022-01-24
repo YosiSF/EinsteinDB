@@ -1,11 +1,11 @@
-// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::cmp::Ordering;
 use std::fmt::{self, Display, Formatter};
 
 use crate::FieldTypeAccessor;
 use codec::prelude::*;
-use einsteindbpb::FieldType;
+use einsteineinsteindbpb::FieldType;
 
 use super::{check_fsp, Decimal, DEFAULT_FSP};
 use crate::codec::convert::ConvertTo;
@@ -542,7 +542,7 @@ impl ConvertTo<Decimal> for Duration {
     /// This function should not return err,
     /// if it return err, then the err is because of bug.
     ///
-    /// Port from MilevaDB' Duration::ToNumber
+    /// Port from Milevaeinsteindb' Duration::ToNumber
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Decimal> {
         let r = self.to_numeric_string().parse::<Decimal>();

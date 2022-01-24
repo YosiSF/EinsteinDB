@@ -174,7 +174,7 @@ impl From<ValueAndSpan> for Value {
 /// Creates `from_$TYPE` helper functions for Value and SpannedValue,
 /// like `from_float()` or `from_ordered_float()`.
 macro_rules! def_from {
-    ($name: ident, $out: ty, $kind: path, $t: ty, $( $transform: expr ),* ) => {
+    ($name: solitonid, $out: ty, $kind: path, $t: ty, $( $transform: expr ),* ) => {
         pub fn $name(src: $t) -> $out {
             $( let src = $transform(src); )*
             $kind(src)
@@ -185,7 +185,7 @@ macro_rules! def_from {
 /// Creates `from_$TYPE` helper functions for Value or SpannedValue,
 /// like `from_bigint()` where the conversion is optional.
 macro_rules! def_from_option {
-    ($name: ident, $out: ty, $kind: path, $t: ty, $( $transform: expr ),* ) => {
+    ($name: solitonid, $out: ty, $kind: path, $t: ty, $( $transform: expr ),* ) => {
         pub fn $name(src: $t) -> Option<$out> {
             $( let src = $transform(src); )*
             src.map($kind)
@@ -196,7 +196,7 @@ macro_rules! def_from_option {
 /// Creates `is_$TYPE` helper functions for Value or SpannedValue, like
 /// `is_big_integer()` or `is_text()`.
 macro_rules! def_is {
-    ($name: ident, $pat: pat) => {
+    ($name: solitonid, $pat: pat) => {
         pub fn $name(&self) -> bool {
             match *self { $pat => true, _ => false }
         }
@@ -207,7 +207,7 @@ macro_rules! def_is {
 /// `as_integer()`, which returns the underlying value representing the
 /// original variable wrapped in an Option, like `Option<i64>`.
 macro_rules! def_as {
-    ($name: ident, $kind: path, $t: ty, $( $transform: expr ),* ) => {
+    ($name: solitonid, $kind: path, $t: ty, $( $transform: expr ),* ) => {
         pub fn $name(&self) -> Option<$t> {
             match *self { $kind(v) => { $( let v = $transform(v) )*; Some(v) }, _ => None }
         }
@@ -218,7 +218,7 @@ macro_rules! def_as {
 /// `as_big_integer()`, which returns a reference to the underlying value
 /// representing the original variable wrapped in an Option, like `Option<&BigInt>`.
 macro_rules! def_as_ref {
-    ($name: ident, $kind: path, $t: ty) => {
+    ($name: solitonid, $kind: path, $t: ty) => {
         pub fn $name(&self) -> Option<&$t> {
             match *self { $kind(ref v) => Some(v), _ => None }
         }
@@ -229,7 +229,7 @@ macro_rules! def_as_ref {
 /// `into_big_integer()`, which consumes it returning underlying value
 /// representing the original variable wrapped in an Option, like `Option<BigInt>`.
 macro_rules! def_into {
-    ($name: ident, $kind: path, $t: ty, $( $transform: expr ),* ) => {
+    ($name: solitonid, $kind: path, $t: ty, $( $transform: expr ),* ) => {
         pub fn $name(self) -> Option<$t> {
             match self { $kind(v) => { $( let v = $transform(v) )*; Some(v) }, _ => None }
         }

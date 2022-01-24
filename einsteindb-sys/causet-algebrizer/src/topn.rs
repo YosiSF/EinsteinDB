@@ -13,17 +13,17 @@ use std::sync::Arc;
 use std::usize;
 use std::vec::IntoIter;
 
-use einsteindbpb::ByItem;
-use einsteindbpb::TopN;
+use einsteineinsteindbpb::ByItem;
+use einsteineinsteindbpb::TopN;
 
 use super::topn_heap::TopNHeap;
 use super::{Executor, ExprColumnRefVisitor, Row};
 use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;
 use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
 use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::MilevaDB_query_datatype::codec::datum::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
-use MilevaDB_query_normal_expr::Expression;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
+use Milevaeinsteindb_query_normal_expr::Expression;
 
 struct OrderBy {
     items: Arc<Vec<ByItem>>,
@@ -168,13 +168,13 @@ pub mod tests {
     use std::sync::Arc;
 
     use codec::prelude::NumberEncoder;
-    use causet_algebrizer::MilevaDB_query_datatype::FieldTypeTp;
-    use EinsteinDB_util::collections::HashMap;
-    use einsteindbpb::{Expr, ExprType};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
+    use Einsteineinsteindb_util::collections::HashMap;
+    use einsteineinsteindbpb::{Expr, ExprType};
 
     use crate::OriginCols;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::table::RowColsDict;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::RowColsDict;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
 
     use super::super::tests::*;
     use super::*;

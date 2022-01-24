@@ -12,10 +12,10 @@ use crate::Expression;
 use crate::ScalarFunc;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
-use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::json::{parse_json_path_expr, ModifyType, PathExpression};
-use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::Json;
-use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{Error, EvalContext, Result};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::json::{parse_json_path_expr, ModifyType, PathExpression};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::Json;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{Error, EvalContext, Result};
 
 impl ScalarFunc {
     #[inline]
@@ -245,10 +245,10 @@ impl<'a> JsonFuncArgsParser<'a> {
 mod tests {
     use crate::tests::{datum_expr, make_null_datums, scalar_func_expr};
     use crate::Expression;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::Json;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-    use einsteindbpb::ScalarFuncSig;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::Json;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+    use einsteineinsteindbpb::ScalarFuncSig;
 
     #[test]
     fn test_json_keys() {

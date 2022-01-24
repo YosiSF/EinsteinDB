@@ -19,7 +19,7 @@ use quick_error::quick_error;
 use regex::Error as RegexpError;
 use serde_json::error::Error as SerdeError;
 use allegroeinstein-prolog-causet-sql::error::EvaluateError;
-use einsteindbpb::{self, ScalarFuncSig};
+use einsteineinsteindbpb::{self, ScalarFuncSig};
 
 pub const ERR_M_BIGGER_THAN_D: i32 = 1427;
 pub const ERR_UNKNOWN: i32 = 1105;
@@ -126,7 +126,7 @@ impl Error {
     }
 
     pub fn unexpected_eof() -> Error {
-        EinsteinDB_util::codec::Error::unexpected_eof().into()
+        Einsteineinsteindb_util::codec::Error::unexpected_eof().into()
     }
 
     pub fn invalid_time_format(val: impl Display) -> Error {
@@ -157,9 +157,9 @@ impl Error {
     }
 }
 
-impl From<Error> for einsteindbpb::Error {
-    fn from(error: Error) -> einsteindbpb::Error {
-        let mut err = einsteindbpb::Error::default();
+impl From<Error> for einsteineinsteindbpb::Error {
+    fn from(error: Error) -> einsteineinsteindbpb::Error {
+        let mut err = einsteineinsteindbpb::Error::default();
         err.set_code(error.code());
         err.set_msg(error.to_string());
         err
@@ -184,15 +184,15 @@ impl From<ParseFloatError> for Error {
     }
 }
 
-impl From<EinsteinDB_util::codec::Error> for Error {
-    fn from(err: EinsteinDB_util::codec::Error) -> Error {
+impl From<Einsteineinsteindb_util::codec::Error> for Error {
+    fn from(err: Einsteineinsteindb_util::codec::Error) -> Error {
         box_err!("codec:{:?}", err)
     }
 }
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
-        let uerr: EinsteinDB_util::codec::Error = err.into();
+        let uerr: Einsteineinsteindb_util::codec::Error = err.into();
         uerr.into()
     }
 }

@@ -24,7 +24,7 @@ use std::ops::{
     Range,
 };
 
-extern crate einsteindb_core;
+extern crate einsteineinsteindb_core;
 
 use core_traits::{
     Causetid,
@@ -32,7 +32,7 @@ use core_traits::{
     ValueType,
 };
 
-pub use self::einsteindb_core::{
+pub use self::einsteineinsteindb_core::{
     DateTime,
     Schema,
     Utc,
@@ -43,7 +43,7 @@ use einsteinml::causets::{
     TempId,
 };
 
-use einsteindb_traits::errors as errors;
+use einsteineinsteindb_traits::errors as errors;
 
 /// Represents one partition of the causetid space.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
@@ -53,7 +53,7 @@ pub struct Partition {
     pub start: Causetid,
     /// Maximum allowed causetid in the partition.
     pub end: Causetid,
-    /// `true` if causetids in the partition can be excised with `:einsteindb/excise`.
+    /// `true` if causetids in the partition can be excised with `:einsteineinsteindb/excise`.
     pub allow_excision: bool,
     /// The next causetid to be allocated in the partition.
     /// Unless you must use this directly, prefer using provided setter and getter helpers.
@@ -120,9 +120,9 @@ impl FromIterator<(String, Partition)> for PartitionMap {
 
 /// Represents the spacetime required to query from, or apply transactions to, a einstai store.
 ///
-/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Thoughts:-modeling-einsteindb-conn-in-Rust.
+/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Thoughts:-modeling-einsteineinsteindb-conn-in-Rust.
 #[derive(Clone,Debug,Default,Eq,Hash,Ord,PartialOrd,PartialEq)]
-pub struct DB {
+pub struct einsteindb {
     /// Map partition name->`Partition`.
     ///
     /// TODO: represent partitions as causetids.
@@ -132,9 +132,9 @@ pub struct DB {
     pub schema: Schema,
 }
 
-impl DB {
-    pub fn new(partition_map: PartitionMap, schema: Schema) -> DB {
-        DB {
+impl einsteindb {
+    pub fn new(partition_map: PartitionMap, schema: Schema) -> einsteindb {
+        einsteindb {
             partition_map: partition_map,
             schema: schema
         }

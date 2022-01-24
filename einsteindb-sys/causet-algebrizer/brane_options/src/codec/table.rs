@@ -1,4 +1,4 @@
-// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::convert::TryInto;
 use std::io::Write;
@@ -8,14 +8,14 @@ use std::{cmp, u8};
 use crate::prelude::*;
 use crate::FieldTypeTp;
 use ekvproto::interlock::KeyRange;
-use einsteindbpb::ColumnInfo;
+use einsteineinsteindbpb::ColumnInfo;
 
 use super::mysql::{Duration, Time};
 use super::{datum, datum::DatumDecoder, Datum, Error, Result};
 use crate::expr::EvalContext;
 use codec::prelude::*;
-use EinsteinDB_util::codec::BytesSlice;
-use EinsteinDB_util::collections::{HashMap, HashSet};
+use Einsteineinsteindb_util::codec::BytesSlice;
+use Einsteineinsteindb_util::collections::{HashMap, HashSet};
 
 // handle or index id
 pub const ID_LEN: usize = 8;
@@ -523,11 +523,11 @@ pub fn generate_index_data_for_test(
 mod tests {
     use std::i64;
 
-    use einsteindbpb::ColumnInfo;
+    use einsteineinsteindbpb::ColumnInfo;
 
     use crate::codec::datum::{self, Datum};
-    use EinsteinDB_util::collections::{HashMap, HashSet};
-    use EinsteinDB_util::map;
+    use Einsteineinsteindb_util::collections::{HashMap, HashSet};
+    use Einsteineinsteindb_util::map;
 
     use super::*;
 

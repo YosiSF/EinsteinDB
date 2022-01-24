@@ -104,28 +104,28 @@ fn half_split_torus_size(region_max_size: u64) -> u64 {
 
 /// Get region approximate middle key based on default and write brane size.
 pub fn get_region_approximate_middle(
-    db: &impl KvEngine,
+    einsteindb: &impl KvEngine,
     region: &Region,
 ) -> Result<Option<Vec<u8>>> {
     let start_key = keys::enc_start_key(region);
     let end_key = keys::enc_end_key(region);
     let range = Range::new(&start_key, &end_key);
     Ok(box_try!(
-        db.get_range_approximate_middle(range, region.get_id())
+        einsteindb.get_range_approximate_middle(range, region.get_id())
     ))
 }
 
 
 #[cfg(test)]
 fn get_region_approximate_middle_cf(
-    db: &impl KvEngine,
+    einsteindb: &impl KvEngine,
     cfname: &str,
     region: &Region,
 ) -> Result<Option<Vec<u8>>> {
     let start_key = keys::enc_start_key(region);
     let end_key = keys::enc_end_key(region);
     let range = Range::new(&start_key, &end_key);
-    Ok(box_try!(db.get_range_approximate_middle_cf(
+    Ok(box_try!(einsteindb.get_range_approximate_middle_cf(
         cfname,
         range,
         region.get_id()
@@ -138,10 +138,10 @@ mod tests {
     use std::sync::mpsc;
     use std::sync::Arc;
 
-    use foundationdb::raw::Writable;
-    use foundationdb::raw::{BraneOptions, DBOptions};
-    use foundationdb::raw_util::{new_engine_opt, BRANEOptions};
-    use foundationdb::Compat;
+    use foundationeinsteindb::raw::Writable;
+    use foundationeinsteindb::raw::{BraneOptions, einsteindbOptions};
+    use foundationeinsteindb::raw_util::{new_engine_opt, BRANEOptions};
+    use foundationeinsteindb::Compat;
     use engine_traits::{ALL_branes, BRANE_DEFAULT, LARGE_branes};
     use ekvproto::metapb::Peer;
     use ekvproto::metapb::Region;
@@ -149,10 +149,10 @@ mod tests {
     use tempfile::Builder;
 
     use crate::store::{SplitCheckRunner, SplitCheckTask};
-    use foundationdb::properties::RangePropertiesCollectorFactory;
-    use einsteindb_util::config::ReadableSize;
-    use einsteindb_util::escape;
-    use einsteindb_util::worker::Runnable;
+    use foundationeinsteindb::properties::RangePropertiesCollectorFactory;
+    use einsteineinsteindb_util::config::ReadableSize;
+    use einsteineinsteindb_util::escape;
+    use einsteineinsteindb_util::worker::Runnable;
     use txn_types::Key;
 
     use super::super::size::tests::must_split_at;
@@ -163,17 +163,17 @@ mod tests {
     fn test_split_check() {
         let path = Builder::new().prefix("test-violetabftstore").tempdir().unwrap();
         let path_str = path.path().to_str().unwrap();
-        let db_opts = DBOptions::new();
+        let einsteindb_opts = einsteindbOptions::new();
         let cfs_opts = ALL_branes
             .iter()
             .map(|brane| {
                 let mut cf_opts = BraneOptions::new();
                 let f = Box::new(RangePropertiesCollectorFactory::default());
-                cf_opts.add_table_properties_collector_factory("einsteindb.size-collector", f);
+                cf_opts.add_table_properties_collector_factory("einsteineinsteindb.size-collector", f);
                 BRANEOptions::new(brane, cf_opts)
             })
             .collect();
-        let engine = Arc::new(new_engine_opt(path_str, db_opts, cfs_opts).unwrap());
+        let engine = Arc::new(new_engine_opt(path_str, einsteindb_opts, cfs_opts).unwrap());
 
         let mut region = Region::default();
         region.set_id(1);
@@ -223,17 +223,17 @@ mod tests {
             .unwrap();
         let path = tmp.path().to_str().unwrap();
 
-        let db_opts = DBOptions::new();
+        let einsteindb_opts = einsteindbOptions::new();
         let mut cf_opts = BraneOptions::new();
         cf_opts.set_level_zero_file_num_compaction_trigger(10);
         let f = Box::new(RangePropertiesCollectorFactory::default());
-        cf_opts.add_table_properties_collector_factory("einsteindb.size-collector", f);
+        cf_opts.add_table_properties_collector_factory("einsteineinsteindb.size-collector", f);
         let cfs_opts = LARGE_branes
             .iter()
             .map(|brane| BRANEOptions::new(brane, cf_opts.clone()))
             .collect();
         let engine =
-            Arc::new(foundationdb::raw_util::new_engine_opt(path, db_opts, cfs_opts).unwrap());
+            Arc::new(foundationeinsteindb::raw_util::new_engine_opt(path, einsteindb_opts, cfs_opts).unwrap());
 
         let cf_handle = engine.cf_handle(BRANE_DEFAULT).unwrap();
         let mut big_value = Vec::with_capacity(256);

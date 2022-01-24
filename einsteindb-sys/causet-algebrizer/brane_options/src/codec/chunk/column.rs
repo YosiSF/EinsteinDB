@@ -1,4 +1,4 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::convert::TryFrom;
 
@@ -6,8 +6,8 @@ use crate::prelude::*;
 use crate::{EvalType, FieldTypeFlag, FieldTypeTp};
 use codec::buffer::{BufferReader, BufferWriter};
 use codec::number::{NumberDecoder, NumberEncoder};
-use EinsteinDB_util::buffer_vec::BufferVec;
-use einsteindbpb::FieldType;
+use Einsteineinsteindb_util::buffer_vec::BufferVec;
+use einsteineinsteindbpb::FieldType;
 
 use super::{Error, Result};
 use crate::codec::data_type::{ChunkRef, VectorValue};
@@ -521,7 +521,7 @@ impl Column {
         let mut raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In both index and record, it's flag is `FLOAT`. See MilevaDB's `encode()`.
+            // In both index and record, it's flag is `FLOAT`. See Milevaeinsteindb's `encode()`.
             datum::FLOAT_FLAG => {
                 let v = raw_datum.read_datum_payload_f64()?;
                 self.append_f64(v)?;
@@ -554,7 +554,7 @@ impl Column {
         let mut raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In both index and record, it's flag is `FLOAT`. See MilevaDB's `encode()`.
+            // In both index and record, it's flag is `FLOAT`. See Milevaeinsteindb's `encode()`.
             datum::FLOAT_FLAG => {
                 let v = raw_datum.read_datum_payload_f64()?;
                 self.append_f32(v as f32)?;
@@ -605,10 +605,10 @@ impl Column {
         let mut raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In index, it's flag is `BYTES`. See MilevaDB's `encode()`.
+            // In index, it's flag is `BYTES`. See Milevaeinsteindb's `encode()`.
             // TODO: this method's performance can be further improved
             datum::BYTES_FLAG => self.append_bytes(&raw_datum.read_datum_payload_bytes()?)?,
-            // In record, it's flag is `COMPACT_BYTES`. See MilevaDB's `encode()`.
+            // In record, it's flag is `COMPACT_BYTES`. See Milevaeinsteindb's `encode()`.
             datum::COMPACT_BYTES_FLAG => {
                 let vn = raw_datum.read_var_i64()? as usize;
                 let data = raw_datum.read_bytes(vn)?;
@@ -656,13 +656,13 @@ impl Column {
 
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In index, it's flag is `UINT`. See MilevaDB's `encode()`.
+            // In index, it's flag is `UINT`. See Milevaeinsteindb's `encode()`.
             datum::UINT_FLAG => {
                 self.data
                     .write_time_to_chunk_by_datum_payload_int(raw_datum, ctx, field_type)?;
                 self.finish_append_fixed();
             }
-            // In record, it's flag is `VAR_UINT`. See MilevaDB's `flatten()` and `encode()`.
+            // In record, it's flag is `VAR_UINT`. See Milevaeinsteindb's `flatten()` and `encode()`.
             datum::VAR_UINT_FLAG => {
                 self.data
                     .write_time_to_chunk_by_datum_payload_varint(raw_datum, ctx, field_type)?;
@@ -705,13 +705,13 @@ impl Column {
         let raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In index, it's flag is `DURATION`. See MilevaDB's `encode()`.
+            // In index, it's flag is `DURATION`. See Milevaeinsteindb's `encode()`.
             datum::DURATION_FLAG => {
                 self.data
                     .write_duration_to_chunk_by_datum_payload_int(raw_datum)?;
                 self.finish_append_fixed();
             }
-            // In record, it's flag is `VAR_INT`. See MilevaDB's `flatten()` and `encode()`.
+            // In record, it's flag is `VAR_INT`. See Milevaeinsteindb's `flatten()` and `encode()`.
             datum::VAR_INT_FLAG => {
                 self.data
                     .write_duration_to_chunk_by_datum_payload_varint(raw_datum)?;
@@ -754,7 +754,7 @@ impl Column {
         let raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In both index and record, it's flag is `DECIMAL`. See MilevaDB's `encode()`.
+            // In both index and record, it's flag is `DECIMAL`. See Milevaeinsteindb's `encode()`.
             datum::DECIMAL_FLAG => {
                 self.data
                     .write_decimal_to_chunk_by_datum_payload(raw_datum)?;
@@ -798,7 +798,7 @@ impl Column {
         let raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In both index and record, it's flag is `JSON`. See MilevaDB's `encode()`.
+            // In both index and record, it's flag is `JSON`. See Milevaeinsteindb's `encode()`.
             datum::JSON_FLAG => {
                 self.data.write_json_to_chunk_by_datum_payload(raw_datum)?;
                 self.finished_append_var();
@@ -834,7 +834,7 @@ impl Column {
     }
 
     #[braneg(test)]
-    pub fn decode(buf: &mut EinsteinDB_util::codec::BytesSlice<'_>, tp: FieldTypeTp) -> Result<Column> {
+    pub fn decode(buf: &mut Einsteineinsteindb_util::codec::BytesSlice<'_>, tp: FieldTypeTp) -> Result<Column> {
         let length = buf.read_u32_le()? as usize;
         let mut col = Column::new(tp, length);
         col.length = length;
@@ -892,7 +892,7 @@ mod tests {
     use super::*;
     use crate::codec::datum::Datum;
     use std::{f64, u64};
-    use einsteindbpb::FieldType;
+    use einsteineinsteindbpb::FieldType;
 
     #[test]
     fn test_column_i64() {

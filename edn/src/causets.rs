@@ -118,7 +118,7 @@ pub type MapNotation<V> = BTreeMap<CausetidOrSolitonid, ValuePlace<V>>;
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub enum ValuePlace<V> {
-    // We never know at parse-time whether an integer or ident is really an causetid, but we will often
+    // We never know at parse-time whether an integer or solitonid is really an causetid, but we will often
     // know when building causets programmatically.
     Causetid(CausetidOrSolitonid),
     // We never know at parse-time whether a string is really a tempid, but we will often know when
@@ -236,13 +236,13 @@ pub enum OpType {
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub enum causet<V> {
-    // Like [:db/add|:db/retract e a v].
+    // Like [:einsteindb/add|:einsteindb/retract e a v].
     AddOrRetract {
         op: OpType,
         e: causetPlace<V>,
         a: AttributePlace,
         v: ValuePlace<V>,
     },
-    // Like {:db/id "tempid" a1 v1 a2 v2}.
+    // Like {:einsteindb/id "tempid" a1 v1 a2 v2}.
     MapNotation(MapNotation<V>),
 }

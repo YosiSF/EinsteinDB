@@ -1,10 +1,10 @@
-// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
-//! This crate implements a simple SQL query engine to work with MilevaDB pushed down executors.
+//! This crate implements a simple SQL query engine to work with Milevaeinsteindb pushed down executors.
 //!
-//! The query engine is able to scan and understand rows stored by MilevaDB, run against a
+//! The query engine is able to scan and understand rows stored by Milevaeinsteindb, run against a
 //! series of executors and then return the execution result. The query engine is provided via
-//! EinsteinDB interlocking_dir interface. However standalone UDF functions are also exported and can be used
+//! Einsteineinsteindb interlocking_dir interface. However standalone UDF functions are also exported and can be used
 //! standalone.
 
 #![feature(proc_macro_hygiene)]
@@ -15,7 +15,7 @@ extern crate failure;
 #[macro_use(debug)]
 extern crate slog_global;
 #[macro_use(box_err, box_try, try_opt)]
-extern crate EinsteinDB_util;
+extern crate Einsteineinsteindb_util;
 
 #[braneg(test)]
 extern crate test;
@@ -25,16 +25,16 @@ use std::convert::TryInto;
 use std::str;
 
 use codec::prelude::NumberDecoder;
-use causet_algebrizer::MilevaDB_query_datatype::prelude::*;
-use causet_algebrizer::MilevaDB_query_datatype::FieldTypeFlag;
-use einsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::prelude::*;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeFlag;
+use einsteineinsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
 
-use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::charset;
-use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::{
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::charset;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::{
     Decimal, DecimalDecoder, Duration, Json, JsonDecoder, Time, MAX_FSP,
 };
-use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
 
 mod builtin_arithmetic;
 mod builtin_cast;
@@ -53,7 +53,7 @@ mod column;
 mod constant;
 mod scalar_function;
 
-pub use causet_algebrizer::MilevaDB_query_datatype::codec::{Error, Result};
+pub use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{Error, Result};
 
 #[derive(Debug)]
 pub enum Expression {
@@ -331,18 +331,18 @@ mod tests {
     use std::sync::Arc;
     use std::{i64, u64};
 
-    use causet_algebrizer::MilevaDB_query_datatype::{self, Collation, FieldTypeAccessor, FieldTypeFlag, FieldTypeTp};
-    use einsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::{self, Collation, FieldTypeAccessor, FieldTypeFlag, FieldTypeTp};
+    use einsteineinsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
 
     use crate::Expression;
     use codec::{number, prelude::NumberEncoder};
-    use causet_algebrizer::MilevaDB_query_datatype::codec::error::{ERR_DATA_OUT_OF_RANGE, ERR_DIVISION_BY_ZERO};
-    use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::json::JsonEncoder;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::{
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::error::{ERR_DATA_OUT_OF_RANGE, ERR_DIVISION_BY_ZERO};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::json::JsonEncoder;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::{
         charset, Decimal, DecimalEncoder, Duration, Json, Time,
     };
-    use causet_algebrizer::MilevaDB_query_datatype::codec::{mysql, Datum};
-    use causet_algebrizer::MilevaDB_query_datatype::expr::{Error, EvalConfig, EvalContext};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{mysql, Datum};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{Error, EvalConfig, EvalContext};
 
     #[inline]
     pub fn str2dec(s: &str) -> Datum {
@@ -573,8 +573,8 @@ mod tests {
             let mut ex = scalar_func_expr(sig, &[col_expr]);
             ex.mut_field_type()
                 .as_mut_accessor()
-                .set_decimal(causet_algebrizer::MilevaDB_query_datatype::UNSPECIFIED_LENGTH)
-                .set_flen(causet_algebrizer::MilevaDB_query_datatype::UNSPECIFIED_LENGTH);
+                .set_decimal(causet_algebrizer::Milevaeinsteindb_query_datatype::UNSPECIFIED_LENGTH)
+                .set_flen(causet_algebrizer::Milevaeinsteindb_query_datatype::UNSPECIFIED_LENGTH);
             let e = Expression::build(&mut ctx, ex).unwrap();
             let res = e.eval(&mut ctx, &cols).unwrap();
             if let Datum::F64(_) = exp {

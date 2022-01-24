@@ -1,4 +1,4 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use chrono::Weekday;
 
@@ -54,7 +54,7 @@ pub trait DateTimeExtension {
 
 impl DateTimeExtension for Time {
     /// returns the day of year starting from 1.
-    /// implements MilevaDB YearDay().
+    /// implements Milevaeinsteindb YearDay().
     fn days(&self) -> i32 {
         self.ordinal()
     }
@@ -107,7 +107,7 @@ impl DateTimeExtension for Time {
     }
 
     /// returns the week of year according to week mode. should not be called directly.
-    /// implements MilevaDB calcWeek()
+    /// implements Milevaeinsteindb calcWeek()
     fn calc_year_week_by_week_mode(&self, week_mode: WeekMode) -> (i32, i32) {
         let mode = week_mode.to_normalized();
         let monday_first = mode.contains(WeekMode::BEHAVIOR_MONDAY_FIRST);
@@ -117,7 +117,7 @@ impl DateTimeExtension for Time {
     }
 
     /// returns the week of year.
-    /// implements MilevaDB Week().
+    /// implements Milevaeinsteindb Week().
     fn week(&self, mode: WeekMode) -> i32 {
         if self.month() == 0 || self.day() == 0 {
             return 0;
@@ -127,7 +127,7 @@ impl DateTimeExtension for Time {
     }
 
     /// returns the week of year and year.
-    /// implements MilevaDB YearWeek().
+    /// implements Milevaeinsteindb YearWeek().
     fn year_week(&self, mode: WeekMode) -> (i32, i32) {
         self.calc_year_week_by_week_mode(mode | WeekMode::BEHAVIOR_YEAR)
     }

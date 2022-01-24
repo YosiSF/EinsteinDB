@@ -12,7 +12,7 @@ use std::cmp::Ordering;
 use std::mem;
 use std::sync::Arc;
 
-use einsteindbpb::{Aggregation, Expr, ExprType};
+use einsteineinsteindbpb::{Aggregation, Expr, ExprType};
 
 use indexmap::map::Entry as OrderMapEntry;
 use indexmap::IndexMap as OrderMap;
@@ -22,9 +22,9 @@ use super::{Executor, ExprColumnRefVisitor, Row};
 use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;
 use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
 use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::MilevaDB_query_datatype::codec::datum::{self, Datum};
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
-use MilevaDB_query_normal_expr::Expression;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
+use Milevaeinsteindb_query_normal_expr::Expression;
 
 const SINGLE_GROUP: &[u8] = b"SingleGroup";
 
@@ -432,18 +432,18 @@ impl<Src: Executor> StreamAggExecutor<Src> {
 mod tests {
     use std::i64;
 
-    use causet_algebrizer::MilevaDB_query_datatype::FieldTypeTp;
-    use EinsteinDB_util::collections::HashMap;
-    use einsteindbpb::ColumnInfo;
-    use einsteindbpb::{Expr, ExprType};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
+    use Einsteineinsteindb_util::collections::HashMap;
+    use einsteineinsteindbpb::ColumnInfo;
+    use einsteineinsteindbpb::{Expr, ExprType};
 
     use super::super::index_scan::tests::IndexTestWrapper;
     use super::super::index_scan::IndexScanExecutor;
     use super::super::tests::*;
     use super::*;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::datum::{self, Datum};
-    use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::decimal::Decimal;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::table;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::decimal::Decimal;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table;
 
     fn build_group_by(col_ids: &[i64]) -> Vec<Expr> {
         let mut group_by = Vec::with_capacity(col_ids.len());

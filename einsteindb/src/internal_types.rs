@@ -26,7 +26,7 @@ use core_traits::{
     ValueType,
 };
 
-use einsteindb_core::util::Either;
+use einsteineinsteindb_core::util::Either;
 
 use einsteinml;
 use einsteinml::{
@@ -42,9 +42,9 @@ use einsteinml::causets::{
     TxFunction,
 };
 
-use einsteindb_traits::errors as errors;
-use einsteindb_traits::errors::{
-    DbErrorKind,
+use einsteineinsteindb_traits::errors as errors;
+use einsteineinsteindb_traits::errors::{
+    einsteindbErrorKind,
     Result,
 };
 use schema::{
@@ -71,7 +71,7 @@ impl TransactableValue for ValueAndSpan {
                     Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Solitonid(v)))
                 } else {
                     // We only allow namespaced idents.
-                    bail!(DbErrorKind::InputError(errors::InputError::BadcausetPlace))
+                    bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace))
                 }
             },
             Text(v) => Ok(causetPlace::TempId(TempId::External(v).into())),
@@ -88,10 +88,10 @@ impl TransactableValue for ValueAndSpan {
                             causetPlace::Causetid(a) => Ok(causetPlace::LookupRef(causets::LookupRef { a: causets::AttributePlace::Causetid(a), v: v.clone() })),
                             causetPlace::TempId(_) |
                             causetPlace::TxFunction(_) |
-                            causetPlace::LookupRef(_) => bail!(DbErrorKind::InputError(errors::InputError::BadcausetPlace)),
+                            causetPlace::LookupRef(_) => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace)),
                         }
                     },
-                    _ => bail!(DbErrorKind::InputError(errors::InputError::BadcausetPlace)),
+                    _ => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace)),
                 }
             },
             Nil |
@@ -104,7 +104,7 @@ impl TransactableValue for ValueAndSpan {
             NamespacedSymbol(_) |
             Vector(_) |
             Set(_) |
-            Map(_) => bail!(DbErrorKind::InputError(errors::InputError::BadcausetPlace)),
+            Map(_) => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace)),
         }
     }
 
@@ -116,7 +116,7 @@ impl TransactableValue for ValueAndSpan {
 impl TransactableValue for TypedValue {
     fn into_typed_value(self, _schema: &Schema, value_type: ValueType) -> Result<TypedValue> {
         if self.value_type() != value_type {
-            bail!(DbErrorKind::BadValuePair(format!("{:?}", self), value_type));
+            bail!(einsteindbErrorKind::BadValuePair(format!("{:?}", self), value_type));
         }
         Ok(self)
     }
@@ -130,7 +130,7 @@ impl TransactableValue for TypedValue {
             TypedValue::Long(_) |
             TypedValue::Double(_) |
             TypedValue::Instant(_) |
-            TypedValue::Uuid(_) => bail!(DbErrorKind::InputError(errors::InputError::BadcausetPlace)),
+            TypedValue::Uuid(_) => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace)),
         }
     }
 
@@ -209,7 +209,7 @@ pub fn replace_lookup_ref<T, U>(lookup_map: &AVMap, desired_or: Either<T, Lookup
                 LookupRefOrTempId::LookupRef(av) => lookup_map.get(&*av)
                     .map(|x| lift(*x)).map(Left)
                     // XXX TODO: fix this error kind!
-                    .ok_or_else(|| DbErrorKind::UnrecognizedSolitonid(format!("couldn't lookup [a v]: {:?}", (*av).clone())).into()),
+                    .ok_or_else(|| einsteindbErrorKind::UnrecognizedSolitonid(format!("couldn't lookup [a v]: {:?}", (*av).clone())).into()),
             }
         }
     }

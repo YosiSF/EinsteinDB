@@ -300,7 +300,7 @@ impl FnArg {
 }
 
 /// e, a, tx can't be values -- no strings, no floats -- and so
-/// they can only be variables, causet IDs, ident keywords, or
+/// they can only be variables, causet IDs, solitonid keywords, or
 /// placeholders.
 /// This encoding allows us to represent integers that aren't
 /// causet IDs. That'll get filtered out in the context of the
@@ -886,13 +886,13 @@ pub enum UnifyVars {
     /// DataScript regards these vars as 'free': these variables don't need to be bound by the
     /// enclosing environment.
     ///
-    /// Datomic's docueinsteindbion implies that all implicit variables are required:
+    /// Datomic's docueinsteineinsteindbion implies that all implicit variables are required:
     ///
     /// > Datomic will attempt to push the or clause down until all necessary variables are bound,
     /// > and will throw an exception if that is not possible.
     ///
     /// but that would render top-level `or` expressions (as used in Datomic's own examples!)
-    /// impossible, so we assume that this is an error in the docueinsteindbion.
+    /// impossible, so we assume that this is an error in the docueinsteineinsteindbion.
     ///
     /// All contained 'arms' in an `or` with implicit variables must bind the same vars.
     Implicit,

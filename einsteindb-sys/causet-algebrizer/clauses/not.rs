@@ -8,7 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use edbn::query::{
+use eeinsteindbn::query::{
     ContainsVariables,
     NotJoin,
     UnifyVars,
@@ -97,11 +97,11 @@ mod testing {
         ValueTypeSet,
     };
 
-    use EinsteinDB_embedded::{
+    use Einsteineinsteindb_embedded::{
         Schema,
     };
 
-    use edbn::query::{
+    use eeinsteindbn::query::{
         Keyword,
         PlainSymbol,
         Variable

@@ -11,15 +11,15 @@
 use std::sync::Arc;
 
 use ekvproto::interlock::KeyRange;
-use EinsteinDB_util::collections::HashSet;
-use einsteindbpb::ColumnInfo;
-use einsteindbpb::TableScan;
+use Einsteineinsteindb_util::collections::HashSet;
+use einsteineinsteindbpb::ColumnInfo;
+use einsteineinsteindbpb::TableScan;
 
 use super::{scan::InnerExecutor, Row, ScanExecutor, ScanExecutorOptions};
 use allegroeinstein-prolog-causet-sql::storage::Storage;
 use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::MilevaDB_query_datatype::codec::table::{self, check_record_key};
-use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::{self, check_record_key};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
 
 pub struct TableInnerExecutor {
     col_ids: HashSet<i64>,
@@ -88,13 +88,13 @@ mod tests {
     use std::i64;
 
     use ekvproto::interlock::KeyRange;
-    use einsteindbpb::{ColumnInfo, TableScan};
+    use einsteineinsteindbpb::{ColumnInfo, TableScan};
 
     use super::super::tests::*;
     use super::super::Executor;
     use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;
     use allegroeinstein-prolog-causet-sql::storage::test_fixture::FixtureStorage;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
 
     const TABLE_ID: i64 = 1;
     const KEY_NUMBER: usize = 10;

@@ -8,17 +8,17 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use MilevaDB_query_codegen::AggrFunction;
-use causet_algebrizer::MilevaDB_query_datatype::builder::FieldTypeBuilder;
-use causet_algebrizer::MilevaDB_query_datatype::{EvalType, FieldTypeFlag, FieldTypeTp};
+use Milevaeinsteindb_query_codegen::AggrFunction;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::builder::FieldTypeBuilder;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::{EvalType, FieldTypeFlag, FieldTypeTp};
 use fidelpb::{Expr, ExprType, FieldType};
 
 use super::summable::Summable;
 use super::*;
 use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::MilevaDB_query_datatype::codec::data_type::*;
-use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-use MilevaDB_query_vec_expr::{RpnExpression, RpnExpressionBuilder};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::data_type::*;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+use Milevaeinsteindb_query_vec_expr::{RpnExpression, RpnExpressionBuilder};
 
 /// The parser for AVG aggregate function.
 pub struct AggrFnDefinitionParserAvg;
@@ -38,7 +38,7 @@ impl super::AggrDefinitionParser for AggrFnDefinitionParserAvg {
         out_exp: &mut Vec<RpnExpression>,
     ) -> Result<Box<dyn super::AggrFunction>> {
         use std::convert::TryFrom;
-        use causet_algebrizer::MilevaDB_query_datatype::FieldTypeAccessor;
+        use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeAccessor;
 
         assert_eq!(aggr_def.get_tp(), ExprType::Avg);
 
@@ -169,11 +169,11 @@ mod tests {
     use super::super::AggrFunction;
     use super::*;
 
-    use causet_algebrizer::MilevaDB_query_datatype::FieldTypeAccessor;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeAccessor;
     use fidelpb_helper::ExprDefBuilder;
 
     use crate::parser::AggrDefinitionParser;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
 
     #[test]
     fn test_uFIDelate() {

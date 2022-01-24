@@ -1,13 +1,13 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::fmt;
 
-use einsteindbpb::ColumnInfo;
-use einsteindbpb::FieldType;
+use einsteineinsteindbpb::ColumnInfo;
+use einsteineinsteindbpb::FieldType;
 
 use crate::error::DataTypeError;
 
-/// Valid values of `einsteindbpb::FieldType::tp` and `einsteindbpb::ColumnInfo::tp`.
+/// Valid values of `einsteineinsteindbpb::FieldType::tp` and `einsteineinsteindbpb::ColumnInfo::tp`.
 ///
 /// `FieldType` is the field type of a column defined by schema.
 ///
@@ -95,8 +95,8 @@ impl From<FieldTypeTp> for ColumnInfo {
     }
 }
 
-/// Valid values of `einsteindbpb::FieldType::collate` and
-/// `einsteindbpb::ColumnInfo::collation`.
+/// Valid values of `einsteineinsteindbpb::FieldType::collate` and
+/// `einsteineinsteindbpb::ColumnInfo::collation`.
 ///
 /// Legacy Utf8Bin collator (was the default) does not pad. For compatibility,
 /// all new collation with padding behavior is negative.
@@ -112,7 +112,7 @@ pub enum Collation {
 impl Collation {
     /// Parse from collation id.
     ///
-    /// These are magic numbers defined in MilevaDB, where positive numbers are for legacy
+    /// These are magic numbers defined in Milevaeinsteindb, where positive numbers are for legacy
     /// compatibility, and all new clusters with padding configuration enabled will
     /// use negative numbers to indicate the padding behavior.
     pub fn from_i32(n: i32) -> Result<Self, DataTypeError> {
@@ -193,7 +193,7 @@ pub trait FieldTypeAccessor {
     /// Whether this type is a hybrid type, which can represent different types of value in
     /// specific context.
     ///
-    /// Please refer to `Hybrid` in MilevaDB.
+    /// Please refer to `Hybrid` in Milevaeinsteindb.
     #[inline]
     fn is_hybrid(&self) -> bool {
         let tp = self.tp();
@@ -202,7 +202,7 @@ pub trait FieldTypeAccessor {
 
     /// Whether this type is a blob type.
     ///
-    /// Please refer to `IsTypeBlob` in MilevaDB.
+    /// Please refer to `IsTypeBlob` in Milevaeinsteindb.
     #[inline]
     fn is_blob_like(&self) -> bool {
         let tp = self.tp();
@@ -214,7 +214,7 @@ pub trait FieldTypeAccessor {
 
     /// Whether this type is a char-like type like a string type or a varchar type.
     ///
-    /// Please refer to `IsTypeChar` in MilevaDB.
+    /// Please refer to `IsTypeChar` in Milevaeinsteindb.
     #[inline]
     fn is_char_like(&self) -> bool {
         let tp = self.tp();
@@ -223,7 +223,7 @@ pub trait FieldTypeAccessor {
 
     /// Whether this type is a varchar-like type like a varstring type or a varchar type.
     ///
-    /// Please refer to `IsTypeVarchar` in MilevaDB.
+    /// Please refer to `IsTypeVarchar` in Milevaeinsteindb.
     #[inline]
     fn is_varchar_like(&self) -> bool {
         let tp = self.tp();
@@ -232,7 +232,7 @@ pub trait FieldTypeAccessor {
 
     /// Whether this type is a string-like type.
     ///
-    /// Please refer to `IsString` in MilevaDB.
+    /// Please refer to `IsString` in Milevaeinsteindb.
     #[inline]
     fn is_string_like(&self) -> bool {
         self.is_blob_like()
@@ -243,7 +243,7 @@ pub trait FieldTypeAccessor {
 
     /// Whether this type is a binary-string-like type.
     ///
-    /// Please refer to `IsBinaryStr` in MilevaDB.
+    /// Please refer to `IsBinaryStr` in Milevaeinsteindb.
     #[inline]
     fn is_binary_string_like(&self) -> bool {
         self.collation()
@@ -254,7 +254,7 @@ pub trait FieldTypeAccessor {
 
     /// Whether this type is a non-binary-string-like type.
     ///
-    /// Please refer to `IsNonBinaryStr` in MilevaDB.
+    /// Please refer to `IsNonBinaryStr` in Milevaeinsteindb.
     #[inline]
     fn is_non_binary_string_like(&self) -> bool {
         self.collation()

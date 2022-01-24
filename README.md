@@ -1,10 +1,10 @@
-<img src="images/EinsteinDBLogo.png" alt="einsteindb_logo" width="600"/>
+<img src="images/EinsteineinsteindbLogo.png" alt="einsteineinsteindb_logo" width="600"/>
 
-## [Website](https://www.einsteindb.com) | [Documentation](https://einsteindb.com/docs/latest/concepts/overview/) | [Community Chat](https://einsteindb.com/chat)
+## [Website](https://www.einsteineinsteindb.com) | [Documentation](https://einsteineinsteindb.com/docs/latest/concepts/overview/) | [Community Chat](https://einsteineinsteindb.com/chat)
 
-In a nutshell, EinsteinDB is a persistent indexing scheme based off of LSH-KVX that exploits the distinct merits of hash index and B+-Tree index to support range scan and avoids long NVM writes for maintaining consistency; thus improving on LSH’s performance guarantees for skewed data and adopts ordered-write consistency to ensure crash consistency, while retaining the same storage and query overhead. 
+In a nutshell, Einsteineinsteindb is a persistent indexing scheme based off of LSH-KVX that exploits the distinct merits of hash index and B+-Tree index to support range scan and avoids long NVM writes for maintaining consistency; thus improving on LSH’s performance guarantees for skewed data and adopts ordered-write consistency to ensure crash consistency, while retaining the same storage and query overhead. 
 
-EinsteinDB is a hybrid memory system consisting of DRAM and Non-Volatile Memory(NVM) as its main components. The key-value store stores keys with their associated values in both DRAM and NVM. In addition, EinsteinDB builds an ordered set of differential concurrency schemes appended to a hash index in NVM to retain its inherent ability of fast index searching. 
+Einsteineinsteindb is a hybrid memory system consisting of DRAM and Non-Volatile Memory(NVM) as its main components. The key-value store stores keys with their associated values in both DRAM and NVM. In addition, Einsteineinsteindb builds an ordered set of differential concurrency schemes appended to a hash index in NVM to retain its inherent ability of fast index searching. 
 
 - **Hybrid Index: Indexes Are Models**
 
@@ -12,14 +12,14 @@ Basic key-value operations include Put, Get, Update, Delete, and Scan. To locate
 
 - **Differential concurrency**
 
-As the number of CPU cores increases, concurrency control for heavy workloads becomes more challenging. Effective workload scheduling can greatly improve the performance by avoiding the conflicts. We introduce einst.ai, an AI4DB learned transaction management system compatible with EinsteinDB, FoundationDB, LevelDB, CockroachDB, and TiDB from two aspects: transaction prediction and transaction scheduling. einstAI predicts the future trend of different workloads
+As the number of CPU cores increases, concurrency control for heavy workloads becomes more challenging. Effective workload scheduling can greatly improve the performance by avoiding the conflicts. We introduce einst.ai, an AI4einsteindb learned transaction management system compatible with Einsteineinsteindb, Foundationeinsteindb, Leveleinsteindb, Cockroacheinsteindb, and Tieinsteindb from two aspects: transaction prediction and transaction scheduling. einstAI predicts the future trend of different workloads
 
 - **Hybrid Language Model s**
 
-EinsteinDB supports declarative queries, which makes it easy to write queries without having to worry about how they're going to be executed. This also means that you can use EinsteinDB's constraint checking capabilities to ensure that your data is always consistent. EinsteinDB provides multi-dimensional spatial indexes, so you can perform geospatial queries on top of its columnar storage format. You can even combine this with time series data! These features make it well suited for mobile applications where users are querying historical data, such as their own location history or nearby points of interest.
+Einsteineinsteindb supports declarative queries, which makes it easy to write queries without having to worry about how they're going to be executed. This also means that you can use Einsteineinsteindb's constraint checking capabilities to ensure that your data is always consistent. Einsteineinsteindb provides multi-dimensional spatial indexes, so you can perform geospatial queries on top of its columnar storage format. You can even combine this with time series data! These features make it well suited for mobile applications where users are querying historical data, such as their own location history or nearby points of interest.
 
 --**Causets: 4-clique Causal cuts**--
-A 4-clique cut (Information Theory Detour)separates processes into disjoint sets such that all edges within the set are potential causality relationships (happen before). The 4-clique cut can be computed in time linear to the number of nodes in the graph. The 4-clique cut provides us with an efficient way to reason about consistency in distributed systems. We’ve implemented our algorithms on top of einst.a.i and deployed them on Kubernetes for our production service MilevaDB, where we use it to provide upgrades with eventually consistent stores transformed by einst.a.i via GPT3 (OpenAI powers EinstAI) to convergent causal consistent 4-clique cuts of a Crown Graph.
+A 4-clique cut (Information Theory Detour)separates processes into disjoint sets such that all edges within the set are potential causality relationships (happen before). The 4-clique cut can be computed in time linear to the number of nodes in the graph. The 4-clique cut provides us with an efficient way to reason about consistency in distributed systems. We’ve implemented our algorithms on top of einst.a.i and deployed them on Kubernetes for our production service Milevaeinsteindb, where we use it to provide upgrades with eventually consistent stores transformed by einst.a.i via GPT3 (OpenAI powers EinstAI) to convergent causal consistent 4-clique cuts of a Crown Graph.
 
 --**Byzantine State Machine Replication for the Masses**--
 
@@ -34,4 +34,4 @@ It guarantees liveness without making any timing assumptions. It ensures that no
 
 ## License
 
-EinsteinDB is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
+Einsteineinsteindb is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.

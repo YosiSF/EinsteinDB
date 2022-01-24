@@ -38,7 +38,7 @@ use edn::parse::{
     parse_query,
 };
 
-///! N.B., parsing a query can be done without reference to a DB.
+///! N.B., parsing a query can be done without reference to a einsteindb.
 ///! Processing the parsed query into something we can work with
 ///! for planning involves interrogating the schema and idents in
 ///! the store.
@@ -157,7 +157,7 @@ fn can_parse_simple_or_join() {
 }
 
 #[cfg(test)]
-fn ident(ns: &str, name: &str) -> PatternNonValuePlace {
+fn solitonid(ns: &str, name: &str) -> PatternNonValuePlace {
     Keyword::namespaced(ns, name).into()
 }
 
@@ -189,14 +189,14 @@ fn can_parse_simple_or_and_join() {
                                            OrWhereClause::Clause(WhereClause::Pattern(Pattern {
                                                source: None,
                                                causet: PatternNonValuePlace::Variable(Variable::from_valid_name("?x")),
-                                               attribute: ident("foo", "bar"),
+                                               attribute: solitonid("foo", "bar"),
                                                value: PatternValuePlace::Variable(Variable::from_valid_name("?y")),
                                                tx: PatternNonValuePlace::Placeholder,
                                            })),
                                            OrWhereClause::Clause(WhereClause::Pattern(Pattern {
                                                source: None,
                                                causet: PatternNonValuePlace::Variable(Variable::from_valid_name("?x")),
-                                               attribute: ident("foo", "baz"),
+                                               attribute: solitonid("foo", "baz"),
                                                value: PatternValuePlace::Variable(Variable::from_valid_name("?y")),
                                                tx: PatternNonValuePlace::Placeholder,
                                            })),

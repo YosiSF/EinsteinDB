@@ -11,7 +11,7 @@
 use std::sync::Arc;
 
 use ekvproto::interlock::KeyRange;
-use causet_algebrizer::MilevaDB_query_datatype::EvalType;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::EvalType;
 use fidelpb::ColumnInfo;
 use fidelpb::FieldType;
 use fidelpb::IndexScan;
@@ -21,10 +21,10 @@ use crate::interface::*;
 use codec::prelude::NumberDecoder;
 use allegroeinstein-prolog-causet-sql::storage::{IntervalRange, Storage};
 use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
-use causet_algebrizer::MilevaDB_query_datatype::codec::table::{check_index_key, MAX_OLD_ENCODED_VALUE_LEN};
-use causet_algebrizer::MilevaDB_query_datatype::codec::{datum, table};
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::{check_index_key, MAX_OLD_ENCODED_VALUE_LEN};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, table};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext};
 
 pub struct BatchIndexScanExecutor<S: Storage>(ScanExecutor<S, IndexScanExecutorImpl>);
 
@@ -205,7 +205,7 @@ impl IndexScanExecutorImpl {
         mut value: &[u8],
         columns: &mut QuiesceBatchColumnVec,
     ) -> Result<()> {
-        use causet_algebrizer::MilevaDB_query_datatype::codec::row::v2::{RowSlice, V1CompatibleEncoder};
+        use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::row::v2::{RowSlice, V1CompatibleEncoder};
         let tail_len = value[0];
         value = &value[1..];
 
@@ -288,14 +288,14 @@ mod tests {
 
     use codec::prelude::NumberEncoder;
     use ekvproto::interlock::KeyRange;
-    use causet_algebrizer::MilevaDB_query_datatype::{FieldTypeAccessor, FieldTypeTp};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::{FieldTypeAccessor, FieldTypeTp};
     use fidelpb::ColumnInfo;
 
     use allegroeinstein-prolog-causet-sql::storage::test_fixture::FixtureStorage;
     use allegroeinstein-prolog-causet-sql::util::convert_to_prefix_next;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::data_type::*;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::{datum, table, Datum};
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalConfig;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::data_type::*;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, table, Datum};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalConfig;
 
     #[test]
     fn test_basic() {

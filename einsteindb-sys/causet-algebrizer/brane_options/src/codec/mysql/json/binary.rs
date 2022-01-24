@@ -18,14 +18,14 @@ use codec::number::NumberCodec;
 impl<'a> JsonRef<'a> {
     /// Gets the ith element in JsonRef
     ///
-    /// See `arrayGetElem()` in MilevaDB `json/binary.go`
+    /// See `arrayGetElem()` in Milevaeinsteindb `json/binary.go`
     pub fn array_get_elem(&self, idx: usize) -> Result<JsonRef<'a>> {
         self.val_causet_get(HEADER_LEN + idx * VALUE_ENTRY_LEN)
     }
 
     /// Return the `i`th key in current Object json
     ///
-    /// See `arrayGetElem()` in MilevaDB `json/binary.go`
+    /// See `arrayGetElem()` in Milevaeinsteindb `json/binary.go`
     pub fn object_get_key(&self, i: usize) -> &'a [u8] {
         let key_off_start = HEADER_LEN + i * KEY_ENTRY_LEN;
         let key_off = NumberCodec::decode_u32_le(&self.value()[key_off_start..]) as usize;
@@ -36,7 +36,7 @@ impl<'a> JsonRef<'a> {
 
     /// Returns the JsonRef of `i`th value in current Object json
     ///
-    /// See `arrayGetElem()` in MilevaDB `json/binary.go`
+    /// See `arrayGetElem()` in Milevaeinsteindb `json/binary.go`
     pub fn object_get_val(&self, i: usize) -> Result<JsonRef<'a>> {
         let ele_count = self.get_elem_count();
         let val_causet_off = HEADER_LEN + ele_count * KEY_ENTRY_LEN + i * VALUE_ENTRY_LEN;
@@ -45,7 +45,7 @@ impl<'a> JsonRef<'a> {
 
     /// Searches the value index by the give `key` in Object.
     ///
-    /// See `objectSearchKey()` in MilevaDB `json/binary_function.go`
+    /// See `objectSearchKey()` in Milevaeinsteindb `json/binary_function.go`
     pub fn object_search_key(&self, key: &[u8]) -> Option<usize> {
         let len = self.get_elem_count();
         let mut j = len;
@@ -66,7 +66,7 @@ impl<'a> JsonRef<'a> {
 
     /// Gets the value (JsonRef) by the given offset of the value causet
     ///
-    /// See `arrayGetElem()` in MilevaDB `json/binary.go`
+    /// See `arrayGetElem()` in Milevaeinsteindb `json/binary.go`
     pub fn val_causet_get(&self, val_causet_off: usize) -> Result<JsonRef<'a>> {
         let val_type: JsonType = self.value()[val_causet_off].try_into()?;
         let val_offset =

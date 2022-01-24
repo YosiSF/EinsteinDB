@@ -1,10 +1,10 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::i64;
 
 use crate::ScalarFunc;
-use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalContext, Result};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, Result};
 
 impl ScalarFunc {
     #[inline]
@@ -35,11 +35,11 @@ mod tests {
     use crate::Expression;
     use std::str::FromStr;
     use std::sync::Arc;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::Decimal;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::Flag;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext};
-    use einsteindbpb::ScalarFuncSig;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::Decimal;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::Flag;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext};
+    use einsteineinsteindbpb::ScalarFuncSig;
 
     #[test]
     fn test_bit_count() {

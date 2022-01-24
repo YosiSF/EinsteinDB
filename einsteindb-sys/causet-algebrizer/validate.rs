@@ -10,7 +10,7 @@
 
 use std::collections::BTreeSet;
 
-use edbn::query::{
+use eeinsteindbn::query::{
     ContainsVariables,
     OrJoin,
     NotJoin,
@@ -77,10 +77,10 @@ pub(crate) fn validate_not_join(not_join: &NotJoin) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    extern crate EinsteinDB_embedded;
-    extern crate edbn;
+    extern crate Einsteineinsteindb_embedded;
+    extern crate eeinsteindbn;
 
-    use edbn::query::{
+    use eeinsteindbn::query::{
         Keyword,
         OrWhereClause,
         Pattern,

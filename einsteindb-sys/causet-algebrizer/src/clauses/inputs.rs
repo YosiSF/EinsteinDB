@@ -17,7 +17,7 @@ use embedded_promises::{
     TypedValue, //The local type
 };
 
-use edbn::query::{
+use eeinsteindbn::query::{
   Variable, //n-instance
 };
 

@@ -58,7 +58,7 @@ fn s_plain(name: &str) -> Value {
 
 // Helpers for parsing strings and converting them into edn::Value.
 macro_rules! fn_parse_into_value {
-    ($name: ident) => {
+    ($name: solitonid) => {
         fn $name<'a, T>(src: T) -> Result<Value, ParseError> where T: Into<&'a str> {
             parse::$name(src.into()).map(|x| x.into())
         }
@@ -866,7 +866,7 @@ fn test_query_active_sessions() {
         :in $
         :where
             [?id :session/startReason ?reason ?tx]
-            [?tx :db/txInstant ?ts]
+            [?tx :einsteindb/txInstant ?ts]
             (not-join [?id] [?id :session/endReason _])
     ]";
 
@@ -886,7 +886,7 @@ fn test_query_active_sessions() {
         ]),
         Vector(vec![
             s_plain("?tx"),
-            k_ns("db", "txInstant"),
+            k_ns("einsteindb", "txInstant"),
             s_plain("?ts"),
         ]),
         List(LinkedList::from_iter(vec![
@@ -913,7 +913,7 @@ fn test_query_ended_sessions() {
         :in $
         :where
             [?id :session/endReason ?endReason ?tx]
-            [?tx :db/txInstant ?ts]
+            [?tx :einsteindb/txInstant ?ts]
     ]";
 
     let reply = Vector(vec![
@@ -932,7 +932,7 @@ fn test_query_ended_sessions() {
         ]),
         Vector(vec![
             s_plain("?tx"),
-            k_ns("db", "txInstant"),
+            k_ns("einsteindb", "txInstant"),
             s_plain("?ts"),
         ]),
     ]);
@@ -1389,7 +1389,7 @@ fn test_utils_merge() {
 }
 
 macro_rules! def_test_as_value_type {
-    ($value: ident, $method: ident, $is_some: expr, $expected: expr) => {
+    ($value: solitonid, $method: solitonid, $is_some: expr, $expected: expr) => {
         if $is_some {
             assert_eq!($value.$method().unwrap(), $expected)
         }
@@ -1397,7 +1397,7 @@ macro_rules! def_test_as_value_type {
     }
 }
 macro_rules! def_test_as_type {
-    ($value: ident, $method: ident, $is_some: expr, $expected: expr) => {
+    ($value: solitonid, $method: solitonid, $is_some: expr, $expected: expr) => {
         if $is_some {
             assert_eq!(*$value.$method().unwrap(), $expected)
         }
@@ -1406,7 +1406,7 @@ macro_rules! def_test_as_type {
 }
 
 macro_rules! def_test_into_type {
-    ($value: ident, $method: ident, $is_some: expr, $expected: expr) => {
+    ($value: solitonid, $method: solitonid, $is_some: expr, $expected: expr) => {
         if $is_some {
             assert_eq!($value.clone().$method().unwrap(), $expected)
         }

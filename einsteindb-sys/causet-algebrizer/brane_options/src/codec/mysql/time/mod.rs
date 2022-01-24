@@ -1,4 +1,4 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 pub mod extension;
 mod tz;
@@ -19,7 +19,7 @@ use chrono::prelude::*;
 
 use crate::{FieldTypeAccessor, FieldTypeTp};
 use codec::prelude::*;
-use einsteindbpb::FieldType;
+use einsteineinsteindbpb::FieldType;
 
 use crate::codec::convert::ConvertTo;
 use crate::codec::mysql::{check_fsp, Decimal, Duration};
@@ -518,7 +518,7 @@ mod parser {
         // NOTE: These numbers can be consider as strings
         // The parser eats two digits each time from the end of string,
         // and fill it into `Time` with reversed order.
-        // Port from: https://github.com/pingcap/MilevaDB/blob/b1aad071489619998e4caefd235ed01f179c2db2/types/time.go#L1263
+        // Port from: https://github.com/pingcap/Milevaeinsteindb/blob/b1aad071489619998e4caefd235ed01f179c2einsteindb2/types/time.go#L1263
         let aligned = match input {
             101..=691_231 => (input + 20_000_000) * 1_000_000,
             700_101..=991_231 => (input + 19_000_000) * 1_000_000,
@@ -1535,7 +1535,7 @@ impl ConvertTo<f64> for Time {
 }
 
 impl ConvertTo<Decimal> for Time {
-    // Port from MilevaDB's Time::ToNumber
+    // Port from Milevaeinsteindb's Time::ToNumber
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Decimal> {
         if self.is_zero() {
@@ -1547,7 +1547,7 @@ impl ConvertTo<Decimal> for Time {
 }
 
 impl ConvertTo<Duration> for Time {
-    /// Port from MilevaDB's Time::ConvertToDuration
+    /// Port from Milevaeinsteindb's Time::ConvertToDuration
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Duration> {
         if self.is_zero() {
@@ -2132,7 +2132,7 @@ mod tests {
 
         let dsts = vec![
             ("2019-03-10 02:00:00", "America/New_York"),
-            ("2018-04-01 02:00:00", "America/Monterrey"),
+            ("2022-04-01 02:00:00", "America/Monterrey"),
         ];
         for (timestamp, time_zone) in dsts {
             let mut ctx = EvalContext::from(TimeEnv {
@@ -2413,9 +2413,9 @@ mod tests {
     #[test]
     fn test_normalized() -> Result<()> {
         let should_pass = vec![
-            ("2019-00-01 12:34:56.1", "2018-12-01 12:34:56.1"),
-            ("2019-01-00 12:34:56.1", "2018-12-31 12:34:56.1"),
-            ("2019-00-00 12:34:56.1", "2018-11-30 12:34:56.1"),
+            ("2019-00-01 12:34:56.1", "2022-12-01 12:34:56.1"),
+            ("2019-01-00 12:34:56.1", "2022-12-31 12:34:56.1"),
+            ("2019-00-00 12:34:56.1", "2022-11-30 12:34:56.1"),
             ("2019-04-31 12:34:56.1", "2019-05-01 12:34:56.1"),
             ("2019-02-29 12:34:56.1", "2019-03-01 12:34:56.1"),
             ("2019-02-30 12:34:56.1", "2019-03-02 12:34:56.1"),
@@ -2440,22 +2440,22 @@ mod tests {
     fn checked_add_sub_duration() -> Result<()> {
         let normal_cases = vec![
             (
-                "2018-12-30 11:30:45.123456",
+                "2022-12-30 11:30:45.123456",
                 "00:00:14.876545",
-                "2018-12-30 11:31:00.000001",
+                "2022-12-30 11:31:00.000001",
             ),
             (
-                "2018-12-30 11:30:45.123456",
+                "2022-12-30 11:30:45.123456",
                 "00:30:00",
-                "2018-12-30 12:00:45.123456",
+                "2022-12-30 12:00:45.123456",
             ),
             (
-                "2018-12-30 11:30:45.123456",
+                "2022-12-30 11:30:45.123456",
                 "12:30:00",
-                "2018-12-31 00:00:45.123456",
+                "2022-12-31 00:00:45.123456",
             ),
             (
-                "2018-12-30 11:30:45.123456",
+                "2022-12-30 11:30:45.123456",
                 "1 12:30:00",
                 "2019-01-01 00:00:45.123456",
             ),
@@ -2484,7 +2484,7 @@ mod tests {
         });
         let dsts = vec![
             ("2019-03-10 01:00:00", "1:00:00", "2019-03-10 03:00:00"),
-            ("2018-03-11 01:00:00", "1:00:00", "2018-03-11 03:00:00"),
+            ("2022-03-11 01:00:00", "1:00:00", "2022-03-11 03:00:00"),
         ];
 
         for (lhs, rhs, expected) in dsts.clone() {
@@ -2508,7 +2508,7 @@ mod tests {
         });
         let cases = vec![
             ("2019-04-31 00:00:00", "1:00:00", "2019-05-01 01:00:00"),
-            ("2019-00-01 00:00:00", "1:00:00", "2018-12-01 01:00:00"),
+            ("2019-00-01 00:00:00", "1:00:00", "2022-12-01 01:00:00"),
             ("2019-2-0 00:00:00", "1:00:00", "2019-01-31 01:00:00"),
         ];
         for (lhs, rhs, expected) in cases {

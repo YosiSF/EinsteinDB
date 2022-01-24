@@ -152,7 +152,7 @@ mod test {
 
     #[test]
     fn test_pp_query1() {
-        let string = "[:find ?id ?bar ?baz :in $ :where [?id :session/keyword-foo ?symbol1 ?symbol2 \"some string\"] [?tx :db/tx ?ts]]";
+        let string = "[:find ?id ?bar ?baz :in $ :where [?id :session/keyword-foo ?symbol1 ?symbol2 \"some string\"] [?tx :einsteindb/tx ?ts]]";
         let data = parse::value(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "\
@@ -168,12 +168,12 @@ mod test {
   ?symbol1
   ?symbol2
   \"some string\"]
- [?tx :db/tx ?ts]]");
+ [?tx :einsteindb/tx ?ts]]");
     }
 
     #[test]
     fn test_pp_query2() {
-        let string = "[:find [?id ?bar ?baz] :in [$] :where [?id :session/keyword-foo ?symbol1 ?symbol2 \"some string\"] [?tx :db/tx ?ts] (not-join [?id] [?id :session/keyword-bar _])]";
+        let string = "[:find [?id ?bar ?baz] :in [$] :where [?id :session/keyword-foo ?symbol1 ?symbol2 \"some string\"] [?tx :einsteindb/tx ?ts] (not-join [?id] [?id :session/keyword-bar _])]";
         let data = parse::value(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "\
@@ -187,7 +187,7 @@ mod test {
   ?symbol1
   ?symbol2
   \"some string\"]
- [?tx :db/tx ?ts]
+ [?tx :einsteindb/tx ?ts]
  (not-join
   [?id]
   [?id :session/keyword-bar _])]");

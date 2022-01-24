@@ -30,7 +30,7 @@ pub struct PlainSymbol(pub String);
 pub struct NamespacedSymbol(IsolatedNamespace);
 
 /// ```rust
-/// # use edbn::superscripts::Keyword;
+/// # use eeinsteindbn::superscripts::Keyword;
 /// let bar     = Keyword::plain("bar");                         // :bar
 /// let foo_bar = Keyword::namespaced("foo", "bar");        // :foo/bar
 /// assert_eq!("bar", bar.name());
@@ -104,12 +104,12 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use edbn::superscripts::Keyword;
+    /// # use eeinsteindbn::superscripts::Keyword;
     /// let keyword = Keyword::namespaced("foo", "bar");
     /// assert_eq!(keyword.to_string(), ":foo/bar");
     /// ```
     ///
-    /// See also the `kw!` macro in the main `einsteindb` crate.
+    /// See also the `kw!` macro in the main `einsteineinsteindb` crate.
     pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
         let r = namespace.as_ref();
         assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null namespace.");
@@ -134,7 +134,7 @@ impl Keyword {
     /// Whether this `Keyword` should be interpreted in reverse order. For example,
     /// the two following snippets are identical:
     ///
-    /// ```edbn
+    /// ```eeinsteindbn
     /// [?y :person/friend ?x]
     /// [?x :person/hired ?y]
     ///
@@ -145,7 +145,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use edbn::superscripts::Keyword;
+    /// # use eeinsteindbn::superscripts::Keyword;
     /// assert!(!Keyword::namespaced("foo", "bar").is_backward());
     /// assert!(Keyword::namespaced("foo", "_bar").is_backward());
     /// ```
@@ -160,7 +160,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use edbn::superscripts::Keyword;
+    /// # use eeinsteindbn::superscripts::Keyword;
     /// assert!(Keyword::namespaced("foo", "bar").is_forward());
     /// assert!(!Keyword::namespaced("foo", "_bar").is_forward());
     /// ```
@@ -183,7 +183,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use edbn::superscripts::Keyword;
+    /// # use eeinsteindbn::superscripts::Keyword;
     /// let nsk = Keyword::namespaced("foo", "bar");
     /// assert!(!nsk.is_backward());
     /// assert_eq!(":foo/bar", nsk.to_string());
@@ -205,12 +205,12 @@ impl Keyword {
 }
 
 impl Display for PlainSymbol {
-    /// Print the symbol in EDBN format.
+    /// Print the symbol in EeinsteindbN format.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// # use edbn::superscripts::PlainSymbol;
+    /// # use eeinsteindbn::superscripts::PlainSymbol;
     /// assert_eq!("baz", PlainSymbol::plain("baz").to_string());
     /// ```
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {

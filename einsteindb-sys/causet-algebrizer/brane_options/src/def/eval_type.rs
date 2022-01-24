@@ -1,10 +1,10 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::fmt;
 
 /// Function implementations' parameter data types.
 ///
-/// It is similar to the `EvalType` in MilevaDB, but doesn't provide type `Timestamp`, which is
+/// It is similar to the `EvalType` in Milevaeinsteindb, but doesn't provide type `Timestamp`, which is
 /// handled by the same type as `DateTime` here, instead of a new type. Also, `String` is
 /// called `Bytes` here to be less confusing.
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -69,7 +69,7 @@ impl std::convert::TryFrom<crate::FieldTypeTp> for EvalType {
             | crate::FieldTypeTp::VarString
             | crate::FieldTypeTp::String => EvalType::Bytes,
             _ => {
-                // In MilevaDB, Bit's eval type is Int, but it is not yet supported in EinsteinDB.
+                // In Milevaeinsteindb, Bit's eval type is Int, but it is not yet supported in Einsteineinsteindb.
                 return Err(crate::DataTypeError::UnsupportedType {
                     name: tp.to_string(),
                 });

@@ -29,7 +29,7 @@ impl<'a> JsonRef<'a> {
     /// All path expressions cannot contain * or ** wildcard.
     /// If any error occurs, the input won't be changed.
     ///
-    /// See `Modify()` in MilevaDB `json/binary_function.go`
+    /// See `Modify()` in Milevaeinsteindb `json/binary_function.go`
     pub fn modify(
         &self,
         path_expr_list: &[PathExpression],

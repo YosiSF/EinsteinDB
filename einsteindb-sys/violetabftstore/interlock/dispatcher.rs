@@ -1,6 +1,6 @@
-// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
-use einsteindb_promises::{BRANEName, KvEngine};
+use einsteineinsteindb_promises::{BRANEName, KvEngine};
 use ekvproto::metapb::Region;
 use ekvproto::FIDelpb::CheckPolicy;
 use ekvproto::violetabft_cmdpb::{violetabftCmdRequest, violetabftCmdResponse};
@@ -36,7 +36,7 @@ pub trait ClonableObserver: 'static + Send {
 }
 
 macro_rules! impl_box_observer {
-    ($name:ident, $ob: ident, $wrapper: ident) => {
+    ($name:solitonid, $ob: solitonid, $wrapper: solitonid) => {
         pub struct $name(Box<dyn ClonableObserver<Ob = dyn $ob> + Send>);
         impl $name {
             pub fn new<T: 'static + $ob + Clone>(observer: T) -> $name {
@@ -80,7 +80,7 @@ macro_rules! impl_box_observer {
 
 // This is the same as impl_box_observer_g except $ob has a typaram
 macro_rules! impl_box_observer_g {
-    ($name:ident, $ob: ident, $wrapper: ident) => {
+    ($name:solitonid, $ob: solitonid, $wrapper: solitonid) => {
         pub struct $name<E>(Box<dyn ClonableObserver<Ob = dyn $ob<E>> + Send>);
         impl<E: 'static + Send> $name<E> {
             pub fn new<T: 'static + $ob<E> + Clone>(observer: T) -> $name<E> {
@@ -178,7 +178,7 @@ impl<E> Default for Registry<E> {
 }
 
 macro_rules! push {
-    ($p:expr, $t:ident, $vec:expr) => {
+    ($p:expr, $t:solitonid, $vec:expr) => {
         $t.inner().start();
         let e = Entry {
             priority: $p,
@@ -227,7 +227,7 @@ impl<E> Registry<E> {
 /// A macro that loops over all observers and returns early when error is found or
 /// bypass is set. `try_loop_ob` is expected to be used for hook that returns a `Result`.
 macro_rules! try_loop_ob {
-    ($r:expr, $obs:expr, $hook:ident, $($args:tt)*) => {
+    ($r:expr, $obs:expr, $hook:solitonid, $($args:tt)*) => {
         loop_ob!(_imp _res, $r, $obs, $hook, $($args)*)
     };
 }
@@ -237,11 +237,11 @@ macro_rules! try_loop_ob {
 /// Using a macro so we don't need to write tests for every observers.
 macro_rules! loop_ob {
     // Execute a hook, return early if error is found.
-    (_exec _res, $o:expr, $hook:ident, $ctx:expr, $($args:tt)*) => {
+    (_exec _res, $o:expr, $hook:solitonid, $ctx:expr, $($args:tt)*) => {
         $o.inner().$hook($ctx, $($args)*)?
     };
     // Execute a hook.
-    (_exec _tup, $o:expr, $hook:ident, $ctx:expr, $($args:tt)*) => {
+    (_exec _tup, $o:expr, $hook:solitonid, $ctx:expr, $($args:tt)*) => {
         $o.inner().$hook($ctx, $($args)*)
     };
     // When the try loop finishes successfully, the value to be returned.
@@ -251,7 +251,7 @@ macro_rules! loop_ob {
     // When the loop finishes successfully, the value to be returned.
     (_done _tup) => {{}};
     // Actual implementation of the for loop.
-    (_imp $res_type:tt, $r:expr, $obs:expr, $hook:ident, $($args:tt)*) => {{
+    (_imp $res_type:tt, $r:expr, $obs:expr, $hook:solitonid, $($args:tt)*) => {{
         let mut ctx = ObserverContext::new($r);
         for o in $obs {
             loop_ob!(_exec $res_type, o.observer, $hook, &mut ctx, $($args)*);
@@ -263,7 +263,7 @@ macro_rules! loop_ob {
     }};
     // Loop over all observers and return early when bypass is set.
     // This macro is expected to be used for hook that returns `()`.
-    ($r:expr, $obs:expr, $hook:ident, $($args:tt)*) => {
+    ($r:expr, $obs:expr, $hook:solitonid, $($args:tt)*) => {
         loop_ob!(_imp _tup, $r, $obs, $hook, $($args)*)
     };
 }
@@ -513,7 +513,7 @@ mod tests {
     use std::sync::atomic::*;
     use std::sync::Arc;
 
-    use engine_foundationdb::foundationdbEngine;
+    use engine_foundationeinsteindb::foundationeinsteindbEngine;
     use ekvproto::metapb::Region;
     use ekvproto::violetabft_cmdpb::{
         AdminRequest, AdminResponse, violetabftCmdRequest, violetabftCmdResponse, Request, Response,
@@ -644,7 +644,7 @@ mod tests {
 
     #[test]
     fn test_trigger_right_hook() {
-        let mut host = interlockHost::<foundationdbEngine>::default();
+        let mut host = interlockHost::<foundationeinsteindbEngine>::default();
         let ob = Testinterlock::default();
         host.registry
             .register_admin_observer(1, BoxAdminObserver::new(ob.clone()));
@@ -706,7 +706,7 @@ mod tests {
 
     #[test]
     fn test_order() {
-        let mut host = interlockHost::<foundationdbEngine>::default();
+        let mut host = interlockHost::<foundationeinsteindbEngine>::default();
 
         let ob1 = Testinterlock::default();
         host.registry

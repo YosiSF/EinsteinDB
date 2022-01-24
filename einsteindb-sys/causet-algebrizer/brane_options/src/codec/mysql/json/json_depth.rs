@@ -18,7 +18,7 @@ impl<'a> JsonRef<'a> {
     }
 }
 
-// See `GetElemDepth()` in MilevaDB `json/binary_function.go`
+// See `GetElemDepth()` in Milevaeinsteindb `json/binary_function.go`
 fn depth_json(j: &JsonRef<'_>) -> Result<i64> {
     Ok(match j.get_type() {
         JsonType::Object => {

@@ -13,13 +13,13 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteindb_embedded::{
+use einsteineinsteindb_embedded::{
     HasSchema,
 };
 
-use einsteindb_embedded::util::Either;
+use einsteineinsteindb_embedded::util::Either;
 
-use edbn::query::{
+use eeinsteindbn::query::{
     Binding,
     FnArg,
     NonIntegerConstant,
@@ -61,12 +61,12 @@ impl ConjoiningClauses {
 
         if where_fn.binding.is_empty() {
             // The binding must introduce at least one bound variable.
-            bail!(AlgebrizerError::InvalidBinding(where_fn.operator.clone(), BindingError::NoBoundVariable));
+            bail!(AlgebrizerError::Invalieinsteindbinding(where_fn.operator.clone(), BindingError::NoBoundVariable));
         }
 
         if !where_fn.binding.is_valid() {
             // The binding must not duplicate bound variables.
-            bail!(AlgebrizerError::InvalidBinding(where_fn.operator.clone(), BindingError::RepeatedBoundVariable));
+            bail!(AlgebrizerError::Invalieinsteindbinding(where_fn.operator.clone(), BindingError::RepeateeinsteindboundVariable));
         }
 
         // We should have exactly four bindings. Destructure them now.
@@ -74,7 +74,7 @@ impl ConjoiningClauses {
             Binding::BindRel(bindings) => {
                 let bindings_count = bindings.len();
                 if bindings_count < 1 || bindings_count > 4 {
-                    bail!(AlgebrizerError::InvalidBinding(where_fn.operator.clone(),
+                    bail!(AlgebrizerError::Invalieinsteindbinding(where_fn.operator.clone(),
                         BindingError::InvalidNumberOfBindings {
                             number: bindings.len(),
                             expected: 4,
@@ -85,7 +85,7 @@ impl ConjoiningClauses {
             },
             Binding::BindScalar(_) |
             Binding::BindTuple(_) |
-            Binding::BindColl(_) => bail!(AlgebrizerError::InvalidBinding(where_fn.operator.clone(), BindingError::ExpectedBindRel)),
+            Binding::BindColl(_) => bail!(AlgebrizerError::Invalieinsteindbinding(where_fn.operator.clone(), BindingError::ExpecteeinsteindbindRel)),
         };
         let mut bindings = bindings.into_iter();
         let b_entity = bindings.next().unwrap();
@@ -248,7 +248,7 @@ impl ConjoiningClauses {
 
             // We do not allow the sembedded to be bound.
             if self.value_bindings.contains_key(var) || self.input_variables.contains(var) {
-                bail!(AlgebrizerError::InvalidBinding(var.name(), BindingError::UnexpectedBinding));
+                bail!(AlgebrizerError::Invalieinsteindbinding(var.name(), BindingError::Unexpecteeinsteindbinding));
             }
 
             // We bind the value ourselves. This handily takes care of substituting into existing uses.
@@ -269,11 +269,11 @@ mod testing {
         ValueType,
     };
 
-    use EinsteinDB_embedded::{
+    use Einsteineinsteindb_embedded::{
         Schema,
     };
 
-    use edbn::query::{
+    use eeinsteindbn::query::{
         Binding,
         FnArg,
         Keyword,

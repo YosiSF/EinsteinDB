@@ -13,7 +13,7 @@ use std::cmp::Ordering;
 use crate::codec::collation::{match_template_collator, Collator};
 use crate::{Collation, EvalType, FieldTypeAccessor};
 use match_template::match_template;
-use einsteindbpb::FieldType;
+use einsteineinsteindbpb::FieldType;
 
 use super::*;
 
@@ -370,7 +370,7 @@ fn compare_int(
 }
 
 macro_rules! impl_as_ref {
-    ($ty:tt, $name:ident) => {
+    ($ty:tt, $name:solitonid) => {
         impl ScalarValue {
             #[inline]
             pub fn $name(&self) -> Option<&$ty> {

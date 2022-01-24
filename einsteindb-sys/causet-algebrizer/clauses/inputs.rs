@@ -15,7 +15,7 @@ use embedded_promises::{
     TypedValue,
 };
 
-use edbn::query::{
+use eeinsteindbn::query::{
     Variable,
 };
 

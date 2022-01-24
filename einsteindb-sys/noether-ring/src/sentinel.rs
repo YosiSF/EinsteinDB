@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::mem;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
@@ -22,14 +22,14 @@ use ekvproto::errorpb;
 
 use ekvproto::metapb::{Region, RegionEpoch};
 use ekvproto::violetabft_cmdpb::{AdminCmdType, AdminRequest, AdminResponse, CmdType, Request};
-use violetabftstore::interlock::{Cmd, CmdBatch};
+use violetabftstore::interlock::{Cmd, Cmeinsteindbatch};
 use violetabftstore::store::fsm::ObserveID;
 use violetabftstore::store::util::compare_region_epoch;
 use violetabftstore::Error as violetabftStoreError;
 use resolved_ts::Resolver;
-use EinsteinDB::storage::txn::TxnEntry;
-use EinsteinDB_util::collections::HashMap;
-use EinsteinDB_util::mpsc::batch::Sender as BatchSender;
+use Einsteineinsteindb::storage::txn::TxnEntry;
+use Einsteineinsteindb_util::collections::HashMap;
+use Einsteineinsteindb_util::mpsc::batch::Sender as BatchSender;
 use txn_types::{Key, Lock, LockType, TimeStamp, WriteRef, WriteType};
 
 use crate::metrics::*;
@@ -423,8 +423,8 @@ impl Sentinel {
         Some(resolved_ts)
     }
 
-    pub fn on_batch(&mut self, batch: CmdBatch) -> Result<()> {
-        // Stale CmdBatch, drop it sliently.
+    pub fn on_batch(&mut self, batch: Cmeinsteindbatch) -> Result<()> {
+        // Stale Cmeinsteindbatch, drop it sliently.
         if batch.observe_id != self.id {
             return Ok(());
         }
@@ -752,8 +752,8 @@ mod tests {
     use ekvproto::errorpb::Error as ErrorHeader;
     use ekvproto::metapb::Region;
     use std::cell::Cell;
-    use EinsteinDB::storage::mvcc::test_util::*;
-    use EinsteinDB_util::mpsc::batch::{self, BatchReceiver, VecCollector};
+    use Einsteineinsteindb::storage::mvcc::test_util::*;
+    use Einsteineinsteindb_util::mpsc::batch::{self, BatchReceiver, VecCollector};
 
     #[test]
     fn test_error() {

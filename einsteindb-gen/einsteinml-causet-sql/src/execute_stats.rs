@@ -54,7 +54,7 @@ pub struct ExecSummaryCollectorEnabled {
 }
 
 impl ExecSummaryCollector for ExecSummaryCollectorEnabled {
-    type DurationRecorder = EinsteinDB_util::time::Instant;
+    type DurationRecorder = Einsteineinsteindb_util::time::Instant;
 
     #[inline]
     fn new(output_index: usize) -> ExecSummaryCollectorEnabled {
@@ -67,13 +67,13 @@ impl ExecSummaryCollector for ExecSummaryCollectorEnabled {
     #[inline]
     fn on_start_iterate(&mut self) -> Self::DurationRecorder {
         self.counts.num_iterations += 1;
-        EinsteinDB_util::time::Instant::now_coarse()
+        Einsteineinsteindb_util::time::Instant::now_coarse()
     }
 
     #[inline]
     fn on_finish_iterate(&mut self, dr: Self::DurationRecorder, rows: usize) {
         self.counts.num_produced_rows += rows;
-        let elapsed_time = EinsteinDB_util::time::duration_to_nanos(dr.elapsed()) as usize;
+        let elapsed_time = Einsteineinsteindb_util::time::duration_to_nanos(dr.elapsed()) as usize;
         self.counts.time_processed_ns += elapsed_time;
     }
 

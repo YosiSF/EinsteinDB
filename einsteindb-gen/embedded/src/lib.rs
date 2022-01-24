@@ -17,7 +17,7 @@ extern crate uuid;
 
 extern crate embedded_promises;
 
-extern crate edbn;
+extern crate eeinsteindbn;
 
 use embedded_promises::{
     Attr,
@@ -97,7 +97,7 @@ pub use relativity_sql_types::{
 //! );
 //! ```
 
-///Map `Keyword` solitonid(`:db/solitonid`) to positive integer causetids(`1`).
+///Map `Keyword` solitonid(`:einsteindb/solitonid`) to positive integer causetids(`1`).
 pub type SolitonidMap = BTreeMap<Keyword, Causetid>;
 
 ///Map positive integer causetids(`1`) to `Keyword` solitonids(`1`).
@@ -149,10 +149,10 @@ impl Schema {
         s
     }
 
-    pub fn to_edbn_value(&self) -> edbn::Value {
-        edbn::Value::Vector((&self.Attr_map).iter()
+    pub fn to_eeinsteindbn_value(&self) -> eeinsteindbn::Value {
+        eeinsteindbn::Value::Vector((&self.Attr_map).iter()
             .map(|(causetid, Attr)|
-                Attr.to_edbn_value(self.get_ident(*causetid).cloned()))
+                Attr.to_eeinsteindbn_value(self.get_ident(*causetid).cloned()))
             .collect())
     }
 
@@ -275,8 +275,8 @@ mod test {
 
     #[test]
     fn test_datetime_truncation() {
-        let dt: DateTime<Utc> = DateTime::from_str("2018-01-11T00:34:09.273457004Z").expect("parsed");
-        let expected: DateTime<Utc> = DateTime::from_str("2018-01-11T00:34:09.273457Z").expect("parsed");
+        let dt: DateTime<Utc> = DateTime::from_str("2022-01-11T00:34:09.273457004Z").expect("parsed");
+        let expected: DateTime<Utc> = DateTime::from_str("2022-01-11T00:34:09.273457Z").expect("parsed");
 
         let tv: TypedValue = dt.into();
         if let TypedValue::Instant(roundtripped) = tv {
@@ -287,7 +287,7 @@ mod test {
     }
 
     #[test]
-    fn test_as_edbn_value() {
+    fn test_as_eeinsteindbn_value() {
         let mut schema = Schema::default();
 
         let attr1 = Attr {
@@ -327,28 +327,28 @@ mod test {
         associate_ident(&mut schema, Keyword::namespaced("foo", "bat"), 99);
         add_Attr(&mut schema, 99, attr3);
 
-        let value = schema.to_edbn_value();
+        let value = schema.to_eeinsteindbn_value();
 
-        let expected_output = r#"[ {   :einsteindb/solitonid     :foo/bar
-    :einsteindb/valueType :einsteindb.type/ref
-    :einsteindb/cardinality :einsteindb.cardinality/one
-    :einsteindb/index true
-    :einsteindb/noHistory true },
-{   :einsteindb/solitonid     :foo/bas
-    :einsteindb/valueType :einsteindb.type/string
-    :einsteindb/cardinality :einsteindb.cardinality/many
-    :einsteindb/unique :einsteindb.unique/value
-    :einsteindb/fulltext true },
-{   :einsteindb/solitonid     :foo/bat
-    :einsteindb/valueType :einsteindb.type/boolean
-    :einsteindb/cardinality :einsteindb.cardinality/one
-    :einsteindb/unique :einsteindb.unique/identity
-    :einsteindb/isComponent true }, ]"#;
-        let expected_value = edbn::parse::value(&expected_output).expect("to be able to parse").without_spans();
+        let expected_output = r#"[ {   :einsteineinsteindb/solitonid     :foo/bar
+    :einsteineinsteindb/valueType :einsteineinsteindb.type/ref
+    :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one
+    :einsteineinsteindb/index true
+    :einsteineinsteindb/noHistory true },
+{   :einsteineinsteindb/solitonid     :foo/bas
+    :einsteineinsteindb/valueType :einsteineinsteindb.type/string
+    :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many
+    :einsteineinsteindb/unique :einsteineinsteindb.unique/value
+    :einsteineinsteindb/fulltext true },
+{   :einsteineinsteindb/solitonid     :foo/bat
+    :einsteineinsteindb/valueType :einsteineinsteindb.type/boolean
+    :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one
+    :einsteineinsteindb/unique :einsteineinsteindb.unique/identity
+    :einsteineinsteindb/isComponent true }, ]"#;
+        let expected_value = eeinsteindbn::parse::value(&expected_output).expect("to be able to parse").without_spans();
         assert_eq!(expected_value, value);
 
-        // let's compare the whole thing again, just to make sure we are not changing anything when we convert to edbn.
-        let value2 = schema.to_edbn_value();
+        // let's compare the whole thing again, just to make sure we are not changing anything when we convert to eeinsteindbn.
+        let value2 = schema.to_eeinsteindbn_value();
         assert_eq!(expected_value, value2);
     }
 }

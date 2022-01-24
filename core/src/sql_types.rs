@@ -31,7 +31,7 @@ pub enum SQLTypeAffinity {
     Blob,    // "blob"
 }
 
-// Put this here rather than in `db` simply because it's widely needed.
+// Put this here rather than in `einsteindb` simply because it's widely needed.
 pub trait SQLValueType {
     fn value_type_tag(&self) -> ValueTypeTag;
     fn accommodates_integer(&self, int: i64) -> bool;

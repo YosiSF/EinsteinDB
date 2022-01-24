@@ -1,4 +1,4 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::borrow::Cow;
 use std::io::Read;
@@ -7,9 +7,9 @@ use crate::ScalarFunc;
 use flate2::read::{ZlibDecoder, ZlibEncoder};
 use flate2::Compression;
 use openssl::hash::{self, MessageDigest};
-use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{Error, EvalContext, Result};
-use allegroeinstein-prolog-causet-projector::MilevaDB_query_shared_expr::rand::{gen_random_bytes, MAX_RAND_BYTES_LENGTH};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{Error, EvalContext, Result};
+use allegroeinstein-prolog-causet-projector::Milevaeinsteindb_query_shared_expr::rand::{gen_random_bytes, MAX_RAND_BYTES_LENGTH};
 
 const SHA0: i64 = 0;
 const SHA224: i64 = 224;
@@ -183,9 +183,9 @@ fn hex_digest(hashtype: MessageDigest, input: &[u8]) -> Result<Vec<u8>> {
 mod tests {
     use crate::tests::{check_overflow, datum_expr, eval_func, scalar_func_expr};
     use crate::Expression;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-    use einsteindbpb::ScalarFuncSig;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+    use einsteineinsteindbpb::ScalarFuncSig;
 
     #[test]
     fn test_md5() {
@@ -223,7 +223,7 @@ mod tests {
             ("a", "86f7e437faa5a7fce15d1ddcb9eaeaea377667b8"),
             ("ab", "da23614e02469a0d7c7bd1bdab5c9c474b1904dc"),
             ("abc", "a9993e364706816aba3e25717850c26c9cd0d89d"),
-            ("123", "40bd001563085fc35165329ea1ff5c5ecbdbbeef"),
+            ("123", "40bd001563085fc35165329ea1ff5c5ecbeinsteindbbeef"),
         ];
         let mut ctx = EvalContext::default();
 
@@ -251,13 +251,13 @@ mod tests {
             ("pingcap", 0, "2871823be240f8ecd1d72f24c99eaa2e58af18b4b8ba99a4fc2823ba5c43930a"),
             ("pingcap", 224, "cd036dc9bec69e758401379c522454ea24a6327b48724b449b40c6b7"),
             ("pingcap", 256, "2871823be240f8ecd1d72f24c99eaa2e58af18b4b8ba99a4fc2823ba5c43930a"),
-            ("pingcap", 384, "c50955b6b0c7b9919740d956849eedcb0f0f90bf8a34e8c1f4e071e3773f53bd6f8f16c04425ff728bed04de1b63db51"),
+            ("pingcap", 384, "c50955b6b0c7b9919740d956849eedcb0f0f90bf8a34e8c1f4e071e3773f53bd6f8f16c04425ff728bed04de1b63einsteindb51"),
             ("pingcap", 512, "ea903c574370774c4844a83b7122105a106e04211673810e1baae7c2ae7aba2brane07465e02f6c413126111ef74a417232683ce7ba210052e63c15fc82204aad80"),
-            ("13572468", 0, "1c91ab1c162fd0cae60a5bb9880f3e7d5a133a65b6057a644b26973d9c55dbranee"),
+            ("13572468", 0, "1c91ab1c162fd0cae60a5bb9880f3e7d5a133a65b6057a644b26973d9c55einsteindbranee"),
             ("13572468", 224, "8ad67735bbf49576219f364f4640d595357a440358d15bf6815a16e4"),
-            ("13572468", 256, "1c91ab1c162fd0cae60a5bb9880f3e7d5a133a65b6057a644b26973d9c55dbranee"),
+            ("13572468", 256, "1c91ab1c162fd0cae60a5bb9880f3e7d5a133a65b6057a644b26973d9c55einsteindbranee"),
             ("13572468.123", 384, "3b4ee302435dc1e15251efd9f3982b1ca6fe4ac778d3260b7bbf3bea613849677eda830239420e448e4c6dc7c2649d89"),
-            ("13572468.123", 512, "4820aa3f2760836557dc1f2d44a0ba7596333fdb60c8a1909481862f4ab0921c00abb23d57b7e67a970363cc3fcb78b25b6a0d45ccac0e87aa0c96bc51f7f96"),
+            ("13572468.123", 512, "4820aa3f2760836557dc1f2d44a0ba7596333feinsteindb60c8a1909481862f4ab0921c00abb23d57b7e67a970363cc3fcb78b25b6a0d45ccac0e87aa0c96bc51f7f96"),
         ];
 
         let mut ctx = EvalContext::default();
@@ -407,7 +407,7 @@ mod tests {
     #[test]
     fn test_password() {
         let cases = vec![
-            ("EinsteinDB", "*cca644408381f962dba8dfb9889db1371ee74208"),
+            ("Einsteineinsteindb", "*cca644408381f962einsteindba8dfb9889einsteindb1371ee74208"),
             ("Pingcap", "*f33bc75eac70ac317621fbbfa560d6251c43brane8a"),
             ("rust", "*090c2b08e0c1776910e777b917c2185be6554c2e"),
             ("database", "*02e86b4af5219d0ba6c974908aea62d42eb7da24"),

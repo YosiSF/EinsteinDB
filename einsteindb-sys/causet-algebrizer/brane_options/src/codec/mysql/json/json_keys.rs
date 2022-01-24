@@ -43,7 +43,7 @@ impl<'a> JsonRef<'a> {
     }
 }
 
-// See `GetKeys()` in MilevaDB `json/binary.go`
+// See `GetKeys()` in Milevaeinsteindb `json/binary.go`
 fn json_keys(j: &JsonRef<'_>) -> Result<Option<Json>> {
     Ok(if j.get_type() == JsonType::Object {
         let elem_count = j.get_elem_count();

@@ -1,6 +1,6 @@
 
 
-pub fn detect_transitive_closure(qp: &QueryPlan, db: &DBInstance) -> bool {
+pub fn detect_transitive_closure(qp: &QueryPlan, einsteindb: &einsteindbInstance) -> bool {
     //check encodings, check that base case is not annotated
     if qp.ghd.len() == 2 && qp.ghd.last().recursion.is_some() {
         let base_case = qp.ghd.first().clone();
@@ -21,7 +21,7 @@ pub fn detect_transitive_closure(qp: &QueryPlan, db: &DBInstance) -> bool {
     }
 
     //### crates a new query plan with the transitive closure added
-    pub fn add_transitive_closure(qp: &QueryPlan, db: &DBInstance) -> QueryPlan {
+    pub fn add_transitive_closure(qp: &QueryPlan, einsteindb: &einsteindbInstance) -> QueryPlan {
         let mut new_qp = qp.clone();
         let mut new_ghd = new_qp.ghd.clone();
         let mut new_nprr = new_ghd.last().nprr.clone();
@@ -66,9 +66,9 @@ let mut distinct_load_relations = HashMap::new();
 
     //spit out output for each query in global vars
     //find all distinct relations
-    let single_source_tc = detectTransitiveClosure(qp,db);
+    let single_source_tc = detectTransitiveClosure(qp,einsteindb);
     qp.relations.iter().for_each(|r| {
-        if db.relationMap.contains_key(r.name) {
+        if einsteindb.relationMap.contains_key(r.name) {
             let load_tc = !single_source_tc || (r.ordering == (0..r.ordering.len()).collect::<Vec<_>>());
             if load_tc && !distinctLoadRelations.contains_key(&format!("{}_{}", r.name, r.ordering.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("_"))) {
                 distinctLoadRelations.insert(format!("{}_{}",r.name,r.ordering.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("_")),r.clone());
@@ -106,9 +106,9 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
 
 //spit out output for each query in global vars
 //find all distinct relations
-        let single_source_tc = detectTransitiveClosure(qp,db);
+        let single_source_tc = detectTransitiveClosure(qp,einsteindb);
         qp.relations.iter().for_each(|r| {
-            if db.relationMap.contains_key(r.name) {
+            if einsteindb.relationMap.contains_key(r.name) {
                 let load_tc = !single_source_tc || (r.ordering == (0..r.ordering.len()).collect::<Vec<_>>());
                 if load_tc && !distinctLoadRelations.contains_key(&format!("{}_{}", r.name, r.ordering.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("_"))) {
                     distinctLoadRelations.insert(format!("{}_{}", r.name, r.ordering.iter().map(|x| x.to_string()).collect::<Vec<_>>().join("_")), r.clone());
@@ -135,7 +135,7 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
                 expression = qp.ghd.last.nprr.last.aggregation.get.expression;
 
                 val
-                encoding = db.relationMap(base_case.relations.head.name).schema.AttrTypes.distinct.head;
+                encoding = einsteindb.relationMap(base_case.relations.head.name).schema.AttrTypes.distinct.head;
                 val
                 recordering = (0
                 until
@@ -160,7 +160,7 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
                     let source = base_case.nprr.head.selection.head.expression;
                     let expression = qp.ghd.last.nprr.last.aggregation.get.expression;
 
-                    let encoding = db.relationMap(base_case.relations.head.name).schema.AttrTypes.distinct.head;
+                    let encoding = einsteindb.relationMap(base_case.relations.head.name).schema.AttrTypes.distinct.head;
                     let recordering = (0..qp.ghd.last.Attrs.values.len()).map(|_| "").collect::<String>();
 
                     cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList));

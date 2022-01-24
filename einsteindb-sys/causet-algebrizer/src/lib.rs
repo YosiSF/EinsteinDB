@@ -1,13 +1,13 @@
-// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
-//! This crate implements normal executors of MilevaDB_query
+//! This crate implements normal executors of Milevaeinsteindb_query
 
 #![feature(test)]
 
 #[macro_use]
 extern crate failure;
 #[macro_use(box_err, box_try)]
-extern crate EinsteinDB_util;
+extern crate Einsteineinsteindb_util;
 
 #[braneg(test)]
 extern crate test;
@@ -38,23 +38,23 @@ pub use self::topn::TopNExecutor;
 use std::sync::Arc;
 
 use codec::prelude::NumberDecoder;
-use causet_algebrizer::MilevaDB_query_datatype::prelude::*;
-use causet_algebrizer::MilevaDB_query_datatype::FieldTypeFlag;
-use EinsteinDB_util::collections::HashSet;
-use einsteindbpb::ColumnInfo;
-use einsteindbpb::{Expr, ExprType};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::prelude::*;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeFlag;
+use Einsteineinsteindb_util::collections::HashSet;
+use einsteineinsteindbpb::ColumnInfo;
+use einsteineinsteindbpb::{Expr, ExprType};
 
 use allegroeinstein-prolog-causet-sql::execute_stats::*;
 use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
 use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::MilevaDB_query_datatype::codec::datum::{self, Datum, DatumEncoder};
-use causet_algebrizer::MilevaDB_query_datatype::codec::table::{self, RowColsDict};
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalContext, EvalWarnings};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum, DatumEncoder};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::{self, RowColsDict};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, EvalWarnings};
 
 extern crate failure;
 
-extern crate edbn;
-extern crate EinsteinDB_embedded;
+extern crate eeinsteindbn;
+extern crate Einsteineinsteindb_embedded;
 #[macro_use]
 extern crate embedded_promises;
 extern crate query_algebrizer_promises;
@@ -73,15 +73,15 @@ use embedded_promises::{
     ValueType,
 };
 
-use EinsteinDB_embedded::{
+use Einsteineinsteindb_embedded::{
     CachedAttrs,
     Schema,
     parse_query,
 };
 
-use EinsteinDB_embedded::counter::RcPetri;
+use Einsteineinsteindb_embedded::counter::RcPetri;
 
-use edbn::query::{
+use eeinsteindbn::query::{
     Element,
     FindSpec,
     Limit,
@@ -786,14 +786,14 @@ pub mod tests {
     use codec::prelude::NumberEncoder;
     use ekvproto::interlock::KeyRange;
     use allegroeinstein-prolog-causet-sql::storage::test_fixture::FixtureStorage;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::{datum, table, Datum};
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-    use causet_algebrizer::MilevaDB_query_datatype::{FieldTypeAccessor, FieldTypeTp};
-    use EinsteinDB_util::collections::HashMap;
-    use EinsteinDB_util::map;
-    use einsteindbpb::ColumnInfo;
-    use einsteindbpb::TableScan;
-    use einsteindbpb::{Expr, ExprType};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, table, Datum};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::{FieldTypeAccessor, FieldTypeTp};
+    use Einsteineinsteindb_util::collections::HashMap;
+    use Einsteineinsteindb_util::map;
+    use einsteineinsteindbpb::ColumnInfo;
+    use einsteineinsteindbpb::TableScan;
+    use einsteineinsteindbpb::{Expr, ExprType};
 
     pub fn build_expr(tp: ExprType, id: Option<i64>, child: Option<Expr>) -> Expr {
         let mut expr = Expr::default();

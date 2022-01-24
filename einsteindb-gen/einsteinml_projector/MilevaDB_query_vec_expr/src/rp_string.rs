@@ -1,4 +1,4 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::borrow::Cow;
 use std::cmp::Ordering;
@@ -8,17 +8,17 @@ use std::iter;
 
 use hex::{self, FromHex};
 
-use causet_algebrizer::MilevaDB_query_datatype::prelude::*;
-use allegroeinstein-prolog-causet-projector::MilevaDB_query_shared_expr::conv::i64_to_usize;
-use allegroeinstein-prolog-causet-projector::MilevaDB_query_shared_expr::string::{
+use causet_algebrizer::Milevaeinsteindb_query_datatype::prelude::*;
+use allegroeinstein-prolog-causet-projector::Milevaeinsteindb_query_shared_expr::conv::i64_to_usize;
+use allegroeinstein-prolog-causet-projector::Milevaeinsteindb_query_shared_expr::string::{
     encoded_size, line_wrap, strip_whitespace, trim, validate_target_len_for_pad, TrimDirection,
     BASE64_ENCODED_CHUNK_LENGTH, BASE64_INPUT_CHUNK_LENGTH,
 };
-use EinsteinDB_util::try_opt_or;
+use Einsteineinsteindb_util::try_opt_or;
 
 use crate::ScalarFunc;
-use causet_algebrizer::MilevaDB_query_datatype::codec::{datum, Datum};
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalContext, Result};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, Datum};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, Result};
 
 const SPACE: u8 = 0o40u8;
 
@@ -499,7 +499,7 @@ impl ScalarFunc {
         let s = try_opt!(self.children[0].eval_string(ctx, row));
 
         if self.field_type.get_flen() == -1
-            || self.field_type.get_flen() > causet_algebrizer::MilevaDB_query_datatype::MAX_BLOB_WIDTH
+            || self.field_type.get_flen() > causet_algebrizer::Milevaeinsteindb_query_datatype::MAX_BLOB_WIDTH
         {
             return Ok(Some(Cow::Borrowed(b"")));
         }
@@ -723,7 +723,7 @@ impl ScalarFunc {
             len as usize
         };
 
-        if len > causet_algebrizer::MilevaDB_query_datatype::MAX_BLOB_WIDTH as usize {
+        if len > causet_algebrizer::Milevaeinsteindb_query_datatype::MAX_BLOB_WIDTH as usize {
             return Ok(None);
         }
 
@@ -1090,23 +1090,23 @@ fn substring_index_negative(s: &str, delim: &str, count: usize) -> String {
 mod tests {
     use super::{encoded_size, TrimDirection};
     use std::{f64, i64, str};
-    use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::charset::CHARSET_BIN;
-    use causet_algebrizer::MilevaDB_query_datatype::{Collation, FieldTypeFlag, FieldTypeTp, MAX_BLOB_WIDTH};
-    use einsteindbpb::{Expr, ScalarFuncSig};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::charset::CHARSET_BIN;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::{Collation, FieldTypeFlag, FieldTypeTp, MAX_BLOB_WIDTH};
+    use einsteineinsteindbpb::{Expr, ScalarFuncSig};
 
     use crate::tests::{
         col_expr, datum_expr, eval_func, scalar_func_expr, string_datum_expr_with_tp,
     };
     use crate::Expression;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
 
     #[test]
     fn test_length() {
         let cases = vec![
             ("", 0i64),
             ("你好", 6i64),
-            ("EinsteinDB", 4i64),
+            ("Einsteineinsteindb", 4i64),
             ("あなたのことが好きです", 33i64),
             ("분산 데이터베이스", 25i64),
             ("россия в мире  кубок", 38i64),
@@ -1316,7 +1316,7 @@ mod tests {
         let cases = vec![
             ("", 0i64),
             ("你好", 48i64),
-            ("EinsteinDB", 32i64),
+            ("Einsteineinsteindb", 32i64),
             ("あなたのことが好きです", 264i64),
             ("분산 데이터베이스", 200i64),
             ("россия в мире  кубок", 304i64),

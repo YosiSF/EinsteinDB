@@ -1,5 +1,5 @@
 [package]
-name = "einstai_einsteindb"
+name = "einstai_einsteineinsteindb"
 version = "0.0.1"
 workspace = ".."
 
@@ -28,14 +28,14 @@ features = ["limits"]
 [dependencies.einsteinml]
 path = "../einsteinml"
 
-[dependencies.einsteindb_core]
+[dependencies.einsteineinsteindb_core]
 path = "../core"
 
 [dependencies.core_traits]
 path = "../core-traits"
 
-[dependencies.einsteindb_traits]
-path = "../einsteindb-traits"
+[dependencies.einsteineinsteindb_traits]
+path = "../einsteineinsteindb-traits"
 
 [dependencies.einstai_sql]
 path = "../sql"

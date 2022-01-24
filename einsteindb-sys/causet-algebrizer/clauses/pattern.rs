@@ -15,12 +15,12 @@ use embedded_promises::{
     ValueTypeSet,
 };
 
-use einsteindb_embedded::{
+use einsteineinsteindb_embedded::{
     Cloned,
     HasSchema,
 };
 
-use edbn::query::{
+use eeinsteindbn::query::{
     NonIntegerConstant,
     Pattern,
     PatternValuePlace,
@@ -73,7 +73,7 @@ impl ConjoiningClauses {
     /// have branched clauses that apply to different knowledge bases, and might refer to
     /// vocabulary that isn't (yet) used in this one.
     ///
-    /// Most of the work done by this function depends on the schema and solitonid maps in the EINSTEINDB. If
+    /// Most of the work done by this function depends on the schema and solitonid maps in the EINSTEINeinsteindb. If
     /// these change, then any work done is invalid.
     ///
     /// There's a lot more we can do here and later by examining the
@@ -238,7 +238,7 @@ impl ConjoiningClauses {
                 let typed_value_type = typed_value.value_type();
                 self.constrain_column_to_constant(col.clone(), causetsColumn::Value, typed_value);
 
-                // If we can't already determine the range of values in the EINSTEINDB from the Attr,
+                // If we can't already determine the range of values in the EINSTEINeinsteindb from the Attr,
                 // then we must also constrain the type tag.
                 //
                 // Input values might be:
@@ -440,7 +440,7 @@ impl ConjoiningClauses {
                         }
                     },
                     Some(v) => {
-                        Empty(EmptyBecause::InvalidBinding(col.into(), v))
+                        Empty(EmptyBecause::Invalieinsteindbinding(col.into(), v))
                     },
                 }
             },
@@ -664,11 +664,11 @@ mod testing {
         Attr,
         ValueTypeSet,
     };
-    use EinsteinDB_embedded::{
+    use Einsteineinsteindb_embedded::{
         Schema,
     };
 
-    use edbn::query::{
+    use eeinsteindbn::query::{
         Keyword,
         Variable,
     };
@@ -893,7 +893,7 @@ mod testing {
         });
 
         assert!(cc.is_known_empty());
-        assert_eq!(cc.empty_because.unwrap(), EmptyBecause::InvalidBinding(Column::Fixed(causetsColumn::Attr), hello));
+        assert_eq!(cc.empty_because.unwrap(), EmptyBecause::Invalieinsteindbinding(Column::Fixed(causetsColumn::Attr), hello));
     }
 
 

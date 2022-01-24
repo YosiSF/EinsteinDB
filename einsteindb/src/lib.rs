@@ -23,8 +23,8 @@ extern crate tabwriter;
 extern crate time;
 
 #[macro_use] extern crate einsteinml;
-#[macro_use] extern crate einsteindb_core;
-extern crate einsteindb_traits;
+#[macro_use] extern crate einsteineinsteindb_core;
+extern crate einsteineinsteindb_traits;
 #[macro_use] extern crate core_traits;
 extern crate einstai_sql;
 
@@ -32,8 +32,8 @@ use std::iter::repeat;
 
 use itertools::Itertools;
 
-use einsteindb_traits::errors::{
-    DbErrorKind,
+use einsteineinsteindb_traits::errors::{
+    einsteindbErrorKind,
     Result,
 };
 
@@ -41,7 +41,7 @@ use einsteindb_traits::errors::{
 
 mod add_retract_alter_set;
 pub mod cache;
-pub mod einsteindb;
+pub mod einsteineinsteindb;
 mod bootstrap;
 pub mod causetids;
 pub mod internal_types;    // pub because we need them for building causets programmatically.
@@ -76,16 +76,16 @@ pub use bootstrap::{
 use einsteinml::symbols;
 
 pub use causetids::{
-    DB_SCHEMA_CORE,
+    einsteindb_SCHEMA_CORE,
 };
 
-pub use einsteindb::{
+pub use einsteineinsteindb::{
     TypedSQLValue,
     new_connection,
 };
 
 #[cfg(feature = "sqlcipher")]
-pub use einsteindb::{
+pub use einsteineinsteindb::{
     new_connection_with_key,
     change_encryption_key,
 };
@@ -107,7 +107,7 @@ pub use tx_observer::{
 
 pub use types::{
     AttributeSet,
-    DB,
+    einsteindb,
     Partition,
     PartitionMap,
     TransactableValue,
@@ -121,7 +121,7 @@ pub fn to_namespaced_keyword(s: &str) -> Result<symbols::Keyword> {
         _ => None,
     };
 
-    nsk.ok_or(DbErrorKind::NotYetImplemented(format!("InvalidKeyword: {}", s)).into())
+    nsk.ok_or(einsteindbErrorKind::NotYetImplemented(format!("InvalidKeyword: {}", s)).into())
 }
 
 /// Prepare an SQL `VALUES` block, like (?, ?, ?), (?, ?, ?).
@@ -131,7 +131,7 @@ pub fn to_namespaced_keyword(s: &str) -> Result<symbols::Keyword> {
 /// # Examples
 ///
 /// ```rust
-/// # use einstai_einsteindb::{repeat_values};
+/// # use einstai_einsteineinsteindb::{repeat_values};
 /// assert_eq!(repeat_values(1, 3), "(?), (?), (?)".to_string());
 /// assert_eq!(repeat_values(3, 1), "(?, ?, ?)".to_string());
 /// assert_eq!(repeat_values(2, 2), "(?, ?), (?, ?)".to_string());

@@ -14,13 +14,13 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteindb_embedded::{
+use einsteineinsteindb_embedded::{
     HasSchema,
     Schema,
     SQLValueType,
 };
 
-use edbn::query::{
+use eeinsteindbn::query::{
     FnArg,
     NonIntegerConstant,
     Variable,

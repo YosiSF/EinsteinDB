@@ -4,7 +4,7 @@ use std::iter::{
     once,
 };
 
-use EinsteinDB_query_pull::{
+use Einsteineinsteindb_query_pull::{
     Puller,
 };
 

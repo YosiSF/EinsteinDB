@@ -10,8 +10,8 @@
 
 extern crate failure;
 
-extern crate edbn;
-extern crate einsteindb_embedded;
+extern crate eeinsteindbn;
+extern crate einsteineinsteindb_embedded;
 #[macro_use]
 extern crate embdedded_promises;
 extern crate causet_algebrizer_promises;

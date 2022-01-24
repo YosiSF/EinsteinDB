@@ -8,14 +8,14 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use MilevaDB_query_codegen::AggrFunction;
+use Milevaeinsteindb_query_codegen::AggrFunction;
 use fidelpb::{Expr, ExprType, FieldType};
 
 use super::*;
 use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::MilevaDB_query_datatype::codec::data_type::*;
-use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-use MilevaDB_query_vec_expr::{RpnExpression, RpnExpressionBuilder};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::data_type::*;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+use Milevaeinsteindb_query_vec_expr::{RpnExpression, RpnExpressionBuilder};
 
 /// A trait for all bit operations
 pub trait BitOp: Clone + std::fmt::Debug + Send + Sync + 'static {
@@ -30,7 +30,7 @@ pub trait BitOp: Clone + std::fmt::Debug + Send + Sync + 'static {
 }
 
 macro_rules! bit_op {
-    ($name:ident, $tp:path, $init:tt, $op:tt) => {
+    ($name:solitonid, $tp:path, $init:tt, $op:tt) => {
         #[derive(Debug, Clone, Copy)]
         pub struct $name;
         impl BitOp for $name {
@@ -145,12 +145,12 @@ mod tests {
     use super::super::AggrFunction;
     use super::*;
 
-    use causet_algebrizer::MilevaDB_query_datatype::FieldTypeTp;
-    use causet_algebrizer::MilevaDB_query_datatype::{EvalType, FieldTypeAccessor};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::{EvalType, FieldTypeAccessor};
     use fidelpb_helper::ExprDefBuilder;
 
     use crate::parser::AggrDefinitionParser;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
 
     #[test]
     fn test_bit_and() {

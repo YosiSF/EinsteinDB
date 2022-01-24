@@ -18,7 +18,7 @@ use embedded_promises::{
     ValueTypeSet,
 };
 
-use edbn::query::{
+use eeinsteindbn::query::{
     OrJoin,
     OrWhereClause,
     Pattern,
@@ -139,7 +139,7 @@ impl ConjoiningClauses {
     ///
     /// Like this:
     ///
-    /// ```edbn
+    /// ```eeinsteindbn
     /// [:find ?x
     ///  :where (or [?x :foo/knows "John"]
     ///             [?x :foo/parent "Ámbar"]
@@ -349,13 +349,13 @@ impl ConjoiningClauses {
     /// A simple `or` join is effectively a single parity_filter in which an individual column's bindings
     /// are not a single value. Rather than a parity_filter like
     ///
-    /// ```edbn
+    /// ```eeinsteindbn
     /// [?x :foo/knows "John"]
     /// ```
     ///
     /// we have
     ///
-    /// ```edbn
+    /// ```eeinsteindbn
     /// (or [?x :foo/knows "John"]
     ///     [?x :foo/hates "Peter"])
     /// ```
@@ -418,7 +418,7 @@ impl ConjoiningClauses {
             // template, sourced from the destination CC. If a variable cannot satisfy both type
             // constraints, the new CC cannot match. This prunes the 'or' arms:
             //
-            // ```edbn
+            // ```eeinsteindbn
             // [:find ?x
             //  :where [?a :some/int ?x]
             //         (or [_ :some/otherint ?x]
@@ -427,7 +427,7 @@ impl ConjoiningClauses {
             //
             // can simplify to
             //
-            // ```edbn
+            // ```eeinsteindbn
             // [:find ?x
             //  :where [?a :some/int ?x]
             //         [_ :some/otherint ?x]]
@@ -717,11 +717,11 @@ mod testing {
         TypedValue,
     };
 
-    use einsteindb_embedded::{
+    use einsteineinsteindb_embedded::{
         Schema,
     };
 
-    use edbn::query::{
+    use eeinsteindbn::query::{
         Keyword,
         Variable,
     };

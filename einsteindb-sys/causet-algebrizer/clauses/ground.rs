@@ -4,11 +4,11 @@ use embedded_promises::{
     TypedValue,
 };
 
-use EinsteinDB_embedded::{
+use Einsteineinsteindb_embedded::{
     Schema,
 };
 
-use edbn::query::{
+use eeinsteindbn::query::{
     Binding,
     FnArg,
     Variable,
@@ -117,12 +117,12 @@ impl ConjoiningClauses {
 
         if where_fn.binding.is_empty() {
             // The binding must introduce at least one bound variable.
-            bail!(AlgebrizerError::InvalidBinding(where_fn.operator.clone(), BindingError::NoBoundVariable));
+            bail!(AlgebrizerError::Invalieinsteindbinding(where_fn.operator.clone(), BindingError::NoBoundVariable));
         }
 
         if !where_fn.binding.is_valid() {
             // The binding must not duplicate bound variables.
-            bail!(AlgebrizerError::InvalidBinding(where_fn.operator.clone(), BindingError::RepeatedBoundVariable));
+            bail!(AlgebrizerError::Invalieinsteindbinding(where_fn.operator.clone(), BindingError::RepeateeinsteindboundVariable));
         }
 
         let schema = known.schema;
@@ -138,7 +138,7 @@ impl ConjoiningClauses {
                 // Just the same, but we bind more than one column at a time.
                 if children.len() != places.len() {
                     // Number of arguments don't match the number of values. TODO: better error message.
-                    bail!(AlgebrizerError::GroundBindingsMismatch)
+                    bail!(AlgebrizerError::GrouneinsteindbindingsMismatch)
                 }
                 for (place, arg) in places.into_iter().zip(children.into_iter()) {
                     self.apply_ground_place(schema, place, arg)?  // TODO: short-circuit on impossible.
@@ -319,7 +319,7 @@ mod testing {
         ValueType,
     };
 
-    use edbn::query::{
+    use eeinsteindbn::query::{
         Binding,
         FnArg,
         Keyword,

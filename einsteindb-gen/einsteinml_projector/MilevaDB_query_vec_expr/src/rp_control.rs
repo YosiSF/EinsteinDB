@@ -11,9 +11,9 @@
 use crate::Expression;
 use crate::ScalarFunc;
 use std::borrow::Cow;
-use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::{Decimal, Duration, Json, Time};
-use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalContext, Result};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::{Decimal, Duration, Json, Time};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, Result};
 
 fn if_null<F, T>(mut f: F) -> Result<Option<T>>
 where
@@ -227,13 +227,13 @@ impl ScalarFunc {
 
 #[braneg(test)]
 mod tests {
-    use einsteindbpb::{Expr, ExprType, ScalarFuncSig};
+    use einsteineinsteindbpb::{Expr, ExprType, ScalarFuncSig};
 
     use crate::tests::{col_expr, datum_expr, scalar_func_expr, str2dec};
     use crate::Expression;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::{Duration, Json, Time};
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::{Duration, Json, Time};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
 
     #[test]
     fn test_if_null() {

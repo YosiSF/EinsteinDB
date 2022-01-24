@@ -5,26 +5,26 @@ authors = [
     "'The lone gunman' <whtcorpsinc> <whtcorpsarpanet@gmail.com>"
 ]
 
-name = "einsteindb"
+name = "einsteineinsteindb"
 license = "Apache-2.0"
 keywords = ["embedded", "distributed-systems", "BFTRaft" ]
 version = "0.0.1"
 build = "build/version.rs"
-edition = "2018"
+edition = "2022"
 publish = "false"
 
 [features]
 default = ["bundled_sqlite3", "syncable"]
 bundled_sqlite3 = ["rusqlite/bundled"]
-sqlcipher = ["rusqlite/sqlcipher", "mentat_db/sqlcipher"]
-syncable = ["einsteindb_lenin", "lenin_traits", "einsteindb_db/syncable"]
+sqlcipher = ["rusqlite/sqlcipher", "einsteindb_einsteindb/sqlcipher"]
+syncable = ["einsteineinsteindb_lenin", "lenin_traits", "einsteineinsteindb_einsteindb/syncable"]
 
 
 [workspace]
-members = ["cmd", "ffi", "tools/cli", "einsteindb-gen", "einsteindb-sys", "einsteindb"]
+members = ["cmd", "ffi", "tools/cli", "einsteineinsteindb-gen", "einsteineinsteindb-sys", "einsteineinsteindb"]
 
 [lib]
-name = "einsteindb"
+name = "einsteineinsteindb"
 
 [build-dependencies]
 rustc_version = "0.4.0"
@@ -54,19 +54,19 @@ unicode_reader = "1.0.2"
 num-traits = "0.2"
 byteorder = "1"
 crunchy = "0.2.2"
-default = ["test-foundation-db", "cloud-aws", "cloud-gcp"]
+default = ["test-foundation-einsteindb", "cloud-aws", "cloud-gcp"]
 tcmalloc = ["memcam/tcmalloc"]
-jemalloc = ["memcam/jemalloc", "foundation_db/jemalloc"]
+jemalloc = ["memcam/jemalloc", "foundation_einsteindb/jemalloc"]
 mimalloc = ["memcam/mimalloc"]
 snmalloc = ["memcam/snmalloc"]
-portable = ["foundation_db/portable"]
-sse = ["foundation_db/sse"]
+portable = ["foundation_einsteindb/portable"]
+sse = ["foundation_einsteindb/sse"]
 mem-profiling = ["memcam/mem-profiling"]
 failpoints = [
     "fail/failpoints",
     "raftstore/failpoints",
-    "einsteindb_util/failpoints",
-    "foundation_db/failpoints"
+    "einsteineinsteindb_util/failpoints",
+    "foundation_einsteindb/failpoints"
 ]
 cloud-aws = [
     "encryption_export/cloud-aws",
@@ -77,8 +77,8 @@ cloud-gcp = [
     "sst_importer/cloud-gcp",
 ]
 testexport = ["raftstore/testexport"]
-test-engines-foundationdb = [
-    "engine_test/test-engines-foundationdb",
+test-engines-foundationeinsteindb = [
+    "engine_test/test-engines-foundationeinsteindb",
 ]
 test-engines-panic = [
     "engine_test/test-engines-panic",
@@ -145,8 +145,8 @@ failure = "0.1.1"
 version = "0.13"
 features = ["limits"]
 
-[dependencies.edb]
-path = "edb"
+[dependencies.eeinsteindb]
+path = "eeinsteindb"
 
 [dependencies.embedded_promises]
 path = "embedded-promises"

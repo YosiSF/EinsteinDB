@@ -11,9 +11,9 @@
 use std::borrow::Cow;
 
 use crate::Constant;
-use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::{Decimal, Duration, Json, Time};
-use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::Result;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::{Decimal, Duration, Json, Time};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::Result;
 
 
 use std::rc::Rc;
@@ -108,9 +108,9 @@ mod tests {
     use crate::tests::datum_expr;
     use crate::Expression;
     use std::u64;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::mysql::{Decimal, Duration, Json, Time};
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::{Decimal, Duration, Json, Time};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
 
     #[derive(PartialEq, Debug)]
     struct EvalResults(

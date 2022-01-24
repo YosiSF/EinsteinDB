@@ -1,4 +1,4 @@
-// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::borrow::Cow;
 use std::fmt::Display;
@@ -7,7 +7,7 @@ use std::{self, char, i16, i32, i64, i8, str, u16, u32, u64, u8};
 // use crate::{self, FieldTypeTp, UNSPECIFIED_LENGTH};
 use crate::{Collation, FieldTypeAccessor};
 use crate::{FieldTypeTp, UNSPECIFIED_LENGTH};
-use einsteindbpb::FieldType;
+use einsteineinsteindbpb::FieldType;
 
 use super::mysql::{RoundMode, DEFAULT_FSP};
 use super::{Error, Result};
@@ -81,7 +81,7 @@ where
 {
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<String> {
-        // FIXME: There is an additional step `ProduceStrWithSpecifiedTp` in MilevaDB.
+        // FIXME: There is an additional step `ProduceStrWithSpecifiedTp` in Milevaeinsteindb.
         Ok(self.to_string())
     }
 }
@@ -108,7 +108,7 @@ impl<'a> ConvertTo<Real> for JsonRef<'a> {
 impl<'a> ConvertTo<String> for JsonRef<'a> {
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<String> {
-        // FIXME: There is an additional step `ProduceStrWithSpecifiedTp` in MilevaDB.
+        // FIXME: There is an additional step `ProduceStrWithSpecifiedTp` in Milevaeinsteindb.
         Ok(self.to_string())
     }
 }
@@ -183,7 +183,7 @@ pub fn truncate_binary(s: &mut Vec<u8>, flen: isize) {
     }
 }
 
-/// `truncate_f64` (`TruncateFloat` in MilevaDB) tries to truncate f.
+/// `truncate_f64` (`TruncateFloat` in Milevaeinsteindb) tries to truncate f.
 /// If the result exceeds the max/min float that flen/decimal
 /// allowed, returns the max/min float allowed.
 pub fn truncate_f64(mut f: f64, flen: u8, decimal: u8) -> Res<f64> {
@@ -271,7 +271,7 @@ impl ToInt for u64 {
 }
 
 impl ToInt for f64 {
-    /// This function is ported from MilevaDB's types.ConvertFloatToInt,
+    /// This function is ported from Milevaeinsteindb's types.ConvertFloatToInt,
     /// which checks whether the number overflows the signed lower and upper boundaries of `tp`
     ///
     /// # Notes
@@ -288,7 +288,7 @@ impl ToInt for f64 {
 
         let upper_bound = integer_signed_upper_bound(tp);
         let ub_f64 = upper_bound as f64;
-        // according to https://github.com/pingcap/MilevaDB/pull/5247
+        // according to https://github.com/pingcap/Milevaeinsteindb/pull/5247
         if val >= ub_f64 {
             if val == ub_f64 {
                 return Ok(upper_bound);
@@ -300,7 +300,7 @@ impl ToInt for f64 {
         Ok(val as i64)
     }
 
-    /// This function is ported from MilevaDB's types.ConvertFloatToUint,
+    /// This function is ported from Milevaeinsteindb's types.ConvertFloatToUint,
     /// which checks whether the number overflows the unsigned upper boundaries of `tp`
     ///
     /// # Notes
@@ -347,7 +347,7 @@ impl ToInt for Real {
 }
 
 impl ToInt for &[u8] {
-    /// Port from MilevaDB's types.StrToInt
+    /// Port from Milevaeinsteindb's types.StrToInt
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64> {
         let s = get_valid_utf8_prefix(ctx, self)?;
         let s = s.trim();
@@ -357,9 +357,9 @@ impl ToInt for &[u8] {
             Ok(val) => val.to_int(ctx, tp),
             Err(_) => {
                 ctx.handle_overflow_err(Error::overflow("BIGINT", &vs))?;
-                // To make compatible with MilevaDB,
+                // To make compatible with Milevaeinsteindb,
                 // return signed upper bound or lower bound when overflow.
-                // see MilevaDB's `types.StrToInt` and [strconv.ParseInt](https://golang.org/pkg/strconv/#ParseInt)
+                // see Milevaeinsteindb's `types.StrToInt` and [strconv.ParseInt](https://golang.org/pkg/strconv/#ParseInt)
                 let val = if vs.starts_with('-') {
                     integer_signed_lower_bound(tp)
                 } else {
@@ -370,12 +370,12 @@ impl ToInt for &[u8] {
         }
     }
 
-    /// Port from MilevaDB's types.StrToUint
+    /// Port from Milevaeinsteindb's types.StrToUint
     fn to_uint(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<u64> {
         let s = get_valid_utf8_prefix(ctx, self)?;
         let s = s.trim();
         let s = get_valid_int_prefix(ctx, s)?;
-        // in MilevaDB, it use strconv.ParseUint here,
+        // in Milevaeinsteindb, it use strconv.ParseUint here,
         // strconv.ParseUint will return 0 and a err if the str is neg
         if s.starts_with('-') {
             ctx.handle_overflow_err(Error::overflow("BIGINT UNSIGNED", s))?;
@@ -386,9 +386,9 @@ impl ToInt for &[u8] {
             Ok(val) => val.to_uint(ctx, tp),
             Err(_) => {
                 ctx.handle_overflow_err(Error::overflow("BIGINT UNSIGNED", s))?;
-                // To make compatible with MilevaDB,
+                // To make compatible with Milevaeinsteindb,
                 // return `integer_unsigned_upper_bound(tp);` when overflow.
-                // see MilevaDB's `types.StrToUint` and [strconv.ParseUint](https://golang.org/pkg/strconv/#ParseUint)
+                // see Milevaeinsteindb's `types.StrToUint` and [strconv.ParseUint](https://golang.org/pkg/strconv/#ParseUint)
                 let val = integer_unsigned_upper_bound(tp);
                 Ok(val)
             }
@@ -487,13 +487,13 @@ impl ToInt for Json {
 }
 
 impl<'a> ToInt for JsonRef<'a> {
-    // Port from MilevaDB's types.ConvertJSONToInt
+    // Port from Milevaeinsteindb's types.ConvertJSONToInt
     #[inline]
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64> {
-        // Casts json to int has different behavior in MilevaDB/MySQL when the json
-        // value is a `Json::from_f64` and we will keep compatible with MilevaDB
+        // Casts json to int has different behavior in Milevaeinsteindb/MySQL when the json
+        // value is a `Json::from_f64` and we will keep compatible with Milevaeinsteindb
         // **Note**: select cast(cast('4.5' as json) as signed)
-        // MilevaDB:  5
+        // Milevaeinsteindb:  5
         // MySQL: 4
         let val = match self.get_type() {
             JsonType::Object | JsonType::Array => Ok(0),
@@ -506,7 +506,7 @@ impl<'a> ToInt for JsonRef<'a> {
         val.to_int(ctx, tp)
     }
 
-    // Port from MilevaDB's types.ConvertJSONToInt
+    // Port from Milevaeinsteindb's types.ConvertJSONToInt
     #[inline]
     fn to_uint(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<u64> {
         let val = match self.get_type() {
@@ -638,7 +638,7 @@ pub fn produce_dec_with_specified_tp(
                 {
                     ctx.warnings.append_warning(Error::truncated());
                 } else {
-                    // although according to MilevaDB,
+                    // although according to Milevaeinsteindb,
                     // we should handler overflow after handle_truncate,
                     // however, no overflow err will return by handle_truncate
                     ctx.handle_truncate(true)?;
@@ -654,9 +654,9 @@ pub fn produce_dec_with_specified_tp(
     }
 }
 
-/// `produce_float_with_specified_tp`(`ProduceFloatWithSpecifiedTp` in MilevaDB) produces
+/// `produce_float_with_specified_tp`(`ProduceFloatWithSpecifiedTp` in Milevaeinsteindb) produces
 /// a new float64 according to `flen` and `decimal` in `self.tp`.
-/// TODO port tests from MilevaDB(MilevaDB haven't implemented now)
+/// TODO port tests from Milevaeinsteindb(Milevaeinsteindb haven't implemented now)
 pub fn produce_float_with_specified_tp(
     ctx: &mut EvalContext,
     tp: &FieldType,
@@ -682,7 +682,7 @@ pub fn produce_float_with_specified_tp(
     Ok(res)
 }
 
-/// `produce_str_with_specified_tp`(`ProduceStrWithSpecifiedTp` in MilevaDB) produces
+/// `produce_str_with_specified_tp`(`ProduceStrWithSpecifiedTp` in Milevaeinsteindb) produces
 /// a new string according to `flen` and `chs`.
 ///
 /// # Panics
@@ -703,7 +703,7 @@ pub fn produce_str_with_specified_tp<'a>(
     // char count and truncate to flen chars if it is too long.
     if chs == charset::CHARSET_UTF8 || chs == charset::CHARSET_UTF8MB4 {
         let truncate_info = {
-            // In MilevaDB's version, the param `s` is a string,
+            // In Milevaeinsteindb's version, the param `s` is a string,
             // so we can unwrap directly here because we need the `s` represent a valid str
             let s: &str = std::str::from_utf8(s.as_ref()).unwrap();
             let mut indices = s.char_indices().skip(flen);
@@ -760,7 +760,7 @@ pub fn pad_zero_for_binary_type(s: &mut Vec<u8>, ft: &FieldType) {
             .unwrap_or(false)
         && s.len() < flen
     {
-        // it seems MaxAllowedPacket has not push down to EinsteinDB, so we needn't to handle it
+        // it seems MaxAllowedPacket has not push down to Einsteineinsteindb, so we needn't to handle it
         s.resize(flen, 0);
     }
 }
@@ -785,7 +785,7 @@ impl ConvertTo<f64> for &[u8] {
     /// it will handle truncated using ctx,
     /// and return f64::MIN or f64::MAX according to whether isNeg of the str
     ///
-    /// Port from MilevaDB's types.StrToFloat
+    /// Port from Milevaeinsteindb's types.StrToFloat
     fn convert(&self, ctx: &mut EvalContext) -> Result<f64> {
         let s = str::from_utf8(self)?.trim();
         let vs = get_valid_float_prefix(ctx, s)?;
@@ -941,8 +941,8 @@ fn float_str_to_int_string<'a>(
     ctx: &mut EvalContext,
     valid_float: &'a str,
 ) -> Result<Cow<'a, str>> {
-    // this func is complex, to make it same as MilevaDB's version,
-    // we impl it like MilevaDB's version(https://github.com/pingcap/MilevaDB/blob/9b521342bf/types/convert.go#L400)
+    // this func is complex, to make it same as Milevaeinsteindb's version,
+    // we impl it like Milevaeinsteindb's version(https://github.com/pingcap/Milevaeinsteindb/blob/9b521342bf/types/convert.go#L400)
     let mut dot_idx = None;
     let mut e_idx = None;
 
@@ -1051,7 +1051,7 @@ fn exp_float_str_to_int_str<'a>(
 }
 
 fn no_exp_float_str_to_int_str(valid_float: &str, mut dot_idx: usize) -> Result<Cow<'_, str>> {
-    // According to MilevaDB's impl
+    // According to Milevaeinsteindb's impl
     // 1. If there is digit after dot, round.
     // 2. Only when the final result <0, add '-' in the front of it.
     // 3. The result has no '+'.
@@ -1084,7 +1084,7 @@ fn no_exp_float_str_to_int_str(valid_float: &str, mut dot_idx: usize) -> Result<
     } else {
         Cow::Borrowed(int_str)
     };
-    // in the MilevaDB version, after round, except '0',
+    // in the Milevaeinsteindb version, after round, except '0',
     // others(even if `00`) will be prefix with `-` if valid_float[0]=='-'.
     // so we need to remove `-` of `-0`.
     let res_bytes = res.as_bytes();
@@ -2047,7 +2047,7 @@ mod tests {
         let mut s3 = s;
         truncate_binary(&mut s3, 0);
         assert!(s3.is_empty());
-        // TODO port tests from MilevaDB(MilevaDB haven't implemented now)
+        // TODO port tests from Milevaeinsteindb(Milevaeinsteindb haven't implemented now)
     }
 
     #[test]

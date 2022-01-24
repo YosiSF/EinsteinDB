@@ -13,11 +13,11 @@ use core_promises::{
     ValueTypeSet,
 };
 
-use einsteindb_embedded::{
+use einsteineinsteindb_embedded::{
     Schema,
 };
 
-use edbn::query::{
+use eeinsteindbn::query::{
     FnArg,
     PlainSymbol,
     Predicate,

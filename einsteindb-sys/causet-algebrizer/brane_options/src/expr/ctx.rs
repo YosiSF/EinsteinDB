@@ -1,4 +1,4 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use bitflags::bitflags;
 use std::sync::Arc;
@@ -6,7 +6,7 @@ use std::{i64, mem, u64};
 
 use super::{Error, Result};
 use crate::codec::mysql::Tz;
-use einsteindbpb::PosetDagRequest;
+use einsteineinsteindbpb::PosetDagRequest;
 
 bitflags! {
     /// Please refer to SQLMode in `mysql/const.go` in repo `pingcap/parser` for details.
@@ -45,7 +45,7 @@ bitflags! {
         /// in non-strict sql mode, overflow error should be saved as warning.
         const OVERFLOW_AS_WARNING = 1 << 6;
 
-        /// DIVIDED_BY_ZERO_AS_WARNING indicates if DividedByZero should be returned as warning.
+        /// DIVIDED_BY_ZERO_AS_WARNING indicates if DivideeinsteindbyZero should be returned as warning.
         const DIVIDED_BY_ZERO_AS_WARNING = 1 << 8;
         /// `IN_LOAD_DATA_STMT` indicates if this is a LOAD DATA statement.
         const IN_LOAD_DATA_STMT = 1 << 10;
@@ -168,7 +168,7 @@ pub struct EvalWarnings {
     // number of warnings
     pub warning_cnt: usize,
     // details of previous max_warning_cnt warnings
-    pub warnings: Vec<einsteindbpb::Error>,
+    pub warnings: Vec<einsteineinsteindbpb::Error>,
 }
 
 impl EvalWarnings {
@@ -272,7 +272,7 @@ impl EvalContext {
 
     pub fn handle_invalid_time_error(&mut self, err: Error) -> Result<()> {
         // FIXME: Only some of the errors can be converted to warning.
-        // See `handleInvalidTimeError` in MilevaDB.
+        // See `handleInvalidTimeError` in Milevaeinsteindb.
 
         if self.braneg.sql_mode.is_strict()
             && (self.braneg.flag.contains(Flag::IN_INSERT_STMT)

@@ -1,13 +1,13 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use regex::{bytes::Regex as BytesRegex, Regex};
 
 use crate::ScalarFunc;
-use causet_algebrizer::MilevaDB_query_datatype::codec::collation::*;
-use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalContext, Result};
-use causet_algebrizer::MilevaDB_query_datatype::{Collation, FieldTypeAccessor};
-use allegroeinstein-prolog-causet-projector::MilevaDB_query_shared_expr::*;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::collation::*;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, Result};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::{Collation, FieldTypeAccessor};
+use allegroeinstein-prolog-causet-projector::Milevaeinsteindb_query_shared_expr::*;
 
 impl ScalarFunc {
     pub fn like(&self, ctx: &mut EvalContext, row: &[Datum]) -> Result<Option<i64>> {
@@ -43,9 +43,9 @@ impl ScalarFunc {
 mod tests {
     use crate::tests::{datum_expr, scalar_func_expr};
     use crate::Expression;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::Datum;
-    use causet_algebrizer::MilevaDB_query_datatype::expr::EvalContext;
-    use einsteindbpb::ScalarFuncSig;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+    use einsteineinsteindbpb::ScalarFuncSig;
 
     #[test]
     fn test_like() {

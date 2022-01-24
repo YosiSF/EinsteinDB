@@ -13,11 +13,11 @@ use embedded_promises::{
     ValueTypeSet,
 };
 
-use einsteindb_embedded::{
+use einsteineinsteindb_embedded::{
     Schema,
 };
 
-use edbn::query::{
+use eeinsteindbn::query::{
     FnArg,
     PlainSymbol,
     Predicate,
@@ -199,7 +199,7 @@ mod testing {
         ValueType,
     };
 
-    use edbn::query::{
+    use eeinsteindbn::query::{
         FnArg,
         Keyword,
         Pattern,

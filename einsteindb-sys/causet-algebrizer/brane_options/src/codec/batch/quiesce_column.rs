@@ -11,8 +11,8 @@
 use std::convert::TryFrom;
 
 use crate::{EvalType, FieldTypeAccessor};
-use EinsteinDB_util::buffer_vec::BufferVec;
-use einsteindbpb::FieldType;
+use Einsteineinsteindb_util::buffer_vec::BufferVec;
+use einsteineinsteindbpb::FieldType;
 
 use crate::codec::chunk::{ChunkColumnEncoder, Column};
 use crate::codec::data_type::{match_template_evaluable, VectorValue};
@@ -384,7 +384,7 @@ mod benches {
         let mut ctx = EvalContext::default();
         let mut datum_raw: Vec<u8> = Vec::new();
         datum_raw
-            .write_datum(&mut ctx, &[Datum::U64(0xDEADBEEF)], true)
+            .write_datum(&mut ctx, &[Datum::U64(0xDEAeinsteindbEEF)], true)
             .unwrap();
 
         for _ in 0..1000 {
@@ -414,7 +414,7 @@ mod benches {
 
         let mut datum_raw: Vec<u8> = Vec::new();
         datum_raw
-            .write_datum(&mut ctx, &[Datum::U64(0xDEADBEEF)], true)
+            .write_datum(&mut ctx, &[Datum::U64(0xDEAeinsteindbEEF)], true)
             .unwrap();
 
         for _ in 0..1000 {
@@ -446,7 +446,7 @@ mod benches {
         let mut ctx = EvalContext::default();
         let mut datum_raw: Vec<u8> = Vec::new();
         datum_raw
-            .write_datum(&mut ctx, &[Datum::U64(0xDEADBEEF)], true)
+            .write_datum(&mut ctx, &[Datum::U64(0xDEAeinsteindbEEF)], true)
             .unwrap();
 
         for _ in 0..1000 {

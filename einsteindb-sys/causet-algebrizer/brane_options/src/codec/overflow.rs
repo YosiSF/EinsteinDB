@@ -1,4 +1,4 @@
-// Copyright 2018 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use crate::codec::{Error, Result};
 
@@ -69,7 +69,7 @@ mod tests {
     use std::{i64, u64};
 
     macro_rules! do_test {
-        ($cases:ident, $func:ident) => {
+        ($cases:solitonid, $func:solitonid) => {
             for (lsh, rsh, exp, is_overflow) in $cases {
                 let desc = format!("Error testing {}({}, {})", stringify!($func), lsh, rsh);
                 match super::$func(lsh, rsh) {

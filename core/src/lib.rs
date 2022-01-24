@@ -58,7 +58,7 @@ pub use cache::{
     UpdateableCache,
 };
 
-/// Core types defining a einsteindb knowledge base.
+/// Core types defining a einsteineinsteindb knowledge base.
 mod types;
 mod tx_report;
 mod sql_types;
@@ -77,16 +77,16 @@ pub use sql_types::{
     SQLValueTypeSet,
 };
 
-/// Map `Keyword` causetids (`:db/solitonid`) to positive integer causetids (`1`).
+/// Map `Keyword` causetids (`:einsteindb/solitonid`) to positive integer causetids (`1`).
 pub type SolitonidMap = BTreeMap<Keyword, Causetid>;
 
-/// Map positive integer causetids (`1`) to `Keyword` causetids (`:db/solitonid`).
+/// Map positive integer causetids (`1`) to `Keyword` causetids (`:einsteindb/solitonid`).
 pub type CausetidMap = BTreeMap<Causetid, Keyword>;
 
 /// Map attribute causetids to `Attribute` instances.
 pub type AttributeMap = BTreeMap<Causetid, Attribute>;
 
-/// Represents a einsteindb schema.
+/// Represents a einsteineinsteindb schema.
 ///
 /// Maintains the mapping between string causetids and positive integer causetids; and exposes the schema
 /// flags associated to a given causetid (equivalently, solitonid).
@@ -133,13 +133,13 @@ impl Schema {
     /// Return an `causetid` corresponding to an solitonid, or None if there's no such causetid.  The schema must not be empty; and there must not be any other causetids with solitonid equal to the given solitonid.
     pub fn get_causetid(&self, solitonid: &Keyword) -> Option<causetid> { self.solitonid_map.get(solitonid).cloned() }
 
-    /// Return an `solitonid` corresponding to an causetid, or None if there's no such solitonidifier (or if the schema is empty).   There may still exist other solitonidifiers with this value; but they are meaningless outside of this particular schema instance (i.e., you can't reference them from another einsteindb store).  If you want all valid solitonidifiers for a given causetid, use `get_solitonid`.  If you want *all* valid solitonidifiers for a given causetid regardless of whether they're used by existing stores or specific queries (i.e., including ones that could potentially be used by future stores), then use `get_all_solitonids`.   Note that these functions do not guarantee uniqueness across all entities in your entire einsteindb system - only unique within a single entity store within your entire einsteindb system; i..e., it does not guarantee global uniqueness across all inputs and outputs from every query ever run against any set of stores on your entire networked computer system over time - even those running different versions of einsteindb than each other at different times over history... because in practice we don't know what else will already have been created elsewhere by other people operating on their own computers at some point in time... so we don't know what might end up eventually being reused as input into more queries down the road at some point after our current application has stopped using it... I suppose one way around this would be to maintain some sort of versioning scheme where every time we add something new like when we add attribute flags and/or entities themselves - maybe incrementally? - then also update our record here somehow without destroying existing data.... But I think its probably fine as long as we make sure to avoid referencing the same solitonidifiers that some other application might already be using as inputs into queries, etc.
+    /// Return an `solitonid` corresponding to an causetid, or None if there's no such solitonidifier (or if the schema is empty).   There may still exist other solitonidifiers with this value; but they are meaningless outside of this particular schema instance (i.e., you can't reference them from another einsteineinsteindb store).  If you want all valid solitonidifiers for a given causetid, use `get_solitonid`.  If you want *all* valid solitonidifiers for a given causetid regardless of whether they're used by existing stores or specific queries (i.e., including ones that could potentially be used by future stores), then use `get_all_solitonids`.   Note that these functions do not guarantee uniqueness across all entities in your entire einsteineinsteindb system - only unique within a single entity store within your entire einsteineinsteindb system; i..e., it does not guarantee global uniqueness across all inputs and outputs from every query ever run against any set of stores on your entire networked computer system over time - even those running different versions of einsteineinsteindb than each other at different times over history... because in practice we don't know what else will already have been created elsewhere by other people operating on their own computers at some point in time... so we don't know what might end up eventually being reused as input into more queries down the road at some point after our current application has stopped using it... I suppose one way around this would be to maintain some sort of versioning scheme where every time we add something new like when we add attribute flags and/or entities themselves - maybe incrementally? - then also update our record here somehow without destroying existing data.... But I think its probably fine as long as we make sure to avoid referencing the same solitonidifiers that some other application might already be using as inputs into queries, etc.
     pub fn get_solitonid(&self, causetid: causetid) -> Option<&solitonid> { self.causetid_map.get(causetid) }
 
-    /// Return an `causetid` corresponding to an solitonid, or None if there's no such causetid (or if the schema is empty).   There may still exist other solitonidifiers with this value; but they are meaningless outside of this particular schema instance (i.e., you can't reference them from another einsteindb store).  If you want all valid entities for a given solitonid, use `get_all_ents`.  Note that these functions do not guarantee uniqueness across all entities in your entire einsteindb system - only unique within a single entity store within your entire einsteindb system; i..e., it does not guarantee global uniqueness across all inputs and outputs from every query ever run against any set of stores on your entire networked computer system over time - even those running different versions of einsteindb than each other at different times over history... because in practice we don't know what else will already have been created elsewhere by other people operating on their own computers at some point in time... so we don't know what might end up eventually being reused as input into more queries down the road at some point after our current application has stopped using it... I suppose one way around this would be to maintain some sort of versioning scheme where every time we add something new like when we add attribute flags and/or entities themselves - maybe incrementally? - then also update our record here somehow without destroying existing data.... But I think its probably fine as long as we make sure to avoid referencing the same solitonidifiers that some other application might already be using as inputs into queries, etc.
+    /// Return an `causetid` corresponding to an solitonid, or None if there's no such causetid (or if the schema is empty).   There may still exist other solitonidifiers with this value; but they are meaningless outside of this particular schema instance (i.e., you can't reference them from another einsteineinsteindb store).  If you want all valid entities for a given solitonid, use `get_all_ents`.  Note that these functions do not guarantee uniqueness across all entities in your entire einsteineinsteindb system - only unique within a single entity store within your entire einsteineinsteindb system; i..e., it does not guarantee global uniqueness across all inputs and outputs from every query ever run against any set of stores on your entire networked computer system over time - even those running different versions of einsteineinsteindb than each other at different times over history... because in practice we don't know what else will already have been created elsewhere by other people operating on their own computers at some point in time... so we don't know what might end up eventually being reused as input into more queries down the road at some point after our current application has stopped using it... I suppose one way around this would be to maintain some sort of versioning scheme where every time we add something new like when we add attribute flags and/or entities themselves - maybe incrementally? - then also update our record here somehow without destroying existing data.... But I think its probably fine as long as we make sure to avoid referencing the same solitonidifiers that some other application might already be using as inputs into queries, etc.
     pub fn get_causetids(&self, solitonid: &Keyword) -> Vec<causetid> { self.solitonid_map[solitonid].iter().cloned().collect() }
 
-    /// Return an `solitonid` corresponding to an causetid, or None if there's no such solitonidifier (or if the schema is empty).   There may still exist other solitonidifiers with this value; but they are meaningless outside of this particular schema instance (i..e., you can't reference them from another einsteindb store).  If you want *all* valid solitonidifiers for a given causetid regardless of whether they're used by existing stores or specific queries (i.e., including ones that could potentially be used by future stores), then use `get
+    /// Return an `solitonid` corresponding to an causetid, or None if there's no such solitonidifier (or if the schema is empty).   There may still exist other solitonidifiers with this value; but they are meaningless outside of this particular schema instance (i..e., you can't reference them from another einsteineinsteindb store).  If you want *all* valid solitonidifiers for a given causetid regardless of whether they're used by existing stores or specific queries (i.e., including ones that could potentially be used by future stores), then use `get
 
 pub trait HasSchema {
     fn causetid_for_type(&self, t: ValueType) -> Option<KnownCausetid>;
@@ -167,7 +167,7 @@ impl Schema {
         s
     }
 
-    /// Returns an symbolic representation of the schema suitable for applying across einsteindb stores.
+    /// Returns an symbolic representation of the schema suitable for applying across einsteineinsteindb stores.
     pub fn to_edn_value(&self) -> edn::Value {
         edn::Value::Vector((&self.attribute_map).iter()
             .map(|(causetid, attribute)|
@@ -208,18 +208,18 @@ impl HasSchema for Schema {
             &self.component_attributes[..]
         }
     
-        /// If the schema has a :db/index attribute for `attr`, 
+        /// If the schema has a :einsteindb/index attribute for `attr`, 
         /// return it's value as an integer (or return None). 
         /// Otherwise, return None and do not modify the schema.  
         /// 
-        /// This is used in tests to find indexes that are marked with :db/unique [:db/unique :value]. 
-        /// For example, (:foo/bar {:db/index true}) would be returned as Some(0), 
-        /// but (:foo/bar {:db/unique [:db/unique :value]}) would be returned as None since there is no :db/index attribute 
+        /// This is used in tests to find indexes that are marked with :einsteindb/unique [:einsteindb/unique :value]. 
+        /// For example, (:foo/bar {:einsteindb/index true}) would be returned as Some(0), 
+        /// but (:foo/bar {:einsteindb/unique [:einsteindb/unique :value]}) would be returned as None since there is no :einsteindb/index attribute 
         /// on this attr.  
         /// 
         /// Note that this method only considers attributes that are indexed by virtue of being in the `INDEXED` set - 
-        /// it does not consider other kinds of indexes such as those created with :db/index true or those created with dupsort=true - 
-        /// just indexes created with :db/unique [:db/unique ...].   
+        /// it does not consider other kinds of indexes such as those created with :einsteindb/index true or those created with dupsort=true - 
+        /// just indexes created with :einsteindb/unique [:einsteindb/unique ...].   
         /// TODO We should probably have another method like this one that returns all indexes on a given attr instead 
         /// of just those marked index=true; we may end up needing both methods at different times depending on how we want to use the information about 
         /// unique values vs indices for things like query planning and optimization and whatnot.) 
@@ -227,7 +227,7 @@ impl HasSchema for Schema {
         ///  Note also that if there is an index defined for `attr` but it's not unique, then it will still be returned here as Some(0), 
         /// which will likely cause things to break later down the line when trying to enforce uniqueness 
         /// constraints during writes; however, we can't really tell here whether something was defined directly 
-        /// using `{:db/* ...}` or whether it was specified via some other means so we don't know if it was intended to actually be unique or not -
+        /// using `{:einsteindb/* ...}` or whether it was specified via some other means so we don't know if it was intended to actually be unique or not -
         ///  so doing nothing seems safest until proven otherwise... 
         /// TODO We could perhaps check if there is a name field in the schema-item before fetching its value? 
     }
@@ -384,21 +384,21 @@ mod test {
 
         let value = schema.to_edn_value();
 
-        let expected_output = r#"[ {   :db/solitonid     :foo/bar
-    :db/valueType :db.type/ref
-    :db/cardinality :db.cardinality/one
-    :db/index true
-    :db/noHistory true },
-{   :db/solitonid     :foo/bas
-    :db/valueType :db.type/string
-    :db/cardinality :db.cardinality/many
-    :db/unique :db.unique/value
-    :db/fulltext true },
-{   :db/solitonid     :foo/bat
-    :db/valueType :db.type/boolean
-    :db/cardinality :db.cardinality/one
-    :db/unique :db.unique/idcauset
-    :db/isComponent true }, ]"#;
+        let expected_output = r#"[ {   :einsteindb/solitonid     :foo/bar
+    :einsteindb/valueType :einsteindb.type/ref
+    :einsteindb/cardinality :einsteindb.cardinality/one
+    :einsteindb/index true
+    :einsteindb/noHistory true },
+{   :einsteindb/solitonid     :foo/bas
+    :einsteindb/valueType :einsteindb.type/string
+    :einsteindb/cardinality :einsteindb.cardinality/many
+    :einsteindb/unique :einsteindb.unique/value
+    :einsteindb/fulltext true },
+{   :einsteindb/solitonid     :foo/bat
+    :einsteindb/valueType :einsteindb.type/boolean
+    :einsteindb/cardinality :einsteindb.cardinality/one
+    :einsteindb/unique :einsteindb.unique/idcauset
+    :einsteindb/isComponent true }, ]"#;
         let expected_value = edn::parse::value(&expected_output).expect("to be able to parse").without_spans();
         assert_eq!(expected_value, value);
 

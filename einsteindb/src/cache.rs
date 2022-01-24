@@ -1,4 +1,4 @@
-// Copyright 2018 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 Whtcorps Inc and EinstAI Inc
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -84,7 +84,7 @@ use core_traits::{
     TypedValue,
 };
 
-use einsteindb_core::{
+use einsteineinsteindb_core::{
     CachedAttributes,
     HasSchema,
     Schema,
@@ -92,7 +92,7 @@ use einsteindb_core::{
     ValueRc,
 };
 
-use einsteindb_core::util::{
+use einsteineinsteindb_core::util::{
     Either,
 };
 
@@ -106,13 +106,13 @@ use einsteinml::causets::{
     OpType,
 };
 
-use einsteindb::{
+use einsteineinsteindb::{
     TypedSQLValue,
 };
 
-use einsteindb_traits::errors::{
-    DbError,
-    DbErrorKind,
+use einsteineinsteindb_traits::errors::{
+    einsteindbError,
+    einsteindbErrorKind,
     Result,
 };
 
@@ -156,13 +156,13 @@ impl<K, V> Absorb for CacheMap<K, Option<V>> where K: Ord {
     }
 }
 
-trait ExtendByAbsorbing {
+trait ExteneinsteindbyAbsorbing {
     /// Just like `extend`, but rather than replacing our value with the other, the other is
     /// absorbed into ours.
     fn extend_by_absorbing(&mut self, other: Self);
 }
 
-impl<K, V> ExtendByAbsorbing for BTreeMap<K, V> where K: Ord, V: Absorb {
+impl<K, V> ExteneinsteindbyAbsorbing for BTreeMap<K, V> where K: Ord, V: Absorb {
     fn extend_by_absorbing(&mut self, other: Self) {
         for (k, v) in other.into_iter() {
             match self.entry(k) {
@@ -898,7 +898,7 @@ impl AttributeCaches {
         let table = if is_fulltext { "fulltext_datoms" } else { "datoms" };
         let sql = format!("SELECT a, e, v, value_type_tag FROM {} WHERE a = ? ORDER BY a ASC, e ASC", table);
         let args: Vec<&rusqlite::types::ToSql> = vec![&attribute];
-        let mut stmt = sqlite.prepare(&sql).context(DbErrorKind::CacheUpdateFailed)?;
+        let mut stmt = sqlite.prepare(&sql).context(einsteindbErrorKind::CacheUpdateFailed)?;
         let replacing = true;
         self.repopulate_from_aevt(schema, &mut stmt, args, replacing)
     }
@@ -1157,7 +1157,7 @@ impl CachedAttributes for AttributeCaches {
     }
 }
 
-impl UpdateableCache<DbError> for AttributeCaches {
+impl UpdateableCache<einsteindbError> for AttributeCaches {
     fn update<I>(&mut self, schema: &Schema, retractions: I, assertions: I) -> Result<()>
     where I: Iterator<Item=(Causetid, Causetid, TypedValue)> {
         self.update_with_fallback(None, schema, retractions, assertions)
@@ -1239,7 +1239,7 @@ impl SQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = schema.attribute_for_causetid(a).ok_or_else(|| DbErrorKind::UnknownAttribute(a))?;
+        let _ = schema.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
         let caches = self.make_mut();
         caches.forward_cached_attributes.insert(a);
         caches.repopulate(schema, sqlite, a)
@@ -1250,7 +1250,7 @@ impl SQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = schema.attribute_for_causetid(a).ok_or_else(|| DbErrorKind::UnknownAttribute(a))?;
+        let _ = schema.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
 
         let caches = self.make_mut();
         caches.reverse_cached_attributes.insert(a);
@@ -1279,7 +1279,7 @@ impl SQLiteAttributeCache {
     }
 }
 
-impl UpdateableCache<DbError> for SQLiteAttributeCache {
+impl UpdateableCache<einsteindbError> for SQLiteAttributeCache {
     fn update<I>(&mut self, schema: &Schema, retractions: I, assertions: I) -> Result<()>
     where I: Iterator<Item=(Causetid, Causetid, TypedValue)> {
         self.make_mut().update(schema, retractions, assertions)
@@ -1357,7 +1357,7 @@ impl InProgressSQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = schema.attribute_for_causetid(a).ok_or_else(|| DbErrorKind::UnknownAttribute(a))?;
+        let _ = schema.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
 
         if self.is_attribute_cached_forward(a) {
             return Ok(());
@@ -1373,7 +1373,7 @@ impl InProgressSQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = schema.attribute_for_causetid(a).ok_or_else(|| DbErrorKind::UnknownAttribute(a))?;
+        let _ = schema.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
 
         if self.is_attribute_cached_reverse(a) {
             return Ok(());
@@ -1389,7 +1389,7 @@ impl InProgressSQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = schema.attribute_for_causetid(a).ok_or_else(|| DbErrorKind::UnknownAttribute(a))?;
+        let _ = schema.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
 
         // TODO: reverse-index unique by default?
         let reverse_done = self.is_attribute_cached_reverse(a);
@@ -1427,7 +1427,7 @@ impl InProgressSQLiteAttributeCache {
     }
 }
 
-impl UpdateableCache<DbError> for InProgressSQLiteAttributeCache {
+impl UpdateableCache<einsteindbError> for InProgressSQLiteAttributeCache {
     fn update<I>(&mut self, schema: &Schema, retractions: I, assertions: I) -> Result<()>
     where I: Iterator<Item=(Causetid, Causetid, TypedValue)> {
         self.overlay.update_with_fallback(Some(&self.inner), schema, retractions, assertions)

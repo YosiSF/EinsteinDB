@@ -1,4 +1,4 @@
-// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use super::super::Result;
 use super::constants::*;
@@ -12,7 +12,7 @@ use std::ptr;
 /// the encoded bytes directly. Only used by `json_replace`, `json_set`,
 /// `json_insert` and `json_remove`
 ///
-/// See `binaryModifier` in MilevaDB `json/binary_function.go`
+/// See `binaryModifier` in Milevaeinsteindb `json/binary_function.go`
 pub struct BinaryModifier<'a> {
     // The target Json to be modified
     old: JsonRef<'a>,

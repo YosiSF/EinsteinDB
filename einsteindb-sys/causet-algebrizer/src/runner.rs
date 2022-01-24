@@ -12,17 +12,17 @@ use std::sync::Arc;
 
 use ekvproto::interlock::KeyRange;
 use protobuf::Message;
-use einsteindbpb::{self, ExecType, ExecutorExecutionSummary};
-use einsteindbpb::{Chunk, PosetDagRequest, SelectResponse, StreamResponse};
+use einsteineinsteindbpb::{self, ExecType, ExecutorExecutionSummary};
+use einsteineinsteindbpb::{Chunk, PosetDagRequest, SelectResponse, StreamResponse};
 
-use EinsteinDB_util::deadline::Deadline;
+use Einsteineinsteindb_util::deadline::Deadline;
 
 use super::Executor;
 use allegroeinstein-prolog-causet-sql::execute_stats::*;
 use allegroeinstein-prolog-causet-sql::metrics::*;
 use allegroeinstein-prolog-causet-sql::storage::{IntervalRange, Storage};
 use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext};
 
 pub struct ExecutorsRunner<SS> {
     deadline: Deadline,
@@ -39,7 +39,7 @@ pub struct ExecutorsRunner<SS> {
 /// Normal executors iterate rows one by one.
 #[allow(clippy::explicit_counter_loop)]
 pub fn build_executors<S: Storage + 'static, C: ExecSummaryCollector + 'static>(
-    exec_descriptors: Vec<einsteindbpb::Executor>,
+    exec_descriptors: Vec<einsteineinsteindbpb::Executor>,
     storage: S,
     ranges: Vec<KeyRange>,
     ctx: Arc<EvalConfig>,
@@ -115,7 +115,7 @@ pub fn build_executors<S: Storage + 'static, C: ExecSummaryCollector + 'static>(
 ///
 /// The inner-most executor must be a table scan executor or an index scan executor.
 fn build_first_executor<S: Storage + 'static, C: ExecSummaryCollector + 'static>(
-    mut first: einsteindbpb::Executor,
+    mut first: einsteineinsteindbpb::Executor,
     storage: S,
     ranges: Vec<KeyRange>,
     context: Arc<EvalConfig>,

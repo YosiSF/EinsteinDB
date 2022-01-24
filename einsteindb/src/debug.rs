@@ -61,11 +61,11 @@ use rusqlite::types::{ToSql};
 use tabwriter::TabWriter;
 
 use bootstrap;
-use einsteindb::*;
-use einsteindb::{read_attribute_map,read_ident_map};
+use einsteineinsteindb::*;
+use einsteineinsteindb::{read_attribute_map,read_ident_map};
 use einsteinml;
 use causetids;
-use einsteindb_traits::errors::Result;
+use einsteineinsteindb_traits::errors::Result;
 
 use core_traits::{
     Causetid,
@@ -73,7 +73,7 @@ use core_traits::{
     ValueType,
 };
 
-use einsteindb_core::{
+use einsteineinsteindb_core::{
     HasSchema,
     SQLValueType,
     TxReport,
@@ -179,18 +179,18 @@ impl ToSolitonid for TypedValue {
     }
 }
 
-/// Convert a numeric causetid to an ident `Causetid` if possible, otherwise a numeric `Causetid`.
+/// Convert a numeric causetid to an solitonid `Causetid` if possible, otherwise a numeric `Causetid`.
 pub fn to_causetid(schema: &Schema, causetid: i64) -> CausetidOrSolitonid {
-    schema.get_ident(causetid).map_or(CausetidOrSolitonid::Causetid(causetid), |ident| CausetidOrSolitonid::Solitonid(ident.clone()))
+    schema.get_ident(causetid).map_or(CausetidOrSolitonid::Causetid(causetid), |solitonid| CausetidOrSolitonid::Solitonid(solitonid.clone()))
 }
 
-// /// Convert a symbolic ident to an ident `Causetid` if possible, otherwise a numeric `Causetid`.
+// /// Convert a symbolic solitonid to an solitonid `Causetid` if possible, otherwise a numeric `Causetid`.
 // pub fn to_ident(schema: &Schema, causetid: i64) -> Causetid {
-//     schema.get_ident(causetid).map_or(Causetid::Causetid(causetid), |ident| Causetid::Solitonid(ident.clone()))
+//     schema.get_ident(causetid).map_or(Causetid::Causetid(causetid), |solitonid| Causetid::Solitonid(solitonid.clone()))
 // }
 
 /// Return the set of datoms in the store, ordered by (e, a, v, tx), but not including any datoms of
-/// the form [... :einsteindb/txInstant ...].
+/// the form [... :einsteineinsteindb/txInstant ...].
 pub fn datoms<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S) -> Result<Datoms> {
     datoms_after(conn, schema, bootstrap::TX0 - 1)
 }
@@ -198,7 +198,7 @@ pub fn datoms<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S) -> Res
 /// Return the set of datoms in the store with transaction ID strictly greater than the given `tx`,
 /// ordered by (e, a, v, tx).
 ///
-/// The datom set returned does not include any datoms of the form [... :einsteindb/txInstant ...].
+/// The datom set returned does not include any datoms of the form [... :einsteineinsteindb/txInstant ...].
 pub fn datoms_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, tx: i64) -> Result<Datoms> {
     let borrowed_schema = schema.borrow();
 
@@ -208,7 +208,7 @@ pub fn datoms_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, 
         let e: i64 = row.get_checked(0)?;
         let a: i64 = row.get_checked(1)?;
 
-        if a == causetids::DB_TX_INSTANT {
+        if a == causetids::einsteindb_TX_INSTANT {
             return Ok(None);
         }
 
@@ -238,7 +238,7 @@ pub fn datoms_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, 
 /// Return the sequence of transactions in the store with transaction ID strictly greater than the
 /// given `tx`, ordered by (tx, e, a, v).
 ///
-/// Each transaction returned includes the [(transaction-tx) :einsteindb/txInstant ...] datom.
+/// Each transaction returned includes the [(transaction-tx) :einsteineinsteindb/txInstant ...] datom.
 pub fn transactions_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, tx: i64) -> Result<Transactions> {
     let borrowed_schema = schema.borrow();
 
@@ -327,7 +327,7 @@ pub struct TestConn {
 
 impl TestConn {
     fn assert_materialized_views(&self) {
-        let materialized_ident_map = read_ident_map(&self.sqlite).expect("ident map");
+        let materialized_ident_map = read_ident_map(&self.sqlite).expect("solitonid map");
         let materialized_attribute_map = read_attribute_map(&self.sqlite).expect("schema map");
 
         let materialized_schema = Schema::from_ident_map_and_attribute_map(materialized_ident_map, materialized_attribute_map).expect("schema");
@@ -384,7 +384,7 @@ impl TestConn {
     }
 
     pub fn last_tx_id(&self) -> Causetid {
-        self.partition_map.get(&":einsteindb.part/tx".to_string()).unwrap().next_causetid() - 1
+        self.partition_map.get(&":einsteineinsteindb.part/tx".to_string()).unwrap().next_causetid() - 1
     }
 
     pub fn last_transaction(&self) -> Datoms {
@@ -404,30 +404,30 @@ impl TestConn {
     }
 
     pub fn with_sqlite(mut conn: rusqlite::Connection) -> TestConn {
-        let einsteindb = ensure_current_version(&mut conn).unwrap();
+        let einsteineinsteindb = ensure_current_version(&mut conn).unwrap();
 
-        // Does not include :einsteindb/txInstant.
-        let datoms = datoms_after(&conn, &einsteindb.schema, 0).unwrap();
+        // Does not include :einsteineinsteindb/txInstant.
+        let datoms = datoms_after(&conn, &einsteineinsteindb.schema, 0).unwrap();
         assert_eq!(datoms.0.len(), 94);
 
-        // Includes :einsteindb/txInstant.
-        let transactions = transactions_after(&conn, &einsteindb.schema, 0).unwrap();
+        // Includes :einsteineinsteindb/txInstant.
+        let transactions = transactions_after(&conn, &einsteineinsteindb.schema, 0).unwrap();
         assert_eq!(transactions.0.len(), 1);
         assert_eq!(transactions.0[0].0.len(), 95);
 
-        let mut parts = einsteindb.partition_map;
+        let mut parts = einsteineinsteindb.partition_map;
 
         // Add a fake partition to allow tests to do things like
-        // [:einsteindb/add 111 :foo/bar 222]
+        // [:einsteineinsteindb/add 111 :foo/bar 222]
         {
             let fake_partition = Partition::new(100, 2000, 1000, true);
-            parts.insert(":einsteindb.part/fake".into(), fake_partition);
+            parts.insert(":einsteineinsteindb.part/fake".into(), fake_partition);
         }
 
         let test_conn = TestConn {
             sqlite: conn,
             partition_map: parts,
-            schema: einsteindb.schema,
+            schema: einsteineinsteindb.schema,
         };
 
         // Verify that we've created the materialized views during bootstrapping.
@@ -437,13 +437,13 @@ impl TestConn {
     }
 
     pub fn sanitized_partition_map(&mut self) {
-        self.partition_map.remove(":einsteindb.part/fake");
+        self.partition_map.remove(":einsteineinsteindb.part/fake");
     }
 }
 
 impl Default for TestConn {
     fn default() -> TestConn {
-        TestConn::with_sqlite(new_connection("").expect("Couldn't open in-memory einsteindb"))
+        TestConn::with_sqlite(new_connection("").expect("Couldn't open in-memory einsteineinsteindb"))
     }
 }
 

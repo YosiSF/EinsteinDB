@@ -26,7 +26,7 @@ impl<'a> JsonRef<'a> {
     /// https://dev.mysql.com/doc/refman/5.7/en/json-modification-functions.html#
     /// json-unquote-character-escape-sequences
     ///
-    /// See `Unquote()` in MilevaDB `json/binary_function.go`
+    /// See `Unquote()` in Milevaeinsteindb `json/binary_function.go`
     pub fn unquote(&self) -> Result<String> {
         match self.get_type() {
             JsonType::String => {

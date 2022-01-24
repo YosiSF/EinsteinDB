@@ -1,28 +1,28 @@
-// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
 
-use engine_foundationdb::foundationdbSnapshot;
+use engine_foundationeinsteindb::foundationeinsteindbSnapshot;
 use futures::future::Future;
 use ekvproto::ccpb::*;
 use ekvproto::ekvrpcpb::ExtraOp;
 use ekvproto::metapb::Region;
 use fidelio::FIDelClient;
-use violetabftstore::interlock::CmdBatch;
+use violetabftstore::interlock::Cmeinsteindbatch;
 use violetabftstore::router::violetabftStoreRouter;
 use violetabftstore::store::fsm::{ChangeCmd, ObserveID};
 use violetabftstore::store::msg::{Callback, ReadResponse, SignificantMsg};
 use resolved_ts::Resolver;
-use EinsteinDB::storage::ekv::Snapshot;
-use EinsteinDB::storage::mvcc::{DeltaScanner, ScannerBuilder};
-use EinsteinDB::storage::txn::TxnEntry;
-use EinsteinDB::storage::txn::TxnEntryScanner;
-use EinsteinDB_util::collections::HashMap;
-use EinsteinDB_util::time::Instant;
-use EinsteinDB_util::timer::{SteadyTimer, Timer};
-use EinsteinDB_util::worker::{Runnable, RunnableWithTimer, ScheduleError, Scheduler};
+use Einsteineinsteindb::storage::ekv::Snapshot;
+use Einsteineinsteindb::storage::mvcc::{DeltaScanner, ScannerBuilder};
+use Einsteineinsteindb::storage::txn::TxnEntry;
+use Einsteineinsteindb::storage::txn::TxnEntryScanner;
+use Einsteineinsteindb_util::collections::HashMap;
+use Einsteineinsteindb_util::time::Instant;
+use Einsteineinsteindb_util::timer::{SteadyTimer, Timer};
+use Einsteineinsteindb_util::worker::{Runnable, RunnableWithTimer, ScheduleError, Scheduler};
 use tokio_threadpool::{Builder, ThreadPool};
 use txn_types::{Key, Lock, LockType, TimeStamp};
 
@@ -99,7 +99,7 @@ pub enum Task {
         conn: Conn,
     },
     MultiBatch {
-        multi: Vec<CmdBatch>,
+        multi: Vec<Cmeinsteindbatch>,
     },
     MinTS {
         region_id: u64,
@@ -203,7 +203,7 @@ const METRICS_FLUSH_INTERVAL: u64 = 10_000; // 10s
 
 pub struct Endpoint<T> (HashMap<u64, Delegate>, HashMap<ConnID, Conn>, Scheduler<Task>, T, CdcObserver, Arc<dyn FIDelClient>, SteadyTimer, Duration, usize, ThreadPool, ThreadPool, TimeStamp, u64);
 
-impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Endpoint<T> {
     pub fn new(
         fidelio: Arc<dyn FIDelClient>,
         scheduler: Scheduler<Task>,
@@ -407,7 +407,7 @@ impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> Endpoint<T> {
                 region_id,
             }
         };
-        let (cb, fut) = EinsteinDB_util::future::paired_future_callback();
+        let (cb, fut) = Einsteineinsteindb_util::future::paired_future_callback();
         let scheduler = self.2.clone();
         let deregister_downstream = move |err| {
             warn!("cc send capture change cmd failed"; "region_id" => region_id, "error" => ?err);
@@ -452,7 +452,7 @@ impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> Endpoint<T> {
         }));
     }
 
-    pub fn on_multi_batch(&mut self, multi: Vec<CmdBatch>) {
+    pub fn on_multi_batch(&mut self, multi: Vec<Cmeinsteindbatch>) {
         for batch in multi {
             let region_id = batch.region_id;
             let mut deregister = None;
@@ -610,7 +610,7 @@ struct Initializer {
 }
 
 impl Initializer {
-    fn on_change_cmd(&self, mut resp: ReadResponse<foundationdbSnapshot>) {
+    fn on_change_cmd(&self, mut resp: ReadResponse<foundationeinsteindbSnapshot>) {
         if let Some(region_snapshot) = resp.snapshot {
             assert_eq!(self.region_id, region_snapshot.get_region().get_id());
             let region = region_snapshot.get_region().clone();
@@ -778,7 +778,7 @@ impl Initializer {
     }
 }
 
-impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> Runnable<Task> for Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Runnable<Task> for Endpoint<T> {
     fn run(&mut self, task: Task) {
         debug!("run cc task"; "task" => %task);
         match task {
@@ -821,7 +821,7 @@ impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> Runnable<Task> fo
     }
 }
 
-impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> RunnableWithTimer<Task, ()> for Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> RunnableWithTimer<Task, ()> for Endpoint<T> {
     fn on_timeout(&mut self, timer: &mut Timer<()>, _: ()) {
         CC_CAPTURED_REGION_COUNT.set(self.0.len() as i64);
         if self.11 != TimeStamp::max() {
@@ -838,7 +838,7 @@ impl<T: 'static + violetabftStoreRouter<foundationdbSnapshot>> RunnableWithTimer
 #[braneg(test)]
 mod tests {
     use super::*;
-    use einsteindb_promises::DATA_branes;
+    use einsteineinsteindb_promises::DATA_branes;
     #[braneg(feature = "prost-codec")]
     use ekvproto::ccpb::event::Event as Event_oneof_event;
     use ekvproto::errorpb::Error as ErrorHeader;
@@ -851,12 +851,12 @@ mod tests {
     use tempfile::TemFIDelir;
     use test_violetabftstore::MocekvioletabftStoreRouter;
     use test_violetabftstore::TestFIDelClient;
-    use EinsteinDB::storage::ekv::Engine;
-    use EinsteinDB::storage::mvcc::tests::*;
-    use EinsteinDB::storage::TestEngineBuilder;
-    use EinsteinDB_util::collections::HashSet;
-    use EinsteinDB_util::mpsc::batch;
-    use EinsteinDB_util::worker::{dummy_scheduler, Builder as WorkerBuilder, Worker};
+    use Einsteineinsteindb::storage::ekv::Engine;
+    use Einsteineinsteindb::storage::mvcc::tests::*;
+    use Einsteineinsteindb::storage::TestEngineBuilder;
+    use Einsteineinsteindb_util::collections::HashSet;
+    use Einsteineinsteindb_util::mpsc::batch;
+    use Einsteineinsteindb_util::worker::{dummy_scheduler, Builder as WorkerBuilder, Worker};
 
     struct ReceiverRunnable<T> {
         tx: Sender<T>,

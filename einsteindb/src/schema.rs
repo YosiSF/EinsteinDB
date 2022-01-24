@@ -10,10 +10,10 @@
 
 #![allow(dead_code)]
 
-use einsteindb::TypedSQLValue;
+use einsteineinsteindb::TypedSQLValue;
 use einsteinml;
-use einsteindb_traits::errors::{
-    DbErrorKind,
+use einsteineinsteindb_traits::errors::{
+    einsteindbErrorKind,
     Result,
 };
 use einsteinml::symbols;
@@ -27,7 +27,7 @@ use core_traits::{
     ValueType,
 };
 
-use einsteindb_core::{
+use einsteineinsteindb_core::{
     CausetidMap,
     HasSchema,
     SolitonidMap,
@@ -40,29 +40,29 @@ use spacetime::{
 };
 
 pub trait AttributeValidation {
-    fn validate<F>(&self, ident: F) -> Result<()> where F: Fn() -> String;
+    fn validate<F>(&self, solitonid: F) -> Result<()> where F: Fn() -> String;
 }
 
 impl AttributeValidation for Attribute {
-    fn validate<F>(&self, ident: F) -> Result<()> where F: Fn() -> String {
+    fn validate<F>(&self, solitonid: F) -> Result<()> where F: Fn() -> String {
         if self.unique == Some(attribute::Unique::Value) && !self.index {
-            bail!(DbErrorKind::BadSchemaAssertion(format!(":einsteindb/unique :einsteindb/unique_value without :einsteindb/index true for causetid: {}", ident())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/unique :einsteineinsteindb/unique_value without :einsteineinsteindb/index true for causetid: {}", solitonid())))
         }
         if self.unique == Some(attribute::Unique::Idcauset) && !self.index {
-            bail!(DbErrorKind::BadSchemaAssertion(format!(":einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: {}", ident())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/unique :einsteineinsteindb/unique_idcauset without :einsteineinsteindb/index true for causetid: {}", solitonid())))
         }
         if self.fulltext && self.value_type != ValueType::String {
-            bail!(DbErrorKind::BadSchemaAssertion(format!(":einsteindb/fulltext true without :einsteindb/valueType :einsteindb.type/string for causetid: {}", ident())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/fulltext true without :einsteineinsteindb/valueType :einsteineinsteindb.type/string for causetid: {}", solitonid())))
         }
         if self.fulltext && !self.index {
-            bail!(DbErrorKind::BadSchemaAssertion(format!(":einsteindb/fulltext true without :einsteindb/index true for causetid: {}", ident())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/fulltext true without :einsteineinsteindb/index true for causetid: {}", solitonid())))
         }
         if self.component && self.value_type != ValueType::Ref {
-            bail!(DbErrorKind::BadSchemaAssertion(format!(":einsteindb/isComponent true without :einsteindb/valueType :einsteindb.type/ref for causetid: {}", ident())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/isComponent true without :einsteineinsteindb/valueType :einsteineinsteindb.type/ref for causetid: {}", solitonid())))
         }
-        // TODO: consider warning if we have :einsteindb/index true for :einsteindb/valueType :einsteindb.type/string,
+        // TODO: consider warning if we have :einsteineinsteindb/index true for :einsteineinsteindb/valueType :einsteineinsteindb.type/string,
         // since this may be inefficient.  More generally, we should try to drive complex
-        // :einsteindb/valueType (string, uri, json in the future) users to opt-in to some hash-indexing
+        // :einsteineinsteindb/valueType (string, uri, json in the future) users to opt-in to some hash-indexing
         // scheme, as discussed in https://github.com/Whtcorps Inc and EinstAI Inc/einstai/issues/69.
         Ok(())
     }
@@ -71,8 +71,8 @@ impl AttributeValidation for Attribute {
 /// Return `Ok(())` if `attribute_map` defines a valid einstai schema.
 fn validate_attribute_map(causetid_map: &CausetidMap, attribute_map: &AttributeMap) -> Result<()> {
     for (causetid, attribute) in attribute_map {
-        let ident = || causetid_map.get(causetid).map(|ident| ident.to_string()).unwrap_or(causetid.to_string());
-        attribute.validate(ident)?;
+        let solitonid = || causetid_map.get(causetid).map(|solitonid| solitonid.to_string()).unwrap_or(causetid.to_string());
+        attribute.validate(solitonid)?;
     }
     Ok(())
 }
@@ -157,17 +157,17 @@ impl AttributeBuilder {
 
     pub fn validate_install_attribute(&self) -> Result<()> {
         if self.value_type.is_none() {
-            bail!(DbErrorKind::BadSchemaAssertion("Schema attribute for new attribute does not set :einsteindb/valueType".into()));
+            bail!(einsteindbErrorKind::BadSchemaAssertion("Schema attribute for new attribute does not set :einsteineinsteindb/valueType".into()));
         }
         Ok(())
     }
 
     pub fn validate_alter_attribute(&self) -> Result<()> {
         if self.value_type.is_some() {
-            bail!(DbErrorKind::BadSchemaAssertion("Schema alteration must not set :einsteindb/valueType".into()));
+            bail!(einsteindbErrorKind::BadSchemaAssertion("Schema alteration must not set :einsteineinsteindb/valueType".into()));
         }
         if self.fulltext.is_some() {
-            bail!(DbErrorKind::BadSchemaAssertion("Schema alteration must not set :einsteindb/fulltext".into()));
+            bail!(einsteindbErrorKind::BadSchemaAssertion("Schema alteration must not set :einsteineinsteindb/fulltext".into()));
         }
         Ok(())
     }
@@ -245,7 +245,7 @@ impl AttributeBuilder {
 
 pub trait SchemaBuilding {
     fn require_ident(&self, causetid: Causetid) -> Result<&symbols::Keyword>;
-    fn require_causetid(&self, ident: &symbols::Keyword) -> Result<KnownCausetid>;
+    fn require_causetid(&self, solitonid: &symbols::Keyword) -> Result<KnownCausetid>;
     fn require_attribute_for_causetid(&self, causetid: Causetid) -> Result<&Attribute>;
     fn from_ident_map_and_attribute_map(ident_map: SolitonidMap, attribute_map: AttributeMap) -> Result<Schema>;
     fn from_ident_map_and_triples<U>(ident_map: SolitonidMap, assertions: U) -> Result<Schema>
@@ -254,15 +254,15 @@ pub trait SchemaBuilding {
 
 impl SchemaBuilding for Schema {
     fn require_ident(&self, causetid: Causetid) -> Result<&symbols::Keyword> {
-        self.get_ident(causetid).ok_or(DbErrorKind::UnrecognizedCausetid(causetid).into())
+        self.get_ident(causetid).ok_or(einsteindbErrorKind::UnrecognizedCausetid(causetid).into())
     }
 
-    fn require_causetid(&self, ident: &symbols::Keyword) -> Result<KnownCausetid> {
-        self.get_causetid(&ident).ok_or(DbErrorKind::UnrecognizedSolitonid(ident.to_string()).into())
+    fn require_causetid(&self, solitonid: &symbols::Keyword) -> Result<KnownCausetid> {
+        self.get_causetid(&solitonid).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(solitonid.to_string()).into())
     }
 
     fn require_attribute_for_causetid(&self, causetid: Causetid) -> Result<&Attribute> {
-        self.attribute_for_causetid(causetid).ok_or(DbErrorKind::UnrecognizedCausetid(causetid).into())
+        self.attribute_for_causetid(causetid).ok_or(einsteindbErrorKind::UnrecognizedCausetid(causetid).into())
     }
 
     /// Create a valid `Schema` from the constituent maps.
@@ -273,14 +273,14 @@ impl SchemaBuilding for Schema {
         Ok(Schema::new(ident_map, causetid_map, attribute_map))
     }
 
-    /// Turn vec![(Keyword(:ident), Keyword(:key), TypedValue(:value)), ...] into a einstai `Schema`.
+    /// Turn vec![(Keyword(:solitonid), Keyword(:key), TypedValue(:value)), ...] into a einstai `Schema`.
     fn from_ident_map_and_triples<U>(ident_map: SolitonidMap, assertions: U) -> Result<Schema>
         where U: IntoIterator<Item=(symbols::Keyword, symbols::Keyword, TypedValue)>{
 
         let causetid_assertions: Result<Vec<(Causetid, Causetid, TypedValue)>> = assertions.into_iter().map(|(symbolic_ident, symbolic_attr, value)| {
-            let ident: i64 = *ident_map.get(&symbolic_ident).ok_or(DbErrorKind::UnrecognizedSolitonid(symbolic_ident.to_string()))?;
-            let attr: i64 = *ident_map.get(&symbolic_attr).ok_or(DbErrorKind::UnrecognizedSolitonid(symbolic_attr.to_string()))?;
-            Ok((ident, attr, value))
+            let solitonid: i64 = *ident_map.get(&symbolic_ident).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(symbolic_ident.to_string()))?;
+            let attr: i64 = *ident_map.get(&symbolic_attr).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(symbolic_attr.to_string()))?;
+            Ok((solitonid, attr, value))
         }).collect();
 
         let mut schema = Schema::from_ident_map_and_attribute_map(ident_map, AttributeMap::default())?;
@@ -307,12 +307,12 @@ pub trait SchemaTypeChecking {
 
 impl SchemaTypeChecking for Schema {
     fn to_typed_value(&self, value: &einsteinml::ValueAndSpan, value_type: ValueType) -> Result<TypedValue> {
-        // TODO: encapsulate causetid-ident-attribute for better error messages, perhaps by including
+        // TODO: encapsulate causetid-solitonid-attribute for better error messages, perhaps by including
         // the attribute (rather than just the attribute's value type) into this function or a
         // wrapper function.
         match TypedValue::from_einsteinml_value(&value.clone().without_spans()) {
             // We don't recognize this EML at all.  Get out!
-            None => bail!(DbErrorKind::BadValuePair(format!("{}", value), value_type)),
+            None => bail!(einsteindbErrorKind::BadValuePair(format!("{}", value), value_type)),
             Some(typed_value) => match (value_type, typed_value) {
                 // Most types don't coerce at all.
                 (ValueType::Boolean, tv @ TypedValue::Boolean(_)) => Ok(tv),
@@ -338,7 +338,7 @@ impl SchemaTypeChecking for Schema {
                 (vt @ ValueType::Instant, _) |
                 (vt @ ValueType::Keyword, _) |
                 (vt @ ValueType::Ref, _)
-                => bail!(DbErrorKind::BadValuePair(format!("{}", value), vt)),
+                => bail!(einsteindbErrorKind::BadValuePair(format!("{}", value), vt)),
             }
         }
     }
@@ -352,12 +352,12 @@ mod test {
     use self::einsteinml::Keyword;
 
     fn add_attribute(schema: &mut Schema,
-            ident: Keyword,
+            solitonid: Keyword,
             causetid: Causetid,
             attribute: Attribute) {
 
-        schema.causetid_map.insert(causetid, ident.clone());
-        schema.ident_map.insert(ident.clone(), causetid);
+        schema.causetid_map.insert(causetid, solitonid.clone());
+        schema.ident_map.insert(solitonid.clone(), causetid);
 
         if attribute.component {
             schema.component_attributes.push(causetid);
@@ -427,8 +427,8 @@ mod test {
     fn invalid_schema_unique_value_not_index() {
         let mut schema = Schema::default();
         // attribute unique by value but not index
-        let ident = Keyword::namespaced("foo", "bar");
-        add_attribute(&mut schema, ident , 99, Attribute {
+        let solitonid = Keyword::namespaced("foo", "bar");
+        add_attribute(&mut schema, solitonid , 99, Attribute {
             index: false,
             value_type: ValueType::Boolean,
             fulltext: false,
@@ -439,7 +439,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/unique :einsteindb/unique_value without :einsteindb/index true for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/unique :einsteineinsteindb/unique_value without :einsteineinsteindb/index true for causetid: :foo/bar".into())));
     }
 
     #[test]
@@ -457,7 +457,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/unique :einsteineinsteindb/unique_idcauset without :einsteineinsteindb/index true for causetid: :foo/bar".into())));
     }
 
     #[test]
@@ -475,7 +475,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/isComponent true without :einsteindb/valueType :einsteindb.type/ref for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/isComponent true without :einsteineinsteindb/valueType :einsteineinsteindb.type/ref for causetid: :foo/bar".into())));
     }
 
     #[test]
@@ -493,7 +493,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/fulltext true without :einsteindb/index true for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/fulltext true without :einsteineinsteindb/index true for causetid: :foo/bar".into())));
     }
 
     fn invalid_schema_fulltext_index_not_string() {
@@ -510,6 +510,6 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(DbErrorKind::BadSchemaAssertion(":einsteindb/fulltext true without :einsteindb/valueType :einsteindb.type/string for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/fulltext true without :einsteineinsteindb/valueType :einsteineinsteindb.type/string for causetid: :foo/bar".into())));
     }
 }

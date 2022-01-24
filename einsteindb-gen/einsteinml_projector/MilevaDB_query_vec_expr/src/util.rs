@@ -10,13 +10,13 @@
 
 use std::convert::TryFrom;
 
-use causet_algebrizer::MilevaDB_query_datatype::builder::FieldTypeBuilder;
-use causet_algebrizer::MilevaDB_query_datatype::{EvalType, FieldTypeAccessor, FieldTypeTp};
-use einsteindbpb::{Expr, FieldType};
+use causet_algebrizer::Milevaeinsteindb_query_datatype::builder::FieldTypeBuilder;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::{EvalType, FieldTypeAccessor, FieldTypeTp};
+use einsteineinsteindbpb::{Expr, FieldType};
 
 use allegroeinstein-prolog-causet-sql::Result;
-use MilevaDB_query_vec_expr::impl_cast::get_cast_fn_rpn_node;
-use MilevaDB_query_vec_expr::{RpnExpression, RpnExpressionBuilder};
+use Milevaeinsteindb_query_vec_expr::impl_cast::get_cast_fn_rpn_node;
+use Milevaeinsteindb_query_vec_expr::{RpnExpression, RpnExpressionBuilder};
 
 /// Checks whether or not there is only one child and the child expression is supported.
 pub fn check_aggr_exp_supported_one_child(aggr_def: &Expr) -> Result<()> {
@@ -36,9 +36,9 @@ pub fn check_aggr_exp_supported_one_child(aggr_def: &Expr) -> Result<()> {
 
 /// Rewrites the expression to insert necessary cast functions for SUM and AVG aggregate functions.
 ///
-/// See `typeInfer4Sum` and `typeInfer4Avg` in MilevaDB.
+/// See `typeInfer4Sum` and `typeInfer4Avg` in Milevaeinsteindb.
 ///
-/// TODO: This logic should be performed by MilevaDB.
+/// TODO: This logic should be performed by Milevaeinsteindb.
 pub fn rewrite_exp_for_sum_avg(schema: &[FieldType], exp: &mut RpnExpression) -> Result<()> {
     let ret_field_type = exp.ret_field_type(schema);
     let ret_eval_type = box_try!(EvalType::try_from(ret_field_type.as_accessor().tp()));
@@ -49,12 +49,12 @@ pub fn rewrite_exp_for_sum_avg(schema: &[FieldType], exp: &mut RpnExpression) ->
         }
         EvalType::Int => FieldTypeBuilder::new()
             .tp(FieldTypeTp::NewDecimal)
-            .flen(causet_algebrizer::MilevaDB_query_datatype::MAX_DECIMAL_WIDTH)
+            .flen(causet_algebrizer::Milevaeinsteindb_query_datatype::MAX_DECIMAL_WIDTH)
             .build(),
         _ => FieldTypeBuilder::new()
             .tp(FieldTypeTp::Double)
-            .flen(causet_algebrizer::MilevaDB_query_datatype::MAX_REAL_WIDTH)
-            .decimal(causet_algebrizer::MilevaDB_query_datatype::UNSPECIFIED_LENGTH)
+            .flen(causet_algebrizer::Milevaeinsteindb_query_datatype::MAX_REAL_WIDTH)
+            .decimal(causet_algebrizer::Milevaeinsteindb_query_datatype::UNSPECIFIED_LENGTH)
             .build(),
     };
     let node = get_cast_fn_rpn_node(exp.is_last_constant(), ret_field_type, new_ret_field_type)?;

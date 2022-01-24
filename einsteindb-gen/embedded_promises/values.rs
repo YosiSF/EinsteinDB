@@ -10,14 +10,14 @@
 
 #![allow(dead_code)]
 
-/// Literal `Value` instances in the the "db" namespace.
+/// Literal `Value` instances in the the "einsteindb" namespace.
 ///
-/// Used through-out the transactor to match core DB constructs.
+/// Used through-out the transactor to match core einsteindb constructs.
 
-use edbn::types::Value;
-use edbn::symbols;
+use eeinsteindbn::types::Value;
+use eeinsteindbn::symbols;
 
-/// TODO: take just ":db.part/db" and define DB_PART_DB using "db.part" and "db".
+/// TODO: take just ":einsteindb.part/einsteindb" and define einsteindb_PART_einsteindb using "einsteindb.part" and "einsteindb".
 macro_rules! lazy_static_namespaced_keyword_value (
     ($tag:solitonid, $namespace:expr, $name:expr) => (
         lazy_static! {

@@ -10,14 +10,14 @@
 
 use std::sync::Arc;
 
-use einsteindbpb::Selection;
+use einsteineinsteindbpb::Selection;
 
 use super::{Executor, ExprColumnRefVisitor, Row};
 use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;
 use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
 use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::MilevaDB_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
-use MilevaDB_query_normal_expr::Expression;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
+use Milevaeinsteindb_query_normal_expr::Expression;
 
 /// Retrieves rows from the source executor and filter rows by expressions.
 pub struct SelectionExecutor<Src: Executor> {
@@ -101,12 +101,12 @@ mod tests {
     use std::sync::Arc;
 
     use codec::prelude::NumberEncoder;
-    use causet_algebrizer::MilevaDB_query_datatype::FieldTypeTp;
-    use einsteindbpb::{Expr, ExprType, ScalarFuncSig};
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
+    use einsteineinsteindbpb::{Expr, ExprType, ScalarFuncSig};
 
     use super::super::tests::*;
     use super::*;
-    use causet_algebrizer::MilevaDB_query_datatype::codec::datum::Datum;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::Datum;
 
     fn new_const_expr() -> Expr {
         let mut expr = Expr::default();

@@ -14,11 +14,11 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteindb_embedded::{
+use einsteineinsteindb_embedded::{
     Schema,
 };
 
-use edbn::query::{
+use eeinsteindbn::query::{
     Binding,
     FnArg,
     Variable,
