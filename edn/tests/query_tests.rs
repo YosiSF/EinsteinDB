@@ -40,7 +40,7 @@ use edn::parse::{
 
 ///! N.B., parsing a query can be done without reference to a einsteindb.
 ///! Processing the parsed query into something we can work with
-///! for planning involves interrogating the schema and idents in
+///! for planning involves interrogating the schema and solitonids in
 ///! the store.
 ///! See <https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Querying> for more.
 #[test]

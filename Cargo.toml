@@ -17,7 +17,7 @@ publish = "false"
 default = ["bundled_sqlite3", "syncable"]
 bundled_sqlite3 = ["rusqlite/bundled"]
 sqlcipher = ["rusqlite/sqlcipher", "einsteindb_einsteindb/sqlcipher"]
-syncable = ["einsteineinsteindb_lenin", "lenin_traits", "einsteineinsteindb_einsteindb/syncable"]
+syncable = ["einsteindb_lenin", "lenin_traits", "einsteindb_einsteindb/syncable"]
 
 
 [workspace]
@@ -65,7 +65,7 @@ mem-profiling = ["memcam/mem-profiling"]
 failpoints = [
     "fail/failpoints",
     "raftstore/failpoints",
-    "einsteineinsteindb_util/failpoints",
+    "einsteindb_util/failpoints",
     "foundation_einsteindb/failpoints"
 ]
 cloud-aws = [

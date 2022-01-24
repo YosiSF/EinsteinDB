@@ -41,8 +41,8 @@ use codec::prelude::NumberDecoder;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::prelude::*;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeFlag;
 use Einsteineinsteindb_util::collections::HashSet;
-use einsteineinsteindbpb::ColumnInfo;
-use einsteineinsteindbpb::{Expr, ExprType};
+use einsteindbpb::ColumnInfo;
+use einsteindbpb::{Expr, ExprType};
 
 use allegroeinstein-prolog-causet-sql::execute_stats::*;
 use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
@@ -791,9 +791,9 @@ pub mod tests {
     use causet_algebrizer::Milevaeinsteindb_query_datatype::{FieldTypeAccessor, FieldTypeTp};
     use Einsteineinsteindb_util::collections::HashMap;
     use Einsteineinsteindb_util::map;
-    use einsteineinsteindbpb::ColumnInfo;
-    use einsteineinsteindbpb::TableScan;
-    use einsteineinsteindbpb::{Expr, ExprType};
+    use einsteindbpb::ColumnInfo;
+    use einsteindbpb::TableScan;
+    use einsteindbpb::{Expr, ExprType};
 
     pub fn build_expr(tp: ExprType, id: Option<i64>, child: Option<Expr>) -> Expr {
         let mut expr = Expr::default();

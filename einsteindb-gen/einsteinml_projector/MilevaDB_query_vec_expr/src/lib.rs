@@ -27,7 +27,7 @@ use std::str;
 use codec::prelude::NumberDecoder;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::prelude::*;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeFlag;
-use einsteineinsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
+use einsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
 
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::charset;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::{
@@ -79,7 +79,7 @@ pub struct Constant {
 pub struct ScalarFunc {
     sig: ScalarFuncSig,
     children: Vec<Expression>,
-    metadata: Option<Box<dyn protobuf::Message>>,
+    spacetime: Option<Box<dyn protobuf::Message>>,
     field_type: FieldType,
 }
 
@@ -296,7 +296,7 @@ impl Expression {
                             sig: expr.get_sig(),
                             children,
                             field_type,
-                            metadata: None,
+                            spacetime: None,
                         })
                     })
             }
@@ -332,7 +332,7 @@ mod tests {
     use std::{i64, u64};
 
     use causet_algebrizer::Milevaeinsteindb_query_datatype::{self, Collation, FieldTypeAccessor, FieldTypeFlag, FieldTypeTp};
-    use einsteineinsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
+    use einsteindbpb::{Expr, ExprType, FieldType, ScalarFuncSig};
 
     use crate::Expression;
     use codec::{number, prelude::NumberEncoder};

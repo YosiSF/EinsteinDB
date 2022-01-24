@@ -8,7 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use super::QuiesceBatchColumn;
 use crate::codec::data_type::VectorValue;

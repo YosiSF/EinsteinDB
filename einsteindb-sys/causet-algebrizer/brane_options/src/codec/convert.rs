@@ -7,7 +7,7 @@ use std::{self, char, i16, i32, i64, i8, str, u16, u32, u64, u8};
 // use crate::{self, FieldTypeTp, UNSPECIFIED_LENGTH};
 use crate::{Collation, FieldTypeAccessor};
 use crate::{FieldTypeTp, UNSPECIFIED_LENGTH};
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use super::mysql::{RoundMode, DEFAULT_FSP};
 use super::{Error, Result};

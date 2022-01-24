@@ -13,8 +13,8 @@ use std::sync::Arc;
 use std::usize;
 use std::vec::IntoIter;
 
-use einsteineinsteindbpb::ByItem;
-use einsteineinsteindbpb::TopN;
+use einsteindbpb::ByItem;
+use einsteindbpb::TopN;
 
 use super::topn_heap::TopNHeap;
 use super::{Executor, ExprColumnRefVisitor, Row};
@@ -170,7 +170,7 @@ pub mod tests {
     use codec::prelude::NumberEncoder;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
     use Einsteineinsteindb_util::collections::HashMap;
-    use einsteineinsteindbpb::{Expr, ExprType};
+    use einsteindbpb::{Expr, ExprType};
 
     use crate::OriginCols;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::RowColsDict;

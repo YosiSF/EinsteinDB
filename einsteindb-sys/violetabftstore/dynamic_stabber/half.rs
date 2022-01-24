@@ -150,9 +150,9 @@ mod tests {
 
     use crate::store::{SplitCheckRunner, SplitCheckTask};
     use foundationeinsteindb::properties::RangePropertiesCollectorFactory;
-    use einsteineinsteindb_util::config::ReadableSize;
-    use einsteineinsteindb_util::escape;
-    use einsteineinsteindb_util::worker::Runnable;
+    use einsteindb_util::config::ReadableSize;
+    use einsteindb_util::escape;
+    use einsteindb_util::worker::Runnable;
     use txn_types::Key;
 
     use super::super::size::tests::must_split_at;

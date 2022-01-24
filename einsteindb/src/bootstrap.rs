@@ -10,23 +10,23 @@
 
 #![allow(dead_code)]
 
-use einsteinml;
-use einsteineinsteindb_traits::errors::{
+use edn;
+use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
-use einsteinml::types::Value;
-use einsteinml::symbols;
+use edn::types::Value;
+use edn::symbols;
 use causetids;
 use einsteindb::TypedSQLValue;
-use einsteinml::causets::causet;
+use edn::causets::causet;
 
 use core_traits::{
     TypedValue,
     values,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     solitonidMap,
     Schema,
 };
@@ -161,7 +161,7 @@ lazy_static! {
                         :einsteindb/index       true
                         :einsteindb/unique      :einsteindb.unique/value
                         :einsteindb/cardinality :einsteindb.cardinality/many}}"#;
-        einsteinml::parse::value(s)
+        edn::parse::value(s)
             .map(|v| v.without_spans())
             .map_err(|_| einsteindbErrorKind::BaeinsteindbootstrapDefinition("Unable to parse V1_SYMBOLIC_SCHEMA".into()))
             .unwrap()
@@ -232,7 +232,7 @@ fn symbolic_schema_to_triples(solitonid_map: &solitonidMap, symbolic_schema: &Va
                             // TODO: remove this limitation, perhaps by including a type tag in the
                             // bootstrap symbolic schema, or by representing the initial bootstrap
                             // schema directly as Rust data.
-                            let typed_value = match TypedValue::from_einsteinml_value(value) {
+                            let typed_value = match TypedValue::from_edn_value(value) {
                                 Some(TypedValue::Keyword(ref k)) => {
                                     solitonid_map.get(k)
                                         .map(|causetid| TypedValue::Ref(*causetid))
@@ -297,7 +297,7 @@ pub(crate) fn bootstrap_schema() -> Schema {
     Schema::from_solitonid_map_and_triples(solitonid_map, bootstrap_triples).unwrap()
 }
 
-pub(crate) fn bootstrap_causets() -> Vec<causet<einsteinml::ValueAndSpan>> {
+pub(crate) fn bootstrap_causets() -> Vec<causet<edn::ValueAndSpan>> {
     let bootstrap_assertions: Value = Value::Vector([
         symbolic_schema_to_assertions(&V1_SYMBOLIC_SCHEMA).expect("symbolic schema"),
         solitonids_to_assertions(&V1_solitonidS[..]),
@@ -306,6 +306,6 @@ pub(crate) fn bootstrap_causets() -> Vec<causet<einsteinml::ValueAndSpan>> {
 
     // Failure here is a coding error (since the inputs are fixed), not a runtime error.
     // TODO: represent these bootstrap data errors rather than just panicing.
-    let bootstrap_causets: Vec<causet<einsteinml::ValueAndSpan>> = einsteinml::parse::causets(&bootstrap_assertions.to_string()).expect("bootstrap assertions");
+    let bootstrap_causets: Vec<causet<edn::ValueAndSpan>> = edn::parse::causets(&bootstrap_assertions.to_string()).expect("bootstrap assertions");
     return bootstrap_causets;
 }

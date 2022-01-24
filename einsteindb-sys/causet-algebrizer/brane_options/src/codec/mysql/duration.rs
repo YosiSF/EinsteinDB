@@ -5,7 +5,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::FieldTypeAccessor;
 use codec::prelude::*;
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use super::{check_fsp, Decimal, DEFAULT_FSP};
 use crate::codec::convert::ConvertTo;

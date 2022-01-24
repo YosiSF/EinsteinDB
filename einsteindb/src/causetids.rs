@@ -60,7 +60,7 @@ pub const EINSTEINeinsteindb_SCHEMA_VERSION: Causetid = 38;
 pub const EINSTEINeinsteindb_SCHEMA_ATTRIBUTE: Causetid = 39;
 pub const EINSTEINeinsteindb_SCHEMA_CORE: Causetid = 40;
 
-/// Return `false` if the given attribute will not change the spacetime: recognized idents, schema,
+/// Return `false` if the given attribute will not change the spacetime: recognized solitonids, schema,
 /// partitions in the partition map.
 pub fn might_update_spacetime(attribute: Causetid) -> bool {
     if attribute >= EINSTEINeinsteindb_DOC {
@@ -97,8 +97,8 @@ pub fn is_a_schema_attribute(attribute: Causetid) -> bool {
 }
 
 lazy_static! {
-    /// Attributes that are "solitonid related".  These might change the "idents" materialized view.
-    pub static ref IDENTS_SQL_LIST: String = {
+    /// Attributes that are "solitonid related".  These might change the "solitonids" materialized view.
+    pub static ref SOLITONIDS_SQL_LIST: String = {
         format!("({})",
                 EINSTEINeinsteindb_IDENT)
     };

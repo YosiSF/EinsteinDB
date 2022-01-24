@@ -21,7 +21,7 @@ use std::collections::{
 use indexmap;
 use petgraph::unionfind;
 
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
@@ -38,7 +38,7 @@ use internal_types::{
     TypedValueOr,
 };
 
-use einsteineinsteindb_core::util::Either::*;
+use einsteindb_core::util::Either::*;
 
 use core_traits::{
     attribute,
@@ -47,10 +47,10 @@ use core_traits::{
     TypedValue,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     Schema,
 };
-use einsteinml::causets::OpType;
+use edn::causets::OpType;
 use schema::SchemaBuilding;
 
 /// A "Simple upsert" that looks like [:einsteindb/add TEMPID a v], where a is :einsteindb.unique/idcauset.

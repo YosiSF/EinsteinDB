@@ -32,7 +32,7 @@ use rusqlite::types::{ToSql, ToSqlOutput};
 use ::{repeat_values, to_namespaced_keyword};
 use bootstrap;
 
-use einsteinml::{
+use edn::{
     DateTime,
     Utc,
     Uuid,
@@ -50,7 +50,7 @@ use core_traits::{
     ValueType,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     AttributeMap,
     FromMicros,
     SolitonidMap,
@@ -59,7 +59,7 @@ use einsteineinsteindb_core::{
     ValueRc,
 };
 
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
@@ -162,31 +162,31 @@ lazy_static! {
     /// SQL statements to be executed, in order, to create the einstai SQL schema (version 1).
     #[cfg_attr(rustfmt, rustfmt_skip)]
     static ref V1_STATEMENTS: Vec<&'static str> = { vec![
-        r#"CREATE TABLE datoms (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL,
+        r#"CREATE TABLE causets (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL,
                                 value_type_tag SMALLINT NOT NULL,
                                 index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
                                 index_fulltext TINYINT NOT NULL DEFAULT 0,
                                 unique_value TINYINT NOT NULL DEFAULT 0)"#,
-        r#"CREATE UNIQUE INDEX idx_datoms_eavt ON datoms (e, a, value_type_tag, v)"#,
-        r#"CREATE UNIQUE INDEX idx_datoms_aevt ON datoms (a, e, value_type_tag, v)"#,
+        r#"CREATE UNIQUE INDEX idx_causets_eavt ON causets (e, a, value_type_tag, v)"#,
+        r#"CREATE UNIQUE INDEX idx_causets_aevt ON causets (a, e, value_type_tag, v)"#,
 
         // Opt-in index: only if a has :einsteindb/index true.
-        r#"CREATE UNIQUE INDEX idx_datoms_avet ON datoms (a, value_type_tag, v, e) WHERE index_avet IS NOT 0"#,
+        r#"CREATE UNIQUE INDEX idx_causets_avet ON causets (a, value_type_tag, v, e) WHERE index_avet IS NOT 0"#,
 
         // Opt-in index: only if a has :einsteindb/valueType :einsteindb.type/ref.  No need for tag here since all
         // indexed elements are refs.
-        r#"CREATE UNIQUE INDEX idx_datoms_vaet ON datoms (v, a, e) WHERE index_vaet IS NOT 0"#,
+        r#"CREATE UNIQUE INDEX idx_causets_vaet ON causets (v, a, e) WHERE index_vaet IS NOT 0"#,
 
         // Opt-in index: only if a has :einsteindb/fulltext true; thus, it has :einsteindb/valueType :einsteindb.type/string,
         // which is not :einsteindb/valueType :einsteindb.type/ref.  That is, index_vaet and index_fulltext are mutually
         // exclusive.
-        r#"CREATE INDEX idx_datoms_fulltext ON datoms (value_type_tag, v, a, e) WHERE index_fulltext IS NOT 0"#,
+        r#"CREATE INDEX idx_causets_fulltext ON causets (value_type_tag, v, a, e) WHERE index_fulltext IS NOT 0"#,
 
         // TODO: possibly remove this index.  :einsteindb.unique/{value,idcauset} should be asserted by the
         // transactor in all cases, but the index may speed up some of SQLite's query planning.  For now,
         // it serves to validate the transactor impleeinstaiion.  Note that tag is needed here to
         // differentiate, e.g., keywords and strings.
-        r#"CREATE UNIQUE INDEX idx_datoms_unique_value ON datoms (a, value_type_tag, v) WHERE unique_value IS NOT 0"#,
+        r#"CREATE UNIQUE INDEX idx_causets_unique_value ON causets (a, value_type_tag, v) WHERE unique_value IS NOT 0"#,
 
         r#"CREATE TABLE timelined_transactions (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, added TINYINT NOT NULL DEFAULT 1, value_type_tag SMALLINT NOT NULL, timeline TINYINT NOT NULL DEFAULT 0)"#,
         r#"CREATE INDEX idx_timelined_transactions_timeline ON timelined_transactions (timeline)"#,
@@ -220,23 +220,23 @@ lazy_static! {
              END"#,
 
         // A view transparently interpolating fulltext indexed values into the datom structure.
-        r#"CREATE VIEW fulltext_datoms AS
+        r#"CREATE VIEW fulltext_causets AS
              SELECT e, a, fulltext_values.text AS v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value
-               FROM datoms, fulltext_values
-               WHERE datoms.index_fulltext IS NOT 0 AND datoms.v = fulltext_values.rowid"#,
+               FROM causets, fulltext_values
+               WHERE causets.index_fulltext IS NOT 0 AND causets.v = fulltext_values.rowid"#,
 
         // A view transparently interpolating all causets (fulltext and non-fulltext) into the datom structure.
-        r#"CREATE VIEW all_datoms AS
+        r#"CREATE VIEW all_causets AS
              SELECT e, a, v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value
-               FROM datoms
+               FROM causets
                WHERE index_fulltext IS 0
              UNION ALL
              SELECT e, a, v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value
-               FROM fulltext_datoms"#,
+               FROM fulltext_causets"#,
 
         // Materialized views of the spacetime.
-        r#"CREATE TABLE idents (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, value_type_tag SMALLINT NOT NULL)"#,
-        r#"CREATE INDEX idx_idents_unique ON idents (e, a, v, value_type_tag)"#,
+        r#"CREATE TABLE solitonids (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, value_type_tag SMALLINT NOT NULL)"#,
+        r#"CREATE INDEX idx_solitonids_unique ON solitonids (e, a, v, value_type_tag)"#,
         r#"CREATE TABLE schema (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, value_type_tag SMALLINT NOT NULL)"#,
         r#"CREATE INDEX idx_schema_unique ON schema (e, a, v, value_type_tag)"#,
 
@@ -312,7 +312,7 @@ fn create_current_partition_view(conn: &rusqlite::Connection) -> Result<()> {
     Ok(())
 }
 
-// TODO: rename "SQL" functions to align with "datoms" functions.
+// TODO: rename "SQL" functions to align with "causets" functions.
 pub fn create_current_version(conn: &mut rusqlite::Connection) -> Result<einsteindb> {
     let (tx, mut einsteindb) = create_empty_current_version(conn)?;
 
@@ -354,7 +354,7 @@ pub fn ensure_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
     let user_version = get_user_version(&conn)?;
     match user_version {
         0               => create_current_version(conn),
-        CURRENT_VERSION => read_einsteineinsteindb(conn),
+        CURRENT_VERSION => read_einsteindb(conn),
 
         // TODO: support updating an existing store.
         v => bail!(einsteindbErrorKind::NotYetImplemented(format!("Opening databases with einstai version: {}", v))),
@@ -364,8 +364,8 @@ pub fn ensure_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
 pub trait TypedSQLValue {
     fn from_sql_value_pair(value: rusqlite::types::Value, value_type_tag: i32) -> Result<TypedValue>;
     fn to_sql_value_pair<'a>(&'a self) -> (ToSqlOutput<'a>, i32);
-    fn from_einsteinml_value(value: &Value) -> Option<TypedValue>;
-    fn to_einsteinml_value_pair(&self) -> (Value, ValueType);
+    fn from_edn_value(value: &Value) -> Option<TypedValue>;
+    fn to_edn_value_pair(&self) -> (Value, ValueType);
 }
 
 impl TypedSQLValue for TypedValue {
@@ -402,11 +402,11 @@ impl TypedSQLValue for TypedValue {
     /// Given an EML `value`, return a corresponding einstai `TypedValue`.
     ///
     /// An EML `Value` does not encode a unique einstai `ValueType`, so the composition
-    /// `from_einsteinml_value(first(to_einsteinml_value_pair(...)))` loses information.  Additionally, there are
+    /// `from_edn_value(first(to_edn_value_pair(...)))` loses information.  Additionally, there are
     /// EML values which are not einstai typed values.
     ///
     /// This function is deterministic.
-    fn from_einsteinml_value(value: &Value) -> Option<TypedValue> {
+    fn from_edn_value(value: &Value) -> Option<TypedValue> {
         match value {
             &Value::Boolean(x) => Some(TypedValue::Boolean(x)),
             &Value::Instant(x) => Some(TypedValue::Instant(x)),
@@ -435,7 +435,7 @@ impl TypedSQLValue for TypedValue {
     }
 
     /// Return the corresponding EML `value` and `value_type` pair.
-    fn to_einsteinml_value_pair(&self) -> (Value, ValueType) {
+    fn to_edn_value_pair(&self) -> (Value, ValueType) {
         match self {
             &TypedValue::Ref(x) => (Value::Integer(x), ValueType::Ref),
             &TypedValue::Boolean(x) => (Value::Boolean(x), ValueType::Boolean),
@@ -503,15 +503,15 @@ pub fn read_partition_map(conn: &rusqlite::Connection) -> Result<PartitionMap> {
 
 /// Read the solitonid map materialized view from the given SQL store.
 pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<SolitonidMap> {
-    let v = read_materialized_view(conn, "idents")?;
+    let v = read_materialized_view(conn, "solitonids")?;
     v.into_iter().map(|(e, a, typed_value)| {
         if a != causetids::einsteindb_IDENT {
-            bail!(einsteindbErrorKind::NotYetImplemented(format!("bad idents materialized view: expected :einsteindb/solitonid but got {}", a)));
+            bail!(einsteindbErrorKind::NotYetImplemented(format!("bad solitonids materialized view: expected :einsteindb/solitonid but got {}", a)));
         }
         if let TypedValue::Keyword(keyword) = typed_value {
             Ok((keyword.as_ref().clone(), e))
         } else {
-            bail!(einsteindbErrorKind::NotYetImplemented(format!("bad idents materialized view: expected [causetid :einsteindb/solitonid keyword] but got [causetid :einsteindb/solitonid {:?}]", typed_value)));
+            bail!(einsteindbErrorKind::NotYetImplemented(format!("bad solitonids materialized view: expected [causetid :einsteindb/solitonid keyword] but got [causetid :einsteindb/solitonid {:?}]", typed_value)));
         }
     }).collect()
 }
@@ -526,7 +526,7 @@ pub(crate) fn read_attribute_map(conn: &rusqlite::Connection) -> Result<Attribut
 
 /// Read the materialized views from the given SQL store and return a einstai `einsteindb` for querying and
 /// applying transactions.
-pub(crate) fn read_einsteineinsteindb(conn: &rusqlite::Connection) -> Result<einsteindb> {
+pub(crate) fn read_einsteindb(conn: &rusqlite::Connection) -> Result<einsteindb> {
     let partition_map = read_partition_map(conn)?;
     let ident_map = read_ident_map(conn)?;
     let attribute_map = read_attribute_map(conn)?;
@@ -581,7 +581,7 @@ pub trait einstaiStoring {
     /// This is a final step in performing a transaction.
     fn commit_einstai_transaction(&self, tx_id: Causetid) -> Result<()>;
 
-    /// Extract spacetime-related [e a typed_value added] datoms resolved in the last
+    /// Extract spacetime-related [e a typed_value added] causets resolved in the last
     /// materialized transaction.
     fn resolved_spacetime_assertions(&self) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>>;
 }
@@ -596,7 +596,7 @@ fn search(conn: &rusqlite::Connection) -> Result<()> {
       INSERT INTO temp.search_results
       SELECT t.e0, t.a0, t.v0, t.value_type_tag0, t.added0, t.flags0, ':einsteindb.cardinality/many', d.rowid, d.v
       FROM temp.exact_searches AS t
-      LEFT JOIN datoms AS d
+      LEFT JOIN causets AS d
       ON t.e0 = d.e AND
          t.a0 = d.a AND
          t.value_type_tag0 = d.value_type_tag AND
@@ -606,7 +606,7 @@ fn search(conn: &rusqlite::Connection) -> Result<()> {
 
       SELECT t.e0, t.a0, t.v0, t.value_type_tag0, t.added0, t.flags0, ':einsteindb.cardinality/one', d.rowid, d.v
       FROM temp.inexact_searches AS t
-      LEFT JOIN datoms AS d
+      LEFT JOIN causets AS d
       ON t.e0 = d.e AND
          t.a0 = d.a"#;
 
@@ -623,8 +623,8 @@ fn search(conn: &rusqlite::Connection) -> Result<()> {
 fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
     // einstai follows Datomic and treats its input as a set.  That means it is okay to transact the
     // same [e a v] twice in one transaction.  However, we don't want to represent the transacted
-    // datom twice.  Therefore, the transactor unifies repeated datoms, and in addition we add
-    // indices to the search inputs and search results to ensure that we don't see repeated datoms
+    // datom twice.  Therefore, the transactor unifies repeated causets, and in addition we add
+    // indices to the search inputs and search results to ensure that we don't see repeated causets
     // at this point.
 
     let s = r#"
@@ -634,7 +634,7 @@ fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
       WHERE added0 IS 1 AND ((rid IS NULL) OR ((rid IS NOT NULL) AND (v0 IS NOT v)))"#;
 
     let mut stmt = conn.prepare_cached(s)?;
-    stmt.execute(&[&tx]).context(einsteindbErrorKind::TxInsertFailedToAddMissingDatoms)?;
+    stmt.execute(&[&tx]).context(einsteindbErrorKind::TxInsertFailedToAddMissingcausets)?;
 
     let s = r#"
       INSERT INTO timelined_transactions (e, a, v, tx, added, value_type_tag)
@@ -645,18 +645,18 @@ fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
              (added0 IS 1 AND search_type IS ':einsteindb.cardinality/one' AND v0 IS NOT v))"#;
 
     let mut stmt = conn.prepare_cached(s)?;
-    stmt.execute(&[&tx]).context(einsteindbErrorKind::TxInsertFailedToRetractDatoms)?;
+    stmt.execute(&[&tx]).context(einsteindbErrorKind::TxInsertFailedToRetractcausets)?;
 
     Ok(())
 }
 
-/// Update the contents of the `datoms` materialized view with the new transaction.
+/// Update the contents of the `causets` materialized view with the new transaction.
 ///
-/// This applies the contents of `search_results` to the `datoms` table (in place).
+/// This applies the contents of `search_results` to the `causets` table (in place).
 ///
 /// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-SQL-translation.
-fn update_datoms(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
-    // Delete datoms that were retracted, or those that were :einsteindb.cardinality/one and will be
+fn update_causets(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
+    // Delete causets that were retracted, or those that were :einsteindb.cardinality/one and will be
     // replaced.
     let s = r#"
         WITH ids AS (SELECT rid
@@ -664,19 +664,19 @@ fn update_datoms(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
                      WHERE rid IS NOT NULL AND
                            ((added0 IS 0) OR
                             (added0 IS 1 AND search_type IS ':einsteindb.cardinality/one' AND v0 IS NOT v)))
-        DELETE FROM datoms WHERE rowid IN ids"#;
+        DELETE FROM causets WHERE rowid IN ids"#;
 
     let mut stmt = conn.prepare_cached(s)?;
-    stmt.execute(&[]).context(einsteindbErrorKind::DatomsUpdateFailedToRetract)?;
+    stmt.execute(&[]).context(einsteindbErrorKind::causetsUpdateFailedToRetract)?;
 
-    // Insert datoms that were added and not already present. We also must expand our bitfield into
+    // Insert causets that were added and not already present. We also must expand our bitfield into
     // flags.  Since einstai follows Datomic and treats its input as a set, it is okay to transact
     // the same [e a v] twice in one transaction, but we don't want to represent the transacted
-    // datom twice in datoms.  The transactor unifies repeated datoms, and in addition we add
-    // indices to the search inputs and search results to ensure that we don't see repeated datoms
+    // datom twice in causets.  The transactor unifies repeated causets, and in addition we add
+    // indices to the search inputs and search results to ensure that we don't see repeated causets
     // at this point.
     let s = format!(r#"
-      INSERT INTO datoms (e, a, v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value)
+      INSERT INTO causets (e, a, v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value)
       SELECT e0, a0, v0, ?, value_type_tag0,
              flags0 & {} IS NOT 0,
              flags0 & {} IS NOT 0,
@@ -690,7 +690,7 @@ fn update_datoms(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
       AttributeBitFlags::UniqueValue as u8);
 
     let mut stmt = conn.prepare_cached(&s)?;
-    stmt.execute(&[&tx]).context(einsteindbErrorKind::DatomsUpdateFailedToAdd)?;
+    stmt.execute(&[&tx]).context(einsteindbErrorKind::causetsUpdateFailedToAdd)?;
     Ok(())
 }
 
@@ -731,15 +731,15 @@ impl einstaiStoring for rusqlite::Connection {
             }).collect();
 
             // TODO: cache these statements for selected values of `count`.
-            // TODO: query against `datoms` and UNION ALL with `fulltext_datoms` rather than
-            // querying against `all_datoms`.  We know all the attributes, and in the common case,
+            // TODO: query against `causets` and UNION ALL with `fulltext_causets` rather than
+            // querying against `all_causets`.  We know all the attributes, and in the common case,
             // where most unique attributes will not be fulltext-indexed, we'll be querying just
-            // `datoms`, which will be much faster.ˇ
+            // `causets`, which will be much faster.ˇ
             assert!(bindings_per_statement * count < max_vars, "Too many values: {} * {} >= {}", bindings_per_statement, count, max_vars);
 
             let values: String = repeat_values(bindings_per_statement, count);
             let s: String = format!("WITH t(search_id, a, v, value_type_tag) AS (VALUES {}) SELECT t.search_id, d.e \
-                                     FROM t, all_datoms AS d \
+                                     FROM t, all_causets AS d \
                                      WHERE d.index_avet IS NOT 0 AND d.a = t.a AND d.value_type_tag = t.value_type_tag AND d.v = t.v",
                                     values);
             let mut stmt: rusqlite::Statement = self.prepare(s.as_str())?;
@@ -768,7 +768,7 @@ impl einstaiStoring for rusqlite::Connection {
             r#"DROP TABLE IF EXISTS temp.exact_searches"#,
             // Note that `flags0` is a bitfield of several flags compressed via
             // `AttributeBitFlags.flags()` in the temporary search tables, later
-            // expanded in the `datoms` insertion.
+            // expanded in the `causets` insertion.
             r#"CREATE TABLE temp.exact_searches (
                e0 INTEGER NOT NULL,
                a0 SMALLINT NOT NULL,
@@ -789,7 +789,7 @@ impl einstaiStoring for rusqlite::Connection {
                flags0 TINYINT NOT NULL)"#,
 
             // It is fine to transact the same [e a v] twice in one transaction, but the transaction
-            // processor should unify such repeated datoms.  This index will cause insertion to fail
+            // processor should unify such repeated causets.  This index will cause insertion to fail
             // if the transaction processor incorrectly tries to assert the same (cardinality one)
             // datom twice.  (Sadly, the failure is opaque.)
             r#"CREATE UNIQUE INDEX IF NOT EXISTS temp.inexact_searches_unique ON inexact_searches (e0, a0) WHERE added0 = 1"#,
@@ -807,7 +807,7 @@ impl einstaiStoring for rusqlite::Connection {
                rid INTEGER,
                v BLOB)"#,
             // It is fine to transact the same [e a v] twice in one transaction, but the transaction
-            // processor should identify those datoms.  This index will cause insertion to fail if
+            // processor should identify those causets.  This index will cause insertion to fail if
             // the internals of the database searching code incorrectly find the same datom twice.
             // (Sadly, the failure is opaque.)
             //
@@ -1013,7 +1013,7 @@ impl einstaiStoring for rusqlite::Connection {
 
     fn materialize_einstai_transaction(&self, tx_id: Causetid) -> Result<()> {
         search(&self)?;
-        update_datoms(&self, tx_id)?;
+        update_causets(&self, tx_id)?;
         Ok(())
     }
 
@@ -1047,7 +1047,7 @@ impl einstaiStoring for rusqlite::Connection {
     }
 }
 
-/// Extract spacetime-related [e a typed_value added] datoms committed in the given transaction.
+/// Extract spacetime-related [e a typed_value added] causets committed in the given transaction.
 pub fn committed_spacetime_assertions(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
     let sql_stmt = format!(r#"
         SELECT e, a, v, value_type_tag, added
@@ -1086,54 +1086,54 @@ fn row_to_datom_assertion(row: &rusqlite::Row) -> Result<(Causetid, Causetid, Ty
 
 /// Update the spacetime materialized views based on the given spacetime report.
 ///
-/// This updates the "causetids", "idents", and "schema" materialized views, copying directly from the
-/// "datoms" and "transactions" table as appropriate.
+/// This updates the "causetids", "solitonids", and "schema" materialized views, copying directly from the
+/// "causets" and "transactions" table as appropriate.
 pub fn update_spacetime(conn: &rusqlite::Connection, _old_schema: &Schema, new_schema: &Schema, spacetime_report: &spacetime::MetadataReport) -> Result<()>
 {
     use spacetime::AttributeAlteration::*;
 
-    // Populate the materialized view directly from datoms (and, potentially in the future,
+    // Populate the materialized view directly from causets (and, potentially in the future,
     // transactions).  This might generalize nicely as we expand the set of materialized views.
     // TODO: consider doing this in fewer SQLite execute() invocations.
     // TODO: use concat! to avoid creating String instances.
-    if !spacetime_report.idents_altered.is_empty() {
-        // Solitonids is the materialized view of the [causetid :einsteindb/solitonid solitonid] slice of datoms.
-        conn.execute(format!("DELETE FROM idents").as_str(),
+    if !spacetime_report.solitonids_altered.is_empty() {
+        // Solitonids is the materialized view of the [causetid :einsteindb/solitonid solitonid] slice of causets.
+        conn.execute(format!("DELETE FROM solitonids").as_str(),
                      &[])?;
-        conn.execute(format!("INSERT INTO idents SELECT e, a, v, value_type_tag FROM datoms WHERE a IN {}", causetids::IDENTS_SQL_LIST.as_str()).as_str(),
+        conn.execute(format!("INSERT INTO solitonids SELECT e, a, v, value_type_tag FROM causets WHERE a IN {}", causetids::SOLITONIDS_SQL_LIST.as_str()).as_str(),
                      &[])?;
     }
 
-    // Populate the materialized view directly from datoms.
+    // Populate the materialized view directly from causets.
     // It's possible that an "solitonid" was removed, along with its attributes.
     // That's not counted as an "alteration" of attributes, so we explicitly check
-    // for non-emptiness of 'idents_altered'.
+    // for non-emptiness of 'solitonids_altered'.
 
     // TODO expand spacetime report to allow for better signaling for the above.
 
     if !spacetime_report.attributes_installed.is_empty()
         || !spacetime_report.attributes_altered.is_empty()
-        || !spacetime_report.idents_altered.is_empty() {
+        || !spacetime_report.solitonids_altered.is_empty() {
 
         conn.execute(format!("DELETE FROM schema").as_str(),
                      &[])?;
         // NB: we're using :einsteindb/valueType as a placeholder for the entire schema-defining set.
         let s = format!(r#"
-            WITH s(e) AS (SELECT e FROM datoms WHERE a = {})
+            WITH s(e) AS (SELECT e FROM causets WHERE a = {})
             INSERT INTO schema
             SELECT s.e, a, v, value_type_tag
-            FROM datoms, s
-            WHERE s.e = datoms.e AND a IN {}
+            FROM causets, s
+            WHERE s.e = causets.e AND a IN {}
         "#, causetids::einsteindb_VALUE_TYPE, causetids::SCHEMA_SQL_LIST.as_str());
         conn.execute(&s, &[])?;
     }
 
-    let mut index_stmt = conn.prepare("UPDATE datoms SET index_avet = ? WHERE a = ?")?;
-    let mut unique_value_stmt = conn.prepare("UPDATE datoms SET unique_value = ? WHERE a = ?")?;
+    let mut index_stmt = conn.prepare("UPDATE causets SET index_avet = ? WHERE a = ?")?;
+    let mut unique_value_stmt = conn.prepare("UPDATE causets SET unique_value = ? WHERE a = ?")?;
     let mut cardinality_stmt = conn.prepare(r#"
 SELECT EXISTS
     (SELECT 1
-        FROM datoms AS left, datoms AS right
+        FROM causets AS left, causets AS right
         WHERE left.a = ? AND
         left.a = right.a AND
         left.e = right.e AND
@@ -1211,26 +1211,26 @@ mod tests {
 
     use super::*;
     use debug::{TestConn,tempids};
-    use einsteinml::{
+    use edn::{
         self,
         InternSet,
     };
-    use einsteinml::causets::{
+    use edn::causets::{
         OpType,
     };
     use core_traits::{
         attribute,
         KnownCausetid,
     };
-    use einsteineinsteindb_core::{
+    use einsteindb_core::{
         HasSchema,
         Keyword,
     };
-    use einsteineinsteindb_core::util::Either::*;
+    use einsteindb_core::util::Either::*;
     use std::collections::{
         BTreeMap,
     };
-    use einsteineinsteindb_traits::errors as errors;
+    use einsteindb_traits::errors as errors;
     use internal_types::{
         Term,
     };
@@ -1243,7 +1243,7 @@ mod tests {
                         "[[100 :einsteindb.schema/version 1 ?tx true]
                           [101 :einsteindb.schema/version 2 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                        "[[100 :einsteindb.schema/version 1]
                          [101 :einsteindb.schema/version 2]]");
 
@@ -1254,7 +1254,7 @@ mod tests {
                         "[[200 :einsteindb.schema/attribute 100 ?tx true]
                           [200 :einsteindb.schema/attribute 101 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb.schema/version 1]
                           [101 :einsteindb.schema/version 2]
                           [200 :einsteindb.schema/attribute 100]
@@ -1269,7 +1269,7 @@ mod tests {
                           [101 :einsteindb.schema/version 2 ?tx false]
                           [101 :einsteindb.schema/version 22 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb.schema/version 11]
                           [101 :einsteindb.schema/version 22]
                           [200 :einsteindb.schema/attribute 100]
@@ -1281,7 +1281,7 @@ mod tests {
                                  [:einsteindb/add 101 :einsteindb.schema/version 22]]");
         assert_matches!(conn.last_transaction(),
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb.schema/version 11]
                           [101 :einsteindb.schema/version 22]
                           [200 :einsteindb.schema/attribute 100]
@@ -1293,7 +1293,7 @@ mod tests {
                                  [:einsteindb/add 200 :einsteindb.schema/attribute 101]]");
         assert_matches!(conn.last_transaction(),
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb.schema/version 11]
                           [101 :einsteindb.schema/version 22]
                           [200 :einsteindb.schema/attribute 100]
@@ -1375,7 +1375,7 @@ mod tests {
                         "[[100 :einsteindb.schema/version 1 ?tx true]
                           [101 :einsteindb.schema/version 2 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb.schema/version 1]
                           [101 :einsteindb.schema/version 2]]");
 
@@ -1386,7 +1386,7 @@ mod tests {
                         "[[200 :einsteindb.schema/attribute 100 ?tx true]
                           [200 :einsteindb.schema/attribute 101 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb.schema/version 1]
                           [101 :einsteindb.schema/version 2]
                           [200 :einsteindb.schema/attribute 100]
@@ -1397,7 +1397,7 @@ mod tests {
         assert_matches!(conn.last_transaction(),
                         "[[100 :einsteindb.schema/version 1 ?tx false]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[101 :einsteindb.schema/version 2]
                           [200 :einsteindb.schema/attribute 100]
                           [200 :einsteindb.schema/attribute 101]]");
@@ -1407,7 +1407,7 @@ mod tests {
         assert_matches!(conn.last_transaction(),
                         "[[200 :einsteindb.schema/attribute 100 ?tx false]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[101 :einsteindb.schema/version 2]
                           [200 :einsteindb.schema/attribute 101]]");
 
@@ -1417,13 +1417,13 @@ mod tests {
                                  [:einsteindb/retract 200 :einsteindb.schema/attribute 100]]");
         assert_matches!(conn.last_transaction(),
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[101 :einsteindb.schema/version 2]
                           [200 :einsteindb.schema/attribute 101]]");
     }
 
     #[test]
-    fn test_einsteineinsteindb_doc_is_not_schema() {
+    fn test_einsteindb_doc_is_not_schema() {
         let mut conn = TestConn::default();
 
         // Neither transaction below is defining a new attribute.  That is, it's fine to use :einsteindb/doc
@@ -1468,7 +1468,7 @@ mod tests {
                         "[[100 :einsteindb/solitonid :name/Ivan ?tx true]
                           [101 :einsteindb/solitonid :name/Petr ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]
                           [101 :einsteindb/solitonid :name/Petr]]");
 
@@ -1481,7 +1481,7 @@ mod tests {
                         "[[100 :einsteindb.schema/attribute :name/Ivan ?tx true]
                           [101 :einsteindb.schema/attribute :name/Petr ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]
                           [100 :einsteindb.schema/attribute :name/Ivan]
                           [101 :einsteindb/solitonid :name/Petr]
@@ -1497,7 +1497,7 @@ mod tests {
         assert_matches!(conn.last_transaction(),
                         "[[100 :einsteindb.schema/attribute 102 ?tx true]
                           [?true :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]
                           [100 :einsteindb.schema/attribute :name/Ivan]
                           [100 :einsteindb.schema/attribute 102]
@@ -1624,7 +1624,7 @@ mod tests {
     }
 
     #[test]
-    fn test_einsteineinsteindb_install() {
+    fn test_einsteindb_install() {
         let mut conn = TestConn::default();
 
         // We're missing some tests here, since our impleeinstaiion is incomplete.
@@ -1647,7 +1647,7 @@ mod tests {
                           [100 :einsteindb/valueType :einsteindb.type/long ?tx true]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :test/solitonid]
                           [100 :einsteindb/valueType :einsteindb.type/long]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
@@ -1700,7 +1700,7 @@ mod tests {
     }
 
     #[test]
-    fn test_einsteineinsteindb_alter() {
+    fn test_einsteindb_alter() {
         let mut conn = TestConn::default();
 
         // Start by installing a :einsteindb.cardinality/one attribute.
@@ -1719,7 +1719,7 @@ mod tests {
                         "[[100 :einsteindb/cardinality :einsteindb.cardinality/one ?tx false]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :test/solitonid]
                           [100 :einsteindb/valueType :einsteindb.type/keyword]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
@@ -1741,7 +1741,7 @@ mod tests {
     }
 
     #[test]
-    fn test_einsteineinsteindb_ident() {
+    fn test_einsteindb_ident() {
         let mut conn = TestConn::default();
 
         // We can assert a new :einsteindb/solitonid.
@@ -1749,7 +1749,7 @@ mod tests {
         assert_matches!(conn.last_transaction(),
                         "[[100 :einsteindb/solitonid :name/Ivan ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
         assert_eq!(conn.schema.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
         assert_eq!(conn.schema.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
@@ -1758,7 +1758,7 @@ mod tests {
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :name/Ivan]]");
         assert_matches!(conn.last_transaction(),
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
         assert_eq!(conn.schema.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
         assert_eq!(conn.schema.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
@@ -1769,7 +1769,7 @@ mod tests {
                         "[[100 :einsteindb/solitonid :name/Ivan ?tx false]
                           [100 :einsteindb/solitonid :name/Petr ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Petr]]");
         // Causetid map is updated.
         assert_eq!(conn.schema.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Petr").unwrap());
@@ -1783,7 +1783,7 @@ mod tests {
         assert_matches!(conn.last_transaction(),
                         "[[101 :einsteindb/solitonid :name/Ivan ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Petr]
                           [101 :einsteindb/solitonid :name/Ivan]]");
         // Causetid map contains both causetids.
@@ -1802,7 +1802,7 @@ mod tests {
     }
 
     #[test]
-    fn test_einsteineinsteindb_alter_cardinality() {
+    fn test_einsteindb_alter_cardinality() {
         let mut conn = TestConn::default();
 
         // Start by installing a :einsteindb.cardinality/one attribute.
@@ -1817,7 +1817,7 @@ mod tests {
 
         assert_transact!(conn, "[[:einsteindb/add 200 :test/solitonid 2]]");
 
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :test/solitonid]
                           [100 :einsteindb/valueType :einsteindb.type/long]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many]
@@ -1831,7 +1831,7 @@ mod tests {
     }
 
     #[test]
-    fn test_einsteineinsteindb_alter_unique_value() {
+    fn test_einsteindb_alter_unique_value() {
         let mut conn = TestConn::default();
 
         // Start by installing a :einsteindb.cardinality/one attribute.
@@ -1874,7 +1874,7 @@ mod tests {
     }
 
     #[test]
-    fn test_einsteineinsteindb_double_retraction_issue_818() {
+    fn test_einsteindb_double_retraction_issue_818() {
         let mut conn = TestConn::default();
 
         // Start by installing a :einsteindb.cardinality/one attribute.
@@ -1894,7 +1894,7 @@ mod tests {
                           [200 :test/solitonid \"Oi\" ?tx false]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
 
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :test/solitonid]
                           [100 :einsteindb/valueType :einsteindb.type/string]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/one]
@@ -1905,7 +1905,7 @@ mod tests {
 
     /// Verify that we can't alter :einsteindb/fulltext schema characteristics at all.
     #[test]
-    fn test_einsteineinsteindb_alter_fulltext() {
+    fn test_einsteindb_alter_fulltext() {
         let mut conn = TestConn::default();
 
         // Start by installing a :einsteindb/fulltext true and a :einsteindb/fulltext unset attribute.
@@ -1929,7 +1929,7 @@ mod tests {
     }
 
     #[test]
-    fn test_einsteineinsteindb_fulltext() {
+    fn test_einsteindb_fulltext() {
         let mut conn = TestConn::default();
 
         // Start by installing a few :einsteindb/fulltext true attributes.
@@ -1957,7 +1957,7 @@ mod tests {
         assert_eq!(other.multival, false);
         assert_eq!(other.unique, None);
 
-        // We can add fulltext indexed datoms.
+        // We can add fulltext indexed causets.
         assert_transact!(conn, "[[:einsteindb/add 301 :test/fulltext \"test this\"]]");
         // value column is rowid into fulltext table.
         assert_matches!(conn.fulltext_values(),
@@ -1965,7 +1965,7 @@ mod tests {
         assert_matches!(conn.last_transaction(),
                         "[[301 :test/fulltext 1 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/valueType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
@@ -1978,7 +1978,7 @@ mod tests {
                           [222 :einsteindb/fulltext true]
                           [301 :test/fulltext 1]]");
 
-        // We can replace existing fulltext indexed datoms.
+        // We can replace existing fulltext indexed causets.
         assert_transact!(conn, "[[:einsteindb/add 301 :test/fulltext \"alternate thing\"]]");
         // value column is rowid into fulltext table.
         assert_matches!(conn.fulltext_values(),
@@ -1988,7 +1988,7 @@ mod tests {
                         "[[301 :test/fulltext 1 ?tx false]
                           [301 :test/fulltext 2 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/valueType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
@@ -2001,7 +2001,7 @@ mod tests {
                           [222 :einsteindb/fulltext true]
                           [301 :test/fulltext 2]]");
 
-        // We can upsert keyed by fulltext indexed datoms.
+        // We can upsert keyed by fulltext indexed causets.
         assert_transact!(conn, "[[:einsteindb/add \"t\" :test/fulltext \"alternate thing\"]
                                  [:einsteindb/add \"t\" :test/other \"other\"]]");
         // value column is rowid into fulltext table.
@@ -2012,7 +2012,7 @@ mod tests {
         assert_matches!(conn.last_transaction(),
                         "[[301 :test/other 3 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/valueType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
@@ -2036,7 +2036,7 @@ mod tests {
         assert_matches!(conn.last_transaction(),
                         "[[302 :test/other 2 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/valueType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
@@ -2051,7 +2051,7 @@ mod tests {
                           [301 :test/other 3]
                           [302 :test/other 2]]");
 
-        // We can retract fulltext indexed datoms.  The underlying fulltext value remains -- indeed,
+        // We can retract fulltext indexed causets.  The underlying fulltext value remains -- indeed,
         // it might still be in use.
         assert_transact!(conn, "[[:einsteindb/retract 302 :test/other \"alternate thing\"]]");
         // value column is rowid into fulltext table.
@@ -2062,7 +2062,7 @@ mod tests {
         assert_matches!(conn.last_transaction(),
                         "[[302 :test/other 2 ?tx false]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
-        assert_matches!(conn.datoms(),
+        assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/valueType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
@@ -2095,7 +2095,7 @@ mod tests {
                                  [:einsteindb/add 333 :einsteindb/valueType :einsteindb.type/keyword]
                                  [:einsteindb/add 333 :einsteindb/index true]]");
 
-        // And a few datoms to match against.
+        // And a few causets to match against.
         assert_transact!(conn, "[[:einsteindb/add 501 :test/unique_value \"test this\"]
                                  [:einsteindb/add 502 :test/unique_value \"other\"]
                                  [:einsteindb/add 503 :test/unique_idcauset -10]
@@ -2153,7 +2153,7 @@ mod tests {
                                  [:einsteindb/add 444 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 444 :einsteindb/index true]]");
 
-        // And a few datoms to match against.
+        // And a few causets to match against.
         assert_transact!(conn, "[[:einsteindb/add 501 :test/unique_value \"test this\"]
                                  [:einsteindb/add 502 :test/unique_value \"other\"]
                                  [:einsteindb/add 503 :test/unique_idcauset -10]
@@ -2349,7 +2349,7 @@ mod tests {
         assert_matches!(tempids(&report),
                         "{}");
 
-        // Check that we can explode direct reversed notation, idents.
+        // Check that we can explode direct reversed notation, solitonids.
         let report = assert_transact!(conn, "[[:einsteindb/add :test/many :test/_dangling :test/unique]]");
         assert_matches!(conn.last_transaction(),
                         "[[333 :test/dangling :test/many ?tx true]
@@ -2565,7 +2565,7 @@ mod tests {
         Err("schema constraint violation: conflicting upserts:\n  tempid External(\"a\") upserts to {KnownCausetid(111), KnownCausetid(222)}\n  tempid External(\"b\") upserts to {KnownCausetid(111), KnownCausetid(222)}\n"));
 
         // Here's a case where the upsert is not resolved, just allocated, but leads to conflicting
-        // cardinality one datoms.
+        // cardinality one causets.
         assert_transact!(conn, r#"[
             [:einsteindb/add "x" :page/ref 333]
             [:einsteindb/add "x" :page/ref 444]
@@ -2585,7 +2585,7 @@ mod tests {
 
         // Observe that "foo" and "zot" upsert to the same causetid, and that doesn't cause a
         // cardinality conflict, because we treat the input with set semantics and accept
-        // duplicate datoms.
+        // duplicate causets.
         let report = assert_transact!(conn, r#"[
             [:einsteindb/add "bar" :page/id "z"]
             [:einsteindb/add "foo" :page/ref "bar"]
@@ -2656,7 +2656,7 @@ mod tests {
     #[test]
     fn test_term_typechecking_issue_663() {
         // The builder interfaces provide untrusted `Term` instances to the transactor, bypassing
-        // the typechecking layers invoked in the schema-aware coercion from `einsteinml::Value` into
+        // the typechecking layers invoked in the schema-aware coercion from `edn::Value` into
         // `TypedValue`.  Typechecking now happens lower in the stack (as well as higher in the
         // stack) so we shouldn't be able to insert bad data into the store.
 
@@ -2670,12 +2670,12 @@ mod tests {
         let report = conn.transact_simple_terms(terms, InternSet::new());
 
         match report.err().map(|e| e.kind()) {
-            Some(einsteindbErrorKind::SchemaConstraintViolation(errors::SchemaConstraintViolation::TypeDisagreements { ref conflicting_datoms })) => {
+            Some(einsteindbErrorKind::SchemaConstraintViolation(errors::SchemaConstraintViolation::TypeDisagreements { ref conflicting_causets })) => {
                 let mut map = BTreeMap::default();
                 map.insert((100, causetids::einsteindb_TX_INSTANT, TypedValue::Long(-1)), ValueType::Instant);
                 map.insert((200, causetids::einsteindb_IDENT, TypedValue::typed_string("test")), ValueType::Keyword);
 
-                assert_eq!(conflicting_datoms, &map);
+                assert_eq!(conflicting_causets, &map);
             },
             x => panic!("expected schema constraint violation, got {:?}", x),
         }
@@ -2706,14 +2706,14 @@ mod tests {
             [:einsteindb/retract 100 :test/many 2]
         ]"#);
 
-        // Can't transact multiple datoms for a cardinality one attribute.
+        // Can't transact multiple causets for a cardinality one attribute.
         assert_transact!(conn, r#"[
             [:einsteindb/add 100 :test/one 3]
             [:einsteindb/add 100 :test/one 4]
         ]"#,
         Err("schema constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 100, a: 200, vs: {Long(3), Long(4)} }\n"));
 
-        // Can transact multiple datoms for a cardinality many attribute.
+        // Can transact multiple causets for a cardinality many attribute.
         assert_transact!(conn, r#"[
             [:einsteindb/add 100 :test/many 5]
             [:einsteindb/add 100 :test/many 6]

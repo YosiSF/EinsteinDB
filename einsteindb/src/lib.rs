@@ -22,9 +22,9 @@ extern crate rusqlite;
 extern crate tabwriter;
 extern crate time;
 
-#[macro_use] extern crate einsteinml;
-#[macro_use] extern crate einsteineinsteindb_core;
-extern crate einsteineinsteindb_traits;
+#[macro_use] extern crate edn;
+#[macro_use] extern crate einsteindb_core;
+extern crate einsteindb_traits;
 #[macro_use] extern crate core_traits;
 extern crate einstai_sql;
 
@@ -32,7 +32,7 @@ use std::iter::repeat;
 
 use itertools::Itertools;
 
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
@@ -73,7 +73,7 @@ pub use bootstrap::{
     CORE_SCHEMA_VERSION,
 };
 
-use einsteinml::symbols;
+use edn::symbols;
 
 pub use causetids::{
     einsteindb_SCHEMA_CORE,
@@ -131,7 +131,7 @@ pub fn to_namespaced_keyword(s: &str) -> Result<symbols::Keyword> {
 /// # Examples
 ///
 /// ```rust
-/// # use einstai_einsteineinsteindb::{repeat_values};
+/// # use einstai_einsteindb::{repeat_values};
 /// assert_eq!(repeat_values(1, 3), "(?), (?), (?)".to_string());
 /// assert_eq!(repeat_values(3, 1), "(?, ?, ?)".to_string());
 /// assert_eq!(repeat_values(2, 2), "(?, ?), (?, ?)".to_string());

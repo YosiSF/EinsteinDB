@@ -19,7 +19,7 @@ use core_traits::{
     ValueType,
 };
 
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors::{
     CardinalityConflict,
 };
 
@@ -60,7 +60,7 @@ pub(crate) fn type_disagreements<'schema>(aev_trie: &AEVTrie<'schema>) -> TypeDi
 /// - add two distinct values for the same cardinality one attribute and causet in a single transaction
 /// - add and remove the same values for the same attribute and causet in a single transaction
 ///
-/// We try to be maximally helpful by yielding every malformed set of datoms, rather than just the
+/// We try to be maximally helpful by yielding every malformed set of causets, rather than just the
 /// first set, or even the first conflict.  In the future, we might change this choice, or allow the
 /// consumer to specify the robustness of the cardinality checking desired.
 pub(crate) fn cardinality_conflicts<'schema>(aev_trie: &AEVTrie<'schema>) -> Vec<CardinalityConflict> {

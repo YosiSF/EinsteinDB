@@ -7,7 +7,7 @@ use crate::{EvalType, FieldTypeFlag, FieldTypeTp};
 use codec::buffer::{BufferReader, BufferWriter};
 use codec::number::{NumberDecoder, NumberEncoder};
 use Einsteineinsteindb_util::buffer_vec::BufferVec;
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use super::{Error, Result};
 use crate::codec::data_type::{ChunkRef, VectorValue};
@@ -892,7 +892,7 @@ mod tests {
     use super::*;
     use crate::codec::datum::Datum;
     use std::{f64, u64};
-    use einsteineinsteindbpb::FieldType;
+    use einsteindbpb::FieldType;
 
     #[test]
     fn test_column_i64() {

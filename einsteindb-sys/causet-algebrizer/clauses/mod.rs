@@ -34,13 +34,13 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteineinsteindb_embedded::{
+use einsteindb_embedded::{
     Cloned,
     HasSchema,
     Schema,
 };
 
-use einsteineinsteindb_embedded::counter::RcPetri;
+use einsteindb_embedded::counter::RcPetri;
 
 use eeinsteindbn::query::{
     Element,

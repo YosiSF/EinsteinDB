@@ -14,7 +14,7 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteineinsteindb_embedded::{
+use einsteindb_embedded::{
     HasSchema,
     Schema,
     SQLValueType,

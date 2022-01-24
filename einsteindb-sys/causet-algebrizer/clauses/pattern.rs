@@ -15,7 +15,7 @@ use embedded_promises::{
     ValueTypeSet,
 };
 
-use einsteineinsteindb_embedded::{
+use einsteindb_embedded::{
     Cloned,
     HasSchema,
 };

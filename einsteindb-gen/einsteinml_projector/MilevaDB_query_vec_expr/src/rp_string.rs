@@ -1092,7 +1092,7 @@ mod tests {
     use std::{f64, i64, str};
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::charset::CHARSET_BIN;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::{Collation, FieldTypeFlag, FieldTypeTp, MAX_BLOB_WIDTH};
-    use einsteineinsteindbpb::{Expr, ScalarFuncSig};
+    use einsteindbpb::{Expr, ScalarFuncSig};
 
     use crate::tests::{
         col_expr, datum_expr, eval_func, scalar_func_expr, string_datum_expr_with_tp,

@@ -185,7 +185,7 @@ mod tests {
     use crate::Expression;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
-    use einsteineinsteindbpb::ScalarFuncSig;
+    use einsteindbpb::ScalarFuncSig;
 
     #[test]
     fn test_md5() {

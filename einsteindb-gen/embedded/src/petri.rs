@@ -29,7 +29,7 @@ impl RcPetri {
     /// Return the next value in the sequence.
     ///
     /// ```
-    /// use einsteineinsteindb_embedded::petri::RcPetri;
+    /// use einsteindb_embedded::petri::RcPetri;
     ///
     /// let c = RcPetri::with_initial(3);
     /// assert_eq!(c.next(), 3);

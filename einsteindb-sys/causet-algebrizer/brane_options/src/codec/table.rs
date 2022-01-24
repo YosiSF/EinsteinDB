@@ -8,7 +8,7 @@ use std::{cmp, u8};
 use crate::prelude::*;
 use crate::FieldTypeTp;
 use ekvproto::interlock::KeyRange;
-use einsteineinsteindbpb::ColumnInfo;
+use einsteindbpb::ColumnInfo;
 
 use super::mysql::{Duration, Time};
 use super::{datum, datum::DatumDecoder, Datum, Error, Result};
@@ -523,7 +523,7 @@ pub fn generate_index_data_for_test(
 mod tests {
     use std::i64;
 
-    use einsteineinsteindbpb::ColumnInfo;
+    use einsteindbpb::ColumnInfo;
 
     use crate::codec::datum::{self, Datum};
     use Einsteineinsteindb_util::collections::{HashMap, HashSet};

@@ -1,5 +1,5 @@
 [package]
-name = "einstai_einsteineinsteindb"
+name = "einstai_einsteindb"
 version = "0.0.1"
 workspace = ".."
 
@@ -25,16 +25,16 @@ serde_derive = { version = "1.0", optional = true }
 version = "0.26.3"
 features = ["limits"]
 
-[dependencies.einsteinml]
-path = "../einsteinml"
+[dependencies.edn]
+path = "../edn"
 
-[dependencies.einsteineinsteindb_core]
+[dependencies.einsteindb_core]
 path = "../core"
 
 [dependencies.core_traits]
 path = "../core-traits"
 
-[dependencies.einsteineinsteindb_traits]
+[dependencies.einsteindb_traits]
 path = "../einsteindb-traits"
 
 [dependencies.einstai_sql]

@@ -31,15 +31,15 @@ use core_traits::{
     TypedValue,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     Schema,
 };
 
-use einsteinml::causets::{
+use edn::causets::{
     OpType,
 };
 
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors::{
     Result,
 };
 

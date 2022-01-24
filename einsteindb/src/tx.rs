@@ -61,13 +61,13 @@ use einsteindb;
 use einsteindb::{
     einstaiStoring,
 };
-use einsteinml::{
+use edn::{
     InternSet,
     Keyword,
 };
 use causetids;
-use einsteineinsteindb_traits::errors as errors;
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors as errors;
+use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
@@ -87,7 +87,7 @@ use internal_types::{
     replace_lookup_ref,
 };
 
-use einsteineinsteindb_core::util::Either;
+use einsteindb_core::util::Either;
 
 use core_traits::{
     attribute,
@@ -99,15 +99,15 @@ use core_traits::{
     now,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     DateTime,
     Schema,
     TxReport,
     Utc,
 };
 
-use einsteinml::causets as entmod;
-use einsteinml::causets::{
+use edn::causets as entmod;
+use edn::causets::{
     AttributePlace,
     causet,
     OpType,
@@ -135,14 +135,14 @@ use watcher::{
 
 /// Defines transactor's high level behaviour.
 pub(crate) enum TransactorAction {
-    /// Materialize transaction into 'datoms' and spacetime
+    /// Materialize transaction into 'causets' and spacetime
     /// views, but do not commit it into 'transactions' table.
     /// Use this if you need transaction's "side-effects", but
     /// don't want its by-products to end-up in the transaction log,
     /// e.g. when rewinding.
     Materialize,
 
-    /// Materialize transaction into 'datoms' and spacetime
+    /// Materialize transaction into 'causets' and spacetime
     /// views, and also commit it into the 'transactions' table.
     /// Use this for regular transactions.
     MaterializeAndCommit,
@@ -179,11 +179,11 @@ pub struct Tx<'conn, 'a, W> where W: TransactWatcher {
 
 /// Remove any :einsteindb/id value from the given map notation, converting the returned value into
 /// something suitable for the causet position rather than something suitable for a value position.
-pub fn remove_einsteineinsteindb_id<V: TransactableValue>(map: &mut entmod::MapNotation<V>) -> Result<Option<entmod::causetPlace<V>>> {
+pub fn remove_einsteindb_id<V: TransactableValue>(map: &mut entmod::MapNotation<V>) -> Result<Option<entmod::causetPlace<V>>> {
     // TODO: extract lazy defined constant.
-    let einsteineinsteindb_id_key = entmod::CausetidOrSolitonid::Solitonid(Keyword::namespaced("einsteindb", "id"));
+    let einsteindb_id_key = entmod::CausetidOrSolitonid::Solitonid(Keyword::namespaced("einsteindb", "id"));
 
-    let einsteineinsteindb_id: Option<entmod::causetPlace<V>> = if let Some(id) = map.remove(&einsteineinsteindb_id_key) {
+    let einsteindb_id: Option<entmod::causetPlace<V>> = if let Some(id) = map.remove(&einsteindb_id_key) {
         match id {
             entmod::ValuePlace::Causetid(e) => Some(entmod::causetPlace::Causetid(e)),
             entmod::ValuePlace::LookupRef(e) => Some(entmod::causetPlace::LookupRef(e)),
@@ -199,7 +199,7 @@ pub fn remove_einsteineinsteindb_id<V: TransactableValue>(map: &mut entmod::MapN
         None
     };
 
-    Ok(einsteineinsteindb_id)
+    Ok(einsteindb_id)
 }
 
 impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
@@ -435,14 +435,14 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                 causet::MapNotation(mut map_notation) => {
                     // :einsteindb/id is optional; if it's not given, we generate a special internal tempid
                     // to use for upserting.  This tempid will not be reported in the TxReport.
-                    let einsteineinsteindb_id: entmod::causetPlace<V> = remove_einsteineinsteindb_id(&mut map_notation)?.unwrap_or_else(|| in_process.allocate_einstai_id());
+                    let einsteindb_id: entmod::causetPlace<V> = remove_einsteindb_id(&mut map_notation)?.unwrap_or_else(|| in_process.allocate_einstai_id());
 
                     // We're not nested, so :einsteindb/isComponent is not relevant.  We just explode the
                     // map notation.
                     for (a, v) in map_notation {
                         deque.push_front(causet::AddOrRetract {
                             op: OpType::Add,
-                            e: einsteineinsteindb_id.clone(),
+                            e: einsteindb_id.clone(),
                             a: AttributePlace::Causetid(a),
                             v: v,
                         });
@@ -541,9 +541,9 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
                                 // :einsteindb/id is optional; if it's not given, we generate a special internal tempid
                                 // to use for upserting.  This tempid will not be reported in the TxReport.
-                                let einsteineinsteindb_id: Option<entmod::causetPlace<V>> = remove_einsteineinsteindb_id(&mut map_notation)?;
-                                let mut dangling = einsteineinsteindb_id.is_none();
-                                let einsteineinsteindb_id: entmod::causetPlace<V> = einsteineinsteindb_id.unwrap_or_else(|| in_process.allocate_einstai_id());
+                                let einsteindb_id: Option<entmod::causetPlace<V>> = remove_einsteindb_id(&mut map_notation)?;
+                                let mut dangling = einsteindb_id.is_none();
+                                let einsteindb_id: entmod::causetPlace<V> = einsteindb_id.unwrap_or_else(|| in_process.allocate_einstai_id());
 
                                 // We're nested, so we want to ensure we're not creating "dangling"
                                 // causets that can't be reached.  If we're :einsteindb/isComponent, then this
@@ -570,7 +570,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
                                         let reversed_e = in_process.causet_v_into_term_e(inner_v, &inner_a)?;
                                         let reversed_a = in_process.causet_a_into_term_a(reversed_a)?;
-                                        let reversed_v = in_process.causet_e_into_term_v(einsteineinsteindb_id.clone())?;
+                                        let reversed_v = in_process.causet_e_into_term_v(einsteindb_id.clone())?;
                                         terms.push(Term::AddOrRetract(OpType::Add, reversed_e, reversed_a, reversed_v));
                                     } else {
                                         let inner_a = in_process.causet_a_into_term_a(inner_a)?;
@@ -581,7 +581,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
                                         deque.push_front(causet::AddOrRetract {
                                             op: OpType::Add,
-                                            e: einsteineinsteindb_id.clone(),
+                                            e: einsteindb_id.clone(),
                                             a: AttributePlace::Causetid(entmod::CausetidOrSolitonid::Causetid(inner_a)),
                                             v: inner_v,
                                         });
@@ -592,7 +592,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                     bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map value that would lead to dangling causet for attribute {}", a)));
                                 }
 
-                                in_process.causet_e_into_term_v(einsteineinsteindb_id)?
+                                in_process.causet_e_into_term_v(einsteindb_id)?
                             },
                         };
 
@@ -756,7 +756,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
         let errors = tx_checking::type_disagreements(&aev_trie);
         if !errors.is_empty() {
-            bail!(einsteindbErrorKind::SchemaConstraintViolation(errors::SchemaConstraintViolation::TypeDisagreements { conflicting_datoms: errors }));
+            bail!(einsteindbErrorKind::SchemaConstraintViolation(errors::SchemaConstraintViolation::TypeDisagreements { conflicting_causets: errors }));
         }
 
         let errors = tx_checking::cardinality_conflicts(&aev_trie);

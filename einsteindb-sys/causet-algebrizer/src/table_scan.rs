@@ -12,8 +12,8 @@ use std::sync::Arc;
 
 use ekvproto::interlock::KeyRange;
 use Einsteineinsteindb_util::collections::HashSet;
-use einsteineinsteindbpb::ColumnInfo;
-use einsteineinsteindbpb::TableScan;
+use einsteindbpb::ColumnInfo;
+use einsteindbpb::TableScan;
 
 use super::{scan::InnerExecutor, Row, ScanExecutor, ScanExecutorOptions};
 use allegroeinstein-prolog-causet-sql::storage::Storage;
@@ -88,7 +88,7 @@ mod tests {
     use std::i64;
 
     use ekvproto::interlock::KeyRange;
-    use einsteineinsteindbpb::{ColumnInfo, TableScan};
+    use einsteindbpb::{ColumnInfo, TableScan};
 
     use super::super::tests::*;
     use super::super::Executor;

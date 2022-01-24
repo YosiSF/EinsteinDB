@@ -19,7 +19,7 @@ use chrono::prelude::*;
 
 use crate::{FieldTypeAccessor, FieldTypeTp};
 use codec::prelude::*;
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use crate::codec::convert::ConvertTo;
 use crate::codec::mysql::{check_fsp, Decimal, Duration};

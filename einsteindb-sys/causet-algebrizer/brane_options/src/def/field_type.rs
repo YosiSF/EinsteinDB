@@ -2,12 +2,12 @@
 
 use std::fmt;
 
-use einsteineinsteindbpb::ColumnInfo;
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::ColumnInfo;
+use einsteindbpb::FieldType;
 
 use crate::error::DataTypeError;
 
-/// Valid values of `einsteineinsteindbpb::FieldType::tp` and `einsteineinsteindbpb::ColumnInfo::tp`.
+/// Valid values of `einsteindbpb::FieldType::tp` and `einsteindbpb::ColumnInfo::tp`.
 ///
 /// `FieldType` is the field type of a column defined by schema.
 ///
@@ -95,8 +95,8 @@ impl From<FieldTypeTp> for ColumnInfo {
     }
 }
 
-/// Valid values of `einsteineinsteindbpb::FieldType::collate` and
-/// `einsteineinsteindbpb::ColumnInfo::collation`.
+/// Valid values of `einsteindbpb::FieldType::collate` and
+/// `einsteindbpb::ColumnInfo::collation`.
 ///
 /// Legacy Utf8Bin collator (was the default) does not pad. For compatibility,
 /// all new collation with padding behavior is negative.

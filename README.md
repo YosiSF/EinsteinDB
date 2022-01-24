@@ -1,4 +1,4 @@
-<img src="images/EinsteineinsteindbLogo.png" alt="einsteineinsteindb_logo" width="600"/>
+<img src="images/EinsteineinsteindbLogo.png" alt="einsteindb_logo" width="600"/>
 
 ## [Website](https://www.einsteindb.com) | [Documentation](https://einsteindb.com/docs/latest/concepts/overview/) | [Community Chat](https://einsteindb.com/chat)
 

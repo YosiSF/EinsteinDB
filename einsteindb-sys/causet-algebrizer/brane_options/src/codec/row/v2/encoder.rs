@@ -34,7 +34,7 @@ use crate::codec::{
 };
 
 use crate::{FieldTypeAccessor, FieldTypeFlag, FieldTypeTp};
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use crate::expr::EvalContext;
 use codec::prelude::*;

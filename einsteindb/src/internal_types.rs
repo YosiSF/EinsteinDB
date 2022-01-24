@@ -26,24 +26,24 @@ use core_traits::{
     ValueType,
 };
 
-use einsteineinsteindb_core::util::Either;
+use einsteindb_core::util::Either;
 
-use einsteinml;
-use einsteinml::{
+use edn;
+use edn::{
     SpannedValue,
     ValueAndSpan,
     ValueRc,
 };
-use einsteinml::causets;
-use einsteinml::causets::{
+use edn::causets;
+use edn::causets::{
     causetPlace,
     OpType,
     TempId,
     TxFunction,
 };
 
-use einsteineinsteindb_traits::errors as errors;
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors as errors;
+use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
@@ -70,7 +70,7 @@ impl TransactableValue for ValueAndSpan {
                 if v.is_namespaced() {
                     Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Solitonid(v)))
                 } else {
-                    // We only allow namespaced idents.
+                    // We only allow namespaced solitonids.
                     bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace))
                 }
             },
@@ -83,7 +83,7 @@ impl TransactableValue for ValueAndSpan {
                         Ok(causetPlace::TxFunction(TxFunction { op: op.clone() }))
                     },
                     // Like "(lookup-ref)".
-                    (Some(&PlainSymbol(einsteinml::PlainSymbol(ref s))), Some(a), Some(v), None) if s == "lookup-ref" => {
+                    (Some(&PlainSymbol(edn::PlainSymbol(ref s))), Some(a), Some(v), None) if s == "lookup-ref" => {
                         match a.clone().into_causet_place()? {
                             causetPlace::Causetid(a) => Ok(causetPlace::LookupRef(causets::LookupRef { a: causets::AttributePlace::Causetid(a), v: v.clone() })),
                             causetPlace::TempId(_) |

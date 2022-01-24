@@ -12,7 +12,7 @@ use std::ops::RangeFrom;
 
 use rusqlite;
 
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
@@ -23,15 +23,15 @@ use core_traits::{
     TypedValue,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     Schema,
 };
 
-use einsteinml::{
+use edn::{
     InternSet,
 };
 
-use einsteinml::causets::OpType;
+use edn::causets::OpType;
 
 use einsteindb;
 use einsteindb::{
@@ -98,8 +98,8 @@ fn move_transactions_to(conn: &rusqlite::Connection, tx_ids: &[Causetid], new_ti
     Ok(())
 }
 
-fn remove_tx_from_datoms(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<()> {
-    conn.execute("DELETE FROM datoms WHERE e = ?", &[&tx_id])?;
+fn remove_tx_from_causets(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<()> {
+    conn.execute("DELETE FROM causets WHERE e = ?", &[&tx_id])?;
     Ok(())
 }
 
@@ -156,7 +156,7 @@ pub fn move_from_main_timeline(conn: &rusqlite::Connection, schema: &Schema,
     for tx_id in &txs_to_move {
         let reversed_terms = reversed_terms_for(conn, *tx_id)?;
 
-        // Rewind schema and datoms.
+        // Rewind schema and causets.
         let (report, _, new_schema, _) = transact_terms_with_action(
             conn, partition_map.clone(), schema, schema, NullWatcher(),
             reversed_terms.into_iter().map(|t| t.rewrap()),
@@ -164,15 +164,15 @@ pub fn move_from_main_timeline(conn: &rusqlite::Connection, schema: &Schema,
         )?;
 
         // Rewind operation generated a 'tx' and a 'txInstant' assertion, which got
-        // inserted into the 'datoms' table (due to TransactorAction::Materialize).
+        // inserted into the 'causets' table (due to TransactorAction::Materialize).
         // This is problematic. If we transact a few more times, the transactor will
         // generate the same 'tx', but with a different 'txInstant'.
         // The end result will be a transaction which has a phantom
         // retraction of a txInstant, since transactor operates against the state of
-        // 'datoms', and not against the 'transactions' table.
+        // 'causets', and not against the 'transactions' table.
         // A quick workaround is to just remove the bad txInstant datom.
         // See test_clashing_tx_instants test case.
-        remove_tx_from_datoms(conn, report.tx_id)?;
+        remove_tx_from_causets(conn, report.tx_id)?;
         last_schema = new_schema;
     }
 
@@ -186,7 +186,7 @@ pub fn move_from_main_timeline(conn: &rusqlite::Connection, schema: &Schema,
 mod tests {
     use super::*;
 
-    use einsteinml;
+    use edn;
 
     use std::borrow::{
         Borrow,
@@ -228,7 +228,7 @@ mod tests {
         ).expect("moved single tx");
         update_conn(&mut conn, &new_schema, &new_partition_map);
 
-        assert_matches!(conn.datoms(), "[]");
+        assert_matches!(conn.causets(), "[]");
         assert_matches!(conn.transactions(), "[]");
         assert_eq!(new_partition_map, partition_map0);
 
@@ -245,7 +245,7 @@ mod tests {
         assert_eq!(report1.tx_id, report2.tx_id);
         assert_eq!(partition_map1, partition_map2);
 
-        assert_matches!(conn.datoms(), r#"
+        assert_matches!(conn.causets(), r#"
             [[37 :einsteindb/doc "test"]]
         "#);
         assert_matches!(conn.transactions(), r#"
@@ -276,7 +276,7 @@ mod tests {
         ).expect("moved single tx");
         update_conn(&mut conn, &new_schema, &new_partition_map);
 
-        assert_matches!(conn.datoms(), "[]");
+        assert_matches!(conn.causets(), "[]");
         assert_matches!(conn.transactions(), "[]");
         assert_eq!(conn.partition_map, partition_map0);
         assert_eq!(conn.schema, schema0);
@@ -287,7 +287,7 @@ mod tests {
         assert_eq!(conn.partition_map, partition_map1);
         assert_eq!(conn.schema, schema1);
 
-        assert_matches!(conn.datoms(), r#"
+        assert_matches!(conn.causets(), r#"
             [[?e :einsteindb/solitonid :test/causetid]
              [?e :einsteindb/doc "test"]
              [?e :einsteindb.schema/version 1]]
@@ -320,8 +320,8 @@ mod tests {
         ).expect("moved single tx");
         update_conn(&mut conn, &new_schema, &new_partition_map);
 
-        // Assert that our datoms are now just the schema.
-        assert_matches!(conn.datoms(), "
+        // Assert that our causets are now just the schema.
+        assert_matches!(conn.causets(), "
             [[?e :einsteindb/solitonid :person/name]
             [?e :einsteindb/valueType :einsteindb.type/string]
             [?e :einsteindb/cardinality :einsteindb.cardinality/one]
@@ -345,8 +345,8 @@ mod tests {
         assert_transact!(conn, r#"
             [[:einsteindb/add (lookup-ref :person/name "Vanya") :person/name "Ivan"]]"#);
 
-        // Assert that our datoms are now the schema and the final assertion.
-        assert_matches!(conn.datoms(), r#"
+        // Assert that our causets are now the schema and the final assertion.
+        assert_matches!(conn.causets(), r#"
             [[?e1 :einsteindb/solitonid :person/name]
             [?e1 :einsteindb/valueType :einsteindb.type/string]
             [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
@@ -356,7 +356,7 @@ mod tests {
         "#);
 
         // Assert that we have three correct looking transactions.
-        // This will fail if we're not cleaning up the 'datoms' table
+        // This will fail if we're not cleaning up the 'causets' table
         // after the timeline move.
         assert_matches!(conn.transactions(), r#"
             [[
@@ -401,7 +401,7 @@ mod tests {
             report1.tx_id.., 1).expect("moved single tx");
         update_conn(&mut conn, &new_schema, &new_partition_map);
 
-        assert_matches!(conn.datoms(), "[]");
+        assert_matches!(conn.causets(), "[]");
         assert_matches!(conn.transactions(), "[]");
         assert_eq!(conn.partition_map, partition_map0);
         assert_eq!(conn.schema, schema0);
@@ -414,7 +414,7 @@ mod tests {
         assert_eq!(partition_map1, partition_map2);
         assert_eq!(schema1, schema2);
 
-        assert_matches!(conn.datoms(), r#"
+        assert_matches!(conn.causets(), r#"
             [[?e1 :einsteindb/solitonid :test/one]
              [?e1 :einsteindb/valueType :einsteindb.type/long]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
@@ -462,7 +462,7 @@ mod tests {
             report1.tx_id.., 1).expect("moved single tx");
         update_conn(&mut conn, &new_schema, &new_partition_map);
 
-        assert_matches!(conn.datoms(), "[]");
+        assert_matches!(conn.causets(), "[]");
         assert_matches!(conn.transactions(), "[]");
         assert_eq!(conn.partition_map, partition_map0);
         assert_eq!(conn.schema, schema0);
@@ -475,7 +475,7 @@ mod tests {
         assert_eq!(partition_map1, partition_map2);
         assert_eq!(schema1, schema2);
 
-        assert_matches!(conn.datoms(), r#"
+        assert_matches!(conn.causets(), r#"
             [[?e1 :einsteindb/solitonid :test/one]
              [?e1 :einsteindb/valueType :einsteindb.type/string]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
@@ -523,7 +523,7 @@ mod tests {
             report1.tx_id.., 1).expect("moved single tx");
         update_conn(&mut conn, &new_schema, &new_partition_map);
 
-        assert_matches!(conn.datoms(), "[]");
+        assert_matches!(conn.causets(), "[]");
         assert_matches!(conn.transactions(), "[]");
         assert_eq!(conn.partition_map, partition_map0);
 
@@ -543,7 +543,7 @@ mod tests {
         assert_eq!(partition_map1, partition_map2);
         assert_eq!(schema1, schema2);
 
-        assert_matches!(conn.datoms(), r#"
+        assert_matches!(conn.causets(), r#"
             [[?e1 :einsteindb/solitonid :test/one]
              [?e1 :einsteindb/valueType :einsteindb.type/ref]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
@@ -586,7 +586,7 @@ mod tests {
             [65537 :einsteindb/valueType :einsteindb.type/long]
             [65537 :einsteindb/cardinality :einsteindb.cardinality/many]
         ]";
-        assert_matches!(conn.datoms(), first);
+        assert_matches!(conn.causets(), first);
 
         let partition_map0 = conn.partition_map.clone();
 
@@ -619,7 +619,7 @@ mod tests {
             [65538 :test/many 2]
             [65538 :test/many 3]
         ]";
-        assert_matches!(conn.datoms(), second);
+        assert_matches!(conn.causets(), second);
 
         let tx_report2 = assert_transact!(conn, r#"[
             [:einsteindb/add 65538 :test/one 2]
@@ -649,14 +649,14 @@ mod tests {
             [65538 :test/many 2]
             [65538 :test/many 4]
         ]";
-        assert_matches!(conn.datoms(), third);
+        assert_matches!(conn.causets(), third);
 
         let (new_schema, new_partition_map) = move_from_main_timeline(
             &conn.sqlite, &conn.schema, conn.partition_map.clone(),
             tx_report2.tx_id.., 1).expect("moved timeline");
         update_conn(&mut conn, &new_schema, &new_partition_map);
 
-        assert_matches!(conn.datoms(), second);
+        assert_matches!(conn.causets(), second);
         // Moving didn't change the schema.
         assert_eq!(None, new_schema);
         assert_eq!(conn.schema, schema2);
@@ -667,7 +667,7 @@ mod tests {
             &conn.sqlite, &conn.schema, conn.partition_map.clone(),
             tx_report1.tx_id.., 2).expect("moved timeline");
         update_conn(&mut conn, &new_schema, &new_partition_map);
-        assert_matches!(conn.datoms(), first);
+        assert_matches!(conn.causets(), first);
         assert_eq!(None, new_schema);
         assert_eq!(schema1, conn.schema);
         assert_eq!(conn.partition_map, partition_map0);
@@ -679,7 +679,7 @@ mod tests {
         assert_eq!(true, new_schema.is_some());
         assert_eq!(bootstrap::bootstrap_schema(), conn.schema);
         assert_eq!(partition_map_after_bootstrap, conn.partition_map);
-        assert_matches!(conn.datoms(), "[]");
+        assert_matches!(conn.causets(), "[]");
         assert_matches!(conn.transactions(), "[]");
     }
 
@@ -721,7 +721,7 @@ mod tests {
         assert_eq!(true, new_schema.is_some());
         assert_eq!(bootstrap::bootstrap_schema(), conn.schema);
         assert_eq!(partition_map_after_bootstrap, conn.partition_map);
-        assert_matches!(conn.datoms(), "[]");
+        assert_matches!(conn.causets(), "[]");
         assert_matches!(conn.transactions(), "[]");
     }
 }

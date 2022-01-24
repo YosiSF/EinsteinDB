@@ -13,7 +13,7 @@
 
 /// Low-level functions for testing.
 
-// Macro to parse a `Borrow<str>` to an `einsteinml::Value` and assert the given `einsteinml::Value` `matches`
+// Macro to parse a `Borrow<str>` to an `edn::Value` and assert the given `edn::Value` `matches`
 // against it.
 //
 // This is a macro only to give nice line numbers when tests fail.
@@ -21,10 +21,10 @@
 macro_rules! assert_matches {
     ( $input: expr, $expected: expr ) => {{
         // Failure to parse the expected pattern is a coding error, so we unwrap.
-        let pattern_value = einsteinml::parse::value($expected.borrow())
+        let pattern_value = edn::parse::value($expected.borrow())
             .expect(format!("to be able to parse expected {}", $expected).as_str())
             .without_spans();
-        let input_value = $input.to_einsteinml();
+        let input_value = $input.to_edn();
         assert!(input_value.matches(&pattern_value),
                 "Expected value:\n{}\nto match pattern:\n{}\n",
                 input_value.to_pretty(120).unwrap(),
@@ -63,9 +63,9 @@ use tabwriter::TabWriter;
 use bootstrap;
 use einsteindb::*;
 use einsteindb::{read_attribute_map,read_ident_map};
-use einsteinml;
+use edn;
 use causetids;
-use einsteineinsteindb_traits::errors::Result;
+use einsteindb_traits::errors::Result;
 
 use core_traits::{
     Causetid,
@@ -73,15 +73,15 @@ use core_traits::{
     ValueType,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     HasSchema,
     SQLValueType,
     TxReport,
 };
-use einsteinml::{
+use edn::{
     InternSet,
 };
-use einsteinml::causets::{
+use edn::causets::{
     CausetidOrSolitonid,
     TempId,
 };
@@ -104,17 +104,17 @@ pub struct Datom {
     // TODO: generalize this.
     pub e: CausetidOrSolitonid,
     pub a: CausetidOrSolitonid,
-    pub v: einsteinml::Value,
+    pub v: edn::Value,
     pub tx: i64,
     pub added: Option<bool>,
 }
 
-/// Represents a set of datoms (assertions) in the store.
+/// Represents a set of causets (assertions) in the store.
 ///
 /// To make comparision easier, we deterministically order.  The ordering is the ascending tuple
 /// ordering determined by `(e, a, (value_type_tag, v), tx)`, where `value_type_tag` is an internal
 /// value that is not exposed but is deterministic.
-pub struct Datoms(pub Vec<Datom>);
+pub struct causets(pub Vec<Datom>);
 
 /// Represents an ordered sequence of transactions in the store.
 ///
@@ -122,45 +122,45 @@ pub struct Datoms(pub Vec<Datom>);
 /// ordering determined by `(e, a, (value_type_tag, v), tx, added)`, where `value_type_tag` is an
 /// internal value that is not exposed but is deterministic, and `added` is ordered such that
 /// retracted assertions appear before added assertions.
-pub struct Transactions(pub Vec<Datoms>);
+pub struct Transactions(pub Vec<causets>);
 
 /// Represents the fulltext values in the store.
 pub struct FulltextValues(pub Vec<(i64, String)>);
 
 impl Datom {
-    pub fn to_einsteinml(&self) -> einsteinml::Value {
-        let f = |causetid: &CausetidOrSolitonid| -> einsteinml::Value {
+    pub fn to_edn(&self) -> edn::Value {
+        let f = |causetid: &CausetidOrSolitonid| -> edn::Value {
             match *causetid {
-                CausetidOrSolitonid::Causetid(ref y) => einsteinml::Value::Integer(y.clone()),
-                CausetidOrSolitonid::Solitonid(ref y) => einsteinml::Value::Keyword(y.clone()),
+                CausetidOrSolitonid::Causetid(ref y) => edn::Value::Integer(y.clone()),
+                CausetidOrSolitonid::Solitonid(ref y) => edn::Value::Keyword(y.clone()),
             }
         };
 
         let mut v = vec![f(&self.e), f(&self.a), self.v.clone()];
         if let Some(added) = self.added {
-            v.push(einsteinml::Value::Integer(self.tx));
-            v.push(einsteinml::Value::Boolean(added));
+            v.push(edn::Value::Integer(self.tx));
+            v.push(edn::Value::Boolean(added));
         }
 
-        einsteinml::Value::Vector(v)
+        edn::Value::Vector(v)
     }
 }
 
-impl Datoms {
-    pub fn to_einsteinml(&self) -> einsteinml::Value {
-        einsteinml::Value::Vector((&self.0).into_iter().map(|x| x.to_einsteinml()).collect())
+impl causets {
+    pub fn to_edn(&self) -> edn::Value {
+        edn::Value::Vector((&self.0).into_iter().map(|x| x.to_edn()).collect())
     }
 }
 
 impl Transactions {
-    pub fn to_einsteinml(&self) -> einsteinml::Value {
-        einsteinml::Value::Vector((&self.0).into_iter().map(|x| x.to_einsteinml()).collect())
+    pub fn to_edn(&self) -> edn::Value {
+        edn::Value::Vector((&self.0).into_iter().map(|x| x.to_edn()).collect())
     }
 }
 
 impl FulltextValues {
-    pub fn to_einsteinml(&self) -> einsteinml::Value {
-        einsteinml::Value::Vector((&self.0).into_iter().map(|&(x, ref y)| einsteinml::Value::Vector(vec![einsteinml::Value::Integer(x), einsteinml::Value::Text(y.clone())])).collect())
+    pub fn to_edn(&self) -> edn::Value {
+        edn::Value::Vector((&self.0).into_iter().map(|&(x, ref y)| edn::Value::Vector(vec![edn::Value::Integer(x), edn::Value::Text(y.clone())])).collect())
     }
 }
 
@@ -189,20 +189,20 @@ pub fn to_causetid(schema: &Schema, causetid: i64) -> CausetidOrSolitonid {
 //     schema.get_ident(causetid).map_or(Causetid::Causetid(causetid), |solitonid| Causetid::Solitonid(solitonid.clone()))
 // }
 
-/// Return the set of datoms in the store, ordered by (e, a, v, tx), but not including any datoms of
+/// Return the set of causets in the store, ordered by (e, a, v, tx), but not including any causets of
 /// the form [... :einsteindb/txInstant ...].
-pub fn datoms<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S) -> Result<Datoms> {
-    datoms_after(conn, schema, bootstrap::TX0 - 1)
+pub fn causets<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S) -> Result<causets> {
+    causets_after(conn, schema, bootstrap::TX0 - 1)
 }
 
-/// Return the set of datoms in the store with transaction ID strictly greater than the given `tx`,
+/// Return the set of causets in the store with transaction ID strictly greater than the given `tx`,
 /// ordered by (e, a, v, tx).
 ///
-/// The datom set returned does not include any datoms of the form [... :einsteindb/txInstant ...].
-pub fn datoms_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, tx: i64) -> Result<Datoms> {
+/// The datom set returned does not include any causets of the form [... :einsteindb/txInstant ...].
+pub fn causets_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, tx: i64) -> Result<causets> {
     let borrowed_schema = schema.borrow();
 
-    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx FROM datoms WHERE tx > ? ORDER BY e ASC, a ASC, value_type_tag ASC, v ASC, tx ASC")?;
+    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx FROM causets WHERE tx > ? ORDER BY e ASC, a ASC, value_type_tag ASC, v ASC, tx ASC")?;
 
     let r: Result<Vec<_>> = stmt.query_and_then(&[&tx], |row| {
         let e: i64 = row.get_checked(0)?;
@@ -219,7 +219,7 @@ pub fn datoms_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, 
         let value_type_tag = if !attribute.fulltext { value_type_tag } else { ValueType::Long.value_type_tag() };
 
         let typed_value = TypedValue::from_sql_value_pair(v, value_type_tag)?.map_ident(borrowed_schema);
-        let (value, _) = typed_value.to_einsteinml_value_pair();
+        let (value, _) = typed_value.to_edn_value_pair();
 
         let tx: i64 = row.get_checked(4)?;
 
@@ -232,7 +232,7 @@ pub fn datoms_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, 
         }))
     })?.collect();
 
-    Ok(Datoms(r?.into_iter().filter_map(|x| x).collect()))
+    Ok(causets(r?.into_iter().filter_map(|x| x).collect()))
 }
 
 /// Return the sequence of transactions in the store with transaction ID strictly greater than the
@@ -255,7 +255,7 @@ pub fn transactions_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema
         let value_type_tag = if !attribute.fulltext { value_type_tag } else { ValueType::Long.value_type_tag() };
 
         let typed_value = TypedValue::from_sql_value_pair(v, value_type_tag)?.map_ident(borrowed_schema);
-        let (value, _) = typed_value.to_einsteinml_value_pair();
+        let (value, _) = typed_value.to_edn_value_pair();
 
         let tx: i64 = row.get_checked(4)?;
         let added: bool = row.get_checked(5)?;
@@ -270,7 +270,7 @@ pub fn transactions_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema
     })?.collect();
 
     // Group by tx.
-    let r: Vec<Datoms> = r?.into_iter().group_by(|x| x.tx).into_iter().map(|(_key, group)| Datoms(group.collect())).collect();
+    let r: Vec<causets> = r?.into_iter().group_by(|x| x.tx).into_iter().map(|(_key, group)| causets(group.collect())).collect();
     Ok(Transactions(r))
 }
 
@@ -336,7 +336,7 @@ impl TestConn {
 
     pub fn transact<I>(&mut self, transaction: I) -> Result<TxReport> where I: Borrow<str> {
         // Failure to parse the transaction is a coding error, so we unwrap.
-        let causets = einsteinml::parse::causets(transaction.borrow()).expect(format!("to be able to parse {} into causets", transaction.borrow()).as_str());
+        let causets = edn::parse::causets(transaction.borrow()).expect(format!("to be able to parse {} into causets", transaction.borrow()).as_str());
 
         let details = {
             // The block scopes the borrow of self.sqlite.
@@ -387,7 +387,7 @@ impl TestConn {
         self.partition_map.get(&":einsteindb.part/tx".to_string()).unwrap().next_causetid() - 1
     }
 
-    pub fn last_transaction(&self) -> Datoms {
+    pub fn last_transaction(&self) -> causets {
         transactions_after(&self.sqlite, &self.schema, self.last_tx_id() - 1).expect("last_transaction").0.pop().unwrap()
     }
 
@@ -395,8 +395,8 @@ impl TestConn {
         transactions_after(&self.sqlite, &self.schema, bootstrap::TX0).expect("transactions")
     }
 
-    pub fn datoms(&self) -> Datoms {
-        datoms_after(&self.sqlite, &self.schema, bootstrap::TX0).expect("datoms")
+    pub fn causets(&self) -> causets {
+        causets_after(&self.sqlite, &self.schema, bootstrap::TX0).expect("causets")
     }
 
     pub fn fulltext_values(&self) -> FulltextValues {
@@ -407,8 +407,8 @@ impl TestConn {
         let einsteindb = ensure_current_version(&mut conn).unwrap();
 
         // Does not include :einsteindb/txInstant.
-        let datoms = datoms_after(&conn, &einsteindb.schema, 0).unwrap();
-        assert_eq!(datoms.0.len(), 94);
+        let causets = causets_after(&conn, &einsteindb.schema, 0).unwrap();
+        assert_eq!(causets.0.len(), 94);
 
         // Includes :einsteindb/txInstant.
         let transactions = transactions_after(&conn, &einsteindb.schema, 0).unwrap();
@@ -447,18 +447,18 @@ impl Default for TestConn {
     }
 }
 
-pub struct TempIds(einsteinml::Value);
+pub struct TempIds(edn::Value);
 
 impl TempIds {
-    pub fn to_einsteinml(&self) -> einsteinml::Value {
+    pub fn to_edn(&self) -> edn::Value {
         self.0.clone()
     }
 }
 
 pub fn tempids(report: &TxReport) -> TempIds {
-    let mut map: BTreeMap<einsteinml::Value, einsteinml::Value> = BTreeMap::default();
+    let mut map: BTreeMap<edn::Value, edn::Value> = BTreeMap::default();
     for (tempid, &causetid) in report.tempids.iter() {
-        map.insert(einsteinml::Value::Text(tempid.clone()), einsteinml::Value::Integer(causetid));
+        map.insert(edn::Value::Text(tempid.clone()), edn::Value::Integer(causetid));
     }
-    TempIds(einsteinml::Value::Map(map))
+    TempIds(edn::Value::Map(map))
 }

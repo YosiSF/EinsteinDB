@@ -12,7 +12,7 @@ use std::convert::TryFrom;
 
 use causet_algebrizer::Milevaeinsteindb_query_datatype::builder::FieldTypeBuilder;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::{EvalType, FieldTypeAccessor, FieldTypeTp};
-use einsteineinsteindbpb::{Expr, FieldType};
+use einsteindbpb::{Expr, FieldType};
 
 use allegroeinstein-prolog-causet-sql::Result;
 use Milevaeinsteindb_query_vec_expr::impl_cast::get_cast_fn_rpn_node;

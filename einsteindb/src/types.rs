@@ -24,7 +24,7 @@ use std::ops::{
     Range,
 };
 
-extern crate einsteineinsteindb_core;
+extern crate einsteindb_core;
 
 use core_traits::{
     Causetid,
@@ -32,18 +32,18 @@ use core_traits::{
     ValueType,
 };
 
-pub use self::einsteineinsteindb_core::{
+pub use self::einsteindb_core::{
     DateTime,
     Schema,
     Utc,
 };
 
-use einsteinml::causets::{
+use edn::causets::{
     causetPlace,
     TempId,
 };
 
-use einsteineinsteindb_traits::errors as errors;
+use einsteindb_traits::errors as errors;
 
 /// Represents one partition of the causetid space.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
@@ -157,7 +157,7 @@ pub type AVMap<'a> = HashMap<&'a AVPair, Causetid>;
 // represents a set of causetids that are correspond to attributes
 pub type AttributeSet = BTreeSet<Causetid>;
 
-/// The transactor is tied to `einsteinml::ValueAndSpan` right now, but in the future we'd like to support
+/// The transactor is tied to `edn::ValueAndSpan` right now, but in the future we'd like to support
 /// `TypedValue` directly for programmatic use.  `TransactableValue` encapsulates the interface
 /// value types (i.e., values in the value place) need to support to be transacted.
 pub trait TransactableValue: Clone {

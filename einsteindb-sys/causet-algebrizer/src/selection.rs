@@ -10,7 +10,7 @@
 
 use std::sync::Arc;
 
-use einsteineinsteindbpb::Selection;
+use einsteindbpb::Selection;
 
 use super::{Executor, ExprColumnRefVisitor, Row};
 use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;
@@ -102,7 +102,7 @@ mod tests {
 
     use codec::prelude::NumberEncoder;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
-    use einsteineinsteindbpb::{Expr, ExprType, ScalarFuncSig};
+    use einsteindbpb::{Expr, ExprType, ScalarFuncSig};
 
     use super::super::tests::*;
     use super::*;

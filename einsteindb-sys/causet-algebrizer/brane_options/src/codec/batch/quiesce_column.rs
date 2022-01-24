@@ -12,7 +12,7 @@ use std::convert::TryFrom;
 
 use crate::{EvalType, FieldTypeAccessor};
 use Einsteineinsteindb_util::buffer_vec::BufferVec;
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use crate::codec::chunk::{ChunkColumnEncoder, Column};
 use crate::codec::data_type::{match_template_evaluable, VectorValue};

@@ -11,7 +11,7 @@
 use std::sync::Arc;
 
 use ekvproto::interlock::KeyRange;
-use einsteineinsteindbpb::ColumnInfo;
+use einsteindbpb::ColumnInfo;
 
 use super::{Executor, Row};
 use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;

@@ -13,7 +13,7 @@
 
 use crate::{FieldTypeAccessor, FieldTypeTp};
 use codec::prelude::*;
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use super::data_type::*;
 use crate::codec::datum;

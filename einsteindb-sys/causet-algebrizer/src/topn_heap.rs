@@ -13,7 +13,7 @@ use std::cmp::{self, Ordering};
 use std::collections::BinaryHeap;
 use std::sync::Arc;
 use std::usize;
-use einsteineinsteindbpb::ByItem;
+use einsteindbpb::ByItem;
 
 use crate::OriginCols;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::Datum;
@@ -181,7 +181,7 @@ mod tests {
     use std::cell::RefCell;
     use std::sync::Arc;
 
-    use einsteineinsteindbpb::{ByItem, Expr, ExprType};
+    use einsteindbpb::{ByItem, Expr, ExprType};
 
     use crate::OriginCols;
     use codec::prelude::NumberEncoder;

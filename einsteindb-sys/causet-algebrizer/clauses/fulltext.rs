@@ -13,11 +13,11 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteineinsteindb_embedded::{
+use einsteindb_embedded::{
     HasSchema,
 };
 
-use einsteineinsteindb_embedded::util::Either;
+use einsteindb_embedded::util::Either;
 
 use eeinsteindbn::query::{
     Binding,

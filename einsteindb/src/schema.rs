@@ -11,12 +11,12 @@
 #![allow(dead_code)]
 
 use einsteindb::TypedSQLValue;
-use einsteinml;
-use einsteineinsteindb_traits::errors::{
+use edn;
+use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
-use einsteinml::symbols;
+use edn::symbols;
 
 use core_traits::{
     attribute,
@@ -27,7 +27,7 @@ use core_traits::{
     ValueType,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     CausetidMap,
     HasSchema,
     SolitonidMap,
@@ -302,15 +302,15 @@ pub trait SchemaTypeChecking {
     ///
     /// Either assert that the given value is in the value type's value set, or (in limited cases)
     /// coerce the given value into the value type's value set.
-    fn to_typed_value(&self, value: &einsteinml::ValueAndSpan, value_type: ValueType) -> Result<TypedValue>;
+    fn to_typed_value(&self, value: &edn::ValueAndSpan, value_type: ValueType) -> Result<TypedValue>;
 }
 
 impl SchemaTypeChecking for Schema {
-    fn to_typed_value(&self, value: &einsteinml::ValueAndSpan, value_type: ValueType) -> Result<TypedValue> {
+    fn to_typed_value(&self, value: &edn::ValueAndSpan, value_type: ValueType) -> Result<TypedValue> {
         // TODO: encapsulate causetid-solitonid-attribute for better error messages, perhaps by including
         // the attribute (rather than just the attribute's value type) into this function or a
         // wrapper function.
-        match TypedValue::from_einsteinml_value(&value.clone().without_spans()) {
+        match TypedValue::from_edn_value(&value.clone().without_spans()) {
             // We don't recognize this EML at all.  Get out!
             None => bail!(einsteindbErrorKind::BadValuePair(format!("{}", value), value_type)),
             Some(typed_value) => match (value_type, typed_value) {
@@ -349,7 +349,7 @@ impl SchemaTypeChecking for Schema {
 #[cfg(test)]
 mod test {
     use super::*;
-    use self::einsteinml::Keyword;
+    use self::edn::Keyword;
 
     fn add_attribute(schema: &mut Schema,
             solitonid: Keyword,

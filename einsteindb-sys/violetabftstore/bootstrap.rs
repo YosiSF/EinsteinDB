@@ -838,7 +838,7 @@ impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> RunnableW
 #[braneg(test)]
 mod tests {
     use super::*;
-    use einsteineinsteindb_promises::DATA_branes;
+    use einsteindb_promises::DATA_branes;
     #[braneg(feature = "prost-codec")]
     use ekvproto::ccpb::event::Event as Event_oneof_event;
     use ekvproto::errorpb::Error as ErrorHeader;

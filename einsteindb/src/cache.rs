@@ -84,7 +84,7 @@ use core_traits::{
     TypedValue,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     CachedAttributes,
     HasSchema,
     Schema,
@@ -92,7 +92,7 @@ use einsteineinsteindb_core::{
     ValueRc,
 };
 
-use einsteineinsteindb_core::util::{
+use einsteindb_core::util::{
     Either,
 };
 
@@ -102,7 +102,7 @@ use einstai_sql::{
     SQLQuery,
 };
 
-use einsteinml::causets::{
+use edn::causets::{
     OpType,
 };
 
@@ -110,7 +110,7 @@ use einsteindb::{
     TypedSQLValue,
 };
 
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors::{
     einsteindbError,
     einsteindbErrorKind,
     Result,
@@ -895,7 +895,7 @@ impl AttributeCaches {
                   sqlite: &rusqlite::Connection,
                   attribute: Causetid) -> Result<()> {
         let is_fulltext = schema.attribute_for_causetid(attribute).map_or(false, |s| s.fulltext);
-        let table = if is_fulltext { "fulltext_datoms" } else { "datoms" };
+        let table = if is_fulltext { "fulltext_causets" } else { "causets" };
         let sql = format!("SELECT a, e, v, value_type_tag FROM {} WHERE a = ? ORDER BY a ASC, e ASC", table);
         let args: Vec<&rusqlite::types::ToSql> = vec![&attribute];
         let mut stmt = sqlite.prepare(&sql).context(einsteindbErrorKind::CacheUpdateFailed)?;
@@ -970,7 +970,7 @@ impl AttributeCaches {
         qb.push_sql("SELECT a, e, v, value_type_tag FROM ");
         match attrs {
             AttributeSpec::All => {
-                qb.push_sql("all_datoms WHERE e IN (");
+                qb.push_sql("all_causets WHERE e IN (");
                 interpose!(item, causets,
                            { qb.push_sql(&item.to_string()) },
                            { qb.push_sql(", ") });
@@ -988,7 +988,7 @@ impl AttributeCaches {
                 }
 
                 if has_non_fts {
-                    qb.push_sql("datoms WHERE e IN (");
+                    qb.push_sql("causets WHERE e IN (");
                     interpose!(item, causets,
                                { qb.push_sql(&item.to_string()) },
                                { qb.push_sql(", ") });
@@ -1007,7 +1007,7 @@ impl AttributeCaches {
                 }
 
                 if has_fts {
-                    qb.push_sql("fulltext_datoms WHERE e IN (");
+                    qb.push_sql("fulltext_causets WHERE e IN (");
                     interpose!(item, causets,
                                { qb.push_sql(&item.to_string()) },
                                { qb.push_sql(", ") });

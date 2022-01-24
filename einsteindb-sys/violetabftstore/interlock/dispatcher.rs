@@ -1,6 +1,6 @@
 // Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
-use einsteineinsteindb_promises::{BRANEName, KvEngine};
+use einsteindb_promises::{BRANEName, KvEngine};
 use ekvproto::metapb::Region;
 use ekvproto::FIDelpb::CheckPolicy;
 use ekvproto::violetabft_cmdpb::{violetabftCmdRequest, violetabftCmdResponse};

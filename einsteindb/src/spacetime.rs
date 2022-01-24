@@ -12,7 +12,7 @@
 
 //! Most transactions can mutate the einstai Spacetime by transacting assertions:
 //!
-//! - they can add (and, eventually, retract and alter) recognized idents using the `:einsteindb/solitonid`
+//! - they can add (and, eventually, retract and alter) recognized solitonids using the `:einsteindb/solitonid`
 //!   attribute;
 //!
 //! - they can add (and, eventually, retract and alter) schema attributes using various `:einsteindb/*`
@@ -32,9 +32,9 @@ use std::collections::btree_map::Entry;
 use add_retract_alter_set::{
     AddRetractAlterSet,
 };
-use einsteinml::symbols;
+use edn::symbols;
 use causetids;
-use einsteineinsteindb_traits::errors::{
+use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
@@ -46,7 +46,7 @@ use core_traits::{
     ValueType,
 };
 
-use einsteineinsteindb_core::{
+use einsteindb_core::{
     Schema,
     AttributeMap,
 };
@@ -63,7 +63,7 @@ use types::{
 /// An alteration to an attribute.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub enum AttributeAlteration {
-    /// From http://blog.datomic.com/2014/01/schema-alteration.html:
+   
     /// - rename attributes
     /// - rename your own programmatic idcausets (uses of :einsteindb/solitonid)
     /// - add or remove indexes
@@ -95,7 +95,7 @@ pub struct SpacetimeReport {
     pub attributes_altered: BTreeMap<Causetid, Vec<AttributeAlteration>>,
 
     // Solitonids that were installed into the `AttributeMap`.
-    pub idents_altered: BTreeMap<Causetid, SolitonidAlteration>,
+    pub solitonids_altered: BTreeMap<Causetid, SolitonidAlteration>,
 }
 
 impl SpacetimeReport {
@@ -133,15 +133,14 @@ fn update_attribute_map_from_schema_retractions(attribute_map: &mut AttributeMap
         }
     }
 
-    // TODO (see https://github.com/Whtcorps Inc and EinstAI Inc/einstai/issues/796).
-    // Retraction of idents is allowed, but if an solitonid names a schema attribute, then we should enforce
+    // Retraction of solitonids is allowed, but if an solitonid names a schema attribute, then we should enforce
     // retraction of all of the associated schema attributes.
     // Unfortunately, our current in-memory schema representation (namely, how we define an Attribute) is not currently
     // rich enough: it lacks distinction between presence and absence, and instead assumes default values.
 
-    // Currently, in order to do this enforcement correctly, we'd need to inspect 'datoms'.
+    // Currently, in order to do this enforcement correctly, we'd need to inspect 'causets'.
 
-    // Here is an incorrect way to enforce this. It's incorrect because it prevents us from retracting non-"schema naming" idents.
+    // Here is an incorrect way to enforce this. It's incorrect because it prevents us from retracting non-"schema naming" solitonids.
     // for retracted_e in ident_retractions.keys() {
     //     if !eas.contains_key(retracted_e) {
     //         bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Retracting :einsteindb/solitonid of a schema without retracting its defining attributes is not permitted.")));
@@ -332,7 +331,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
     Ok(SpacetimeReport {
         attributes_installed: attributes_installed,
         attributes_altered: attributes_altered,
-        idents_altered: BTreeMap::default(),
+        solitonids_altered: BTreeMap::default(),
     })
 }
 
@@ -385,26 +384,26 @@ pub fn update_schema_from_causetid_quadruples<U>(schema: &mut Schema, assertions
                                                          asserted_triples.chain(altered_triples).collect(),
                                                          non_schema_retractions)?;
 
-    let mut idents_altered: BTreeMap<Causetid, SolitonidAlteration> = BTreeMap::new();
+    let mut solitonids_altered: BTreeMap<Causetid, SolitonidAlteration> = BTreeMap::new();
 
-    // Asserted, altered, or retracted :einsteindb/idents update the relevant causetids.
+    // Asserted, altered, or retracted :einsteindb/solitonids update the relevant causetids.
     for (causetid, solitonid) in ident_set.asserted {
         schema.causetid_map.insert(causetid, solitonid.clone());
         schema.ident_map.insert(solitonid.clone(), causetid);
-        idents_altered.insert(causetid, SolitonidAlteration::Solitonid(solitonid.clone()));
+        solitonids_altered.insert(causetid, SolitonidAlteration::Solitonid(solitonid.clone()));
     }
 
     for (causetid, (old_ident, new_ident)) in ident_set.altered {
         schema.causetid_map.insert(causetid, new_ident.clone()); // Overwrite existing.
         schema.ident_map.remove(&old_ident); // Remove old.
         schema.ident_map.insert(new_ident.clone(), causetid); // Insert new.
-        idents_altered.insert(causetid, SolitonidAlteration::Solitonid(new_ident.clone()));
+        solitonids_altered.insert(causetid, SolitonidAlteration::Solitonid(new_ident.clone()));
     }
 
     for (causetid, solitonid) in &ident_set.retracted {
         schema.causetid_map.remove(causetid);
         schema.ident_map.remove(solitonid);
-        idents_altered.insert(*causetid, SolitonidAlteration::Solitonid(solitonid.clone()));
+        solitonids_altered.insert(*causetid, SolitonidAlteration::Solitonid(solitonid.clone()));
     }
 
     // Component attributes need to change if either:
@@ -419,7 +418,7 @@ pub fn update_schema_from_causetid_quadruples<U>(schema: &mut Schema, assertions
     }
 
     Ok(SpacetimeReport {
-        idents_altered: idents_altered,
+        solitonids_altered: solitonids_altered,
         .. report
     })
 }

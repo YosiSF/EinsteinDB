@@ -85,7 +85,7 @@ impl Createeinsteindb{
   pub fn loadAndEncode(&self){
     let ehhome = std::env::var("EINSTEIN_einsteindb").unwrap();
     let mvdir = std::process::Command::new("cp")
-      .args(&["-rf",&format!("{}/codegen/create/createeinsteindb", einsteineinsteindb_home),&self.einsteindb.folder])
+      .args(&["-rf",&format!("{}/codegen/create/createeinsteindb", einsteindb_home),&self.einsteindb.folder])
       .output()
       .unwrap();
     let os = std::env::var("OS").unwrap();

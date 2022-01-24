@@ -12,8 +12,8 @@ use std::sync::Arc;
 
 use ekvproto::interlock::KeyRange;
 use protobuf::Message;
-use einsteineinsteindbpb::{self, ExecType, ExecutorExecutionSummary};
-use einsteineinsteindbpb::{Chunk, PosetDagRequest, SelectResponse, StreamResponse};
+use einsteindbpb::{self, ExecType, ExecutorExecutionSummary};
+use einsteindbpb::{Chunk, PosetDagRequest, SelectResponse, StreamResponse};
 
 use Einsteineinsteindb_util::deadline::Deadline;
 
@@ -39,7 +39,7 @@ pub struct ExecutorsRunner<SS> {
 /// Normal executors iterate rows one by one.
 #[allow(clippy::explicit_counter_loop)]
 pub fn build_executors<S: Storage + 'static, C: ExecSummaryCollector + 'static>(
-    exec_descriptors: Vec<einsteineinsteindbpb::Executor>,
+    exec_descriptors: Vec<einsteindbpb::Executor>,
     storage: S,
     ranges: Vec<KeyRange>,
     ctx: Arc<EvalConfig>,
@@ -115,7 +115,7 @@ pub fn build_executors<S: Storage + 'static, C: ExecSummaryCollector + 'static>(
 ///
 /// The inner-most executor must be a table scan executor or an index scan executor.
 fn build_first_executor<S: Storage + 'static, C: ExecSummaryCollector + 'static>(
-    mut first: einsteineinsteindbpb::Executor,
+    mut first: einsteindbpb::Executor,
     storage: S,
     ranges: Vec<KeyRange>,
     context: Arc<EvalConfig>,

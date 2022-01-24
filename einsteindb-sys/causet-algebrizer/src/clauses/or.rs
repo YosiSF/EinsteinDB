@@ -43,7 +43,7 @@ use types::{
     ColumnAlternation,
     ColumnIntersection,
     ComputedTable,
-    DatomsTable,
+    causetsTable,
     EmptyBecause,
     EvolvedPattern,
     PlaceOrEmpty,
@@ -199,7 +199,7 @@ impl ConjoiningClauses {
         let mut parity_filters: Vec<Pattern> = Vec::with_capacity(or_join.clauses.len());
 
         // Keep track of the table we need every parity_filter to use.
-        let mut expected_table: Option<DatomsTable> = None;
+        let mut expected_table: Option<causetsTable> = None;
 
         // Technically we might have several reasons, but we take the last -- that is, that's the
         // reason we don't have at least one parity_filter!
@@ -363,14 +363,14 @@ impl ConjoiningClauses {
     /// but the generated SQL is very similar: the former is
     ///
     /// ```sql
-    /// WHERE datoms00.a = 99 AND datoms00.v = 'John'
+    /// WHERE causets00.a = 99 AND causets00.v = 'John'
     /// ```
     ///
     /// with the latter growing to
     ///
     /// ```sql
-    /// WHERE (datoms00.a = 99 AND datoms00.v = 'John')
-    ///    OR (datoms00.a = 98 AND datoms00.v = 'Peter')
+    /// WHERE (causets00.a = 99 AND causets00.v = 'John')
+    ///    OR (causets00.a = 98 AND causets00.v = 'Peter')
     /// ```
     ///
     fn apply_simple_or_join(&mut self,
@@ -717,7 +717,7 @@ mod testing {
         TypedValue,
     };
 
-    use einsteineinsteindb_embedded::{
+    use einsteindb_embedded::{
         Schema,
     };
 
@@ -840,10 +840,10 @@ mod testing {
                         [?x :foo/knows "Daphne"])]"#;
         let cc = alg(known, query);
         let vx = Variable::from_valid_name("?x");
-        let d0 = "datoms00".to_string();
-        let d0e = QualifiedAlias::new(d0.clone(), DatomsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), DatomsColumn::Attr);
-        let d0v = QualifiedAlias::new(d0.clone(), DatomsColumn::Value);
+        let d0 = "causets00".to_string();
+        let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
+        let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
         let knows = QueryValue::Causetid(66);
         let parent = QueryValue::Causetid(67);
         let john = QueryValue::TypedValue(TypedValue::typed_string("John"));
@@ -865,7 +865,7 @@ mod testing {
                         ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d0v.clone(), daphne))]),
                     ]))]));
         assert_eq!(cc.column_bindings.get(&vx), Some(&vec![d0e]));
-        assert_eq!(cc.from, vec![SourceAlias(DatomsTable::Datoms, d0)]);
+        assert_eq!(cc.from, vec![SourceAlias(causetsTable::causets, d0)]);
     }
 
     // Alternation with a parity_filter.
@@ -882,13 +882,13 @@ mod testing {
                  [?x :foo/knows "Daphne"])]"#;
         let cc = alg(known, query);
         let vx = Variable::from_valid_name("?x");
-        let d0 = "datoms00".to_string();
-        let d1 = "datoms01".to_string();
-        let d0e = QualifiedAlias::new(d0.clone(), DatomsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), DatomsColumn::Attr);
-        let d1e = QualifiedAlias::new(d1.clone(), DatomsColumn::Causets);
-        let d1a = QualifiedAlias::new(d1.clone(), DatomsColumn::Attr);
-        let d1v = QualifiedAlias::new(d1.clone(), DatomsColumn::Value);
+        let d0 = "causets00".to_string();
+        let d1 = "causets01".to_string();
+        let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
+        let d1e = QualifiedAlias::new(d1.clone(), causetsColumn::Causets);
+        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attr);
+        let d1v = QualifiedAlias::new(d1.clone(), causetsColumn::Value);
         let name = QueryValue::Causetid(65);
         let knows = QueryValue::Causetid(66);
         let parent = QueryValue::Causetid(67);
@@ -915,8 +915,8 @@ mod testing {
             ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d0e.clone(), QueryValue::Column(d1e.clone()))),
         ]));
         assert_eq!(cc.column_bindings.get(&vx), Some(&vec![d0e, d1e]));
-        assert_eq!(cc.from, vec![SourceAlias(DatomsTable::Datoms, d0),
-                                 SourceAlias(DatomsTable::Datoms, d1)]);
+        assert_eq!(cc.from, vec![SourceAlias(causetsTable::causets, d0),
+                                 SourceAlias(causetsTable::causets, d1)]);
     }
 
     // Alternation with a parity_filter and a predicate.
@@ -933,14 +933,14 @@ mod testing {
                  [?x :foo/knows "Daphne"])]"#;
         let cc = alg(known, query);
         let vx = Variable::from_valid_name("?x");
-        let d0 = "datoms00".to_string();
-        let d1 = "datoms01".to_string();
-        let d0e = QualifiedAlias::new(d0.clone(), DatomsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), DatomsColumn::Attr);
-        let d0v = QualifiedAlias::new(d0.clone(), DatomsColumn::Value);
-        let d1e = QualifiedAlias::new(d1.clone(), DatomsColumn::Causets);
-        let d1a = QualifiedAlias::new(d1.clone(), DatomsColumn::Attr);
-        let d1v = QualifiedAlias::new(d1.clone(), DatomsColumn::Value);
+        let d0 = "causets00".to_string();
+        let d1 = "causets01".to_string();
+        let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
+        let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
+        let d1e = QualifiedAlias::new(d1.clone(), causetsColumn::Causets);
+        let d1a = QualifiedAlias::new(d1.clone(), causetsColumn::Attr);
+        let d1v = QualifiedAlias::new(d1.clone(), causetsColumn::Value);
         let knows = QueryValue::Causetid(66);
         let age = QueryValue::Causetid(68);
         let john = QueryValue::TypedValue(TypedValue::typed_string("John"));
@@ -967,8 +967,8 @@ mod testing {
             ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d0e.clone(), QueryValue::Column(d1e.clone()))),
         ]));
         assert_eq!(cc.column_bindings.get(&vx), Some(&vec![d0e, d1e]));
-        assert_eq!(cc.from, vec![SourceAlias(DatomsTable::Datoms, d0),
-                                 SourceAlias(DatomsTable::Datoms, d1)]);
+        assert_eq!(cc.from, vec![SourceAlias(causetsTable::causets, d0),
+                                 SourceAlias(causetsTable::causets, d1)]);
     }
 
     // These two are not equivalent:
@@ -984,12 +984,12 @@ mod testing {
         let cc = alg(known, query);
         let vx = Variable::from_valid_name("?x");
         let vy = Variable::from_valid_name("?y");
-        let d0 = "datoms00".to_string();
+        let d0 = "causets00".to_string();
         let c0 = "c00".to_string();
         let c0x = QualifiedAlias::new(c0.clone(), VariableColumn::Variable(vx.clone()));
-        let d0e = QualifiedAlias::new(d0.clone(), DatomsColumn::Causets);
-        let d0a = QualifiedAlias::new(d0.clone(), DatomsColumn::Attr);
-        let d0v = QualifiedAlias::new(d0.clone(), DatomsColumn::Value);
+        let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
+        let d0a = QualifiedAlias::new(d0.clone(), causetsColumn::Attr);
+        let d0v = QualifiedAlias::new(d0.clone(), causetsColumn::Value);
         let knows = QueryValue::Causetid(66);
 
         assert!(!cc.is_known_empty());
@@ -1003,8 +1003,8 @@ mod testing {
 
         // ?y does not have a binding in the `or-join` parity_filter.
         assert_eq!(cc.column_bindings.get(&vy), Some(&vec![d0v]));
-        assert_eq!(cc.from, vec![SourceAlias(DatomsTable::Datoms, d0),
-                                 SourceAlias(DatomsTable::Computed(0), c0)]);
+        assert_eq!(cc.from, vec![SourceAlias(causetsTable::causets, d0),
+                                 SourceAlias(causetsTable::Computed(0), c0)]);
     }
 
     // These two are equivalent:

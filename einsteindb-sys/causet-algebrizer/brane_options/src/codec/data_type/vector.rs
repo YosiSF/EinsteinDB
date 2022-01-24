@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 use crate::{EvalType, FieldTypeAccessor};
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use super::scalar::ScalarValueRef;
 use super::*;

@@ -2,7 +2,7 @@
 
 use crate::FieldTypeAccessor;
 use codec::buffer::BufferWriter;
-use einsteineinsteindbpb::FieldType;
+use einsteindbpb::FieldType;
 
 use super::column::{ChunkColumnEncoder, Column};
 use super::Result;

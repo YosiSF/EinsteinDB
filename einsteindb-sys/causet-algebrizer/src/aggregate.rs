@@ -1,7 +1,7 @@
 // Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
 use std::cmp::Ordering;
-use einsteineinsteindbpb::ExprType;
+use einsteindbpb::ExprType;
 
 use allegroeinstein-prolog-causet-sql::Result;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::Decimal;

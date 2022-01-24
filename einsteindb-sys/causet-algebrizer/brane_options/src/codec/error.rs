@@ -19,7 +19,7 @@ use quick_error::quick_error;
 use regex::Error as RegexpError;
 use serde_json::error::Error as SerdeError;
 use allegroeinstein-prolog-causet-sql::error::EvaluateError;
-use einsteineinsteindbpb::{self, ScalarFuncSig};
+use einsteindbpb::{self, ScalarFuncSig};
 
 pub const ERR_M_BIGGER_THAN_D: i32 = 1427;
 pub const ERR_UNKNOWN: i32 = 1105;
@@ -157,9 +157,9 @@ impl Error {
     }
 }
 
-impl From<Error> for einsteineinsteindbpb::Error {
-    fn from(error: Error) -> einsteineinsteindbpb::Error {
-        let mut err = einsteineinsteindbpb::Error::default();
+impl From<Error> for einsteindbpb::Error {
+    fn from(error: Error) -> einsteindbpb::Error {
+        let mut err = einsteindbpb::Error::default();
         err.set_code(error.code());
         err.set_msg(error.to_string());
         err
