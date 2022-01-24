@@ -10,7 +10,7 @@
 
 #![allow(dead_code)]
 
-use einsteineinsteindb::TypedSQLValue;
+use einsteindb::TypedSQLValue;
 use einsteinml;
 use einsteineinsteindb_traits::errors::{
     einsteindbErrorKind,
@@ -46,23 +46,23 @@ pub trait AttributeValidation {
 impl AttributeValidation for Attribute {
     fn validate<F>(&self, solitonid: F) -> Result<()> where F: Fn() -> String {
         if self.unique == Some(attribute::Unique::Value) && !self.index {
-            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/unique :einsteineinsteindb/unique_value without :einsteineinsteindb/index true for causetid: {}", solitonid())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteindb/unique :einsteindb/unique_value without :einsteindb/index true for causetid: {}", solitonid())))
         }
         if self.unique == Some(attribute::Unique::Idcauset) && !self.index {
-            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/unique :einsteineinsteindb/unique_idcauset without :einsteineinsteindb/index true for causetid: {}", solitonid())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: {}", solitonid())))
         }
         if self.fulltext && self.value_type != ValueType::String {
-            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/fulltext true without :einsteineinsteindb/valueType :einsteineinsteindb.type/string for causetid: {}", solitonid())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteindb/fulltext true without :einsteindb/valueType :einsteindb.type/string for causetid: {}", solitonid())))
         }
         if self.fulltext && !self.index {
-            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/fulltext true without :einsteineinsteindb/index true for causetid: {}", solitonid())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteindb/fulltext true without :einsteindb/index true for causetid: {}", solitonid())))
         }
         if self.component && self.value_type != ValueType::Ref {
-            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteineinsteindb/isComponent true without :einsteineinsteindb/valueType :einsteineinsteindb.type/ref for causetid: {}", solitonid())))
+            bail!(einsteindbErrorKind::BadSchemaAssertion(format!(":einsteindb/isComponent true without :einsteindb/valueType :einsteindb.type/ref for causetid: {}", solitonid())))
         }
-        // TODO: consider warning if we have :einsteineinsteindb/index true for :einsteineinsteindb/valueType :einsteineinsteindb.type/string,
+        // TODO: consider warning if we have :einsteindb/index true for :einsteindb/valueType :einsteindb.type/string,
         // since this may be inefficient.  More generally, we should try to drive complex
-        // :einsteineinsteindb/valueType (string, uri, json in the future) users to opt-in to some hash-indexing
+        // :einsteindb/valueType (string, uri, json in the future) users to opt-in to some hash-indexing
         // scheme, as discussed in https://github.com/Whtcorps Inc and EinstAI Inc/einstai/issues/69.
         Ok(())
     }
@@ -157,17 +157,17 @@ impl AttributeBuilder {
 
     pub fn validate_install_attribute(&self) -> Result<()> {
         if self.value_type.is_none() {
-            bail!(einsteindbErrorKind::BadSchemaAssertion("Schema attribute for new attribute does not set :einsteineinsteindb/valueType".into()));
+            bail!(einsteindbErrorKind::BadSchemaAssertion("Schema attribute for new attribute does not set :einsteindb/valueType".into()));
         }
         Ok(())
     }
 
     pub fn validate_alter_attribute(&self) -> Result<()> {
         if self.value_type.is_some() {
-            bail!(einsteindbErrorKind::BadSchemaAssertion("Schema alteration must not set :einsteineinsteindb/valueType".into()));
+            bail!(einsteindbErrorKind::BadSchemaAssertion("Schema alteration must not set :einsteindb/valueType".into()));
         }
         if self.fulltext.is_some() {
-            bail!(einsteindbErrorKind::BadSchemaAssertion("Schema alteration must not set :einsteineinsteindb/fulltext".into()));
+            bail!(einsteindbErrorKind::BadSchemaAssertion("Schema alteration must not set :einsteindb/fulltext".into()));
         }
         Ok(())
     }
@@ -439,7 +439,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/unique :einsteineinsteindb/unique_value without :einsteineinsteindb/index true for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteindb/unique :einsteindb/unique_value without :einsteindb/index true for causetid: :foo/bar".into())));
     }
 
     #[test]
@@ -457,7 +457,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/unique :einsteineinsteindb/unique_idcauset without :einsteineinsteindb/index true for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: :foo/bar".into())));
     }
 
     #[test]
@@ -475,7 +475,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/isComponent true without :einsteineinsteindb/valueType :einsteineinsteindb.type/ref for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteindb/isComponent true without :einsteindb/valueType :einsteindb.type/ref for causetid: :foo/bar".into())));
     }
 
     #[test]
@@ -493,7 +493,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/fulltext true without :einsteineinsteindb/index true for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteindb/fulltext true without :einsteindb/index true for causetid: :foo/bar".into())));
     }
 
     fn invalid_schema_fulltext_index_not_string() {
@@ -510,6 +510,6 @@ mod test {
         });
 
         let err = validate_attribute_map(&schema.causetid_map, &schema.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteineinsteindb/fulltext true without :einsteineinsteindb/valueType :einsteineinsteindb.type/string for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadSchemaAssertion(":einsteindb/fulltext true without :einsteindb/valueType :einsteindb.type/string for causetid: :foo/bar".into())));
     }
 }

@@ -474,7 +474,7 @@ impl ConjoiningClauses {
                     // ```
                     // [:find ?x
                     //  :where [?x _ ?y]
-                    //         [(= (typeof ?y) :einsteineinsteindb.valueType/double)]]
+                    //         [(= (typeof ?y) :einsteindb.valueType/double)]]
                     // ```
                     unimplemented!();
                 },

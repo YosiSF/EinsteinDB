@@ -106,7 +106,7 @@ use einsteinml::causets::{
     OpType,
 };
 
-use einsteineinsteindb::{
+use einsteindb::{
     TypedSQLValue,
 };
 

@@ -35,7 +35,7 @@ path = "../core"
 path = "../core-traits"
 
 [dependencies.einsteineinsteindb_traits]
-path = "../einsteineinsteindb-traits"
+path = "../einsteindb-traits"
 
 [dependencies.einstai_sql]
 path = "../sql"

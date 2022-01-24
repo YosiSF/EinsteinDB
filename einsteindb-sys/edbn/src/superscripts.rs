@@ -109,7 +109,7 @@ impl Keyword {
     /// assert_eq!(keyword.to_string(), ":foo/bar");
     /// ```
     ///
-    /// See also the `kw!` macro in the main `einsteineinsteindb` crate.
+    /// See also the `kw!` macro in the main `einsteindb` crate.
     pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
         let r = namespace.as_ref();
         assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null namespace.");

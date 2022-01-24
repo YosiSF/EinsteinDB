@@ -53,32 +53,32 @@ use einsteineinsteindb_core::{
 use einsteinml::causets::OpType;
 use schema::SchemaBuilding;
 
-/// A "Simple upsert" that looks like [:einsteineinsteindb/add TEMPID a v], where a is :einsteineinsteindb.unique/idcauset.
+/// A "Simple upsert" that looks like [:einsteindb/add TEMPID a v], where a is :einsteindb.unique/idcauset.
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 struct UpsertE(TempIdHandle, Causetid, TypedValue);
 
-/// A "Complex upsert" that looks like [:einsteineinsteindb/add TEMPID a OTHERID], where a is :einsteineinsteindb.unique/idcauset
+/// A "Complex upsert" that looks like [:einsteindb/add TEMPID a OTHERID], where a is :einsteindb.unique/idcauset
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 struct UpsertEV(TempIdHandle, Causetid, TempIdHandle);
 
 /// A generation collects causets into populations at a single evolutionary step in the upsert
 /// resolution evolution process.
 ///
-/// The upsert resolution process is only concerned with [:einsteineinsteindb/add ...] causets until the final
+/// The upsert resolution process is only concerned with [:einsteindb/add ...] causets until the final
 /// causetid allocations.  That's why we separate into special simple and complex upsert types
 /// immediately, and then collect the more general term types for final resolution.
 #[derive(Clone,Debug,Default,Eq,Hash,Ord,PartialOrd,PartialEq)]
 pub(crate) struct Generation {
-    /// "Simple upserts" that look like [:einsteineinsteindb/add TEMPID a v], where a is :einsteineinsteindb.unique/idcauset.
+    /// "Simple upserts" that look like [:einsteindb/add TEMPID a v], where a is :einsteindb.unique/idcauset.
     upserts_e: Vec<UpsertE>,
 
-    /// "Complex upserts" that look like [:einsteineinsteindb/add TEMPID a OTHERID], where a is :einsteineinsteindb.unique/idcauset
+    /// "Complex upserts" that look like [:einsteindb/add TEMPID a OTHERID], where a is :einsteindb.unique/idcauset
     upserts_ev: Vec<UpsertEV>,
 
     /// Causets that look like:
-    /// - [:einsteineinsteindb/add TEMPID b OTHERID].  b may be :einsteineinsteindb.unique/idcauset if it has failed to upsert.
-    /// - [:einsteineinsteindb/add TEMPID b v].  b may be :einsteineinsteindb.unique/idcauset if it has failed to upsert.
-    /// - [:einsteineinsteindb/add e b OTHERID].
+    /// - [:einsteindb/add TEMPID b OTHERID].  b may be :einsteindb.unique/idcauset if it has failed to upsert.
+    /// - [:einsteindb/add TEMPID b v].  b may be :einsteindb.unique/idcauset if it has failed to upsert.
+    /// - [:einsteindb/add e b OTHERID].
     allocations: Vec<TermWithTempIds>,
 
     /// Causets that upserted and no longer reference tempids.  These assertions are guaranteed to
@@ -150,7 +150,7 @@ impl Generation {
         !self.upserts_e.is_empty()
     }
 
-    /// Evolve this generation one step further by rewriting the existing :einsteineinsteindb/add causets using the
+    /// Evolve this generation one step further by rewriting the existing :einsteindb/add causets using the
     /// given temporary IDs.
     ///
     /// TODO: Considering doing this in place; the function already consumes `self`.
@@ -270,7 +270,7 @@ impl Generation {
                 },
                 &Term::AddOrRetract(OpType::Add, Left(_), _, Left(_)) => unreachable!(),
                 &Term::AddOrRetract(OpType::Retract, _, _, _) => {
-                    // [:einsteineinsteindb/retract ...] causets never allocate causetids; they have to resolve due to
+                    // [:einsteindb/retract ...] causets never allocate causetids; they have to resolve due to
                     // other upserts (or they fail the transaction).
                 },
             }
@@ -333,22 +333,22 @@ impl Generation {
                 Term::AddOrRetract(op, Right(t1), a, Right(t2)) => {
                     match (op, temp_id_map.get(&*t1), temp_id_map.get(&*t2)) {
                         (op, Some(&n1), Some(&n2)) => Term::AddOrRetract(op, n1, a, TypedValue::Ref(n2.0)),
-                        (OpType::Add, _, _) => unreachable!(), // This is a coding error -- every tempid in a :einsteineinsteindb/add causet should resolve or be allocated.
-                        (OpType::Retract, _, _) => bail!(einsteindbErrorKind::NotYetImplemented(format!("[:einsteineinsteindb/retract ...] causet referenced tempid that did not upsert: one of {}, {}", t1, t2))),
+                        (OpType::Add, _, _) => unreachable!(), // This is a coding error -- every tempid in a :einsteindb/add causet should resolve or be allocated.
+                        (OpType::Retract, _, _) => bail!(einsteindbErrorKind::NotYetImplemented(format!("[:einsteindb/retract ...] causet referenced tempid that did not upsert: one of {}, {}", t1, t2))),
                     }
                 },
                 Term::AddOrRetract(op, Right(t), a, Left(v)) => {
                     match (op, temp_id_map.get(&*t)) {
                         (op, Some(&n)) => Term::AddOrRetract(op, n, a, v),
                         (OpType::Add, _) => unreachable!(), // This is a coding error.
-                        (OpType::Retract, _) => bail!(einsteindbErrorKind::NotYetImplemented(format!("[:einsteineinsteindb/retract ...] causet referenced tempid that did not upsert: {}", t))),
+                        (OpType::Retract, _) => bail!(einsteindbErrorKind::NotYetImplemented(format!("[:einsteindb/retract ...] causet referenced tempid that did not upsert: {}", t))),
                     }
                 },
                 Term::AddOrRetract(op, Left(e), a, Right(t)) => {
                     match (op, temp_id_map.get(&*t)) {
                         (op, Some(&n)) => Term::AddOrRetract(op, e, a, TypedValue::Ref(n.0)),
                         (OpType::Add, _) => unreachable!(), // This is a coding error.
-                        (OpType::Retract, _) => bail!(einsteindbErrorKind::NotYetImplemented(format!("[:einsteineinsteindb/retract ...] causet referenced tempid that did not upsert: {}", t))),
+                        (OpType::Retract, _) => bail!(einsteindbErrorKind::NotYetImplemented(format!("[:einsteindb/retract ...] causet referenced tempid that did not upsert: {}", t))),
                     }
                 },
                 Term::AddOrRetract(_, Left(_), _, Left(_)) => unreachable!(), // This is a coding error -- these should not be in allocations.

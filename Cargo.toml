@@ -5,7 +5,7 @@ authors = [
     "'The lone gunman' <whtcorpsinc> <whtcorpsarpanet@gmail.com>"
 ]
 
-name = "einsteineinsteindb"
+name = "einsteindb"
 license = "Apache-2.0"
 keywords = ["embedded", "distributed-systems", "BFTRaft" ]
 version = "0.0.1"
@@ -21,10 +21,10 @@ syncable = ["einsteineinsteindb_lenin", "lenin_traits", "einsteineinsteindb_eins
 
 
 [workspace]
-members = ["cmd", "ffi", "tools/cli", "einsteineinsteindb-gen", "einsteineinsteindb-sys", "einsteineinsteindb"]
+members = ["cmd", "ffi", "tools/cli", "einsteindb-gen", "einsteindb-sys", "einsteindb"]
 
 [lib]
-name = "einsteineinsteindb"
+name = "einsteindb"
 
 [build-dependencies]
 rustc_version = "0.4.0"

@@ -22,7 +22,7 @@ use core_traits::{
     TypedValue,
     ValueType,
 };
-use einstai_einsteineinsteindb::einsteineinsteindb::TypedSQLValue;
+use einstai_einsteineinsteindb::einsteindb::TypedSQLValue;
 
 // It's not possible to test to_sql_value_pair since rusqlite::ToSqlOutput doesn't implement
 // PartialEq.
@@ -39,8 +39,8 @@ fn test_from_sql_value_pair() {
     assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Real(0.0), 5).unwrap(), TypedValue::Double(OrderedFloat(0.0)));
     assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Real(0.5), 5).unwrap(), TypedValue::Double(OrderedFloat(0.5)));
 
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Text(":einsteineinsteindb/keyword".into()), 10).unwrap(), TypedValue::typed_string(":einsteineinsteindb/keyword"));
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Text(":einsteineinsteindb/keyword".into()), 13).unwrap(), TypedValue::typed_ns_keyword("einsteineinsteindb", "keyword"));
+    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Text(":einsteindb/keyword".into()), 10).unwrap(), TypedValue::typed_string(":einsteindb/keyword"));
+    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Text(":einsteindb/keyword".into()), 13).unwrap(), TypedValue::typed_ns_keyword("einsteindb", "keyword"));
 }
 
 #[test]
@@ -56,6 +56,6 @@ fn test_to_einsteinml_value_pair() {
     assert_eq!(TypedValue::Double(OrderedFloat(0.0)).to_einsteinml_value_pair(), (einsteinml::Value::Float(OrderedFloat(0.0)), ValueType::Double));
     assert_eq!(TypedValue::Double(OrderedFloat(0.5)).to_einsteinml_value_pair(), (einsteinml::Value::Float(OrderedFloat(0.5)), ValueType::Double));
 
-    assert_eq!(TypedValue::typed_string(":einsteineinsteindb/keyword").to_einsteinml_value_pair(), (einsteinml::Value::Text(":einsteineinsteindb/keyword".into()), ValueType::String));
-    assert_eq!(TypedValue::typed_ns_keyword("einsteineinsteindb", "keyword").to_einsteinml_value_pair(), (einsteinml::Value::Keyword(symbols::Keyword::namespaced("einsteineinsteindb", "keyword")), ValueType::Keyword));
+    assert_eq!(TypedValue::typed_string(":einsteindb/keyword").to_einsteinml_value_pair(), (einsteinml::Value::Text(":einsteindb/keyword".into()), ValueType::String));
+    assert_eq!(TypedValue::typed_ns_keyword("einsteindb", "keyword").to_einsteinml_value_pair(), (einsteinml::Value::Keyword(symbols::Keyword::namespaced("einsteindb", "keyword")), ValueType::Keyword));
 }

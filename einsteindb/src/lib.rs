@@ -41,7 +41,7 @@ use einsteineinsteindb_traits::errors::{
 
 mod add_retract_alter_set;
 pub mod cache;
-pub mod einsteineinsteindb;
+pub mod einsteindb;
 mod bootstrap;
 pub mod causetids;
 pub mod internal_types;    // pub because we need them for building causets programmatically.
@@ -79,13 +79,13 @@ pub use causetids::{
     einsteindb_SCHEMA_CORE,
 };
 
-pub use einsteineinsteindb::{
+pub use einsteindb::{
     TypedSQLValue,
     new_connection,
 };
 
 #[cfg(feature = "sqlcipher")]
-pub use einsteineinsteindb::{
+pub use einsteindb::{
     new_connection_with_key,
     change_encryption_key,
 };

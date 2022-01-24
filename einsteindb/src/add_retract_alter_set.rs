@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 /// Witness assertions and retractions, folding (assertion, retraction) pairs into alterations.
 /// Assumes that no assertion or retraction will be witnessed more than once.
 ///
-/// This keeps track of when we see a :einsteineinsteindb/add, a :einsteineinsteindb/retract, or both :einsteineinsteindb/add and :einsteineinsteindb/retract in
+/// This keeps track of when we see a :einsteindb/add, a :einsteindb/retract, or both :einsteindb/add and :einsteindb/retract in
 /// some order.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub struct AddRetractAlterSet<K, V> {

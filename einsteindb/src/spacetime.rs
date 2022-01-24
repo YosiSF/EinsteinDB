@@ -12,14 +12,14 @@
 
 //! Most transactions can mutate the einstai Spacetime by transacting assertions:
 //!
-//! - they can add (and, eventually, retract and alter) recognized idents using the `:einsteineinsteindb/solitonid`
+//! - they can add (and, eventually, retract and alter) recognized idents using the `:einsteindb/solitonid`
 //!   attribute;
 //!
-//! - they can add (and, eventually, retract and alter) schema attributes using various `:einsteineinsteindb/*`
+//! - they can add (and, eventually, retract and alter) schema attributes using various `:einsteindb/*`
 //!   attributes;
 //!
 //! - eventually, they will be able to add (and possibly retract) causetid partitions using a einstai
-//!   equivalent (perhaps :einsteineinsteindb/partition or :einsteineinsteindb.partition/start) to Datomic's `:einsteineinsteindb.install/partition`
+//!   equivalent (perhaps :einsteindb/partition or :einsteindb.partition/start) to Datomic's `:einsteindb.install/partition`
 //!   attribute.
 //!
 //! This module recognizes, validates, applies, and reports on these mutations.
@@ -65,7 +65,7 @@ use types::{
 pub enum AttributeAlteration {
     /// From http://blog.datomic.com/2014/01/schema-alteration.html:
     /// - rename attributes
-    /// - rename your own programmatic idcausets (uses of :einsteineinsteindb/solitonid)
+    /// - rename your own programmatic idcausets (uses of :einsteindb/solitonid)
     /// - add or remove indexes
     Index,
     /// - add or remove uniqueness constraints
@@ -109,7 +109,7 @@ impl SpacetimeReport {
 /// together contain enough information to reason about a "schema retraction".
 ///
 /// Schema may only be retracted if all of its necessary attributes are being retracted:
-/// - :einsteineinsteindb/solitonid, :einsteineinsteindb/valueType, :einsteineinsteindb/cardinality.
+/// - :einsteindb/solitonid, :einsteindb/valueType, :einsteindb/cardinality.
 ///
 /// Note that this is currently incomplete/flawed:
 /// - we're allowing optional attributes to not be retracted and dangle afterwards
@@ -118,7 +118,7 @@ impl SpacetimeReport {
 fn update_attribute_map_from_schema_retractions(attribute_map: &mut AttributeMap, retractions: Vec<EAV>, ident_retractions: &BTreeMap<Causetid, symbols::Keyword>) -> Result<Vec<EAV>> {
     // Process retractions of schema attributes first. It's allowed to retract a schema attribute
     // if all of the schema-defining schema attributes are being retracted.
-    // A defining set of attributes is :einsteineinsteindb/solitonid, :einsteineinsteindb/valueType, :einsteineinsteindb/cardinality.
+    // A defining set of attributes is :einsteindb/solitonid, :einsteindb/valueType, :einsteindb/cardinality.
     let mut filtered_retractions = vec![];
     let mut suspect_retractions = vec![];
 
@@ -144,7 +144,7 @@ fn update_attribute_map_from_schema_retractions(attribute_map: &mut AttributeMap
     // Here is an incorrect way to enforce this. It's incorrect because it prevents us from retracting non-"schema naming" idents.
     // for retracted_e in ident_retractions.keys() {
     //     if !eas.contains_key(retracted_e) {
-    //         bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Retracting :einsteineinsteindb/solitonid of a schema without retracting its defining attributes is not permitted.")));
+    //         bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Retracting :einsteindb/solitonid of a schema without retracting its defining attributes is not permitted.")));
     //     }
     // }
 
@@ -153,12 +153,12 @@ fn update_attribute_map_from_schema_retractions(attribute_map: &mut AttributeMap
 
         // Found a set of retractions which negate a schema.
         if attributes.contains(&causetids::einsteindb_CARDINALITY) && attributes.contains(&causetids::einsteindb_VALUE_TYPE) {
-            // Ensure that corresponding :einsteineinsteindb/solitonid is also being retracted at the same time.
+            // Ensure that corresponding :einsteindb/solitonid is also being retracted at the same time.
             if ident_retractions.contains_key(&e) {
                 // Remove attributes corresponding to retracted attribute.
                 attribute_map.remove(&e);
             } else {
-                bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Retracting defining attributes of a schema without retracting its :einsteineinsteindb/solitonid is not permitted.")));
+                bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Retracting defining attributes of a schema without retracting its :einsteindb/solitonid is not permitted.")));
             }
         } else {
             filtered_retractions.push((e, a, v));
@@ -189,7 +189,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
     for (causetid, attr, ref value) in retractions {
         let builder = builders.entry(causetid).or_insert_with(|| attribute_builder_to_modify(causetid, attribute_map));
         match attr {
-            // You can only retract :einsteineinsteindb/unique, :einsteineinsteindb/isComponent; all others must be altered instead
+            // You can only retract :einsteindb/unique, :einsteindb/isComponent; all others must be altered instead
             // of retracted, or are not allowed to change.
             causetids::einsteindb_IS_COMPONENT => {
                 match value {
@@ -197,7 +197,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                         builder.component(false);
                     },
                     v => {
-                        bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Attempted to retract :einsteineinsteindb/isComponent with the wrong value {:?}.", v)));
+                        bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Attempted to retract :einsteindb/isComponent with the wrong value {:?}.", v)));
                     },
                 }
             },
@@ -213,11 +213,11 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                                 builder.non_unique();
                             },
                             v => {
-                                bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Attempted to retract :einsteineinsteindb/unique with the wrong value {}.", v)));
+                                bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Attempted to retract :einsteindb/unique with the wrong value {}.", v)));
                             },
                         }
                     },
-                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [:einsteineinsteindb/retract _ :einsteineinsteindb/unique :einsteineinsteindb.unique/_] but got [:einsteineinsteindb/retract {} :einsteineinsteindb/unique {:?}]", causetid, value)))
+                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [:einsteindb/retract _ :einsteindb/unique :einsteindb.unique/_] but got [:einsteindb/retract {} :einsteindb/unique {:?}]", causetid, value)))
                 }
             },
 
@@ -251,7 +251,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                     TypedValue::Ref(causetids::einsteindb_TYPE_REF)     => { builder.value_type(ValueType::Ref); },
                     TypedValue::Ref(causetids::einsteindb_TYPE_STRING)  => { builder.value_type(ValueType::String); },
                     TypedValue::Ref(causetids::einsteindb_TYPE_UUID)    => { builder.value_type(ValueType::Uuid); },
-                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteineinsteindb/valueType :einsteineinsteindb.type/*] but got [... :einsteineinsteindb/valueType {:?}] for causetid {} and attribute {}", value, causetid, attr)))
+                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteindb/valueType :einsteindb.type/*] but got [... :einsteindb/valueType {:?}] for causetid {} and attribute {}", value, causetid, attr)))
                 }
             },
 
@@ -259,7 +259,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                 match *value {
                     TypedValue::Ref(causetids::einsteindb_CARDINALITY_MANY) => { builder.multival(true); },
                     TypedValue::Ref(causetids::einsteindb_CARDINALITY_ONE) => { builder.multival(false); },
-                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many|:einsteineinsteindb.cardinality/one] but got [... :einsteineinsteindb/cardinality {:?}]", value)))
+                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteindb/cardinality :einsteindb.cardinality/many|:einsteindb.cardinality/one] but got [... :einsteindb/cardinality {:?}]", value)))
                 }
             },
 
@@ -267,35 +267,35 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                 match *value {
                     TypedValue::Ref(causetids::einsteindb_UNIQUE_VALUE) => { builder.unique(attribute::Unique::Value); },
                     TypedValue::Ref(causetids::einsteindb_UNIQUE_IDcauset) => { builder.unique(attribute::Unique::Idcauset); },
-                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteineinsteindb/unique :einsteineinsteindb.unique/value|:einsteineinsteindb.unique/idcauset] but got [... :einsteineinsteindb/unique {:?}]", value)))
+                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteindb/unique :einsteindb.unique/value|:einsteindb.unique/idcauset] but got [... :einsteindb/unique {:?}]", value)))
                 }
             },
 
             causetids::einsteindb_INDEX => {
                 match *value {
                     TypedValue::Boolean(x) => { builder.index(x); },
-                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteineinsteindb/index true|false] but got [... :einsteineinsteindb/index {:?}]", value)))
+                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteindb/index true|false] but got [... :einsteindb/index {:?}]", value)))
                 }
             },
 
             causetids::einsteindb_FULLTEXT => {
                 match *value {
                     TypedValue::Boolean(x) => { builder.fulltext(x); },
-                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteineinsteindb/fulltext true|false] but got [... :einsteineinsteindb/fulltext {:?}]", value)))
+                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteindb/fulltext true|false] but got [... :einsteindb/fulltext {:?}]", value)))
                 }
             },
 
             causetids::einsteindb_IS_COMPONENT => {
                 match *value {
                     TypedValue::Boolean(x) => { builder.component(x); },
-                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteineinsteindb/isComponent true|false] but got [... :einsteineinsteindb/isComponent {:?}]", value)))
+                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteindb/isComponent true|false] but got [... :einsteindb/isComponent {:?}]", value)))
                 }
             },
 
             causetids::einsteindb_NO_HISTORY => {
                 match *value {
                     TypedValue::Boolean(x) => { builder.no_history(x); },
-                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteineinsteindb/noHistory true|false] but got [... :einsteineinsteindb/noHistory {:?}]", value)))
+                    _ => bail!(einsteindbErrorKind::BadSchemaAssertion(format!("Expected [... :einsteindb/noHistory true|false] but got [... :einsteindb/noHistory {:?}]", value)))
                 }
             },
 
@@ -338,7 +338,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
 
 /// Update a `Schema` in place from the given `[e a typed_value added]` quadruples.
 ///
-/// This layer enforces that solitonid assertions of the form [causetid :einsteineinsteindb/solitonid ...] (as distinct from
+/// This layer enforces that solitonid assertions of the form [causetid :einsteindb/solitonid ...] (as distinct from
 /// attribute assertions) are present and correct.
 ///
 /// This is suitable for mutating a `Schema` from an applied transaction.
@@ -348,14 +348,14 @@ pub fn update_schema_from_causetid_quadruples<U>(schema: &mut Schema, assertions
     where U: IntoIterator<Item=(Causetid, Causetid, TypedValue, bool)> {
 
     // Group attribute assertions into asserted, retracted, and updated.  We assume all our
-    // attribute assertions are :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one (so they'll only be added or
+    // attribute assertions are :einsteindb/cardinality :einsteindb.cardinality/one (so they'll only be added or
     // retracted at most once), which means all attribute alterations are simple changes from an old
     // value to a new value.
     let mut attribute_set: AddRetractAlterSet<(Causetid, Causetid), TypedValue> = AddRetractAlterSet::default();
     let mut ident_set: AddRetractAlterSet<Causetid, symbols::Keyword> = AddRetractAlterSet::default();
 
     for (e, a, typed_value, added) in assertions.into_iter() {
-        // Here we handle :einsteineinsteindb/solitonid assertions.
+        // Here we handle :einsteindb/solitonid assertions.
         if a == causetids::einsteindb_IDENT {
             if let TypedValue::Keyword(ref keyword) = typed_value {
                 ident_set.witness(e, keyword.as_ref().clone(), added);
@@ -387,7 +387,7 @@ pub fn update_schema_from_causetid_quadruples<U>(schema: &mut Schema, assertions
 
     let mut idents_altered: BTreeMap<Causetid, SolitonidAlteration> = BTreeMap::new();
 
-    // Asserted, altered, or retracted :einsteineinsteindb/idents update the relevant causetids.
+    // Asserted, altered, or retracted :einsteindb/idents update the relevant causetids.
     for (causetid, solitonid) in ident_set.asserted {
         schema.causetid_map.insert(causetid, solitonid.clone());
         schema.ident_map.insert(solitonid.clone(), causetid);

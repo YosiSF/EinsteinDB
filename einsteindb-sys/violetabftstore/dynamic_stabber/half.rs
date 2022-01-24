@@ -169,7 +169,7 @@ mod tests {
             .map(|brane| {
                 let mut cf_opts = BraneOptions::new();
                 let f = Box::new(RangePropertiesCollectorFactory::default());
-                cf_opts.add_table_properties_collector_factory("einsteineinsteindb.size-collector", f);
+                cf_opts.add_table_properties_collector_factory("einsteindb.size-collector", f);
                 BRANEOptions::new(brane, cf_opts)
             })
             .collect();
@@ -227,7 +227,7 @@ mod tests {
         let mut cf_opts = BraneOptions::new();
         cf_opts.set_level_zero_file_num_compaction_trigger(10);
         let f = Box::new(RangePropertiesCollectorFactory::default());
-        cf_opts.add_table_properties_collector_factory("einsteineinsteindb.size-collector", f);
+        cf_opts.add_table_properties_collector_factory("einsteindb.size-collector", f);
         let cfs_opts = LARGE_branes
             .iter()
             .map(|brane| BRANEOptions::new(brane, cf_opts.clone()))

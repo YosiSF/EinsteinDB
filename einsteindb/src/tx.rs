@@ -36,7 +36,7 @@
 //! in place and suffered bugs where particular code paths missed cases.
 //!
 //! The type hierarchy accepts `causet` instances from the transaction parser and flows `Term`
-//! instances through the term-rewriting transaction applier.  `Term` is a general `[:einsteineinsteindb/add e a v]`
+//! instances through the term-rewriting transaction applier.  `Term` is a general `[:einsteindb/add e a v]`
 //! with restrictions on the `e` and `v` components.  The hierarchy is expressed using `Result` to
 //! model either/or, and layers of `Result` are stripped -- we might say the `Term` instances are
 //! _lowered_ as they flow through the pipeline.  This type hierarchy could have been expressed by
@@ -57,8 +57,8 @@ use std::iter::{
     once,
 };
 
-use einsteineinsteindb;
-use einsteineinsteindb::{
+use einsteindb;
+use einsteindb::{
     einstaiStoring,
 };
 use einsteinml::{
@@ -152,7 +152,7 @@ pub(crate) enum TransactorAction {
 #[derive(Debug)]
 pub struct Tx<'conn, 'a, W> where W: TransactWatcher {
     /// The storage to apply against.  In the future, this will be a einstai connection.
-    store: &'conn rusqlite::Connection, // TODO: einsteineinsteindb::einstaiStoring,
+    store: &'conn rusqlite::Connection, // TODO: einsteindb::einstaiStoring,
 
     /// The partition map to allocate causetids from.
     ///
@@ -177,11 +177,11 @@ pub struct Tx<'conn, 'a, W> where W: TransactWatcher {
     tx_id: Causetid,
 }
 
-/// Remove any :einsteineinsteindb/id value from the given map notation, converting the returned value into
+/// Remove any :einsteindb/id value from the given map notation, converting the returned value into
 /// something suitable for the causet position rather than something suitable for a value position.
 pub fn remove_einsteineinsteindb_id<V: TransactableValue>(map: &mut entmod::MapNotation<V>) -> Result<Option<entmod::causetPlace<V>>> {
     // TODO: extract lazy defined constant.
-    let einsteineinsteindb_id_key = entmod::CausetidOrSolitonid::Solitonid(Keyword::namespaced("einsteineinsteindb", "id"));
+    let einsteineinsteindb_id_key = entmod::CausetidOrSolitonid::Solitonid(Keyword::namespaced("einsteindb", "id"));
 
     let einsteineinsteindb_id: Option<entmod::causetPlace<V>> = if let Some(id) = map.remove(&einsteineinsteindb_id_key) {
         match id {
@@ -311,7 +311,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
                 let lr_typed_value: TypedValue = lookup_ref.v.clone().into_typed_value(&self.schema, lr_attribute.value_type)?;
                 if lr_attribute.unique.is_none() {
-                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve (lookup-ref {} {:?}) with attribute that is not :einsteineinsteindb/unique", lr_a, lr_typed_value)))
+                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve (lookup-ref {} {:?}) with attribute that is not :einsteindb/unique", lr_a, lr_typed_value)))
                 }
 
                 Ok(self.lookup_refs.intern((lr_a, lr_typed_value)))
@@ -372,7 +372,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                         let forward_a = self.causet_a_into_term_a(forward_a)?;
                         let forward_attribute = self.schema.require_attribute_for_causetid(forward_a)?;
                         if forward_attribute.value_type != ValueType::Ref {
-                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} that is not :einsteineinsteindb/valueType :einsteineinsteindb.type/ref", forward_a)))
+                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", forward_a)))
                         }
 
                         match x {
@@ -386,8 +386,8 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                         if let TypedValue::Ref(causetid) = v.into_typed_value(&self.schema, ValueType::Ref)? {
                                             Ok(Either::Left(KnownCausetid(causetid)))
                                         } else {
-                                            // The given value is expected to be :einsteineinsteindb.type/ref, so this shouldn't happen.
-                                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} with value that is not :einsteineinsteindb.valueType :einsteineinsteindb.type/ref", forward_a)))
+                                            // The given value is expected to be :einsteindb.type/ref, so this shouldn't happen.
+                                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} with value that is not :einsteindb.valueType :einsteindb.type/ref", forward_a)))
                                         }
                                     }
                                 }
@@ -433,11 +433,11 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         while let Some(causet) = deque.pop_front() {
             match causet {
                 causet::MapNotation(mut map_notation) => {
-                    // :einsteineinsteindb/id is optional; if it's not given, we generate a special internal tempid
+                    // :einsteindb/id is optional; if it's not given, we generate a special internal tempid
                     // to use for upserting.  This tempid will not be reported in the TxReport.
                     let einsteineinsteindb_id: entmod::causetPlace<V> = remove_einsteineinsteindb_id(&mut map_notation)?.unwrap_or_else(|| in_process.allocate_einstai_id());
 
-                    // We're not nested, so :einsteineinsteindb/isComponent is not relevant.  We just explode the
+                    // We're not nested, so :einsteindb/isComponent is not relevant.  We just explode the
                     // map notation.
                     for (a, v) in map_notation {
                         deque.push_front(causet::AddOrRetract {
@@ -484,7 +484,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
                             entmod::ValuePlace::LookupRef(ref lookup_ref) => {
                                 if attribute.value_type != ValueType::Ref {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve value lookup ref for attribute {} that is not :einsteineinsteindb/valueType :einsteineinsteindb.type/ref", a)))
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve value lookup ref for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", a)))
                                 }
 
                                 Either::Right(LookupRefOrTempId::LookupRef(in_process.intern_lookup_ref(lookup_ref)?))
@@ -512,7 +512,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
                             entmod::ValuePlace::Vector(vs) => {
                                 if !attribute.multival {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode vector value for attribute {} that is not :einsteineinsteindb.cardinality :einsteineinsteindb.cardinality/many", a)));
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode vector value for attribute {} that is not :einsteindb.cardinality :einsteindb.cardinality/many", a)));
                                 }
 
                                 for vv in vs {
@@ -532,23 +532,23 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 // AddOrRetract, which proliferates types and code, or only handling
                                 // nested maps rather than map values, like Datomic does.
                                 if op != OpType::Add {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map value in :einsteineinsteindb/retract for attribute {}", a)));
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map value in :einsteindb/retract for attribute {}", a)));
                                 }
 
                                 if attribute.value_type != ValueType::Ref {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map value for attribute {} that is not :einsteineinsteindb/valueType :einsteineinsteindb.type/ref", a)))
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map value for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", a)))
                                 }
 
-                                // :einsteineinsteindb/id is optional; if it's not given, we generate a special internal tempid
+                                // :einsteindb/id is optional; if it's not given, we generate a special internal tempid
                                 // to use for upserting.  This tempid will not be reported in the TxReport.
                                 let einsteineinsteindb_id: Option<entmod::causetPlace<V>> = remove_einsteineinsteindb_id(&mut map_notation)?;
                                 let mut dangling = einsteineinsteindb_id.is_none();
                                 let einsteineinsteindb_id: entmod::causetPlace<V> = einsteineinsteindb_id.unwrap_or_else(|| in_process.allocate_einstai_id());
 
                                 // We're nested, so we want to ensure we're not creating "dangling"
-                                // causets that can't be reached.  If we're :einsteineinsteindb/isComponent, then this
+                                // causets that can't be reached.  If we're :einsteindb/isComponent, then this
                                 // is not dangling.  Otherwise, the resulting map needs to have a
-                                // :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset [a v] pair, so that it's reachable.
+                                // :einsteindb/unique :einsteindb.unique/idcauset [a v] pair, so that it's reachable.
                                 // Per http://docs.datomic.com/transactions.html: "Either the reference
                                 // to the nested map must be a component attribute, or the nested map
                                 // must include a unique attribute. This constraint prevents the
@@ -698,7 +698,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         debug!("unresolved tempids {:?}", unresolved_temp_ids);
 
         // TODO: track partitions for temporary IDs.
-        let causetids = self.partition_map.allocate_causetids(":einsteineinsteindb.part/user", unresolved_temp_ids.len());
+        let causetids = self.partition_map.allocate_causetids(":einsteindb.part/user", unresolved_temp_ids.len());
 
         let temp_id_allocations = unresolved_temp_ids
             .into_iter()
@@ -726,30 +726,30 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         // detail; it shouldn't be exposed in the final transaction report.
         let tempids = tempids.into_iter().filter_map(|(tempid, e)| tempid.into_external().map(|s| (s, e.0))).collect();
 
-        // A transaction might try to add or retract :einsteineinsteindb/solitonid assertions or other spacetime mutating
+        // A transaction might try to add or retract :einsteindb/solitonid assertions or other spacetime mutating
         // assertions , but those assertions might not make it to the store.  If we see a possible
         // spacetime mutation, we will figure out if any assertions made it through later.  This is
         // strictly an optimization: it would be correct to _always_ check what made it to the
         // store.
         let mut tx_might_update_spacetime = false;
 
-        // Mutable so that we can add the transaction :einsteineinsteindb/txInstant.
+        // Mutable so that we can add the transaction :einsteindb/txInstant.
         let mut aev_trie = into_aev_trie(&self.schema, final_populations, inert_terms)?;
 
         let tx_instant;
         { // TODO: Don't use this block to scope borrowing the schema; instead, extract a helper function.
 
-        // Assertions that are :einsteineinsteindb.cardinality/one and not :einsteineinsteindb.fulltext.
-        let mut non_fts_one: Vec<einsteineinsteindb::Reducedcauset> = vec![];
+        // Assertions that are :einsteindb.cardinality/one and not :einsteindb.fulltext.
+        let mut non_fts_one: Vec<einsteindb::Reducedcauset> = vec![];
 
-        // Assertions that are :einsteineinsteindb.cardinality/many and not :einsteineinsteindb.fulltext.
-        let mut non_fts_many: Vec<einsteineinsteindb::Reducedcauset> = vec![];
+        // Assertions that are :einsteindb.cardinality/many and not :einsteindb.fulltext.
+        let mut non_fts_many: Vec<einsteindb::Reducedcauset> = vec![];
 
-        // Assertions that are :einsteineinsteindb.cardinality/one and :einsteineinsteindb.fulltext.
-        let mut fts_one: Vec<einsteineinsteindb::Reducedcauset> = vec![];
+        // Assertions that are :einsteindb.cardinality/one and :einsteindb.fulltext.
+        let mut fts_one: Vec<einsteindb::Reducedcauset> = vec![];
 
-        // Assertions that are :einsteineinsteindb.cardinality/many and :einsteineinsteindb.fulltext.
-        let mut fts_many: Vec<einsteineinsteindb::Reducedcauset> = vec![];
+        // Assertions that are :einsteindb.cardinality/many and :einsteindb.fulltext.
+        let mut fts_many: Vec<einsteindb::Reducedcauset> = vec![];
 
         // We need to ensure that callers can't blindly transact causets that haven't been
         // allocated by this store.
@@ -794,19 +794,19 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         }
 
         if !non_fts_one.is_empty() {
-            self.store.insert_non_fts_searches(&non_fts_one[..], einsteineinsteindb::SearchType::Inexact)?;
+            self.store.insert_non_fts_searches(&non_fts_one[..], einsteindb::SearchType::Inexact)?;
         }
 
         if !non_fts_many.is_empty() {
-            self.store.insert_non_fts_searches(&non_fts_many[..], einsteineinsteindb::SearchType::Exact)?;
+            self.store.insert_non_fts_searches(&non_fts_many[..], einsteindb::SearchType::Exact)?;
         }
 
         if !fts_one.is_empty() {
-            self.store.insert_fts_searches(&fts_one[..], einsteineinsteindb::SearchType::Inexact)?;
+            self.store.insert_fts_searches(&fts_one[..], einsteindb::SearchType::Inexact)?;
         }
 
         if !fts_many.is_empty() {
-            self.store.insert_fts_searches(&fts_many[..], einsteineinsteindb::SearchType::Exact)?;
+            self.store.insert_fts_searches(&fts_many[..], einsteindb::SearchType::Exact)?;
         }
 
         match action {
@@ -827,7 +827,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             // Extract changes to spacetime from the store.
             let spacetime_assertions = match action {
                 TransactorAction::Materialize => self.store.resolved_spacetime_assertions()?,
-                TransactorAction::MaterializeAndCommit => einsteineinsteindb::committed_spacetime_assertions(self.store, self.tx_id)?
+                TransactorAction::MaterializeAndCommit => einsteindb::committed_spacetime_assertions(self.store, self.tx_id)?
             };
             let mut new_schema = (*self.schema_for_mutation).clone(); // Clone the underlying Schema for modification.
             let spacetime_report = spacetime::update_schema_from_causetid_quadruples(&mut new_schema, spacetime_assertions)?;
@@ -839,7 +839,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             if new_schema != *self.schema_for_mutation {
                 let old_schema = (*self.schema_for_mutation).clone(); // Clone the original Schema for comparison.
                 *self.schema_for_mutation.to_mut() = new_schema; // Store the new Schema.
-                einsteineinsteindb::update_spacetime(self.store, &old_schema, &*self.schema_for_mutation, &spacetime_report)?;
+                einsteindb::update_spacetime(self.store, &old_schema, &*self.schema_for_mutation, &spacetime_report)?;
             }
         }
 
@@ -858,7 +858,7 @@ fn start_tx<'conn, 'a, W>(conn: &'conn rusqlite::Connection,
                        schema: &'a Schema,
                        watcher: W) -> Result<Tx<'conn, 'a, W>>
     where W: TransactWatcher {
-    let tx_id = partition_map.allocate_causetid(":einsteineinsteindb.part/tx");
+    let tx_id = partition_map.allocate_causetid(":einsteindb.part/tx");
     conn.begin_tx_application()?;
 
     Ok(Tx::new(conn, partition_map, schema_for_mutation, schema, watcher, tx_id))
@@ -957,7 +957,7 @@ pub(crate) fn into_aev_trie<'schema>(schema: &'schema Schema, final_populations:
     Ok(trie)
 }
 
-/// Transact [:einsteineinsteindb/add :einsteineinsteindb/txInstant tx_instant (transaction-tx)] if the trie doesn't contain it
+/// Transact [:einsteindb/add :einsteindb/txInstant tx_instant (transaction-tx)] if the trie doesn't contain it
 /// already.  Return the instant from the input or the instant inserted.
 fn get_or_insert_tx_instant<'schema>(aev_trie: &mut AEVTrie<'schema>, schema: &'schema Schema, tx_id: Causetid) -> Result<DateTime<Utc>> {
     let ars = aev_trie
@@ -966,7 +966,7 @@ fn get_or_insert_tx_instant<'schema>(aev_trie: &mut AEVTrie<'schema>, schema: &'
         .entry(tx_id)
         .or_insert(AddAndRetract::default());
     if !ars.retract.is_empty() {
-        // Cannot retract :einsteineinsteindb/txInstant!
+        // Cannot retract :einsteindb/txInstant!
     }
 
     // Otherwise we have a coding error -- we should have cardinality checked this already.

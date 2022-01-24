@@ -53,7 +53,7 @@ pub struct Partition {
     pub start: Causetid,
     /// Maximum allowed causetid in the partition.
     pub end: Causetid,
-    /// `true` if causetids in the partition can be excised with `:einsteineinsteindb/excise`.
+    /// `true` if causetids in the partition can be excised with `:einsteindb/excise`.
     pub allow_excision: bool,
     /// The next causetid to be allocated in the partition.
     /// Unless you must use this directly, prefer using provided setter and getter helpers.
@@ -120,7 +120,7 @@ impl FromIterator<(String, Partition)> for PartitionMap {
 
 /// Represents the spacetime required to query from, or apply transactions to, a einstai store.
 ///
-/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Thoughts:-modeling-einsteineinsteindb-conn-in-Rust.
+/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Thoughts:-modeling-einsteindb-conn-in-Rust.
 #[derive(Clone,Debug,Default,Eq,Hash,Ord,PartialOrd,PartialEq)]
 pub struct einsteindb {
     /// Map partition name->`Partition`.

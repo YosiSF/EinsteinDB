@@ -33,8 +33,8 @@ use einsteinml::{
 
 use einsteinml::causets::OpType;
 
-use einsteineinsteindb;
-use einsteineinsteindb::{
+use einsteindb;
+use einsteindb::{
     TypedSQLValue,
 };
 
@@ -179,7 +179,7 @@ pub fn move_from_main_timeline(conn: &rusqlite::Connection, schema: &Schema,
     // Move transactions over to the target timeline.
     move_transactions_to(conn, &txs_to_move, new_timeline)?;
 
-    Ok((last_schema, einsteineinsteindb::read_partition_map(conn)?))
+    Ok((last_schema, einsteindb::read_partition_map(conn)?))
 }
 
 #[cfg(test)]
@@ -214,7 +214,7 @@ mod tests {
         conn.sanitized_partition_map();
 
         let t = r#"
-            [{:einsteineinsteindb/id :einsteineinsteindb/doc :einsteineinsteindb/doc "test"}]
+            [{:einsteindb/id :einsteindb/doc :einsteindb/doc "test"}]
         "#;
 
         let partition_map0 = conn.partition_map.clone();
@@ -246,11 +246,11 @@ mod tests {
         assert_eq!(partition_map1, partition_map2);
 
         assert_matches!(conn.datoms(), r#"
-            [[37 :einsteineinsteindb/doc "test"]]
+            [[37 :einsteindb/doc "test"]]
         "#);
         assert_matches!(conn.transactions(), r#"
-            [[[37 :einsteineinsteindb/doc "test" ?tx true]
-              [?tx :einsteineinsteindb/txInstant ?ms ?tx true]]]
+            [[[37 :einsteindb/doc "test" ?tx true]
+              [?tx :einsteindb/txInstant ?ms ?tx true]]]
         "#);
     }
 
@@ -260,7 +260,7 @@ mod tests {
         conn.sanitized_partition_map();
 
         let t = r#"
-            [{:einsteineinsteindb/solitonid :test/causetid :einsteineinsteindb/doc "test" :einsteineinsteindb.schema/version 1}]
+            [{:einsteindb/solitonid :test/causetid :einsteindb/doc "test" :einsteindb.schema/version 1}]
         "#;
 
         let partition_map0 = conn.partition_map.clone();
@@ -288,15 +288,15 @@ mod tests {
         assert_eq!(conn.schema, schema1);
 
         assert_matches!(conn.datoms(), r#"
-            [[?e :einsteineinsteindb/solitonid :test/causetid]
-             [?e :einsteineinsteindb/doc "test"]
-             [?e :einsteineinsteindb.schema/version 1]]
+            [[?e :einsteindb/solitonid :test/causetid]
+             [?e :einsteindb/doc "test"]
+             [?e :einsteindb.schema/version 1]]
         "#);
         assert_matches!(conn.transactions(), r#"
-            [[[?e :einsteineinsteindb/solitonid :test/causetid ?tx true]
-              [?e :einsteineinsteindb/doc "test" ?tx true]
-              [?e :einsteineinsteindb.schema/version 1 ?tx true]
-              [?tx :einsteineinsteindb/txInstant ?ms ?tx true]]]
+            [[[?e :einsteindb/solitonid :test/causetid ?tx true]
+              [?e :einsteindb/doc "test" ?tx true]
+              [?e :einsteindb.schema/version 1 ?tx true]
+              [?tx :einsteindb/txInstant ?ms ?tx true]]]
         "#);
     }
 
@@ -307,7 +307,7 @@ mod tests {
 
         // Transact a basic schema.
         assert_transact!(conn, r#"
-            [{:einsteineinsteindb/solitonid :person/name :einsteineinsteindb/valueType :einsteineinsteindb.type/string :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset :einsteineinsteindb/index true}]
+            [{:einsteindb/solitonid :person/name :einsteindb/valueType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/index true}]
         "#);
 
         // Make an assertion against our schema.
@@ -322,36 +322,36 @@ mod tests {
 
         // Assert that our datoms are now just the schema.
         assert_matches!(conn.datoms(), "
-            [[?e :einsteineinsteindb/solitonid :person/name]
-            [?e :einsteineinsteindb/valueType :einsteineinsteindb.type/string]
-            [?e :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one]
-            [?e :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset]
-            [?e :einsteineinsteindb/index true]]");
+            [[?e :einsteindb/solitonid :person/name]
+            [?e :einsteindb/valueType :einsteindb.type/string]
+            [?e :einsteindb/cardinality :einsteindb.cardinality/one]
+            [?e :einsteindb/unique :einsteindb.unique/idcauset]
+            [?e :einsteindb/index true]]");
         // Same for transactions.
         assert_matches!(conn.transactions(), "
-            [[[?e :einsteineinsteindb/solitonid :person/name ?tx true]
-            [?e :einsteineinsteindb/valueType :einsteineinsteindb.type/string ?tx true]
-            [?e :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one ?tx true]
-            [?e :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset ?tx true]
-            [?e :einsteineinsteindb/index true ?tx true]
-            [?tx :einsteineinsteindb/txInstant ?ms ?tx true]]]");
+            [[[?e :einsteindb/solitonid :person/name ?tx true]
+            [?e :einsteindb/valueType :einsteindb.type/string ?tx true]
+            [?e :einsteindb/cardinality :einsteindb.cardinality/one ?tx true]
+            [?e :einsteindb/unique :einsteindb.unique/idcauset ?tx true]
+            [?e :einsteindb/index true ?tx true]
+            [?tx :einsteindb/txInstant ?ms ?tx true]]]");
 
         // Re-assert our initial fact against our schema.
         assert_transact!(conn, r#"
-            [[:einsteineinsteindb/add "tempid" :person/name "Vanya"]]"#);
+            [[:einsteindb/add "tempid" :person/name "Vanya"]]"#);
 
         // Now, change that fact. This is the "clashing" transaction, if we're
         // performing a timeline move using the transactor.
         assert_transact!(conn, r#"
-            [[:einsteineinsteindb/add (lookup-ref :person/name "Vanya") :person/name "Ivan"]]"#);
+            [[:einsteindb/add (lookup-ref :person/name "Vanya") :person/name "Ivan"]]"#);
 
         // Assert that our datoms are now the schema and the final assertion.
         assert_matches!(conn.datoms(), r#"
-            [[?e1 :einsteineinsteindb/solitonid :person/name]
-            [?e1 :einsteineinsteindb/valueType :einsteineinsteindb.type/string]
-            [?e1 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one]
-            [?e1 :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset]
-            [?e1 :einsteineinsteindb/index true]
+            [[?e1 :einsteindb/solitonid :person/name]
+            [?e1 :einsteindb/valueType :einsteindb.type/string]
+            [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
+            [?e1 :einsteindb/unique :einsteindb.unique/idcauset]
+            [?e1 :einsteindb/index true]
             [?e2 :person/name "Ivan"]]
         "#);
 
@@ -360,21 +360,21 @@ mod tests {
         // after the timeline move.
         assert_matches!(conn.transactions(), r#"
             [[
-                [?e1 :einsteineinsteindb/solitonid :person/name ?tx1 true]
-                [?e1 :einsteineinsteindb/valueType :einsteineinsteindb.type/string ?tx1 true]
-                [?e1 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one ?tx1 true]
-                [?e1 :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset ?tx1 true]
-                [?e1 :einsteineinsteindb/index true ?tx1 true]
-                [?tx1 :einsteineinsteindb/txInstant ?ms1 ?tx1 true]
+                [?e1 :einsteindb/solitonid :person/name ?tx1 true]
+                [?e1 :einsteindb/valueType :einsteindb.type/string ?tx1 true]
+                [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
+                [?e1 :einsteindb/unique :einsteindb.unique/idcauset ?tx1 true]
+                [?e1 :einsteindb/index true ?tx1 true]
+                [?tx1 :einsteindb/txInstant ?ms1 ?tx1 true]
             ]
             [
                 [?e2 :person/name "Vanya" ?tx2 true]
-                [?tx2 :einsteineinsteindb/txInstant ?ms2 ?tx2 true]
+                [?tx2 :einsteindb/txInstant ?ms2 ?tx2 true]
             ]
             [
                 [?e2 :person/name "Ivan" ?tx3 true]
                 [?e2 :person/name "Vanya" ?tx3 false]
-                [?tx3 :einsteineinsteindb/txInstant ?ms3 ?tx3 true]
+                [?tx3 :einsteindb/txInstant ?ms3 ?tx3 true]
             ]]
         "#);
     }
@@ -385,8 +385,8 @@ mod tests {
         conn.sanitized_partition_map();
 
         let t = r#"
-            [{:einsteineinsteindb/id "e" :einsteineinsteindb/solitonid :test/one :einsteineinsteindb/valueType :einsteineinsteindb.type/long :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one}
-             {:einsteineinsteindb/id "f" :einsteineinsteindb/solitonid :test/many :einsteineinsteindb/valueType :einsteineinsteindb.type/long :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many}]
+            [{:einsteindb/id "e" :einsteindb/solitonid :test/one :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one}
+             {:einsteindb/id "f" :einsteindb/solitonid :test/many :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}]
         "#;
 
         let partition_map0 = conn.partition_map.clone();
@@ -415,21 +415,21 @@ mod tests {
         assert_eq!(schema1, schema2);
 
         assert_matches!(conn.datoms(), r#"
-            [[?e1 :einsteineinsteindb/solitonid :test/one]
-             [?e1 :einsteineinsteindb/valueType :einsteineinsteindb.type/long]
-             [?e1 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one]
-             [?e2 :einsteineinsteindb/solitonid :test/many]
-             [?e2 :einsteineinsteindb/valueType :einsteineinsteindb.type/long]
-             [?e2 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many]]
+            [[?e1 :einsteindb/solitonid :test/one]
+             [?e1 :einsteindb/valueType :einsteindb.type/long]
+             [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
+             [?e2 :einsteindb/solitonid :test/many]
+             [?e2 :einsteindb/valueType :einsteindb.type/long]
+             [?e2 :einsteindb/cardinality :einsteindb.cardinality/many]]
         "#);
         assert_matches!(conn.transactions(), r#"
-            [[[?e1 :einsteineinsteindb/solitonid :test/one ?tx1 true]
-             [?e1 :einsteineinsteindb/valueType :einsteineinsteindb.type/long ?tx1 true]
-             [?e1 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one ?tx1 true]
-             [?e2 :einsteineinsteindb/solitonid :test/many ?tx1 true]
-             [?e2 :einsteineinsteindb/valueType :einsteineinsteindb.type/long ?tx1 true]
-             [?e2 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many ?tx1 true]
-             [?tx1 :einsteineinsteindb/txInstant ?ms ?tx1 true]]]
+            [[[?e1 :einsteindb/solitonid :test/one ?tx1 true]
+             [?e1 :einsteindb/valueType :einsteindb.type/long ?tx1 true]
+             [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
+             [?e2 :einsteindb/solitonid :test/many ?tx1 true]
+             [?e2 :einsteindb/valueType :einsteindb.type/long ?tx1 true]
+             [?e2 :einsteindb/cardinality :einsteindb.cardinality/many ?tx1 true]
+             [?tx1 :einsteindb/txInstant ?ms ?tx1 true]]]
         "#);
     }
 
@@ -440,13 +440,13 @@ mod tests {
 
         let t = r#"
             [{
-                :einsteineinsteindb/id "e"
-                :einsteineinsteindb/solitonid :test/one
-                :einsteineinsteindb/valueType :einsteineinsteindb.type/string
-                :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one
-                :einsteineinsteindb/unique :einsteineinsteindb.unique/value
-                :einsteineinsteindb/index true
-                :einsteineinsteindb/fulltext true
+                :einsteindb/id "e"
+                :einsteindb/solitonid :test/one
+                :einsteindb/valueType :einsteindb.type/string
+                :einsteindb/cardinality :einsteindb.cardinality/one
+                :einsteindb/unique :einsteindb.unique/value
+                :einsteindb/index true
+                :einsteindb/fulltext true
             }]
         "#;
 
@@ -476,21 +476,21 @@ mod tests {
         assert_eq!(schema1, schema2);
 
         assert_matches!(conn.datoms(), r#"
-            [[?e1 :einsteineinsteindb/solitonid :test/one]
-             [?e1 :einsteineinsteindb/valueType :einsteineinsteindb.type/string]
-             [?e1 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one]
-             [?e1 :einsteineinsteindb/unique :einsteineinsteindb.unique/value]
-             [?e1 :einsteineinsteindb/index true]
-             [?e1 :einsteineinsteindb/fulltext true]]
+            [[?e1 :einsteindb/solitonid :test/one]
+             [?e1 :einsteindb/valueType :einsteindb.type/string]
+             [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
+             [?e1 :einsteindb/unique :einsteindb.unique/value]
+             [?e1 :einsteindb/index true]
+             [?e1 :einsteindb/fulltext true]]
         "#);
         assert_matches!(conn.transactions(), r#"
-            [[[?e1 :einsteineinsteindb/solitonid :test/one ?tx1 true]
-             [?e1 :einsteineinsteindb/valueType :einsteineinsteindb.type/string ?tx1 true]
-             [?e1 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one ?tx1 true]
-             [?e1 :einsteineinsteindb/unique :einsteineinsteindb.unique/value ?tx1 true]
-             [?e1 :einsteineinsteindb/index true ?tx1 true]
-             [?e1 :einsteineinsteindb/fulltext true ?tx1 true]
-             [?tx1 :einsteineinsteindb/txInstant ?ms ?tx1 true]]]
+            [[[?e1 :einsteindb/solitonid :test/one ?tx1 true]
+             [?e1 :einsteindb/valueType :einsteindb.type/string ?tx1 true]
+             [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
+             [?e1 :einsteindb/unique :einsteindb.unique/value ?tx1 true]
+             [?e1 :einsteindb/index true ?tx1 true]
+             [?e1 :einsteindb/fulltext true ?tx1 true]
+             [?tx1 :einsteindb/txInstant ?ms ?tx1 true]]]
         "#);
     }
 
@@ -501,13 +501,13 @@ mod tests {
 
         let t = r#"
             [{
-                :einsteineinsteindb/id "e"
-                :einsteineinsteindb/solitonid :test/one
-                :einsteineinsteindb/valueType :einsteineinsteindb.type/ref
-                :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one
-                :einsteineinsteindb/unique :einsteineinsteindb.unique/value
-                :einsteineinsteindb/index true
-                :einsteineinsteindb/isComponent true
+                :einsteindb/id "e"
+                :einsteindb/solitonid :test/one
+                :einsteindb/valueType :einsteindb.type/ref
+                :einsteindb/cardinality :einsteindb.cardinality/one
+                :einsteindb/unique :einsteindb.unique/value
+                :einsteindb/index true
+                :einsteindb/isComponent true
             }]
         "#;
 
@@ -544,21 +544,21 @@ mod tests {
         assert_eq!(schema1, schema2);
 
         assert_matches!(conn.datoms(), r#"
-            [[?e1 :einsteineinsteindb/solitonid :test/one]
-             [?e1 :einsteineinsteindb/valueType :einsteineinsteindb.type/ref]
-             [?e1 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one]
-             [?e1 :einsteineinsteindb/unique :einsteineinsteindb.unique/value]
-             [?e1 :einsteineinsteindb/isComponent true]
-             [?e1 :einsteineinsteindb/index true]]
+            [[?e1 :einsteindb/solitonid :test/one]
+             [?e1 :einsteindb/valueType :einsteindb.type/ref]
+             [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
+             [?e1 :einsteindb/unique :einsteindb.unique/value]
+             [?e1 :einsteindb/isComponent true]
+             [?e1 :einsteindb/index true]]
         "#);
         assert_matches!(conn.transactions(), r#"
-            [[[?e1 :einsteineinsteindb/solitonid :test/one ?tx1 true]
-             [?e1 :einsteineinsteindb/valueType :einsteineinsteindb.type/ref ?tx1 true]
-             [?e1 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one ?tx1 true]
-             [?e1 :einsteineinsteindb/unique :einsteineinsteindb.unique/value ?tx1 true]
-             [?e1 :einsteineinsteindb/isComponent true ?tx1 true]
-             [?e1 :einsteineinsteindb/index true ?tx1 true]
-             [?tx1 :einsteineinsteindb/txInstant ?ms ?tx1 true]]]
+            [[[?e1 :einsteindb/solitonid :test/one ?tx1 true]
+             [?e1 :einsteindb/valueType :einsteindb.type/ref ?tx1 true]
+             [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
+             [?e1 :einsteindb/unique :einsteindb.unique/value ?tx1 true]
+             [?e1 :einsteindb/isComponent true ?tx1 true]
+             [?e1 :einsteindb/index true ?tx1 true]
+             [?tx1 :einsteindb/txInstant ?ms ?tx1 true]]]
         "#);
     }
 
@@ -570,32 +570,32 @@ mod tests {
         let partition_map_after_bootstrap = conn.partition_map.clone();
 
         assert_eq!((65536..65538),
-                   conn.partition_map.allocate_causetids(":einsteineinsteindb.part/user", 2));
+                   conn.partition_map.allocate_causetids(":einsteindb.part/user", 2));
         let tx_report0 = assert_transact!(conn, r#"[
-            {:einsteineinsteindb/id 65536 :einsteineinsteindb/solitonid :test/one :einsteineinsteindb/valueType :einsteineinsteindb.type/long :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset :einsteineinsteindb/index true}
-            {:einsteineinsteindb/id 65537 :einsteineinsteindb/solitonid :test/many :einsteineinsteindb/valueType :einsteineinsteindb.type/long :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many}
+            {:einsteindb/id 65536 :einsteindb/solitonid :test/one :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/index true}
+            {:einsteindb/id 65537 :einsteindb/solitonid :test/many :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
         let first = "[
-            [65536 :einsteineinsteindb/solitonid :test/one]
-            [65536 :einsteineinsteindb/valueType :einsteineinsteindb.type/long]
-            [65536 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one]
-            [65536 :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset]
-            [65536 :einsteineinsteindb/index true]
-            [65537 :einsteineinsteindb/solitonid :test/many]
-            [65537 :einsteineinsteindb/valueType :einsteineinsteindb.type/long]
-            [65537 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many]
+            [65536 :einsteindb/solitonid :test/one]
+            [65536 :einsteindb/valueType :einsteindb.type/long]
+            [65536 :einsteindb/cardinality :einsteindb.cardinality/one]
+            [65536 :einsteindb/unique :einsteindb.unique/idcauset]
+            [65536 :einsteindb/index true]
+            [65537 :einsteindb/solitonid :test/many]
+            [65537 :einsteindb/valueType :einsteindb.type/long]
+            [65537 :einsteindb/cardinality :einsteindb.cardinality/many]
         ]";
         assert_matches!(conn.datoms(), first);
 
         let partition_map0 = conn.partition_map.clone();
 
         assert_eq!((65538..65539),
-                   conn.partition_map.allocate_causetids(":einsteineinsteindb.part/user", 1));
+                   conn.partition_map.allocate_causetids(":einsteindb.part/user", 1));
         let tx_report1 = assert_transact!(conn, r#"[
-            [:einsteineinsteindb/add 65538 :test/one 1]
-            [:einsteineinsteindb/add 65538 :test/many 2]
-            [:einsteineinsteindb/add 65538 :test/many 3]
+            [:einsteindb/add 65538 :test/one 1]
+            [:einsteindb/add 65538 :test/many 2]
+            [:einsteindb/add 65538 :test/many 3]
         ]"#);
         let schema1 = conn.schema.clone();
         let partition_map1 = conn.partition_map.clone();
@@ -604,17 +604,17 @@ mod tests {
                         "[[65538 :test/one 1 ?tx true]
                           [65538 :test/many 2 ?tx true]
                           [65538 :test/many 3 ?tx true]
-                          [?tx :einsteineinsteindb/txInstant ?ms ?tx true]]");
+                          [?tx :einsteindb/txInstant ?ms ?tx true]]");
 
         let second = "[
-            [65536 :einsteineinsteindb/solitonid :test/one]
-            [65536 :einsteineinsteindb/valueType :einsteineinsteindb.type/long]
-            [65536 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one]
-            [65536 :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset]
-            [65536 :einsteineinsteindb/index true]
-            [65537 :einsteineinsteindb/solitonid :test/many]
-            [65537 :einsteineinsteindb/valueType :einsteineinsteindb.type/long]
-            [65537 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many]
+            [65536 :einsteindb/solitonid :test/one]
+            [65536 :einsteindb/valueType :einsteindb.type/long]
+            [65536 :einsteindb/cardinality :einsteindb.cardinality/one]
+            [65536 :einsteindb/unique :einsteindb.unique/idcauset]
+            [65536 :einsteindb/index true]
+            [65537 :einsteindb/solitonid :test/many]
+            [65537 :einsteindb/valueType :einsteindb.type/long]
+            [65537 :einsteindb/cardinality :einsteindb.cardinality/many]
             [65538 :test/one 1]
             [65538 :test/many 2]
             [65538 :test/many 3]
@@ -622,10 +622,10 @@ mod tests {
         assert_matches!(conn.datoms(), second);
 
         let tx_report2 = assert_transact!(conn, r#"[
-            [:einsteineinsteindb/add 65538 :test/one 2]
-            [:einsteineinsteindb/add 65538 :test/many 2]
-            [:einsteineinsteindb/retract 65538 :test/many 3]
-            [:einsteineinsteindb/add 65538 :test/many 4]
+            [:einsteindb/add 65538 :test/one 2]
+            [:einsteindb/add 65538 :test/many 2]
+            [:einsteindb/retract 65538 :test/many 3]
+            [:einsteindb/add 65538 :test/many 4]
         ]"#);
         let schema2 = conn.schema.clone();
 
@@ -634,17 +634,17 @@ mod tests {
                           [65538 :test/one 2 ?tx true]
                           [65538 :test/many 3 ?tx false]
                           [65538 :test/many 4 ?tx true]
-                          [?tx :einsteineinsteindb/txInstant ?ms ?tx true]]");
+                          [?tx :einsteindb/txInstant ?ms ?tx true]]");
 
         let third = "[
-            [65536 :einsteineinsteindb/solitonid :test/one]
-            [65536 :einsteineinsteindb/valueType :einsteineinsteindb.type/long]
-            [65536 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one]
-            [65536 :einsteineinsteindb/unique :einsteineinsteindb.unique/idcauset]
-            [65536 :einsteineinsteindb/index true]
-            [65537 :einsteineinsteindb/solitonid :test/many]
-            [65537 :einsteineinsteindb/valueType :einsteineinsteindb.type/long]
-            [65537 :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many]
+            [65536 :einsteindb/solitonid :test/one]
+            [65536 :einsteindb/valueType :einsteindb.type/long]
+            [65536 :einsteindb/cardinality :einsteindb.cardinality/one]
+            [65536 :einsteindb/unique :einsteindb.unique/idcauset]
+            [65536 :einsteindb/index true]
+            [65537 :einsteindb/solitonid :test/many]
+            [65537 :einsteindb/valueType :einsteindb.type/long]
+            [65537 :einsteindb/cardinality :einsteindb.cardinality/many]
             [65538 :test/one 2]
             [65538 :test/many 2]
             [65538 :test/many 4]
@@ -691,23 +691,23 @@ mod tests {
         let partition_map_after_bootstrap = conn.partition_map.clone();
 
         assert_eq!((65536..65539),
-                   conn.partition_map.allocate_causetids(":einsteineinsteindb.part/user", 3));
+                   conn.partition_map.allocate_causetids(":einsteindb.part/user", 3));
         let tx_report0 = assert_transact!(conn, r#"[
-            {:einsteineinsteindb/id 65536 :einsteineinsteindb/solitonid :test/one :einsteineinsteindb/valueType :einsteineinsteindb.type/long :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one}
-            {:einsteineinsteindb/id 65537 :einsteineinsteindb/solitonid :test/many :einsteineinsteindb/valueType :einsteineinsteindb.type/long :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many}
+            {:einsteindb/id 65536 :einsteindb/solitonid :test/one :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one}
+            {:einsteindb/id 65537 :einsteindb/solitonid :test/many :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
         assert_transact!(conn, r#"[
-            [:einsteineinsteindb/add 65538 :test/one 1]
-            [:einsteineinsteindb/add 65538 :test/many 2]
-            [:einsteineinsteindb/add 65538 :test/many 3]
+            [:einsteindb/add 65538 :test/one 1]
+            [:einsteindb/add 65538 :test/many 2]
+            [:einsteindb/add 65538 :test/many 3]
         ]"#);
 
         assert_transact!(conn, r#"[
-            [:einsteineinsteindb/add 65538 :test/one 2]
-            [:einsteineinsteindb/add 65538 :test/many 2]
-            [:einsteineinsteindb/retract 65538 :test/many 3]
-            [:einsteineinsteindb/add 65538 :test/many 4]
+            [:einsteindb/add 65538 :test/one 2]
+            [:einsteindb/add 65538 :test/many 2]
+            [:einsteindb/retract 65538 :test/many 3]
+            [:einsteindb/add 65538 :test/many 4]
         ]"#);
 
         // Remove all of these transactions from the main timeline,

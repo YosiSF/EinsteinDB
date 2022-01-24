@@ -329,21 +329,21 @@ mod test {
 
         let value = schema.to_eeinsteindbn_value();
 
-        let expected_output = r#"[ {   :einsteineinsteindb/solitonid     :foo/bar
-    :einsteineinsteindb/valueType :einsteineinsteindb.type/ref
-    :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one
-    :einsteineinsteindb/index true
-    :einsteineinsteindb/noHistory true },
-{   :einsteineinsteindb/solitonid     :foo/bas
-    :einsteineinsteindb/valueType :einsteineinsteindb.type/string
-    :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/many
-    :einsteineinsteindb/unique :einsteineinsteindb.unique/value
-    :einsteineinsteindb/fulltext true },
-{   :einsteineinsteindb/solitonid     :foo/bat
-    :einsteineinsteindb/valueType :einsteineinsteindb.type/boolean
-    :einsteineinsteindb/cardinality :einsteineinsteindb.cardinality/one
-    :einsteineinsteindb/unique :einsteineinsteindb.unique/identity
-    :einsteineinsteindb/isComponent true }, ]"#;
+        let expected_output = r#"[ {   :einsteindb/solitonid     :foo/bar
+    :einsteindb/valueType :einsteindb.type/ref
+    :einsteindb/cardinality :einsteindb.cardinality/one
+    :einsteindb/index true
+    :einsteindb/noHistory true },
+{   :einsteindb/solitonid     :foo/bas
+    :einsteindb/valueType :einsteindb.type/string
+    :einsteindb/cardinality :einsteindb.cardinality/many
+    :einsteindb/unique :einsteindb.unique/value
+    :einsteindb/fulltext true },
+{   :einsteindb/solitonid     :foo/bat
+    :einsteindb/valueType :einsteindb.type/boolean
+    :einsteindb/cardinality :einsteindb.cardinality/one
+    :einsteindb/unique :einsteindb.unique/identity
+    :einsteindb/isComponent true }, ]"#;
         let expected_value = eeinsteindbn::parse::value(&expected_output).expect("to be able to parse").without_spans();
         assert_eq!(expected_value, value);
 
