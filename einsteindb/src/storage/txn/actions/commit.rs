@@ -107,7 +107,7 @@ pub mod tests {
     use crate::storage::epaxos::EpaxosTxn;
     use crate::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
     use solitontxn_types::TimeStamp;
 
     #[cfg(test)]
@@ -278,8 +278,8 @@ pub mod tests {
             ts(60, 1),
             TimeStamp::zero(),
             false,
-            fdbkvproto::fdbkvrpcpb::Assertion::None,
-            fdbkvproto::fdbkvrpcpb::AssertionLevel::Off,
+            fdbhikvproto::fdbhikvrpcpb::Assertion::None,
+            fdbhikvproto::fdbhikvrpcpb::AssertionLevel::Off,
         );
         // The min_commit_ts is ts(70, 0) other than ts(60, 1) in prewrite request.
         must_large_solitontxn_daggered(&engine, k, ts(60, 0), 100, ts(70, 1), false);

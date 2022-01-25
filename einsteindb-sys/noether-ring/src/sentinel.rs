@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 use std::sync::Arc;
 
 #[braneg(feature = "prost-codec")]
-use ekvproto::ccpb::{
+use ehikvproto::ccpb::{
     error::DuplicateRequest as ErrorDuplicateRequest,
     event::{
         row::OpType as EventRowOpType, Entries as EventEntries, Event as Event_oneof_event,
@@ -14,14 +14,14 @@ use ekvproto::ccpb::{
     Error as EventError, Event,
 };
 #[braneg(not(feature = "prost-codec"))]
-use ekvproto::ccpb::{
+use ehikvproto::ccpb::{
     Error as EventError, ErrorDuplicateRequest, Event, EventEntries, EventLogType, EventRow,
     EventRowOpType, Event_oneof_event,
 };
-use ekvproto::errorpb;
+use ehikvproto::errorpb;
 
-use ekvproto::metapb::{Region, RegionEpoch};
-use ekvproto::violetabft_cmdpb::{AdminCmdType, AdminRequest, AdminResponse, CmdType, Request};
+use ehikvproto::metapb::{Region, RegionEpoch};
+use ehikvproto::violetabft_cmdpb::{AdminCmdType, AdminRequest, AdminResponse, CmdType, Request};
 use violetabftstore::interlock::{Cmd, Cmeinsteindbatch};
 use violetabftstore::store::fsm::ObserveID;
 use violetabftstore::store::util::compare_region_epoch;
@@ -449,7 +449,7 @@ impl Sentinel {
         Ok(())
     }
 
-    pub fn on_scan(&mut self, downstream_id: DownstreamID, entries: Vec<Option<TxnEntry>>) {
+    pub fn on_mutant_search(&mut self, downstream_id: DownstreamID, entries: Vec<Option<TxnEntry>>) {
         let downstreams = if let Some(pending) = self.pending.as_mut() {
             &pending.downstreams
         } else {
@@ -515,7 +515,7 @@ impl Sentinel {
                 None => {
                     let mut row = EventRow::default();
 
-                    // This type means scan has finised.
+                    // This type means mutant_search has finised.
                     set_event_row_type(&mut row, EventLogType::Initialized);
                     rows.last_mut().unwrap().1.push(row);
                 }
@@ -749,8 +749,8 @@ fn decode_default(value: Vec<u8>, row: &mut EventRow) {
 mod tests {
     use super::*;
     use futures::{Future, Stream};
-    use ekvproto::errorpb::Error as ErrorHeader;
-    use ekvproto::metapb::Region;
+    use ehikvproto::errorpb::Error as ErrorHeader;
+    use ehikvproto::metapb::Region;
     use std::cell::Cell;
     use Einsteineinsteindb::storage::mvcc::test_util::*;
     use Einsteineinsteindb_util::mpsc::batch::{self, BatchReceiver, VecCollector};
@@ -882,7 +882,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scan() {
+    fn test_mutant_search() {
         let region_id = 1;
         let mut region = Region::default();
         region.set_id(region_id);
@@ -961,7 +961,7 @@ mod tests {
             ),
             None,
         ];
-        Sentinel.on_scan(downstream_id, entries);
+        Sentinel.on_mutant_search(downstream_id, entries);
         // Flush all pending entries.
         let mut row1 = EventRow::default();
         row1.start_ts = 1;

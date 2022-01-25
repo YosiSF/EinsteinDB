@@ -83,7 +83,7 @@ pub mod tests {
     use crate::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
     use engine_promises::CF_WRITE;
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
     use solitontxn_types::TimeStamp;
 
     #[cfg(test)]

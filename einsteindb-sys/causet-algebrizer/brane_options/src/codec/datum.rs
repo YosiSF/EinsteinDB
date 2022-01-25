@@ -947,7 +947,7 @@ pub trait DatumEncoder:
                 }
                 Datum::Null => self.write_u8(NIL_FLAG)?,
                 Datum::Min => {
-                    self.write_u8(BYTES_FLAG)?; // for backward compatibility
+                    self.write_u8(BYTES_FLAG)?; // for spacelike_completion compatibility
                     find_min = true;
                 }
                 Datum::Max => self.write_u8(MAX_FLAG)?,

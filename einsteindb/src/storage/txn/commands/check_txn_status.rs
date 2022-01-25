@@ -3,7 +3,7 @@
 // #[PerformanceCriticalPath]
 use solitontxn_types::{Key, TimeStamp};
 
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::epaxos::{EpaxosTxn, blackbraneReader};
 use crate::storage::solitontxn::actions::check_solitontxn_status::*;
@@ -25,7 +25,7 @@ command! {
     /// [`Prewrite`](Command::Prewrite).
     CheckTxnStatus:
         cmd_ty => TxnStatus,
-        display => "fdbkv::command::check_solitontxn_status {} @ {} curr({}, {}) | {:?}", (primary_key, dagger_ts, caller_start_ts, current_ts, ctx),
+        display => "fdbhikv::command::check_solitontxn_status {} @ {} curr({}, {}) | {:?}", (primary_key, dagger_ts, caller_start_ts, current_ts, ctx),
         content => {
             /// The primary key of the transaction.
             primary_key: Key,
@@ -139,7 +139,7 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for CheckTxnStatus {
 pub mod tests {
     use super::TxnStatus::*;
     use super::*;
-    use crate::storage::fdbkv::Engine;
+    use crate::storage::fdbhikv::Engine;
     use crate::storage::dagger_manager::DummyDaggerManager;
     use crate::storage::epaxos::tests::*;
     use crate::storage::solitontxn::commands::{pessimistic_rollback, WriteCommand, WriteContext};
@@ -147,8 +147,8 @@ pub mod tests {
     use crate::storage::solitontxn::tests::*;
     use crate::storage::{types::TxnStatus, ProcessResult, TestEngineBuilder};
     use concurrency_manager::ConcurrencyManager;
-    use fdbkvproto::fdbkvrpcpb::Context;
-    use einstfdbkv_util::deadline::Deadline;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
+    use einstfdbhikv_util::deadline::Deadline;
     use solitontxn_types::Key;
     use solitontxn_types::WriteType;
 
@@ -928,8 +928,8 @@ pub mod tests {
             /* min_commit_ts */ TimeStamp::zero(),
             /* max_commit_ts */ TimeStamp::zero(),
             false,
-            fdbkvproto::fdbkvrpcpb::Assertion::None,
-            fdbkvproto::fdbkvrpcpb::AssertionLevel::Off,
+            fdbhikvproto::fdbhikvrpcpb::Assertion::None,
+            fdbhikvproto::fdbhikvrpcpb::AssertionLevel::Off,
         );
         must_success(
             &engine,
@@ -1052,8 +1052,8 @@ pub mod tests {
             /* min_commit_ts */ TimeStamp::zero(),
             /* max_commit_ts */ TimeStamp::zero(),
             false,
-            fdbkvproto::fdbkvrpcpb::Assertion::None,
-            fdbkvproto::fdbkvrpcpb::AssertionLevel::Off,
+            fdbhikvproto::fdbhikvrpcpb::Assertion::None,
+            fdbhikvproto::fdbhikvrpcpb::AssertionLevel::Off,
         );
         must_success(
             &engine,

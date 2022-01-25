@@ -1,15 +1,15 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::storage::config::BdaggerCacheConfig;
-use crate::storage::fdbkv::{Result, RocksEngine};
+use crate::storage::fdbhikv::{Result, RocksEngine};
 use engine_rocks::cocauset::ColumnFamilyOptions;
 use engine_rocks::cocauset_util::CFOptions;
 use engine_promises::{CfName, ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
 use file_system::IORateLimiter;
-use fdbkvproto::fdbkvrpcpb::ApiVersion;
+use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use einstfdbkv_util::config::ReadableSize;
+use einstfdbhikv_util::config::ReadableSize;
 
 // Duplicated from rocksdb_engine
 const TEMP_DIR: &str = "";
@@ -129,8 +129,8 @@ mod tests {
     use super::*;
     use crate::storage::{Cursor, CursorBuilder, SentinelSearchMode};
     use engine_promises::IterOptions;
-    use fdbkvproto::fdbkvrpcpb::Context;
-    use einstfdbkv_fdbkv::tests::*;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
+    use einstfdbhikv_fdbhikv::tests::*;
     use solitontxn_types::Key;
     use solitontxn_types::TimeStamp;
 
@@ -306,7 +306,7 @@ mod tests {
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
         let mut iter = CursorBuilder::new(&blackbrane, CF_WRITE)
             .prefix_seek(true)
-            .scan_mode(SentinelSearchMode::Forward)
+            .mutant_search_mode(SentinelSearchMode::Forward)
             .build()
             .unwrap();
 

@@ -1,7 +1,7 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::{Iterator, Result, blackbrane, TTL_TOMBSTONE};
+use crate::storage::fdbhikv::{Iterator, Result, blackbrane, TTL_TOMBSTONE};
 use crate::storage::Statistics;
 
 use api_version::APIVersion;

@@ -5,26 +5,26 @@ use std::error::Error as StdError;
 use std::fmt::{self, Debug, Display, Formatter};
 use std::io::Error as IoError;
 
-use fdbkvproto::fdbkvrpcpb::ApiVersion;
-use fdbkvproto::{errorpb, fdbkvrpcpb};
+use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
+use fdbhikvproto::{errorpb, fdbhikvrpcpb};
 use thiserror::Error;
 
 use crate::storage::{
-    fdbkv::{self, Error as KvError, ErrorInner as KvErrorInner},
+    fdbhikv::{self, Error as HikvError, ErrorInner as HikvErrorInner},
     epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner},
     solitontxn::{self, Error as TxnError, ErrorInner as TxnErrorInner},
     CommandKind, Result,
 };
 use error_code::{self, ErrorCode, ErrorCodeExt};
-use einstfdbkv_util::deadline::DeadlineError;
-use solitontxn_types::{KvPair, TimeStamp};
+use einstfdbhikv_util::deadline::DeadlineError;
+use solitontxn_types::{HikvPair, TimeStamp};
 
 #[derive(Debug, Error)]
 /// Detailed errors for storage operations. This enum also unifies code for basic error
 /// handling functionality in a single place instead of being spread out.
 pub enum ErrorInner {
     #[error("{0}")]
-    Kv(#[from] fdbkv::Error),
+    Hikv(#[from] fdbhikv::Error),
 
     #[error("{0}")]
     Txn(#[from] solitontxn::Error),
@@ -141,7 +141,7 @@ impl<T: Into<ErrorInner>> From<T> for Error {
 impl ErrorCodeExt for Error {
     fn error_code(&self) -> ErrorCode {
         match self.0.as_ref() {
-            ErrorInner::Kv(e) => e.error_code(),
+            ErrorInner::Hikv(e) => e.error_code(),
             ErrorInner::Txn(e) => e.error_code(),
             ErrorInner::Engine(e) => e.error_code(),
             ErrorInner::Closed => error_code::storage::CLOSED,
@@ -238,12 +238,12 @@ pub fn get_tag_from_header(header: &errorpb::Error) -> &'static str {
 pub fn extract_region_error<T>(res: &Result<T>) -> Option<errorpb::Error> {
     match *res {
         // TODO: use `Error::cause` instead.
-        Err(Error(box ErrorInner::Kv(KvError(box KvErrorInner::Request(ref e)))))
-        | Err(Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Engine(KvError(
-            box KvErrorInner::Request(ref e),
+        Err(Error(box ErrorInner::Hikv(HikvError(box HikvErrorInner::Request(ref e)))))
+        | Err(Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Engine(HikvError(
+            box HikvErrorInner::Request(ref e),
         ))))))
         | Err(Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(EpaxosError(
-            box EpaxosErrorInner::Kv(KvError(box KvErrorInner::Request(ref e))),
+            box EpaxosErrorInner::Hikv(HikvError(box HikvErrorInner::Request(ref e))),
         )))))) => Some(e.to_owned()),
         Err(Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::MaxTimestampNotSynced {
             ..
@@ -293,16 +293,16 @@ pub fn extract_committed(err: &Error) -> Option<TimeStamp> {
     }
 }
 
-pub fn extract_key_error(err: &Error) -> fdbkvrpcpb::KeyError {
-    let mut key_error = fdbkvrpcpb::KeyError::default();
+pub fn extract_key_error(err: &Error) -> fdbhikvrpcpb::KeyError {
+    let mut key_error = fdbhikvrpcpb::KeyError::default();
     match err {
         Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(EpaxosError(
             box EpaxosErrorInner::KeyIsDaggered(info),
         )))))
-        | Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Engine(KvError(
-            box KvErrorInner::KeyIsDaggered(info),
+        | Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Engine(HikvError(
+            box HikvErrorInner::KeyIsDaggered(info),
         )))))
-        | Error(box ErrorInner::Kv(KvError(box KvErrorInner::KeyIsDaggered(info)))) => {
+        | Error(box ErrorInner::Hikv(HikvError(box HikvErrorInner::KeyIsDaggered(info)))) => {
             key_error.set_daggered(info.clone());
         }
         // failed in prewrite or pessimistic dagger
@@ -316,7 +316,7 @@ pub fn extract_key_error(err: &Error) -> fdbkvrpcpb::KeyError {
                 ..
             },
         ))))) => {
-            let mut write_conflict = fdbkvrpcpb::WriteConflict::default();
+            let mut write_conflict = fdbhikvrpcpb::WriteConflict::default();
             write_conflict.set_start_ts(start_ts.into_inner());
             write_conflict.set_conflict_ts(conflict_start_ts.into_inner());
             write_conflict.set_conflict_commit_ts(conflict_commit_ts.into_inner());
@@ -329,7 +329,7 @@ pub fn extract_key_error(err: &Error) -> fdbkvrpcpb::KeyError {
         Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(EpaxosError(
             box EpaxosErrorInner::AlreadyExist { key },
         ))))) => {
-            let mut exist = fdbkvrpcpb::AlreadyExist::default();
+            let mut exist = fdbhikvrpcpb::AlreadyExist::default();
             exist.set_key(key.clone());
             key_error.set_already_exist(exist);
         }
@@ -343,7 +343,7 @@ pub fn extract_key_error(err: &Error) -> fdbkvrpcpb::KeyError {
         Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(EpaxosError(
             box EpaxosErrorInner::TxnNotFound { start_ts, key },
         ))))) => {
-            let mut solitontxn_not_found = fdbkvrpcpb::TxnNotFound::default();
+            let mut solitontxn_not_found = fdbhikvrpcpb::TxnNotFound::default();
             solitontxn_not_found.set_start_ts(start_ts.into_inner());
             solitontxn_not_found.set_primary_key(key.to_owned());
             key_error.set_solitontxn_not_found(solitontxn_not_found);
@@ -358,7 +358,7 @@ pub fn extract_key_error(err: &Error) -> fdbkvrpcpb::KeyError {
             },
         ))))) => {
             warn!("solitontxn deaddaggers"; "err" => ?err);
-            let mut deaddagger = fdbkvrpcpb::Deaddagger::default();
+            let mut deaddagger = fdbhikvrpcpb::Deaddagger::default();
             deaddagger.set_dagger_ts(dagger_ts.into_inner());
             deaddagger.set_dagger_key(dagger_key.to_owned());
             deaddagger.set_deaddagger_key_hash(*deaddagger_key_hash);
@@ -373,7 +373,7 @@ pub fn extract_key_error(err: &Error) -> fdbkvrpcpb::KeyError {
                 min_commit_ts,
             },
         ))))) => {
-            let mut commit_ts_expired = fdbkvrpcpb::CommitTsExpired::default();
+            let mut commit_ts_expired = fdbhikvrpcpb::CommitTsExpired::default();
             commit_ts_expired.set_start_ts(start_ts.into_inner());
             commit_ts_expired.set_attempted_commit_ts(commit_ts.into_inner());
             commit_ts_expired.set_key(key.to_owned());
@@ -383,7 +383,7 @@ pub fn extract_key_error(err: &Error) -> fdbkvrpcpb::KeyError {
         Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(EpaxosError(
             box EpaxosErrorInner::CommitTsTooLarge { min_commit_ts, .. },
         ))))) => {
-            let mut commit_ts_too_large = fdbkvrpcpb::CommitTsTooLarge::default();
+            let mut commit_ts_too_large = fdbhikvrpcpb::CommitTsTooLarge::default();
             commit_ts_too_large.set_commit_ts(min_commit_ts.into_inner());
             key_error.set_commit_ts_too_large(commit_ts_too_large);
         }
@@ -396,7 +396,7 @@ pub fn extract_key_error(err: &Error) -> fdbkvrpcpb::KeyError {
                 existing_commit_ts,
             },
         ))))) => {
-            let mut assertion_failed = fdbkvrpcpb::AssertionFailed::default();
+            let mut assertion_failed = fdbhikvrpcpb::AssertionFailed::default();
             assertion_failed.set_start_ts(start_ts.into_inner());
             assertion_failed.set_key(key.to_owned());
             assertion_failed.set_assertion(*assertion);
@@ -412,28 +412,28 @@ pub fn extract_key_error(err: &Error) -> fdbkvrpcpb::KeyError {
     key_error
 }
 
-pub fn extract_fdbkv_pairs(res: Result<Vec<Result<KvPair>>>) -> Vec<fdbkvrpcpb::KvPair> {
+pub fn extract_fdbhikv_pairs(res: Result<Vec<Result<HikvPair>>>) -> Vec<fdbhikvrpcpb::HikvPair> {
     match res {
-        Ok(res) => map_fdbkv_pairs(res),
+        Ok(res) => map_fdbhikv_pairs(res),
         Err(e) => {
-            let mut pair = fdbkvrpcpb::KvPair::default();
+            let mut pair = fdbhikvrpcpb::HikvPair::default();
             pair.set_error(extract_key_error(&e));
             vec![pair]
         }
     }
 }
 
-pub fn map_fdbkv_pairs(r: Vec<Result<KvPair>>) -> Vec<fdbkvrpcpb::KvPair> {
+pub fn map_fdbhikv_pairs(r: Vec<Result<HikvPair>>) -> Vec<fdbhikvrpcpb::HikvPair> {
     r.into_iter()
         .map(|r| match r {
             Ok((key, value)) => {
-                let mut pair = fdbkvrpcpb::KvPair::default();
+                let mut pair = fdbhikvrpcpb::HikvPair::default();
                 pair.set_key(key);
                 pair.set_value(value);
                 pair
             }
             Err(e) => {
-                let mut pair = fdbkvrpcpb::KvPair::default();
+                let mut pair = fdbhikvrpcpb::HikvPair::default();
                 pair.set_error(extract_key_error(&e));
                 pair
             }
@@ -441,7 +441,7 @@ pub fn map_fdbkv_pairs(r: Vec<Result<KvPair>>) -> Vec<fdbkvrpcpb::KvPair> {
         .collect()
 }
 
-pub fn extract_key_errors(res: Result<Vec<Result<()>>>) -> Vec<fdbkvrpcpb::KeyError> {
+pub fn extract_key_errors(res: Result<Vec<Result<()>>>) -> Vec<fdbhikvrpcpb::KeyError> {
     match res {
         Ok(res) => res
             .into_iter()
@@ -474,8 +474,8 @@ mod test {
                 primary: primary.clone(),
             },
         )));
-        let mut expect = fdbkvrpcpb::KeyError::default();
-        let mut write_conflict = fdbkvrpcpb::WriteConflict::default();
+        let mut expect = fdbhikvrpcpb::KeyError::default();
+        let mut write_conflict = fdbhikvrpcpb::WriteConflict::default();
         write_conflict.set_start_ts(start_ts.into_inner());
         write_conflict.set_conflict_ts(conflict_start_ts.into_inner());
         write_conflict.set_conflict_commit_ts(conflict_commit_ts.into_inner());

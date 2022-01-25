@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::epaxos::{EpaxosTxn, Result as EpaxosResult, blackbraneReader};
 use crate::storage::solitontxn::commands::{
@@ -19,7 +19,7 @@ command! {
     /// This can roll back an [`AcquirePessimisticDagger`](Command::AcquirePessimisticDagger) command.
     PessimisticRollback:
         cmd_ty => Vec<StorageResult<()>>,
-        display => "fdbkv::command::pessimistic_rollback keys({}) @ {} {} | {:?}", (keys.len, start_ts, for_update_ts, ctx),
+        display => "fdbhikv::command::pessimistic_rollback keys({}) @ {} {} | {:?}", (keys.len, start_ts, for_update_ts, ctx),
         content => {
             /// The keys to be rolled back.
             keys: Vec<Key>,
@@ -93,7 +93,7 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for PessimisticRollback
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::storage::fdbkv::Engine;
+    use crate::storage::fdbhikv::Engine;
     use crate::storage::dagger_manager::DummyDaggerManager;
     use crate::storage::epaxos::tests::*;
     use crate::storage::solitontxn::commands::{WriteCommand, WriteContext};
@@ -101,8 +101,8 @@ pub mod tests {
     use crate::storage::solitontxn::tests::*;
     use crate::storage::TestEngineBuilder;
     use concurrency_manager::ConcurrencyManager;
-    use fdbkvproto::fdbkvrpcpb::Context;
-    use einstfdbkv_util::deadline::Deadline;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
+    use einstfdbhikv_util::deadline::Deadline;
     use solitontxn_types::Key;
 
     pub fn must_success<E: Engine>(

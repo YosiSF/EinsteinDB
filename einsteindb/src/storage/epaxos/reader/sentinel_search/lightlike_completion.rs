@@ -4,26 +4,26 @@
 use std::{borrow::Cow, cmp::Ordering};
 
 use engine_promises::CF_DEFAULT;
-use fdbkvproto::fdbkvrpcpb::{ExtraOp, IsolationLevel};
+use fdbhikvproto::fdbhikvrpcpb::{ExtraOp, IsolationLevel};
 use solitontxn_types::{Key, Dagger, DaggerType, OldValue, TimeStamp, Value, WriteRef, WriteType};
 
 use super::MutantSentinelSearchConfig;
-use crate::storage::fdbkv::SEEK_BOUND;
+use crate::storage::fdbhikv::SEEK_BOUND;
 use crate::storage::epaxos::{NewerTsCheckState, Result};
 use crate::storage::solitontxn::{Result as TxnResult, TxnEntry, TxnEntryMutantSentinelSearch};
 use crate::storage::{Cursor, blackbrane, Statistics};
 
-/// Defines the behavior of the scanner.
+/// Defines the behavior of the mutant_searchner.
 pub trait SentinelSearchPolicy<S: blackbrane> {
-    /// The type that the scanner outputs.
+    /// The type that the mutant_searchner outputs.
     type Output;
 
-    /// Handles the dagger that the scanner meets.
+    /// Handles the dagger that the mutant_searchner meets.
     ///
     /// If `HandleRes::Return(val)` is returned, `val` will be returned to the
-    /// caller of the scanner. Otherwise, `HandleRes::Skip(current_user_key)`
-    /// should be returned. Then, the scanner will handle the write records
-    /// if the write cursor points to the same user key, or continue scanning.
+    /// caller of the mutant_searchner. Otherwise, `HandleRes::Skip(current_user_key)`
+    /// should be returned. Then, the mutant_searchner will handle the write records
+    /// if the write cursor points to the same user key, or continue mutant_searchning.
     ///
     /// Note that the method should also take care of moving the cursors.
     fn handle_dagger(
@@ -34,11 +34,11 @@ pub trait SentinelSearchPolicy<S: blackbrane> {
         statistics: &mut Statistics,
     ) -> Result<HandleRes<Self::Output>>;
 
-    /// Handles the write record that the scanner meets.
+    /// Handles the write record that the mutant_searchner meets.
     ///
     /// If `HandleRes::Return(val)` is returned, `val` will be returned to the
-    /// caller of the scanner. Otherwise, `HandleRes::Skip(current_user_key)`
-    /// should be returned and the scanner will continue scanning.
+    /// caller of the mutant_searchner. Otherwise, `HandleRes::Skip(current_user_key)`
+    /// should be returned and the mutant_searchner will continue mutant_searchning.
     ///
     /// Note that the method should also take care of moving the cursors.
     fn handle_write(
@@ -119,7 +119,7 @@ pub struct ForwardMutantSentinelSearch<S: blackbrane, P: SentinelSearchPolicy<S>
     /// Is iteration started
     is_started: bool,
     statistics: Statistics,
-    scan_policy: P,
+    mutant_search_policy: P,
     met_newer_ts_data: NewerTsCheckState,
 }
 
@@ -129,7 +129,7 @@ impl<S: blackbrane, P: SentinelSearchPolicy<S>> ForwardMutantSentinelSearch<S, P
         dagger_cursor: Option<Cursor<S::Iter>>,
         write_cursor: Cursor<S::Iter>,
         default_cursor: Option<Cursor<S::Iter>>,
-        scan_policy: P,
+        mutant_search_policy: P,
     ) -> ForwardMutantSentinelSearch<S, P> {
         let cursors = Cursors {
             dagger: dagger_cursor,
@@ -146,7 +146,7 @@ impl<S: blackbrane, P: SentinelSearchPolicy<S>> ForwardMutantSentinelSearch<S, P
             cursors,
             statistics: Statistics::default(),
             is_started: false,
-            scan_policy,
+            mutant_search_policy,
         }
     }
 
@@ -268,14 +268,14 @@ impl<S: blackbrane, P: SentinelSearchPolicy<S>> ForwardMutantSentinelSearch<S, P
                 if self.met_newer_ts_data == NewerTsCheckState::NotMetYet {
                     self.met_newer_ts_data = NewerTsCheckState::Met;
                 }
-                current_user_key = match self.scan_policy.handle_dagger(
+                current_user_key = match self.mutant_search_policy.handle_dagger(
                     current_user_key,
                     &mut self.cfg,
                     &mut self.cursors,
                     &mut self.statistics,
                 )? {
                     HandleRes::Return(output) => {
-                        self.statistics.processed_size += self.scan_policy.output_size(&output);
+                        self.statistics.processed_size += self.mutant_search_policy.output_size(&output);
                         return Ok(Some(output));
                     }
                     HandleRes::Skip(key) => key,
@@ -285,14 +285,14 @@ impl<S: blackbrane, P: SentinelSearchPolicy<S>> ForwardMutantSentinelSearch<S, P
             if has_write {
                 let is_current_user_key = self.move_write_cursor_to_ts(&current_user_key)?;
                 if is_current_user_key {
-                    if let HandleRes::Return(output) = self.scan_policy.handle_write(
+                    if let HandleRes::Return(output) = self.mutant_search_policy.handle_write(
                         current_user_key,
                         &mut self.cfg,
                         &mut self.cursors,
                         &mut self.statistics,
                     )? {
                         self.statistics.write.processed_keys += 1;
-                        self.statistics.processed_size += self.scan_policy.output_size(&output);
+                        self.statistics.processed_size += self.mutant_search_policy.output_size(&output);
                         resource_metering::record_read_keys(1);
                         return Ok(Some(output));
                     }
@@ -360,9 +360,9 @@ impl<S: blackbrane, P: SentinelSearchPolicy<S>> ForwardMutantSentinelSearch<S, P
 }
 
 /// `ForwardMutantSentinelSearch` with this policy outputs the latest key value pairs.
-pub struct LatestKvPolicy;
+pub struct LatestHikvPolicy;
 
-impl<S: blackbrane> SentinelSearchPolicy<S> for LatestKvPolicy {
+impl<S: blackbrane> SentinelSearchPolicy<S> for LatestHikvPolicy {
     type Output = (Key, Value);
 
     fn handle_dagger(
@@ -508,7 +508,7 @@ impl<S: blackbrane> SentinelSearchPolicy<S> for LatestEntryPolicy {
         cursors: &mut Cursors<S>,
         statistics: &mut Statistics,
     ) -> Result<HandleRes<Self::Output>> {
-        scan_latest_handle_dagger(current_user_key, cfg, cursors, statistics)
+        mutant_search_latest_handle_dagger(current_user_key, cfg, cursors, statistics)
     }
 
     fn handle_write(
@@ -595,7 +595,7 @@ impl<S: blackbrane> SentinelSearchPolicy<S> for LatestEntryPolicy {
     }
 }
 
-fn scan_latest_handle_dagger<S: blackbrane, T>(
+fn mutant_search_latest_handle_dagger<S: blackbrane, T>(
     current_user_key: Key,
     cfg: &mut MutantSentinelSearchConfig<S>,
     cursors: &mut Cursors<S>,
@@ -631,7 +631,7 @@ fn scan_latest_handle_dagger<S: blackbrane, T>(
 
 /// The SentinelSearchPolicy for outputting `TxnEntry` for every daggers or commits in specified ts range.
 ///
-/// The `ForwardMutantSentinelSearch` with this policy scans all entries whose `commit_ts`s
+/// The `ForwardMutantSentinelSearch` with this policy mutant_searchs all entries whose `commit_ts`s
 /// (or daggers' `start_ts`s) in range (`from_ts`, `cfg.ts`].
 pub struct DeltaEntryPolicy {
     from_ts: TimeStamp,
@@ -813,18 +813,18 @@ impl<S: blackbrane> SentinelSearchPolicy<S> for DeltaEntryPolicy {
     }
 }
 
-/// This type can be used to scan keys starting from the given user key (greater than or equal).
+/// This type can be used to mutant_search keys starting from the given user key (greater than or equal).
 ///
 /// Internally, for each key, rollbacks are ignored and smaller version will be tried. If the
 /// isolation level is SI, daggers will be checked first.
 ///
-/// Use `MutantSentinelSearchBuilder` to build `ForwardKvMutantSentinelSearch`.
-pub type ForwardKvMutantSentinelSearch<S> = ForwardMutantSentinelSearch<S, LatestKvPolicy>;
+/// Use `MutantSentinelSearchBuilder` to build `ForwardHikvMutantSentinelSearch`.
+pub type ForwardHikvMutantSentinelSearch<S> = ForwardMutantSentinelSearch<S, LatestHikvPolicy>;
 
-/// This scanner is like `ForwardKvMutantSentinelSearch` but outputs `TxnEntry`.
+/// This mutant_searchner is like `ForwardHikvMutantSentinelSearch` but outputs `TxnEntry`.
 pub type EntryMutantSentinelSearch<S> = ForwardMutantSentinelSearch<S, LatestEntryPolicy>;
 
-/// This scanner scans all entries whose commit_ts (or daggers' start_ts) is in range
+/// This mutant_searchner mutant_searchs all entries whose commit_ts (or daggers' start_ts) is in range
 /// (from_ts, cfg.ts].
 pub type DeltaMutantSentinelSearch<S> = ForwardMutantSentinelSearch<S, DeltaEntryPolicy>;
 
@@ -1076,18 +1076,18 @@ pub mod test_util {
 }
 
 #[cfg(test)]
-mod latest_fdbkv_tests {
+mod latest_fdbhikv_tests {
     use super::super::MutantSentinelSearchBuilder;
     use super::test_util::prepare_test_data_for_check_gc_fence;
     use super::*;
-    use crate::storage::fdbkv::{Engine, Modify, TestEngineBuilder};
+    use crate::storage::fdbhikv::{Engine, Modify, TestEngineBuilder};
     use crate::storage::epaxos::tests::write;
     use crate::storage::solitontxn::tests::*;
     use crate::storage::MutantSentinelSearch;
     use engine_promises::{CF_LOCK, CF_WRITE};
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
 
-    /// Check whether everything works as usual when `ForwardKvMutantSentinelSearch::get()` goes out of bound.
+    /// Check whether everything works as usual when `ForwardHikvMutantSentinelSearch::get()` goes out of bound.
     #[test]
     fn test_get_out_of_bound() {
         let engine = TestEngineBuilder::new().build().unwrap();
@@ -1112,7 +1112,7 @@ mod latest_fdbkv_tests {
         }
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .range(None, None)
             .build()
             .unwrap();
@@ -1124,10 +1124,10 @@ mod latest_fdbkv_tests {
         //   a_7 b_4 b_3 b_2 b_1 b_0
         //       ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"a"), b"value".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(
@@ -1138,22 +1138,22 @@ mod latest_fdbkv_tests {
         // Use 5 next and reach out of bound:
         //   a_7 b_4 b_3 b_2 b_1 b_0
         //                           ^cursor
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 5);
         assert_eq!(statistics.processed_size, 0);
 
         // Cursor remains invalid, so nothing should happen.
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 0);
         assert_eq!(statistics.processed_size, 0);
     }
 
     /// Check whether everything works as usual when
-    /// `ForwardKvMutantSentinelSearch::move_write_cursor_to_next_user_key()` goes out of bound.
+    /// `ForwardHikvMutantSentinelSearch::move_write_cursor_to_next_user_key()` goes out of bound.
     ///
     /// Case 1. next() out of bound
     #[test]
@@ -1181,7 +1181,7 @@ mod latest_fdbkv_tests {
         must_commit(&engine, b"b", SEEK_BOUND / 2, SEEK_BOUND / 2);
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
             .build()
             .unwrap();
@@ -1195,10 +1195,10 @@ mod latest_fdbkv_tests {
         //   a_8 b_2 b_1 b_0
         //       ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"a"), b"a_value".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(
@@ -1214,10 +1214,10 @@ mod latest_fdbkv_tests {
         //   a_8 b_2 b_1 b_0
         //                   ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"b"), b"b_value".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, (SEEK_BOUND / 2 + 1) as usize);
         assert_eq!(
@@ -1226,15 +1226,15 @@ mod latest_fdbkv_tests {
         );
 
         // Next we should get nothing.
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 0);
         assert_eq!(statistics.processed_size, 0);
     }
 
     /// Check whether everything works as usual when
-    /// `ForwardKvMutantSentinelSearch::move_write_cursor_to_next_user_key()` goes out of bound.
+    /// `ForwardHikvMutantSentinelSearch::move_write_cursor_to_next_user_key()` goes out of bound.
     ///
     /// Case 2. seek() out of bound
     #[test]
@@ -1263,7 +1263,7 @@ mod latest_fdbkv_tests {
         must_commit(&engine, b"b", SEEK_BOUND, SEEK_BOUND);
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
             .build()
             .unwrap();
@@ -1277,10 +1277,10 @@ mod latest_fdbkv_tests {
         //   a_8 b_4 b_3 b_2 b_1
         //       ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"a"), b"a_value".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(
@@ -1299,10 +1299,10 @@ mod latest_fdbkv_tests {
         //   a_8 b_4 b_3 b_2 b_1
         //                       ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"b"), b"b_value".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, (SEEK_BOUND - 1) as usize);
         assert_eq!(
@@ -1311,8 +1311,8 @@ mod latest_fdbkv_tests {
         );
 
         // Next we should get nothing.
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 0);
         assert_eq!(statistics.processed_size, 0);
@@ -1341,21 +1341,21 @@ mod latest_fdbkv_tests {
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
 
         // Test both bound specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .range(Some(Key::from_cocauset(&[3u8])), Some(Key::from_cocauset(&[5u8])))
             .build()
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[3u8]), vec![3u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[4u8]), vec![4u8]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
         assert_eq!(
-            scanner.take_statistics().processed_size,
+            mutant_searchner.take_statistics().processed_size,
             Key::from_cocauset(&[3u8]).len()
                 + vec![3u8].len()
                 + Key::from_cocauset(&[4u8]).len()
@@ -1363,21 +1363,21 @@ mod latest_fdbkv_tests {
         );
 
         // Test left bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .range(None, Some(Key::from_cocauset(&[3u8])))
             .build()
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[1u8]), vec![1u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[2u8]), vec![2u8]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
         assert_eq!(
-            scanner.take_statistics().processed_size,
+            mutant_searchner.take_statistics().processed_size,
             Key::from_cocauset(&[1u8]).len()
                 + vec![1u8].len()
                 + Key::from_cocauset(&[2u8]).len()
@@ -1385,21 +1385,21 @@ mod latest_fdbkv_tests {
         );
 
         // Test right bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .range(Some(Key::from_cocauset(&[5u8])), None)
             .build()
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[5u8]), vec![5u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[6u8]), vec![6u8]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
         assert_eq!(
-            scanner.take_statistics().processed_size,
+            mutant_searchner.take_statistics().processed_size,
             Key::from_cocauset(&[5u8]).len()
                 + vec![5u8].len()
                 + Key::from_cocauset(&[6u8]).len()
@@ -1407,37 +1407,37 @@ mod latest_fdbkv_tests {
         );
 
         // Test both bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .range(None, None)
             .build()
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[1u8]), vec![1u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[2u8]), vec![2u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[3u8]), vec![3u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[4u8]), vec![4u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[5u8]), vec![5u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[6u8]), vec![6u8]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
         assert_eq!(
-            scanner.take_statistics().processed_size,
+            mutant_searchner.take_statistics().processed_size,
             (1u8..=6u8)
                 .map(|k| Key::from_cocauset(&[k]).len() + vec![k].len())
                 .sum::<usize>()
@@ -1445,7 +1445,7 @@ mod latest_fdbkv_tests {
     }
 
     #[test]
-    fn test_latest_fdbkv_check_gc_fence() {
+    fn test_latest_fdbhikv_check_gc_fence() {
         let engine = TestEngineBuilder::new().build().unwrap();
 
         let (read_ts, expected_result) = prepare_test_data_for_check_gc_fence(&engine);
@@ -1455,12 +1455,12 @@ mod latest_fdbkv_tests {
             .collect();
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, read_ts)
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, read_ts)
             .range(None, None)
             .build()
             .unwrap();
-        let result: Vec<_> = scanner
-            .scan(100, 0)
+        let result: Vec<_> = mutant_searchner
+            .mutant_search(100, 0)
             .unwrap()
             .into_iter()
             .map(|result| result.unwrap())
@@ -1480,7 +1480,7 @@ mod latest_entry_tests {
     use crate::storage::epaxos::tests::write;
     use crate::storage::solitontxn::EntryBatch;
     use engine_promises::{CF_LOCK, CF_WRITE};
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
 
     /// Check whether everything works as usual when `EntryMutantSentinelSearch::get()` goes out of bound.
     #[test]
@@ -1507,9 +1507,9 @@ mod latest_entry_tests {
         }
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .range(None, None)
-            .build_entry_scanner(0.into(), false)
+            .build_entry_mutant_searchner(0.into(), false)
             .unwrap();
 
         // Initial position: 1 seek_to_first:
@@ -1527,8 +1527,8 @@ mod latest_entry_tests {
             .commit_ts(7.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry),);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry),);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(statistics.processed_size, size);
@@ -1536,15 +1536,15 @@ mod latest_entry_tests {
         // Use 5 next and reach out of bound:
         //   a_7 b_4 b_3 b_2 b_1 b_0
         //                           ^cursor
-        assert_eq!(scanner.next_entry().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 5);
         assert_eq!(statistics.processed_size, 0);
 
         // Cursor remains invalid, so nothing should happen.
-        assert_eq!(scanner.next_entry().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 0);
         assert_eq!(statistics.processed_size, 0);
@@ -1580,9 +1580,9 @@ mod latest_entry_tests {
         must_commit(&engine, b"b", SEEK_BOUND / 2, SEEK_BOUND / 2);
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
-            .build_entry_scanner(0.into(), false)
+            .build_entry_mutant_searchner(0.into(), false)
             .unwrap();
 
         // The following illustration comments assume that SEEK_BOUND = 4.
@@ -1600,8 +1600,8 @@ mod latest_entry_tests {
             .commit_ts(16.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry),);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry),);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(statistics.processed_size, size);
@@ -1620,15 +1620,15 @@ mod latest_entry_tests {
             .commit_ts(4.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry),);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry),);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, (SEEK_BOUND / 2 + 1) as usize);
         assert_eq!(statistics.processed_size, size);
 
         // Next we should get nothing.
-        assert_eq!(scanner.next_entry().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 0);
         assert_eq!(statistics.processed_size, 0);
@@ -1664,9 +1664,9 @@ mod latest_entry_tests {
         must_commit(&engine, b"b", SEEK_BOUND, SEEK_BOUND);
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
-            .build_entry_scanner(0.into(), false)
+            .build_entry_mutant_searchner(0.into(), false)
             .unwrap();
 
         // The following illustration comments assume that SEEK_BOUND = 4.
@@ -1684,8 +1684,8 @@ mod latest_entry_tests {
             .commit_ts(16.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry));
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry));
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(statistics.processed_size, size);
@@ -1707,15 +1707,15 @@ mod latest_entry_tests {
             .commit_ts(8.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry),);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry),);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, (SEEK_BOUND - 1) as usize);
         assert_eq!(statistics.processed_size, size);
 
         // Next we should get nothing.
-        assert_eq!(scanner.next_entry().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 0);
         assert_eq!(statistics.processed_size, 0);
@@ -1744,9 +1744,9 @@ mod latest_entry_tests {
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
 
         // Test both bound specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .range(Some(Key::from_cocauset(&[3u8])), Some(Key::from_cocauset(&[5u8])))
-            .build_entry_scanner(0.into(), false)
+            .build_entry_mutant_searchner(0.into(), false)
             .unwrap();
 
         let entry = |key, ts| {
@@ -1758,40 +1758,40 @@ mod latest_entry_tests {
                 .build_commit(WriteType::Put, true)
         };
 
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[3u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[4u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), None);
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[3u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[4u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
 
         // Test left bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .range(None, Some(Key::from_cocauset(&[3u8])))
-            .build_entry_scanner(0.into(), false)
+            .build_entry_mutant_searchner(0.into(), false)
             .unwrap();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[1u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[2u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), None);
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[1u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[2u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
 
         // Test right bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .range(Some(Key::from_cocauset(&[5u8])), None)
-            .build_entry_scanner(0.into(), false)
+            .build_entry_mutant_searchner(0.into(), false)
             .unwrap();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[5u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[6u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), None);
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[5u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[6u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
 
         // Test both bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .range(None, None)
-            .build_entry_scanner(0.into(), false)
+            .build_entry_mutant_searchner(0.into(), false)
             .unwrap();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[1u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[2u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[3u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[4u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[5u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[6u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), None);
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[1u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[2u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[3u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[4u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[5u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[6u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
     }
 
     #[test]
@@ -1855,14 +1855,14 @@ mod latest_entry_tests {
 
         let check = |ts: u64, after_ts: u64, output_delete, expected: Vec<&TxnEntry>| {
             let blackbrane = engine.blackbrane(Default::default()).unwrap();
-            let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, ts.into())
+            let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, ts.into())
                 .range(None, None)
-                .build_entry_scanner(after_ts.into(), output_delete)
+                .build_entry_mutant_searchner(after_ts.into(), output_delete)
                 .unwrap();
             for entry in expected {
-                assert_eq!(scanner.next_entry().unwrap().as_ref(), Some(entry));
+                assert_eq!(mutant_searchner.next_entry().unwrap().as_ref(), Some(entry));
             }
-            assert!(scanner.next_entry().unwrap().is_none());
+            assert!(mutant_searchner.next_entry().unwrap().is_none());
         };
 
         // SentinelSearchning entries in (10, 15] should get None
@@ -1890,15 +1890,15 @@ mod latest_entry_tests {
             .collect();
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, read_ts)
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, read_ts)
             .range(None, None)
-            .build_entry_scanner(0.into(), false)
+            .build_entry_mutant_searchner(0.into(), false)
             .unwrap();
         let mut result = EntryBatch::with_capacity(20);
-        scanner.scan_entries(&mut result).unwrap();
+        mutant_searchner.mutant_search_entries(&mut result).unwrap();
         let result: Vec<_> = result
             .drain()
-            .map(|entry| entry.into_fdbkvpair().unwrap())
+            .map(|entry| entry.into_fdbhikvpair().unwrap())
             .collect();
 
         assert_eq!(result, expected_result);
@@ -1917,7 +1917,7 @@ mod delta_entry_tests {
     use super::test_util::*;
     use crate::storage::epaxos::tests::write;
     use engine_promises::{CF_LOCK, CF_WRITE};
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
     /// Check whether everything works as usual when `Delta::get()` goes out of bound.
     #[test]
     fn test_get_out_of_bound() {
@@ -1943,9 +1943,9 @@ mod delta_entry_tests {
         }
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .range(None, None)
-            .build_delta_scanner(0.into(), ExtraOp::Noop)
+            .build_delta_mutant_searchner(0.into(), ExtraOp::Noop)
             .unwrap();
 
         // Initial position: 1 seek_to_first:
@@ -1963,8 +1963,8 @@ mod delta_entry_tests {
             .commit_ts(7.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry),);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry),);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(statistics.processed_size, size);
@@ -1972,15 +1972,15 @@ mod delta_entry_tests {
         // Use 5 next and reach out of bound:
         //   a_7 b_4 b_3 b_2 b_1 b_0
         //                           ^cursor
-        assert_eq!(scanner.next_entry().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 5);
         assert_eq!(statistics.processed_size, 0);
 
         // Cursor remains invalid, so nothing should happen.
-        assert_eq!(scanner.next_entry().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 0);
         assert_eq!(statistics.processed_size, 0);
@@ -2015,9 +2015,9 @@ mod delta_entry_tests {
         must_commit(&engine, b"b", SEEK_BOUND / 2, SEEK_BOUND / 2);
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
-            .build_delta_scanner(0.into(), ExtraOp::Noop)
+            .build_delta_mutant_searchner(0.into(), ExtraOp::Noop)
             .unwrap();
 
         // The following illustration comments assume that SEEK_BOUND = 4.
@@ -2035,8 +2035,8 @@ mod delta_entry_tests {
             .commit_ts(16.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry),);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry),);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(statistics.processed_size, size);
@@ -2055,15 +2055,15 @@ mod delta_entry_tests {
             .commit_ts(4.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry),);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry),);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(statistics.processed_size, size);
 
         // Next we should get nothing.
-        assert_eq!(scanner.next_entry().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 4);
         assert_eq!(statistics.processed_size, 0);
@@ -2101,9 +2101,9 @@ mod delta_entry_tests {
         must_commit(&engine, b"b", SEEK_BOUND + 1, SEEK_BOUND + 1);
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
-            .build_delta_scanner(8.into(), ExtraOp::Noop)
+            .build_delta_mutant_searchner(8.into(), ExtraOp::Noop)
             .unwrap();
 
         // The following illustration comments assume that SEEK_BOUND = 4.
@@ -2121,8 +2121,8 @@ mod delta_entry_tests {
             .commit_ts(16.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry));
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry));
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(statistics.processed_size, size);
@@ -2144,15 +2144,15 @@ mod delta_entry_tests {
             .commit_ts(9.into())
             .build_commit(WriteType::Put, true);
         let size = entry.size();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry),);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry),);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 1);
         assert_eq!(statistics.processed_size, size);
 
         // Next we should get nothing.
-        assert_eq!(scanner.next_entry().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, (SEEK_BOUND - 1) as usize);
         assert_eq!(statistics.processed_size, 0);
@@ -2181,9 +2181,9 @@ mod delta_entry_tests {
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
 
         // Test both bound specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .range(Some(Key::from_cocauset(&[3u8])), Some(Key::from_cocauset(&[5u8])))
-            .build_delta_scanner(4.into(), ExtraOp::Noop)
+            .build_delta_mutant_searchner(4.into(), ExtraOp::Noop)
             .unwrap();
 
         let entry = |key, ts| {
@@ -2195,40 +2195,40 @@ mod delta_entry_tests {
                 .build_commit(WriteType::Put, true)
         };
 
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[3u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[4u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), None);
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[3u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[4u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
 
         // Test left bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .range(None, Some(Key::from_cocauset(&[3u8])))
-            .build_delta_scanner(4.into(), ExtraOp::Noop)
+            .build_delta_mutant_searchner(4.into(), ExtraOp::Noop)
             .unwrap();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[1u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[2u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), None);
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[1u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[2u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
 
         // Test right bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .range(Some(Key::from_cocauset(&[5u8])), None)
-            .build_delta_scanner(4.into(), ExtraOp::Noop)
+            .build_delta_mutant_searchner(4.into(), ExtraOp::Noop)
             .unwrap();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[5u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[6u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), None);
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[5u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[6u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
 
         // Test both bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .range(None, None)
-            .build_delta_scanner(4.into(), ExtraOp::Noop)
+            .build_delta_mutant_searchner(4.into(), ExtraOp::Noop)
             .unwrap();
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[1u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[2u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[3u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[4u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[5u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), Some(entry(&[6u8], 7.into())));
-        assert_eq!(scanner.next_entry().unwrap(), None);
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[1u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[2u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[3u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[4u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[5u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), Some(entry(&[6u8], 7.into())));
+        assert_eq!(mutant_searchner.next_entry().unwrap(), None);
     }
 
     #[test]
@@ -2329,7 +2329,7 @@ mod delta_entry_tests {
                     }
 
                     for (start_ts, commit_ts, write_type, value) in writes.iter().rev() {
-                        // Commits not in timestamp range will not be scanned
+                        // Commits not in timestamp range will not be mutant_searchned
                         if *commit_ts > to_ts || *commit_ts <= from_ts {
                             continue;
                         }
@@ -2437,16 +2437,16 @@ mod delta_entry_tests {
             } else {
                 Some(Key::from_cocauset(to_key))
             };
-            let mut scanner =
+            let mut mutant_searchner =
                 MutantSentinelSearchBuilder::new(engine.blackbrane(Default::default()).unwrap(), to_ts.into())
                     .hint_min_ts(Some(from_ts.into()))
                     .hint_max_ts(Some(to_ts.into()))
                     .range(from_key, to_key)
-                    .build_delta_scanner(from_ts.into(), ExtraOp::Noop)
+                    .build_delta_mutant_searchner(from_ts.into(), ExtraOp::Noop)
                     .unwrap();
 
             let mut actual = vec![];
-            while let Some(entry) = scanner.next_entry().unwrap() {
+            while let Some(entry) = mutant_searchner.next_entry().unwrap() {
                 actual.push(entry);
             }
             // Do assertions one by one so that if it fails it won't print too long panic message.
@@ -2576,14 +2576,14 @@ mod delta_entry_tests {
 
         let check = |after_ts: u64, expected: Vec<&TxnEntry>| {
             let blackbrane = engine.blackbrane(Default::default()).unwrap();
-            let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
+            let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
                 .range(None, None)
-                .build_delta_scanner(after_ts.into(), ExtraOp::ReadOldValue)
+                .build_delta_mutant_searchner(after_ts.into(), ExtraOp::ReadOldValue)
                 .unwrap();
             for entry in expected {
-                assert_eq!(scanner.next_entry().unwrap().as_ref(), Some(entry));
+                assert_eq!(mutant_searchner.next_entry().unwrap().as_ref(), Some(entry));
             }
-            let last = scanner.next_entry().unwrap();
+            let last = mutant_searchner.next_entry().unwrap();
             assert!(last.is_none(), "{:?}", last);
         };
 
@@ -2613,11 +2613,11 @@ mod delta_entry_tests {
         prepare_test_data_for_check_gc_fence(&engine);
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
             .range(None, None)
-            .build_delta_scanner(40.into(), ExtraOp::ReadOldValue)
+            .build_delta_mutant_searchner(40.into(), ExtraOp::ReadOldValue)
             .unwrap();
-        let entries: Vec<_> = std::iter::from_fn(|| scanner.next_entry().unwrap()).collect();
+        let entries: Vec<_> = std::iter::from_fn(|| mutant_searchner.next_entry().unwrap()).collect();
         let expected_entries_1 = vec![
             EntryBuilder::default()
                 .key(b"k1")
@@ -2645,11 +2645,11 @@ mod delta_entry_tests {
             must_prewrite_put(&engine, key, value, b"k1", 55);
         }
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
             .range(None, None)
-            .build_delta_scanner(40.into(), ExtraOp::ReadOldValue)
+            .build_delta_mutant_searchner(40.into(), ExtraOp::ReadOldValue)
             .unwrap();
-        let entries: Vec<_> = std::iter::from_fn(|| scanner.next_entry().unwrap()).collect();
+        let entries: Vec<_> = std::iter::from_fn(|| mutant_searchner.next_entry().unwrap()).collect();
 
         // Shortcut for generating the expected result at current time.
         let build_entry = |k, v, old_value| {
@@ -2681,11 +2681,11 @@ mod delta_entry_tests {
             must_commit(&engine, key, 55, 56);
         }
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
             .range(None, None)
-            .build_delta_scanner(40.into(), ExtraOp::ReadOldValue)
+            .build_delta_mutant_searchner(40.into(), ExtraOp::ReadOldValue)
             .unwrap();
-        let entries: Vec<_> = std::iter::from_fn(|| scanner.next_entry().unwrap()).collect();
+        let entries: Vec<_> = std::iter::from_fn(|| mutant_searchner.next_entry().unwrap()).collect();
 
         // Shortcut for generating the expected result at current time.
         let build_entry = |k, v, old_value| {

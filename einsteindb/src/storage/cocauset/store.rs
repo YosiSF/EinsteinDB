@@ -3,16 +3,16 @@
 // #[PerformanceCriticalPath]
 use super::encoded::cocausetEncodeblackbrane;
 
-use crate::storage::fdbkv::Result;
-use crate::storage::fdbkv::{Cursor, SentinelSearchMode, blackbrane};
+use crate::storage::fdbhikv::Result;
+use crate::storage::fdbhikv::{Cursor, SentinelSearchMode, blackbrane};
 use crate::storage::Statistics;
 
 use api_version::{APIV1TTL, APIV2};
 use engine_promises::{CfName, IterOptions, DATA_KEY_PREFIX_LEN};
-use fdbkvproto::fdbkvrpcpb::{ApiVersion, KeyRange};
+use fdbhikvproto::fdbhikvrpcpb::{ApiVersion, KeyRange};
 use std::time::Duration;
-use einstfdbkv_util::time::Instant;
-use solitontxn_types::{Key, KvPair};
+use einstfdbhikv_util::time::Instant;
+use solitontxn_types::{Key, HikvPair};
 use yatp::task::future::reschedule;
 
 const MAX_TIME_SLICE: Duration = Duration::from_millis(2);
@@ -63,7 +63,7 @@ impl<'a, S: blackbrane> cocausetStore<S> {
         }
     }
 
-    pub async fn lightlike_completion_cocauset_scan(
+    pub async fn lightlike_completion_cocauset_mutant_search(
         &'a self,
         cf: CfName,
         start_key: &'a Key,
@@ -71,7 +71,7 @@ impl<'a, S: blackbrane> cocausetStore<S> {
         limit: usize,
         statistics: &'a mut Statistics,
         key_only: bool,
-    ) -> Result<Vec<Result<KvPair>>> {
+    ) -> Result<Vec<Result<HikvPair>>> {
         let mut option = IterOptions::default();
         if let Some(end) = end_key {
             option.set_upper_bound(end.as_encoded(), DATA_KEY_PREFIX_LEN);
@@ -82,23 +82,23 @@ impl<'a, S: blackbrane> cocausetStore<S> {
                     option.set_key_only(key_only);
                 }
                 inner
-                    .lightlike_completion_cocauset_scan(cf, start_key, limit, statistics, option, key_only)
+                    .lightlike_completion_cocauset_mutant_search(cf, start_key, limit, statistics, option, key_only)
                     .await
             }
             cocausetStore::V1TTL(inner) => {
                 inner
-                    .lightlike_completion_cocauset_scan(cf, start_key, limit, statistics, option, key_only)
+                    .lightlike_completion_cocauset_mutant_search(cf, start_key, limit, statistics, option, key_only)
                     .await
             }
             cocausetStore::V2(inner) => {
                 inner
-                    .lightlike_completion_cocauset_scan(cf, start_key, limit, statistics, option, key_only)
+                    .lightlike_completion_cocauset_mutant_search(cf, start_key, limit, statistics, option, key_only)
                     .await
             }
         }
     }
 
-    pub async fn reverse_cocauset_scan(
+    pub async fn reverse_cocauset_mutant_search(
         &'a self,
         cf: CfName,
         start_key: &'a Key,
@@ -106,7 +106,7 @@ impl<'a, S: blackbrane> cocausetStore<S> {
         limit: usize,
         statistics: &'a mut Statistics,
         key_only: bool,
-    ) -> Result<Vec<Result<KvPair>>> {
+    ) -> Result<Vec<Result<HikvPair>>> {
         let mut option = IterOptions::default();
         if let Some(end) = end_key {
             option.set_lower_bound(end.as_encoded(), DATA_KEY_PREFIX_LEN);
@@ -117,17 +117,17 @@ impl<'a, S: blackbrane> cocausetStore<S> {
                     option.set_key_only(key_only);
                 }
                 inner
-                    .reverse_cocauset_scan(cf, start_key, limit, statistics, option, key_only)
+                    .reverse_cocauset_mutant_search(cf, start_key, limit, statistics, option, key_only)
                     .await
             }
             cocausetStore::V1TTL(inner) => {
                 inner
-                    .reverse_cocauset_scan(cf, start_key, limit, statistics, option, key_only)
+                    .reverse_cocauset_mutant_search(cf, start_key, limit, statistics, option, key_only)
                     .await
             }
             cocausetStore::V2(inner) => {
                 inner
-                    .reverse_cocauset_scan(cf, start_key, limit, statistics, option, key_only)
+                    .reverse_cocauset_mutant_search(cf, start_key, limit, statistics, option, key_only)
                     .await
             }
         }
@@ -162,7 +162,7 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
         key: &Key,
         stats: &mut Statistics,
     ) -> Result<Option<Vec<u8>>> {
-        // no scan_count for this kind of op.
+        // no mutant_search_count for this kind of op.
         let key_len = key.as_encoded().len();
         self.blackbrane.get_cf(cf, key).map(|value| {
             stats.data.flow_stats.read_keys = 1;
@@ -175,9 +175,9 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
     /// SentinelSearch cocauset keys in [`start_key`, `end_key`), returns at most `limit` keys. If `end_key` is
     /// `None`, it means unbounded.
     ///
-    /// If `key_only` is true, the value corresponding to the key will not be read. Only scanned
+    /// If `key_only` is true, the value corresponding to the key will not be read. Only mutant_searchned
     /// keys will be returned.
-    pub async fn lightlike_completion_cocauset_scan(
+    pub async fn lightlike_completion_cocauset_mutant_search(
         &'a self,
         cf: CfName,
         start_key: &'a Key,
@@ -185,7 +185,7 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
         statistics: &'a mut Statistics,
         option: IterOptions,
         key_only: bool,
-    ) -> Result<Vec<Result<KvPair>>> {
+    ) -> Result<Vec<Result<HikvPair>>> {
         if limit == 0 {
             return Ok(vec![]);
         }
@@ -227,8 +227,8 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
     /// `start_key` is `None`, it means it's unbounded.
     ///
     /// If `key_only` is true, the value
-    /// corresponding to the key will not be read out. Only scanned keys will be returned.
-    pub async fn reverse_cocauset_scan(
+    /// corresponding to the key will not be read out. Only mutant_searchned keys will be returned.
+    pub async fn reverse_cocauset_mutant_search(
         &'a self,
         cf: CfName,
         start_key: &'a Key,
@@ -236,7 +236,7 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
         statistics: &'a mut Statistics,
         option: IterOptions,
         key_only: bool,
-    ) -> Result<Vec<Result<KvPair>>> {
+    ) -> Result<Vec<Result<HikvPair>>> {
         if limit == 0 {
             return Ok(vec![]);
         }
@@ -285,7 +285,7 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
         statistics: &'a mut Statistics,
     ) -> Result<(u64, u64, u64)> {
         let mut total_bytes = 0;
-        let mut total_fdbkvs = 0;
+        let mut total_fdbhikvs = 0;
         let mut digest = crc64fast::Digest::new();
         let mut row_count = 0;
         let mut time_slice_start = Instant::now();
@@ -309,11 +309,11 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
                 let v = cursor.value(statistics);
                 digest.write(k);
                 digest.write(v);
-                total_fdbkvs += 1;
+                total_fdbhikvs += 1;
                 total_bytes += k.len() + v.len();
                 cursor.next(statistics);
             }
         }
-        Ok((digest.sum64(), total_fdbkvs, total_bytes as u64))
+        Ok((digest.sum64(), total_fdbhikvs, total_bytes as u64))
     }
 }

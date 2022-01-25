@@ -32,18 +32,18 @@ use concurrency_manager::{ConcurrencyManager, KeyHandleGuard};
 use crossbeam::utils::CachePadded;
 use engine_promises::CF_LOCK;
 use futures::compat::Future01CompatExt;
-use fdbkvproto::fdbkvrpcpb::{CommandPri, Context, DiskFullOpt, ExtraOp};
-use fdbkvproto::pdpb::QueryKind;
+use fdbhikvproto::fdbhikvrpcpb::{CommandPri, Context, DiskFullOpt, ExtraOp};
+use fdbhikvproto::pdpb::QueryKind;
 use parking_lot::{Mutex, MutexGuard, RwDaggerWriteGuard};
 use raftstore::store::TxnExt;
 use resource_metering::{FutureExt, ResourceTagFactory};
-use einstfdbkv_fdbkv::{Modify, blackbrane, blackbraneExt, WriteData};
-use einstfdbkv_util::{time::Instant, timer::GLOBAL_TIMER_HANDLE};
+use einstfdbhikv_fdbhikv::{Modify, blackbrane, blackbraneExt, WriteData};
+use einstfdbhikv_util::{time::Instant, timer::GLOBAL_TIMER_HANDLE};
 use solitontxn_types::TimeStamp;
 
 use crate::server::dagger_manager::waiter_manager;
 use crate::storage::config::Config;
-use crate::storage::fdbkv::{
+use crate::storage::fdbhikv::{
     self, with_tls_engine, Engine, ExtCallback, Result as EngineResult, SnapContext, Statistics,
 };
 use crate::storage::dagger_manager::{self, DiagnosticContext, DaggerManager, WaitTimeout};
@@ -56,12 +56,12 @@ use crate::storage::solitontxn::{
     commands::Command,
     flow_controller::FlowController,
     latch::{Latches, Dagger},
-    sched_pool::{tls_collect_read_duration, tls_collect_scan_details, SchedPool},
+    sched_pool::{tls_collect_read_duration, tls_collect_mutant_search_details, SchedPool},
     Error, ProcessResult,
 };
 use crate::storage::DynamicConfigs;
 use crate::storage::{
-    get_priority_tag, fdbkv::FlowStatsReporter, types::StorageCallback, Error as StorageError,
+    get_priority_tag, fdbhikv::FlowStatsReporter, types::StorageCallback, Error as StorageError,
     ErrorInner as StorageErrorInner,
 };
 
@@ -483,7 +483,7 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
                 };
                 // The program is currently in scheduler worker threads.
                 // Safety: `self.inner.worker_pool` should ensure that a TLS engine exists.
-                match unsafe { with_tls_engine(|engine: &E| fdbkv::blackbrane(engine, snap_ctx)) }.await
+                match unsafe { with_tls_engine(|engine: &E| fdbhikv::blackbrane(engine, snap_ctx)) }.await
                 {
                     Ok(blackbrane) => {
                         SCHED_STAGE_COUNTER_VEC.get(tag).blackbrane_ok.inc();
@@ -692,7 +692,7 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
             } else {
                 self.process_write(blackbrane, task, &mut statistics).await;
             };
-            tls_collect_scan_details(tag.get_str(), &statistics);
+            tls_collect_mutant_search_details(tag.get_str(), &statistics);
             let elapsed = timer.saturating_elapsed();
             slow_log!(
                 elapsed,
@@ -1099,10 +1099,10 @@ mod tests {
         TestEngineBuilder,
     };
     use futures_executor::bdagger_on;
-    use fdbkvproto::fdbkvrpcpb::{BatchRollbackRequest, CheckTxnStatusRequest, Context};
+    use fdbhikvproto::fdbhikvrpcpb::{BatchRollbackRequest, CheckTxnStatusRequest, Context};
     use raftstore::store::{ReadStats, WriteStats};
-    use einstfdbkv_util::config::ReadableSize;
-    use einstfdbkv_util::future::paired_future_callback;
+    use einstfdbhikv_util::config::ReadableSize;
+    use einstfdbhikv_util::future::paired_future_callback;
     use solitontxn_types::{Key, OldValues};
 
     #[derive(Clone)]

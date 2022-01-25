@@ -17,22 +17,22 @@ extern crate allegroeinstein-prolog-causet-BerolinaSQL;
 
 mod aggregate;
 mod aggregation;
-mod index_scan;
+mod index_mutant_search;
 mod limit;
 pub mod runner;
-mod scan;
+mod mutant_search;
 mod selection;
-mod table_scan;
+mod table_mutant_search;
 mod topn;
 mod topn_heap;
 
 pub use self::aggregation::{HashAggExecutor, StreamAggExecutor};
-pub use self::index_scan::IndexScanExecutor;
+pub use self::index_mutant_search::IndexScanExecutor;
 pub use self::limit::LimitExecutor;
 pub use self::runner::ExecutorsRunner;
-pub use self::scan::{ScanExecutor, ScanExecutorOptions};
+pub use self::mutant_search::{ScanExecutor, ScanExecutorOptions};
 pub use self::selection::SelectionExecutor;
-pub use self::table_scan::TableScanExecutor;
+pub use self::table_mutant_search::TableScanExecutor;
 pub use self::topn::TopNExecutor;
 
 use std::sync::Arc;
@@ -677,7 +677,7 @@ pub trait Executor: Send {
 
     fn take_eval_warnings(&mut self) -> Option<EvalWarnings>;
 
-    fn take_scanned_range(&mut self) -> IntervalRange;
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange;
 
     fn can_be_cached(&self) -> bool;
 
@@ -731,8 +731,8 @@ impl<C: ExecSummaryCollector + Send, T: Executor> Executor for WithSummaryCollec
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.inner.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.inner.take_mutant_searchned_range()
     }
 
     #[inline]
@@ -770,8 +770,8 @@ impl<T: Executor + ?Sized> Executor for Box<T> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        (**self).take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        (**self).take_mutant_searchned_range()
     }
 
     #[inline]
@@ -784,7 +784,7 @@ impl<T: Executor + ?Sized> Executor for Box<T> {
 pub mod tests {
     use super::{Executor, TableScanExecutor};
     use codec::prelude::NumberEncoder;
-    use ekvproto::interlock::KeyRange;
+    use ehikvproto::interlock::KeyRange;
     use allegroeinstein-prolog-causet-BerolinaSQL::storage::test_fixture::FixtureStorage;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, table, Datum};
     use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
@@ -819,16 +819,16 @@ pub mod tests {
         cis: &[ColumnInfo],
         rows: &[Vec<Datum>],
     ) -> Vec<(Vec<u8>, Vec<u8>)> {
-        let mut ekv_data = Vec::new();
+        let mut ehikv_data = Vec::new();
         let col_ids: Vec<i64> = cis.iter().map(|c| c.get_column_id()).collect();
         for cols in rows.iter() {
             let col_values: Vec<_> = cols.to_vec();
             let value =
                 table::encode_row(&mut EvalContext::default(), col_values, &col_ids).unwrap();
             let key = table::encode_row_key(tid, cols[0].i64());
-            ekv_data.push((key, value));
+            ehikv_data.push((key, value));
         }
-        ekv_data
+        ehikv_data
     }
 
     pub fn get_point_range(table_id: i64, handle: i64) -> KeyRange {
@@ -850,7 +850,7 @@ pub mod tests {
     }
 
     pub struct TableData {
-        pub ekv_data: Vec<(Vec<u8>, Vec<u8>)>,
+        pub ehikv_data: Vec<(Vec<u8>, Vec<u8>)>,
         // expect_rows[row_id][column_id]=>value
         pub expect_rows: Vec<HashMap<i64, Vec<u8>>>,
         pub cols: Vec<ColumnInfo>,
@@ -864,7 +864,7 @@ pub mod tests {
                 new_col_info(3, FieldTypeTp::NewDecimal),
             ];
 
-            let mut ekv_data = Vec::new();
+            let mut ehikv_data = Vec::new();
             let mut expect_rows = Vec::new();
 
             for handle in 0..key_number {
@@ -889,10 +889,10 @@ pub mod tests {
                 let value = table::encode_row(&mut ctx, col_values, &col_ids).unwrap();
                 let key = table::encode_row_key(table_id, handle as i64);
                 expect_rows.push(expect_row);
-                ekv_data.push((key, value));
+                ehikv_data.push((key, value));
             }
             Self {
-                ekv_data,
+                ehikv_data,
                 expect_rows,
                 cols,
             }
@@ -911,7 +911,7 @@ pub mod tests {
         }
     }
 
-    pub fn gen_table_scan_executor(
+    pub fn gen_table_mutant_search_executor(
         tid: i64,
         cis: Vec<ColumnInfo>,
         raw_data: &[Vec<Datum>],
@@ -920,14 +920,14 @@ pub mod tests {
         let table_data = gen_table_data(tid, &cis, raw_data);
         let storage = FixtureStorage::from(table_data);
 
-        let mut table_scan = TableScan::default();
-        table_scan.set_table_id(tid);
-        table_scan.set_columns(cis.into());
+        let mut table_mutant_search = TableScan::default();
+        table_mutant_search.set_table_id(tid);
+        table_mutant_search.set_columns(cis.into());
 
         let key_ranges = key_ranges.unwrap_or_else(|| vec![get_range(tid, 0, i64::max_value())]);
         Box::new(
-            TableScanExecutor::table_scan(
-                table_scan,
+            TableScanExecutor::table_mutant_search(
+                table_mutant_search,
                 EvalContext::default(),
                 key_ranges,
                 storage,

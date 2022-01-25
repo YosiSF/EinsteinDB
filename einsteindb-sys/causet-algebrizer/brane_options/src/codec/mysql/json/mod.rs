@@ -304,7 +304,7 @@ impl Json {
     }
 
     /// Creates a `object` JSON from key-value pairs
-    pub fn from_ekv_pairs<'a>(entries: Vec<(&[u8], JsonRef<'a>)>) -> Result<Self> {
+    pub fn from_ehikv_pairs<'a>(entries: Vec<(&[u8], JsonRef<'a>)>) -> Result<Self> {
         let mut value = vec![];
         value.write_json_obj_from_keys_values(entries)?;
         Ok(Self::new(JsonType::Object, value))
@@ -346,8 +346,8 @@ pub fn json_array(elems: Vec<Datum>) -> Result<Json> {
 
 /// Create JSON object by given key-value pairs
 /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-creation-functions.html#function_json-object
-pub fn json_object(ekvs: Vec<Datum>) -> Result<Json> {
-    let len = ekvs.len();
+pub fn json_object(ehikvs: Vec<Datum>) -> Result<Json> {
+    let len = ehikvs.len();
     if !is_even(len) {
         return Err(Error::Other(box_err!(
             "Incorrect parameter count in the call to native \
@@ -356,7 +356,7 @@ pub fn json_object(ekvs: Vec<Datum>) -> Result<Json> {
     }
     let mut map = BTreeMap::new();
     let mut key = None;
-    for elem in ekvs {
+    for elem in ehikvs {
         if key.is_none() {
             // take elem as key
             if elem == Datum::Null {

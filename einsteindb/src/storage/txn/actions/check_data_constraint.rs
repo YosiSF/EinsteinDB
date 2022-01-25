@@ -39,7 +39,7 @@ mod tests {
     use crate::storage::epaxos::EpaxosTxn;
     use crate::storage::{Engine, TestEngineBuilder};
     use concurrency_manager::ConcurrencyManager;
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
 
     #[test]
     fn test_check_data_constraint() {

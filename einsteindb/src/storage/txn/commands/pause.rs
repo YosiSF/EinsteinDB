@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::solitontxn::commands::{
     Command, CommandExt, ResponsePolicy, TypedCommand, WriteCommand, WriteContext, WriteResult,
@@ -18,7 +18,7 @@ command! {
     /// This means other write operations that involve these keys will be bdaggered.
     Pause:
         cmd_ty => (),
-        display => "fdbkv::command::pause keys:({}) {} ms | {:?}", (keys.len, duration, ctx),
+        display => "fdbhikv::command::pause keys:({}) {} ms | {:?}", (keys.len, duration, ctx),
         content => {
             /// The keys to hold latches on.
             keys: Vec<Key>,

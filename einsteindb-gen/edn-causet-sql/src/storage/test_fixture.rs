@@ -23,7 +23,7 @@ type FixtureValue = std::result::Result<Vec<u8>, ErrorBuilder>;
 pub struct FixtureStorage {
     data: Arc<BTreeMap<Vec<u8>, FixtureValue>>,
     data_view_unsafe: Option<btree_map::Range<'static, Vec<u8>, FixtureValue>>,
-    is_backward_scan: bool,
+    is_spacelike_completion_mutant_search: bool,
     is_key_only: bool,
 }
 
@@ -32,7 +32,7 @@ impl FixtureStorage {
         Self {
             data: Arc::new(data),
             data_view_unsafe: None,
-            is_backward_scan: false,
+            is_spacelike_completion_mutant_search: false,
             is_key_only: false,
         }
     }
@@ -58,9 +58,9 @@ impl From<Vec<(Vec<u8>, Vec<u8>)>> for FixtureStorage {
 impl super::Storage for FixtureStorage {
     type Statistics = ();
 
-    fn begin_scan(
+    fn begin_mutant_search(
         &mut self,
-        is_backward_scan: bool,
+        is_spacelike_completion_mutant_search: bool,
         is_key_only: bool,
         range: IntervalRange,
     ) -> Result<()> {
@@ -69,13 +69,13 @@ impl super::Storage for FixtureStorage {
             .range(range.lower_inclusive..range.upper_exclusive);
         // Erase the lifetime to be 'static.
         self.data_view_unsafe = unsafe { Some(std::mem::transmute(data_view)) };
-        self.is_backward_scan = is_backward_scan;
+        self.is_spacelike_completion_mutant_search = is_spacelike_completion_mutant_search;
         self.is_key_only = is_key_only;
         Ok(())
     }
 
-    fn scan_next(&mut self) -> Result<Option<super::OwnedKvPair>> {
-        let value = if !self.is_backward_scan {
+    fn mutant_search_next(&mut self) -> Result<Option<super::OwnedHikvPair>> {
+        let value = if !self.is_spacelike_completion_mutant_search {
             // During the call of this function, `data` must be valid and we are only returning
             // data clones to outside, so this access is safe.
             self.data_view_unsafe.as_mut().unwrap().next()
@@ -95,7 +95,7 @@ impl super::Storage for FixtureStorage {
         }
     }
 
-    fn get(&mut self, is_key_only: bool, range: PointRange) -> Result<Option<super::OwnedKvPair>> {
+    fn get(&mut self, is_key_only: bool, range: PointRange) -> Result<Option<super::OwnedHikvPair>> {
         let r = self.data.get(&range.0);
         match r {
             None => Ok(None),
@@ -149,85 +149,85 @@ mod tests {
 
         // Scan Backward = false, Key only = false
         storage
-            .begin_scan(false, false, IntervalRange::from(("foo", "foo_3")))
+            .begin_mutant_search(false, false, IntervalRange::from(("foo", "foo_3")))
             .unwrap();
 
         assert_eq!(
-            storage.scan_next().unwrap(),
+            storage.mutant_search_next().unwrap(),
             Some((b"foo".to_vec(), b"1".to_vec()))
         );
 
         let mut s2 = storage.clone();
         assert_eq!(
-            s2.scan_next().unwrap(),
+            s2.mutant_search_next().unwrap(),
             Some((b"foo_2".to_vec(), b"3".to_vec()))
         );
 
         assert_eq!(
-            storage.scan_next().unwrap(),
+            storage.mutant_search_next().unwrap(),
             Some((b"foo_2".to_vec(), b"3".to_vec()))
         );
-        assert_eq!(storage.scan_next().unwrap(), None);
-        assert_eq!(storage.scan_next().unwrap(), None);
+        assert_eq!(storage.mutant_search_next().unwrap(), None);
+        assert_eq!(storage.mutant_search_next().unwrap(), None);
 
-        assert_eq!(s2.scan_next().unwrap(), None);
-        assert_eq!(s2.scan_next().unwrap(), None);
+        assert_eq!(s2.mutant_search_next().unwrap(), None);
+        assert_eq!(s2.mutant_search_next().unwrap(), None);
 
         // Scan Backward = false, Key only = false
         storage
-            .begin_scan(false, false, IntervalRange::from(("bar", "bar_2")))
+            .begin_mutant_search(false, false, IntervalRange::from(("bar", "bar_2")))
             .unwrap();
 
         assert_eq!(
-            storage.scan_next().unwrap(),
+            storage.mutant_search_next().unwrap(),
             Some((b"bar".to_vec(), b"2".to_vec()))
         );
-        assert_eq!(storage.scan_next().unwrap(), None);
+        assert_eq!(storage.mutant_search_next().unwrap(), None);
 
         // Scan Backward = false, Key only = true
         storage
-            .begin_scan(false, true, IntervalRange::from(("bar", "foo_")))
+            .begin_mutant_search(false, true, IntervalRange::from(("bar", "foo_")))
             .unwrap();
 
         assert_eq!(
-            storage.scan_next().unwrap(),
+            storage.mutant_search_next().unwrap(),
             Some((b"bar".to_vec(), Vec::new()))
         );
         assert_eq!(
-            storage.scan_next().unwrap(),
+            storage.mutant_search_next().unwrap(),
             Some((b"bar_2".to_vec(), Vec::new()))
         );
         assert_eq!(
-            storage.scan_next().unwrap(),
+            storage.mutant_search_next().unwrap(),
             Some((b"foo".to_vec(), Vec::new()))
         );
-        assert_eq!(storage.scan_next().unwrap(), None);
+        assert_eq!(storage.mutant_search_next().unwrap(), None);
 
         // Scan Backward = true, Key only = false
         storage
-            .begin_scan(true, false, IntervalRange::from(("foo", "foo_3")))
+            .begin_mutant_search(true, false, IntervalRange::from(("foo", "foo_3")))
             .unwrap();
 
         assert_eq!(
-            storage.scan_next().unwrap(),
+            storage.mutant_search_next().unwrap(),
             Some((b"foo_2".to_vec(), b"3".to_vec()))
         );
         assert_eq!(
-            storage.scan_next().unwrap(),
+            storage.mutant_search_next().unwrap(),
             Some((b"foo".to_vec(), b"1".to_vec()))
         );
-        assert_eq!(storage.scan_next().unwrap(), None);
-        assert_eq!(storage.scan_next().unwrap(), None);
+        assert_eq!(storage.mutant_search_next().unwrap(), None);
+        assert_eq!(storage.mutant_search_next().unwrap(), None);
 
         // Scan empty range
         storage
-            .begin_scan(false, false, IntervalRange::from(("faa", "fab")))
+            .begin_mutant_search(false, false, IntervalRange::from(("faa", "fab")))
             .unwrap();
-        assert_eq!(storage.scan_next().unwrap(), None);
+        assert_eq!(storage.mutant_search_next().unwrap(), None);
 
         storage
-            .begin_scan(false, false, IntervalRange::from(("foo", "foo")))
+            .begin_mutant_search(false, false, IntervalRange::from(("foo", "foo")))
             .unwrap();
-        assert_eq!(storage.scan_next().unwrap(), None);
+        assert_eq!(storage.mutant_search_next().unwrap(), None);
     }
 }

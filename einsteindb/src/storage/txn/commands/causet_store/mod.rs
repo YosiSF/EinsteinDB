@@ -1,7 +1,7 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::{Modify, WriteData};
+use crate::storage::fdbhikv::{Modify, WriteData};
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::solitontxn::commands::{
     Command, CommandExt, ResponsePolicy, TypedCommand, WriteCommand, WriteContext, WriteResult,
@@ -11,14 +11,14 @@ use crate::storage::{ProcessResult, blackbrane};
 use api_version::{match_template_api_version, APIVersion, cocausetValue};
 use engine_promises::cocauset_ttl::ttl_to_expire_ts;
 use engine_promises::CfName;
-use fdbkvproto::fdbkvrpcpb::ApiVersion;
+use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use solitontxn_types::cocausetMutation;
 
 command! {
     /// Run Put or Delete for keys which may be changed by `cocausetCompareAndSwap`.
     cocauset:
         cmd_ty => (),
-        display => "fdbkv::command::causetxctx_store {:?}", (ctx),
+        display => "fdbhikv::command::causetxctx_store {:?}", (ctx),
         content => {
             /// The set of mutations to apply.
             cf: CfName,

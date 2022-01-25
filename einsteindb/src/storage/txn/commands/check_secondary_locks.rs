@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::epaxos::{DaggerType, EpaxosTxn, blackbraneReader, TimeStamp, TxnCommitRecord};
 use crate::storage::solitontxn::commands::ReaderWithStats;
@@ -27,7 +27,7 @@ command! {
     /// status being changed, a rollback may be written.
     CheckSecondaryDaggers:
         cmd_ty => SecondaryDaggersStatus,
-        display => "fdbkv::command::CheckSecondaryDaggers {} keys@{} | {:?}", (keys.len, start_ts, ctx),
+        display => "fdbhikv::command::CheckSecondaryDaggers {} keys@{} | {:?}", (keys.len, start_ts, ctx),
         content => {
             /// The keys of secondary daggers.
             keys: Vec<Key>,
@@ -162,7 +162,7 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for CheckSecondaryDagge
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::storage::fdbkv::TestEngineBuilder;
+    use crate::storage::fdbhikv::TestEngineBuilder;
     use crate::storage::dagger_manager::DummyDaggerManager;
     use crate::storage::epaxos::tests::*;
     use crate::storage::solitontxn::commands::WriteCommand;
@@ -170,8 +170,8 @@ pub mod tests {
     use crate::storage::solitontxn::tests::*;
     use crate::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
-    use fdbkvproto::fdbkvrpcpb::Context;
-    use einstfdbkv_util::deadline::Deadline;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
+    use einstfdbhikv_util::deadline::Deadline;
 
     pub fn must_success<E: Engine>(
         engine: &E,

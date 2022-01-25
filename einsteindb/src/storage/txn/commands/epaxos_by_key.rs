@@ -14,7 +14,7 @@ command! {
     /// Retrieve EPAXOS information for the given key.
     EpaxosByKey:
         cmd_ty => EpaxosInfo,
-        display => "fdbkv::command::epaxosbykey {:?} | {:?}", (key, ctx),
+        display => "fdbhikv::command::epaxosbykey {:?} | {:?}", (key, ctx),
         content => {
             key: Key,
         }

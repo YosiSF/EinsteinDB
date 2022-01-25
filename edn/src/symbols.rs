@@ -183,16 +183,16 @@ impl Keyword {
     ///
     /// ```rust
     /// # use edn::symbols::Keyword;
-    /// assert!(!Keyword::namespaced("foo", "bar").is_backward());
-    /// assert!(Keyword::namespaced("foo", "_bar").is_backward());
+    /// assert!(!Keyword::namespaced("foo", "bar").is_spacelike_completion());
+    /// assert!(Keyword::namespaced("foo", "_bar").is_spacelike_completion());
     /// ```
     #[inline]
-    pub fn is_backward(&self) -> bool {
-        self.0.is_backward()
+    pub fn is_spacelike_completion(&self) -> bool {
+        self.0.is_spacelike_completion()
     }
 
     /// Whether this `Keyword` should be interpreted in forward order.
-    /// See `symbols::Keyword::is_backward`.
+    /// See `symbols::Keyword::is_spacelike_completion`.
     ///
     /// # Examples
     ///
@@ -212,7 +212,7 @@ impl Keyword {
     }
 
     /// Returns a `Keyword` with the same namespace and a
-    /// 'backward' name. See `symbols::Keyword::is_backward`.
+    /// 'spacelike_completion' name. See `symbols::Keyword::is_spacelike_completion`.
     ///
     /// Returns a forward name if passed a reversed keyword; i.e., this
     /// function is its own inverse.
@@ -222,18 +222,18 @@ impl Keyword {
     /// ```rust
     /// # use edn::symbols::Keyword;
     /// let nsk = Keyword::namespaced("foo", "bar");
-    /// assert!(!nsk.is_backward());
+    /// assert!(!nsk.is_spacelike_completion());
     /// assert_eq!(":foo/bar", nsk.to_string());
     ///
     /// let reversed = nsk.to_reversed();
-    /// assert!(reversed.is_backward());
+    /// assert!(reversed.is_spacelike_completion());
     /// assert_eq!(":foo/_bar", reversed.to_string());
     /// ```
     pub fn to_reversed(&self) -> Keyword {
         Keyword(self.0.to_reversed())
     }
 
-    /// If this `Keyword` is 'backward' (see `symbols::Keyword::is_backward`),
+    /// If this `Keyword` is 'spacelike_completion' (see `symbols::Keyword::is_spacelike_completion`),
     /// return `Some('forward name')`; otherwise, return `None`.
     ///
     /// # Examples
@@ -247,7 +247,7 @@ impl Keyword {
     /// assert_eq!(Some(nsk), reversed.unreversed());
     /// ```
     pub fn unreversed(&self) -> Option<Keyword> {
-        if self.is_backward() {
+        if self.is_spacelike_completion() {
             Some(self.to_reversed())
         } else {
             None

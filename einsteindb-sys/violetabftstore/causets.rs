@@ -6,16 +6,16 @@ use std::time::Duration;
 
 use engine_foundationeinsteindb::foundationeinsteindbSnapshot;
 use futures::future::Future;
-use ekvproto::ccpb::*;
-use ekvproto::ekvrpcpb::ExtraOp;
-use ekvproto::metapb::Region;
+use ehikvproto::ccpb::*;
+use ehikvproto::ehikvrpcpb::ExtraOp;
+use ehikvproto::metapb::Region;
 use fidelio::FIDelClient;
 use violetabftstore::interlock::Cmeinsteindbatch;
 use violetabftstore::router::violetabftStoreRouter;
 use violetabftstore::store::fsm::{ChangeCmd, ObserveID};
 use violetabftstore::store::msg::{Callback, ReadResponse, SignificantMsg};
 use resolved_ts::Resolver;
-use Einsteineinsteindb::storage::ekv::Snapshot;
+use Einsteineinsteindb::storage::ehikv::Snapshot;
 use Einsteineinsteindb::storage::mvcc::{DeltaScanner, ScannerBuilder};
 use Einsteineinsteindb::storage::txn::TxnEntry;
 use Einsteineinsteindb::storage::txn::TxnEntryScanner;
@@ -182,10 +182,10 @@ impl fmt::Debug for Task {
                 ref downstream_id,
                 ref entries,
             } => de
-                .field("type", &"incremental_scan")
+                .field("type", &"incremental_mutant_search")
                 .field("region_id", &region_id)
                 .field("downstream", &downstream_id)
-                .field("scan_entries", &entries.len())
+                .field("mutant_search_entries", &entries.len())
                 .finish(),
             Task::RegisterMinTsEvent => de.field("type", &"register_min_ts").finish(),
             Task::InitDownstream {
@@ -211,7 +211,7 @@ pub struct Endpoint<T> {
     fidelio: Arc<dyn FIDelClient>,
     timer: SteadyTimer,
     min_ts_interval: Duration,
-    scan_batch_size: usize,
+    mutant_search_batch_size: usize,
     tso_worker: ThreadPool,
 
     workers: ThreadPool,
@@ -239,7 +239,7 @@ impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Endpoint<
             workers,
             violetabft_router,
             observer,
-            scan_batch_size: 1024,
+            mutant_search_batch_size: 1024,
             min_ts_interval: Duration::from_secs(1),
             min_resolved_ts: TimeStamp::max(),
             min_ts_region_id: 0,
@@ -260,8 +260,8 @@ impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Endpoint<
         self.min_ts_interval = dur;
     }
 
-    pub fn set_scan_batch_size(&mut self, scan_batch_size: usize) {
-        self.scan_batch_size = scan_batch_size;
+    pub fn set_mutant_search_batch_size(&mut self, mutant_search_batch_size: usize) {
+        self.mutant_search_batch_size = mutant_search_batch_size;
     }
 
     fn on_deregister(&mut self, deregister: Deregister) {
@@ -395,7 +395,7 @@ impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Endpoint<
         let downstream_state = downstream.get_state();
         let checkpoint_ts = request.checkpoint_ts;
         let sched = self.scheduler.clone();
-        let batch_size = self.scan_batch_size;
+        let batch_size = self.mutant_search_batch_size;
 
         let init = Initializer {
             sched,
@@ -508,16 +508,16 @@ impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Endpoint<
         }
     }
 
-    pub fn on_incremental_scan(
+    pub fn on_incremental_mutant_search(
         &mut self,
         region_id: u64,
         downstream_id: DownstreamID,
         entries: Vec<Option<TxnEntry>>,
     ) {
         if let Some(delegate) = self.capture_regions.get_mut(&region_id) {
-            delegate.on_scan(downstream_id, entries);
+            delegate.on_mutant_search(downstream_id, entries);
         } else {
-            warn!("region not found on incremental scan"; "region_id" => region_id);
+            warn!("region not found on incremental mutant_search"; "region_id" => region_id);
         }
     }
 
@@ -645,7 +645,7 @@ impl Initializer {
         if let Some(region_snapshot) = resp.snapshot {
             assert_eq!(self.region_id, region_snapshot.get_region().get_id());
             let region = region_snapshot.get_region().clone();
-            self.async_incremental_scan(region_snapshot, region);
+            self.async_incremental_mutant_search(region_snapshot, region);
         } else {
             assert!(
                 resp.response.get_header().has_error(),
@@ -664,11 +664,11 @@ impl Initializer {
         }
     }
 
-    fn async_incremental_scan<S: Snapshot + 'static>(&self, snap: S, region: Region) {
+    fn async_incremental_mutant_search<S: Snapshot + 'static>(&self, snap: S, region: Region) {
         let downstream_id = self.downstream_id;
         let conn_id = self.conn_id;
         let region_id = region.get_id();
-        info!("async incremental scan";
+        info!("async incremental mutant_search";
             "region_id" => region_id,
             "downstream_id" => ?downstream_id,
             "observe_id" => ?self.observe_id);
@@ -679,28 +679,28 @@ impl Initializer {
             None
         };
 
-        fail_point!("cc_incremental_scan_start");
+        fail_point!("cc_incremental_mutant_search_start");
 
         let start = Instant::now_coarse();
         // Time range: (checkpoint_ts, current]
         let current = TimeStamp::max();
-        let mut scanner = ScannerBuilder::new(snap, current, false)
+        let mut mutant_searchner = ScannerBuilder::new(snap, current, false)
             .range(None, None)
-            .build_delta_scanner(self.checkpoint_ts, ExtraOp::Noop)
+            .build_delta_mutant_searchner(self.checkpoint_ts, ExtraOp::Noop)
             .unwrap();
         let mut done = false;
         while !done {
             if !self.downstream_state.is_normal() {
-                info!("async incremental scan canceled";
+                info!("async incremental mutant_search canceled";
                     "region_id" => region_id,
                     "downstream_id" => ?downstream_id,
                     "observe_id" => ?self.observe_id);
                 return;
             }
-            let entries = match Self::scan_batch(&mut scanner, self.batch_size, resolver.as_mut()) {
+            let entries = match Self::mutant_search_batch(&mut mutant_searchner, self.batch_size, resolver.as_mut()) {
                 Ok(res) => res,
                 Err(e) => {
-                    error!("cc scan entries failed"; "error" => ?e, "region_id" => region_id);
+                    error!("cc mutant_search entries failed"; "error" => ?e, "region_id" => region_id);
                     // TODO: record in metrics.
                     let deregister = Deregister::Downstream {
                         region_id,
@@ -714,18 +714,18 @@ impl Initializer {
                     return;
                 }
             };
-            // If the last element is None, it means scanning is finished.
+            // If the last element is None, it means mutant_searchning is finished.
             if let Some(None) = entries.last() {
                 done = true;
             }
-            debug!("cc scan entries"; "len" => entries.len(), "region_id" => region_id);
-            fail_point!("before_schedule_incremental_scan");
-            let scanned = Task::IncrementalScan {
+            debug!("cc mutant_search entries"; "len" => entries.len(), "region_id" => region_id);
+            fail_point!("before_schedule_incremental_mutant_search");
+            let mutant_searchned = Task::IncrementalScan {
                 region_id,
                 downstream_id,
                 entries,
             };
-            if let Err(e) = self.sched.schedule(scanned) {
+            if let Err(e) = self.sched.schedule(mutant_searchned) {
                 error!("schedule cc task failed"; "error" => ?e, "region_id" => region_id);
                 return;
             }
@@ -738,14 +738,14 @@ impl Initializer {
         CC_SCAN_DURATION_HISTOGRAM.observe(start.elapsed().as_secs_f64());
     }
 
-    fn scan_batch<S: Snapshot>(
-        scanner: &mut DeltaScanner<S>,
+    fn mutant_search_batch<S: Snapshot>(
+        mutant_searchner: &mut DeltaScanner<S>,
         batch_size: usize,
         resolver: Option<&mut Resolver>,
     ) -> Result<Vec<Option<TxnEntry>>> {
         let mut entries = Vec::with_capacity(batch_size);
         while entries.len() < entries.capacity() {
-            match scanner.next_entry()? {
+            match mutant_searchner.next_entry()? {
                 Some(entry) => {
                     entries.push(Some(entry));
                 }
@@ -830,7 +830,7 @@ impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Runnable<
                 downstream_id,
                 entries,
             } => {
-                self.on_incremental_scan(region_id, downstream_id, entries);
+                self.on_incremental_mutant_search(region_id, downstream_id, entries);
             }
             Task::MultiBatch { multi } => self.on_multi_batch(multi),
             Task::OpenConn { conn } => self.on_open_conn(conn),
@@ -871,18 +871,18 @@ mod tests {
     use super::*;
     use einsteindb_promises::DATA_branes;
     #[braneg(feature = "prost-codec")]
-    use ekvproto::ccpb::event::Event as Event_oneof_event;
-    use ekvproto::errorpb::Error as ErrorHeader;
-    use ekvproto::ekvrpcpb::Context;
+    use ehikvproto::ccpb::event::Event as Event_oneof_event;
+    use ehikvproto::errorpb::Error as ErrorHeader;
+    use ehikvproto::ehikvrpcpb::Context;
     use violetabftstore::errors::Error as violetabftStoreError;
     use violetabftstore::store::msg::CasualMessage;
     use std::collections::BTreeMap;
     use std::fmt::Display;
     use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
     use tempfile::TemFIDelir;
-    use test_violetabftstore::MocekvioletabftStoreRouter;
+    use test_violetabftstore::MocehikvioletabftStoreRouter;
     use test_violetabftstore::TestFIDelClient;
-    use Einsteineinsteindb::storage::ekv::Engine;
+    use Einsteineinsteindb::storage::ehikv::Engine;
     use Einsteineinsteindb::storage::mvcc::tests::*;
     use Einsteineinsteindb::storage::TestEngineBuilder;
     use Einsteineinsteindb_util::collections::HashSet;
@@ -976,22 +976,22 @@ mod tests {
             }
         };
 
-        initializer.async_incremental_scan(snap.clone(), region.clone());
+        initializer.async_incremental_mutant_search(snap.clone(), region.clone());
         check_result();
         initializer.batch_size = 1000;
-        initializer.async_incremental_scan(snap.clone(), region.clone());
+        initializer.async_incremental_mutant_search(snap.clone(), region.clone());
         check_result();
 
         initializer.batch_size = 10;
-        initializer.async_incremental_scan(snap.clone(), region.clone());
+        initializer.async_incremental_mutant_search(snap.clone(), region.clone());
         check_result();
 
         initializer.batch_size = 11;
-        initializer.async_incremental_scan(snap.clone(), region.clone());
+        initializer.async_incremental_mutant_search(snap.clone(), region.clone());
         check_result();
 
         initializer.build_resolver = false;
-        initializer.async_incremental_scan(snap.clone(), region.clone());
+        initializer.async_incremental_mutant_search(snap.clone(), region.clone());
 
         loop {
             let task = rx.recv_timeout(Duration::from_secs(1));
@@ -1005,7 +1005,7 @@ mod tests {
 
         // Test cancellation.
         initializer.downstream_state.set_stopped();
-        initializer.async_incremental_scan(snap, region);
+        initializer.async_incremental_mutant_search(snap, region);
 
         loop {
             let task = rx.recv_timeout(Duration::from_secs(1));
@@ -1022,7 +1022,7 @@ mod tests {
     #[test]
     fn test_violetabftstore_is_busy() {
         let (task_sched, task_rx) = dummy_scheduler();
-        let violetabft_router = MocekvioletabftStoreRouter::new();
+        let violetabft_router = MocehikvioletabftStoreRouter::new();
         let observer = CdcObserver::new(task_sched.clone());
         let fidelio = Arc::new(TestFIDelClient::new(0, true));
         let mut ep = Endpoint::new(fidelio, task_sched, violetabft_router.clone(), observer);
@@ -1072,7 +1072,7 @@ mod tests {
     #[test]
     fn test_deregister() {
         let (task_sched, _task_rx) = dummy_scheduler();
-        let violetabft_router = MocekvioletabftStoreRouter::new();
+        let violetabft_router = MocehikvioletabftStoreRouter::new();
         let _violetabft_rx = violetabft_router.add_region(1 /* region id */, 100 /* cap */);
         let observer = CdcObserver::new(task_sched.clone());
         let fidelio = Arc::new(TestFIDelClient::new(0, true));

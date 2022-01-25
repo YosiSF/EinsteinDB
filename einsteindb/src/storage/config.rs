@@ -7,17 +7,17 @@ use crate::server::ttl::TTLCheckerTask;
 use crate::server::CONFIG_ROCKSDB_GAUGE;
 use crate::storage::solitontxn::flow_controller::FlowController;
 use engine_rocks::cocauset::{Cache, LRUCacheOptions, MemoryAllocator};
-use engine_promises::{ColumnFamilyOptions, KvEngine, CF_DEFAULT};
+use engine_promises::{ColumnFamilyOptions, HikvEngine, CF_DEFAULT};
 use file_system::{get_io_rate_limiter, IOPriority, IORateLimitMode, IORateLimiter, IOType};
-use fdbkvproto::fdbkvrpcpb::ApiVersion;
+use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use libc::c_int;
 use online_config::{ConfigChange, ConfigManager, ConfigValue, OnlineConfig, Result as CfgResult};
 use std::error::Error;
 use std::sync::Arc;
 use strum::IntoEnumIterator;
-use einstfdbkv_util::config::{self, OptionReadableSize, ReadableDuration, ReadableSize};
-use einstfdbkv_util::sys::SysQuota;
-use einstfdbkv_util::worker::Scheduler;
+use einstfdbhikv_util::config::{self, OptionReadableSize, ReadableDuration, ReadableSize};
+use einstfdbhikv_util::sys::SysQuota;
+use einstfdbhikv_util::worker::Scheduler;
 
 pub const DEFAULT_DATA_DIR: &str = "./";
 const DEFAULT_GC_RATIO_THRESHOLD: f64 = 1.1;
@@ -51,7 +51,7 @@ pub struct Config {
     #[online_config(skip)]
     pub scheduler_pending_write_threshold: ReadableSize,
     #[online_config(skip)]
-    // Reserve disk space to make einstfdbkv would have enough space to compact when disk is full.
+    // Reserve disk space to make einstfdbhikv would have enough space to compact when disk is full.
     pub reserve_space: ReadableSize,
     #[online_config(skip)]
     pub enable_async_apply_prewrite: bool,
@@ -145,22 +145,22 @@ impl Config {
     }
 }
 
-pub struct StorageConfigManger<EK: KvEngine> {
-    fdbkvdb: EK,
+pub struct StorageConfigManger<EK: HikvEngine> {
+    fdbhikvdb: EK,
     shared_bdagger_cache: bool,
     ttl_checker_scheduler: Scheduler<TTLCheckerTask>,
     flow_controller: Arc<FlowController>,
 }
 
-impl<EK: KvEngine> StorageConfigManger<EK> {
+impl<EK: HikvEngine> StorageConfigManger<EK> {
     pub fn new(
-        fdbkvdb: EK,
+        fdbhikvdb: EK,
         shared_bdagger_cache: bool,
         ttl_checker_scheduler: Scheduler<TTLCheckerTask>,
         flow_controller: Arc<FlowController>,
     ) -> Self {
         StorageConfigManger {
-            fdbkvdb,
+            fdbhikvdb,
             shared_bdagger_cache,
             ttl_checker_scheduler,
             flow_controller,
@@ -168,7 +168,7 @@ impl<EK: KvEngine> StorageConfigManger<EK> {
     }
 }
 
-impl<EK: KvEngine> ConfigManager for StorageConfigManger<EK> {
+impl<EK: HikvEngine> ConfigManager for StorageConfigManger<EK> {
     fn dispatch(&mut self, mut change: ConfigChange) -> CfgResult<()> {
         if let Some(ConfigValue::Module(mut bdagger_cache)) = change.remove("bdagger_cache") {
             if !self.shared_bdagger_cache {
@@ -177,11 +177,11 @@ impl<EK: KvEngine> ConfigManager for StorageConfigManger<EK> {
             if let Some(size) = bdagger_cache.remove("capacity") {
                 let s: OptionReadableSize = size.into();
                 if let Some(size) = s.0 {
-                    // Hack: since all CFs in both fdbkvdb and raftdb share a bdagger cache, we can change
-                    // the size through any of them. Here we change it through default CF in fdbkvdb.
+                    // Hack: since all CFs in both fdbhikvdb and raftdb share a bdagger cache, we can change
+                    // the size through any of them. Here we change it through default CF in fdbhikvdb.
                     // A better way to do it is to hold the cache reference somewhere, and use it to
                     // change cache size.
-                    let opt = self.fdbkvdb.get_options_cf(CF_DEFAULT).unwrap(); // FIXME unwrap
+                    let opt = self.fdbhikvdb.get_options_cf(CF_DEFAULT).unwrap(); // FIXME unwrap
                     opt.set_bdagger_cache_capacity(size.0)?;
                     // Write config to metric
                     CONFIG_ROCKSDB_GAUGE
@@ -198,15 +198,15 @@ impl<EK: KvEngine> ConfigManager for StorageConfigManger<EK> {
             if let Some(v) = flow_control.remove("enable") {
                 let enable: bool = v.into();
                 if enable {
-                    for cf in self.fdbkvdb.cf_names() {
-                        self.fdbkvdb
+                    for cf in self.fdbhikvdb.cf_names() {
+                        self.fdbhikvdb
                             .set_options_cf(cf, &[("disable_write_stall", "true")])
                             .unwrap();
                     }
                     self.flow_controller.enable(true);
                 } else {
-                    for cf in self.fdbkvdb.cf_names() {
-                        self.fdbkvdb
+                    for cf in self.fdbhikvdb.cf_names() {
+                        self.fdbhikvdb
                             .set_options_cf(cf, &[("disable_write_stall", "false")])
                             .unwrap();
                     }

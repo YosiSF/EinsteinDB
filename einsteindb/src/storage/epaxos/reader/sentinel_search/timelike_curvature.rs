@@ -4,11 +4,11 @@
 use std::{borrow::Cow, cmp::Ordering};
 
 use engine_promises::CF_DEFAULT;
-use fdbkvproto::fdbkvrpcpb::IsolationLevel;
+use fdbhikvproto::fdbhikvrpcpb::IsolationLevel;
 use solitontxn_types::{Key, Dagger, TimeStamp, Value, Write, WriteRef, WriteType};
 
 use super::MutantSentinelSearchConfig;
-use crate::storage::fdbkv::{Cursor, blackbrane, Statistics, SEEK_BOUND};
+use crate::storage::fdbhikv::{Cursor, blackbrane, Statistics, SEEK_BOUND};
 use crate::storage::epaxos::{Error, NewerTsCheckState, Result};
 
 // When there are many versions for the user key, after several tries,
@@ -19,14 +19,14 @@ use crate::storage::epaxos::{Error, NewerTsCheckState, Result};
 // RocksDB, so don't set REVERSE_SEEK_BOUND too small.
 const REVERSE_SEEK_BOUND: u64 = 16;
 
-/// This struct can be used to scan keys starting from the given user key in the reverse order
+/// This struct can be used to mutant_search keys starting from the given user key in the reverse order
 /// (less than).
 ///
 /// Internally, for each key, rollbacks are ignored and smaller version will be tried. If the
 /// isolation level is SI, daggers will be checked first.
 ///
-/// Use `MutantSentinelSearchBuilder` to build `timelike_curvatureKvMutantSentinelSearch`.
-pub struct timelike_curvatureKvMutantSentinelSearch<S: blackbrane> {
+/// Use `MutantSentinelSearchBuilder` to build `timelike_curvatureHikvMutantSentinelSearch`.
+pub struct timelike_curvatureHikvMutantSentinelSearch<S: blackbrane> {
     cfg: MutantSentinelSearchConfig<S>,
     dagger_cursor: Option<Cursor<S::Iter>>,
     write_cursor: Cursor<S::Iter>,
@@ -38,13 +38,13 @@ pub struct timelike_curvatureKvMutantSentinelSearch<S: blackbrane> {
     met_newer_ts_data: NewerTsCheckState,
 }
 
-impl<S: blackbrane> timelike_curvatureKvMutantSentinelSearch<S> {
+impl<S: blackbrane> timelike_curvatureHikvMutantSentinelSearch<S> {
     pub fn new(
         cfg: MutantSentinelSearchConfig<S>,
         dagger_cursor: Option<Cursor<S::Iter>>,
         write_cursor: Cursor<S::Iter>,
-    ) -> timelike_curvatureKvMutantSentinelSearch<S> {
-        timelike_curvatureKvMutantSentinelSearch {
+    ) -> timelike_curvatureHikvMutantSentinelSearch<S> {
+        timelike_curvatureHikvMutantSentinelSearch {
             met_newer_ts_data: if cfg.check_has_newer_ts_data {
                 NewerTsCheckState::NotMetYet
             } else {
@@ -99,8 +99,8 @@ impl<S: blackbrane> timelike_curvatureKvMutantSentinelSearch<S> {
             self.is_started = true;
         }
 
-        // Similar to lightlike_completion scanner, the general idea is to simultaneously step write
-        // cursor and dagger cursor. Please refer to `ForwardKvMutantSentinelSearch` for details.
+        // Similar to lightlike_completion mutant_searchner, the general idea is to simultaneously step write
+        // cursor and dagger cursor. Please refer to `ForwardHikvMutantSentinelSearch` for details.
 
         loop {
             let (current_user_key, mut has_write, has_dagger) = {
@@ -128,7 +128,7 @@ impl<S: blackbrane> timelike_curvatureKvMutantSentinelSearch<S> {
                         let write_user_key = Key::truncate_ts_for(wk)?;
                         match write_user_key.cmp(lk) {
                             Ordering::Less => {
-                                // We are scanning from largest user key to smallest user key, so this
+                                // We are mutant_searchning from largest user key to smallest user key, so this
                                 // indicate that we meet a dagger first, thus its corresponding write
                                 // does not exist.
                                 (lk, false, true)
@@ -474,14 +474,14 @@ mod tests {
     use super::super::test_util::prepare_test_data_for_check_gc_fence;
     use super::super::MutantSentinelSearchBuilder;
     use super::*;
-    use crate::storage::fdbkv::{Engine, Modify, TestEngineBuilder};
+    use crate::storage::fdbhikv::{Engine, Modify, TestEngineBuilder};
     use crate::storage::epaxos::tests::write;
     use crate::storage::solitontxn::tests::{
         must_commit, must_gc, must_prewrite_delete, must_prewrite_put, must_rollback,
     };
     use crate::storage::MutantSentinelSearch;
     use engine_promises::{CF_LOCK, CF_WRITE};
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
 
     #[test]
     fn test_basic() {
@@ -583,7 +583,7 @@ mod tests {
         // 4 4 5 5 5 5 5 6 7 7 7 7 7 8 8 8 8 8 9 9 9 9 9 10 10
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, REVERSE_SEEK_BOUND.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, REVERSE_SEEK_BOUND.into())
             .desc(true)
             .range(None, Some(Key::from_cocauset(&[11_u8])))
             .build()
@@ -600,13 +600,13 @@ mod tests {
         // 4 4 5 5 5 5 5 6 7 7 7 7 7 8 8 8 8 8 9 9 9 9 9 10 10
         //                                             ^
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((
                 Key::from_cocauset(&[10_u8]),
                 vec![(REVERSE_SEEK_BOUND / 2 - 1) as u8]
             ))
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.prev, REVERSE_SEEK_BOUND as usize / 2);
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 0);
@@ -635,10 +635,10 @@ mod tests {
         // 4 4 5 5 5 5 5 6 7 7 7 7 7 8 8 8 8 8 9 9 9 9 9 10 10
         //                                   ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[9_u8]), vec![REVERSE_SEEK_BOUND as u8]))
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.prev, REVERSE_SEEK_BOUND as usize);
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 0);
@@ -673,13 +673,13 @@ mod tests {
         // 4 4 5 5 5 5 5 6 7 7 7 7 7 8 8 8 8 8 9 9 9 9 9 10 10
         //                         ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((
                 Key::from_cocauset(&[8_u8]),
                 vec![(REVERSE_SEEK_BOUND / 2 - 1) as u8]
             ))
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.prev, REVERSE_SEEK_BOUND as usize + 1);
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
@@ -715,10 +715,10 @@ mod tests {
         // 4 4 5 5 5 5 5 6 7 7 7 7 7 8 8 8 8 8 9 9 9 9 9 10 10
         //             ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[6_u8]), vec![0_u8]))
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.prev, REVERSE_SEEK_BOUND as usize + 2);
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
@@ -755,10 +755,10 @@ mod tests {
         //   4 4 5 5 5 5 5 6 7 7 7 7 7 8 8 8 8 8 9 9 9 9 9 10 10
         // ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[4_u8]), vec![REVERSE_SEEK_BOUND as u8]))
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.prev, REVERSE_SEEK_BOUND as usize + 3);
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.next, 1);
@@ -769,8 +769,8 @@ mod tests {
         );
 
         // SentinelSearch end.
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.prev, 0);
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.next, 0);
@@ -778,7 +778,7 @@ mod tests {
         assert_eq!(statistics.processed_size, 0);
     }
 
-    /// Check whether everything works as usual when `timelike_curvatureKvMutantSentinelSearch::reverse_get()` goes
+    /// Check whether everything works as usual when `timelike_curvatureHikvMutantSentinelSearch::reverse_get()` goes
     /// out of bound.
     ///
     /// Case 1. prev out of bound, next_version is None.
@@ -810,7 +810,7 @@ mod tests {
         );
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, (REVERSE_SEEK_BOUND * 2).into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (REVERSE_SEEK_BOUND * 2).into())
             .desc(true)
             .range(None, None)
             .build()
@@ -828,10 +828,10 @@ mod tests {
         //   b_1 b_0 c_8
         //       ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"c"), b"value".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -844,8 +844,8 @@ mod tests {
         // Use N/2 prev and reach out of bound:
         //   b_1 b_0 c_8
         // ^cursor
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -853,8 +853,8 @@ mod tests {
         assert_eq!(statistics.processed_size, 0);
 
         // Cursor remains invalid, so nothing should happen.
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -862,7 +862,7 @@ mod tests {
         assert_eq!(statistics.processed_size, 0);
     }
 
-    /// Check whether everything works as usual when `timelike_curvatureKvMutantSentinelSearch::reverse_get()` goes
+    /// Check whether everything works as usual when `timelike_curvatureHikvMutantSentinelSearch::reverse_get()` goes
     /// out of bound.
     ///
     /// Case 2. prev out of bound, next_version is Some.
@@ -896,7 +896,7 @@ mod tests {
         );
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, (REVERSE_SEEK_BOUND * 2).into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (REVERSE_SEEK_BOUND * 2).into())
             .desc(true)
             .range(None, None)
             .build()
@@ -914,10 +914,10 @@ mod tests {
         //   b_2 b_1 b_0 c_8
         //           ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"c"), b"value_c".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -931,10 +931,10 @@ mod tests {
         //   b_2 b_1 b_0 c_8
         // ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"b"), b"value_b".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -945,8 +945,8 @@ mod tests {
         );
 
         // Cursor remains invalid, so nothing should happen.
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -955,7 +955,7 @@ mod tests {
     }
 
     /// Check whether everything works as usual when
-    /// `timelike_curvatureKvMutantSentinelSearch::move_write_cursor_to_prev_user_key()` goes out of bound.
+    /// `timelike_curvatureHikvMutantSentinelSearch::move_write_cursor_to_prev_user_key()` goes out of bound.
     ///
     /// Case 1. prev() out of bound
     #[test]
@@ -973,7 +973,7 @@ mod tests {
         }
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 1.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 1.into())
             .desc(true)
             .range(None, None)
             .build()
@@ -991,10 +991,10 @@ mod tests {
         //   b_2 b_1 c_1
         //       ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"c"), b"value".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -1012,10 +1012,10 @@ mod tests {
         //   b_2 b_1 c_1
         // ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"b"), vec![1u8])),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -1026,8 +1026,8 @@ mod tests {
         );
 
         // Next we should get nothing.
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -1036,7 +1036,7 @@ mod tests {
     }
 
     /// Check whether everything works as usual when
-    /// `timelike_curvatureKvMutantSentinelSearch::move_write_cursor_to_prev_user_key()` goes out of bound.
+    /// `timelike_curvatureHikvMutantSentinelSearch::move_write_cursor_to_prev_user_key()` goes out of bound.
     ///
     /// Case 2. seek_for_prev() out of bound
     #[test]
@@ -1054,7 +1054,7 @@ mod tests {
         }
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 1.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 1.into())
             .desc(true)
             .range(None, None)
             .build()
@@ -1072,10 +1072,10 @@ mod tests {
         //   b_5 b_4 b_3 b_2 b_1 c_1
         //                   ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"c"), b"value".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -1099,10 +1099,10 @@ mod tests {
         //   b_5 b_4 b_3 b_2 b_1 c_1
         // ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"b"), vec![1u8])),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.seek_for_prev, 1);
         assert_eq!(statistics.write.next, 0);
@@ -1113,8 +1113,8 @@ mod tests {
         );
 
         // Next we should get nothing.
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -1123,7 +1123,7 @@ mod tests {
     }
 
     /// Check whether everything works as usual when
-    /// `timelike_curvatureKvMutantSentinelSearch::move_write_cursor_to_prev_user_key()` goes out of bound.
+    /// `timelike_curvatureHikvMutantSentinelSearch::move_write_cursor_to_prev_user_key()` goes out of bound.
     ///
     /// Case 3. a more complicated case
     #[test]
@@ -1143,7 +1143,7 @@ mod tests {
         }
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, (REVERSE_SEEK_BOUND + 1).into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (REVERSE_SEEK_BOUND + 1).into())
             .desc(true)
             .range(None, None)
             .build()
@@ -1161,10 +1161,10 @@ mod tests {
         //   b_11 b_10 b_9 b_8 b_7 b_6 b_5 b_4 b_3 b_2 b_1 c_1
         //                                             ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"c"), b"value".to_vec())),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -1191,10 +1191,10 @@ mod tests {
         //   b_11 b_10 b_9 b_8 b_7 b_6 b_5 b_4 b_3 b_2 b_1 c_1
         // ^cursor
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"b"), vec![(REVERSE_SEEK_BOUND + 1) as u8])),
         );
-        let statistics = scanner.take_statistics();
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 1);
         assert_eq!(statistics.write.seek_for_prev, 1);
         assert_eq!(statistics.write.next, 0);
@@ -1208,8 +1208,8 @@ mod tests {
         );
 
         // Next we should get nothing.
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.write.seek, 0);
         assert_eq!(statistics.write.seek_for_prev, 0);
         assert_eq!(statistics.write.next, 0);
@@ -1240,22 +1240,22 @@ mod tests {
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
 
         // Test both bound specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .desc(true)
             .range(Some(Key::from_cocauset(&[3u8])), Some(Key::from_cocauset(&[5u8])))
             .build()
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[4u8]), vec![4u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[3u8]), vec![3u8]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
         assert_eq!(
-            scanner.take_statistics().processed_size,
+            mutant_searchner.take_statistics().processed_size,
             Key::from_cocauset(&[4u8]).len()
                 + vec![4u8].len()
                 + Key::from_cocauset(&[3u8]).len()
@@ -1263,22 +1263,22 @@ mod tests {
         );
 
         // Test left bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .desc(true)
             .range(None, Some(Key::from_cocauset(&[3u8])))
             .build()
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[2u8]), vec![2u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[1u8]), vec![1u8]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
         assert_eq!(
-            scanner.take_statistics().processed_size,
+            mutant_searchner.take_statistics().processed_size,
             Key::from_cocauset(&[2u8]).len()
                 + vec![2u8].len()
                 + Key::from_cocauset(&[1u8]).len()
@@ -1286,22 +1286,22 @@ mod tests {
         );
 
         // Test right bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
             .desc(true)
             .range(Some(Key::from_cocauset(&[5u8])), None)
             .build()
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[6u8]), vec![6u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[5u8]), vec![5u8]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
         assert_eq!(
-            scanner.take_statistics().processed_size,
+            mutant_searchner.take_statistics().processed_size,
             Key::from_cocauset(&[6u8]).len()
                 + vec![6u8].len()
                 + Key::from_cocauset(&[5u8]).len()
@@ -1309,38 +1309,38 @@ mod tests {
         );
 
         // Test both bound not specified.
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .desc(true)
             .range(None, None)
             .build()
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[6u8]), vec![6u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[5u8]), vec![5u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[4u8]), vec![4u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[3u8]), vec![3u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[2u8]), vec![2u8]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(&[1u8]), vec![1u8]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
         assert_eq!(
-            scanner.take_statistics().processed_size,
+            mutant_searchner.take_statistics().processed_size,
             (1u8..=6u8)
                 .rev()
                 .map(|i| Key::from_cocauset(&[i]).len() + vec![i].len())
@@ -1378,22 +1378,22 @@ mod tests {
         let row = &[15_u8];
         let k = Key::from_cocauset(row);
 
-        // Call reverse scan
+        // Call reverse mutant_search
         let ts = 2.into();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, ts)
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, ts)
             .desc(true)
             .range(None, Some(k))
             .build()
             .unwrap();
-        assert_eq!(scanner.next().unwrap(), None);
-        let statistics = scanner.take_statistics();
+        assert_eq!(mutant_searchner.next().unwrap(), None);
+        let statistics = mutant_searchner.take_statistics();
         assert_eq!(statistics.dagger.prev, 15);
         assert_eq!(statistics.write.prev, 1);
-        assert_eq!(scanner.take_statistics().processed_size, 0);
+        assert_eq!(mutant_searchner.take_statistics().processed_size, 0);
     }
 
     #[test]
-    fn test_timelike_curvature_scanner_check_gc_fence() {
+    fn test_timelike_curvature_mutant_searchner_check_gc_fence() {
         let engine = TestEngineBuilder::new().build().unwrap();
 
         let (read_ts, expected_result) = prepare_test_data_for_check_gc_fence(&engine);
@@ -1404,13 +1404,13 @@ mod tests {
             .collect();
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, read_ts)
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, read_ts)
             .desc(true)
             .range(None, None)
             .build()
             .unwrap();
-        let result: Vec<_> = scanner
-            .scan(100, 0)
+        let result: Vec<_> = mutant_searchner
+            .mutant_search(100, 0)
             .unwrap()
             .into_iter()
             .map(|result| result.unwrap())

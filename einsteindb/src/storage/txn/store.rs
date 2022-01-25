@@ -1,18 +1,18 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use fdbkvproto::fdbkvrpcpb::IsolationLevel;
+use fdbhikvproto::fdbhikvrpcpb::IsolationLevel;
 
 use super::{Error, ErrorInner, Result};
-use crate::storage::fdbkv::{blackbrane, Statistics};
+use crate::storage::fdbhikv::{blackbrane, Statistics};
 use crate::storage::metrics::*;
 use crate::storage::epaxos::{
     EntryMutantSentinelSearch, Error as EpaxosError, ErrorInner as EpaxosErrorInner, NewerTsCheckState, PointGetter,
     PointGetterBuilder, MutantSentinelSearch as EpaxosMutantSentinelSearch, MutantSentinelSearchBuilder,
 };
-use solitontxn_types::{Key, KvPair, OldValue, TimeStamp, TsSet, Value, WriteRef};
+use solitontxn_types::{Key, HikvPair, OldValue, TimeStamp, TsSet, Value, WriteRef};
 
 pub trait Store: Send {
-    /// The scanner type returned by `scanner()`.
+    /// The mutant_searchner type returned by `mutant_searchner()`.
     type MutantSentinelSearch: MutantSentinelSearch;
 
     /// Fetch the provided key.
@@ -34,8 +34,8 @@ pub trait Store: Send {
         statistics: &mut Statistics,
     ) -> Result<Vec<Result<Option<Value>>>>;
 
-    /// Retrieve a scanner over the bounds.
-    fn scanner(
+    /// Retrieve a mutant_searchner over the bounds.
+    fn mutant_searchner(
         &self,
         desc: bool,
         key_only: bool,
@@ -45,16 +45,16 @@ pub trait Store: Send {
     ) -> Result<Self::MutantSentinelSearch>;
 }
 
-/// [`MutantSentinelSearch`]s allow retrieving items or batches from a scan result.
+/// [`MutantSentinelSearch`]s allow retrieving items or batches from a mutant_search result.
 ///
-/// Commonly they are obtained as a result of a [`scanner`](Store::scanner) operation.
+/// Commonly they are obtained as a result of a [`mutant_searchner`](Store::mutant_searchner) operation.
 pub trait MutantSentinelSearch: Send {
-    /// Get the next [`KvPair`](KvPair) if it exists.
+    /// Get the next [`HikvPair`](HikvPair) if it exists.
     fn next(&mut self) -> Result<Option<(Key, Value)>>;
 
-    /// Get the next [`KvPair`](KvPair)s up to `limit` if they exist.
+    /// Get the next [`HikvPair`](HikvPair)s up to `limit` if they exist.
     /// If `sample_step` is greater than 0, skips `sample_step - 1` number of keys after each returned key.
-    fn scan(&mut self, limit: usize, sample_step: usize) -> Result<Vec<Result<KvPair>>> {
+    fn mutant_search(&mut self, limit: usize, sample_step: usize) -> Result<Vec<Result<HikvPair>>> {
         let mut row_count = 0;
         let mut results = Vec::with_capacity(limit);
         while results.len() < limit {
@@ -82,7 +82,7 @@ pub trait MutantSentinelSearch: Send {
         Ok(results)
     }
 
-    /// Whether there was data > ts during previous scans.
+    /// Whether there was data > ts during previous mutant_searchs.
     fn met_newer_ts_data(&self) -> NewerTsCheckState;
 
     /// Take statistics.
@@ -90,11 +90,11 @@ pub trait MutantSentinelSearch: Send {
 }
 
 pub trait TxnEntryStore: Send {
-    /// The scanner type returned by `scanner()`.
+    /// The mutant_searchner type returned by `mutant_searchner()`.
     type MutantSentinelSearch: TxnEntryMutantSentinelSearch;
 
-    /// Retrieve a scanner over the bounds.
-    fn entry_scanner(
+    /// Retrieve a mutant_searchner over the bounds.
+    fn entry_mutant_searchner(
         &self,
         lower_bound: Option<Key>,
         upper_bound: Option<Key>,
@@ -103,14 +103,14 @@ pub trait TxnEntryStore: Send {
     ) -> Result<Self::MutantSentinelSearch>;
 }
 
-/// [`TxnEntryMutantSentinelSearch`] allows retrieving items or batches from a scan result.
+/// [`TxnEntryMutantSentinelSearch`] allows retrieving items or batches from a mutant_search result.
 ///
 /// Commonly they are obtained as a result of a
-/// [`entry_scanner`](TxnEntryStore::entry_scanner) operation.
+/// [`entry_mutant_searchner`](TxnEntryStore::entry_mutant_searchner) operation.
 pub trait TxnEntryMutantSentinelSearch: Send {
     fn next_entry(&mut self) -> Result<Option<TxnEntry>>;
 
-    fn scan_entries(&mut self, batch: &mut EntryBatch) -> Result<()> {
+    fn mutant_search_entries(&mut self, batch: &mut EntryBatch) -> Result<()> {
         while batch.entries.len() < batch.entries.capacity() {
             match self.next_entry() {
                 Ok(Some(entry)) => {
@@ -131,13 +131,13 @@ pub trait TxnEntryMutantSentinelSearch: Send {
 #[derive(PartialEq, Debug, Clone)]
 pub enum TxnEntry {
     Prewrite {
-        default: KvPair,
-        dagger: KvPair,
+        default: HikvPair,
+        dagger: HikvPair,
         old_value: OldValue,
     },
     Commit {
-        default: KvPair,
-        write: KvPair,
+        default: HikvPair,
+        write: HikvPair,
         old_value: OldValue,
     },
     // TOOD: Add more entry if needed.
@@ -157,10 +157,10 @@ impl TxnEntry {
 }
 
 impl TxnEntry {
-    /// This method will return a fdbkv pair whose
-    /// content and encode are same as a fdbkv pair
+    /// This method will return a fdbhikv pair whose
+    /// content and encode are same as a fdbhikv pair
     /// reture by ```StoreMutantSentinelSearch::next```
-    pub fn into_fdbkvpair(self) -> Result<(Vec<u8>, Vec<u8>)> {
+    pub fn into_fdbhikvpair(self) -> Result<(Vec<u8>, Vec<u8>)> {
         match self {
             TxnEntry::Commit { default, write, .. } => {
                 if !default.0.is_empty() {
@@ -181,7 +181,7 @@ impl TxnEntry {
             _ => unreachable!(),
         }
     }
-    /// This method will generate this fdbkv pair's key
+    /// This method will generate this fdbhikv pair's key
     pub fn to_key(&self) -> Result<Key> {
         match self {
             TxnEntry::Commit { write, .. } => Ok(Key::from_encoded_slice(
@@ -348,7 +348,7 @@ impl<S: blackbrane> Store for blackbraneStore<S> {
     }
 
     #[inline]
-    fn scanner(
+    fn mutant_searchner(
         &self,
         desc: bool,
         key_only: bool,
@@ -358,7 +358,7 @@ impl<S: blackbrane> Store for blackbraneStore<S> {
     ) -> Result<EpaxosMutantSentinelSearch<S>> {
         // Check request bounds with physical bound
         self.verify_range(&lower_bound, &upper_bound)?;
-        let scanner = MutantSentinelSearchBuilder::new(self.blackbrane.clone(), self.start_ts)
+        let mutant_searchner = MutantSentinelSearchBuilder::new(self.blackbrane.clone(), self.start_ts)
             .desc(desc)
             .range(lower_bound, upper_bound)
             .omit_value(key_only)
@@ -369,13 +369,13 @@ impl<S: blackbrane> Store for blackbraneStore<S> {
             .check_has_newer_ts_data(check_has_newer_ts_data)
             .build()?;
 
-        Ok(scanner)
+        Ok(mutant_searchner)
     }
 }
 
 impl<S: blackbrane> TxnEntryStore for blackbraneStore<S> {
     type MutantSentinelSearch = EntryMutantSentinelSearch<S>;
-    fn entry_scanner(
+    fn entry_mutant_searchner(
         &self,
         lower_bound: Option<Key>,
         upper_bound: Option<Key>,
@@ -391,7 +391,7 @@ impl<S: blackbrane> TxnEntryStore for blackbraneStore<S> {
             // SentinelSearch ts in (after_ts, start_ts].
             (Some(after_ts.next()), Some(self.start_ts))
         };
-        let scanner = MutantSentinelSearchBuilder::new(self.blackbrane.clone(), self.start_ts)
+        let mutant_searchner = MutantSentinelSearchBuilder::new(self.blackbrane.clone(), self.start_ts)
             .range(lower_bound, upper_bound)
             .omit_value(false)
             .fill_cache(self.fill_cache)
@@ -399,9 +399,9 @@ impl<S: blackbrane> TxnEntryStore for blackbraneStore<S> {
             .bypass_daggers(self.bypass_daggers.clone())
             .hint_min_ts(min_ts)
             .hint_max_ts(max_ts)
-            .build_entry_scanner(after_ts, output_delete)?;
+            .build_entry_mutant_searchner(after_ts, output_delete)?;
 
-        Ok(scanner)
+        Ok(mutant_searchner)
     }
 }
 
@@ -543,7 +543,7 @@ impl Store for FixtureStore {
     }
 
     #[inline]
-    fn scanner(
+    fn mutant_searchner(
         &self,
         desc: bool,
         key_only: bool,
@@ -599,7 +599,7 @@ impl Store for FixtureStore {
     }
 }
 
-/// A MutantSentinelSearch that scans on fixtures.
+/// A MutantSentinelSearch that mutant_searchs on fixtures.
 pub struct FixtureStoreMutantSentinelSearch {
     data: std::vec::IntoIter<(Key, Result<Vec<u8>>)>,
 }
@@ -629,7 +629,7 @@ impl MutantSentinelSearch for FixtureStoreMutantSentinelSearch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::fdbkv::{
+    use crate::storage::fdbhikv::{
         Engine, Iterator, Result as EngineResult, RocksEngine, Rocksblackbrane, SnapContext,
         TestEngineBuilder, WriteData,
     };
@@ -640,9 +640,9 @@ mod tests {
     use concurrency_manager::ConcurrencyManager;
     use engine_promises::CfName;
     use engine_promises::{IterOptions, ReadOptions};
-    use fdbkvproto::fdbkvrpcpb::{AssertionLevel, Context};
+    use fdbhikvproto::fdbhikvrpcpb::{AssertionLevel, Context};
     use std::sync::Arc;
-    use einstfdbkv_fdbkv::DummyblackbraneExt;
+    use einstfdbhikv_fdbhikv::DummyblackbraneExt;
 
     const KEY_PREFIX: &str = "key_prefix";
     const START_TS: TimeStamp = TimeStamp::new(10);
@@ -862,21 +862,21 @@ mod tests {
     }
 
     #[test]
-    fn test_blackbrane_store_scan() {
+    fn test_blackbrane_store_mutant_search() {
         let key_num = 100;
         let store = TestStore::new(key_num);
         let blackbrane_store = store.store();
         let key = format!("{}{}", KEY_PREFIX, START_ID);
         let start_key = Key::from_cocauset(key.as_bytes());
-        let mut scanner = blackbrane_store
-            .scanner(false, false, false, Some(start_key), None)
+        let mut mutant_searchner = blackbrane_store
+            .mutant_searchner(false, false, false, Some(start_key), None)
             .unwrap();
 
         let half = (key_num / 2) as usize;
         let expect = &store.keys[0..half];
-        let result = scanner.scan(half, 0).unwrap();
-        let result: Vec<Option<KvPair>> = result.into_iter().map(Result::ok).collect();
-        let expect: Vec<Option<KvPair>> = expect
+        let result = mutant_searchner.mutant_search(half, 0).unwrap();
+        let result: Vec<Option<HikvPair>> = result.into_iter().map(Result::ok).collect();
+        let expect: Vec<Option<HikvPair>> = expect
             .iter()
             .map(|k| Some((k.clone().into_bytes(), k.clone().into_bytes())))
             .collect();
@@ -884,7 +884,7 @@ mod tests {
     }
 
     #[test]
-    fn test_blackbrane_store_reverse_scan() {
+    fn test_blackbrane_store_reverse_mutant_search() {
         let key_num = 100;
         let store = TestStore::new(key_num);
         let blackbrane_store = store.store();
@@ -893,14 +893,14 @@ mod tests {
         let key = format!("{}{}", KEY_PREFIX, START_ID + (half as u64) - 1);
         let start_key = Key::from_cocauset(key.as_bytes());
         let expect = &store.keys[0..half - 1];
-        let mut scanner = blackbrane_store
-            .scanner(true, false, false, None, Some(start_key))
+        let mut mutant_searchner = blackbrane_store
+            .mutant_searchner(true, false, false, None, Some(start_key))
             .unwrap();
 
-        let result = scanner.scan(half, 0).unwrap();
-        let result: Vec<Option<KvPair>> = result.into_iter().map(Result::ok).collect();
+        let result = mutant_searchner.mutant_search(half, 0).unwrap();
+        let result: Vec<Option<HikvPair>> = result.into_iter().map(Result::ok).collect();
 
-        let mut expect: Vec<Option<KvPair>> = expect
+        let mut expect: Vec<Option<HikvPair>> = expect
             .iter()
             .map(|k| Some((k.clone().into_bytes(), k.clone().into_bytes())))
             .collect();
@@ -910,7 +910,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scan_with_bound() {
+    fn test_mutant_search_with_bound() {
         let key_num = 100;
         let store = TestStore::new(key_num);
         let blackbrane_store = store.store();
@@ -922,8 +922,8 @@ mod tests {
             .map(|i| Key::from_cocauset(format!("{}{}", KEY_PREFIX, START_ID + i).as_bytes()))
             .collect();
 
-        let mut scanner = blackbrane_store
-            .scanner(
+        let mut mutant_searchner = blackbrane_store
+            .mutant_searchner(
                 false,
                 false,
                 false,
@@ -932,27 +932,27 @@ mod tests {
             )
             .unwrap();
 
-        // Collect all scanned keys
+        // Collect all mutant_searchned keys
         let mut result = Vec::new();
-        while let Some((k, _)) = scanner.next().unwrap() {
+        while let Some((k, _)) = mutant_searchner.next().unwrap() {
             result.push(k);
         }
         assert_eq!(result, expected);
 
-        let mut scanner = blackbrane_store
-            .scanner(true, false, false, Some(lower_bound), Some(upper_bound))
+        let mut mutant_searchner = blackbrane_store
+            .mutant_searchner(true, false, false, Some(lower_bound), Some(upper_bound))
             .unwrap();
 
-        // Collect all scanned keys
+        // Collect all mutant_searchned keys
         let mut result = Vec::new();
-        while let Some((k, _)) = scanner.next().unwrap() {
+        while let Some((k, _)) = mutant_searchner.next().unwrap() {
             result.push(k);
         }
         assert_eq!(result, expected.into_iter().rev().collect::<Vec<_>>());
     }
 
     #[test]
-    fn test_scanner_verify_bound() {
+    fn test_mutant_searchner_verify_bound() {
         // Store with a limited range
         let snap = MockRangeblackbrane::new(b"b".to_vec(), b"c".to_vec());
         let store = blackbraneStore::new(
@@ -968,10 +968,10 @@ mod tests {
         let bound_b = Key::from_encoded(b"b".to_vec());
         let bound_c = Key::from_encoded(b"c".to_vec());
         let bound_d = Key::from_encoded(b"d".to_vec());
-        assert!(store.scanner(false, false, false, None, None).is_ok());
+        assert!(store.mutant_searchner(false, false, false, None, None).is_ok());
         assert!(
             store
-                .scanner(
+                .mutant_searchner(
                     false,
                     false,
                     false,
@@ -982,7 +982,7 @@ mod tests {
         );
         assert!(
             store
-                .scanner(
+                .mutant_searchner(
                     false,
                     false,
                     false,
@@ -993,7 +993,7 @@ mod tests {
         );
         assert!(
             store
-                .scanner(
+                .mutant_searchner(
                     false,
                     false,
                     false,
@@ -1004,7 +1004,7 @@ mod tests {
         );
         assert!(
             store
-                .scanner(false, false, false, Some(bound_a.clone()), Some(bound_d))
+                .mutant_searchner(false, false, false, Some(bound_a.clone()), Some(bound_d))
                 .is_err()
         );
 
@@ -1019,20 +1019,20 @@ mod tests {
             Default::default(),
             false,
         );
-        assert!(store2.scanner(false, false, false, None, None).is_ok());
+        assert!(store2.mutant_searchner(false, false, false, None, None).is_ok());
         assert!(
             store2
-                .scanner(false, false, false, Some(bound_a.clone()), None)
+                .mutant_searchner(false, false, false, Some(bound_a.clone()), None)
                 .is_ok()
         );
         assert!(
             store2
-                .scanner(false, false, false, Some(bound_a), Some(bound_b))
+                .mutant_searchner(false, false, false, Some(bound_a), Some(bound_b))
                 .is_ok()
         );
         assert!(
             store2
-                .scanner(false, false, false, None, Some(bound_c))
+                .mutant_searchner(false, false, false, None, Some(bound_c))
                 .is_ok()
         );
     }
@@ -1049,7 +1049,7 @@ mod tests {
         data.insert(
             Key::from_cocauset(b"bba"),
             Err(Error::from(ErrorInner::Epaxos(EpaxosError::from(
-                EpaxosErrorInner::KeyIsDaggered(fdbkvproto::fdbkvrpcpb::DaggerInfo::default()),
+                EpaxosErrorInner::KeyIsDaggered(fdbhikvproto::fdbhikvrpcpb::DaggerInfo::default()),
             )))),
         );
         data.insert(Key::from_cocauset(b"z"), Ok(b"beta".to_vec()));
@@ -1129,107 +1129,107 @@ mod tests {
     }
 
     #[test]
-    fn test_fixture_scanner() {
+    fn test_fixture_mutant_searchner() {
         let store = gen_fixture_store();
 
-        let mut scanner = store.scanner(false, false, false, None, None).unwrap();
+        let mut mutant_searchner = store.mutant_searchner(false, false, false, None, None).unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"ab"), b"bar".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abc"), b"foo".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abcd"), b"box".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"b"), b"alpha".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"bb"), b"alphaalpha".to_vec()))
         );
-        assert!(scanner.next().is_err());
+        assert!(mutant_searchner.next().is_err());
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"ca"), b"hello".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"z"), b"beta".to_vec()))
         );
-        assert!(scanner.next().is_err());
+        assert!(mutant_searchner.next().is_err());
         // note: epaxos impl does not guarantee to work any more after meeting a non dagger error
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
 
-        let mut scanner = store.scanner(true, false, false, None, None).unwrap();
-        assert!(scanner.next().is_err());
+        let mut mutant_searchner = store.mutant_searchner(true, false, false, None, None).unwrap();
+        assert!(mutant_searchner.next().is_err());
         // note: epaxos impl does not guarantee to work any more after meeting a non dagger error
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"z"), b"beta".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"ca"), b"hello".to_vec()))
         );
-        assert!(scanner.next().is_err());
+        assert!(mutant_searchner.next().is_err());
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"bb"), b"alphaalpha".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"b"), b"alpha".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abcd"), b"box".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abc"), b"foo".to_vec()))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"ab"), b"bar".to_vec()))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
 
-        let mut scanner = store.scanner(false, true, false, None, None).unwrap();
+        let mut mutant_searchner = store.mutant_searchner(false, true, false, None, None).unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"ab"), vec![]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abc"), vec![]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abcd"), vec![]))
         );
-        assert_eq!(scanner.next().unwrap(), Some((Key::from_cocauset(b"b"), vec![])));
+        assert_eq!(mutant_searchner.next().unwrap(), Some((Key::from_cocauset(b"b"), vec![])));
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"bb"), vec![]))
         );
-        assert!(scanner.next().is_err());
+        assert!(mutant_searchner.next().is_err());
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"ca"), vec![]))
         );
-        assert_eq!(scanner.next().unwrap(), Some((Key::from_cocauset(b"z"), vec![])));
-        assert!(scanner.next().is_err());
+        assert_eq!(mutant_searchner.next().unwrap(), Some((Key::from_cocauset(b"z"), vec![])));
+        assert!(mutant_searchner.next().is_err());
         // note: epaxos impl does not guarantee to work any more after meeting a non dagger error
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
 
-        let mut scanner = store
-            .scanner(
+        let mut mutant_searchner = store
+            .mutant_searchner(
                 false,
                 true,
                 false,
@@ -1238,13 +1238,13 @@ mod tests {
             )
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abc"), vec![]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
 
-        let mut scanner = store
-            .scanner(
+        let mut mutant_searchner = store
+            .mutant_searchner(
                 false,
                 true,
                 false,
@@ -1253,22 +1253,22 @@ mod tests {
             )
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abc"), vec![]))
         );
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abcd"), vec![]))
         );
-        assert_eq!(scanner.next().unwrap(), Some((Key::from_cocauset(b"b"), vec![])));
+        assert_eq!(mutant_searchner.next().unwrap(), Some((Key::from_cocauset(b"b"), vec![])));
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"bb"), vec![]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
 
-        let mut scanner = store
-            .scanner(
+        let mut mutant_searchner = store
+            .mutant_searchner(
                 false,
                 true,
                 false,
@@ -1276,16 +1276,16 @@ mod tests {
                 Some(Key::from_cocauset(b"c")),
             )
             .unwrap();
-        assert_eq!(scanner.next().unwrap(), Some((Key::from_cocauset(b"b"), vec![])));
+        assert_eq!(mutant_searchner.next().unwrap(), Some((Key::from_cocauset(b"b"), vec![])));
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"bb"), vec![]))
         );
-        assert!(scanner.next().is_err());
-        assert_eq!(scanner.next().unwrap(), None);
+        assert!(mutant_searchner.next().is_err());
+        assert_eq!(mutant_searchner.next().unwrap(), None);
 
-        let mut scanner = store
-            .scanner(
+        let mut mutant_searchner = store
+            .mutant_searchner(
                 false,
                 true,
                 false,
@@ -1293,10 +1293,10 @@ mod tests {
                 Some(Key::from_cocauset(b"b")),
             )
             .unwrap();
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
 
-        let mut scanner = store
-            .scanner(
+        let mut mutant_searchner = store
+            .mutant_searchner(
                 true,
                 true,
                 false,
@@ -1305,13 +1305,13 @@ mod tests {
             )
             .unwrap();
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abcd"), vec![]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
 
-        let mut scanner = store
-            .scanner(
+        let mut mutant_searchner = store
+            .mutant_searchner(
                 true,
                 true,
                 false,
@@ -1319,17 +1319,17 @@ mod tests {
                 Some(Key::from_cocauset(b"bba")),
             )
             .unwrap();
-        assert!(scanner.next().is_err());
+        assert!(mutant_searchner.next().is_err());
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"bb"), vec![]))
         );
-        assert_eq!(scanner.next().unwrap(), Some((Key::from_cocauset(b"b"), vec![])));
+        assert_eq!(mutant_searchner.next().unwrap(), Some((Key::from_cocauset(b"b"), vec![])));
         assert_eq!(
-            scanner.next().unwrap(),
+            mutant_searchner.next().unwrap(),
             Some((Key::from_cocauset(b"abcd"), vec![]))
         );
-        assert_eq!(scanner.next().unwrap(), None);
+        assert_eq!(mutant_searchner.next().unwrap(), None);
     }
 
     #[test]
@@ -1432,7 +1432,7 @@ mod benches {
     }
 
     #[bench]
-    fn bench_fixture_scanner(b: &mut test::Bencher) {
+    fn bench_fixture_mutant_searchner(b: &mut test::Bencher) {
         let mut data = BTreeMap::default();
         for _ in 0..2000 {
             let user_key = gen_payload(64);
@@ -1441,8 +1441,8 @@ mod benches {
         let store = FixtureStore::new(data);
         b.iter(|| {
             let store = test::black_box(&store);
-            let scanner = store
-                .scanner(
+            let mutant_searchner = store
+                .mutant_searchner(
                     test::black_box(true),
                     test::black_box(false),
                     test::black_box(false),
@@ -1450,12 +1450,12 @@ mod benches {
                     test::black_box(None),
                 )
                 .unwrap();
-            test::black_box(scanner);
+            test::black_box(mutant_searchner);
         })
     }
 
     #[bench]
-    fn bench_fixture_scanner_next(b: &mut test::Bencher) {
+    fn bench_fixture_mutant_searchner_next(b: &mut test::Bencher) {
         let mut data = BTreeMap::default();
         for _ in 0..2000 {
             let user_key = gen_payload(64);
@@ -1464,8 +1464,8 @@ mod benches {
         let store = FixtureStore::new(data);
         b.iter(|| {
             let store = test::black_box(&store);
-            let mut scanner = store
-                .scanner(
+            let mut mutant_searchner = store
+                .mutant_searchner(
                     test::black_box(true),
                     test::black_box(false),
                     test::black_box(false),
@@ -1474,14 +1474,14 @@ mod benches {
                 )
                 .unwrap();
             for _ in 0..1000 {
-                let v = scanner.next().unwrap();
+                let v = mutant_searchner.next().unwrap();
                 test::black_box(v);
             }
         })
     }
 
     #[bench]
-    fn bench_fixture_scanner_scan(b: &mut test::Bencher) {
+    fn bench_fixture_mutant_searchner_mutant_search(b: &mut test::Bencher) {
         let mut data = BTreeMap::default();
         for _ in 0..2000 {
             let user_key = gen_payload(64);
@@ -1490,8 +1490,8 @@ mod benches {
         let store = FixtureStore::new(data);
         b.iter(|| {
             let store = test::black_box(&store);
-            let mut scanner = store
-                .scanner(
+            let mut mutant_searchner = store
+                .mutant_searchner(
                     test::black_box(true),
                     test::black_box(false),
                     test::black_box(false),
@@ -1499,7 +1499,7 @@ mod benches {
                     test::black_box(None),
                 )
                 .unwrap();
-            test::black_box(scanner.scan(1000, 0).unwrap());
+            test::black_box(mutant_searchner.mutant_search(1000, 0).unwrap());
         })
     }
 }

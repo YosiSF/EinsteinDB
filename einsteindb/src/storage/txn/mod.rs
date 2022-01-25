@@ -14,7 +14,7 @@ mod store;
 use std::error::Error as StdError;
 use std::io::Error as IoError;
 
-use fdbkvproto::fdbkvrpcpb::DaggerInfo;
+use fdbhikvproto::fdbhikvrpcpb::DaggerInfo;
 use thiserror::Error;
 
 use error_code::{self, ErrorCode, ErrorCodeExt};
@@ -95,10 +95,10 @@ impl ProcessResult {
 #[derive(Debug, Error)]
 pub enum ErrorInner {
     #[error("{0}")]
-    Engine(#[from] crate::storage::fdbkv::Error),
+    Engine(#[from] crate::storage::fdbhikv::Error),
 
     #[error("{0}")]
-    Codec(#[from] einstfdbkv_util::codec::Error),
+    Codec(#[from] einstfdbhikv_util::codec::Error),
 
     #[error("{0}")]
     ProtoBuf(#[from] protobuf::error::ProtobufError),

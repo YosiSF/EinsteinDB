@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::epaxos::{
     Error as EpaxosError, ErrorInner as EpaxosErrorInner, EpaxosTxn, blackbraneReader, MAX_TXN_WRITE_SIZE,
@@ -23,7 +23,7 @@ command! {
     /// This should follow after a `ResolveDaggerReadPhase`.
     ResolveDagger:
         cmd_ty => (),
-        display => "fdbkv::resolve_dagger", (),
+        display => "fdbhikv::resolve_dagger", (),
         content => {
             /// Maps dagger_ts to commit_ts. If a transaction was rolled back, it is mapped to 0.
             ///
@@ -42,7 +42,7 @@ command! {
             /// `solitontxn_status`. `"k4"` will not be affected either, because it doesn't have a non-committed
             /// version.
             solitontxn_status: HashMap<TimeStamp, TimeStamp>,
-            scan_key: Option<Key>,
+            mutant_search_key: Option<Key>,
             key_daggers: Vec<(Key, Dagger)>,
         }
 }
@@ -72,7 +72,7 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for ResolveDagger {
             context.statistics,
         );
 
-        let mut scan_key = self.scan_key.take();
+        let mut mutant_search_key = self.mutant_search_key.take();
         let rows = key_daggers.len();
         // Map solitontxn's start_ts to ReleasedDaggers
         let mut released_daggers = HashMap::default();
@@ -116,7 +116,7 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for ResolveDagger {
                 .push(released);
 
             if solitontxn.write_size() >= MAX_TXN_WRITE_SIZE {
-                scan_key = Some(current_key);
+                mutant_search_key = Some(current_key);
                 break;
             }
         }
@@ -125,14 +125,14 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for ResolveDagger {
             .into_iter()
             .for_each(|(_, released_daggers)| released_daggers.wake_up(dagger_mgr));
 
-        let pr = if scan_key.is_none() {
+        let pr = if mutant_search_key.is_none() {
             ProcessResult::Res
         } else {
             let next_cmd = ResolveDaggerReadPhase {
                 ctx: ctx.clone(),
                 deadline: self.deadline,
                 solitontxn_status,
-                scan_key,
+                mutant_search_key,
             };
             ProcessResult::NextCommand {
                 cmd: Command::ResolveDaggerReadPhase(next_cmd),
@@ -153,5 +153,5 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for ResolveDagger {
 }
 
 // To resolve a key, the write size is about 100~150 bytes, depending on key and value length.
-// The write batch will be around 32KB if we scan 256 keys each time.
+// The write batch will be around 32KB if we mutant_search 256 keys each time.
 pub const RESOLVE_LOCK_BATCH_SIZE: usize = 256;

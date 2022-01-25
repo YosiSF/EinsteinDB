@@ -2,7 +2,7 @@
 
 // #[PerformanceCriticalPath]
 use super::metrics::{GC_DELETE_VERSIONS_HISTOGRAM, EPAXOS_VERSIONS_HISTOGRAM};
-use crate::storage::fdbkv::Modify;
+use crate::storage::fdbhikv::Modify;
 use concurrency_manager::{ConcurrencyManager, KeyHandleGuard};
 use engine_promises::{CF_DEFAULT, CF_LOCK, CF_WRITE};
 use std::fmt;
@@ -199,7 +199,7 @@ pub(crate) fn make_solitontxn_error(
     if let Some(s) = s {
         match s.to_ascii_lowercase().as_str() {
             "keyisdaggered" => {
-                let mut info = fdbkvproto::fdbkvrpcpb::DaggerInfo::default();
+                let mut info = fdbhikvproto::fdbhikvrpcpb::DaggerInfo::default();
                 info.set_key(key.to_cocauset().unwrap());
                 info.set_primary_dagger(key.to_cocauset().unwrap());
                 info.set_dagger_ttl(3000);
@@ -266,7 +266,7 @@ pub(crate) fn make_solitontxn_error(
 pub(crate) mod tests {
     use super::*;
 
-    use crate::storage::fdbkv::{RocksEngine, SentinelSearchMode, WriteData};
+    use crate::storage::fdbhikv::{RocksEngine, SentinelSearchMode, WriteData};
     use crate::storage::epaxos::tests::*;
     use crate::storage::epaxos::{Error, ErrorInner, Mutation, EpaxosReader, blackbraneReader};
     use crate::storage::solitontxn::commands::*;
@@ -276,10 +276,10 @@ pub(crate) mod tests {
     };
     use crate::storage::SecondaryDaggersStatus;
     use crate::storage::{
-        fdbkv::{Engine, TestEngineBuilder},
+        fdbhikv::{Engine, TestEngineBuilder},
         TxnStatus,
     };
-    use fdbkvproto::fdbkvrpcpb::{AssertionLevel, Context};
+    use fdbhikvproto::fdbhikvrpcpb::{AssertionLevel, Context};
     use solitontxn_types::{TimeStamp, WriteType, SHORT_VALUE_MAX_LEN};
 
     fn test_epaxos_solitontxn_read_imp(k1: &[u8], k2: &[u8], v: &[u8]) {
@@ -681,7 +681,7 @@ pub(crate) mod tests {
         test_write_imp(b"kk", &v2, b"k");
     }
 
-    fn test_scan_keys_imp(keys: Vec<&[u8]>, values: Vec<&[u8]>) {
+    fn test_mutant_search_keys_imp(keys: Vec<&[u8]>, values: Vec<&[u8]>) {
         let engine = TestEngineBuilder::new().build().unwrap();
         must_prewrite_put(&engine, keys[0], values[0], keys[0], 1);
         must_commit(&engine, keys[0], 1, 10);
@@ -693,19 +693,19 @@ pub(crate) mod tests {
         must_prewrite_dagger(&engine, keys[4], keys[4], 10);
         must_prewrite_delete(&engine, keys[5], keys[5], 5);
 
-        must_scan_keys(&engine, None, 100, vec![keys[0], keys[1], keys[2]], None);
-        must_scan_keys(&engine, None, 3, vec![keys[0], keys[1], keys[2]], None);
-        must_scan_keys(&engine, None, 2, vec![keys[0], keys[1]], Some(keys[1]));
-        must_scan_keys(&engine, Some(keys[1]), 1, vec![keys[1]], Some(keys[1]));
+        must_mutant_search_keys(&engine, None, 100, vec![keys[0], keys[1], keys[2]], None);
+        must_mutant_search_keys(&engine, None, 3, vec![keys[0], keys[1], keys[2]], None);
+        must_mutant_search_keys(&engine, None, 2, vec![keys[0], keys[1]], Some(keys[1]));
+        must_mutant_search_keys(&engine, Some(keys[1]), 1, vec![keys[1]], Some(keys[1]));
     }
 
     #[test]
-    fn test_scan_keys() {
-        test_scan_keys_imp(vec![b"a", b"c", b"e", b"b", b"d", b"f"], vec![b"a", b"b"]);
+    fn test_mutant_search_keys() {
+        test_mutant_search_keys_imp(vec![b"a", b"c", b"e", b"b", b"d", b"f"], vec![b"a", b"b"]);
 
         let v1 = "x".repeat(SHORT_VALUE_MAX_LEN + 1).into_bytes();
         let v4 = "v".repeat(SHORT_VALUE_MAX_LEN + 1).into_bytes();
-        test_scan_keys_imp(vec![b"a", b"c", b"e", b"b", b"d", b"f"], vec![&v1, &v4]);
+        test_mutant_search_keys_imp(vec![b"a", b"c", b"e", b"b", b"d", b"f"], vec![&v1, &v4]);
     }
 
     pub fn solitontxn_props(
@@ -856,7 +856,7 @@ pub(crate) mod tests {
     }
 
     #[test]
-    fn test_scan_values_in_default() {
+    fn test_mutant_search_values_in_default() {
         let engine = TestEngineBuilder::new().build().unwrap();
 
         must_prewrite_put(
@@ -898,7 +898,7 @@ pub(crate) mod tests {
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Forward), true);
 
-        let v = reader.scan_values_in_default(&Key::from_cocauset(&[3])).unwrap();
+        let v = reader.mutant_search_values_in_default(&Key::from_cocauset(&[3])).unwrap();
         assert_eq!(v.len(), 2);
         assert_eq!(
             v[1],
@@ -993,7 +993,7 @@ pub(crate) mod tests {
 
     #[test]
     fn test_dagger_info_validation() {
-        use fdbkvproto::fdbkvrpcpb::{DaggerInfo, Op};
+        use fdbhikvproto::fdbhikvrpcpb::{DaggerInfo, Op};
 
         let engine = TestEngineBuilder::new().build().unwrap();
         let k = b"k";
@@ -1028,8 +1028,8 @@ pub(crate) mod tests {
                     TimeStamp::zero(),
                     TimeStamp::zero(),
                     false,
-                    fdbkvproto::fdbkvrpcpb::Assertion::None,
-                    fdbkvproto::fdbkvrpcpb::AssertionLevel::Off,
+                    fdbhikvproto::fdbhikvrpcpb::Assertion::None,
+                    fdbhikvproto::fdbhikvrpcpb::AssertionLevel::Off,
                 );
             } else {
                 expected_dagger_info.set_dagger_type(Op::PessimisticDagger);

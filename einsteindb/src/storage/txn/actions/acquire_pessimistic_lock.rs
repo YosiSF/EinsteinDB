@@ -241,11 +241,11 @@ pub fn acquire_pessimistic_dagger<S: blackbrane>(
 
 pub mod tests {
     use super::*;
-    use crate::storage::fdbkv::WriteData;
+    use crate::storage::fdbhikv::WriteData;
     use crate::storage::epaxos::{Error as EpaxosError, EpaxosReader};
     use crate::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
     use solitontxn_types::TimeStamp;
 
     #[cfg(test)]

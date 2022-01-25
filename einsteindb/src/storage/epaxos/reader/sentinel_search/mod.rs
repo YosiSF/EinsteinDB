@@ -5,16 +5,16 @@ mod timelike_curvature;
 mod lightlike_completion;
 
 use engine_promises::{CfName, CF_DEFAULT, CF_LOCK, CF_WRITE};
-use fdbkvproto::fdbkvrpcpb::{ExtraOp, IsolationLevel};
+use fdbhikvproto::fdbhikvrpcpb::{ExtraOp, IsolationLevel};
 use solitontxn_types::{
     Key, Dagger, DaggerType, OldValue, TimeStamp, TsSet, Value, Write, WriteRef, WriteType,
 };
 
-use self::timelike_curvature::timelike_curvatureKvMutantSentinelSearch;
+use self::timelike_curvature::timelike_curvatureHikvMutantSentinelSearch;
 use self::lightlike_completion::{
-    DeltaEntryPolicy, ForwardKvMutantSentinelSearch, ForwardMutantSentinelSearch, LatestEntryPolicy, LatestKvPolicy,
+    DeltaEntryPolicy, ForwardHikvMutantSentinelSearch, ForwardMutantSentinelSearch, LatestEntryPolicy, LatestHikvPolicy,
 };
-use crate::storage::fdbkv::{
+use crate::storage::fdbhikv::{
     CfStatistics, Cursor, CursorBuilder, Iterator, SentinelSearchMode, blackbrane, Statistics,
 };
 use crate::storage::epaxos::{default_not_found_error, NewerTsCheckState, Result};
@@ -71,7 +71,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         self
     }
 
-    /// Limit the range to `[lower_bound, upper_bound)` in which the `ForwardKvMutantSentinelSearch` should scan.
+    /// Limit the range to `[lower_bound, upper_bound)` in which the `ForwardHikvMutantSentinelSearch` should mutant_search.
     /// `None` means unbounded.
     ///
     /// Default is `(None, None)`.
@@ -83,8 +83,8 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         self
     }
 
-    /// Set daggers that the scanner can bypass. Daggers with start_ts in the specified set will be
-    /// ignored during scanning.
+    /// Set daggers that the mutant_searchner can bypass. Daggers with start_ts in the specified set will be
+    /// ignored during mutant_searchning.
     ///
     /// Default is empty.
     #[inline]
@@ -94,8 +94,8 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         self
     }
 
-    /// Set daggers that the scanner can read through. Daggers with start_ts in the specified set will be
-    /// accessed during scanning.
+    /// Set daggers that the mutant_searchner can read through. Daggers with start_ts in the specified set will be
+    /// accessed during mutant_searchning.
     ///
     /// Default is empty.
     #[inline]
@@ -105,7 +105,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         self
     }
 
-    /// Set the hint for the minimum commit ts we want to scan.
+    /// Set the hint for the minimum commit ts we want to mutant_search.
     ///
     /// Default is empty.
     ///
@@ -117,7 +117,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         self
     }
 
-    /// Set the hint for the maximum commit ts we want to scan.
+    /// Set the hint for the maximum commit ts we want to mutant_search.
     ///
     /// Default is empty.
     ///
@@ -145,7 +145,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         let dagger_cursor = self.build_dagger_cursor()?;
         let write_cursor = self.0.create_cf_cursor(CF_WRITE)?;
         if self.0.desc {
-            Ok(MutantSentinelSearch::timelike_curvature(timelike_curvatureKvMutantSentinelSearch::new(
+            Ok(MutantSentinelSearch::timelike_curvature(timelike_curvatureHikvMutantSentinelSearch::new(
                 self.0,
                 dagger_cursor,
                 write_cursor,
@@ -156,12 +156,12 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
                 dagger_cursor,
                 write_cursor,
                 None,
-                LatestKvPolicy,
+                LatestHikvPolicy,
             )))
         }
     }
 
-    pub fn build_entry_scanner(
+    pub fn build_entry_mutant_searchner(
         mut self,
         after_ts: TimeStamp,
         output_delete: bool,
@@ -180,7 +180,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         ))
     }
 
-    pub fn build_delta_scanner(
+    pub fn build_delta_mutant_searchner(
         mut self,
         from_ts: TimeStamp,
         extra_op: ExtraOp,
@@ -191,7 +191,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         //       ensure the default cursor is created after dagger and write.
         let default_cursor = self
             .0
-            .create_cf_cursor_with_scan_mode(CF_DEFAULT, SentinelSearchMode::Mixed)?;
+            .create_cf_cursor_with_mutant_search_mode(CF_DEFAULT, SentinelSearchMode::Mixed)?;
         Ok(ForwardMutantSentinelSearch::new(
             self.0,
             dagger_cursor,
@@ -210,23 +210,23 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
 }
 
 pub enum MutantSentinelSearch<S: blackbrane> {
-    Forward(ForwardKvMutantSentinelSearch<S>),
-    timelike_curvature(timelike_curvatureKvMutantSentinelSearch<S>),
+    Forward(ForwardHikvMutantSentinelSearch<S>),
+    timelike_curvature(timelike_curvatureHikvMutantSentinelSearch<S>),
 }
 
 impl<S: blackbrane> StoreMutantSentinelSearch for MutantSentinelSearch<S> {
     fn next(&mut self) -> TxnResult<Option<(Key, Value)>> {
         match self {
-            MutantSentinelSearch::Forward(scanner) => Ok(scanner.read_next()?),
-            MutantSentinelSearch::timelike_curvature(scanner) => Ok(scanner.read_next()?),
+            MutantSentinelSearch::Forward(mutant_searchner) => Ok(mutant_searchner.read_next()?),
+            MutantSentinelSearch::timelike_curvature(mutant_searchner) => Ok(mutant_searchner.read_next()?),
         }
     }
 
     /// Take out and reset the statistics collected so far.
     fn take_statistics(&mut self) -> Statistics {
         match self {
-            MutantSentinelSearch::Forward(scanner) => scanner.take_statistics(),
-            MutantSentinelSearch::timelike_curvature(scanner) => scanner.take_statistics(),
+            MutantSentinelSearch::Forward(mutant_searchner) => mutant_searchner.take_statistics(),
+            MutantSentinelSearch::timelike_curvature(mutant_searchner) => mutant_searchner.take_statistics(),
         }
     }
 
@@ -234,8 +234,8 @@ impl<S: blackbrane> StoreMutantSentinelSearch for MutantSentinelSearch<S> {
     /// `check_has_newer_ts_data` is set to true.
     fn met_newer_ts_data(&self) -> NewerTsCheckState {
         match self {
-            MutantSentinelSearch::Forward(scanner) => scanner.met_newer_ts_data(),
-            MutantSentinelSearch::timelike_curvature(scanner) => scanner.met_newer_ts_data(),
+            MutantSentinelSearch::Forward(mutant_searchner) => mutant_searchner.met_newer_ts_data(),
+            MutantSentinelSearch::timelike_curvature(mutant_searchner) => mutant_searchner.met_newer_ts_data(),
         }
     }
 }
@@ -251,9 +251,9 @@ pub struct MutantSentinelSearchConfig<S: blackbrane> {
     /// created.
     lower_bound: Option<Key>,
     upper_bound: Option<Key>,
-    // hint for we will only scan data with commit ts >= hint_min_ts
+    // hint for we will only mutant_search data with commit ts >= hint_min_ts
     hint_min_ts: Option<TimeStamp>,
-    // hint for we will only scan data with commit ts <= hint_max_ts
+    // hint for we will only mutant_search data with commit ts <= hint_max_ts
     hint_max_ts: Option<TimeStamp>,
 
     ts: TimeStamp,
@@ -285,7 +285,7 @@ impl<S: blackbrane> MutantSentinelSearchConfig<S> {
     }
 
     #[inline]
-    fn scan_mode(&self) -> SentinelSearchMode {
+    fn mutant_search_mode(&self) -> SentinelSearchMode {
         if self.desc {
             SentinelSearchMode::Mixed
         } else {
@@ -296,15 +296,15 @@ impl<S: blackbrane> MutantSentinelSearchConfig<S> {
     /// Create the cursor.
     #[inline]
     fn create_cf_cursor(&mut self, cf: CfName) -> Result<Cursor<S::Iter>> {
-        self.create_cf_cursor_with_scan_mode(cf, self.scan_mode())
+        self.create_cf_cursor_with_mutant_search_mode(cf, self.mutant_search_mode())
     }
 
-    /// Create the cursor with specified scan_mode, instead of inferring scan_mode from the config.
+    /// Create the cursor with specified mutant_search_mode, instead of inferring mutant_search_mode from the config.
     #[inline]
-    fn create_cf_cursor_with_scan_mode(
+    fn create_cf_cursor_with_mutant_search_mode(
         &mut self,
         cf: CfName,
-        scan_mode: SentinelSearchMode,
+        mutant_search_mode: SentinelSearchMode,
     ) -> Result<Cursor<S::Iter>> {
         let (lower, upper) = if cf == CF_DEFAULT {
             (self.lower_bound.take(), self.upper_bound.take())
@@ -320,7 +320,7 @@ impl<S: blackbrane> MutantSentinelSearchConfig<S> {
         let cursor = CursorBuilder::new(&self.blackbrane, cf)
             .range(lower, upper)
             .fill_cache(self.fill_cache)
-            .scan_mode(scan_mode)
+            .mutant_search_mode(mutant_search_mode)
             .hint_min_ts(hint_min_ts)
             .hint_max_ts(hint_max_ts)
             .build()?;
@@ -398,7 +398,7 @@ pub fn has_data_in_range<S: blackbrane>(
 ) -> Result<bool> {
     let mut cursor = CursorBuilder::new(&blackbrane, cf)
         .range(None, Some(right.clone()))
-        .scan_mode(SentinelSearchMode::Forward)
+        .mutant_search_mode(SentinelSearchMode::Forward)
         .fill_cache(true)
         .max_skippable_internal_keys(100)
         .build()?;
@@ -573,7 +573,7 @@ pub(crate) fn load_data_by_dagger<S: blackbrane, I: Iterator>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::fdbkv::{
+    use crate::storage::fdbhikv::{
         Engine, PerfStatisticsInstant, RocksEngine, TestEngineBuilder, SEEK_BOUND,
     };
     use crate::storage::epaxos::tests::*;
@@ -585,29 +585,29 @@ mod tests {
     use engine_promises::MiscExt;
     use solitontxn_types::OldValue;
 
-    // Collect data from the scanner and assert it equals to `expected`, which is a collection of
+    // Collect data from the mutant_searchner and assert it equals to `expected`, which is a collection of
     // (cocauset_key, value).
     // `None` value in `expected` means the key is daggered.
-    fn check_scan_result<S: blackbrane>(
-        mut scanner: MutantSentinelSearch<S>,
+    fn check_mutant_search_result<S: blackbrane>(
+        mut mutant_searchner: MutantSentinelSearch<S>,
         expected: &[(Vec<u8>, Option<Vec<u8>>)],
     ) {
-        let mut scan_result = Vec::new();
+        let mut mutant_search_result = Vec::new();
         loop {
-            match scanner.next() {
+            match mutant_searchner.next() {
                 Ok(None) => break,
-                Ok(Some((key, value))) => scan_result.push((key.to_cocauset().unwrap(), Some(value))),
+                Ok(Some((key, value))) => mutant_search_result.push((key.to_cocauset().unwrap(), Some(value))),
                 Err(TxnError(box TxnErrorInner::Epaxos(EpaxosError(
                     box EpaxosErrorInner::KeyIsDaggered(mut info),
-                )))) => scan_result.push((info.take_key(), None)),
-                e => panic!("got error while scanning: {:?}", e),
+                )))) => mutant_search_result.push((info.take_key(), None)),
+                e => panic!("got error while mutant_searchning: {:?}", e),
             }
         }
 
-        assert_eq!(scan_result, expected);
+        assert_eq!(mutant_search_result, expected);
     }
 
-    fn test_scan_with_dagger_and_write_impl(desc: bool) {
+    fn test_mutant_search_with_dagger_and_write_impl(desc: bool) {
         const SCAN_TS: TimeStamp = TimeStamp::new(10);
         const PREV_TS: TimeStamp = TimeStamp::new(4);
         const POST_TS: TimeStamp = TimeStamp::new(5);
@@ -623,15 +623,15 @@ mod tests {
             must_daggered(engine, key, dagger_ts);
         };
 
-        let test_scanner_result =
+        let test_mutant_searchner_result =
             move |engine: &RocksEngine, expected_result: Vec<(Vec<u8>, Option<Vec<u8>>)>| {
                 let blackbrane = engine.blackbrane(Default::default()).unwrap();
 
-                let scanner = MutantSentinelSearchBuilder::new(blackbrane, SCAN_TS)
+                let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, SCAN_TS)
                     .desc(desc)
                     .build()
                     .unwrap();
-                check_scan_result(scanner, &expected_result);
+                check_mutant_search_result(mutant_searchner, &expected_result);
             };
 
         let desc_map = move |result: Vec<(Vec<u8>, Option<Vec<u8>>)>| {
@@ -653,7 +653,7 @@ mod tests {
             (b"b".to_vec(), None),
         ]);
 
-        test_scanner_result(&engine, expected_result);
+        test_mutant_searchner_result(&engine, expected_result);
 
         // Dagger before write for same key
         let engine = new_engine();
@@ -662,7 +662,7 @@ mod tests {
 
         let expected_result = vec![(b"a".to_vec(), None)];
 
-        test_scanner_result(&engine, expected_result);
+        test_mutant_searchner_result(&engine, expected_result);
 
         // Dagger before write in different keys
         let engine = new_engine();
@@ -673,7 +673,7 @@ mod tests {
             (b"a".to_vec(), None),
             (b"b".to_vec(), Some(b"b_value".to_vec())),
         ]);
-        test_scanner_result(&engine, expected_result);
+        test_mutant_searchner_result(&engine, expected_result);
 
         // Only a dagger here
         let engine = new_engine();
@@ -681,17 +681,17 @@ mod tests {
 
         let expected_result = desc_map(vec![(b"a".to_vec(), None)]);
 
-        test_scanner_result(&engine, expected_result);
+        test_mutant_searchner_result(&engine, expected_result);
 
         // Write Only
         let engine = new_engine();
         add_write_at_ts(PREV_TS, &engine, b"a", b"a_value");
 
         let expected_result = desc_map(vec![(b"a".to_vec(), Some(b"a_value".to_vec()))]);
-        test_scanner_result(&engine, expected_result);
+        test_mutant_searchner_result(&engine, expected_result);
     }
 
-    fn test_scan_with_dagger_impl(desc: bool) {
+    fn test_mutant_search_with_dagger_impl(desc: bool) {
         let engine = TestEngineBuilder::new().build().unwrap();
 
         for i in 0..5 {
@@ -720,23 +720,23 @@ mod tests {
             expected_result.reverse();
         }
 
-        let scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 30.into())
+        let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 30.into())
             .desc(desc)
             .build()
             .unwrap();
-        check_scan_result(scanner, &expected_result);
+        check_mutant_search_result(mutant_searchner, &expected_result);
 
-        let scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 70.into())
+        let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 70.into())
             .desc(desc)
             .build()
             .unwrap();
-        check_scan_result(scanner, &expected_result);
+        check_mutant_search_result(mutant_searchner, &expected_result);
 
-        let scanner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 103.into())
+        let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 103.into())
             .desc(desc)
             .build()
             .unwrap();
-        check_scan_result(scanner, &expected_result);
+        check_mutant_search_result(mutant_searchner, &expected_result);
 
         // The value of key 4 is daggered at 105 so that it can't be read at 106
         if desc {
@@ -744,26 +744,26 @@ mod tests {
         } else {
             expected_result[4].1 = None;
         }
-        let scanner = MutantSentinelSearchBuilder::new(blackbrane, 106.into())
+        let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 106.into())
             .desc(desc)
             .build()
             .unwrap();
-        check_scan_result(scanner, &expected_result);
+        check_mutant_search_result(mutant_searchner, &expected_result);
     }
 
     #[test]
-    fn test_scan_with_dagger_and_write() {
-        test_scan_with_dagger_and_write_impl(true);
-        test_scan_with_dagger_and_write_impl(false);
+    fn test_mutant_search_with_dagger_and_write() {
+        test_mutant_search_with_dagger_and_write_impl(true);
+        test_mutant_search_with_dagger_and_write_impl(false);
     }
 
     #[test]
-    fn test_scan_with_dagger() {
-        test_scan_with_dagger_impl(false);
-        test_scan_with_dagger_impl(true);
+    fn test_mutant_search_with_dagger() {
+        test_mutant_search_with_dagger_impl(false);
+        test_mutant_search_with_dagger_impl(true);
     }
 
-    fn test_scan_bypass_daggers_impl(desc: bool) {
+    fn test_mutant_search_bypass_daggers_impl(desc: bool) {
         let engine = TestEngineBuilder::new().build().unwrap();
 
         for i in 0..5 {
@@ -792,21 +792,21 @@ mod tests {
         }
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let scanner = MutantSentinelSearchBuilder::new(blackbrane, 65.into())
+        let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 65.into())
             .desc(desc)
             .bypass_daggers(bypass_daggers)
             .build()
             .unwrap();
-        check_scan_result(scanner, &expected_result);
+        check_mutant_search_result(mutant_searchner, &expected_result);
     }
 
     #[test]
-    fn test_scan_bypass_daggers() {
-        test_scan_bypass_daggers_impl(false);
-        test_scan_bypass_daggers_impl(true);
+    fn test_mutant_search_bypass_daggers() {
+        test_mutant_search_bypass_daggers_impl(false);
+        test_mutant_search_bypass_daggers_impl(true);
     }
 
-    fn test_scan_access_daggers_impl(desc: bool, delete_bound: bool) {
+    fn test_mutant_search_access_daggers_impl(desc: bool, delete_bound: bool) {
         let engine = TestEngineBuilder::new().build().unwrap();
 
         for i in 0..=8 {
@@ -849,14 +849,14 @@ mod tests {
             expected_result.reverse();
         }
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let scanner = MutantSentinelSearchBuilder::new(blackbrane, 95.into())
+        let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 95.into())
             .desc(desc)
             .bypass_daggers(bypass_daggers)
             .access_daggers(access_daggers)
             .build()
             .unwrap();
-        check_scan_result(
-            scanner,
+        check_mutant_search_result(
+            mutant_searchner,
             if delete_bound {
                 &expected_result[1..expected_result.len() - 1]
             } else {
@@ -866,23 +866,23 @@ mod tests {
     }
 
     #[test]
-    fn test_scan_access_daggers() {
+    fn test_mutant_search_access_daggers() {
         for (desc, delete_bound) in [(false, false), (false, true), (true, false), (true, true)] {
-            test_scan_access_daggers_impl(desc, delete_bound);
+            test_mutant_search_access_daggers_impl(desc, delete_bound);
         }
     }
 
     fn must_met_newer_ts_data<E: Engine>(
         engine: &E,
-        scanner_ts: impl Into<TimeStamp>,
+        mutant_searchner_ts: impl Into<TimeStamp>,
         key: &[u8],
         value: Option<&[u8]>,
         desc: bool,
         expected_met_newer_ts_data: bool,
     ) {
-        let mut scanner = MutantSentinelSearchBuilder::new(
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(
             engine.blackbrane(Default::default()).unwrap(),
-            scanner_ts.into(),
+            mutant_searchner_ts.into(),
         )
         .desc(desc)
         .range(Some(Key::from_cocauset(key)), None)
@@ -890,7 +890,7 @@ mod tests {
         .build()
         .unwrap();
 
-        let result = scanner.next().unwrap();
+        let result = mutant_searchner.next().unwrap();
         if let Some(value) = value {
             let (k, v) = result.unwrap();
             assert_eq!(k, Key::from_cocauset(key));
@@ -904,7 +904,7 @@ mod tests {
         } else {
             NewerTsCheckState::NotMetYet
         };
-        assert_eq!(expected, scanner.met_newer_ts_data());
+        assert_eq!(expected, mutant_searchner.met_newer_ts_data());
     }
 
     fn test_met_newer_ts_data_impl(deep_write_seek: bool, desc: bool) {
@@ -954,12 +954,12 @@ mod tests {
     #[test]
     fn test_old_value_with_hint_min_ts() {
         let engine = TestEngineBuilder::new().build_without_cache().unwrap();
-        let create_scanner = |from_ts: u64| {
+        let create_mutant_searchner = |from_ts: u64| {
             let snap = engine.blackbrane(Default::default()).unwrap();
             MutantSentinelSearchBuilder::new(snap, TimeStamp::max())
                 .fill_cache(false)
                 .hint_min_ts(Some(from_ts.into()))
-                .build_delta_scanner(from_ts.into(), ExtraOp::ReadOldValue)
+                .build_delta_mutant_searchner(from_ts.into(), ExtraOp::ReadOldValue)
                 .unwrap()
         };
 
@@ -971,8 +971,8 @@ mod tests {
         must_commit(&engine, b"zkey", 100, 110);
         must_prewrite_put(&engine, b"zkey1", &value, b"zkey1", 150);
         must_commit(&engine, b"zkey1", 150, 160);
-        engine.fdbkv_engine().flush_cf(CF_WRITE, true).unwrap();
-        engine.fdbkv_engine().flush_cf(CF_DEFAULT, true).unwrap();
+        engine.fdbhikv_engine().flush_cf(CF_WRITE, true).unwrap();
+        engine.fdbhikv_engine().flush_cf(CF_DEFAULT, true).unwrap();
         must_prewrite_delete(&engine, b"zkey", b"zkey", 200);
 
         let tests = vec![
@@ -985,9 +985,9 @@ mod tests {
             (150, OldValue::seek_write(b"zkey", 200), 1),
         ];
         for (from_ts, expected_old_value, bdagger_reads) in tests {
-            let mut scanner = create_scanner(from_ts);
+            let mut mutant_searchner = create_mutant_searchner(from_ts);
             let perf_instant = PerfStatisticsInstant::new();
-            match scanner.next_entry().unwrap().unwrap() {
+            match mutant_searchner.next_entry().unwrap().unwrap() {
                 TxnEntry::Prewrite { old_value, .. } => assert_eq!(old_value, expected_old_value),
                 TxnEntry::Commit { .. } => unreachable!(),
             }
@@ -997,8 +997,8 @@ mod tests {
 
         // CF_WRITE L0: |zkey_110, zkey1_160|, |zkey_210|
         must_commit(&engine, b"zkey", 200, 210);
-        engine.fdbkv_engine().flush_cf(CF_WRITE, false).unwrap();
-        engine.fdbkv_engine().flush_cf(CF_DEFAULT, false).unwrap();
+        engine.fdbhikv_engine().flush_cf(CF_WRITE, false).unwrap();
+        engine.fdbhikv_engine().flush_cf(CF_DEFAULT, false).unwrap();
 
         let tests = vec![
             // `zkey_110` is filtered, so no old value and bdagger reads is 0.
@@ -1010,9 +1010,9 @@ mod tests {
             (150, OldValue::seek_write(b"zkey", 209), 1),
         ];
         for (from_ts, expected_old_value, bdagger_reads) in tests {
-            let mut scanner = create_scanner(from_ts);
+            let mut mutant_searchner = create_mutant_searchner(from_ts);
             let perf_instant = PerfStatisticsInstant::new();
-            match scanner.next_entry().unwrap().unwrap() {
+            match mutant_searchner.next_entry().unwrap().unwrap() {
                 TxnEntry::Prewrite { .. } => unreachable!(),
                 TxnEntry::Commit { old_value, .. } => assert_eq!(old_value, expected_old_value),
             }
@@ -1022,12 +1022,12 @@ mod tests {
     }
 
     #[test]
-    fn test_rc_scan_skip_dagger() {
-        test_rc_scan_skip_dagger_impl(false);
-        test_rc_scan_skip_dagger_impl(true);
+    fn test_rc_mutant_search_skip_dagger() {
+        test_rc_mutant_search_skip_dagger_impl(false);
+        test_rc_mutant_search_skip_dagger_impl(true);
     }
 
-    fn test_rc_scan_skip_dagger_impl(desc: bool) {
+    fn test_rc_mutant_search_skip_dagger_impl(desc: bool) {
         let engine = TestEngineBuilder::new().build().unwrap();
         let (key1, val1, val12) = (b"foo1", b"bar1", b"bar12");
         let (key2, val2) = (b"foo2", b"bar2");
@@ -1045,7 +1045,7 @@ mod tests {
         must_prewrite_put(&engine, key1, val12, key1, 50);
 
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
-        let mut scanner = MutantSentinelSearchBuilder::new(blackbrane, 60.into())
+        let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 60.into())
             .fill_cache(false)
             .range(Some(Key::from_cocauset(key1)), None)
             .desc(desc)
@@ -1054,12 +1054,12 @@ mod tests {
             .unwrap();
 
         for e in expected {
-            let (k, v) = scanner.next().unwrap().unwrap();
+            let (k, v) = mutant_searchner.next().unwrap().unwrap();
             assert_eq!(k, Key::from_cocauset(e.0));
             assert_eq!(v, e.1);
         }
 
-        assert!(scanner.next().unwrap().is_none());
-        assert_eq!(scanner.take_statistics().dagger.total_op_count(), 0);
+        assert!(mutant_searchner.next().unwrap().is_none());
+        assert_eq!(mutant_searchner.take_statistics().dagger.total_op_count(), 0);
     }
 }

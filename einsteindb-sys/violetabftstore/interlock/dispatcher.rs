@@ -1,9 +1,9 @@
 // Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
 
-use einsteindb_promises::{BRANEName, KvEngine};
-use ekvproto::metapb::Region;
-use ekvproto::FIDelpb::CheckPolicy;
-use ekvproto::violetabft_cmdpb::{violetabftCmdRequest, violetabftCmdResponse};
+use einsteindb_promises::{BRANEName, HikvEngine};
+use ehikvproto::metapb::Region;
+use ehikvproto::FIDelpb::CheckPolicy;
+use ehikvproto::violetabft_cmdpb::{violetabftCmdRequest, violetabftCmdResponse};
 use std::marker::PhantomData;
 use txn_types::TxnExtra;
 
@@ -290,7 +290,7 @@ where
 
 impl<E> InterlockHost<E>
 where
-    E: KvEngine,
+    E: HikvEngine,
 {
     pub fn new<C: CasualRouter<E::Snapshot> + Clone + Send + 'static>(ch: C) -> InterlockHost<E> {
         let mut registry = Registry::default();
@@ -378,18 +378,18 @@ where
         }
     }
 
-    pub fn pre_apply_plain_ekvs_from_snapshot(
+    pub fn pre_apply_plain_ehikvs_from_snapshot(
         &self,
         region: &Region,
         brane: BRANEName,
-        ekv_pairs: &[(Vec<u8>, Vec<u8>)],
+        ehikv_pairs: &[(Vec<u8>, Vec<u8>)],
     ) {
         loop_ob!(
             region,
             &self.registry.apply_snapshot_observers,
-            pre_apply_plain_ekvs,
+            pre_apply_plain_ehikvs,
             brane,
-            ekv_pairs
+            ehikv_pairs
         );
     }
 
@@ -514,8 +514,8 @@ mod tests {
     use std::sync::Arc;
 
     use engine_foundationeinsteindb::foundationeinsteindbEngine;
-    use ekvproto::metapb::Region;
-    use ekvproto::violetabft_cmdpb::{
+    use ehikvproto::metapb::Region;
+    use ehikvproto::violetabft_cmdpb::{
         AdminRequest, AdminResponse, violetabftCmdRequest, violetabftCmdResponse, Request, Response,
     };
 
@@ -598,7 +598,7 @@ mod tests {
     }
 
     impl ApplySnapshotObserver for Testinterlock {
-        fn pre_apply_plain_ekvs(
+        fn pre_apply_plain_ehikvs(
             &self,
             ctx: &mut ObserverContext<'_>,
             _: BRANEName,
@@ -687,7 +687,7 @@ mod tests {
         host.on_region_changed(&region, RegionChangeEvent::Create, StateRole::Follower);
         assert_all!(&[&ob.called], &[36]);
 
-        host.pre_apply_plain_ekvs_from_snapshot(&region, "default", &[]);
+        host.pre_apply_plain_ehikvs_from_snapshot(&region, "default", &[]);
         assert_all!(&[&ob.called], &[45]);
         host.pre_apply_sst_from_snapshot(&region, "default", "");
         assert_all!(&[&ob.called], &[55]);

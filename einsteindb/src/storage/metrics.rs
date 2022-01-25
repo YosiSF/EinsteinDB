@@ -9,16 +9,16 @@ use std::cell::RefCell;
 use std::mem;
 
 use crate::server::metrics::{GcKeysCF as ServerGcKeysCF, GcKeysDetail as ServerGcKeysDetail};
-use crate::storage::fdbkv::{FlowStatsReporter, PerfStatisticsDelta, Statistics};
+use crate::storage::fdbhikv::{FlowStatsReporter, PerfStatisticsDelta, Statistics};
 use collections::HashMap;
-use fdbkvproto::fdbkvrpcpb::KeyRange;
-use fdbkvproto::metapb;
-use fdbkvproto::pdpb::QueryKind;
+use fdbhikvproto::fdbhikvrpcpb::KeyRange;
+use fdbhikvproto::metapb;
+use fdbhikvproto::pdpb::QueryKind;
 use raftstore::store::util::build_key_range;
 use raftstore::store::ReadStats;
 
 struct StorageLocalMetrics {
-    local_scan_details: HashMap<CommandKind, Statistics>,
+    local_mutant_search_details: HashMap<CommandKind, Statistics>,
     local_read_stats: ReadStats,
     local_perf_stats: HashMap<CommandKind, PerfStatisticsDelta>,
 }
@@ -26,7 +26,7 @@ struct StorageLocalMetrics {
 thread_local! {
     static TLS_STORAGE_METRICS: RefCell<StorageLocalMetrics> = RefCell::new(
         StorageLocalMetrics {
-            local_scan_details: HashMap::default(),
+            local_mutant_search_details: HashMap::default(),
             local_read_stats:ReadStats::default(),
             local_perf_stats: HashMap::default(),
         }
@@ -46,7 +46,7 @@ pub fn tls_flush<R: FlowStatsReporter>(reporter: &R) {
     TLS_STORAGE_METRICS.with(|m| {
         let mut m = m.borrow_mut();
 
-        for (cmd, stat) in m.local_scan_details.drain() {
+        for (cmd, stat) in m.local_mutant_search_details.drain() {
             for (cf, cf_details) in stat.details_enum().iter() {
                 for (tag, count) in cf_details.iter() {
                     KV_COMMAND_SCAN_DETAILS_STATIC
@@ -118,10 +118,10 @@ pub fn tls_flush<R: FlowStatsReporter>(reporter: &R) {
     });
 }
 
-pub fn tls_collect_scan_details(cmd: CommandKind, stats: &Statistics) {
+pub fn tls_collect_mutant_search_details(cmd: CommandKind, stats: &Statistics) {
     TLS_STORAGE_METRICS.with(|m| {
         m.borrow_mut()
-            .local_scan_details
+            .local_mutant_search_details
             .entry(cmd)
             .or_insert_with(Default::default)
             .add(stats);
@@ -144,12 +144,12 @@ pub fn tls_collect_query(
     peer: &metapb::Peer,
     start_key: &[u8],
     end_key: &[u8],
-    reverse_scan: bool,
+    reverse_mutant_search: bool,
     kind: QueryKind,
 ) {
     TLS_STORAGE_METRICS.with(|m| {
         let mut m = m.borrow_mut();
-        let key_range = build_key_range(start_key, end_key, reverse_scan);
+        let key_range = build_key_range(start_key, end_key, reverse_mutant_search);
         m.local_read_stats
             .add_query_num(region_id, peer, key_range, kind);
     });
@@ -181,7 +181,7 @@ make_auto_flush_static_metric! {
     pub label_enum CommandKind {
         get,
         cocauset_batch_get_command,
-        scan,
+        mutant_search,
         batch_get,
         batch_get_command,
         prewrite,
@@ -193,7 +193,7 @@ make_auto_flush_static_metric! {
         solitontxn_heart_beat,
         check_solitontxn_status,
         check_secondary_daggers,
-        scan_dagger,
+        mutant_search_dagger,
         resolve_dagger,
         resolve_dagger_lite,
         delete_range,
@@ -202,8 +202,8 @@ make_auto_flush_static_metric! {
         start_ts_epaxos,
         cocauset_get,
         cocauset_batch_get,
-        cocauset_scan,
-        cocauset_batch_scan,
+        cocauset_mutant_search,
+        cocauset_batch_mutant_search,
         cocauset_put,
         cocauset_batch_put,
         cocauset_delete,
@@ -337,7 +337,7 @@ make_auto_flush_static_metric! {
         "type" => CommandKind,
     }
 
-    pub struct KvCommandCounterVec: LocalIntCounter {
+    pub struct HikvCommandCounterVec: LocalIntCounter {
         "type" => CommandKind,
     }
 
@@ -350,7 +350,7 @@ make_auto_flush_static_metric! {
         "type" => CommandKind,
     }
 
-    pub struct KvCommandKeysWrittenVec: LocalHistogram {
+    pub struct HikvCommandKeysWrittenVec: LocalHistogram {
         "type" => CommandKind,
     }
 
@@ -404,16 +404,16 @@ impl From<ServerGcKeysDetail> for GcKeysDetail {
 
 lazy_static! {
     pub static ref KV_COMMAND_COUNTER_VEC: IntCounterVec = register_int_counter_vec!(
-        "einstfdbkv_storage_command_total",
+        "einstfdbhikv_storage_command_total",
         "Total number of commands received.",
         &["type"]
     )
     .unwrap();
-    pub static ref KV_COMMAND_COUNTER_VEC_STATIC: KvCommandCounterVec =
-        auto_flush_from!(KV_COMMAND_COUNTER_VEC, KvCommandCounterVec);
+    pub static ref KV_COMMAND_COUNTER_VEC_STATIC: HikvCommandCounterVec =
+        auto_flush_from!(KV_COMMAND_COUNTER_VEC, HikvCommandCounterVec);
     pub static ref SCHED_STAGE_COUNTER: IntCounterVec = {
         register_int_counter_vec!(
-            "einstfdbkv_scheduler_stage_total",
+            "einstfdbhikv_scheduler_stage_total",
             "Total number of commands on each stage.",
             &["type", "stage"]
         )
@@ -422,93 +422,93 @@ lazy_static! {
     pub static ref SCHED_STAGE_COUNTER_VEC: SchedStageCounterVec =
         auto_flush_from!(SCHED_STAGE_COUNTER, SchedStageCounterVec);
     pub static ref SCHED_WRITING_BYTES_GAUGE: IntGauge = register_int_gauge!(
-        "einstfdbkv_scheduler_writing_bytes",
-        "Total number of writing fdbkv."
+        "einstfdbhikv_scheduler_writing_bytes",
+        "Total number of writing fdbhikv."
     )
     .unwrap();
     pub static ref SCHED_CONTEX_GAUGE: IntGauge = register_int_gauge!(
-        "einstfdbkv_scheduler_contex_total",
+        "einstfdbhikv_scheduler_contex_total",
         "Total number of pending commands."
     )
     .unwrap();
     pub static ref SCHED_WRITE_FLOW_GAUGE: IntGauge = register_int_gauge!(
-        "einstfdbkv_scheduler_write_flow",
+        "einstfdbhikv_scheduler_write_flow",
         "The write flow passed through at scheduler level."
     )
     .unwrap();
     pub static ref SCHED_THROTTLE_FLOW_GAUGE: IntGauge = register_int_gauge!(
-        "einstfdbkv_scheduler_throttle_flow",
+        "einstfdbhikv_scheduler_throttle_flow",
         "The throttled write flow at scheduler level."
     )
     .unwrap();
        pub static ref SCHED_L0_TARGET_FLOW_GAUGE: IntGauge = register_int_gauge!(
-        "einstfdbkv_scheduler_l0_target_flow",
+        "einstfdbhikv_scheduler_l0_target_flow",
         "The target flow of L0."
     )
     .unwrap();
 
     pub static ref SCHED_MEMTABLE_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "einstfdbkv_scheduler_memtable",
+        "einstfdbhikv_scheduler_memtable",
         "The number of memtables.",
         &["cf"]
     )
     .unwrap();
     pub static ref SCHED_L0_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "einstfdbkv_scheduler_l0",
+        "einstfdbhikv_scheduler_l0",
         "The number of l0 files.",
         &["cf"]
     )
     .unwrap();
     pub static ref SCHED_L0_AVG_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "einstfdbkv_scheduler_l0_avg",
+        "einstfdbhikv_scheduler_l0_avg",
         "The number of average l0 files.",
         &["cf"]
     )
     .unwrap();
     pub static ref SCHED_FLUSH_FLOW_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "einstfdbkv_scheduler_flush_flow",
+        "einstfdbhikv_scheduler_flush_flow",
         "The speed of flush flow.",
         &["cf"]
     )
     .unwrap();
     pub static ref SCHED_L0_FLOW_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "einstfdbkv_scheduler_l0_flow",
+        "einstfdbhikv_scheduler_l0_flow",
         "The speed of l0 compaction flow.",
         &["cf"]
     )
     .unwrap();
     pub static ref SCHED_THROTTLE_ACTION_COUNTER: IntCounterVec = {
         register_int_counter_vec!(
-            "einstfdbkv_scheduler_throttle_action_total",
+            "einstfdbhikv_scheduler_throttle_action_total",
             "Total number of actions for flow control.",
             &["cf", "type"]
         )
         .unwrap()
     };
     pub static ref SCHED_DISCARD_RATIO_GAUGE: IntGauge = register_int_gauge!(
-        "einstfdbkv_scheduler_discard_ratio",
+        "einstfdbhikv_scheduler_discard_ratio",
         "The discard ratio for flow control."
     )
     .unwrap();
     pub static ref SCHED_THROTTLE_CF_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "einstfdbkv_scheduler_throttle_cf",
+        "einstfdbhikv_scheduler_throttle_cf",
         "The CF being throttled.",
         &["cf"]
     ).unwrap();
     pub static ref SCHED_PENDING_COMPACTION_BYTES_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "einstfdbkv_scheduler_pending_compaction_bytes",
+        "einstfdbhikv_scheduler_pending_compaction_bytes",
         "The number of pending compaction bytes.",
         &["type"]
     )
     .unwrap();
     pub static ref SCHED_THROTTLE_TIME: Histogram =
         register_histogram!(
-            "einstfdbkv_scheduler_throttle_duration_seconds",
+            "einstfdbhikv_scheduler_throttle_duration_seconds",
             "Bucketed histogram of peer commits logs duration.",
             exponential_buckets(0.0005, 2.0, 20).unwrap()
         ).unwrap();
     pub static ref SCHED_HISTOGRAM_VEC: HistogramVec = register_histogram_vec!(
-        "einstfdbkv_scheduler_command_duration_seconds",
+        "einstfdbhikv_scheduler_command_duration_seconds",
         "Bucketed histogram of command execution",
         &["type"],
         exponential_buckets(0.0005, 2.0, 20).unwrap()
@@ -517,7 +517,7 @@ lazy_static! {
     pub static ref SCHED_HISTOGRAM_VEC_STATIC: SchedDurationVec =
         auto_flush_from!(SCHED_HISTOGRAM_VEC, SchedDurationVec);
     pub static ref SCHED_LATCH_HISTOGRAM: HistogramVec = register_histogram_vec!(
-        "einstfdbkv_scheduler_latch_wait_duration_seconds",
+        "einstfdbhikv_scheduler_latch_wait_duration_seconds",
         "Bucketed histogram of latch wait",
         &["type"],
         exponential_buckets(0.0005, 2.0, 20).unwrap()
@@ -526,7 +526,7 @@ lazy_static! {
     pub static ref SCHED_LATCH_HISTOGRAM_VEC: SchedLatchDurationVec =
         auto_flush_from!(SCHED_LATCH_HISTOGRAM, SchedLatchDurationVec);
     pub static ref SCHED_PROCESSING_READ_HISTOGRAM_VEC: HistogramVec = register_histogram_vec!(
-        "einstfdbkv_scheduler_processing_read_duration_seconds",
+        "einstfdbhikv_scheduler_processing_read_duration_seconds",
         "Bucketed histogram of processing read duration",
         &["type"],
         exponential_buckets(0.0005, 2.0, 20).unwrap()
@@ -535,14 +535,14 @@ lazy_static! {
     pub static ref SCHED_PROCESSING_READ_HISTOGRAM_STATIC: ProcessingReadVec =
         auto_flush_from!(SCHED_PROCESSING_READ_HISTOGRAM_VEC, ProcessingReadVec);
     pub static ref SCHED_PROCESSING_WRITE_HISTOGRAM_VEC: HistogramVec = register_histogram_vec!(
-        "einstfdbkv_scheduler_processing_write_duration_seconds",
+        "einstfdbhikv_scheduler_processing_write_duration_seconds",
         "Bucketed histogram of processing write duration",
         &["type"],
         exponential_buckets(0.0005, 2.0, 20).unwrap()
     )
     .unwrap();
     pub static ref SCHED_TOO_BUSY_COUNTER: IntCounterVec = register_int_counter_vec!(
-        "einstfdbkv_scheduler_too_busy_total",
+        "einstfdbhikv_scheduler_too_busy_total",
         "Total count of scheduler too busy",
         &["type"]
     )
@@ -550,7 +550,7 @@ lazy_static! {
     pub static ref SCHED_TOO_BUSY_COUNTER_VEC: SchedTooBusyVec =
         auto_flush_from!(SCHED_TOO_BUSY_COUNTER, SchedTooBusyVec);
     pub static ref SCHED_COMMANDS_PRI_COUNTER_VEC: IntCounterVec = register_int_counter_vec!(
-        "einstfdbkv_scheduler_commands_pri_total",
+        "einstfdbhikv_scheduler_commands_pri_total",
         "Total count of different priority commands",
         &["priority"]
     )
@@ -558,8 +558,8 @@ lazy_static! {
     pub static ref SCHED_COMMANDS_PRI_COUNTER_VEC_STATIC: SchedCommandPriCounterVec =
         auto_flush_from!(SCHED_COMMANDS_PRI_COUNTER_VEC, SchedCommandPriCounterVec);
     pub static ref KV_COMMAND_KEYREAD_HISTOGRAM_VEC: HistogramVec = register_histogram_vec!(
-        "einstfdbkv_scheduler_fdbkv_command_key_read",
-        "Bucketed histogram of keys read of a fdbkv command",
+        "einstfdbhikv_scheduler_fdbhikv_command_key_read",
+        "Bucketed histogram of keys read of a fdbhikv command",
         &["type"],
         exponential_buckets(1.0, 2.0, 21).unwrap()
     )
@@ -567,29 +567,29 @@ lazy_static! {
     pub static ref KV_COMMAND_KEYREAD_HISTOGRAM_STATIC: KReadVec =
         auto_flush_from!(KV_COMMAND_KEYREAD_HISTOGRAM_VEC, KReadVec);
     pub static ref KV_COMMAND_SCAN_DETAILS: IntCounterVec = register_int_counter_vec!(
-        "einstfdbkv_scheduler_fdbkv_scan_details",
-        "Bucketed counter of fdbkv keys scan details for each cf",
+        "einstfdbhikv_scheduler_fdbhikv_mutant_search_details",
+        "Bucketed counter of fdbhikv keys mutant_search details for each cf",
         &["req", "cf", "tag"]
     )
     .unwrap();
     pub static ref KV_COMMAND_SCAN_DETAILS_STATIC: CommandSentinelSearchDetails =
         auto_flush_from!(KV_COMMAND_SCAN_DETAILS, CommandSentinelSearchDetails);
     pub static ref KV_COMMAND_KEYWRITE_HISTOGRAM: HistogramVec = register_histogram_vec!(
-        "einstfdbkv_scheduler_fdbkv_command_key_write",
-        "Bucketed histogram of keys write of a fdbkv command",
+        "einstfdbhikv_scheduler_fdbhikv_command_key_write",
+        "Bucketed histogram of keys write of a fdbhikv command",
         &["type"],
         exponential_buckets(1.0, 2.0, 21).unwrap()
     )
     .unwrap();
-    pub static ref KV_COMMAND_KEYWRITE_HISTOGRAM_VEC: KvCommandKeysWrittenVec =
-        auto_flush_from!(KV_COMMAND_KEYWRITE_HISTOGRAM, KvCommandKeysWrittenVec);
+    pub static ref KV_COMMAND_KEYWRITE_HISTOGRAM_VEC: HikvCommandKeysWrittenVec =
+        auto_flush_from!(KV_COMMAND_KEYWRITE_HISTOGRAM, HikvCommandKeysWrittenVec);
     pub static ref REQUEST_EXCEED_BOUND: IntCounter = register_int_counter!(
-        "einstfdbkv_request_exceed_bound",
+        "einstfdbhikv_request_exceed_bound",
         "Counter of request exceed bound"
     )
     .unwrap();
     pub static ref CHECK_MEM_LOCK_DURATION_HISTOGRAM: HistogramVec = register_histogram_vec!(
-        "einstfdbkv_storage_check_mem_dagger_duration_seconds",
+        "einstfdbhikv_storage_check_mem_dagger_duration_seconds",
         "Histogram of the duration of checking memory daggers",
         &["type", "result"],
         exponential_buckets(1e-6f64, 4f64, 10).unwrap() // 1us ~ 262ms
@@ -599,7 +599,7 @@ lazy_static! {
         auto_flush_from!(CHECK_MEM_LOCK_DURATION_HISTOGRAM, CheckMemDaggerHistogramVec);
 
     pub static ref STORAGE_ROCKSDB_PERF_COUNTER: IntCounterVec = register_int_counter_vec!(
-        "einstfdbkv_storage_rocksdb_perf",
+        "einstfdbhikv_storage_rocksdb_perf",
         "Total number of RocksDB internal operations from PerfContext",
         &["req", "metric"]
     )

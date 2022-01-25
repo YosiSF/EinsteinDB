@@ -103,13 +103,13 @@ impl NamespaceableName {
     }
 
     #[inline]
-    pub fn is_backward(&self) -> bool {
+    pub fn is_spacelike_completion(&self) -> bool {
         self.name().starts_with('_')
     }
 
     #[inline]
     pub fn is_forward(&self) -> bool {
-        !self.is_backward()
+        !self.is_spacelike_completion()
     }
 
     pub fn to_reversed(&self) -> NamespaceableName {

@@ -9,13 +9,13 @@ use std::sync::Arc;
 
 use crate::storage::epaxos::{Dagger, DaggerType, WriteRef, WriteType};
 use engine_promises::{
-    IterOptions, Iterable, Iterator as EngineIterator, KvEngine, Peekable, SeekKey,
+    IterOptions, Iterable, Iterator as EngineIterator, HikvEngine, Peekable, SeekKey,
 };
 use engine_promises::{CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
-use fdbkvproto::fdbkvrpcpb::{EpaxosInfo, EpaxosDagger, EpaxosValue, EpaxosWrite, Op};
+use fdbhikvproto::fdbhikvrpcpb::{EpaxosInfo, EpaxosDagger, EpaxosValue, EpaxosWrite, Op};
 use raftstore::coprocessor::{ConsistencyCheckMethod, ConsistencyCheckObserver, Coprocessor};
 use raftstore::Result;
-use einstfdbkv_util::keybuilder::KeyBuilder;
+use einstfdbhikv_util::keybuilder::KeyBuilder;
 use solitontxn_types::Key;
 
 const PHYSICAL_SHIFT_BITS: usize = 18;
@@ -37,14 +37,14 @@ const fn zero_safe_point_for_check() -> u64 {
 }
 
 #[derive(Clone)]
-pub struct Epaxos<E: KvEngine> {
+pub struct Epaxos<E: HikvEngine> {
     _engine: PhantomData<E>,
     local_safe_point: Arc<causetxctxU64>,
 }
 
-impl<E: KvEngine> Coprocessor for Epaxos<E> {}
+impl<E: HikvEngine> Coprocessor for Epaxos<E> {}
 
-impl<E: KvEngine> Epaxos<E> {
+impl<E: HikvEngine> Epaxos<E> {
     pub fn new(safe_point: Arc<causetxctxU64>) -> Self {
         Epaxos {
             _engine: Default::default(),
@@ -53,7 +53,7 @@ impl<E: KvEngine> Epaxos<E> {
     }
 }
 
-impl<E: KvEngine> ConsistencyCheckObserver<E> for Epaxos<E> {
+impl<E: HikvEngine> ConsistencyCheckObserver<E> for Epaxos<E> {
     fn update_context(&self, context: &mut Vec<u8>) -> bool {
         context.push(ConsistencyCheckMethod::Epaxos as u8);
         context.reserve(8);
@@ -75,7 +75,7 @@ impl<E: KvEngine> ConsistencyCheckObserver<E> for Epaxos<E> {
 
     fn compute_hash(
         &self,
-        region: &fdbkvproto::metapb::Region,
+        region: &fdbhikvproto::metapb::Region,
         context: &mut &[u8],
         snap: &E::blackbrane,
     ) -> Result<Option<u32>> {
@@ -97,16 +97,16 @@ impl<E: KvEngine> ConsistencyCheckObserver<E> for Epaxos<E> {
             return Ok(None);
         }
 
-        let mut scanner = EpaxosInfoMutantSentinelSearch::new(
+        let mut mutant_searchner = EpaxosInfoMutantSentinelSearch::new(
             |cf, opts| snap.iterator_cf_opt(cf, opts).map_err(|e| box_err!(e)),
             Some(&keys::data_key(region.get_start_key())),
             Some(&keys::data_end_key(region.get_end_key())),
             EpaxosChecksum::new(safe_point),
         )?;
-        while scanner.next_item()?.is_some() {}
+        while mutant_searchner.next_item()?.is_some() {}
 
         // Computes the hash from the Region state too.
-        let mut digest = scanner.observer.digest;
+        let mut digest = mutant_searchner.observer.digest;
         let region_state_key = keys::region_state_key(region.get_id());
         digest.update(&region_state_key);
         match snap.get_value_cf(CF_RAFT, &region_state_key) {
@@ -292,7 +292,7 @@ impl EpaxosInfoObserver for EpaxosInfoCollector {
 }
 
 pub struct EpaxosInfoIterator<Iter: EngineIterator> {
-    scanner: EpaxosInfoMutantSentinelSearch<Iter, EpaxosInfoCollector>,
+    mutant_searchner: EpaxosInfoMutantSentinelSearch<Iter, EpaxosInfoCollector>,
     limit: usize,
     count: usize,
 }
@@ -302,9 +302,9 @@ impl<Iter: EngineIterator> EpaxosInfoIterator<Iter> {
     where
         F: Fn(&str, IterOptions) -> Result<Iter>,
     {
-        let scanner = EpaxosInfoMutantSentinelSearch::new(f, from, to, EpaxosInfoCollector::default())?;
+        let mutant_searchner = EpaxosInfoMutantSentinelSearch::new(f, from, to, EpaxosInfoCollector::default())?;
         Ok(Self {
-            scanner,
+            mutant_searchner,
             limit,
             count: 0,
         })
@@ -319,7 +319,7 @@ impl<Iter: EngineIterator> Iterator for EpaxosInfoIterator<Iter> {
             return None;
         }
 
-        match self.scanner.next_item() {
+        match self.mutant_searchner.next_item() {
             Ok(Some(item)) => {
                 self.count += 1;
                 Some(Ok(item))
@@ -418,15 +418,15 @@ impl EpaxosInfoObserver for EpaxosChecksum {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::fdbkv::TestEngineBuilder;
+    use crate::storage::fdbhikv::TestEngineBuilder;
     use crate::storage::solitontxn::tests::must_rollback;
     use crate::storage::solitontxn::tests::{must_commit, must_prewrite_delete, must_prewrite_put};
-    use engine_test::fdbkv::KvTestEngine;
+    use engine_test::fdbhikv::HikvTestEngine;
 
     #[test]
     fn test_update_context() {
         let safe_point = Arc::new(causetxctxU64::new((123 << PHYSICAL_SHIFT_BITS) * 1000));
-        let observer = Epaxos::<KvTestEngine>::new(safe_point);
+        let observer = Epaxos::<HikvTestEngine>::new(safe_point);
 
         let mut context = Vec::new();
         assert!(observer.update_context(&mut context));
@@ -454,15 +454,15 @@ mod tests {
         let mut checksums = Vec::with_capacity(3);
         for &safe_point in &[150, 160, 100] {
             let cocauset = engine.get_rocksdb();
-            let mut scanner = EpaxosInfoMutantSentinelSearch::new(
+            let mut mutant_searchner = EpaxosInfoMutantSentinelSearch::new(
                 |cf, opts| cocauset.iterator_cf_opt(cf, opts).map_err(|e| box_err!(e)),
                 Some(&keys::data_key(b"")),
                 Some(&keys::data_end_key(b"")),
                 EpaxosChecksum::new(safe_point),
             )
             .unwrap();
-            while scanner.next_item().unwrap().is_some() {}
-            let digest = scanner.observer.digest;
+            while mutant_searchner.next_item().unwrap().is_some() {}
+            let digest = mutant_searchner.observer.digest;
             checksums.push(digest.finalize());
         }
         assert_eq!(checksums[0], checksums[1]);
@@ -481,7 +481,7 @@ mod tests {
             .tempdir()
             .unwrap();
         let path = tmp.path().to_str().unwrap();
-        let engine = engine_test::fdbkv::new_engine_opt(
+        let engine = engine_test::fdbhikv::new_engine_opt(
             path,
             DBOptions::new(),
             vec![
@@ -544,7 +544,7 @@ mod tests {
                 .unwrap();
         }
 
-        let scan_epaxos = |start: &[u8], end: &[u8], limit: u64| {
+        let mutant_search_epaxos = |start: &[u8], end: &[u8], limit: u64| {
             EpaxosInfoIterator::new(
                 |cf, opts| engine.iterator_cf_opt(cf, opts).map_err(|e| box_err!(e)),
                 if start.is_empty() { None } else { Some(start) },
@@ -555,7 +555,7 @@ mod tests {
         };
 
         let mut count = 0;
-        for key_and_epaxos in scan_epaxos(b"z", &[], 30) {
+        for key_and_epaxos in mutant_search_epaxos(b"z", &[], 30) {
             assert!(key_and_epaxos.is_ok());
             count += 1;
         }

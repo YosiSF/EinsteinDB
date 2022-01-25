@@ -16,7 +16,7 @@ use engine_rocks::FlowInfo;
 use engine_promises::{CFNamesExt, FlowControlFactorsExt};
 use num_promises::cast::{AsPrimitive, FromPrimitive};
 use rand::Rng;
-use einstfdbkv_util::time::{Instant, Limiter};
+use einstfdbhikv_util::time::{Instant, Limiter};
 
 use crate::storage::config::FlowControlConfig;
 use crate::storage::metrics::*;
@@ -492,7 +492,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
         Builder::new()
             .name(thd_name!("flow-checker"))
             .spawn(move || {
-                einstfdbkv_alloc::add_thread_memory_accessor();
+                einstfdbhikv_alloc::add_thread_memory_accessor();
                 let mut checker = self;
                 let mut deadline = std::time::Instant::now();
                 let mut enabled = true;
@@ -590,7 +590,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
                         }
                     }
                 }
-                einstfdbkv_alloc::remove_thread_memory_accessor();
+                einstfdbhikv_alloc::remove_thread_memory_accessor();
             })
             .unwrap()
     }

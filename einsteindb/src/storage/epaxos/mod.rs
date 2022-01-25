@@ -21,25 +21,25 @@ use std::error;
 use std::io;
 
 use error_code::{self, ErrorCode, ErrorCodeExt};
-use fdbkvproto::fdbkvrpcpb::Assertion;
+use fdbhikvproto::fdbhikvrpcpb::Assertion;
 use thiserror::Error;
 
-use einstfdbkv_util::metrics::CRITICAL_ERROR;
-use einstfdbkv_util::{panic_when_unexpected_key_or_data, set_panic_mark};
+use einstfdbhikv_util::metrics::CRITICAL_ERROR;
+use einstfdbhikv_util::{panic_when_unexpected_key_or_data, set_panic_mark};
 
 #[derive(Debug, Error)]
 pub enum ErrorInner {
     #[error("{0}")]
-    Kv(#[from] crate::storage::fdbkv::Error),
+    Hikv(#[from] crate::storage::fdbhikv::Error),
 
     #[error("{0}")]
     Io(#[from] io::Error),
 
     #[error("{0}")]
-    Codec(#[from] einstfdbkv_util::codec::Error),
+    Codec(#[from] einstfdbhikv_util::codec::Error),
 
     #[error("key is daggered (backoff or cleanup) {0:?}")]
-    KeyIsDaggered(fdbkvproto::fdbkvrpcpb::DaggerInfo),
+    KeyIsDaggered(fdbhikvproto::fdbhikvrpcpb::DaggerInfo),
 
     #[error("{0}")]
     BadFormat(#[source] solitontxn_types::Error),
@@ -105,7 +105,7 @@ pub enum ErrorInner {
         dagger_ts: TimeStamp,
         dagger_key: Vec<u8>,
         deaddagger_key_hash: u64,
-        wait_chain: Vec<fdbkvproto::deaddagger::WaitForEntry>,
+        wait_chain: Vec<fdbhikvproto::deaddagger::WaitForEntry>,
     },
 
     #[error("key {} already exists", log_wrappers::Value::key(.key))]
@@ -166,7 +166,7 @@ pub enum ErrorInner {
 impl ErrorInner {
     pub fn maybe_clone(&self) -> Option<ErrorInner> {
         match self {
-            ErrorInner::Kv(e) => e.maybe_clone().map(ErrorInner::Kv),
+            ErrorInner::Hikv(e) => e.maybe_clone().map(ErrorInner::Hikv),
             ErrorInner::Codec(e) => e.maybe_clone().map(ErrorInner::Codec),
             ErrorInner::KeyIsDaggered(info) => Some(ErrorInner::KeyIsDaggered(info.clone())),
             ErrorInner::BadFormat(e) => e.maybe_clone().map(ErrorInner::BadFormat),
@@ -340,7 +340,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 impl ErrorCodeExt for Error {
     fn error_code(&self) -> ErrorCode {
         match self.0.as_ref() {
-            ErrorInner::Kv(e) => e.error_code(),
+            ErrorInner::Hikv(e) => e.error_code(),
             ErrorInner::Io(_) => error_code::storage::IO,
             ErrorInner::Codec(e) => e.error_code(),
             ErrorInner::KeyIsDaggered(_) => error_code::storage::KEY_IS_LOCKED,
@@ -393,9 +393,9 @@ pub fn default_not_found_error(key: Vec<u8>, hint: &str) -> Error {
 
 pub mod tests {
     use super::*;
-    use crate::storage::fdbkv::{Engine, Modify, SentinelSearchMode, SnapContext, blackbrane, WriteData};
+    use crate::storage::fdbhikv::{Engine, Modify, SentinelSearchMode, SnapContext, blackbrane, WriteData};
     use engine_promises::CF_WRITE;
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
     use std::borrow::Cow;
     use solitontxn_types::Key;
 
@@ -694,7 +694,7 @@ pub mod tests {
         assert_eq!(write.gc_fence, gc_fence.map(|x| x.into()));
     }
 
-    pub fn must_scan_keys<E: Engine>(
+    pub fn must_mutant_search_keys<E: Engine>(
         engine: &E,
         start: Option<&[u8]>,
         limit: usize,
@@ -708,7 +708,7 @@ pub mod tests {
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Mixed), false);
         assert_eq!(
-            reader.scan_keys(start.map(Key::from_cocauset), limit).unwrap(),
+            reader.mutant_search_keys(start.map(Key::from_cocauset), limit).unwrap(),
             expect
         );
     }

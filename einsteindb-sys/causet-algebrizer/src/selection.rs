@@ -85,8 +85,8 @@ impl<Src: Executor> Executor for SelectionExecutor<Src> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.src.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.src.take_mutant_searchned_range()
     }
 
     #[inline]
@@ -189,7 +189,7 @@ mod tests {
             ],
         ];
 
-        let inner_table_scan = gen_table_scan_executor(1, cis, &raw_data, None);
+        let inner_table_mutant_search = gen_table_mutant_search_executor(1, cis, &raw_data, None);
 
         // selection executor
         let mut selection = Selection::default();
@@ -197,7 +197,7 @@ mod tests {
         selection.mut_conditions().push(expr);
 
         let mut selection_executor =
-            SelectionExecutor::new(selection, Arc::new(EvalConfig::default()), inner_table_scan)
+            SelectionExecutor::new(selection, Arc::new(EvalConfig::default()), inner_table_mutant_search)
                 .unwrap();
 
         let mut selection_rows = Vec::with_capacity(raw_data.len());
@@ -228,7 +228,7 @@ mod tests {
             vec![Datum::I64(7), Datum::Bytes(b"f".to_vec()), Datum::I64(6)],
         ];
 
-        let inner_table_scan = gen_table_scan_executor(1, cis, &raw_data, None);
+        let inner_table_mutant_search = gen_table_mutant_search_executor(1, cis, &raw_data, None);
 
         // selection executor
         let mut selection = Selection::default();
@@ -236,7 +236,7 @@ mod tests {
         selection.mut_conditions().push(expr);
 
         let mut selection_executor =
-            SelectionExecutor::new(selection, Arc::new(EvalConfig::default()), inner_table_scan)
+            SelectionExecutor::new(selection, Arc::new(EvalConfig::default()), inner_table_mutant_search)
                 .unwrap();
 
         let mut selection_rows = Vec::with_capacity(raw_data.len());
@@ -256,6 +256,6 @@ mod tests {
         let expected_counts = vec![raw_data.len()];
         let mut exec_stats = ExecuteStats::new(0);
         selection_executor.collect_exec_stats(&mut exec_stats);
-        assert_eq!(expected_counts, exec_stats.scanned_rows_per_range);
+        assert_eq!(expected_counts, exec_stats.mutant_searchned_rows_per_range);
     }
 }

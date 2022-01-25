@@ -3,7 +3,7 @@
 // #[PerformanceCriticalPath]
 use solitontxn_types::Key;
 
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::epaxos::{EpaxosTxn, blackbraneReader};
 use crate::storage::solitontxn::commands::{
@@ -19,7 +19,7 @@ command! {
     /// This should be following a [`Prewrite`](Command::Prewrite).
     Commit:
         cmd_ty => TxnStatus,
-        display => "fdbkv::command::commit {} {} -> {} | {:?}", (keys.len, dagger_ts, commit_ts, ctx),
+        display => "fdbhikv::command::commit {} {} -> {} | {:?}", (keys.len, dagger_ts, commit_ts, ctx),
         content => {
             /// The keys affected.
             keys: Vec<Key>,

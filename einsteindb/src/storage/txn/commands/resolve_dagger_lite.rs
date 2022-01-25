@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::epaxos::{EpaxosTxn, blackbraneReader};
 use crate::storage::solitontxn::commands::{
@@ -16,7 +16,7 @@ command! {
     /// Resolve daggers on `resolve_keys` according to `start_ts` and `commit_ts`.
     ResolveDaggerLite:
         cmd_ty => (),
-        display => "fdbkv::resolve_dagger_lite", (),
+        display => "fdbhikv::resolve_dagger_lite", (),
         content => {
             /// The transaction timestamp.
             start_ts: TimeStamp,

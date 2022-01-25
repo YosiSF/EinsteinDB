@@ -1,6 +1,6 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-pub use einstfdbkv_fdbkv::*;
+pub use einstfdbhikv_fdbhikv::*;
 
 mod test_engine_builder;
 

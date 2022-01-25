@@ -39,8 +39,8 @@ impl<Src: BatchExecutor> BatchExecutor for BatchLimitExecutor<Src> {
     }
 
     #[inline]
-    fn next_batch(&mut self, scan_rows: usize) -> BatchExecuteResult {
-        let mut result = self.src.next_batch(scan_rows);
+    fn next_batch(&mut self, mutant_search_rows: usize) -> BatchExecuteResult {
+        let mut result = self.src.next_batch(mutant_search_rows);
         if result.logical_rows.len() < self.remaining_rows {
             self.remaining_rows -= result.logical_rows.len();
         } else {
@@ -64,8 +64,8 @@ impl<Src: BatchExecutor> BatchExecutor for BatchLimitExecutor<Src> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.src.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.src.take_mutant_searchned_range()
     }
 
     #[inline]

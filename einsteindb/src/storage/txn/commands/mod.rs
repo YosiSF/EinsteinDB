@@ -38,7 +38,7 @@ pub use resolve_dagger::ResolveDagger;
 pub use resolve_dagger_lite::ResolveDaggerLite;
 pub use resolve_dagger_readphase::ResolveDaggerReadPhase;
 pub use rollback::Rollback;
-use einstfdbkv_util::deadline::Deadline;
+use einstfdbhikv_util::deadline::Deadline;
 pub use solitontxn_heart_beat::TxnHeartBeat;
 
 pub use resolve_dagger::RESOLVE_LOCK_BATCH_SIZE;
@@ -48,10 +48,10 @@ use std::iter;
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut};
 
-use fdbkvproto::fdbkvrpcpb::*;
+use fdbhikvproto::fdbhikvrpcpb::*;
 use solitontxn_types::{Key, OldValues, TimeStamp, Value, Write};
 
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::{self, DaggerManager, WaitTimeout};
 use crate::storage::epaxos::{Dagger as EpaxosDagger, EpaxosReader, ReleasedDagger, blackbraneReader};
 use crate::storage::solitontxn::latch;
@@ -66,7 +66,7 @@ use concurrency_manager::{ConcurrencyManager, KeyHandleGuard};
 /// Store Transaction scheduler commands.
 ///
 /// Learn more about our transaction system at
-/// [Deep Dive EinsteinDB: Distributed Transactions](https://einstfdbkv.org/docs/deep-dive/distributed-transaction/introduction/)
+/// [Deep Dive EinsteinDB: Distributed Transactions](https://einstfdbhikv.org/docs/deep-dive/distributed-transaction/introduction/)
 ///
 /// These are typically scheduled and used through the [`Storage`](crate::storage::Storage) with functions like
 /// [`prewrite`](prewrite::Prewrite) trait and are executed asynchronously.
@@ -96,7 +96,7 @@ pub enum Command {
 /// Incoming grpc requests (like `CommitRequest`, `PrewriteRequest`) are converted to
 /// this type via a series of transformations. That process is described below using
 /// `CommitRequest` as an example:
-/// 1. A `CommitRequest` is handled by the `future_commit` method in fdbkv.rs, where it
+/// 1. A `CommitRequest` is handled by the `future_commit` method in fdbhikv.rs, where it
 /// needs to be transformed to a `TypedCommand` before being passed to the
 /// `storage.sched_solitontxn_command` method.
 /// 2. The `From<CommitRequest>` impl for `TypedCommand` gets chosen, and its generic
@@ -457,7 +457,7 @@ fn find_epaxos_infos_by_key<S: blackbrane>(
             None => break,
         };
     }
-    for (ts, v) in reader.scan_values_in_default(key)? {
+    for (ts, v) in reader.mutant_search_values_in_default(key)? {
         values.push((ts, v));
     }
     Ok((dagger, writes, values))

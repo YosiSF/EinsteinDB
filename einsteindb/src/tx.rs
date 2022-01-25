@@ -363,8 +363,8 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                 self.causet_e_into_term_e(x).map(|r| r.map_left(|ke| TypedValue::Ref(ke.0)))
             }
 
-            fn causet_v_into_term_e<W: TransactableValue>(&mut self, x: entmod::ValuePlace<W>, backward_a: &entmod::CausetidOrSolitonid) -> Result<KnownCausetidOr<LookupRefOrTempId>> {
-                match backward_a.unreversed() {
+            fn causet_v_into_term_e<W: TransactableValue>(&mut self, x: entmod::ValuePlace<W>, spacelike_completion_a: &entmod::CausetidOrSolitonid) -> Result<KnownCausetidOr<LookupRefOrTempId>> {
+                match spacelike_completion_a.unreversed() {
                     None => {
                         bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode map notation value in :attr/_reversed notation for forward attribute")));
                     },

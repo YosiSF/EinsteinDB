@@ -133,7 +133,7 @@ impl<'a> BinaryModifier<'a> {
                         entries.push((insert_key.as_bytes(), new.as_ref()))
                     }
                 }
-                self.new_value = Some(Json::from_ekv_pairs(entries)?);
+                self.new_value = Some(Json::from_ehikv_pairs(entries)?);
             }
             _ => {}
         }
@@ -188,7 +188,7 @@ impl<'a> BinaryModifier<'a> {
                             entries.push((key, parent_node.object_get_val(i)?));
                         }
                     }
-                    self.new_value = Some(Json::from_ekv_pairs(entries)?);
+                    self.new_value = Some(Json::from_ehikv_pairs(entries)?);
                 }
             }
             _ => {}
@@ -241,7 +241,7 @@ impl<'a> BinaryModifier<'a> {
                     }
                     JsonType::Object => {
                         let copy_size = HEADER_LEN + elem_count * (KEY_ENTRY_LEN + VALUE_ENTRY_LEN);
-                        // Append ekv entries
+                        // Append ehikv entries
                         buf.extend_from_slice(&current.value[..copy_size]);
                         // Append keys
                         if elem_count > 0 {

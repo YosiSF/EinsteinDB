@@ -233,7 +233,7 @@ impl ConjoiningClauses {
                 }
 
                 // TODO: if we don't know the type of the Attr because we don't know the
-                // Attr, we can actually work backwards to the set of appropriate Attrs
+                // Attr, we can actually work spacelike_completions to the set of appropriate Attrs
                 // from the type of the value itself! #292.
                 let typed_value_type = typed_value.value_type();
                 self.constrain_column_to_constant(col.clone(), causetsColumn::Value, typed_value);

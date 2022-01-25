@@ -7,7 +7,7 @@
 //! kinds of prewrite.
 
 use crate::storage::{
-    fdbkv::WriteData,
+    fdbhikv::WriteData,
     dagger_manager::DaggerManager,
     epaxos::{
         has_data_in_range, Error as EpaxosError, ErrorInner as EpaxosErrorInner, EpaxosTxn,
@@ -25,9 +25,9 @@ use crate::storage::{
     Context, Error as StorageError, ProcessResult, blackbrane,
 };
 use engine_promises::CF_WRITE;
-use fdbkvproto::fdbkvrpcpb::{AssertionLevel, ExtraOp};
+use fdbhikvproto::fdbhikvrpcpb::{AssertionLevel, ExtraOp};
 use std::mem;
-use einstfdbkv_fdbkv::blackbraneExt;
+use einstfdbhikv_fdbhikv::blackbraneExt;
 use solitontxn_types::{Key, Mutation, OldValue, OldValues, TimeStamp, TxnExtra, Write, WriteType};
 
 use super::ReaderWithStats;
@@ -41,7 +41,7 @@ command! {
     /// or a [`Rollback`](Command::Rollback) should follow.
     Prewrite:
         cmd_ty => PrewriteResult,
-        display => "fdbkv::command::prewrite mutations({}) @ {} | {:?}", (mutations.len, start_ts, ctx),
+        display => "fdbhikv::command::prewrite mutations({}) @ {} | {:?}", (mutations.len, start_ts, ctx),
         content => {
             /// The set of mutations to apply.
             mutations: Vec<Mutation>,
@@ -224,7 +224,7 @@ command! {
     /// or a [`Rollback`](Command::Rollback) should follow.
     PrewritePessimistic:
         cmd_ty => PrewriteResult,
-        display => "fdbkv::command::prewrite_pessimistic mutations({}) @ {} | {:?}", (mutations.len, start_ts, ctx),
+        display => "fdbhikv::command::prewrite_pessimistic mutations({}) @ {} | {:?}", (mutations.len, start_ts, ctx),
         content => {
             /// The set of mutations to apply; the bool = is pessimistic dagger.
             mutations: Vec<(Mutation, bool)>,
@@ -801,7 +801,7 @@ mod tests {
     };
     use concurrency_manager::ConcurrencyManager;
     use engine_promises::CF_WRITE;
-    use fdbkvproto::fdbkvrpcpb::{Context, ExtraOp};
+    use fdbhikvproto::fdbhikvrpcpb::{Context, ExtraOp};
     use solitontxn_types::{Key, Mutation, TimeStamp};
 
     fn inner_test_prewrite_skip_constraint_check(pri_key_number: u8, write_num: usize) {
@@ -925,7 +925,7 @@ mod tests {
     #[test]
     fn test_prewrite_skip_too_many_tombstone() {
         use crate::server::gc_worker::gc_by_compact;
-        use crate::storage::fdbkv::PerfStatisticsInstant;
+        use crate::storage::fdbhikv::PerfStatisticsInstant;
         use engine_rocks::{set_perf_level, PerfLevel};
         let mut mutations = Vec::default();
         let pri_key_number = 0;
@@ -1329,10 +1329,10 @@ mod tests {
 
     #[test]
     fn test_out_of_sync_max_ts() {
-        use crate::storage::{fdbkv::Result, CfName, ConcurrencyManager, DummyDaggerManager, Value};
-        use engine_test::fdbkv::KvTestEngineIterator;
+        use crate::storage::{fdbhikv::Result, CfName, ConcurrencyManager, DummyDaggerManager, Value};
+        use engine_test::fdbhikv::HikvTestEngineIterator;
         use engine_promises::{IterOptions, ReadOptions};
-        use fdbkvproto::fdbkvrpcpb::ExtraOp;
+        use fdbhikvproto::fdbhikvrpcpb::ExtraOp;
         #[derive(Clone)]
         struct Mockblackbrane;
 
@@ -1345,7 +1345,7 @@ mod tests {
         }
 
         impl blackbrane for Mockblackbrane {
-            type Iter = KvTestEngineIterator;
+            type Iter = HikvTestEngineIterator;
             type Ext<'a> = MockblackbraneExt;
 
             fn get(&self, _: &Key) -> Result<Option<Value>> {

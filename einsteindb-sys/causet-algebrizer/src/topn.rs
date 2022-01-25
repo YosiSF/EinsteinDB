@@ -152,8 +152,8 @@ impl<Src: Executor> Executor for TopNExecutor<Src> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.src.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.src.take_mutant_searchned_range()
     }
 
     #[inline]
@@ -396,7 +396,7 @@ pub mod tests {
         let range1 = get_range(tid, 0, 4);
         let range2 = get_range(tid, 5, 10);
         let key_ranges = vec![range1, range2];
-        let ts_ect = gen_table_scan_executor(tid, cis, &raw_data, Some(key_ranges));
+        let ts_ect = gen_table_mutant_search_executor(tid, cis, &raw_data, Some(key_ranges));
 
         // init TopN meta
         let mut ob_vec = Vec::with_capacity(2);
@@ -421,7 +421,7 @@ pub mod tests {
         let expected_counts = vec![3, 3];
         let mut exec_stats = ExecuteStats::new(0);
         topn_ect.collect_exec_stats(&mut exec_stats);
-        assert_eq!(expected_counts, exec_stats.scanned_rows_per_range);
+        assert_eq!(expected_counts, exec_stats.mutant_searchned_rows_per_range);
     }
 
     #[test]
@@ -442,7 +442,7 @@ pub mod tests {
         let range1 = get_range(tid, 0, 4);
         let range2 = get_range(tid, 5, 10);
         let key_ranges = vec![range1, range2];
-        let ts_ect = gen_table_scan_executor(tid, cis, &raw_data, Some(key_ranges));
+        let ts_ect = gen_table_mutant_search_executor(tid, cis, &raw_data, Some(key_ranges));
 
         // init TopN meta
         let mut ob_vec = Vec::with_capacity(2);

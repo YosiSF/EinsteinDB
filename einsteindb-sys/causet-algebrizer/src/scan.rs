@@ -10,19 +10,19 @@
 
 use std::sync::Arc;
 
-use ekvproto::interlock::KeyRange;
+use ehikvproto::interlock::KeyRange;
 use einsteindbpb::ColumnInfo;
 
 use super::{Executor, Row};
 use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::ExecuteStats;
-use allegroeinstein-prolog-causet-BerolinaSQL::storage::scanner::{RangesScanner, RangesScannerOptions};
+use allegroeinstein-prolog-causet-BerolinaSQL::storage::mutant_searchner::{RangesScanner, RangesScannerOptions};
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::{IntervalRange, Range, Storage};
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, EvalWarnings};
 
 // an InnerExecutor is used in ScanExecutor,
-// hold the different logics between table scan and index scan
+// hold the different logics between table mutant_search and index mutant_search
 pub trait InnerExecutor: Send {
     fn decode_row(
         &self,
@@ -33,11 +33,11 @@ pub trait InnerExecutor: Send {
     ) -> Result<Option<Row>>;
 }
 
-// Executor for table scan and index scan
+// Executor for table mutant_search and index mutant_search
 pub struct ScanExecutor<S: Storage, T: InnerExecutor> {
     inner: T,
     context: EvalContext,
-    scanner: RangesScanner<S>,
+    mutant_searchner: RangesScanner<S>,
     columns: Arc<Vec<ColumnInfo>>,
 }
 
@@ -47,10 +47,10 @@ pub struct ScanExecutorOptions<S, T> {
     pub columns: Vec<ColumnInfo>,
     pub key_ranges: Vec<KeyRange>,
     pub storage: S,
-    pub is_backward: bool,
+    pub is_spacelike_completion: bool,
     pub is_key_only: bool,
     pub accept_point_range: bool,
-    pub is_scanned_range_aware: bool,
+    pub is_mutant_searchned_range_aware: bool,
 }
 
 impl<S: Storage, T: InnerExecutor> ScanExecutor<S, T> {
@@ -61,32 +61,32 @@ impl<S: Storage, T: InnerExecutor> ScanExecutor<S, T> {
             columns,
             mut key_ranges,
             storage,
-            is_backward,
+            is_spacelike_completion,
             is_key_only,
             accept_point_range,
-            is_scanned_range_aware,
+            is_mutant_searchned_range_aware,
         }: ScanExecutorOptions<S, T>,
     ) -> Result<Self> {
         box_try!(table::check_table_ranges(&key_ranges));
-        if is_backward {
+        if is_spacelike_completion {
             key_ranges.reverse();
         }
 
-        let scanner = RangesScanner::new(RangesScannerOptions {
+        let mutant_searchner = RangesScanner::new(RangesScannerOptions {
             storage,
             ranges: key_ranges
                 .into_iter()
                 .map(|r| Range::from_pb_range(r, accept_point_range))
                 .collect(),
-            scan_backward_in_range: is_backward,
+            mutant_search_spacelike_completion_in_range: is_spacelike_completion,
             is_key_only,
-            is_scanned_range_aware,
+            is_mutant_searchned_range_aware,
         });
 
         Ok(Self {
             inner,
             context,
-            scanner,
+            mutant_searchner,
             columns: Arc::new(columns),
         })
     }
@@ -96,7 +96,7 @@ impl<S: Storage, T: InnerExecutor> Executor for ScanExecutor<S, T> {
     type StorageStats = S::Statistics;
 
     fn next(&mut self) -> Result<Option<Row>> {
-        let some_row = self.scanner.next()?;
+        let some_row = self.mutant_searchner.next()?;
         if let Some((key, value)) = some_row {
             self.inner
                 .decode_row(&mut self.context, key, value, self.columns.clone())
@@ -107,13 +107,13 @@ impl<S: Storage, T: InnerExecutor> Executor for ScanExecutor<S, T> {
 
     #[inline]
     fn collect_exec_stats(&mut self, dest: &mut ExecuteStats) {
-        self.scanner
-            .collect_scanned_rows_per_range(&mut dest.scanned_rows_per_range);
+        self.mutant_searchner
+            .collect_mutant_searchned_rows_per_range(&mut dest.mutant_searchned_rows_per_range);
     }
 
     #[inline]
     fn collect_storage_stats(&mut self, dest: &mut Self::StorageStats) {
-        self.scanner.collect_storage_stats(dest);
+        self.mutant_searchner.collect_storage_stats(dest);
     }
 
     #[inline]
@@ -127,12 +127,12 @@ impl<S: Storage, T: InnerExecutor> Executor for ScanExecutor<S, T> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.scanner.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.mutant_searchner.take_mutant_searchned_range()
     }
 
     #[inline]
     fn can_be_cached(&self) -> bool {
-        self.scanner.can_be_cached()
+        self.mutant_searchner.can_be_cached()
     }
 }

@@ -152,8 +152,8 @@ impl<Src: Executor> AggExecutor<Src> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.src.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.src.take_mutant_searchned_range()
     }
 
     #[inline]
@@ -273,8 +273,8 @@ impl<Src: Executor> Executor for HashAggExecutor<Src> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.inner.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.inner.take_mutant_searchned_range()
     }
 
     #[inline]
@@ -337,8 +337,8 @@ impl<Src: Executor> Executor for StreamAggExecutor<Src> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.inner.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.inner.take_mutant_searchned_range()
     }
 
     #[inline]
@@ -437,8 +437,8 @@ mod tests {
     use einsteindbpb::ColumnInfo;
     use einsteindbpb::{Expr, ExprType};
 
-    use super::super::index_scan::tests::IndexTestWrapper;
-    use super::super::index_scan::IndexScanExecutor;
+    use super::super::index_mutant_search::tests::IndexTestWrapper;
+    use super::super::index_mutant_search::IndexScanExecutor;
     use super::super::tests::*;
     use super::*;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum};
@@ -490,7 +490,7 @@ mod tests {
         cols: Vec<ColumnInfo>,
         idx_vals: Vec<Vec<(i64, Datum)>>,
     ) -> TableData {
-        let mut ekv_data = Vec::new();
+        let mut ehikv_data = Vec::new();
         let mut expect_rows = Vec::new();
 
         let mut handle = 1;
@@ -499,11 +499,11 @@ mod tests {
                 generate_index_data(table_id, index_id, i64::from(handle), val);
             expect_rows.push(expect_row);
             let value = vec![1; 0];
-            ekv_data.push((idx_key, value));
+            ehikv_data.push((idx_key, value));
             handle += 1;
         }
         TableData {
-            ekv_data,
+            ehikv_data,
             expect_rows,
             cols,
         }
@@ -530,11 +530,11 @@ mod tests {
         // test no row
         let idx_vals = vec![];
         let idx_data = prepare_index_data(tid, idx_id, col_infos.clone(), idx_vals);
-        let idx_row_cnt = idx_data.ekv_data.len();
+        let idx_row_cnt = idx_data.ehikv_data.len();
         let unique = false;
         let wrapper = IndexTestWrapper::new(unique, idx_data);
-        let is_executor = IndexScanExecutor::index_scan(
-            wrapper.scan,
+        let is_executor = IndexScanExecutor::index_mutant_search(
+            wrapper.mutant_search,
             EvalContext::default(),
             wrapper.ranges,
             wrapper.store,
@@ -558,7 +558,7 @@ mod tests {
         let expected_counts = vec![idx_row_cnt];
         let mut exec_stats = ExecuteStats::new(0);
         agg_ect.collect_exec_stats(&mut exec_stats);
-        assert_eq!(expected_counts, exec_stats.scanned_rows_per_range);
+        assert_eq!(expected_counts, exec_stats.mutant_searchned_rows_per_range);
 
         // test one row
         let idx_vals = vec![vec![
@@ -566,11 +566,11 @@ mod tests {
             (3, Datum::Dec(12.into())),
         ]];
         let idx_data = prepare_index_data(tid, idx_id, col_infos.clone(), idx_vals);
-        let idx_row_cnt = idx_data.ekv_data.len();
+        let idx_row_cnt = idx_data.ehikv_data.len();
         let unique = false;
         let wrapper = IndexTestWrapper::new(unique, idx_data);
-        let is_executor = IndexScanExecutor::index_scan(
-            wrapper.scan,
+        let is_executor = IndexScanExecutor::index_mutant_search(
+            wrapper.mutant_search,
             EvalContext::default(),
             wrapper.ranges,
             wrapper.store,
@@ -608,7 +608,7 @@ mod tests {
         let expected_counts = vec![idx_row_cnt];
         let mut exec_stats = ExecuteStats::new(0);
         agg_ect.collect_exec_stats(&mut exec_stats);
-        assert_eq!(expected_counts, exec_stats.scanned_rows_per_range);
+        assert_eq!(expected_counts, exec_stats.mutant_searchned_rows_per_range);
 
         // test multiple rows
         let idx_vals = vec![
@@ -621,10 +621,10 @@ mod tests {
             vec![(2, Datum::Bytes(b"a".to_vec())), (3, Datum::Dec(12.into()))],
         ];
         let idx_data = prepare_index_data(tid, idx_id, col_infos, idx_vals);
-        let idx_row_cnt = idx_data.ekv_data.len();
+        let idx_row_cnt = idx_data.ehikv_data.len();
         let wrapper = IndexTestWrapper::new(unique, idx_data);
-        let is_executor = IndexScanExecutor::index_scan(
-            wrapper.scan,
+        let is_executor = IndexScanExecutor::index_mutant_search(
+            wrapper.mutant_search,
             EvalContext::default(),
             wrapper.ranges,
             wrapper.store,
@@ -691,7 +691,7 @@ mod tests {
         let expected_counts = vec![idx_row_cnt];
         let mut exec_stats = ExecuteStats::new(0);
         agg_ect.collect_exec_stats(&mut exec_stats);
-        assert_eq!(expected_counts, exec_stats.scanned_rows_per_range);
+        assert_eq!(expected_counts, exec_stats.mutant_searchned_rows_per_range);
     }
 
     #[test]
@@ -758,7 +758,7 @@ mod tests {
         ];
 
         let key_ranges = vec![get_range(tid, i64::MIN, i64::MAX)];
-        let ts_ect = gen_table_scan_executor(tid, cis, &raw_data, Some(key_ranges));
+        let ts_ect = gen_table_mutant_search_executor(tid, cis, &raw_data, Some(key_ranges));
 
         // init aggregation meta
         let mut aggregation = Aggregation::default();
@@ -837,6 +837,6 @@ mod tests {
         let expected_counts = vec![raw_data.len()];
         let mut exec_stats = ExecuteStats::new(0);
         aggr_ect.collect_exec_stats(&mut exec_stats);
-        assert_eq!(expected_counts, exec_stats.scanned_rows_per_range);
+        assert_eq!(expected_counts, exec_stats.mutant_searchned_rows_per_range);
     }
 }

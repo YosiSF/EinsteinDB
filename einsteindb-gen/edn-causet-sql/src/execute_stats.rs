@@ -120,8 +120,8 @@ pub struct ExecuteStats {
     /// be zero sized.
     pub summary_per_executor: Vec<ExecSummary>,
 
-    /// For each range given in the request, how many rows are scanned.
-    pub scanned_rows_per_range: Vec<usize>,
+    /// For each range given in the request, how many rows are mutant_searchned.
+    pub mutant_searchned_rows_per_range: Vec<usize>,
 }
 
 impl ExecuteStats {
@@ -132,7 +132,7 @@ impl ExecuteStats {
     pub fn new(executors_len: usize) -> Self {
         Self {
             summary_per_executor: vec![ExecSummary::default(); executors_len],
-            scanned_rows_per_range: Vec::new(),
+            mutant_searchned_rows_per_range: Vec::new(),
         }
     }
 
@@ -141,6 +141,6 @@ impl ExecuteStats {
         for item in self.summary_per_executor.iter_mut() {
             *item = ExecSummary::default();
         }
-        self.scanned_rows_per_range.clear();
+        self.mutant_searchned_rows_per_range.clear();
     }
 }

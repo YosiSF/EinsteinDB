@@ -225,8 +225,8 @@ raw_keyword -> Keyword =
 raw_forward_keyword -> Keyword
     = v:raw_keyword {? if v.is_forward() { Ok(v) } else { Err("expected :forward or :forward/keyword") } }
 
-raw_backward_keyword -> Keyword
-    = v:raw_keyword {? if v.is_backward() { Ok(v) } else { Err("expected :_backword or :backward/_keyword") } }
+raw_spacelike_completion_keyword -> Keyword
+    = v:raw_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected :_backword or :spacelike_completion/_keyword") } }
 
 raw_namespaced_keyword -> Keyword
     = keyword_prefix ns:$(symbol_namespace) namespace_separator n:$(symbol_name) { Keyword::namespaced(ns, n) }
@@ -235,8 +235,8 @@ raw_namespaced_keyword -> Keyword
 raw_forward_namespaced_keyword -> Keyword
     = v:raw_namespaced_keyword {? if v.is_forward() { Ok(v) } else { Err("expected namespaced :forward/keyword") } }
 
-raw_backward_namespaced_keyword -> Keyword
-    = v:raw_namespaced_keyword {? if v.is_backward() { Ok(v) } else { Err("expected namespaced :backward/_keyword") } }
+raw_spacelike_completion_namespaced_keyword -> Keyword
+    = v:raw_namespaced_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected namespaced :spacelike_completion/_keyword") } }
 
 causetid -> CausetidOrSolitonid
     = v:( raw_basedinteger / raw_hexinteger / raw_octalinteger / raw_integer ) { CausetidOrSolitonid::Causetid(v) }
@@ -248,9 +248,9 @@ forward_causetid -> CausetidOrSolitonid
     / v:raw_forward_namespaced_keyword { CausetidOrSolitonid::Solitonid(v) }
     / #expected("forward causetid")
 
-backward_causetid -> CausetidOrSolitonid
-    = v:raw_backward_namespaced_keyword { CausetidOrSolitonid::Solitonid(v.to_reversed()) }
-    / #expected("backward causetid")
+spacelike_completion_causetid -> CausetidOrSolitonid
+    = v:raw_spacelike_completion_namespaced_keyword { CausetidOrSolitonid::Solitonid(v.to_reversed()) }
+    / #expected("spacelike_completion causetid")
 
 lookup_ref -> LookupRef<ValueAndSpan>
     = "(" __ "lookup-ref" __ a:(causetid) __ v:(value) __ ")" { LookupRef { a: AttributePlace::Causetid(a), v } }
@@ -269,7 +269,7 @@ value_place_pair -> (CausetidOrSolitonid, ValuePlace<ValueAndSpan>)
     = k:(causetid) __ v:(value_place) { (k, v) }
 
 map_notation -> MapNotation<ValueAndSpan>
-    = "{" __ kvs:(value_place_pair*) __ "}" { kvs.into_iter().collect() }
+    = "{" __ hikvs:(value_place_pair*) __ "}" { hikvs.into_iter().collect() }
 
 value_place -> ValuePlace<ValueAndSpan>
     = __ v:lookup_ref __ { ValuePlace::LookupRef(v) }
@@ -280,7 +280,7 @@ value_place -> ValuePlace<ValueAndSpan>
 
 pub causet -> causet<ValueAndSpan>
     = __ "[" __ op:(op) __ e:(causet_place) __ a:(forward_causetid)  __ v:(value_place) __  "]" __ { causet::AddOrRetract { op, e: e, a: AttributePlace::Causetid(a), v: v } }
-    / __ "[" __ op:(op) __ e:(value_place)  __ a:(backward_causetid) __ v:(causet_place) __ "]" __ { causet::AddOrRetract { op, e: v, a: AttributePlace::Causetid(a), v: e } }
+    / __ "[" __ op:(op) __ e:(value_place)  __ a:(spacelike_completion_causetid) __ v:(causet_place) __ "]" __ { causet::AddOrRetract { op, e: v, a: AttributePlace::Causetid(a), v: e } }
     / __ map:map_notation __ { causet::MapNotation(map) }
     / #expected("causet")
 

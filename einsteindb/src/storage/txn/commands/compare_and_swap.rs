@@ -1,7 +1,7 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::{Modify, WriteData};
+use crate::storage::fdbhikv::{Modify, WriteData};
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::cocauset;
 use crate::storage::solitontxn::commands::{
@@ -12,9 +12,9 @@ use crate::storage::{ProcessResult, blackbrane};
 use api_version::{match_template_api_version, APIVersion, cocausetValue};
 use engine_promises::cocauset_ttl::ttl_to_expire_ts;
 use engine_promises::CfName;
-use fdbkvproto::fdbkvrpcpb::ApiVersion;
+use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use cocauset::cocausetStore;
-use einstfdbkv_fdbkv::Statistics;
+use einstfdbhikv_fdbhikv::Statistics;
 use solitontxn_types::{Key, Value};
 
 command! {
@@ -23,7 +23,7 @@ command! {
     /// The previous value is always returned regardless of whether the new value is set.
     cocausetCompareAndSwap:
         cmd_ty => (Option<Value>, bool),
-        display => "fdbkv::command::cocauset_compare_and_swap {:?}", (ctx),
+        display => "fdbhikv::command::cocauset_compare_and_swap {:?}", (ctx),
         content => {
             cf: CfName,
             key: Key,
@@ -100,7 +100,7 @@ mod tests {
     use crate::storage::{Engine, Statistics, TestEngineBuilder};
     use concurrency_manager::ConcurrencyManager;
     use engine_promises::CF_DEFAULT;
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
     use solitontxn_types::Key;
 
     #[test]
@@ -162,7 +162,7 @@ mod tests {
     ) -> Result<(Option<Value>, bool)> {
         let snap = engine.blackbrane(Default::default())?;
         use crate::storage::DummyDaggerManager;
-        use fdbkvproto::fdbkvrpcpb::ExtraOp;
+        use fdbhikvproto::fdbhikvrpcpb::ExtraOp;
         let mut statistic = Statistics::default();
         let context = WriteContext {
             dagger_mgr: &DummyDaggerManager {},

@@ -1,7 +1,7 @@
 use std::error;
 
 use crate::Error;
-use ekvproto::violetabft_cmdpb::violetabftCmdResponse;
+use ehikvproto::violetabft_cmdpb::violetabftCmdResponse;
 
 pub fn bind_term(resp: &mut violetabftCmdResponse, term: u64) {
     if term == 0 {

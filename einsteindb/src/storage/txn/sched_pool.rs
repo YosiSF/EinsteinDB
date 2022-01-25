@@ -3,22 +3,22 @@
 use std::cell::RefCell;
 use std::mem;
 use std::sync::{Arc, Mutex};
-use einstfdbkv_util::time::Duration;
+use einstfdbhikv_util::time::Duration;
 
 use collections::HashMap;
 use file_system::{set_io_type, IOType};
-use fdbkvproto::pdpb::QueryKind;
+use fdbhikvproto::pdpb::QueryKind;
 use prometheus::local::*;
 use raftstore::store::WriteStats;
-use einstfdbkv_util::yatp_pool::{FuturePool, PoolTicker, YatpPoolBuilder};
+use einstfdbhikv_util::yatp_pool::{FuturePool, PoolTicker, YatpPoolBuilder};
 
-use crate::storage::fdbkv::{
+use crate::storage::fdbhikv::{
     destroy_tls_engine, set_tls_engine, Engine, FlowStatsReporter, Statistics,
 };
 use crate::storage::metrics::*;
 
 pub struct SchedLocalMetrics {
-    local_scan_details: HashMap<&'static str, Statistics>,
+    local_mutant_search_details: HashMap<&'static str, Statistics>,
     processing_read_duration: LocalHistogramVec,
     processing_write_duration: LocalHistogramVec,
     command_keyread_histogram_vec: LocalHistogramVec,
@@ -28,7 +28,7 @@ pub struct SchedLocalMetrics {
 thread_local! {
      static TLS_SCHED_METRICS: RefCell<SchedLocalMetrics> = RefCell::new(
         SchedLocalMetrics {
-            local_scan_details: HashMap::default(),
+            local_mutant_search_details: HashMap::default(),
             processing_read_duration: SCHED_PROCESSING_READ_HISTOGRAM_VEC.local(),
             processing_write_duration: SCHED_PROCESSING_WRITE_HISTOGRAM_VEC.local(),
             command_keyread_histogram_vec: KV_COMMAND_KEYREAD_HISTOGRAM_VEC.local(),
@@ -80,10 +80,10 @@ impl SchedPool {
     }
 }
 
-pub fn tls_collect_scan_details(cmd: &'static str, stats: &Statistics) {
+pub fn tls_collect_mutant_search_details(cmd: &'static str, stats: &Statistics) {
     TLS_SCHED_METRICS.with(|m| {
         m.borrow_mut()
-            .local_scan_details
+            .local_mutant_search_details
             .entry(cmd)
             .or_insert_with(Default::default)
             .add(stats);
@@ -93,7 +93,7 @@ pub fn tls_collect_scan_details(cmd: &'static str, stats: &Statistics) {
 pub fn tls_flush<R: FlowStatsReporter>(reporter: &R) {
     TLS_SCHED_METRICS.with(|m| {
         let mut m = m.borrow_mut();
-        for (cmd, stat) in m.local_scan_details.drain() {
+        for (cmd, stat) in m.local_mutant_search_details.drain() {
             for (cf, cf_details) in stat.details().iter() {
                 for (tag, count) in cf_details.iter() {
                     KV_COMMAND_SCAN_DETAILS
@@ -127,7 +127,7 @@ pub fn tls_collect_read_duration(cmd: &str, duration: Duration) {
         m.borrow_mut()
             .processing_read_duration
             .with_label_values(&[cmd])
-            .observe(einstfdbkv_util::time::duration_to_sec(duration))
+            .observe(einstfdbhikv_util::time::duration_to_sec(duration))
     });
 }
 

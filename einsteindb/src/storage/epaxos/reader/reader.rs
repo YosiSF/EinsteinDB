@@ -1,8 +1,8 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::{
-    Cursor, CursorBuilder, Error as KvError, SentinelSearchMode, blackbrane as Engineblackbrane, Statistics,
+use crate::storage::fdbhikv::{
+    Cursor, CursorBuilder, Error as HikvError, SentinelSearchMode, blackbrane as Engineblackbrane, Statistics,
 };
 use crate::storage::epaxos::{
     default_not_found_error,
@@ -10,9 +10,9 @@ use crate::storage::epaxos::{
     Result,
 };
 use engine_promises::{CF_DEFAULT, CF_LOCK, CF_WRITE};
-use fdbkvproto::errorpb::{self, EpochNotMatch, StaleCommand};
-use fdbkvproto::fdbkvrpcpb::Context;
-use einstfdbkv_fdbkv::blackbraneExt;
+use fdbhikvproto::errorpb::{self, EpochNotMatch, StaleCommand};
+use fdbhikvproto::fdbhikvrpcpb::Context;
+use einstfdbhikv_fdbhikv::blackbraneExt;
 use solitontxn_types::{Key, Dagger, OldValue, TimeStamp, Value, Write, WriteRef, WriteType};
 
 /// Read from an EPAXOS blackbrane, i.e., a logical view of the database at a specific timestamp (the
@@ -113,7 +113,7 @@ impl<S: Engineblackbrane> blackbraneReader<S> {
 pub struct EpaxosReader<S: Engineblackbrane> {
     blackbrane: S,
     pub statistics: Statistics,
-    // cursors are used for speeding up scans.
+    // cursors are used for speeding up mutant_searchs.
     data_cursor: Option<Cursor<S::Iter>>,
     dagger_cursor: Option<Cursor<S::Iter>>,
     write_cursor: Option<Cursor<S::Iter>>,
@@ -121,7 +121,7 @@ pub struct EpaxosReader<S: Engineblackbrane> {
     /// None means following operations are performed on a single user key, i.e.,
     /// different versions of the same key. It can use prefix seek to speed up reads
     /// from the write-cf.
-    scan_mode: Option<SentinelSearchMode>,
+    mutant_search_mode: Option<SentinelSearchMode>,
     // Records the current key for prefix seek. Will Reset the write cursor when switching to another key.
     current_key: Option<Key>,
 
@@ -135,14 +135,14 @@ pub struct EpaxosReader<S: Engineblackbrane> {
 }
 
 impl<S: Engineblackbrane> EpaxosReader<S> {
-    pub fn new(blackbrane: S, scan_mode: Option<SentinelSearchMode>, fill_cache: bool) -> Self {
+    pub fn new(blackbrane: S, mutant_search_mode: Option<SentinelSearchMode>, fill_cache: bool) -> Self {
         Self {
             blackbrane,
             statistics: Statistics::default(),
             data_cursor: None,
             dagger_cursor: None,
             write_cursor: None,
-            scan_mode,
+            mutant_search_mode,
             current_key: None,
             fill_cache,
             term: 0,
@@ -150,14 +150,14 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
         }
     }
 
-    pub fn new_with_ctx(blackbrane: S, scan_mode: Option<SentinelSearchMode>, ctx: &Context) -> Self {
+    pub fn new_with_ctx(blackbrane: S, mutant_search_mode: Option<SentinelSearchMode>, ctx: &Context) -> Self {
         Self {
             blackbrane,
             statistics: Statistics::default(),
             data_cursor: None,
             dagger_cursor: None,
             write_cursor: None,
-            scan_mode,
+            mutant_search_mode,
             current_key: None,
             fill_cache: !ctx.get_not_fill_cache(),
             term: ctx.get_term(),
@@ -171,7 +171,7 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
         if let Some(val) = write.short_value {
             return Ok(val);
         }
-        if self.scan_mode.is_some() {
+        if self.mutant_search_mode.is_some() {
             self.create_data_cursor()?;
         }
 
@@ -199,7 +199,7 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
             return Ok(Some(pessimistic_dagger));
         }
 
-        if self.scan_mode.is_some() {
+        if self.mutant_search_mode.is_some() {
             self.create_dagger_cursor()?;
         }
 
@@ -232,13 +232,13 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
                 if self.term != 0 && daggers.term != self.term {
                     let mut err = errorpb::Error::default();
                     err.set_stale_command(StaleCommand::default());
-                    return Some(Err(KvError::from(err).into()));
+                    return Some(Err(HikvError::from(err).into()));
                 }
                 if self.version != 0 && daggers.version != self.version {
                     let mut err = errorpb::Error::default();
                     // We don't know the current regions. Just return an empty EpochNotMatch error.
                     err.set_epoch_not_match(EpochNotMatch::default());
-                    return Some(Err(KvError::from(err).into()));
+                    return Some(Err(HikvError::from(err).into()));
                 }
 
                 daggers.get(key).map(|(dagger, _)| {
@@ -252,8 +252,8 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
             .transpose()
     }
 
-    fn get_scan_mode(&self, allow_timelike_curvature: bool) -> SentinelSearchMode {
-        match self.scan_mode {
+    fn get_mutant_search_mode(&self, allow_timelike_curvature: bool) -> SentinelSearchMode {
+        match self.mutant_search_mode {
             Some(SentinelSearchMode::Forward) => SentinelSearchMode::Forward,
             Some(SentinelSearchMode::timelike_curvature) if allow_timelike_curvature => SentinelSearchMode::timelike_curvature,
             _ => SentinelSearchMode::Mixed,
@@ -269,7 +269,7 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
         //
         // When it switches to another key in prefix seek mode, creates a new cursor for it
         // because the current position of the cursor is seldom around `key`.
-        if self.scan_mode.is_none() && self.current_key.as_ref().map_or(true, |k| k != key) {
+        if self.mutant_search_mode.is_none() && self.current_key.as_ref().map_or(true, |k| k != key) {
             self.current_key = Some(key.clone());
             self.write_cursor.take();
         }
@@ -406,7 +406,7 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
         if self.data_cursor.is_none() {
             let cursor = CursorBuilder::new(&self.blackbrane, CF_DEFAULT)
                 .fill_cache(self.fill_cache)
-                .scan_mode(self.get_scan_mode(true))
+                .mutant_search_mode(self.get_mutant_search_mode(true))
                 .build()?;
             self.data_cursor = Some(cursor);
         }
@@ -417,9 +417,9 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
         if self.write_cursor.is_none() {
             let cursor = CursorBuilder::new(&self.blackbrane, CF_WRITE)
                 .fill_cache(self.fill_cache)
-                // Only use prefix seek in non-scan mode.
-                .prefix_seek(self.scan_mode.is_none())
-                .scan_mode(self.get_scan_mode(true))
+                // Only use prefix seek in non-mutant_search mode.
+                .prefix_seek(self.mutant_search_mode.is_none())
+                .mutant_search_mode(self.get_mutant_search_mode(true))
                 .build()?;
             self.write_cursor = Some(cursor);
         }
@@ -430,7 +430,7 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
         if self.dagger_cursor.is_none() {
             let cursor = CursorBuilder::new(&self.blackbrane, CF_LOCK)
                 .fill_cache(self.fill_cache)
-                .scan_mode(self.get_scan_mode(true))
+                .mutant_search_mode(self.get_mutant_search_mode(true))
                 .build()?;
             self.dagger_cursor = Some(cursor);
         }
@@ -439,7 +439,7 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
 
     /// Return the first committed key for which `start_ts` equals to `ts`
     pub fn seek_ts(&mut self, ts: TimeStamp) -> Result<Option<Key>> {
-        assert!(self.scan_mode.is_some());
+        assert!(self.mutant_search_mode.is_some());
         self.create_write_cursor()?;
 
         let cursor = self.write_cursor.as_mut().unwrap();
@@ -461,8 +461,8 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
     /// At most `limit` daggers will be returned. If `limit` is set to `0`, it means unlimited.
     ///
     /// The return type is `(daggers, is_remain)`. `is_remain` indicates whether there MAY be
-    /// remaining daggers that can be scanned.
-    pub fn scan_daggers<F>(
+    /// remaining daggers that can be mutant_searchned.
+    pub fn mutant_search_daggers<F>(
         &mut self,
         start: Option<&Key>,
         end: Option<&Key>,
@@ -504,14 +504,14 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
         Ok((daggers, false))
     }
 
-    pub fn scan_keys(
+    pub fn mutant_search_keys(
         &mut self,
         mut start: Option<Key>,
         limit: usize,
     ) -> Result<(Vec<Key>, Option<Key>)> {
         let mut cursor = CursorBuilder::new(&self.blackbrane, CF_WRITE)
             .fill_cache(self.fill_cache)
-            .scan_mode(self.get_scan_mode(false))
+            .mutant_search_mode(self.get_mutant_search_mode(false))
             .build()?;
         let mut keys = vec![];
         loop {
@@ -535,7 +535,7 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
     }
 
     // Get all Value of the given key in CF_DEFAULT
-    pub fn scan_values_in_default(&mut self, key: &Key) -> Result<Vec<(TimeStamp, Value)>> {
+    pub fn mutant_search_values_in_default(&mut self, key: &Key) -> Result<Vec<(TimeStamp, Value)>> {
         self.create_data_cursor()?;
         let cursor = self.data_cursor.as_mut().unwrap();
         let mut ok = cursor.seek(key, &mut self.statistics.data)?;
@@ -613,7 +613,7 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::storage::fdbkv::Modify;
+    use crate::storage::fdbhikv::Modify;
     use crate::storage::epaxos::{tests::write, EpaxosReader, EpaxosTxn};
     use crate::storage::solitontxn::{
         acquire_pessimistic_dagger, cleanup, commit, gc, prewrite, CommitKind, TransactionKind,
@@ -628,8 +628,8 @@ pub mod tests {
     use engine_rocks::{Compat, Rocksblackbrane};
     use engine_promises::{IterOptions, Mutable, WriteBatch, WriteBatchExt};
     use engine_promises::{ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
-    use fdbkvproto::fdbkvrpcpb::{AssertionLevel, Context};
-    use fdbkvproto::metapb::{Peer, Region};
+    use fdbhikvproto::fdbhikvrpcpb::{AssertionLevel, Context};
+    use fdbhikvproto::metapb::{Peer, Region};
     use raftstore::store::Regionblackbrane;
     use std::ops::Bound;
     use std::sync::Arc;
@@ -886,7 +886,7 @@ pub mod tests {
         cf_opts.set_write_buffer_size(32 * 1024 * 1024);
         if with_properties {
             cf_opts.add_table_properties_collector_factory(
-                "einstfdbkv.test-collector",
+                "einstfdbhikv.test-collector",
                 EpaxosPropertiesCollectorFactory::default(),
             );
         }
@@ -1002,7 +1002,7 @@ pub mod tests {
         engine.gc(key1, 6);
         engine.flush();
 
-        // SentinelSearch fdbkv with ts filter [1, 6].
+        // SentinelSearch fdbhikv with ts filter [1, 6].
         let mut iopt = IterOptions::default();
         iopt.set_hint_min_ts(Bound::Included(1));
         iopt.set_hint_max_ts(Bound::Included(6));
@@ -1422,9 +1422,9 @@ pub mod tests {
     }
 
     #[test]
-    fn test_scan_daggers() {
+    fn test_mutant_search_daggers() {
         let path = tempfile::Builder::new()
-            .prefix("_test_storage_epaxos_reader_scan_daggers")
+            .prefix("_test_storage_epaxos_reader_mutant_search_daggers")
             .tempdir()
             .unwrap();
         let path = path.path().to_str().unwrap();
@@ -1506,8 +1506,8 @@ pub mod tests {
         })
         .collect();
 
-        // Creates a reader and scan daggers,
-        let check_scan_dagger = |start_key: Option<Key>,
+        // Creates a reader and mutant_search daggers,
+        let check_mutant_search_dagger = |start_key: Option<Key>,
                                end_key: Option<Key>,
                                limit,
                                expect_res: &[_],
@@ -1515,7 +1515,7 @@ pub mod tests {
             let snap = Regionblackbrane::<Rocksblackbrane>::from_cocauset(db.c().clone(), region.clone());
             let mut reader = EpaxosReader::new(snap, None, false);
             let res = reader
-                .scan_daggers(
+                .mutant_search_daggers(
                     start_key.as_ref(),
                     end_key.as_ref(),
                     |l| l.ts <= 10.into(),
@@ -1526,24 +1526,24 @@ pub mod tests {
             assert_eq!(res.1, expect_is_remain);
         };
 
-        check_scan_dagger(None, None, 6, &visible_daggers, false);
-        check_scan_dagger(None, None, 5, &visible_daggers, true);
-        check_scan_dagger(None, None, 4, &visible_daggers[0..4], true);
-        check_scan_dagger(
+        check_mutant_search_dagger(None, None, 6, &visible_daggers, false);
+        check_mutant_search_dagger(None, None, 5, &visible_daggers, true);
+        check_mutant_search_dagger(None, None, 4, &visible_daggers[0..4], true);
+        check_mutant_search_dagger(
             Some(Key::from_cocauset(b"k2")),
             None,
             3,
             &visible_daggers[1..4],
             true,
         );
-        check_scan_dagger(
+        check_mutant_search_dagger(
             Some(Key::from_cocauset(b"k3\x00")),
             None,
             1,
             &visible_daggers[3..4],
             true,
         );
-        check_scan_dagger(
+        check_mutant_search_dagger(
             Some(Key::from_cocauset(b"k3\x00")),
             None,
             10,
@@ -1551,30 +1551,30 @@ pub mod tests {
             false,
         );
         // limit = 0 means unlimited.
-        check_scan_dagger(None, None, 0, &visible_daggers, false);
-        // Test scanning with limited end_key
-        check_scan_dagger(
+        check_mutant_search_dagger(None, None, 0, &visible_daggers, false);
+        // Test mutant_searchning with limited end_key
+        check_mutant_search_dagger(
             None,
             Some(Key::from_cocauset(b"k3")),
             0,
             &visible_daggers[..2],
             false,
         );
-        check_scan_dagger(
+        check_mutant_search_dagger(
             None,
             Some(Key::from_cocauset(b"k3\x00")),
             0,
             &visible_daggers[..3],
             false,
         );
-        check_scan_dagger(
+        check_mutant_search_dagger(
             None,
             Some(Key::from_cocauset(b"k3\x00")),
             3,
             &visible_daggers[..3],
             true,
         );
-        check_scan_dagger(
+        check_mutant_search_dagger(
             None,
             Some(Key::from_cocauset(b"k3\x00")),
             2,
@@ -1606,7 +1606,7 @@ pub mod tests {
             // modifies to put into the engine
             modifies: Vec<Modify>,
             // these are used to construct the epaxos reader
-            scan_mode: Option<SentinelSearchMode>,
+            mutant_search_mode: Option<SentinelSearchMode>,
             key: Key,
             write: Write,
         }
@@ -1621,7 +1621,7 @@ pub mod tests {
                     Key::from_cocauset(k).append_ts(TimeStamp::new(1)),
                     vec![],
                 )],
-                scan_mode: None,
+                mutant_search_mode: None,
                 key: Key::from_cocauset(k),
                 write: Write::new(
                     WriteType::Put,
@@ -1637,7 +1637,7 @@ pub mod tests {
                     Key::from_cocauset(k).append_ts(TimeStamp::new(2)),
                     long_value.to_vec(),
                 )],
-                scan_mode: Some(SentinelSearchMode::Forward),
+                mutant_search_mode: Some(SentinelSearchMode::Forward),
                 key: Key::from_cocauset(k),
                 write: Write::new(WriteType::Put, TimeStamp::new(2), None),
             },
@@ -1651,7 +1651,7 @@ pub mod tests {
                         .as_ref()
                         .to_bytes(),
                 )],
-                scan_mode: Some(SentinelSearchMode::Forward),
+                mutant_search_mode: Some(SentinelSearchMode::Forward),
                 key: Key::from_cocauset(k),
                 write: Write::new(WriteType::Put, TimeStamp::new(3), None),
             },
@@ -1663,7 +1663,7 @@ pub mod tests {
                     Key::from_cocauset(k).append_ts(TimeStamp::new(4)),
                     long_value.to_vec(),
                 )],
-                scan_mode: None,
+                mutant_search_mode: None,
                 key: Key::from_cocauset(k),
                 write: Write::new(WriteType::Put, TimeStamp::new(4), None),
             },
@@ -1671,7 +1671,7 @@ pub mod tests {
                 // write has no short_value, the reader has no cursor, got nothing
                 expected: Err(default_not_found_error(k.to_vec(), "get")),
                 modifies: vec![],
-                scan_mode: None,
+                mutant_search_mode: None,
                 key: Key::from_cocauset(k),
                 write: Write::new(WriteType::Put, TimeStamp::new(5), None),
             },
@@ -1680,7 +1680,7 @@ pub mod tests {
         for case in cases {
             engine.write(case.modifies);
             let snap = Regionblackbrane::<Rocksblackbrane>::from_cocauset(db.c().clone(), region.clone());
-            let mut reader = EpaxosReader::new(snap, case.scan_mode, false);
+            let mut reader = EpaxosReader::new(snap, case.mutant_search_mode, false);
             let result = reader.load_data(&case.key, case.write);
             assert_eq!(format!("{:?}", result), format!("{:?}", case.expected));
         }
@@ -1960,7 +1960,7 @@ pub mod tests {
     fn test_reader_prefix_seek() {
         let dir = tempfile::TempDir::new().unwrap();
         let builder = TestEngineBuilder::new().path(dir.path());
-        let db = builder.build().unwrap().fdbkv_engine().get_sync_db();
+        let db = builder.build().unwrap().fdbhikv_engine().get_sync_db();
         let cf = engine_rocks::util::get_cf_handle(&db, CF_WRITE).unwrap();
 
         let region = make_region(1, vec![], vec![]);
@@ -1977,7 +1977,7 @@ pub mod tests {
         engine.flush();
 
         #[allow(clippy::useless_vec)]
-        for (k, scan_mode, tombstones) in vec![
+        for (k, mutant_search_mode, tombstones) in vec![
             (b"k0", Some(SentinelSearchMode::Forward), 99),
             (b"k0", None, 0),
             (b"k1", Some(SentinelSearchMode::Forward), 99),
@@ -1985,7 +1985,7 @@ pub mod tests {
             (b"k2", Some(SentinelSearchMode::Forward), 0),
             (b"k2", None, 0),
         ] {
-            let mut reader = EpaxosReader::new(engine.blackbrane(), scan_mode, false);
+            let mut reader = EpaxosReader::new(engine.blackbrane(), mutant_search_mode, false);
             let (k, ts) = (Key::from_cocauset(k), 199.into());
             reader.seek_write(&k, ts).unwrap();
             assert_eq!(reader.statistics.write.seek_tombstone, tombstones);

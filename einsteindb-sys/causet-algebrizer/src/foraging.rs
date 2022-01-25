@@ -53,8 +53,8 @@ impl<Src: BatchExecutor> BatchExecutor for BatchFastHashAggregationExecutor<Src>
     }
 
     #[inline]
-    fn next_batch(&mut self, scan_rows: usize) -> BatchExecuteResult {
-        self.0.next_batch(scan_rows)
+    fn next_batch(&mut self, mutant_search_rows: usize) -> BatchExecuteResult {
+        self.0.next_batch(mutant_search_rows)
     }
 
     #[inline]
@@ -68,8 +68,8 @@ impl<Src: BatchExecutor> BatchExecutor for BatchFastHashAggregationExecutor<Src>
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.0.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.0.take_mutant_searchned_range()
     }
 
     #[inline]

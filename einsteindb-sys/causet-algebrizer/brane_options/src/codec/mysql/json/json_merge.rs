@@ -91,22 +91,22 @@ fn merge_binary_array<'a>(elems: &[MergeUnit<'a>]) -> Result<Json> {
 
 // See `mergeBinaryObject()` in Milevaeinsteindb `json/binary_function.go`
 fn merge_binary_object<'a>(objects: &mut Vec<JsonRef<'a>>) -> Result<Json> {
-    let mut ekv_map: BTreeMap<String, Json> = BTreeMap::new();
+    let mut ehikv_map: BTreeMap<String, Json> = BTreeMap::new();
     for j in objects.drain(..) {
         let elem_count = j.get_elem_count();
         for i in 0..elem_count {
             let key = j.object_get_key(i);
             let val = j.object_get_val(i)?;
             let key = String::from_utf8(key.to_owned()).map_err(Error::from)?;
-            if let Some(old) = ekv_map.remove(&key) {
+            if let Some(old) = ehikv_map.remove(&key) {
                 let new = Json::merge(vec![old.as_ref(), val])?;
-                ekv_map.insert(key, new);
+                ehikv_map.insert(key, new);
             } else {
-                ekv_map.insert(key, val.to_owned());
+                ehikv_map.insert(key, val.to_owned());
             }
         }
     }
-    Json::from_object(ekv_map)
+    Json::from_object(ehikv_map)
 }
 
 #[braneg(test)]

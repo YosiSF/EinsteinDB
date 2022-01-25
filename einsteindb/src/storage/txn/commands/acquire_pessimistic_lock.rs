@@ -1,10 +1,10 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use fdbkvproto::fdbkvrpcpb::{ExtraOp, DaggerInfo};
+use fdbhikvproto::fdbhikvrpcpb::{ExtraOp, DaggerInfo};
 use solitontxn_types::{Key, OldValues, TimeStamp, TxnExtra};
 
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::{DaggerManager, WaitTimeout};
 use crate::storage::epaxos::{
     Error as EpaxosError, ErrorInner as EpaxosErrorInner, EpaxosTxn, blackbraneReader,
@@ -25,7 +25,7 @@ command! {
     /// This can be rolled back with a [`PessimisticRollback`](Command::PessimisticRollback) command.
     AcquirePessimisticDagger:
         cmd_ty => StorageResult<PessimisticDaggerRes>,
-        display => "fdbkv::command::acquirepessimisticdagger keys({}) @ {} {} | {:?}", (keys.len, start_ts, for_update_ts, ctx),
+        display => "fdbhikv::command::acquirepessimisticdagger keys({}) @ {} {} | {:?}", (keys.len, start_ts, for_update_ts, ctx),
         content => {
             /// The set of keys to dagger.
             keys: Vec<(Key, bool)>,

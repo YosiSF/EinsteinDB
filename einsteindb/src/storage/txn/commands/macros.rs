@@ -9,7 +9,7 @@ macro_rules! ctx {
         fn get_ctx_mut(&mut self) -> &mut crate::storage::Context {
             &mut self.ctx
         }
-        fn deadline(&self) -> ::einstfdbkv_util::deadline::Deadline {
+        fn deadline(&self) -> ::einstfdbhikv_util::deadline::Deadline {
             self.deadline
         }
     };
@@ -38,7 +38,7 @@ macro_rules! command {
         $(#[$outer_doc])*
         pub struct $cmd {
             pub ctx: crate::storage::Context,
-            pub deadline: ::einstfdbkv_util::deadline::Deadline,
+            pub deadline: ::einstfdbhikv_util::deadline::Deadline,
             $($(#[$inner_doc])* pub $arg: $arg_ty,)*
         }
 
@@ -53,7 +53,7 @@ macro_rules! command {
                 } else {
                     ::std::time::Duration::from_millis(ctx.max_execution_duration_ms)
                 };
-                let deadline = ::einstfdbkv_util::deadline::Deadline::from_now(execution_duration_limit);
+                let deadline = ::einstfdbhikv_util::deadline::Deadline::from_now(execution_duration_limit);
                 Command::$cmd($cmd {
                         ctx,
                         deadline,

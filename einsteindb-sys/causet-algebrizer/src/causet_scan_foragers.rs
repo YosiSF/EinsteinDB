@@ -10,13 +10,13 @@
 
 use std::sync::Arc;
 
-use ekvproto::interlock::KeyRange;
+use ehikvproto::interlock::KeyRange;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::EvalType;
 use fidelpb::ColumnInfo;
 use fidelpb::FieldType;
 use fidelpb::IndexScan;
 
-use super::util::scan_executor::*;
+use super::util::mutant_search_executor::*;
 use crate::interface::*;
 use codec::prelude::NumberDecoder;
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::{IntervalRange, Storage};
@@ -43,7 +43,7 @@ impl<S: Storage> BatchIndexScanExecutor<S> {
         config: Arc<EvalConfig>,
         columns_info: Vec<ColumnInfo>,
         key_ranges: Vec<KeyRange>,
-        is_backward: bool,
+        is_spacelike_completion: bool,
         unique: bool,
     ) -> Result<Self> {
 
@@ -70,7 +70,7 @@ impl<S: Storage> BatchIndexScanExecutor<S> {
             imp,
             storage,
             key_ranges,
-            is_backward,
+            is_spacelike_completion,
             is_key_only: false,
             accept_point_range: unique,
         })?;
@@ -87,8 +87,8 @@ impl<S: Storage> BatchExecutor for BatchIndexScanExecutor<S> {
     }
 
     #[inline]
-    fn next_batch(&mut self, scan_rows: usize) -> BatchExecuteResult {
-        self.0.next_batch(scan_rows)
+    fn next_batch(&mut self, mutant_search_rows: usize) -> BatchExecuteResult {
+        self.0.next_batch(mutant_search_rows)
     }
 
     #[inline]
@@ -102,8 +102,8 @@ impl<S: Storage> BatchExecutor for BatchIndexScanExecutor<S> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.0.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.0.take_mutant_searchned_range()
     }
 
     #[inline]
@@ -137,16 +137,16 @@ impl ScanExecutorImpl for IndexScanExecutorImpl {
         &mut self.context
     }
 
-    fn build_column_vec(&self, scan_rows: usize) -> QuiesceBatchColumnVec {
+    fn build_column_vec(&self, mutant_search_rows: usize) -> QuiesceBatchColumnVec {
         let columns_len = self.topograph.len();
         let mut columns = Vec::with_capacity(columns_len);
         for _ in 0..self.columns_id_without_handle.len() {
-            columns.push(QuiesceBatchColumn::raw_with_capacity(scan_rows));
+            columns.push(QuiesceBatchColumn::raw_with_capacity(mutant_search_rows));
         }
         if self.decode_handle {
 
             columns.push(QuiesceBatchColumn::decoded_with_capacity_and_tp(
-                scan_rows,
+                mutant_search_rows,
                 EvalType::Int,
             ));
         }
@@ -155,16 +155,16 @@ impl ScanExecutorImpl for IndexScanExecutorImpl {
         QuiesceBatchColumnVec::from(columns)
     }
 
-    fn process_ekv_pair(
+    fn process_ehikv_pair(
         &mut self,
         key: &[u8],
         value: &[u8],
         columns: &mut QuiesceBatchColumnVec,
     ) -> Result<()> {
         if value.len() > MAX_OLD_ENCODED_VALUE_LEN {
-            self.process_ekv_pair_new(key, value, columns)
+            self.process_ehikv_pair_new(key, value, columns)
         } else {
-            self.process_ekv_pair_old(key, value, columns)
+            self.process_ehikv_pair_old(key, value, columns)
         }
     }
 }
@@ -199,7 +199,7 @@ impl IndexScanExecutorImpl {
         }
     }
 
-    fn process_ekv_pair_new(
+    fn process_ehikv_pair_new(
         &mut self,
         key: &[u8],
         mut value: &[u8],
@@ -241,7 +241,7 @@ impl IndexScanExecutorImpl {
         Ok(())
     }
 
-    fn process_ekv_pair_old(
+    fn process_ehikv_pair_old(
         &mut self,
         key: &[u8],
         value: &[u8],
@@ -287,7 +287,7 @@ mod tests {
     use std::sync::Arc;
 
     use codec::prelude::NumberEncoder;
-    use ekvproto::interlock::KeyRange;
+    use ehikvproto::interlock::KeyRange;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::{FieldTypeAccessor, FieldTypeTp};
     use fidelpb::ColumnInfo;
 
@@ -342,7 +342,7 @@ mod tests {
 
 
         let store = {
-            let ekv: Vec<_> = data
+            let ehikv: Vec<_> = data
                 .iter()
                 .map(|datums| {
                     let index_data = datum::encode_key(&mut ctx, datums).unwrap();
@@ -351,7 +351,7 @@ mod tests {
                     (key, value)
                 })
                 .collect();
-            FixtureStorage::from(ekv)
+            FixtureStorage::from(ehikv)
         };
 
         {
@@ -464,7 +464,7 @@ mod tests {
         // For a unique index, the PK handle is stored in the value.
 
         let store = {
-            let ekv: Vec<_> = data
+            let ehikv: Vec<_> = data
                 .iter()
                 .map(|datums| {
                     let index_data = datum::encode_key(&mut ctx, &datums[0..2]).unwrap();
@@ -477,11 +477,11 @@ mod tests {
                     (key, value)
                 })
                 .collect();
-            FixtureStorage::from(ekv)
+            FixtureStorage::from(ehikv)
         };
 
         {
-            // Case 2.1. Unique index, prefix range scan.
+            // Case 2.1. Unique index, prefix range mutant_search.
 
             let key_ranges = vec![{
                 let mut range = KeyRange::default();
@@ -535,7 +535,7 @@ mod tests {
         }
 
         {
-            // Case 2.2. Unique index, point scan.
+            // Case 2.2. Unique index, point mutant_search.
 
             let key_ranges = vec![{
                 let mut range = KeyRange::default();

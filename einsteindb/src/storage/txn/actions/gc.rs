@@ -118,11 +118,11 @@ impl State {
 
 pub mod tests {
     use super::*;
-    use crate::storage::fdbkv::SnapContext;
+    use crate::storage::fdbhikv::SnapContext;
     use crate::storage::epaxos::tests::write;
     use crate::storage::{Engine, SentinelSearchMode};
     use concurrency_manager::ConcurrencyManager;
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
 
     #[cfg(test)]
     use crate::storage::{

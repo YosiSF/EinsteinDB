@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::epaxos::{EpaxosTxn, blackbraneReader};
 use crate::storage::solitontxn::commands::{
@@ -18,7 +18,7 @@ command! {
     /// This should be following a [`Prewrite`](Command::Prewrite) on the given key.
     Rollback:
         cmd_ty => (),
-        display => "fdbkv::command::rollback keys({}) @ {} | {:?}", (keys.len, start_ts, ctx),
+        display => "fdbhikv::command::rollback keys({}) @ {} | {:?}", (keys.len, start_ts, ctx),
         content => {
             keys: Vec<Key>,
             /// The transaction timestamp.

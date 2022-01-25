@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::epaxos::{
     Error as EpaxosError, ErrorInner as EpaxosErrorInner, EpaxosTxn, blackbraneReader,
@@ -22,7 +22,7 @@ command! {
     /// [`Prewrite`](Command::Prewrite).
     TxnHeartBeat:
         cmd_ty => TxnStatus,
-        display => "fdbkv::command::solitontxn_heart_beat {} @ {} ttl {} | {:?}", (primary_key, start_ts, advise_ttl, ctx),
+        display => "fdbhikv::command::solitontxn_heart_beat {} @ {} ttl {} | {:?}", (primary_key, start_ts, advise_ttl, ctx),
         content => {
             /// The primary key of the transaction.
             primary_key: Key,
@@ -96,7 +96,7 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for TxnHeartBeat {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::storage::fdbkv::TestEngineBuilder;
+    use crate::storage::fdbhikv::TestEngineBuilder;
     use crate::storage::dagger_manager::DummyDaggerManager;
     use crate::storage::epaxos::tests::*;
     use crate::storage::solitontxn::commands::WriteCommand;
@@ -104,8 +104,8 @@ pub mod tests {
     use crate::storage::solitontxn::tests::*;
     use crate::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
-    use fdbkvproto::fdbkvrpcpb::Context;
-    use einstfdbkv_util::deadline::Deadline;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
+    use einstfdbhikv_util::deadline::Deadline;
 
     pub fn must_success<E: Engine>(
         engine: &E,

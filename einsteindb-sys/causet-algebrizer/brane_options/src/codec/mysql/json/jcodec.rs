@@ -39,11 +39,11 @@ pub trait JsonEncoder: NumberEncoder {
         let key_entries_len = KEY_ENTRY_LEN * element_count;
         // value-causet ::= type(byte) offset-or-inlined-value(uint32)
         let value_entries_len = VALUE_ENTRY_LEN * element_count;
-        let ekv_encoded_len = entries
+        let ehikv_encoded_len = entries
             .iter()
             .fold(0, |acc, (k, v)| acc + k.len() + v.encoded_len());
         let size =
-            ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len + ekv_encoded_len;
+            ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len + ehikv_encoded_len;
         self.write_u32_le(element_count as u32)?;
         self.write_u32_le(size as u32)?;
         let mut key_offset = ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len;
@@ -84,11 +84,11 @@ pub trait JsonEncoder: NumberEncoder {
         let key_entries_len = KEY_ENTRY_LEN * element_count;
         // value-causet ::= type(byte) offset-or-inlined-value(uint32)
         let value_entries_len = VALUE_ENTRY_LEN * element_count;
-        let ekv_encoded_len = data
+        let ehikv_encoded_len = data
             .iter()
             .fold(0, |acc, (k, v)| acc + k.len() + v.as_ref().encoded_len());
         let size =
-            ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len + ekv_encoded_len;
+            ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len + ehikv_encoded_len;
         self.write_u32_le(element_count as u32)?;
         self.write_u32_le(size as u32)?;
         let mut key_offset = ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len;

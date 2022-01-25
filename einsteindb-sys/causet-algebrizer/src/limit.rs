@@ -69,8 +69,8 @@ impl<Src: Executor> Executor for LimitExecutor<Src> {
     }
 
     #[inline]
-    fn take_scanned_range(&mut self) -> IntervalRange {
-        self.src.take_scanned_range()
+    fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+        self.src.take_mutant_searchned_range()
     }
 
     #[inline]
@@ -108,7 +108,7 @@ mod tests {
         let range1 = get_range(tid, 0, 4);
         let range2 = get_range(tid, 5, 10);
         let key_ranges = vec![range1, range2];
-        let ts_ect = gen_table_scan_executor(tid, cis, &raw_data, Some(key_ranges));
+        let ts_ect = gen_table_mutant_search_executor(tid, cis, &raw_data, Some(key_ranges));
 
         // init Limit meta
         let mut limit_meta = Limit::default();

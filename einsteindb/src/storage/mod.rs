@@ -7,7 +7,7 @@
 //!
 //! This module is further split into layers: [`solitontxn`](solitontxn) lowers transactional commands to
 //! key-value operations on an EPAXOS abstraction. [`epaxos`](epaxos) is our EPAXOS implementation.
-//! [`fdbkv`](fdbkv) is an abstraction layer over persistent storage.
+//! [`fdbhikv`](fdbhikv) is an abstraction layer over persistent storage.
 //!
 //! Other responsibilities of this module are managing latches (see [`latch`](solitontxn::latch)), deaddagger
 //! and wait handling (see [`dagger_manager`](dagger_manager)), sche
@@ -15,11 +15,11 @@
 //! [`solitontxn::scheduler`](solitontxn::scheduler)), and handling commands from the cocauset and versioned APIs (in
 //! the [`Storage`](Storage) struct).
 //!
-//! For more information about EinsteinDB's transactions, see the [sig-solitontxn docs](https://github.com/einstfdbkv/sig-transaction/tree/master/doc).
+//! For more information about EinsteinDB's transactions, see the [sig-solitontxn docs](https://github.com/einstfdbhikv/sig-transaction/tree/master/doc).
 //!
 //! Some important types are:
 //!
-//! * the [`Engine`](fdbkv::Engine) trait and related promises, which abstracts over underlying storage,
+//! * the [`Engine`](fdbhikv::Engine) trait and related promises, which abstracts over underlying storage,
 //! * the [`EpaxosTxn`](epaxos::solitontxn::EpaxosTxn) struct, which is the primary object in the EPAXOS
 //!   implementation,
 //! * the commands in the [`commands`](solitontxn::commands) module, which are how each command is implemented,
@@ -27,19 +27,19 @@
 //!
 //! Related code:
 //!
-//! * the [`fdbkv`](crate::server::service::fdbkv) module, which is the interface for EinsteinDB's APIs,
+//! * the [`fdbhikv`](crate::server::service::fdbhikv) module, which is the interface for EinsteinDB's APIs,
 //! * the [`dagger_manager](crate::server::dagger_manager), which takes part in dagger and deaddagger
 //!   management,
 //! * [`gc_worker`](crate::server::gc_worker), which drives garbage collection of old values,
 //! * the [`solitontxn_types](::solitontxn_types) crate, some important types for this module's interface,
-//! * the [`fdbkvproto`](::fdbkvproto) crate, which defines EinsteinDB's protobuf API and includes some
+//! * the [`fdbhikvproto`](::fdbhikvproto) crate, which defines EinsteinDB's protobuf API and includes some
 //!   documentation of the commands implemented here,
 //! * the [`test_storage`](::test_storage) crate, integration tests for this module,
 //! * the [`engine_promises`](::engine_promises) crate, more detail of the engine abstraction.
 
 pub mod config;
 pub mod errors;
-pub mod fdbkv;
+pub mod fdbhikv;
 pub mod dagger_manager;
 pub(crate) mod metrics;
 pub mod epaxos;
@@ -49,10 +49,10 @@ pub mod solitontxn;
 mod read_pool;
 mod types;
 
-use self::fdbkv::SnapContext;
+use self::fdbhikv::SnapContext;
 pub use self::{
     errors::{get_error_kind_from_header, get_tag_from_header, Error, ErrorHeaderKind, ErrorInner},
-    fdbkv::{
+    fdbhikv::{
         CfStatistics, Cursor, CursorBuilder, Engine, FlowStatistics, FlowStatsReporter, Iterator,
         PerfStatisticsDelta, PerfStatisticsInstant, RocksEngine, SentinelSearchMode, blackbrane,
         StageLatencyStats, Statistics, TestEngineBuilder,
@@ -72,7 +72,7 @@ use crate::storage::solitontxn::flow_controller::FlowController;
 use crate::server::dagger_manager::waiter_manager;
 use crate::storage::{
     config::Config,
-    fdbkv::{with_tls_engine, Modify, WriteData},
+    fdbhikv::{with_tls_engine, Modify, WriteData},
     dagger_manager::{DummyDaggerManager, DaggerManager},
     metrics::*,
     epaxos::PointGetterBuilder,
@@ -84,12 +84,12 @@ use api_version::{match_template_api_version, APIVersion, KeyMode, cocausetValue
 use concurrency_manager::ConcurrencyManager;
 use engine_promises::{cocauset_ttl::ttl_to_expire_ts, CfName, CF_DEFAULT, CF_LOCK, CF_WRITE, DATA_CFS};
 use futures::prelude::*;
-use fdbkvproto::fdbkvrpcpb::ApiVersion;
-use fdbkvproto::fdbkvrpcpb::{
+use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
+use fdbhikvproto::fdbhikvrpcpb::{
     ChecksumAlgorithm, CommandPri, Context, GetRequest, IsolationLevel, KeyRange, DaggerInfo,
     cocausetGetRequest,
 };
-use fdbkvproto::pdpb::QueryKind;
+use fdbhikvproto::pdpb::QueryKind;
 use raftstore::store::{util::build_key_range, TxnExt};
 use raftstore::store::{ReadStats, WriteStats};
 use rand::prelude::*;
@@ -102,9 +102,9 @@ use std::{
         Arc,
     },
 };
-use einstfdbkv_fdbkv::blackbraneExt;
-use einstfdbkv_util::time::{duration_to_ms, Instant, ThreadReadId};
-use solitontxn_types::{Key, KvPair, Dagger, OldValues, cocausetMutation, TimeStamp, TsSet, Value};
+use einstfdbhikv_fdbhikv::blackbraneExt;
+use einstfdbhikv_util::time::{duration_to_ms, Instant, ThreadReadId};
+use solitontxn_types::{Key, HikvPair, Dagger, OldValues, cocausetMutation, TimeStamp, TsSet, Value};
 
 pub type Result<T> = std::result::Result<T, Error>;
 pub type Callback<T> = Box<dyn FnOnce(Result<T>) + Send>;
@@ -244,7 +244,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         engine: &E,
         ctx: SnapContext<'_>,
     ) -> impl std::future::Future<Output = Result<E::Snap>> {
-        fdbkv::blackbrane(engine, ctx)
+        fdbhikv::blackbrane(engine, ctx)
             .map_err(solitontxn::Error::from)
             .map_err(Error::from)
     }
@@ -275,8 +275,8 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         unsafe { with_tls_engine(f) }
     }
 
-    /// Check the given cocauset fdbkv CF name. If the given cf is empty, CF_DEFAULT will be returned.
-    fn cocausetfdbkv_cf(cf: &str, api_version: ApiVersion) -> Result<CfName> {
+    /// Check the given cocauset fdbhikv CF name. If the given cf is empty, CF_DEFAULT will be returned.
+    fn cocausetfdbhikv_cf(cf: &str, api_version: ApiVersion) -> Result<CfName> {
         match api_version {
             ApiVersion::V1 | ApiVersion::V1ttl => {
                 // In API V1, the possible cfs are CF_DEFAULT, CF_LOCK and CF_WRITE.
@@ -321,7 +321,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         true
     }
 
-    /// Check whether a cocauset fdbkv command or not.
+    /// Check whether a cocauset fdbhikv command or not.
     #[inline]
     fn is_cocauset_command(cmd: CommandKind) -> bool {
         matches!(
@@ -329,8 +329,8 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
             CommandKind::cocauset_batch_get_command
                 | CommandKind::cocauset_get
                 | CommandKind::cocauset_batch_get
-                | CommandKind::cocauset_scan
-                | CommandKind::cocauset_batch_scan
+                | CommandKind::cocauset_mutant_search
+                | CommandKind::cocauset_batch_mutant_search
                 | CommandKind::cocauset_put
                 | CommandKind::cocauset_batch_put
                 | CommandKind::cocauset_delete
@@ -343,7 +343,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         )
     }
 
-    /// Check whether a trancsation fdbkv command or not.
+    /// Check whether a trancsation fdbhikv command or not.
     #[inline]
     fn is_solitontxn_command(cmd: CommandKind) -> bool {
         !Self::is_cocauset_command(cmd)
@@ -356,8 +356,8 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
     ///   * Request of V1 from TiDB, for compatibility.
     ///   * Request of V2 with legal prefix.
     /// See the following for detail:
-    ///   * rfc: https://github.com/einstfdbkv/rfcs/blob/master/text/0069-api-v2.md.
-    ///   * proto: https://github.com/pingcap/fdbkvproto/blob/master/proto/fdbkvrpcpb.proto, enum APIVersion.
+    ///   * rfc: https://github.com/einstfdbhikv/rfcs/blob/master/text/0069-api-v2.md.
+    ///   * proto: https://github.com/pingcap/fdbhikvproto/blob/master/proto/fdbhikvrpcpb.proto, enum APIVersion.
     fn check_api_version(
         storage_api_version: ApiVersion,
         req_api_version: ApiVersion,
@@ -496,7 +496,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         mut ctx: Context,
         key: Key,
         start_ts: TimeStamp,
-    ) -> impl Future<Output = Result<(Option<Value>, KvGetStatistics)>> {
+    ) -> impl Future<Output = Result<(Option<Value>, HikvGetStatistics)>> {
         let stage_begin_ts = Instant::now_coarse();
         const CMD: CommandKind = CommandKind::get;
         let priority = ctx.get_priority();
@@ -524,7 +524,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
                 Self::check_api_version(api_version, ctx.api_version, CMD, [key.as_encoded()])?;
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
 
                 // The bypass_daggers and access_daggers set will be checked at most once.
                 // `TsSet::vec` is more efficient here.
@@ -565,7 +565,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         });
 
                     let delta = perf_statistics.delta();
-                    metrics::tls_collect_scan_details(CMD, &statistics);
+                    metrics::tls_collect_mutant_search_details(CMD, &statistics);
                     metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
                     metrics::tls_collect_perf_stats(CMD, &delta);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
@@ -592,7 +592,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     };
                     Ok((
                         result?,
-                        KvGetStatistics {
+                        HikvGetStatistics {
                             stats: statistics,
                             perf_stats: delta,
                             latency_stats,
@@ -620,7 +620,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         requests: Vec<GetRequest>,
         ids: Vec<u64>,
         consumer: P,
-        begin_instant: einstfdbkv_util::time::Instant,
+        begin_instant: einstfdbhikv_util::time::Instant,
     ) -> impl Future<Output = Result<()>> {
         const CMD: CommandKind = CommandKind::batch_get_command;
         // all requests in a batch have the same region, epoch, term, replica_read
@@ -641,7 +641,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                 KV_COMMAND_KEYREAD_HISTOGRAM_STATIC
                     .get(CMD)
                     .observe(requests.len() as f64);
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
                 let read_id = Some(ThreadReadId::new());
                 let mut statistics = Statistics::default();
                 let mut req_snaps = vec![];
@@ -756,7 +756,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         }
                     }
                 }
-                metrics::tls_collect_scan_details(CMD, &statistics);
+                metrics::tls_collect_mutant_search_details(CMD, &statistics);
                 SCHED_HISTOGRAM_VEC_STATIC
                     .get(CMD)
                     .observe(command_duration.saturating_elapsed_secs());
@@ -781,7 +781,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         mut ctx: Context,
         keys: Vec<Key>,
         start_ts: TimeStamp,
-    ) -> impl Future<Output = Result<(Vec<Result<KvPair>>, KvGetStatistics)>> {
+    ) -> impl Future<Output = Result<(Vec<Result<HikvPair>>, HikvGetStatistics)>> {
         let stage_begin_ts = Instant::now_coarse();
         const CMD: CommandKind = CommandKind::batch_get;
         let priority = ctx.get_priority();
@@ -816,7 +816,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     keys.iter().map(Key::as_encoded),
                 )?;
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
 
                 let bypass_daggers = TsSet::from_u64s(ctx.take_resolved_daggers());
                 let access_daggers = TsSet::from_u64s(ctx.take_committed_daggers());
@@ -849,7 +849,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         .batch_get(&keys, &mut statistics)
                         .map_err(Error::from)
                         .map(|v| {
-                            let fdbkv_pairs: Vec<_> = v
+                            let fdbhikv_pairs: Vec<_> = v
                                 .into_iter()
                                 .zip(keys)
                                 .filter(|&(ref v, ref _k)| {
@@ -863,12 +863,12 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                                 .collect();
                             KV_COMMAND_KEYREAD_HISTOGRAM_STATIC
                                 .get(CMD)
-                                .observe(fdbkv_pairs.len() as f64);
-                            fdbkv_pairs
+                                .observe(fdbhikv_pairs.len() as f64);
+                            fdbhikv_pairs
                         });
 
                     let delta = perf_statistics.delta();
-                    metrics::tls_collect_scan_details(CMD, &statistics);
+                    metrics::tls_collect_mutant_search_details(CMD, &statistics);
                     metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
                     metrics::tls_collect_perf_stats(CMD, &delta);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
@@ -895,7 +895,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     };
                     Ok((
                         result?,
-                        KvGetStatistics {
+                        HikvGetStatistics {
                             stats: statistics,
                             perf_stats: delta,
                             latency_stats,
@@ -915,11 +915,11 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
     }
 
     /// SentinelSearch keys in [`start_key`, `end_key`) up to `limit` keys from the blackbrane.
-    /// If `reverse_scan` is true, it scans [`end_key`, `start_key`) in descending order.
-    /// If `end_key` is `None`, it means the upper bound or the lower bound if reverse scan is unbounded.
+    /// If `reverse_mutant_search` is true, it mutant_searchs [`end_key`, `start_key`) in descending order.
+    /// If `end_key` is `None`, it means the upper bound or the lower bound if reverse mutant_search is unbounded.
     ///
     /// Only writes committed before `start_ts` are visible.
-    pub fn scan(
+    pub fn mutant_search(
         &self,
         mut ctx: Context,
         start_key: Key,
@@ -928,9 +928,9 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         sample_step: usize,
         start_ts: TimeStamp,
         key_only: bool,
-        reverse_scan: bool,
-    ) -> impl Future<Output = Result<Vec<Result<KvPair>>>> {
-        const CMD: CommandKind = CommandKind::scan;
+        reverse_mutant_search: bool,
+    ) -> impl Future<Output = Result<Vec<Result<HikvPair>>>> {
+        const CMD: CommandKind = CommandKind::mutant_search;
         let priority = ctx.get_priority();
         let priority_tag = get_priority_tag(priority);
         let resource_tag = self.resource_tag_factory.new_tag(&ctx);
@@ -949,7 +949,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         ctx.get_peer(),
                         start_key.as_encoded(),
                         end_key,
-                        reverse_scan,
+                        reverse_mutant_search,
                         QueryKind::SentinelSearch,
                     );
                 }
@@ -969,10 +969,10 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                 )?;
 
                 let (mut start_key, mut end_key) = (Some(start_key), end_key);
-                if reverse_scan {
+                if reverse_mutant_search {
                     std::mem::swap(&mut start_key, &mut end_key);
                 }
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
 
                 let bypass_daggers = TsSet::from_u64s(ctx.take_resolved_daggers());
                 let access_daggers = TsSet::from_u64s(ctx.take_committed_daggers());
@@ -1037,13 +1037,13 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         false,
                     );
 
-                    let mut scanner =
-                        snap_store.scanner(reverse_scan, key_only, false, start_key, end_key)?;
-                    let res = scanner.scan(limit, sample_step);
+                    let mut mutant_searchner =
+                        snap_store.mutant_searchner(reverse_mutant_search, key_only, false, start_key, end_key)?;
+                    let res = mutant_searchner.mutant_search(limit, sample_step);
 
-                    let statistics = scanner.take_statistics();
+                    let statistics = mutant_searchner.take_statistics();
                     let delta = perf_statistics.delta();
-                    metrics::tls_collect_scan_details(CMD, &statistics);
+                    metrics::tls_collect_mutant_search_details(CMD, &statistics);
                     metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
                     metrics::tls_collect_perf_stats(CMD, &delta);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
@@ -1075,7 +1075,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         }
     }
 
-    pub fn scan_dagger(
+    pub fn mutant_search_dagger(
         &self,
         mut ctx: Context,
         max_ts: TimeStamp,
@@ -1083,13 +1083,13 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         end_key: Option<Key>,
         limit: usize,
     ) -> impl Future<Output = Result<Vec<DaggerInfo>>> {
-        const CMD: CommandKind = CommandKind::scan_dagger;
+        const CMD: CommandKind = CommandKind::mutant_search_dagger;
         let priority = ctx.get_priority();
         let priority_tag = get_priority_tag(priority);
         let resource_tag = self.resource_tag_factory.new_tag(&ctx);
         let concurrency_manager = self.concurrency_manager.clone();
         let api_version = self.api_version;
-        // Do not allow replica read for scan_dagger.
+        // Do not allow replica read for mutant_search_dagger.
         ctx.set_replica_read(false);
 
         let res = self.read_pool.spawn_handle(
@@ -1124,7 +1124,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     )],
                 )?;
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
 
                 concurrency_manager.update_max_ts(max_ts);
                 let begin_instant = Instant::now();
@@ -1172,7 +1172,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         !ctx.get_not_fill_cache(),
                     );
                     let result = reader
-                        .scan_daggers(
+                        .mutant_search_daggers(
                             start_key.as_ref(),
                             end_key.as_ref(),
                             |dagger| dagger.ts <= max_ts,
@@ -1180,16 +1180,16 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         )
                         .map_err(solitontxn::Error::from);
                     statistics.add(&reader.statistics);
-                    let (fdbkv_pairs, _) = result?;
-                    let mut daggers = Vec::with_capacity(fdbkv_pairs.len());
-                    for (key, dagger) in fdbkv_pairs {
+                    let (fdbhikv_pairs, _) = result?;
+                    let mut daggers = Vec::with_capacity(fdbhikv_pairs.len());
+                    for (key, dagger) in fdbhikv_pairs {
                         let dagger_info =
                             dagger.into_dagger_info(key.into_cocauset().map_err(solitontxn::Error::from)?);
                         daggers.push(dagger_info);
                     }
 
                     let delta = perf_statistics.delta();
-                    metrics::tls_collect_scan_details(CMD, &statistics);
+                    metrics::tls_collect_mutant_search_details(CMD, &statistics);
                     metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
                     metrics::tls_collect_perf_stats(CMD, &delta);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
@@ -1339,7 +1339,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
                 Self::check_api_version(api_version, ctx.api_version, CMD, [&key])?;
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
                 let snap_ctx = SnapContext {
                     pb_ctx: &ctx,
                     ..Default::default()
@@ -1347,7 +1347,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                 let blackbrane =
                     Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
                 let store = cocausetStore::new(blackbrane, api_version);
-                let cf = Self::cocausetfdbkv_cf(&cf, api_version)?;
+                let cf = Self::cocausetfdbhikv_cf(&cf, api_version)?;
                 {
                     let begin_instant = Instant::now_coarse();
                     let mut stats = Statistics::default();
@@ -1422,7 +1422,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     .map_err(Error::from)?;
                 }
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
                 let read_id = Some(ThreadReadId::new());
                 let mut snaps = vec![];
                 for (req, id) in gets.into_iter().zip(ids) {
@@ -1444,7 +1444,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         Ok(blackbrane) => {
                             let mut stats = Statistics::default();
                             let store = cocausetStore::new(blackbrane, api_version);
-                            match Self::cocausetfdbkv_cf(&cf, api_version) {
+                            match Self::cocausetfdbhikv_cf(&cf, api_version) {
                                 Ok(cf) => {
                                     consumer.consume(
                                         id,
@@ -1494,7 +1494,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         ctx: Context,
         cf: String,
         keys: Vec<Vec<u8>>,
-    ) -> impl Future<Output = Result<Vec<Result<KvPair>>>> {
+    ) -> impl Future<Output = Result<Vec<Result<HikvPair>>>> {
         const CMD: CommandKind = CommandKind::cocauset_batch_get;
         let priority = ctx.get_priority();
         let priority_tag = get_priority_tag(priority);
@@ -1521,7 +1521,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
                 Self::check_api_version(api_version, ctx.api_version, CMD, &keys)?;
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
                 let snap_ctx = SnapContext {
                     pb_ctx: &ctx,
                     ..Default::default()
@@ -1532,10 +1532,10 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                 {
                     let begin_instant = Instant::now_coarse();
 
-                    let cf = Self::cocausetfdbkv_cf(&cf, api_version)?;
-                    // no scan_count for this kind of op.
+                    let cf = Self::cocausetfdbhikv_cf(&cf, api_version)?;
+                    // no mutant_search_count for this kind of op.
                     let mut stats = Statistics::default();
-                    let result: Vec<Result<KvPair>> = keys
+                    let result: Vec<Result<HikvPair>> = keys
                         .into_iter()
                         .map(Key::from_encoded)
                         .map(|k| {
@@ -1605,7 +1605,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         expire_ts: ttl_to_expire_ts(ttl),
                     };
                     Modify::Put(
-                        Self::cocausetfdbkv_cf(&cf, self.api_version)?,
+                        Self::cocausetfdbhikv_cf(&cf, self.api_version)?,
                         Key::from_encoded(key),
                         API::encode_cocauset_value_owned(cocauset_value),
                     )
@@ -1630,7 +1630,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         &self,
         ctx: Context,
         cf: String,
-        pairs: Vec<KvPair>,
+        pairs: Vec<HikvPair>,
         ttls: Vec<u64>,
         callback: Callback<()>,
     ) -> Result<()> {
@@ -1641,7 +1641,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
             pairs.iter().map(|(ref k, _)| k),
         )?;
 
-        let cf = Self::cocausetfdbkv_cf(&cf, self.api_version)?;
+        let cf = Self::cocausetfdbhikv_cf(&cf, self.api_version)?;
 
         check_key_size!(
             pairs.iter().map(|(ref k, _)| k),
@@ -1710,7 +1710,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         check_key_size!(Some(&key).into_iter(), self.max_key_size, callback);
 
         let mut batch = WriteData::from_modifies(vec![Modify::Delete(
-            Self::cocausetfdbkv_cf(&cf, self.api_version)?,
+            Self::cocausetfdbhikv_cf(&cf, self.api_version)?,
             Key::from_encoded(key),
         )]);
         batch.set_allowed_on_disk_almost_full();
@@ -1741,7 +1741,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
             [(Some(&start_key), Some(&end_key))],
         )?;
 
-        let cf = Self::cocausetfdbkv_cf(&cf, self.api_version)?;
+        let cf = Self::cocausetfdbhikv_cf(&cf, self.api_version)?;
         let start_key = Key::from_encoded(start_key);
         let end_key = Key::from_encoded(end_key);
 
@@ -1773,7 +1773,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
             &keys,
         )?;
 
-        let cf = Self::cocausetfdbkv_cf(&cf, self.api_version)?;
+        let cf = Self::cocausetfdbhikv_cf(&cf, self.api_version)?;
         check_key_size!(keys.iter(), self.max_key_size, callback);
 
         let modifies = keys
@@ -1795,15 +1795,15 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
     /// SentinelSearch cocauset keys in a range.
     ///
-    /// If `reverse_scan` is false, the range is [`start_key`, `end_key`); otherwise, the range is
-    /// [`end_key`, `start_key`) and it scans from `start_key` and goes timelike_curvatures. If `end_key` is `None`, it
+    /// If `reverse_mutant_search` is false, the range is [`start_key`, `end_key`); otherwise, the range is
+    /// [`end_key`, `start_key`) and it mutant_searchs from `start_key` and goes timelike_curvatures. If `end_key` is `None`, it
     /// means unbounded.
     ///
-    /// This function scans at most `limit` keys.
+    /// This function mutant_searchs at most `limit` keys.
     ///
     /// If `key_only` is true, the value
-    /// corresponding to the key will not be read out. Only scanned keys will be returned.
-    pub fn cocauset_scan(
+    /// corresponding to the key will not be read out. Only mutant_searchned keys will be returned.
+    pub fn cocauset_mutant_search(
         &self,
         ctx: Context,
         cf: String,
@@ -1811,9 +1811,9 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         end_key: Option<Vec<u8>>,
         limit: usize,
         key_only: bool,
-        reverse_scan: bool,
-    ) -> impl Future<Output = Result<Vec<Result<KvPair>>>> {
-        const CMD: CommandKind = CommandKind::cocauset_scan;
+        reverse_mutant_search: bool,
+    ) -> impl Future<Output = Result<Vec<Result<HikvPair>>>> {
+        const CMD: CommandKind = CommandKind::cocauset_mutant_search;
         let priority = ctx.get_priority();
         let priority_tag = get_priority_tag(priority);
         let resource_tag = self.resource_tag_factory.new_tag(&ctx);
@@ -1827,7 +1827,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         ctx.get_peer(),
                         &start_key,
                         end_key.as_ref().unwrap_or(&vec![]),
-                        reverse_scan,
+                        reverse_mutant_search,
                         QueryKind::SentinelSearch,
                     );
                 }
@@ -1844,14 +1844,14 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     [(Some(&start_key), end_key.as_ref())],
                 )?;
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
                 let snap_ctx = SnapContext {
                     pb_ctx: &ctx,
                     ..Default::default()
                 };
                 let blackbrane =
                     Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
-                let cf = Self::cocausetfdbkv_cf(&cf, api_version)?;
+                let cf = Self::cocausetfdbhikv_cf(&cf, api_version)?;
                 {
                     let store = cocausetStore::new(blackbrane, api_version);
                     let begin_instant = Instant::now_coarse();
@@ -1860,9 +1860,9 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     let end_key = end_key.map(Key::from_encoded);
 
                     let mut statistics = Statistics::default();
-                    let result = if reverse_scan {
+                    let result = if reverse_mutant_search {
                         store
-                            .reverse_cocauset_scan(
+                            .reverse_cocauset_mutant_search(
                                 cf,
                                 &start_key,
                                 end_key.as_ref(),
@@ -1873,7 +1873,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                             .await
                     } else {
                         store
-                            .lightlike_completion_cocauset_scan(
+                            .lightlike_completion_cocauset_mutant_search(
                                 cf,
                                 &start_key,
                                 end_key.as_ref(),
@@ -1895,7 +1895,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     KV_COMMAND_KEYREAD_HISTOGRAM_STATIC
                         .get(CMD)
                         .observe(statistics.data.flow_stats.read_keys as f64);
-                    metrics::tls_collect_scan_details(CMD, &statistics);
+                    metrics::tls_collect_mutant_search_details(CMD, &statistics);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
                         .observe(begin_instant.saturating_elapsed_secs());
@@ -1918,16 +1918,16 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
     }
 
     /// SentinelSearch cocauset keys in multiple ranges in a batch.
-    pub fn cocauset_batch_scan(
+    pub fn cocauset_batch_mutant_search(
         &self,
         ctx: Context,
         cf: String,
         mut ranges: Vec<KeyRange>,
         each_limit: usize,
         key_only: bool,
-        reverse_scan: bool,
-    ) -> impl Future<Output = Result<Vec<Result<KvPair>>>> {
-        const CMD: CommandKind = CommandKind::cocauset_batch_scan;
+        reverse_mutant_search: bool,
+    ) -> impl Future<Output = Result<Vec<Result<HikvPair>>>> {
+        const CMD: CommandKind = CommandKind::cocauset_batch_mutant_search;
         let priority = ctx.get_priority();
         let priority_tag = get_priority_tag(priority);
         let resource_tag = self.resource_tag_factory.new_tag(&ctx);
@@ -1949,19 +1949,19 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         .map(|range| (Some(range.get_start_key()), Some(range.get_end_key()))),
                 )?;
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
                 let snap_ctx = SnapContext {
                     pb_ctx: &ctx,
                     ..Default::default()
                 };
                 let blackbrane =
                     Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
-                let cf = Self::cocausetfdbkv_cf(&cf, api_version)?;
+                let cf = Self::cocausetfdbhikv_cf(&cf, api_version)?;
                 {
                     let store = cocausetStore::new(blackbrane, api_version);
                     let begin_instant = Instant::now();
                     let mut statistics = Statistics::default();
-                    if !Self::check_key_ranges(&ranges, reverse_scan) {
+                    if !Self::check_key_ranges(&ranges, reverse_mutant_search) {
                         return Err(box_err!("Invalid KeyRanges"));
                     };
                     let mut result = Vec::new();
@@ -1970,7 +1970,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         key_ranges.push(build_key_range(
                             &range.start_key,
                             &range.end_key,
-                            reverse_scan,
+                            reverse_mutant_search,
                         ));
                     }
                     let ranges_len = ranges.len();
@@ -1986,9 +1986,9 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         } else {
                             Some(Key::from_encoded(end_key))
                         };
-                        let pairs = if reverse_scan {
+                        let pairs = if reverse_mutant_search {
                             store
-                                .reverse_cocauset_scan(
+                                .reverse_cocauset_mutant_search(
                                     cf,
                                     &start_key,
                                     end_key.as_ref(),
@@ -1999,7 +1999,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                                 .await
                         } else {
                             store
-                                .lightlike_completion_cocauset_scan(
+                                .lightlike_completion_cocauset_mutant_search(
                                     cf,
                                     &start_key,
                                     end_key.as_ref(),
@@ -2022,7 +2022,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     KV_COMMAND_KEYREAD_HISTOGRAM_STATIC
                         .get(CMD)
                         .observe(statistics.data.flow_stats.read_keys as f64);
-                    metrics::tls_collect_scan_details(CMD, &statistics);
+                    metrics::tls_collect_mutant_search_details(CMD, &statistics);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
                         .observe(begin_instant.saturating_elapsed_secs());
@@ -2074,7 +2074,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
                 Self::check_api_version(api_version, ctx.api_version, CMD, [&key])?;
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
                 let snap_ctx = SnapContext {
                     pb_ctx: &ctx,
                     ..Default::default()
@@ -2082,7 +2082,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                 let blackbrane =
                     Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
                 let store = cocausetStore::new(blackbrane, api_version);
-                let cf = Self::cocausetfdbkv_cf(&cf, api_version)?;
+                let cf = Self::cocausetfdbhikv_cf(&cf, api_version)?;
                 {
                     let begin_instant = Instant::now_coarse();
                     let mut stats = Statistics::default();
@@ -2127,7 +2127,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
             CommandKind::cocauset_compare_and_swap,
             [&key],
         )?;
-        let cf = Self::cocausetfdbkv_cf(&cf, self.api_version)?;
+        let cf = Self::cocausetfdbhikv_cf(&cf, self.api_version)?;
 
         if self.api_version == ApiVersion::V1 && ttl != 0 {
             return Err(Error::from(ErrorInner::TTLNotEnabled));
@@ -2148,7 +2148,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         &self,
         ctx: Context,
         cf: String,
-        pairs: Vec<KvPair>,
+        pairs: Vec<HikvPair>,
         ttls: Vec<u64>,
         callback: Callback<()>,
     ) -> Result<()> {
@@ -2159,7 +2159,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
             pairs.iter().map(|(ref k, _)| k),
         )?;
 
-        let cf = Self::cocausetfdbkv_cf(&cf, self.api_version)?;
+        let cf = Self::cocausetfdbhikv_cf(&cf, self.api_version)?;
         let mutations = match self.api_version {
             ApiVersion::V1 => {
                 if ttls.iter().any(|&x| x != 0) {
@@ -2208,7 +2208,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
             &keys,
         )?;
 
-        let cf = Self::cocausetfdbkv_cf(&cf, self.api_version)?;
+        let cf = Self::cocausetfdbhikv_cf(&cf, self.api_version)?;
         let muations = keys
             .into_iter()
             .map(|k| cocausetMutation::Delete {
@@ -2251,7 +2251,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         .map(|range| (Some(range.get_start_key()), Some(range.get_end_key()))),
                 )?;
 
-                let command_duration = einstfdbkv_util::time::Instant::now_coarse();
+                let command_duration = einstfdbhikv_util::time::Instant::now_coarse();
                 let snap_ctx = SnapContext {
                     pb_ctx: &ctx,
                     ..Default::default()
@@ -2259,9 +2259,9 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                 let blackbrane =
                     Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
                 let store = cocausetStore::new(blackbrane, api_version);
-                let cf = Self::cocausetfdbkv_cf("", api_version)?;
+                let cf = Self::cocausetfdbhikv_cf("", api_version)?;
 
-                let begin_instant = einstfdbkv_util::time::Instant::now_coarse();
+                let begin_instant = einstfdbhikv_util::time::Instant::now_coarse();
                 let mut stats = Statistics::default();
                 let ret = store
                     .cocauset_checksum_ranges(cf, ranges, &mut stats)
@@ -2402,31 +2402,31 @@ impl<E: Engine> Engine for TxnTestEngine<E> {
     type Snap = TxnTestblackbrane<E::Snap>;
     type Local = E::Local;
 
-    fn fdbkv_engine(&self) -> Self::Local {
-        self.engine.fdbkv_engine()
+    fn fdbhikv_engine(&self) -> Self::Local {
+        self.engine.fdbhikv_engine()
     }
 
-    fn blackbrane_on_fdbkv_engine(
+    fn blackbrane_on_fdbhikv_engine(
         &self,
         start_key: &[u8],
         end_key: &[u8],
-    ) -> einstfdbkv_fdbkv::Result<Self::Snap> {
-        let blackbrane = self.engine.blackbrane_on_fdbkv_engine(start_key, end_key)?;
+    ) -> einstfdbhikv_fdbhikv::Result<Self::Snap> {
+        let blackbrane = self.engine.blackbrane_on_fdbhikv_engine(start_key, end_key)?;
         Ok(TxnTestblackbrane {
             blackbrane,
             solitontxn_ext: self.solitontxn_ext.clone(),
         })
     }
 
-    fn modify_on_fdbkv_engine(&self, modifies: Vec<Modify>) -> einstfdbkv_fdbkv::Result<()> {
-        self.engine.modify_on_fdbkv_engine(modifies)
+    fn modify_on_fdbhikv_engine(&self, modifies: Vec<Modify>) -> einstfdbhikv_fdbhikv::Result<()> {
+        self.engine.modify_on_fdbhikv_engine(modifies)
     }
 
     fn async_blackbrane(
         &self,
         ctx: SnapContext<'_>,
-        cb: einstfdbkv_fdbkv::Callback<Self::Snap>,
-    ) -> einstfdbkv_fdbkv::Result<()> {
+        cb: einstfdbhikv_fdbhikv::Callback<Self::Snap>,
+    ) -> einstfdbhikv_fdbhikv::Result<()> {
         let solitontxn_ext = self.solitontxn_ext.clone();
         self.engine.async_blackbrane(
             ctx,
@@ -2440,8 +2440,8 @@ impl<E: Engine> Engine for TxnTestEngine<E> {
         &self,
         ctx: &Context,
         batch: WriteData,
-        write_cb: einstfdbkv_fdbkv::Callback<()>,
-    ) -> einstfdbkv_fdbkv::Result<()> {
+        write_cb: einstfdbhikv_fdbhikv::Callback<()>,
+    ) -> einstfdbhikv_fdbhikv::Result<()> {
         self.engine.async_write(ctx, batch, write_cb)
     }
 }
@@ -2459,11 +2459,11 @@ impl<S: blackbrane> blackbrane for TxnTestblackbrane<S> {
         S: 'a,
     = TxnTestblackbraneExt<'a>;
 
-    fn get(&self, key: &Key) -> einstfdbkv_fdbkv::Result<Option<Value>> {
+    fn get(&self, key: &Key) -> einstfdbhikv_fdbhikv::Result<Option<Value>> {
         self.blackbrane.get(key)
     }
 
-    fn get_cf(&self, cf: CfName, key: &Key) -> einstfdbkv_fdbkv::Result<Option<Value>> {
+    fn get_cf(&self, cf: CfName, key: &Key) -> einstfdbhikv_fdbhikv::Result<Option<Value>> {
         self.blackbrane.get_cf(cf, key)
     }
 
@@ -2472,11 +2472,11 @@ impl<S: blackbrane> blackbrane for TxnTestblackbrane<S> {
         opts: engine_promises::ReadOptions,
         cf: CfName,
         key: &Key,
-    ) -> einstfdbkv_fdbkv::Result<Option<Value>> {
+    ) -> einstfdbhikv_fdbhikv::Result<Option<Value>> {
         self.blackbrane.get_cf_opt(opts, cf, key)
     }
 
-    fn iter(&self, iter_opt: engine_promises::IterOptions) -> einstfdbkv_fdbkv::Result<Self::Iter> {
+    fn iter(&self, iter_opt: engine_promises::IterOptions) -> einstfdbhikv_fdbhikv::Result<Self::Iter> {
         self.blackbrane.iter(iter_opt)
     }
 
@@ -2484,7 +2484,7 @@ impl<S: blackbrane> blackbrane for TxnTestblackbrane<S> {
         &self,
         cf: CfName,
         iter_opt: engine_promises::IterOptions,
-    ) -> einstfdbkv_fdbkv::Result<Self::Iter> {
+    ) -> einstfdbhikv_fdbhikv::Result<Self::Iter> {
         self.blackbrane.iter_cf(cf, iter_opt)
     }
 
@@ -2629,8 +2629,8 @@ pub mod test_util {
         assert_eq!(x.unwrap(), v);
     }
 
-    pub fn expect_multi_values(v: Vec<Option<KvPair>>, x: Vec<Result<KvPair>>) {
-        let x: Vec<Option<KvPair>> = x.into_iter().map(Result::ok).collect();
+    pub fn expect_multi_values(v: Vec<Option<HikvPair>>, x: Vec<Result<HikvPair>>) {
+        let x: Vec<Option<HikvPair>> = x.into_iter().map(Result::ok).collect();
         assert_eq!(x, v);
     }
 
@@ -2789,7 +2789,7 @@ pub mod test_util {
             &self,
             id: u64,
             res: Result<(Option<Vec<u8>>, Statistics, PerfStatisticsDelta)>,
-            _: einstfdbkv_util::time::Instant,
+            _: einstfdbhikv_util::time::Instant,
         ) {
             self.data.dagger().unwrap().push(GetResult {
                 id,
@@ -2799,15 +2799,15 @@ pub mod test_util {
     }
 
     impl ResponseBatchConsumer<Option<Vec<u8>>> for GetConsumer {
-        fn consume(&self, id: u64, res: Result<Option<Vec<u8>>>, _: einstfdbkv_util::time::Instant) {
+        fn consume(&self, id: u64, res: Result<Option<Vec<u8>>>, _: einstfdbhikv_util::time::Instant) {
             self.data.dagger().unwrap().push(GetResult { id, res });
         }
     }
 }
 
-/// All statistics related to KvGet/KvBatchGet.
+/// All statistics related to HikvGet/HikvBatchGet.
 #[derive(Debug, Default, Clone)]
-pub struct KvGetStatistics {
+pub struct HikvGetStatistics {
     pub stats: Statistics,
     pub perf_stats: PerfStatisticsDelta,
     pub latency_stats: StageLatencyStats,
@@ -2822,14 +2822,14 @@ mod tests {
     };
 
     use crate::config::TitanDBConfig;
-    use crate::storage::fdbkv::{ExpectedWrite, MockEngineBuilder};
+    use crate::storage::fdbhikv::{ExpectedWrite, MockEngineBuilder};
     use crate::storage::dagger_manager::DiagnosticContext;
     use crate::storage::epaxos::DaggerType;
     use crate::storage::solitontxn::commands::{AcquirePessimisticDagger, Prewrite};
     use crate::storage::solitontxn::tests::must_rollback;
     use crate::storage::{
         config::BdaggerCacheConfig,
-        fdbkv::{Error as KvError, ErrorInner as EngineErrorInner},
+        fdbhikv::{Error as HikvError, ErrorInner as EngineErrorInner},
         dagger_manager::{Dagger, WaitTimeout},
         epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner},
         solitontxn::{commands, Error as TxnError, ErrorInner as TxnErrorInner},
@@ -2840,7 +2840,7 @@ mod tests {
     use error_code::ErrorCodeExt;
     use errors::extract_key_error;
     use futures::executor::bdagger_on;
-    use fdbkvproto::fdbkvrpcpb::{AssertionLevel, CommandPri, Op};
+    use fdbhikvproto::fdbhikvrpcpb::{AssertionLevel, CommandPri, Op};
     use std::{
         sync::{
             causetxctx::{causetxctxBool, Ordering},
@@ -2850,12 +2850,12 @@ mod tests {
         time::Duration,
     };
 
-    use einstfdbkv_util::config::ReadableSize;
+    use einstfdbhikv_util::config::ReadableSize;
     use solitontxn_types::{Mutation, PessimisticDagger, WriteType};
 
     #[test]
     fn test_prewrite_bdaggers_read() {
-        use fdbkvproto::fdbkvrpcpb::ExtraOp;
+        use fdbhikvproto::fdbhikvrpcpb::ExtraOp;
         let storage = TestStorageBuilder::new(DummyDaggerManager {}, ApiVersion::V1)
             .build()
             .unwrap();
@@ -2972,7 +2972,7 @@ mod tests {
                 ),
                 expect_fail_callback(tx, 0, |e| match e {
                     Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                        box epaxos::ErrorInner::Kv(KvError(box EngineErrorInner::Request(..))),
+                        box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
                     ))))) => {}
                     e => panic!("unexpected error chain: {:?}", e),
                 }),
@@ -2982,7 +2982,7 @@ mod tests {
         expect_error(
             |e| match e {
                 Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                    box epaxos::ErrorInner::Kv(KvError(box EngineErrorInner::Request(..))),
+                    box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
                 ))))) => (),
                 e => panic!("unexpected error chain: {:?}", e),
             },
@@ -2991,11 +2991,11 @@ mod tests {
         expect_error(
             |e| match e {
                 Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                    box epaxos::ErrorInner::Kv(KvError(box EngineErrorInner::Request(..))),
+                    box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
                 ))))) => (),
                 e => panic!("unexpected error chain: {:?}", e),
             },
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"x"),
                 None,
@@ -3009,7 +3009,7 @@ mod tests {
         expect_error(
             |e| match e {
                 Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                    box epaxos::ErrorInner::Kv(KvError(box EngineErrorInner::Request(..))),
+                    box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
                 ))))) => (),
                 e => panic!("unexpected error chain: {:?}", e),
             },
@@ -3032,7 +3032,7 @@ mod tests {
             expect_error(
                 |e| match e {
                     Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                        box epaxos::ErrorInner::Kv(KvError(box EngineErrorInner::Request(..))),
+                        box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
                     ))))) => {}
                     e => panic!("unexpected error chain: {:?}", e),
                 },
@@ -3042,7 +3042,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scan() {
+    fn test_mutant_search() {
         let storage = TestStorageBuilder::new(DummyDaggerManager {}, ApiVersion::V1)
             .build()
             .unwrap();
@@ -3065,7 +3065,7 @@ mod tests {
         // Forward
         expect_multi_values(
             vec![None, None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3080,7 +3080,7 @@ mod tests {
         // timelike_curvature
         expect_multi_values(
             vec![None, None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -3095,7 +3095,7 @@ mod tests {
         // Forward with bound
         expect_multi_values(
             vec![None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 Some(Key::from_cocauset(b"c")),
@@ -3110,7 +3110,7 @@ mod tests {
         // timelike_curvature with bound
         expect_multi_values(
             vec![None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 Some(Key::from_cocauset(b"b")),
@@ -3125,7 +3125,7 @@ mod tests {
         // Forward with limit
         expect_multi_values(
             vec![None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3140,7 +3140,7 @@ mod tests {
         // timelike_curvature with limit
         expect_multi_values(
             vec![None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -3176,7 +3176,7 @@ mod tests {
                 Some((b"b".to_vec(), b"bb".to_vec())),
                 Some((b"c".to_vec(), b"cc".to_vec())),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3195,7 +3195,7 @@ mod tests {
                 Some((b"b".to_vec(), b"bb".to_vec())),
                 Some((b"a".to_vec(), b"aa".to_vec())),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -3213,7 +3213,7 @@ mod tests {
                 Some((b"a".to_vec(), b"aa".to_vec())),
                 Some((b"c".to_vec(), b"cc".to_vec())),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3231,7 +3231,7 @@ mod tests {
                 Some((b"c".to_vec(), b"cc".to_vec())),
                 Some((b"a".to_vec(), b"aa".to_vec())),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -3246,7 +3246,7 @@ mod tests {
         // Forward with sample step and limit
         expect_multi_values(
             vec![Some((b"a".to_vec(), b"aa".to_vec()))],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3261,7 +3261,7 @@ mod tests {
         // timelike_curvature with sample step and limit
         expect_multi_values(
             vec![Some((b"c".to_vec(), b"cc".to_vec()))],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -3279,7 +3279,7 @@ mod tests {
                 Some((b"a".to_vec(), b"aa".to_vec())),
                 Some((b"b".to_vec(), b"bb".to_vec())),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 Some(Key::from_cocauset(b"c")),
@@ -3297,7 +3297,7 @@ mod tests {
                 Some((b"c".to_vec(), b"cc".to_vec())),
                 Some((b"b".to_vec(), b"bb".to_vec())),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 Some(Key::from_cocauset(b"b")),
@@ -3316,7 +3316,7 @@ mod tests {
                 Some((b"a".to_vec(), b"aa".to_vec())),
                 Some((b"b".to_vec(), b"bb".to_vec())),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3334,7 +3334,7 @@ mod tests {
                 Some((b"c".to_vec(), b"cc".to_vec())),
                 Some((b"b".to_vec(), b"bb".to_vec())),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -3349,7 +3349,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scan_with_key_only() {
+    fn test_mutant_search_with_key_only() {
         let db_config = crate::config::DbConfig {
             titan: TitanDBConfig {
                 enabled: true,
@@ -3408,7 +3408,7 @@ mod tests {
         // Forward
         expect_multi_values(
             vec![None, None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3423,7 +3423,7 @@ mod tests {
         // timelike_curvature
         expect_multi_values(
             vec![None, None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -3438,7 +3438,7 @@ mod tests {
         // Forward with bound
         expect_multi_values(
             vec![None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 Some(Key::from_cocauset(b"c")),
@@ -3453,7 +3453,7 @@ mod tests {
         // timelike_curvature with bound
         expect_multi_values(
             vec![None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 Some(Key::from_cocauset(b"b")),
@@ -3468,7 +3468,7 @@ mod tests {
         // Forward with limit
         expect_multi_values(
             vec![None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3483,7 +3483,7 @@ mod tests {
         // timelike_curvature with limit
         expect_multi_values(
             vec![None, None],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -3519,7 +3519,7 @@ mod tests {
                 Some((b"b".to_vec(), vec![])),
                 Some((b"c".to_vec(), vec![])),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3538,7 +3538,7 @@ mod tests {
                 Some((b"b".to_vec(), vec![])),
                 Some((b"a".to_vec(), vec![])),
             ],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -3553,7 +3553,7 @@ mod tests {
         // Forward with bound
         expect_multi_values(
             vec![Some((b"a".to_vec(), vec![])), Some((b"b".to_vec(), vec![]))],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 Some(Key::from_cocauset(b"c")),
@@ -3568,7 +3568,7 @@ mod tests {
         // timelike_curvature with bound
         expect_multi_values(
             vec![Some((b"c".to_vec(), vec![])), Some((b"b".to_vec(), vec![]))],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 Some(Key::from_cocauset(b"b")),
@@ -3584,7 +3584,7 @@ mod tests {
         // Forward with limit
         expect_multi_values(
             vec![Some((b"a".to_vec(), vec![])), Some((b"b".to_vec(), vec![]))],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\x00"),
                 None,
@@ -3599,7 +3599,7 @@ mod tests {
         // timelike_curvature with limit
         expect_multi_values(
             vec![Some((b"c".to_vec(), vec![])), Some((b"b".to_vec(), vec![]))],
-            bdagger_on(storage.scan(
+            bdagger_on(storage.mutant_search(
                 Context::default(),
                 Key::from_cocauset(b"\xff"),
                 None,
@@ -4243,13 +4243,13 @@ mod tests {
         ];
 
         // Write some key-value pairs to the db
-        for fdbkv in &test_data {
+        for fdbhikv in &test_data {
             storage
                 .cocauset_put(
                     ctx.clone(),
                     "".to_string(),
-                    fdbkv.0.to_vec(),
-                    fdbkv.1.to_vec(),
+                    fdbhikv.0.to_vec(),
+                    fdbhikv.1.to_vec(),
                     0,
                     expect_ok_callback(tx.clone(), 0),
                 )
@@ -4321,9 +4321,9 @@ mod tests {
         rx.recv().unwrap();
 
         // Assert now no key remains
-        for fdbkv in &test_data {
+        for fdbhikv in &test_data {
             expect_none(
-                bdagger_on(storage.cocauset_get(ctx.clone(), "".to_string(), fdbkv.0.to_vec())).unwrap(),
+                bdagger_on(storage.cocauset_get(ctx.clone(), "".to_string(), fdbhikv.0.to_vec())).unwrap(),
             );
         }
 
@@ -4360,7 +4360,7 @@ mod tests {
             (b"r\0e".to_vec(), b"ee".to_vec(), 40),
         ];
 
-        let fdbkvpairs = test_data
+        let fdbhikvpairs = test_data
             .clone()
             .into_iter()
             .map(|(key, value, _)| (key, value))
@@ -4379,7 +4379,7 @@ mod tests {
             .cocauset_batch_put(
                 ctx.clone(),
                 "".to_string(),
-                fdbkvpairs,
+                fdbhikvpairs,
                 ttls,
                 expect_ok_callback(tx, 0),
             )
@@ -4619,14 +4619,14 @@ mod tests {
     }
 
     #[test]
-    fn test_cocauset_scan() {
-        test_cocauset_scan_impl(ApiVersion::V1);
-        test_cocauset_scan_impl(ApiVersion::V1ttl);
-        test_cocauset_scan_impl(ApiVersion::V2);
+    fn test_cocauset_mutant_search() {
+        test_cocauset_mutant_search_impl(ApiVersion::V1);
+        test_cocauset_mutant_search_impl(ApiVersion::V1ttl);
+        test_cocauset_mutant_search_impl(ApiVersion::V2);
     }
 
-    fn test_cocauset_scan_impl(api_version: ApiVersion) {
-        let (end_key, end_key_reverse_scan) = if let ApiVersion::V2 = api_version {
+    fn test_cocauset_mutant_search_impl(api_version: ApiVersion) {
+        let (end_key, end_key_reverse_mutant_search) = if let ApiVersion::V2 = api_version {
             (Some(b"r\0z".to_vec()), Some(b"r\0\0".to_vec()))
         } else {
             (None, None)
@@ -4682,13 +4682,13 @@ mod tests {
         rx.recv().unwrap();
 
         // SentinelSearch pairs with key only
-        let mut results: Vec<Option<KvPair>> = test_data
+        let mut results: Vec<Option<HikvPair>> = test_data
             .iter()
             .map(|&(ref k, _)| Some((k.clone(), vec![])))
             .collect();
         expect_multi_values(
             results.clone(),
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0".to_vec(),
@@ -4702,7 +4702,7 @@ mod tests {
         results = results.split_off(10);
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0c2".to_vec(),
@@ -4713,14 +4713,14 @@ mod tests {
             ))
             .unwrap(),
         );
-        let mut results: Vec<Option<KvPair>> = test_data
+        let mut results: Vec<Option<HikvPair>> = test_data
             .clone()
             .into_iter()
             .map(|(k, v)| Some((k, v)))
             .collect();
         expect_multi_values(
             results.clone(),
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0".to_vec(),
@@ -4734,7 +4734,7 @@ mod tests {
         results = results.split_off(10);
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0c2".to_vec(),
@@ -4745,7 +4745,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        let results: Vec<Option<KvPair>> = test_data
+        let results: Vec<Option<HikvPair>> = test_data
             .clone()
             .into_iter()
             .map(|(k, v)| Some((k, v)))
@@ -4753,18 +4753,18 @@ mod tests {
             .collect();
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0z".to_vec(),
-                end_key_reverse_scan.clone(),
+                end_key_reverse_mutant_search.clone(),
                 20,
                 false,
                 true,
             ))
             .unwrap(),
         );
-        let results: Vec<Option<KvPair>> = test_data
+        let results: Vec<Option<HikvPair>> = test_data
             .clone()
             .into_iter()
             .map(|(k, v)| Some((k, v)))
@@ -4773,11 +4773,11 @@ mod tests {
             .collect();
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0z".to_vec(),
-                end_key_reverse_scan,
+                end_key_reverse_mutant_search,
                 5,
                 false,
                 true,
@@ -4786,7 +4786,7 @@ mod tests {
         );
 
         // SentinelSearch with end_key
-        let results: Vec<Option<KvPair>> = test_data
+        let results: Vec<Option<HikvPair>> = test_data
             .clone()
             .into_iter()
             .skip(6)
@@ -4795,7 +4795,7 @@ mod tests {
             .collect();
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0b2".to_vec(),
@@ -4806,7 +4806,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        let results: Vec<Option<KvPair>> = test_data
+        let results: Vec<Option<HikvPair>> = test_data
             .clone()
             .into_iter()
             .skip(6)
@@ -4815,7 +4815,7 @@ mod tests {
             .collect();
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0b2".to_vec(),
@@ -4827,8 +4827,8 @@ mod tests {
             .unwrap(),
         );
 
-        // Reverse scan with end_key
-        let results: Vec<Option<KvPair>> = test_data
+        // Reverse mutant_search with end_key
+        let results: Vec<Option<HikvPair>> = test_data
             .clone()
             .into_iter()
             .rev()
@@ -4838,7 +4838,7 @@ mod tests {
             .collect();
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0c2".to_vec(),
@@ -4849,7 +4849,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        let results: Vec<Option<KvPair>> = test_data
+        let results: Vec<Option<HikvPair>> = test_data
             .into_iter()
             .skip(6)
             .take(1)
@@ -4857,7 +4857,7 @@ mod tests {
             .collect();
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_scan(
+            bdagger_on(storage.cocauset_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 b"r\0b2\x00".to_vec(),
@@ -4884,7 +4884,7 @@ mod tests {
             results.clone().collect(),
             bdagger_on(async {
                 storage
-                    .cocauset_scan(
+                    .cocauset_mutant_search(
                         ctx.clone(),
                         "".to_string(),
                         b"r\0c1".to_vec(),
@@ -4901,7 +4901,7 @@ mod tests {
             results.rev().collect(),
             bdagger_on(async {
                 storage
-                    .cocauset_scan(
+                    .cocauset_mutant_search(
                         ctx.clone(),
                         "".to_string(),
                         b"r\0d3".to_vec(),
@@ -5015,13 +5015,13 @@ mod tests {
     }
 
     #[test]
-    fn test_cocauset_batch_scan() {
-        test_cocauset_batch_scan_impl(ApiVersion::V1);
-        test_cocauset_batch_scan_impl(ApiVersion::V1ttl);
-        test_cocauset_batch_scan_impl(ApiVersion::V2);
+    fn test_cocauset_batch_mutant_search() {
+        test_cocauset_batch_mutant_search_impl(ApiVersion::V1);
+        test_cocauset_batch_mutant_search_impl(ApiVersion::V1ttl);
+        test_cocauset_batch_mutant_search_impl(ApiVersion::V2);
     }
 
-    fn test_cocauset_batch_scan_impl(api_version: ApiVersion) {
+    fn test_cocauset_batch_mutant_search_impl(api_version: ApiVersion) {
         let make_ranges = |delimiters: Vec<Vec<u8>>| -> Vec<KeyRange> {
             delimiters
                 .windows(2)
@@ -5116,7 +5116,7 @@ mod tests {
         ]);
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_batch_scan(
+            bdagger_on(storage.cocauset_batch_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 ranges.clone(),
@@ -5144,7 +5144,7 @@ mod tests {
         ];
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_batch_scan(
+            bdagger_on(storage.cocauset_batch_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 ranges.clone(),
@@ -5168,7 +5168,7 @@ mod tests {
         ];
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_batch_scan(
+            bdagger_on(storage.cocauset_batch_mutant_search(
                 ctx.clone(),
                 "".to_string(),
                 ranges.clone(),
@@ -5192,7 +5192,7 @@ mod tests {
         ];
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_batch_scan(ctx.clone(), "".to_string(), ranges, 3, true, false))
+            bdagger_on(storage.cocauset_batch_mutant_search(ctx.clone(), "".to_string(), ranges, 3, true, false))
                 .unwrap(),
         );
 
@@ -5222,7 +5222,7 @@ mod tests {
         .collect();
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_batch_scan(ctx.clone(), "".to_string(), ranges, 5, false, true))
+            bdagger_on(storage.cocauset_batch_mutant_search(ctx.clone(), "".to_string(), ranges, 5, false, true))
                 .unwrap(),
         );
 
@@ -5242,7 +5242,7 @@ mod tests {
         ]);
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_batch_scan(ctx.clone(), "".to_string(), ranges, 2, false, true))
+            bdagger_on(storage.cocauset_batch_mutant_search(ctx.clone(), "".to_string(), ranges, 2, false, true))
                 .unwrap(),
         );
 
@@ -5272,7 +5272,7 @@ mod tests {
         .collect();
         expect_multi_values(
             results,
-            bdagger_on(storage.cocauset_batch_scan(ctx, "".to_string(), ranges, 5, true, true)).unwrap(),
+            bdagger_on(storage.cocauset_batch_mutant_search(ctx, "".to_string(), ranges, 5, true, true)).unwrap(),
         );
     }
 
@@ -5342,7 +5342,7 @@ mod tests {
     }
 
     #[test]
-    fn test_scan_dagger() {
+    fn test_mutant_search_dagger() {
         let storage = TestStorageBuilder::new(DummyDaggerManager {}, ApiVersion::V1)
             .build()
             .unwrap();
@@ -5442,16 +5442,16 @@ mod tests {
         let cm = storage.concurrency_manager.clone();
 
         let res =
-            bdagger_on(storage.scan_dagger(Context::default(), 99.into(), None, None, 10)).unwrap();
+            bdagger_on(storage.mutant_search_dagger(Context::default(), 99.into(), None, None, 10)).unwrap();
         assert_eq!(res, vec![]);
         assert_eq!(cm.max_ts(), 99.into());
 
         let res =
-            bdagger_on(storage.scan_dagger(Context::default(), 100.into(), None, None, 10)).unwrap();
+            bdagger_on(storage.mutant_search_dagger(Context::default(), 100.into(), None, None, 10)).unwrap();
         assert_eq!(res, vec![dagger_x.clone(), dagger_y.clone(), dagger_z.clone()]);
         assert_eq!(cm.max_ts(), 100.into());
 
-        let res = bdagger_on(storage.scan_dagger(
+        let res = bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             100.into(),
             Some(Key::from_cocauset(b"a")),
@@ -5461,7 +5461,7 @@ mod tests {
         .unwrap();
         assert_eq!(res, vec![dagger_x.clone(), dagger_y.clone(), dagger_z.clone()]);
 
-        let res = bdagger_on(storage.scan_dagger(
+        let res = bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             100.into(),
             Some(Key::from_cocauset(b"y")),
@@ -5472,7 +5472,7 @@ mod tests {
         assert_eq!(res, vec![dagger_y.clone(), dagger_z.clone()]);
 
         let res =
-            bdagger_on(storage.scan_dagger(Context::default(), 101.into(), None, None, 10)).unwrap();
+            bdagger_on(storage.mutant_search_dagger(Context::default(), 101.into(), None, None, 10)).unwrap();
         assert_eq!(
             res,
             vec![
@@ -5487,13 +5487,13 @@ mod tests {
         assert_eq!(cm.max_ts(), 101.into());
 
         let res =
-            bdagger_on(storage.scan_dagger(Context::default(), 101.into(), None, None, 4)).unwrap();
+            bdagger_on(storage.mutant_search_dagger(Context::default(), 101.into(), None, None, 4)).unwrap();
         assert_eq!(
             res,
             vec![dagger_a, dagger_b.clone(), dagger_c.clone(), dagger_x.clone()]
         );
 
-        let res = bdagger_on(storage.scan_dagger(
+        let res = bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             101.into(),
             Some(Key::from_cocauset(b"b")),
@@ -5511,7 +5511,7 @@ mod tests {
             ]
         );
 
-        let res = bdagger_on(storage.scan_dagger(
+        let res = bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             101.into(),
             Some(Key::from_cocauset(b"b")),
@@ -5530,7 +5530,7 @@ mod tests {
             ]
         );
 
-        let res = bdagger_on(storage.scan_dagger(
+        let res = bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             101.into(),
             Some(Key::from_cocauset(b"b")),
@@ -5540,7 +5540,7 @@ mod tests {
         .unwrap();
         assert_eq!(res, vec![dagger_b.clone()]);
 
-        let res = bdagger_on(storage.scan_dagger(
+        let res = bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             101.into(),
             Some(Key::from_cocauset(b"b")),
@@ -5558,7 +5558,7 @@ mod tests {
             ]
         );
 
-        let res = bdagger_on(storage.scan_dagger(
+        let res = bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             101.into(),
             Some(Key::from_cocauset(b"b")),
@@ -5587,10 +5587,10 @@ mod tests {
         };
 
         let guard = mem_dagger(b"z", 80, DaggerType::Put);
-        bdagger_on(storage.scan_dagger(Context::default(), 101.into(), None, None, 1)).unwrap_err();
+        bdagger_on(storage.mutant_search_dagger(Context::default(), 101.into(), None, None, 1)).unwrap_err();
 
         let guard2 = mem_dagger(b"a", 80, DaggerType::Put);
-        let res = bdagger_on(storage.scan_dagger(
+        let res = bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             101.into(),
             Some(Key::from_cocauset(b"b")),
@@ -5610,9 +5610,9 @@ mod tests {
         drop(guard);
         drop(guard2);
 
-        // DaggerType::Dagger can't be ignored by scan_dagger
+        // DaggerType::Dagger can't be ignored by mutant_search_dagger
         let guard = mem_dagger(b"c", 80, DaggerType::Dagger);
-        bdagger_on(storage.scan_dagger(
+        bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             101.into(),
             Some(Key::from_cocauset(b"b")),
@@ -5623,7 +5623,7 @@ mod tests {
         drop(guard);
 
         let guard = mem_dagger(b"c", 102, DaggerType::Put);
-        let res = bdagger_on(storage.scan_dagger(
+        let res = bdagger_on(storage.mutant_search_dagger(
             Context::default(),
             101.into(),
             Some(Key::from_cocauset(b"b")),
@@ -5687,7 +5687,7 @@ mod tests {
 
         // We should be able to resolve all daggers for transaction ts=100 when there are this
         // many daggers.
-        let scanned_daggers_coll = vec![
+        let mutant_searchned_daggers_coll = vec![
             1,
             RESOLVE_LOCK_BATCH_SIZE,
             RESOLVE_LOCK_BATCH_SIZE - 1,
@@ -5703,10 +5703,10 @@ mod tests {
         ];
         let mut ts = 100.into();
 
-        for scanned_daggers in scanned_daggers_coll {
+        for mutant_searchned_daggers in mutant_searchned_daggers_coll {
             for is_rollback in &is_rollback_coll {
                 let mut mutations = vec![];
-                for i in 0..scanned_daggers {
+                for i in 0..mutant_searchned_daggers {
                     mutations.push(Mutation::make_put(
                         Key::from_cocauset(format!("x{:08}", i).as_bytes()),
                         b"foo".to_vec(),
@@ -5740,7 +5740,7 @@ mod tests {
 
                 // All daggers should be resolved except for a, b and c.
                 let res =
-                    bdagger_on(storage.scan_dagger(Context::default(), ts, None, None, 0)).unwrap();
+                    bdagger_on(storage.mutant_search_dagger(Context::default(), ts, None, None, 0)).unwrap();
                 assert_eq!(res, vec![dagger_a.clone(), dagger_b.clone(), dagger_c.clone()]);
 
                 ts = (ts.into_inner() + 10).into();
@@ -5795,7 +5795,7 @@ mod tests {
             dagger
         };
         let res =
-            bdagger_on(storage.scan_dagger(Context::default(), 99.into(), None, None, 0)).unwrap();
+            bdagger_on(storage.mutant_search_dagger(Context::default(), 99.into(), None, None, 0)).unwrap();
         assert_eq!(res, vec![dagger_a]);
 
         // Resolve dagger for key 'a'.
@@ -5852,7 +5852,7 @@ mod tests {
             dagger
         };
         let res =
-            bdagger_on(storage.scan_dagger(Context::default(), 101.into(), None, None, 0)).unwrap();
+            bdagger_on(storage.mutant_search_dagger(Context::default(), 101.into(), None, None, 0)).unwrap();
         assert_eq!(res, vec![dagger_a]);
     }
 
@@ -7038,21 +7038,21 @@ mod tests {
         assert!(batch_get(ctx.clone()).is_ok());
         ctx.take_resolved_daggers();
 
-        // Test scan
-        let scan = |ctx, start_key, end_key, reverse| {
-            bdagger_on(storage.scan(ctx, start_key, end_key, 10, 0, 100.into(), false, reverse))
+        // Test mutant_search
+        let mutant_search = |ctx, start_key, end_key, reverse| {
+            bdagger_on(storage.mutant_search(ctx, start_key, end_key, 10, 0, 100.into(), false, reverse))
         };
         let key_error =
-            extract_key_error(&scan(ctx.clone(), Key::from_cocauset(b"a"), None, false).unwrap_err());
+            extract_key_error(&mutant_search(ctx.clone(), Key::from_cocauset(b"a"), None, false).unwrap_err());
         assert_eq!(key_error.get_daggered().get_key(), b"key");
         ctx.set_resolved_daggers(vec![10]);
-        assert!(scan(ctx.clone(), Key::from_cocauset(b"a"), None, false).is_ok());
+        assert!(mutant_search(ctx.clone(), Key::from_cocauset(b"a"), None, false).is_ok());
         ctx.take_resolved_daggers();
         let key_error =
-            extract_key_error(&scan(ctx.clone(), Key::from_cocauset(b"\xff"), None, true).unwrap_err());
+            extract_key_error(&mutant_search(ctx.clone(), Key::from_cocauset(b"\xff"), None, true).unwrap_err());
         assert_eq!(key_error.get_daggered().get_key(), b"key");
         ctx.set_resolved_daggers(vec![10]);
-        assert!(scan(ctx.clone(), Key::from_cocauset(b"\xff"), None, false).is_ok());
+        assert!(mutant_search(ctx.clone(), Key::from_cocauset(b"\xff"), None, false).is_ok());
         ctx.take_resolved_daggers();
         // Ignore memory daggers in resolved or committed daggers.
 
@@ -7148,7 +7148,7 @@ mod tests {
         let res = consumer.take_data();
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].as_ref().unwrap(), &Some(v1.clone()));
-        // scan
+        // mutant_search
         for desc in &[false, true] {
             let mut values = vec![
                 Some((k1.clone(), v1.clone())),
@@ -7161,7 +7161,7 @@ mod tests {
             }
             expect_multi_values(
                 values,
-                bdagger_on(storage.scan(ctx.clone(), key, None, 1000, 0, 110.into(), false, *desc))
+                bdagger_on(storage.mutant_search(ctx.clone(), key, None, 1000, 0, 110.into(), false, *desc))
                     .unwrap(),
             );
         }
@@ -7788,8 +7788,8 @@ mod tests {
 
     // Test check_api_version.
     // See the following for detail:
-    //   * rfc: https://github.com/einstfdbkv/rfcs/blob/master/text/0069-api-v2.md.
-    //   * proto: https://github.com/pingcap/fdbkvproto/blob/master/proto/fdbkvrpcpb.proto, enum APIVersion.
+    //   * rfc: https://github.com/einstfdbhikv/rfcs/blob/master/text/0069-api-v2.md.
+    //   * proto: https://github.com/pingcap/fdbhikvproto/blob/master/proto/fdbhikvrpcpb.proto, enum APIVersion.
     #[test]
     fn test_check_api_version() {
         use error_code::storage::*;
@@ -7981,21 +7981,21 @@ mod tests {
         test_case(
             ApiVersion::V1,    // storage api_version
             ApiVersion::V1,    // request api_version
-            CommandKind::scan, // command kind
+            CommandKind::mutant_search, // command kind
             TIDB_KEY_CASE,     // ranges
             None,              // expected error code
         );
         test_case(
             ApiVersion::V1,
             ApiVersion::V1,
-            CommandKind::cocauset_scan,
+            CommandKind::cocauset_mutant_search,
             TIDB_KEY_CASE,
             None,
         );
         test_case(
             ApiVersion::V1,
             ApiVersion::V1,
-            CommandKind::cocauset_scan,
+            CommandKind::cocauset_mutant_search,
             TIDB_KEY_CASE_APIV2_ERR,
             None,
         );
@@ -8003,21 +8003,21 @@ mod tests {
         test_case(
             ApiVersion::V1ttl,
             ApiVersion::V1,
-            CommandKind::cocauset_scan,
+            CommandKind::cocauset_mutant_search,
             cocauset_KEY_CASE,
             None,
         );
         test_case(
             ApiVersion::V1ttl,
             ApiVersion::V1,
-            CommandKind::cocauset_scan,
+            CommandKind::cocauset_mutant_search,
             cocauset_KEY_CASE_APIV2_ERR,
             None,
         );
         test_case(
             ApiVersion::V1ttl,
             ApiVersion::V1,
-            CommandKind::scan,
+            CommandKind::mutant_search,
             TIDB_KEY_CASE,
             Some(API_VERSION_NOT_MATCHED),
         );
@@ -8025,7 +8025,7 @@ mod tests {
         test_case(
             ApiVersion::V1,
             ApiVersion::V2,
-            CommandKind::scan,
+            CommandKind::mutant_search,
             TIDB_KEY_CASE,
             Some(API_VERSION_NOT_MATCHED),
         );
@@ -8034,28 +8034,28 @@ mod tests {
         test_case(
             ApiVersion::V2,
             ApiVersion::V1,
-            CommandKind::scan,
+            CommandKind::mutant_search,
             TIDB_KEY_CASE,
             None,
         );
         test_case(
             ApiVersion::V2,
             ApiVersion::V1,
-            CommandKind::cocauset_scan,
+            CommandKind::cocauset_mutant_search,
             TIDB_KEY_CASE,
             Some(API_VERSION_NOT_MATCHED),
         );
         test_case(
             ApiVersion::V2,
             ApiVersion::V1,
-            CommandKind::scan,
+            CommandKind::mutant_search,
             TXN_KEY_CASE,
             Some(INVALID_KEY_MODE),
         );
         test_case(
             ApiVersion::V2,
             ApiVersion::V1,
-            CommandKind::scan,
+            CommandKind::mutant_search,
             cocauset_KEY_CASE,
             Some(INVALID_KEY_MODE),
         );
@@ -8063,35 +8063,35 @@ mod tests {
         test_case(
             ApiVersion::V2,
             ApiVersion::V2,
-            CommandKind::scan,
+            CommandKind::mutant_search,
             TXN_KEY_CASE,
             None,
         );
         test_case(
             ApiVersion::V2,
             ApiVersion::V2,
-            CommandKind::cocauset_scan,
+            CommandKind::cocauset_mutant_search,
             cocauset_KEY_CASE,
             None,
         );
         test_case(
             ApiVersion::V2,
             ApiVersion::V2,
-            CommandKind::scan,
+            CommandKind::mutant_search,
             cocauset_KEY_CASE,
             Some(INVALID_KEY_MODE),
         );
         test_case(
             ApiVersion::V2,
             ApiVersion::V2,
-            CommandKind::cocauset_scan,
+            CommandKind::cocauset_mutant_search,
             TXN_KEY_CASE,
             Some(INVALID_KEY_MODE),
         );
         test_case(
             ApiVersion::V2,
             ApiVersion::V2,
-            CommandKind::scan,
+            CommandKind::mutant_search,
             TIDB_KEY_CASE,
             Some(INVALID_KEY_MODE),
         );
@@ -8100,7 +8100,7 @@ mod tests {
             test_case(
                 ApiVersion::V2,
                 ApiVersion::V1,
-                CommandKind::scan,
+                CommandKind::mutant_search,
                 &[*range],
                 Some(INVALID_KEY_MODE),
             );
@@ -8109,7 +8109,7 @@ mod tests {
             test_case(
                 ApiVersion::V2,
                 ApiVersion::V2,
-                CommandKind::scan,
+                CommandKind::mutant_search,
                 &[*range],
                 Some(INVALID_KEY_MODE),
             );
@@ -8118,7 +8118,7 @@ mod tests {
             test_case(
                 ApiVersion::V2,
                 ApiVersion::V2,
-                CommandKind::cocauset_scan,
+                CommandKind::cocauset_mutant_search,
                 &[*range],
                 Some(INVALID_KEY_MODE),
             );

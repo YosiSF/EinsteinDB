@@ -14,7 +14,7 @@ command! {
     /// Retrieve EPAXOS info for the first committed key which `start_ts == ts`.
     EpaxosByStartTs:
         cmd_ty => Option<(Key, EpaxosInfo)>,
-        display => "fdbkv::command::epaxosbystartts {:?} | {:?}", (start_ts, ctx),
+        display => "fdbhikv::command::epaxosbystartts {:?} | {:?}", (start_ts, ctx),
         content => {
             start_ts: TimeStamp,
         }

@@ -10,7 +10,7 @@
 
 use std::sync::Arc;
 
-use ekvproto::interlock::KeyRange;
+use ehikvproto::interlock::KeyRange;
 use protobuf::Message;
 use einsteindbpb::{self, ExecType, ExecutorExecutionSummary};
 use einsteindbpb::{Chunk, PosetDagRequest, SelectResponse, StreamResponse};
@@ -113,7 +113,7 @@ pub fn build_executors<S: Storage + 'static, C: ExecSummaryCollector + 'static>(
 /// Builds the inner-most executor for the normal executor pipeline, which can produce rows to
 /// other executors and never receive rows from other executors.
 ///
-/// The inner-most executor must be a table scan executor or an index scan executor.
+/// The inner-most executor must be a table mutant_search executor or an index mutant_search executor.
 fn build_first_executor<S: Storage + 'static, C: ExecSummaryCollector + 'static>(
     mut first: einsteindbpb::Executor,
     storage: S,
@@ -124,11 +124,11 @@ fn build_first_executor<S: Storage + 'static, C: ExecSummaryCollector + 'static>
     let context = EvalContext::new(context);
     match first.get_tp() {
         ExecType::TypeTableScan => {
-            EXECUTOR_COUNT_METRICS.table_scan.inc();
+            EXECUTOR_COUNT_METRICS.table_mutant_search.inc();
 
             let ex = Box::new(
-                super::ScanExecutor::table_scan(
-                    first.take_tbl_scan(),
+                super::ScanExecutor::table_mutant_search(
+                    first.take_tbl_mutant_search(),
                     context,
                     ranges,
                     storage,
@@ -139,12 +139,12 @@ fn build_first_executor<S: Storage + 'static, C: ExecSummaryCollector + 'static>
             Ok(ex)
         }
         ExecType::TypeIndexScan => {
-            EXECUTOR_COUNT_METRICS.index_scan.inc();
+            EXECUTOR_COUNT_METRICS.index_mutant_search.inc();
 
-            let unique = first.get_idx_scan().get_unique();
+            let unique = first.get_idx_mutant_search().get_unique();
             let ex = Box::new(
-                super::ScanExecutor::index_scan(
-                    first.take_idx_scan(),
+                super::ScanExecutor::index_mutant_search(
+                    first.take_idx_mutant_search(),
                     context,
                     ranges,
                     storage,
@@ -155,7 +155,7 @@ fn build_first_executor<S: Storage + 'static, C: ExecSummaryCollector + 'static>
             );
             Ok(ex)
         }
-        _ => Err(other_err!("Unexpected first scanner: {:?}", first.get_tp())),
+        _ => Err(other_err!("Unexpected first mutant_searchner: {:?}", first.get_tp())),
     }
 }
 
@@ -219,7 +219,7 @@ impl<SS: 'static> ExecutorsRunner<SS> {
         }
         s_resp.set_output_counts(
             self.exec_stats
-                .scanned_rows_per_range
+                .mutant_searchned_rows_per_range
                 .iter()
                 .map(|v| *v as i64)
                 .collect(),
@@ -260,7 +260,7 @@ impl<SS: 'static> ExecutorsRunner<SS> {
                     // TODO: output_counts should not be i64. Let's fix it in interlocking_dir POSETDAG V2.
                     sel_resp.set_output_counts(
                         self.exec_stats
-                            .scanned_rows_per_range
+                            .mutant_searchned_rows_per_range
                             .iter()
                             .map(|v| *v as i64)
                             .collect(),
@@ -312,7 +312,7 @@ impl<SS: 'static> ExecutorsRunner<SS> {
             }
         }
         if record_cnt > 0 {
-            let range = self.executor.take_scanned_range();
+            let range = self.executor.take_mutant_searchned_range();
             return self
                 .make_stream_response(chunk)
                 .map(|r| (Some((r, range)), finished));

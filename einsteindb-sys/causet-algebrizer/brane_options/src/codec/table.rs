@@ -7,7 +7,7 @@ use std::{cmp, u8};
 
 use crate::prelude::*;
 use crate::FieldTypeTp;
-use ekvproto::interlock::KeyRange;
+use ehikvproto::interlock::KeyRange;
 use einsteindbpb::ColumnInfo;
 
 use super::myBerolinaSQL::{Duration, Time};

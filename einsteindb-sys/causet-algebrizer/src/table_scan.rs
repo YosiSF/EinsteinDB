@@ -10,12 +10,12 @@
 
 use std::sync::Arc;
 
-use ekvproto::interlock::KeyRange;
+use ehikvproto::interlock::KeyRange;
 use Einsteineinsteindb_util::collections::HashSet;
 use einsteindbpb::ColumnInfo;
 use einsteindbpb::TableScan;
 
-use super::{scan::InnerExecutor, Row, ScanExecutor, ScanExecutorOptions};
+use super::{mutant_search::InnerExecutor, Row, ScanExecutor, ScanExecutorOptions};
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::Storage;
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::{self, check_record_key};
@@ -59,12 +59,12 @@ impl InnerExecutor for TableInnerExecutor {
 pub type TableScanExecutor<S> = ScanExecutor<S, TableInnerExecutor>;
 
 impl<S: Storage> TableScanExecutor<S> {
-    pub fn table_scan(
+    pub fn table_mutant_search(
         mut meta: TableScan,
         context: EvalContext,
         key_ranges: Vec<KeyRange>,
         storage: S,
-        is_scanned_range_aware: bool,
+        is_mutant_searchned_range_aware: bool,
     ) -> Result<Self> {
         let inner = TableInnerExecutor::new(&meta);
         let is_key_only = inner.is_key_only();
@@ -75,10 +75,10 @@ impl<S: Storage> TableScanExecutor<S> {
             columns: meta.take_columns().to_vec(),
             key_ranges,
             storage,
-            is_backward: meta.get_desc(),
+            is_spacelike_completion: meta.get_desc(),
             is_key_only,
             accept_point_range: true,
-            is_scanned_range_aware,
+            is_mutant_searchned_range_aware,
         })
     }
 }
@@ -87,7 +87,7 @@ impl<S: Storage> TableScanExecutor<S> {
 mod tests {
     use std::i64;
 
-    use ekvproto::interlock::KeyRange;
+    use ehikvproto::interlock::KeyRange;
     use einsteindbpb::{ColumnInfo, TableScan};
 
     use super::super::tests::*;
@@ -102,7 +102,7 @@ mod tests {
     struct TableScanTestWrapper {
         data: TableData,
         store: FixtureStorage,
-        table_scan: TableScan,
+        table_mutant_search: TableScan,
         ranges: Vec<KeyRange>,
         cols: Vec<ColumnInfo>,
     }
@@ -116,19 +116,19 @@ mod tests {
     impl Default for TableScanTestWrapper {
         fn default() -> TableScanTestWrapper {
             let test_data = TableData::prepare(KEY_NUMBER, TABLE_ID);
-            let store = FixtureStorage::from(test_data.ekv_data.clone());
-            let mut table_scan = TableScan::default();
+            let store = FixtureStorage::from(test_data.ehikv_data.clone());
+            let mut table_mutant_search = TableScan::default();
             // prepare cols
             let cols = test_data.get_prev_2_cols();
             let col_req = cols.clone().into();
-            table_scan.set_columns(col_req);
+            table_mutant_search.set_columns(col_req);
             // prepare range
             let range = get_range(TABLE_ID, i64::MIN, i64::MAX);
             let key_ranges = vec![range];
             TableScanTestWrapper {
                 data: test_data,
                 store,
-                table_scan,
+                table_mutant_search,
                 ranges: key_ranges,
                 cols,
             }
@@ -145,8 +145,8 @@ mod tests {
         let r2 = wrapper.get_point_range(handle);
         wrapper.ranges = vec![r1, r2];
 
-        let mut table_scanner = super::TableScanExecutor::table_scan(
-            wrapper.table_scan,
+        let mut table_mutant_searchner = super::TableScanExecutor::table_mutant_search(
+            wrapper.table_mutant_search,
             EvalContext::default(),
             wrapper.ranges,
             wrapper.store,
@@ -154,7 +154,7 @@ mod tests {
         )
         .unwrap();
 
-        let row = table_scanner
+        let row = table_mutant_searchner
             .next()
             .unwrap()
             .unwrap()
@@ -169,11 +169,11 @@ mod tests {
             let v = row.data.get(cid).unwrap();
             assert_eq!(expect_row[&cid], v.to_vec());
         }
-        assert!(table_scanner.next().unwrap().is_none());
+        assert!(table_mutant_searchner.next().unwrap().is_none());
         let expected_counts = vec![0, 1];
         let mut exec_stats = ExecuteStats::new(0);
-        table_scanner.collect_exec_stats(&mut exec_stats);
-        assert_eq!(expected_counts, exec_stats.scanned_rows_per_range);
+        table_mutant_searchner.collect_exec_stats(&mut exec_stats);
+        assert_eq!(expected_counts, exec_stats.mutant_searchned_rows_per_range);
     }
 
     #[test]
@@ -190,8 +190,8 @@ mod tests {
         let r4 = get_range(TABLE_ID, (handle + 1) as i64, i64::MAX);
         wrapper.ranges = vec![r1, r2, r3, r4];
 
-        let mut table_scanner = super::TableScanExecutor::table_scan(
-            wrapper.table_scan,
+        let mut table_mutant_searchner = super::TableScanExecutor::table_mutant_search(
+            wrapper.table_mutant_search,
             EvalContext::default(),
             wrapper.ranges,
             wrapper.store,
@@ -200,7 +200,7 @@ mod tests {
         .unwrap();
 
         for handle in 0..KEY_NUMBER {
-            let row = table_scanner
+            let row = table_mutant_searchner
                 .next()
                 .unwrap()
                 .unwrap()
@@ -215,13 +215,13 @@ mod tests {
                 assert_eq!(expect_row[&cid], v.to_vec());
             }
         }
-        assert!(table_scanner.next().unwrap().is_none());
+        assert!(table_mutant_searchner.next().unwrap().is_none());
     }
 
     #[test]
-    fn test_reverse_scan() {
+    fn test_reverse_mutant_search() {
         let mut wrapper = TableScanTestWrapper::default();
-        wrapper.table_scan.set_desc(true);
+        wrapper.table_mutant_search.set_desc(true);
 
         // prepare range
         let r1 = get_range(TABLE_ID, i64::MIN, 0);
@@ -234,8 +234,8 @@ mod tests {
         let r4 = get_range(TABLE_ID, (handle + 1) as i64, i64::MAX);
         wrapper.ranges = vec![r1, r2, r3, r4];
 
-        let mut table_scanner = super::TableScanExecutor::table_scan(
-            wrapper.table_scan,
+        let mut table_mutant_searchner = super::TableScanExecutor::table_mutant_search(
+            wrapper.table_mutant_search,
             EvalContext::default(),
             wrapper.ranges,
             wrapper.store,
@@ -245,7 +245,7 @@ mod tests {
 
         for tid in 0..KEY_NUMBER {
             let handle = KEY_NUMBER - tid - 1;
-            let row = table_scanner
+            let row = table_mutant_searchner
                 .next()
                 .unwrap()
                 .unwrap()
@@ -260,6 +260,6 @@ mod tests {
                 assert_eq!(expect_row[&cid], v.to_vec());
             }
         }
-        assert!(table_scanner.next().unwrap().is_none());
+        assert!(table_mutant_searchner.next().unwrap().is_none());
     }
 }

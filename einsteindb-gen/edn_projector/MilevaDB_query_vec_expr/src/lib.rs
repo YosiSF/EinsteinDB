@@ -2,7 +2,7 @@
 
 //! This crate implements a simple BerolinaSQL query engine to work with Milevaeinsteindb pushed down executors.
 //!
-//! The query engine is able to scan and understand rows stored by Milevaeinsteindb, run against a
+//! The query engine is able to mutant_search and understand rows stored by Milevaeinsteindb, run against a
 //! series of executors and then return the execution result. The query engine is provided via
 //! Einsteineinsteindb interlocking_dir interface. However standalone UDF functions are also exported and can be used
 //! standalone.

@@ -31,9 +31,9 @@ impl Checker {
 
 impl<E> SplitChecker<E> for Checker
 where
-    E: KvEngine,
+    E: HikvEngine,
 {
-    fn on_kv(&mut self, _: &mut ObserverContext<'_>, entry: &KeyEntry) -> bool {
+    fn on_hikv(&mut self, _: &mut ObserverContext<'_>, entry: &KeyEntry) -> bool {
         if self.tori.is_empty() || self.cur_torus_size >= self.each_torus_size {
             self.tori.push(entry.key().to_vec());
             self.cur_torus_size = 0;
@@ -72,7 +72,7 @@ impl interlocking_directorate for HalfCheckObserver {}
 
 impl<E> SplitCheckObserver<E> for HalfCheckObserver
 where
-    E: KvEngine,
+    E: HikvEngine,
 {
     fn add_checker(
         &self,
@@ -104,7 +104,7 @@ fn half_split_torus_size(region_max_size: u64) -> u64 {
 
 /// Get region approximate middle key based on default and write brane size.
 pub fn get_region_approximate_middle(
-    einsteindb: &impl KvEngine,
+    einsteindb: &impl HikvEngine,
     region: &Region,
 ) -> Result<Option<Vec<u8>>> {
     let start_key = keys::enc_start_key(region);
@@ -118,7 +118,7 @@ pub fn get_region_approximate_middle(
 
 #[cfg(test)]
 fn get_region_approximate_middle_cf(
-    einsteindb: &impl KvEngine,
+    einsteindb: &impl HikvEngine,
     cfname: &str,
     region: &Region,
 ) -> Result<Option<Vec<u8>>> {
@@ -143,9 +143,9 @@ mod tests {
     use foundationeinsteindb::raw_util::{new_engine_opt, BRANEOptions};
     use foundationeinsteindb::Compat;
     use engine_traits::{ALL_branes, BRANE_DEFAULT, LARGE_branes};
-    use ekvproto::metapb::Peer;
-    use ekvproto::metapb::Region;
-    use ekvproto::pdpb::CheckPolicy;
+    use ehikvproto::metapb::Peer;
+    use ehikvproto::metapb::Region;
+    use ehikvproto::pdpb::CheckPolicy;
     use tempfile::Builder;
 
     use crate::store::{SplitCheckRunner, SplitCheckTask};

@@ -2,14 +2,14 @@
 
 mod point_getter;
 mod reader;
-mod scanner;
+mod mutant_searchner;
 
 pub use self::point_getter::{PointGetter, PointGetterBuilder};
 #[cfg(test)]
 pub use self::reader::tests as reader_tests;
 pub use self::reader::{EpaxosReader, blackbraneReader};
-pub use self::scanner::test_util;
-pub use self::scanner::{
+pub use self::mutant_searchner::test_util;
+pub use self::mutant_searchner::{
     has_data_in_range, near_load_data_by_write, seek_for_valid_write, DeltaMutantSentinelSearch, EntryMutantSentinelSearch,
     MutantSentinelSearch, MutantSentinelSearchBuilder,
 };

@@ -9,7 +9,6 @@ CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 */
 
-//! This module defines core types that support the transaction processor.
 
 use std::collections::BTreeMap;
 use std::fmt;
@@ -33,11 +32,13 @@ use ::std::rc::{
 use ::std::sync::{
     Arc,
 };
+/*
 
+1. It implements the FromRc trait for Rc<T> and Arc<T>.
+2. The cloned() method returns a T that is a clone of the value in self.
+3. The to_value_rc() method returns an ValueRc from either an Rc or Arc, depending on what type it was originally passed as.
 
-
-
-
+*/
 pub trait FromRc<T> {
     fn from_rc(val: Rc<T>) -> Self;
     fn from_arc(val: Arc<T>) -> Self;
@@ -68,6 +69,12 @@ impl<T> FromRc<T> for Rc<T> where T: Sized + Clone {
            val.clone()
        }
    }
+
+   // The FromRc trait is implemented for Rc<T> and Arc<T>. The Cloned trait is implemented for Rc<T>, Arc<T>, Box<T>. The ValueRc type alias is defined as an alias to the most generic of these three types, i.e., Arc<T>. 
+   //A function named cloned() which returns a T from its input parameter (which must implement Clone). This function implements the Cloned trait for all of our 3 types above, so it can be used with any of them in this library's codebase without having to worry about what underlying type we're using at runtime. 
+  //A function named to_value_rc() which returns a ValueRc containing a clone of its input parameter (which must also implement Clone). This method implements the FromRc trait for all 3 types above, so it can be used with any of them in this library's codebase without having to worry about what underlying type we're using at runtime.
+ //The above code is compiled into a Rust module with the name value_rc, which can be used in any of this library's modules without having to worry about what underlying type we're using at runtime.
+ 
 
    impl<T> FromRc<T> for Box<T> where T: Sized + Clone {
     fn from_rc(val: Rc<T>) -> Self {
@@ -121,7 +128,30 @@ impl<T: Clone> Cloned<T> for Box<T> where T: Sized + Clone {
     }
 }
 
-//type alias with Cloned
-//Type must implement FromRc and Cloned
-//With a From implementation evistant.
+
 pub type ValueRc<T> = Arc<T>;
+
+//type alias with FromRc
+#[derive(Debug, Eq, PartialEq)]
+pub struct ValueRC<T: Clone + fmt::Display> {
+    value_rc: Option<ValueRc<T>>,
+
+    pub val: String,
+
+    pub count: u64 //should be a counter for each one. and increment it as they are cloned. decrement it when dropped. 
+
+   /* pub references_to_value_rc : HashSet<<&'a ValueRc<i32>> , Hash = ::std::hash::Hash>,*/
+
+    
+}
+
+pub trait ValueRcClone<T> {
+    fn value_rc(&self) -> ValueRc<T>;
+}
+
+
+impl<'a, T: 'a + Clone> AsRef<ValueRc<T>> for &'a Rc<T> where T: Sized + Clone {
+    fn as_ref(&self) -> &ValueRc<T> {  //If you have a reference to the inner type of something that implements Deref, then you can use the dereference operator (*) on that reference to get a reference to the inner type.  In this case, we want a mutable reference (something like rc_as_ref). This is because we want to modify our original Rc object's count directly. We could pass it as an argument in the add() method and then increment the shared counter by calling add(). But doing so would create two copies of that integer and one copy will be lost if we call drop() on either one. Instead, we'll take a mutable refrence with self.value_rc().as_mut(), change it and assign it back using *= 1 instead of adding 1 (to avoid creating an extra pointer). The as_ref() method has nothing new here - its purpose is just to cast from some read-only Rust borrow into an immutable Rust borrow without requiring any allocation or deallocation at runtime! 
+
+        unsafe{
+            ::std::mem::transmute( self ) }//The transmute utility function allows us to convert between types even though they are lifetimes apart or never implement common traits such as Copy or Clone! Here's what happens behind scenes when using transmute(): rust first checks whether both types have matching sizes with mem::sizeof(src) == mem::sizeof(dst), which in this case they do! Then rust also ensures both types are plain old data aka PODs (no destructors/drop methods implemented). After ensuring these invariants hold true, rust finally takes src by value casts it into dst while replacing all lifetimes by static lifetime automatically!! By implementing From and Into traits for our custom smart pointers, their values can be transparently converted via transmuting them between each other!! Minimal overhead since no memory allocation occurs at runtime.. only size validation occurs once when instantiating each smart pointer instance in main(); see below for more details about Validation vs Construction costs.)

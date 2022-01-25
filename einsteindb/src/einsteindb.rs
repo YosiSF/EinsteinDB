@@ -2405,7 +2405,7 @@ mod tests {
                         "{\"s\" 65542
                           \"t\" 65543}");
 
-        // Check that we can use the same attribute in both forward and backward form in the same
+        // Check that we can use the same attribute in both forward and spacelike_completion form in the same
         // transaction.
         let report = assert_transact!(conn, "[[:einsteindb/add 888 :test/dangling 889]
                                               [:einsteindb/add 888 :test/_dangling 889]]");
@@ -2416,7 +2416,7 @@ mod tests {
         assert_matches!(tempids(&report),
                         "{}");
 
-        // Check that we can use the same attribute in both forward and backward form in the same
+        // Check that we can use the same attribute in both forward and spacelike_completion form in the same
         // transaction in map notation.
         let report = assert_transact!(conn, "[{:einsteindb/id 998 :test/dangling 999 :test/_dangling 999}]");
         assert_matches!(conn.last_transaction(),

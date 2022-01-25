@@ -19,7 +19,7 @@ use solitontxn_types::{
     is_short_value, Key, Mutation, MutationType, OldValue, TimeStamp, Value, Write, WriteType,
 };
 
-use fdbkvproto::fdbkvrpcpb::{Assertion, AssertionLevel};
+use fdbhikvproto::fdbhikvrpcpb::{Assertion, AssertionLevel};
 
 /// Prewrite a single mutation by creating and storing a dagger and value.
 pub fn prewrite<S: blackbrane>(
@@ -536,7 +536,7 @@ impl<'a> PrewriteMutation<'a> {
             TransactionKind::Pessimistic(_) => {
                 // For non-pessimistic-daggered keys, do not skip constraint check when retrying.
                 // This intents to protect idempotency.
-                // Ref: https://github.com/einstfdbkv/einstfdbkv/issues/11187
+                // Ref: https://github.com/einstfdbhikv/einstfdbhikv/issues/11187
                 self.is_pessimistic_dagger || !self.solitontxn_props.is_retry_request
             }
         }
@@ -662,12 +662,12 @@ pub mod tests {
     use super::*;
     #[cfg(test)]
     use crate::storage::{
-        fdbkv::Rocksblackbrane,
+        fdbhikv::Rocksblackbrane,
         solitontxn::{commands::prewrite::fallback_1pc_daggers, tests::*},
     };
     use crate::storage::{epaxos::tests::*, Engine};
     use concurrency_manager::ConcurrencyManager;
-    use fdbkvproto::fdbkvrpcpb::Context;
+    use fdbhikvproto::fdbhikvrpcpb::Context;
     #[cfg(test)]
     use rand::{Rng, SeedableRng};
     #[cfg(test)]
@@ -1415,8 +1415,8 @@ pub mod tests {
             15.into(),
             TimeStamp::default(),
             false,
-            fdbkvproto::fdbkvrpcpb::Assertion::None,
-            fdbkvproto::fdbkvrpcpb::AssertionLevel::Off,
+            fdbhikvproto::fdbhikvrpcpb::Assertion::None,
+            fdbhikvproto::fdbhikvrpcpb::AssertionLevel::Off,
         );
         must_daggered(&engine, b"k2", 10);
     }

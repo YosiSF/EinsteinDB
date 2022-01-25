@@ -13,8 +13,8 @@ use prometheus_static_metric::*;
 
 make_auto_flush_static_metric! {
     pub label_enum ExecutorName {
-        batch_table_scan,
-        batch_index_scan,
+        batch_table_mutant_search,
+        batch_index_mutant_search,
         batch_selection,
         batch_simple_aggr,
         batch_fast_hash_aggr,
@@ -22,8 +22,8 @@ make_auto_flush_static_metric! {
         batch_stream_aggr,
         batch_limit,
         batch_top_n,
-        table_scan,
-        index_scan,
+        table_mutant_search,
+        index_mutant_search,
         selection,
         hash_aggr,
         stream_aggr,

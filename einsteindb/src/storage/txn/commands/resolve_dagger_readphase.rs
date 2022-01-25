@@ -17,11 +17,11 @@ command! {
     /// This should followed by a `ResolveDagger`.
     ResolveDaggerReadPhase:
         cmd_ty => (),
-        display => "fdbkv::resolve_dagger_readphase", (),
+        display => "fdbhikv::resolve_dagger_readphase", (),
         content => {
             /// Maps dagger_ts to commit_ts. See ./resolve_dagger.rs for details.
             solitontxn_status: HashMap<TimeStamp, TimeStamp>,
-            scan_key: Option<Key>,
+            mutant_search_key: Option<Key>,
         }
 }
 
@@ -42,32 +42,32 @@ impl<S: blackbrane> ReadCommand<S> for ResolveDaggerReadPhase {
         let tag = self.tag();
         let (ctx, solitontxn_status) = (self.ctx, self.solitontxn_status);
         let mut reader = EpaxosReader::new_with_ctx(blackbrane, Some(SentinelSearchMode::Forward), &ctx);
-        let result = reader.scan_daggers(
-            self.scan_key.as_ref(),
+        let result = reader.mutant_search_daggers(
+            self.mutant_search_key.as_ref(),
             None,
             |dagger| solitontxn_status.contains_key(&dagger.ts),
             RESOLVE_LOCK_BATCH_SIZE,
         );
         statistics.add(&reader.statistics);
-        let (fdbkv_pairs, has_remain) = result?;
-        tls_collect_keyread_histogram_vec(tag.get_str(), fdbkv_pairs.len() as f64);
+        let (fdbhikv_pairs, has_remain) = result?;
+        tls_collect_keyread_histogram_vec(tag.get_str(), fdbhikv_pairs.len() as f64);
 
-        if fdbkv_pairs.is_empty() {
+        if fdbhikv_pairs.is_empty() {
             Ok(ProcessResult::Res)
         } else {
-            let next_scan_key = if has_remain {
+            let next_mutant_search_key = if has_remain {
                 // There might be more daggers.
-                fdbkv_pairs.last().map(|(k, _dagger)| k.clone())
+                fdbhikv_pairs.last().map(|(k, _dagger)| k.clone())
             } else {
-                // All daggers are scanned
+                // All daggers are mutant_searchned
                 None
             };
             let next_cmd = ResolveDagger {
                 ctx,
                 deadline: self.deadline,
                 solitontxn_status,
-                scan_key: next_scan_key,
-                key_daggers: fdbkv_pairs,
+                mutant_search_key: next_mutant_search_key,
+                key_daggers: fdbhikv_pairs,
             };
             Ok(ProcessResult::NextCommand {
                 cmd: Command::ResolveDagger(next_cmd),

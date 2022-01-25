@@ -3,12 +3,12 @@
 //! This file contains tests and testing tools which affects multiple actions
 
 use super::*;
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::epaxos::tests::write;
 use crate::storage::epaxos::{Error, Key, Mutation, EpaxosTxn, blackbraneReader, TimeStamp};
 use crate::storage::{solitontxn, Engine};
 use concurrency_manager::ConcurrencyManager;
-use fdbkvproto::fdbkvrpcpb::{Assertion, AssertionLevel, Context};
+use fdbhikvproto::fdbhikvrpcpb::{Assertion, AssertionLevel, Context};
 use prewrite::{prewrite, CommitKind, TransactionKind, TransactionProperties};
 
 pub fn must_prewrite_put_impl<E: Engine>(

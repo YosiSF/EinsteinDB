@@ -839,7 +839,7 @@ impl Pattern {
                tx: PatternNonValuePlace) -> Option<Pattern> {
         let aa = a.clone();       // Too tired of fighting borrow scope for now.
         if let PatternNonValuePlace::Solitonid(ref k) = aa {
-            if k.is_backward() {
+            if k.is_spacelike_completion() {
                 // e and v have different types; we must convert them.
                 // Not every parseable value is suitable for the causet field!
                 // As such, this is a failable constructor.

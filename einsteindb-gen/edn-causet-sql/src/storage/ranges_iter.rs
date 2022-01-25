@@ -15,12 +15,12 @@ pub enum IterStatus {
     /// All ranges are consumed.
     Drained,
 
-    /// Last range is drained or this iteration is a fresh start so that caller should scan
+    /// Last range is drained or this iteration is a fresh start so that caller should mutant_search
     /// on a new range.
     NewRange(Range),
 
-    /// Last interval range is not drained and the caller should continue scanning without changing
-    /// the scan range.
+    /// Last interval range is not drained and the caller should continue mutant_searchning without changing
+    /// the mutant_search range.
     Continue,
 }
 
@@ -31,7 +31,7 @@ pub enum IterStatus {
 /// - a flag indicating continuing last interval range
 /// - a flag indicating that all ranges are consumed
 ///
-/// If a new range is returned, caller can then scan unknown amount of key(s) within this new range.
+/// If a new range is returned, caller can then mutant_search unknown amount of key(s) within this new range.
 /// The caller must inform the structure so that it will emit a new range next time by calling
 /// `notify_drained()` after current range is drained. Multiple `notify_drained()` without `next()`
 /// will have no effect.

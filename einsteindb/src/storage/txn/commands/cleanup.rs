@@ -3,7 +3,7 @@
 // #[PerformanceCriticalPath]
 use solitontxn_types::{Key, TimeStamp};
 
-use crate::storage::fdbkv::WriteData;
+use crate::storage::fdbhikv::WriteData;
 use crate::storage::dagger_manager::DaggerManager;
 use crate::storage::epaxos::{EpaxosTxn, blackbraneReader};
 use crate::storage::solitontxn::commands::{
@@ -19,7 +19,7 @@ command! {
     /// This should be following a [`Prewrite`](Command::Prewrite) on the given key.
     Cleanup:
         cmd_ty => (),
-        display => "fdbkv::command::cleanup {} @ {} | {:?}", (key, start_ts, ctx),
+        display => "fdbhikv::command::cleanup {} @ {} | {:?}", (key, start_ts, ctx),
         content => {
             key: Key,
             /// The transaction timestamp.
@@ -52,7 +52,7 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for Cleanup {
 
         let mut released_daggers = ReleasedDaggers::new(self.start_ts, TimeStamp::zero());
         // The rollback must be protected, see more on
-        // [issue #7364](https://github.com/einstfdbkv/einstfdbkv/issues/7364)
+        // [issue #7364](https://github.com/einstfdbhikv/einstfdbhikv/issues/7364)
         released_daggers.push(cleanup(
             &mut solitontxn,
             &mut reader,

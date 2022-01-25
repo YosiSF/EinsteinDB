@@ -2,7 +2,7 @@
 
 ## [Website](https://www.einsteindb.com) | [Documentation](https://einsteindb.com/docs/latest/concepts/overview/) | [Community Chat](https://einsteindb.com/chat)
 
-In a nutshell, Einsteineinsteindb is a persistent indexing scheme based off of LSH-KVX that exploits the distinct merits of hash index and B+-Tree index to support range scan and avoids long NVM writes for maintaining consistency; thus improving on LSH’s performance guarantees for skewed data and adopts ordered-write consistency to ensure crash consistency, while retaining the same storage and query overhead. 
+In a nutshell, Einsteineinsteindb is a persistent indexing scheme based off of LSH-KVX that exploits the distinct merits of hash index and B+-Tree index to support range mutant_search and avoids long NVM writes for maintaining consistency; thus improving on LSH’s performance guarantees for skewed data and adopts ordered-write consistency to ensure crash consistency, while retaining the same storage and query overhead. 
 
 Einsteineinsteindb is a hybrid memory system consisting of DRAM and Non-Volatile Memory(NVM) as its main components. The key-value store stores keys with their associated values in both DRAM and NVM. In addition, Einsteineinsteindb builds an ordered set of differential concurrency schemes appended to a hash index in NVM to retain its inherent ability of fast index searching. 
 

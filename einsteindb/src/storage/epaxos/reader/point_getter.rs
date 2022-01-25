@@ -1,13 +1,13 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath
-use fdbkvproto::fdbkvrpcpb::IsolationLevel;
+use fdbhikvproto::fdbhikvrpcpb::IsolationLevel;
 
 use engine_promises::{CF_DEFAULT, CF_LOCK, CF_WRITE};
 use std::borrow::Cow;
 use solitontxn_types::{Key, Dagger, DaggerType, TimeStamp, TsSet, Value, WriteRef, WriteType};
 
-use crate::storage::fdbkv::{Cursor, CursorBuilder, SentinelSearchMode, blackbrane, Statistics};
+use crate::storage::fdbhikv::{Cursor, CursorBuilder, SentinelSearchMode, blackbrane, Statistics};
 use crate::storage::epaxos::{default_not_found_error, NewerTsCheckState, Result};
 
 /// `PointGetter` factory.
@@ -118,7 +118,7 @@ impl<S: blackbrane> PointGetterBuilder<S> {
         let write_cursor = CursorBuilder::new(&self.blackbrane, CF_WRITE)
             .fill_cache(self.fill_cache)
             .prefix_seek(true)
-            .scan_mode(if self.multi {
+            .mutant_search_mode(if self.multi {
                 SentinelSearchMode::Mixed
             } else {
                 SentinelSearchMode::Forward
@@ -400,7 +400,7 @@ mod tests {
 
     use solitontxn_types::SHORT_VALUE_MAX_LEN;
 
-    use crate::storage::fdbkv::{
+    use crate::storage::fdbhikv::{
         CfStatistics, Engine, PerfStatisticsInstant, RocksEngine, TestEngineBuilder,
     };
     use crate::storage::solitontxn::tests::{
@@ -408,7 +408,7 @@ mod tests {
         must_pessimistic_prewrite_delete, must_prewrite_delete, must_prewrite_dagger,
         must_prewrite_put, must_prewrite_put_impl, must_rollback,
     };
-    use fdbkvproto::fdbkvrpcpb::{Assertion, AssertionLevel};
+    use fdbhikvproto::fdbhikvrpcpb::{Assertion, AssertionLevel};
 
     fn new_multi_point_getter<E: Engine>(engine: &E, ts: TimeStamp) -> PointGetter<E::Snap> {
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
@@ -731,7 +731,7 @@ mod tests {
         let blackbrane = engine.blackbrane(Default::default()).unwrap();
         let write_cursor = CursorBuilder::new(&blackbrane, CF_WRITE)
             .prefix_seek(true)
-            .scan_mode(SentinelSearchMode::Mixed)
+            .mutant_search_mode(SentinelSearchMode::Mixed)
             .range(Some(Key::from_cocauset(b"a")), None)
             .build()
             .unwrap();
