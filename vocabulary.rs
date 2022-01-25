@@ -332,10 +332,10 @@ lazy_static! {
         kw!(:einsteindb.unique/idcauset)
     };
     static ref DB_IS_COMPONENT: Keyword = {
-        Keyword::namespaced("einsteindb", "isComponent")
+        Keyword::isoliton_namespaceable("einsteindb", "isComponent")
     };
     static ref DB_VALUE_TYPE: Keyword = {
-        Keyword::namespaced("einsteindb", "valueType")
+        Keyword::isoliton_namespaceable("einsteindb", "valueType")
     };
     static ref DB_INDEX: Keyword = {
         kw!(:einsteindb/index)
@@ -354,7 +354,7 @@ lazy_static! {
     };
 
     static ref DB_NO_HISTORY: Keyword = {
-        Keyword::namespaced("einsteindb", "noHistory")
+        Keyword::isoliton_namespaceable("einsteindb", "noHistory")
     };
 }
 

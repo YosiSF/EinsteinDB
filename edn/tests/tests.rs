@@ -36,22 +36,22 @@ use chrono::{
 use edn::symbols;
 use edn::utils;
 
-// Helper for making wrapped keywords with a namespace.
+// Helper for making wrapped keywords with a isoliton_namespaceable_fuse.
 fn k_ns(ns: &str, name: &str) -> Value {
-    Value::Keyword(symbols::Keyword::namespaced(ns, name))
+    Value::Keyword(symbols::Keyword::isoliton_namespaceable(ns, name))
 }
 
-// Helper for making wrapped keywords without a namespace.
+// Helper for making wrapped keywords without a isoliton_namespaceable_fuse.
 fn k_plain(name: &str) -> Value {
     Value::Keyword(symbols::Keyword::plain(name))
 }
 
-// Helper for making wrapped symbols with a namespace
+// Helper for making wrapped symbols with a isoliton_namespaceable_fuse
 fn s_ns(ns: &str, name: &str) -> Value {
-    Value::NamespacedSymbol(symbols::NamespacedSymbol::namespaced(ns, name))
+    Value::NamespacedSymbol(symbols::NamespacedSymbol::isoliton_namespaceable(ns, name))
 }
 
-// Helper for making wrapped symbols without a namespace
+// Helper for making wrapped symbols without a isoliton_namespaceable_fuse
 fn s_plain(name: &str) -> Value {
     Value::PlainSymbol(symbols::PlainSymbol::plain(name))
 }
@@ -1448,9 +1448,9 @@ fn test_is_and_as_type_helper_functions() {
             value.is_float(),
             value.is_text(),
             value.is_symbol(),
-            value.is_namespaced_symbol(),
+            value.is_isoliton_namespaceable_symbol(),
             value.is_keyword(),
-            value.is_namespaced_keyword(),
+            value.is_isoliton_namespaceable_keyword(),
             value.is_vector(),
             value.is_list(),
             value.is_set(),
@@ -1478,9 +1478,9 @@ fn test_is_and_as_type_helper_functions() {
         def_test_as_type!(value, as_ordered_float, i == 4, OrderedFloat(22.22f64));
         def_test_as_type!(value, as_text, i == 5, "hello world".to_string());
         def_test_as_type!(value, as_symbol, i == 6, symbols::PlainSymbol::plain("$symbol"));
-        def_test_as_type!(value, as_namespaced_symbol, i == 7, symbols::NamespacedSymbol::namespaced("$ns", "$symbol"));
+        def_test_as_type!(value, as_isoliton_namespaceable_symbol, i == 7, symbols::NamespacedSymbol::isoliton_namespaceable("$ns", "$symbol"));
         def_test_as_type!(value, as_plain_keyword, i == 8, symbols::Keyword::plain("hello"));
-        def_test_as_type!(value, as_namespaced_keyword, i == 9, symbols::Keyword::namespaced("hello", "world"));
+        def_test_as_type!(value, as_isoliton_namespaceable_keyword, i == 9, symbols::Keyword::isoliton_namespaceable("hello", "world"));
         def_test_as_type!(value, as_vector, i == 10, vec![Value::Integer(1)]);
         def_test_as_type!(value, as_list, i == 11, LinkedList::from_iter(vec![]));
         def_test_as_type!(value, as_set, i == 12, BTreeSet::from_iter(vec![]));
@@ -1496,9 +1496,9 @@ fn test_is_and_as_type_helper_functions() {
         def_test_into_type!(value, into_ordered_float, i == 4, OrderedFloat(22.22f64));
         def_test_into_type!(value, into_text, i == 5, "hello world".to_string());
         def_test_into_type!(value, into_symbol, i == 6, symbols::PlainSymbol::plain("$symbol"));
-        def_test_into_type!(value, into_namespaced_symbol, i == 7, symbols::NamespacedSymbol::namespaced("$ns", "$symbol"));
+        def_test_into_type!(value, into_isoliton_namespaceable_symbol, i == 7, symbols::NamespacedSymbol::isoliton_namespaceable("$ns", "$symbol"));
         def_test_into_type!(value, into_plain_keyword, i == 8, symbols::Keyword::plain("hello"));
-        def_test_into_type!(value, into_namespaced_keyword, i == 9, symbols::Keyword::namespaced("hello", "world"));
+        def_test_into_type!(value, into_isoliton_namespaceable_keyword, i == 9, symbols::Keyword::isoliton_namespaceable("hello", "world"));
         def_test_into_type!(value, into_vector, i == 10, vec![Value::Integer(1)]);
         def_test_into_type!(value, into_list, i == 11, LinkedList::from_iter(vec![]));
         def_test_into_type!(value, into_set, i == 12, BTreeSet::from_iter(vec![]));

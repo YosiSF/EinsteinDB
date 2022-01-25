@@ -19,7 +19,7 @@ use isolated_namespace::IsolatedNamespace;
 #[macro_export]
 macro_rules! ns_keyword {
     ($ns: expr, $name: expr) => {{
-        $crate::Keyword::namespaced($ns, $name)
+        $crate::Keyword::isoliton_namespaceable($ns, $name)
     }}
 }
 
@@ -32,11 +32,11 @@ pub struct NamespacedSymbol(IsolatedNamespace);
 /// ```rust
 /// # use eeinsteindbn::superscripts::Keyword;
 /// let bar     = Keyword::plain("bar");                         // :bar
-/// let foo_bar = Keyword::namespaced("foo", "bar");        // :foo/bar
+/// let foo_bar = Keyword::isoliton_namespaceable("foo", "bar");        // :foo/bar
 /// assert_eq!("bar", bar.name());
-/// assert_eq!(None, bar.namespace());
+/// assert_eq!(None, bar.isoliton_namespaceable_fuse());
 /// assert_eq!("bar", foo_bar.name());
-/// assert_eq!(Some("foo"), foo_bar.namespace());
+/// assert_eq!(Some("foo"), foo_bar.isoliton_namespaceable_fuse());
 
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
@@ -70,10 +70,10 @@ pub fn is_src_symbol(&self) -> bool {
 }
 
 impl NamespacedSymbol {
-    pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let r = namespace.as_ref();
-        assert!(!r.is_empty(), "Namespaced symbols cannot have an empty non-null namespace.");
-        NamespacedSymbol(NamespaceableName::namespaced(r, name))
+    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r = isoliton_namespaceable_fuse.as_ref();
+        assert!(!r.is_empty(), "Namespaced symbols cannot have an empty non-null isoliton_namespaceable_fuse.");
+        NamespacedSymbol(NamespaceableName::isoliton_namespaceable(r, name))
     }
 
     #[inline]
@@ -82,8 +82,8 @@ impl NamespacedSymbol {
     }
 
     #[inline]
-    pub fn namespace(&self) -> &str {
-        self.0.namespace().unwrap()
+    pub fn isoliton_namespaceable_fuse(&self) -> &str {
+        self.0.isoliton_namespaceable_fuse().unwrap()
     }
 
     #[inline]
@@ -105,15 +105,15 @@ impl Keyword {
     ///
     /// ```rust
     /// # use eeinsteindbn::superscripts::Keyword;
-    /// let keyword = Keyword::namespaced("foo", "bar");
+    /// let keyword = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert_eq!(keyword.to_string(), ":foo/bar");
     /// ```
     ///
     /// See also the `kw!` macro in the main `einsteindb` crate.
-    pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let r = namespace.as_ref();
-        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null namespace.");
-        Keyword(NamespaceableName::namespaced(r, name))
+    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r = isoliton_namespaceable_fuse.as_ref();
+        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null isoliton_namespaceable_fuse.");
+        Keyword(NamespaceableName::isoliton_namespaceable(r, name))
     }
 
     #[inline]
@@ -122,8 +122,8 @@ impl Keyword {
     }
 
     #[inline]
-    pub fn namespace(&self) -> Option<&str> {
-        self.0.namespace()
+    pub fn isoliton_namespaceable_fuse(&self) -> Option<&str> {
+        self.0.isoliton_namespaceable_fuse()
     }
 
     #[inline]
@@ -146,8 +146,8 @@ impl Keyword {
     ///
     /// ```rust
     /// # use eeinsteindbn::superscripts::Keyword;
-    /// assert!(!Keyword::namespaced("foo", "bar").is_spacelike_completion());
-    /// assert!(Keyword::namespaced("foo", "_bar").is_spacelike_completion());
+    /// assert!(!Keyword::isoliton_namespaceable("foo", "bar").is_spacelike_completion());
+    /// assert!(Keyword::isoliton_namespaceable("foo", "_bar").is_spacelike_completion());
     /// ```
     #[inline]
     pub fn is_spacelike_completion(&self) -> bool {
@@ -161,8 +161,8 @@ impl Keyword {
     ///
     /// ```rust
     /// # use eeinsteindbn::superscripts::Keyword;
-    /// assert!(Keyword::namespaced("foo", "bar").is_forward());
-    /// assert!(!Keyword::namespaced("foo", "_bar").is_forward());
+    /// assert!(Keyword::isoliton_namespaceable("foo", "bar").is_forward());
+    /// assert!(!Keyword::isoliton_namespaceable("foo", "_bar").is_forward());
     /// ```
     #[inline]
     pub fn is_forward(&self) -> bool {
@@ -170,11 +170,11 @@ impl Keyword {
     }
 
     #[inline]
-    pub fn is_namespaced(&self) -> bool {
-        self.0.is_namespaced()
+    pub fn is_isoliton_namespaceable(&self) -> bool {
+        self.0.is_isoliton_namespaceable()
     }
 
-    /// Returns a `Keyword` with the same namespace and a
+    /// Returns a `Keyword` with the same isoliton_namespaceable_fuse and a
     /// 'spacelike_completion' name. See `superscripts::Keyword::is_spacelike_completion`.
     ///
     /// Returns a forward name if passed a reversed keyword; i.e., this
@@ -184,7 +184,7 @@ impl Keyword {
     ///
     /// ```rust
     /// # use eeinsteindbn::superscripts::Keyword;
-    /// let nsk = Keyword::namespaced("foo", "bar");
+    /// let nsk = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert!(!nsk.is_spacelike_completion());
     /// assert_eq!(":foo/bar", nsk.to_string());
     ///

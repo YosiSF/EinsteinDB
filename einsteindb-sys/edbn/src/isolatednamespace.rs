@@ -30,12 +30,12 @@ use serde::ser::{
 };
 
 #[inline]
-pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
     let n = name.as_ref();
-    let ns = namespace.as_ref();
+    let ns = isoliton_namespaceable_fuse.as_ref();
 
     assert!(!n.is_empty(), "Symbols and keywords cannot be unnamed.");
-    assert!(!ns.is_empty(), "Symbols and keywords cannot have an empty non-null namespace.");
+    assert!(!ns.is_empty(), "Symbols and keywords cannot have an empty non-null isoliton_namespaceable_fuse.");
 
     let mut dest = String::with_capacity(n.len() + ns.len());
 
@@ -56,11 +56,11 @@ pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: A
 pub struct IsolatedNamespace {
 
 
-    //bytes that make up the namespace followed directly by
+    //bytes that make up the isoliton_namespaceable_fuse followed directly by
     //solidus partitions
     components: String,
 
-    //If zero, this isn't a namespaced component.
+    //If zero, this isn't a isoliton_namespaceable component.
     // 1. `boundary` must always be less than or equal to `components.len()`.
     // 2. `boundary` must be a byte index that points to a character boundary,
     //     and not point into the middle of a UTF-8 codepoint. That is,
@@ -78,7 +78,7 @@ pub struct IsolatedNamespace {
 
 impl IsolatedNamespace {
     #[inline]
-    pub fn namespace(&self) -> &str {
+    pub fn isoliton_namespaceable_fuse(&self) -> &str {
         let ns = self.components.as_bytes();
 
         unsafe {
@@ -86,7 +86,7 @@ impl IsolatedNamespace {
 
             //ensure that our slice is at least as long as the index we're looking up, and that it's a valid UTF-8 slice,
             // or else unwrap will panic when we try to use it to construct a string slice from it.
-            assert!(len <= ns.len(), "Boundary must not extend past end of namespace.");
+            assert!(len <= ns.len(), "Boundary must not extend past end of isoliton_namespaceable_fuse.");
 
             std::str::from_utf8_unchecked(&ns[..len])
         }
@@ -101,7 +101,7 @@ impl IsolatedNamespace {
             let sep = self.separator;
 
             //ensure that our slice is at least as long as the index we're looking up, and that it's a valid UTF-8 slice, or else unwrap will panic when we try to use it to construct a string slice from it.
-            assert!(len <= sep && sep <= ns.len(), "Boundary must not extend past end of namespace.");
+            assert!(len <= sep && sep <= ns.len(), "Boundary must not extend past end of isoliton_namespaceable_fuse.");
 
             std::str::from_utf8_unchecked(&ns[sep..len])
         }
@@ -137,16 +137,16 @@ impl IsolatedNamespace {
 
 
 
-        fn new<N, T>(namespace: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-            if let Some(ns) = namespace {
-                Self::namespaced(ns, name)
+        fn new<N, T>(isoliton_namespaceable_fuse: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+            if let Some(ns) = isoliton_namespaceable_fuse {
+                Self::isoliton_namespaceable(ns, name)
             } else {
                 Self::plain(name.as_ref())
             }
         }
 
 
-        pub fn is_namespaced(&self) -> bool {
+        pub fn is_isoliton_namespaceable(&self) -> bool {
             self.boundary > 0
         }
 
@@ -164,9 +164,9 @@ impl IsolatedNamespace {
             let name = self.name();
 
             if name.starts_with('_') {
-                Self::new(self.namespace(), &name[1..])
+                Self::new(self.isoliton_namespaceable_fuse(), &name[1..])
             } else {
-                Self::new(self.namespace(), &format!("_{}", name))
+                Self::new(self.isoliton_namespaceable_fuse(), &format!("_{}", name))
             }
         }
     }

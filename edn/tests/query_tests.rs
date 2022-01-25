@@ -158,7 +158,7 @@ fn can_parse_simple_or_join() {
 
 #[cfg(test)]
 fn solitonid(ns: &str, name: &str) -> PatternNonValuePlace {
-    Keyword::namespaced(ns, name).into()
+    Keyword::isoliton_namespaceable(ns, name).into()
 }
 
 #[test]
@@ -274,7 +274,7 @@ fn can_parse_uuid() {
                WhereClause::Pattern(
                    Pattern::new(None,
                                 PatternNonValuePlace::Variable(Variable::from_valid_name("?x")),
-                                Keyword::namespaced("foo", "baz").into(),
+                                Keyword::isoliton_namespaceable("foo", "baz").into(),
                                 PatternValuePlace::Constant(NonIntegerConstant::Uuid(expected)),
                                 PatternNonValuePlace::Placeholder)
                        .expect("valid pattern")));
@@ -293,7 +293,7 @@ fn can_parse_exotic_whitespace() {
                WhereClause::Pattern(
                    Pattern::new(None,
                                 PatternNonValuePlace::Variable(Variable::from_valid_name("?x")),
-                                Keyword::namespaced("foo", "baz").into(),
+                                Keyword::isoliton_namespaceable("foo", "baz").into(),
                                 PatternValuePlace::Constant(NonIntegerConstant::Uuid(expected)),
                                 PatternNonValuePlace::Placeholder)
                        .expect("valid pattern")));

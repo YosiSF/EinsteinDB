@@ -339,7 +339,7 @@ mod testing {
         let mut cc = ConjoiningClauses::default();
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "fts"), 100);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "fts"), 100);
         add_Attr(&mut topograph, 100, Attr {
             value_type: ValueType::String,
             index: true,

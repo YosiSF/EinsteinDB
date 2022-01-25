@@ -236,8 +236,8 @@ macro_rules! def_into {
     }
 }
 
-/// Converts `name` into a plain or namespaced value symbol, depending on
-/// whether or not `namespace` is given.
+/// Converts `name` into a plain or isoliton_namespaceable value symbol, depending on
+/// whether or not `isoliton_namespaceable_fuse` is given.
 ///
 /// # Examples
 ///
@@ -246,7 +246,7 @@ macro_rules! def_into {
 /// # use edn::types::Value;
 /// # use edn::symbols;
 /// let value = to_symbol!("foo", "bar", Value);
-/// assert_eq!(value, Value::NamespacedSymbol(symbols::NamespacedSymbol::namespaced("foo", "bar")));
+/// assert_eq!(value, Value::NamespacedSymbol(symbols::NamespacedSymbol::isoliton_namespaceable("foo", "bar")));
 ///
 /// let value = to_symbol!(None, "baz", Value);
 /// assert_eq!(value, Value::PlainSymbol(symbols::PlainSymbol::plain("baz")));
@@ -258,15 +258,15 @@ macro_rules! def_into {
 /// assert_eq!(value.into(), to_symbol!(None, "baz", Value));
 /// ```
 macro_rules! to_symbol {
-    ( $namespace:expr, $name:expr, $t:tt ) => {
-        $namespace.into().map_or_else(
+    ( $isoliton_namespaceable_fuse:expr, $name:expr, $t:tt ) => {
+        $isoliton_namespaceable_fuse.into().map_or_else(
             || $t::PlainSymbol(symbols::PlainSymbol::plain($name)),
-            |ns| $t::NamespacedSymbol(symbols::NamespacedSymbol::namespaced(ns, $name)))
+            |ns| $t::NamespacedSymbol(symbols::NamespacedSymbol::isoliton_namespaceable(ns, $name)))
     }
 }
 
-/// Converts `name` into a plain or namespaced value keyword, depending on
-/// whether or not `namespace` is given.
+/// Converts `name` into a plain or isoliton_namespaceable value keyword, depending on
+/// whether or not `isoliton_namespaceable_fuse` is given.
 ///
 /// # Examples
 ///
@@ -275,7 +275,7 @@ macro_rules! to_symbol {
 /// # use edn::types::Value;
 /// # use edn::symbols;
 /// let value = to_keyword!("foo", "bar", Value);
-/// assert_eq!(value, Value::Keyword(symbols::Keyword::namespaced("foo", "bar")));
+/// assert_eq!(value, Value::Keyword(symbols::Keyword::isoliton_namespaceable("foo", "bar")));
 ///
 /// let value = to_keyword!(None, "baz", Value);
 /// assert_eq!(value, Value::Keyword(symbols::Keyword::plain("baz")));
@@ -287,10 +287,10 @@ macro_rules! to_symbol {
 /// assert_eq!(value.into(), to_keyword!(None, "baz", Value));
 /// ```
 macro_rules! to_keyword {
-    ( $namespace:expr, $name:expr, $t:tt ) => {
-        $namespace.into().map_or_else(
+    ( $isoliton_namespaceable_fuse:expr, $name:expr, $t:tt ) => {
+        $isoliton_namespaceable_fuse.into().map_or_else(
             || $t::Keyword(symbols::Keyword::plain($name)),
-            |ns| $t::Keyword(symbols::Keyword::namespaced(ns, $name)))
+            |ns| $t::Keyword(symbols::Keyword::isoliton_namespaceable(ns, $name)))
     }
 }
 
@@ -307,7 +307,7 @@ macro_rules! def_common_value_methods {
         def_is!(is_text, $t::Text(_));
         def_is!(is_uuid, $t::Uuid(_));
         def_is!(is_symbol, $t::PlainSymbol(_));
-        def_is!(is_namespaced_symbol, $t::NamespacedSymbol(_));
+        def_is!(is_isoliton_namespaceable_symbol, $t::NamespacedSymbol(_));
         def_is!(is_vector, $t::Vector(_));
         def_is!(is_list, $t::List(_));
         def_is!(is_set, $t::Set(_));
@@ -315,14 +315,14 @@ macro_rules! def_common_value_methods {
 
         pub fn is_keyword(&self) -> bool {
             match self {
-                &$t::Keyword(ref k) => !k.is_namespaced(),
+                &$t::Keyword(ref k) => !k.is_isoliton_namespaceable(),
                 _ => false,
             }
         }
 
-        pub fn is_namespaced_keyword(&self) -> bool {
+        pub fn is_isoliton_namespaceable_keyword(&self) -> bool {
             match self {
-                &$t::Keyword(ref k) => k.is_namespaced(),
+                &$t::Keyword(ref k) => k.is_isoliton_namespaceable(),
                 _ => false,
             }
         }
@@ -343,7 +343,7 @@ macro_rules! def_common_value_methods {
         def_as_ref!(as_text, $t::Text, String);
         def_as_ref!(as_uuid, $t::Uuid, Uuid);
         def_as_ref!(as_symbol, $t::PlainSymbol, symbols::PlainSymbol);
-        def_as_ref!(as_namespaced_symbol, $t::NamespacedSymbol, symbols::NamespacedSymbol);
+        def_as_ref!(as_isoliton_namespaceable_symbol, $t::NamespacedSymbol, symbols::NamespacedSymbol);
 
         pub fn as_keyword(&self) -> Option<&symbols::Keyword> {
             match self {
@@ -354,14 +354,14 @@ macro_rules! def_common_value_methods {
 
         pub fn as_plain_keyword(&self) -> Option<&symbols::Keyword> {
             match self {
-                &$t::Keyword(ref k) if !k.is_namespaced() => Some(k),
+                &$t::Keyword(ref k) if !k.is_isoliton_namespaceable() => Some(k),
                 _ => None,
             }
         }
 
-        pub fn as_namespaced_keyword(&self) -> Option<&symbols::Keyword> {
+        pub fn as_isoliton_namespaceable_keyword(&self) -> Option<&symbols::Keyword> {
             match self {
-                &$t::Keyword(ref k) if k.is_namespaced() => Some(k),
+                &$t::Keyword(ref k) if k.is_isoliton_namespaceable() => Some(k),
                 _ => None,
             }
         }
@@ -380,7 +380,7 @@ macro_rules! def_common_value_methods {
         def_into!(into_text, $t::Text, String,);
         def_into!(into_uuid, $t::Uuid, Uuid,);
         def_into!(into_symbol, $t::PlainSymbol, symbols::PlainSymbol,);
-        def_into!(into_namespaced_symbol, $t::NamespacedSymbol, symbols::NamespacedSymbol,);
+        def_into!(into_isoliton_namespaceable_symbol, $t::NamespacedSymbol, symbols::NamespacedSymbol,);
 
         pub fn into_keyword(self) -> Option<symbols::Keyword> {
             match self {
@@ -392,7 +392,7 @@ macro_rules! def_common_value_methods {
         pub fn into_plain_keyword(self) -> Option<symbols::Keyword> {
             match self {
                 $t::Keyword(k) => {
-                    if !k.is_namespaced() {
+                    if !k.is_isoliton_namespaceable() {
                         Some(k)
                     } else {
                         None
@@ -402,10 +402,10 @@ macro_rules! def_common_value_methods {
             }
         }
 
-        pub fn into_namespaced_keyword(self) -> Option<symbols::Keyword> {
+        pub fn into_isoliton_namespaceable_keyword(self) -> Option<symbols::Keyword> {
             match self {
                 $t::Keyword(k) => {
-                    if k.is_namespaced() {
+                    if k.is_isoliton_namespaceable() {
                         Some(k)
                     } else {
                         None
@@ -425,12 +425,12 @@ macro_rules! def_common_value_methods {
         def_from!(from_float, $t, $t::Float, f64, |src: f64| OrderedFloat::from(src));
         def_from!(from_ordered_float, $t, $t::Float, OrderedFloat<f64>,);
 
-        pub fn from_symbol<'a, T: Into<Option<&'a str>>>(namespace: T, name: &str) -> $t {
-            to_symbol!(namespace, name, $t)
+        pub fn from_symbol<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_fuse: T, name: &str) -> $t {
+            to_symbol!(isoliton_namespaceable_fuse, name, $t)
         }
 
-        pub fn from_keyword<'a, T: Into<Option<&'a str>>>(namespace: T, name: &str) -> $t {
-            to_keyword!(namespace, name, $t)
+        pub fn from_keyword<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_fuse: T, name: &str) -> $t {
+            to_keyword!(isoliton_namespaceable_fuse, name, $t)
         }
 
         fn precedence(&self) -> i32 {
@@ -445,7 +445,7 @@ macro_rules! def_common_value_methods {
                 $t::Uuid(_) => 7,
                 $t::PlainSymbol(_) => 8,
                 $t::NamespacedSymbol(_) => 9,
-                $t::Keyword(ref k) if !k.is_namespaced() => 10,
+                $t::Keyword(ref k) if !k.is_isoliton_namespaceable() => 10,
                 $t::Keyword(_) => 11,
                 $t::Vector(_) => 12,
                 $t::List(_) => 13,
@@ -805,25 +805,25 @@ mod test {
 
     #[test]
     fn test_keyword_as() {
-        let namespaced = symbols::Keyword::namespaced("foo", "bar");
+        let isoliton_namespaceable = symbols::Keyword::isoliton_namespaceable("foo", "bar");
         let plain = symbols::Keyword::plain("bar");
-        let n_v = Value::Keyword(namespaced);
+        let n_v = Value::Keyword(isoliton_namespaceable);
         let p_v = Value::Keyword(plain);
 
         assert!(n_v.as_keyword().is_some());
         assert!(n_v.as_plain_keyword().is_none());
-        assert!(n_v.as_namespaced_keyword().is_some());
+        assert!(n_v.as_isoliton_namespaceable_keyword().is_some());
 
         assert!(p_v.as_keyword().is_some());
         assert!(p_v.as_plain_keyword().is_some());
-        assert!(p_v.as_namespaced_keyword().is_none());
+        assert!(p_v.as_isoliton_namespaceable_keyword().is_none());
 
         assert!(n_v.clone().into_keyword().is_some());
         assert!(n_v.clone().into_plain_keyword().is_none());
-        assert!(n_v.clone().into_namespaced_keyword().is_some());
+        assert!(n_v.clone().into_isoliton_namespaceable_keyword().is_some());
 
         assert!(p_v.clone().into_keyword().is_some());
         assert!(p_v.clone().into_plain_keyword().is_some());
-        assert!(p_v.clone().into_namespaced_keyword().is_none());
+        assert!(p_v.clone().into_isoliton_namespaceable_keyword().is_none());
     }
 }

@@ -665,7 +665,7 @@ mod testing {
         let mut cc = ConjoiningClauses::default();
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
 
         let known = KnownCauset::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
@@ -684,7 +684,7 @@ mod testing {
         let mut cc = ConjoiningClauses::default();
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
@@ -770,7 +770,7 @@ mod testing {
     fn test_apply_unAttrd_but_bound_parity_filter_with_returned() {
         let mut cc = ConjoiningClauses::default();
         let mut topograph = Topograph::default();
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
@@ -918,8 +918,8 @@ mod testing {
         let mut cc = ConjoiningClauses::default();
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "roz"), 98);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "roz"), 98);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
@@ -991,7 +991,7 @@ mod testing {
     fn test_value_bindings() {
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
@@ -1039,7 +1039,7 @@ mod testing {
     fn test_value_bindings_type_disagreement() {
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
@@ -1073,7 +1073,7 @@ mod testing {
     fn test_fulltext_type_disagreement() {
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::String,
             index: true,
@@ -1111,8 +1111,8 @@ mod testing {
         let mut cc = ConjoiningClauses::default();
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "roz"), 98);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "roz"), 98);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
@@ -1200,7 +1200,7 @@ mod testing {
     fn ensure_extracted_types_is_cleared() {
         let query = r#"[:find ?e ?v :where [_ _ ?v] [?e :foo/bar ?v]]"#;
         let mut topograph = Topograph::default();
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()

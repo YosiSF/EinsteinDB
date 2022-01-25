@@ -214,14 +214,14 @@ fn symbolic_topograph_to_triples(solitonid_map: &solitonidMap, symbolic_topograp
             for (solitonid, mp) in m {
                 let solitonid = match solitonid {
                     &Value::Keyword(ref solitonid) => solitonid,
-                    _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expected namespaced keyword for solitonid but got '{:?}'", solitonid))),
+                    _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expected isoliton_namespaceable keyword for solitonid but got '{:?}'", solitonid))),
                 };
                 match *mp {
                     Value::Map(ref mpp) => {
                         for (attr, value) in mpp {
                             let attr = match attr {
                                 &Value::Keyword(ref attr) => attr,
-                                _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expected namespaced keyword for attr but got '{:?}'", attr))),
+                                _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expected isoliton_namespaceable keyword for attr but got '{:?}'", attr))),
                         };
 
                             // We have symbolic solitonids but the transactor handles causetids.  Ad-hoc

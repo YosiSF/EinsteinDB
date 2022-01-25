@@ -291,14 +291,14 @@ mod testing {
         let mut cc = ConjoiningClauses::default();
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 101);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 101);
         add_Attr(&mut topograph, 101, Attr {
             value_type: ValueType::String,
             fulltext: false,
             ..Default::default()
         });
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "fts"), 100);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "fts"), 100);
         add_Attr(&mut topograph, 100, Attr {
             value_type: ValueType::String,
             index: true,
@@ -313,7 +313,7 @@ mod testing {
             operator: op,
             args: vec![
                 FnArg::SrcVar(SrcVar::DefaultSrc),
-                FnArg::solitonidOrKeyword(Keyword::namespaced("foo", "fts")),
+                FnArg::solitonidOrKeyword(Keyword::isoliton_namespaceable("foo", "fts")),
                 FnArg::Constant("needle".into()),
             ],
             binding: Binding::BindRel(vec![VariableOrPlaceholder::Variable(Variable::from_valid_name("?entity")),
@@ -371,7 +371,7 @@ mod testing {
             operator: op,
             args: vec![
                 FnArg::SrcVar(SrcVar::DefaultSrc),
-                FnArg::solitonidOrKeyword(Keyword::namespaced("foo", "bar")),
+                FnArg::solitonidOrKeyword(Keyword::isoliton_namespaceable("foo", "bar")),
                 FnArg::Constant("needle".into()),
             ],
             binding: Binding::BindRel(vec![VariableOrPlaceholder::Variable(Variable::from_valid_name("?entity")),

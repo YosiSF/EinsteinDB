@@ -155,3 +155,6 @@ impl<'a, T: 'a + Clone> AsRef<ValueRc<T>> for &'a Rc<T> where T: Sized + Clone {
 
         unsafe{
             ::std::mem::transmute( self ) }//The transmute utility function allows us to convert between types even though they are lifetimes apart or never implement common traits such as Copy or Clone! Here's what happens behind scenes when using transmute(): rust first checks whether both types have matching sizes with mem::sizeof(src) == mem::sizeof(dst), which in this case they do! Then rust also ensures both types are plain old data aka PODs (no destructors/drop methods implemented). After ensuring these invariants hold true, rust finally takes src by value casts it into dst while replacing all lifetimes by static lifetime automatically!! By implementing From and Into traits for our custom smart pointers, their values can be transparently converted via transmuting them between each other!! Minimal overhead since no memory allocation occurs at runtime.. only size validation occurs once when instantiating each smart pointer instance in main(); see below for more details about Validation vs Construction costs.)
+
+              fn value(&self) -> ValueRc<T>;       //Unsafe because there could be multiple clones that point to same underlying T causing UB?Or maybe not cause Cloning is efficient enough? Anyway preferred over referencing?
+}

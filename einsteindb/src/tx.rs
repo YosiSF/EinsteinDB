@@ -181,7 +181,7 @@ pub struct Tx<'conn, 'a, W> where W: TransactWatcher {
 /// something suitable for the causet position rather than something suitable for a value position.
 pub fn remove_einsteindb_id<V: TransactableValue>(map: &mut entmod::MapNotation<V>) -> Result<Option<entmod::causetPlace<V>>> {
     // TODO: extract lazy defined constant.
-    let einsteindb_id_key = entmod::CausetidOrSolitonid::Solitonid(Keyword::namespaced("einsteindb", "id"));
+    let einsteindb_id_key = entmod::CausetidOrSolitonid::Solitonid(Keyword::isoliton_namespaceable("einsteindb", "id"));
 
     let einsteindb_id: Option<entmod::causetPlace<V>> = if let Some(id) = map.remove(&einsteindb_id_key) {
         match id {

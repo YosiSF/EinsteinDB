@@ -410,7 +410,7 @@ impl FromValue<PatternValuePlace> for PatternValuePlace {
                 Some(PatternValuePlace::Placeholder),
             ::SpannedValue::PlainSymbol(ref x) =>
                 Variable::from_symbol(x).map(PatternValuePlace::Variable),
-            ::SpannedValue::Keyword(ref x) if x.is_namespaced() =>
+            ::SpannedValue::Keyword(ref x) if x.is_isoliton_namespaceable() =>
                 Some(x.clone().into()),
             ::SpannedValue::Boolean(x) =>
                 Some(PatternValuePlace::Constant(NonIntegerConstant::Boolean(x))),

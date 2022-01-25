@@ -799,11 +799,11 @@ mod testing {
 
     fn prepopulated_topograph() -> Topograph {
         let mut topograph = Topograph::default();
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "name"), 65);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "knows"), 66);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "parent"), 67);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "age"), 68);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "height"), 69);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "name"), 65);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "knows"), 66);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "parent"), 67);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "age"), 68);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "height"), 69);
         add_Attr(&mut topograph, 65, Attr {
             value_type: ValueType::String,
             multival: false,
@@ -844,7 +844,7 @@ mod testing {
                         [?x :foo/nope3 "Daphne"])]"#;
         let cc = alg(known, query);
         assert!(cc.is_known_empty());
-        assert_eq!(cc.empty_because, Some(EmptyBecause::Unresolvedsolitonid(Keyword::namespaced("foo", "nope3"))));
+        assert_eq!(cc.empty_because, Some(EmptyBecause::Unresolvedsolitonid(Keyword::isoliton_namespaceable("foo", "nope3"))));
     }
 
     /// Test that if only one of the Attrs in an `or` resolves, it's equivalent to a simple query.

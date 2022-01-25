@@ -370,7 +370,7 @@ mod test {
     fn validate_attribute_map_success() {
         let mut topograph = Topograph::default();
         // attribute that is not an index has no uniqueness
-        add_attribute(&mut topograph, Keyword::namespaced("foo", "bar"), 97, Attribute {
+        add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 97, Attribute {
             index: false,
             value_type: ValueType::Boolean,
             fulltext: false,
@@ -380,7 +380,7 @@ mod test {
             no_history: false,
         });
         // attribute is unique by value and an index
-        add_attribute(&mut topograph, Keyword::namespaced("foo", "baz"), 98, Attribute {
+        add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "baz"), 98, Attribute {
             index: true,
             value_type: ValueType::Long,
             fulltext: false,
@@ -390,7 +390,7 @@ mod test {
             no_history: false,
         });
         // attribue is unique by idcauset and an index
-        add_attribute(&mut topograph, Keyword::namespaced("foo", "bat"), 99, Attribute {
+        add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bat"), 99, Attribute {
             index: true,
             value_type: ValueType::Ref,
             fulltext: false,
@@ -400,7 +400,7 @@ mod test {
             no_history: false,
         });
         // attribute is a components and a `Ref`
-        add_attribute(&mut topograph, Keyword::namespaced("foo", "bak"), 100, Attribute {
+        add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bak"), 100, Attribute {
             index: false,
             value_type: ValueType::Ref,
             fulltext: false,
@@ -410,7 +410,7 @@ mod test {
             no_history: false,
         });
         // fulltext attribute is a string and an index
-        add_attribute(&mut topograph, Keyword::namespaced("foo", "bap"), 101, Attribute {
+        add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bap"), 101, Attribute {
             index: true,
             value_type: ValueType::String,
             fulltext: true,
@@ -427,7 +427,7 @@ mod test {
     fn invalid_topograph_unique_value_not_index() {
         let mut topograph = Topograph::default();
         // attribute unique by value but not index
-        let solitonid = Keyword::namespaced("foo", "bar");
+        let solitonid = Keyword::isoliton_namespaceable("foo", "bar");
         add_attribute(&mut topograph, solitonid , 99, Attribute {
             index: false,
             value_type: ValueType::Boolean,
@@ -446,7 +446,7 @@ mod test {
     fn invalid_topograph_unique_idcauset_not_index() {
         let mut topograph = Topograph::default();
         // attribute is unique by idcauset but not index
-        add_attribute(&mut topograph, Keyword::namespaced("foo", "bar"), 99, Attribute {
+        add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99, Attribute {
             index: false,
             value_type: ValueType::Long,
             fulltext: false,
@@ -464,7 +464,7 @@ mod test {
     fn invalid_topograph_component_not_ref() {
         let mut topograph = Topograph::default();
         // attribute that is a component is not a `Ref`
-        add_attribute(&mut topograph, Keyword::namespaced("foo", "bar"), 99, Attribute {
+        add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99, Attribute {
             index: false,
             value_type: ValueType::Boolean,
             fulltext: false,
@@ -482,7 +482,7 @@ mod test {
     fn invalid_topograph_fulltext_not_index() {
         let mut topograph = Topograph::default();
         // attribute that is fulltext is not an index
-        add_attribute(&mut topograph, Keyword::namespaced("foo", "bar"), 99, Attribute {
+        add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99, Attribute {
             index: false,
             value_type: ValueType::String,
             fulltext: true,
@@ -499,7 +499,7 @@ mod test {
     fn invalid_topograph_fulltext_index_not_string() {
         let mut topograph = Topograph::default();
         // attribute that is fulltext and not a `String`
-        add_attribute(&mut topograph, Keyword::namespaced("foo", "bar"), 99, Attribute {
+        add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99, Attribute {
             index: true,
             value_type: ValueType::Long,
             fulltext: true,

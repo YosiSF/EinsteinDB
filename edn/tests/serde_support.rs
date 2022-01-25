@@ -21,11 +21,11 @@ use serde_test::{assert_tokens, Token};
 #[cfg(feature = "serde_support")]
 #[test]
 fn test_serialize_keyword() {
-    let kw = Keyword::namespaced("foo", "bar");
+    let kw = Keyword::isoliton_namespaceable("foo", "bar");
     assert_tokens(&kw, &[
         Token::NewtypeStruct { name: "Keyword" },
         Token::Struct { name: "NamespaceableName", len: 2 },
-        Token::Str("namespace"),
+        Token::Str("isoliton_namespaceable_fuse"),
         Token::Some,
         Token::BorrowedStr("foo"),
         Token::Str("name"),
@@ -38,16 +38,16 @@ fn test_serialize_keyword() {
 #[cfg(feature = "serde_support")]
 #[test]
 fn test_deserialize_keyword() {
-    let json = r#"{"name": "foo", "namespace": "bar"}"#;
+    let json = r#"{"name": "foo", "isoliton_namespaceable_fuse": "bar"}"#;
     let kw = serde_json::from_str::<Keyword>(json).unwrap();
     assert_eq!(kw.name(), "foo");
-    assert_eq!(kw.namespace(), Some("bar"));
+    assert_eq!(kw.isoliton_namespaceable_fuse(), Some("bar"));
 
-    let bad_ns_json = r#"{"name": "foo", "namespace": ""}"#;
+    let bad_ns_json = r#"{"name": "foo", "isoliton_namespaceable_fuse": ""}"#;
     let not_kw = serde_json::from_str::<Keyword>(bad_ns_json);
     assert!(not_kw.is_err());
 
-    let bad_ns_json = r#"{"name": "", "namespace": "bar"}"#;
+    let bad_ns_json = r#"{"name": "", "isoliton_namespaceable_fuse": "bar"}"#;
     let not_kw = serde_json::from_str::<Keyword>(bad_ns_json);
     assert!(not_kw.is_err());
 }

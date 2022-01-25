@@ -89,34 +89,34 @@ macro_rules! var {
     };
 }
 
-/// Produce the appropriate `Keyword` for the provided namespace and name.
+/// Produce the appropriate `Keyword` for the provided isoliton_namespaceable_fuse and name.
 /// This lives here because we can't re-export macros:
 /// https://github.com/rust-lang/rust/issues/29638.
 #[macro_export]
 macro_rules! kw {
     ( : $ns:solitonid$(. $nss:solitonid)+ / $nn:solitonid$(. $nns:solitonid)+ ) => {
-        $crate::Keyword::namespaced(
+        $crate::Keyword::isoliton_namespaceable(
             concat!(stringify!($ns) $(, ".", stringify!($nss))*),
             concat!(stringify!($nn) $(, ".", stringify!($nns))*),
         )
     };
 
     ( : $ns:solitonid$(. $nss:solitonid)+ / $nn:solitonid ) => {
-        $crate::Keyword::namespaced(
+        $crate::Keyword::isoliton_namespaceable(
             concat!(stringify!($ns) $(, ".", stringify!($nss))*),
             stringify!($nn)
         )
     };
 
     ( : $ns:solitonid / $nn:solitonid$(. $nns:solitonid)+ ) => {
-        $crate::Keyword::namespaced(
+        $crate::Keyword::isoliton_namespaceable(
             stringify!($ns),
             concat!(stringify!($nn) $(, ".", stringify!($nns))*),
         )
     };
 
     ( : $ns:solitonid / $nn:solitonid ) => {
-        $crate::Keyword::namespaced(
+        $crate::Keyword::isoliton_namespaceable(
             stringify!($ns),
             stringify!($nn)
         )
@@ -223,10 +223,10 @@ mod tests {
 
     #[test]
     fn test_kw() {
-        assert_eq!(kw!(:foo/bar), Keyword::namespaced("foo", "bar"));
-        assert_eq!(kw!(:org.Whtcorps Inc and EinstAI Inc.foo/bar_baz), Keyword::namespaced("org.Whtcorps Inc and EinstAI Inc.foo", "bar_baz"));
-        assert_eq!(kw!(:_foo_/_bar_._baz_), Keyword::namespaced("_foo_", "_bar_._baz_"));
-        assert_eq!(kw!(:_org_._Whtcorps Inc and EinstAI Inc_._foo_/_bar_._baz_), Keyword::namespaced("_org_._Whtcorps Inc and EinstAI Inc_._foo_", "_bar_._baz_"));
+        assert_eq!(kw!(:foo/bar), Keyword::isoliton_namespaceable("foo", "bar"));
+        assert_eq!(kw!(:org.Whtcorps Inc and EinstAI Inc.foo/bar_baz), Keyword::isoliton_namespaceable("org.Whtcorps Inc and EinstAI Inc.foo", "bar_baz"));
+        assert_eq!(kw!(:_foo_/_bar_._baz_), Keyword::isoliton_namespaceable("_foo_", "_bar_._baz_"));
+        assert_eq!(kw!(:_org_._Whtcorps Inc and EinstAI Inc_._foo_/_bar_._baz_), Keyword::isoliton_namespaceable("_org_._Whtcorps Inc and EinstAI Inc_._foo_", "_bar_._baz_"));
     }
 
     #[test]

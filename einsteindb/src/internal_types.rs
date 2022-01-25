@@ -67,10 +67,10 @@ impl TransactableValue for ValueAndSpan {
         match self.inner {
             Integer(v) => Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Causetid(v))),
             Keyword(v) => {
-                if v.is_namespaced() {
+                if v.is_isoliton_namespaceable() {
                     Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Solitonid(v)))
                 } else {
-                    // We only allow namespaced solitonids.
+                    // We only allow isoliton_namespaceable solitonids.
                     bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace))
                 }
             },

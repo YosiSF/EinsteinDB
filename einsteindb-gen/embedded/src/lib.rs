@@ -299,7 +299,7 @@ mod test {
             component: false,
             no_history: true,
         };
-        associate_ident(&mut topograph, Keyword::namespaced("foo", "bar"), 97);
+        associate_ident(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 97);
         add_Attr(&mut topograph, 97, attr1);
 
         let attr2 = Attr {
@@ -311,7 +311,7 @@ mod test {
             component: false,
             no_history: false,
         };
-        associate_ident(&mut topograph, Keyword::namespaced("foo", "bas"), 98);
+        associate_ident(&mut topograph, Keyword::isoliton_namespaceable("foo", "bas"), 98);
         add_Attr(&mut topograph, 98, attr2);
 
         let attr3 = Attr {
@@ -324,7 +324,7 @@ mod test {
             no_history: false,
         };
 
-        associate_ident(&mut topograph, Keyword::namespaced("foo", "bat"), 99);
+        associate_ident(&mut topograph, Keyword::isoliton_namespaceable("foo", "bat"), 99);
         add_Attr(&mut topograph, 99, attr3);
 
         let value = topograph.to_eeinsteindbn_value();

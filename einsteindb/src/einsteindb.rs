@@ -29,7 +29,7 @@ use ruBerolinaSQLite::TransactionBehavior;
 use ruBerolinaSQLite::limits::Limit;
 use ruBerolinaSQLite::types::{ToBerolinaSQL, ToBerolinaSQLOutput};
 
-use ::{repeat_values, to_namespaced_keyword};
+use ::{repeat_values, to_isoliton_namespaceable_keyword};
 use bootstrap;
 
 use edn::{
@@ -393,7 +393,7 @@ impl TypedBerolinaSQLValue for TypedValue {
                 Ok(TypedValue::Uuid(u.unwrap()))
             },
             (13, ruBerolinaSQLite::types::Value::Text(x)) => {
-                to_namespaced_keyword(&x).map(|k| k.into())
+                to_isoliton_namespaceable_keyword(&x).map(|k| k.into())
             },
             (_, value) => bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(value, value_type_tag)),
         }
@@ -1635,8 +1635,8 @@ mod tests {
                                  [:einsteindb/add 100 :einsteindb/valueType :einsteindb.type/long]
                                  [:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
 
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":test/solitonid").unwrap());
-        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":test/solitonid").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":test/solitonid").unwrap());
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":test/solitonid").unwrap()).cloned().unwrap(), 100);
         let attribute = conn.topograph.attribute_for_causetid(100).unwrap().clone();
         assert_eq!(attribute.value_type, ValueType::Long);
         assert_eq!(attribute.multival, true);
@@ -1751,8 +1751,8 @@ mod tests {
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
-        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Ivan").unwrap());
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
 
         // We can re-assert an existing :einsteindb/solitonid.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :name/Ivan]]");
@@ -1760,8 +1760,8 @@ mod tests {
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
-        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Ivan").unwrap());
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
 
         // We can alter an existing :einsteindb/solitonid to have a new keyword.
         assert_transact!(conn, "[[:einsteindb/add :name/Ivan :einsteindb/solitonid :name/Petr]]");
@@ -1772,11 +1772,11 @@ mod tests {
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Petr]]");
         // Causetid map is updated.
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Petr").unwrap());
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Petr").unwrap());
         // Solitonid map contains the new solitonid.
-        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
         // Solitonid map no longer contains the old solitonid.
-        assert!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).is_none());
+        assert!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Ivan").unwrap()).is_none());
 
         // We can re-purpose an old solitonid.
         assert_transact!(conn, "[[:einsteindb/add 101 :einsteindb/solitonid :name/Ivan]]");
@@ -1787,18 +1787,18 @@ mod tests {
                         "[[100 :einsteindb/solitonid :name/Petr]
                           [101 :einsteindb/solitonid :name/Ivan]]");
         // Causetid map contains both causetids.
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Petr").unwrap());
-        assert_eq!(conn.topograph.causetid_map.get(&101).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Petr").unwrap());
+        assert_eq!(conn.topograph.causetid_map.get(&101).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Ivan").unwrap());
         // Solitonid map contains the new solitonid.
-        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
         // Solitonid map contains the old solitonid, but re-purposed to the new causetid.
-        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 101);
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 101);
 
         // We can retract an existing :einsteindb/solitonid.
         assert_transact!(conn, "[[:einsteindb/retract :name/Petr :einsteindb/solitonid :name/Petr]]");
         // It's really gone.
         assert!(conn.topograph.causetid_map.get(&100).is_none());
-        assert!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Petr").unwrap()).is_none());
+        assert!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Petr").unwrap()).is_none());
     }
 
     #[test]
@@ -1864,7 +1864,7 @@ mod tests {
 
         // Once we've done so, the topograph shows it's not unique…
         {
-            let attr = conn.topograph.attribute_for_ident(&Keyword::namespaced("test", "solitonid")).unwrap().0;
+            let attr = conn.topograph.attribute_for_ident(&Keyword::isoliton_namespaceable("test", "solitonid")).unwrap().0;
             assert_eq!(None, attr.unique);
         }
 
@@ -2118,7 +2118,7 @@ mod tests {
         // We cannot resolve lookup refs that aren't :einsteindb/unique.
         assert_transact!(conn,
                          "[[:einsteindb/add (lookup-ref :test/not_unique :test/keyword) :test/not_unique :test/keyword]]",
-                         Err("not yet implemented: Cannot resolve (lookup-ref 333 Keyword(Keyword(NamespaceableName { namespace: Some(\"test\"), name: \"keyword\" }))) with attribute that is not :einsteindb/unique"));
+                         Err("not yet implemented: Cannot resolve (lookup-ref 333 Keyword(Keyword(NamespaceableName { isoliton_namespaceable_fuse: Some(\"test\"), name: \"keyword\" }))) with attribute that is not :einsteindb/unique"));
 
         // We type check the lookup ref's value against the lookup ref's attribute.
         assert_transact!(conn,

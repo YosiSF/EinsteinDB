@@ -19,7 +19,7 @@ use namespaceable_name::NamespaceableName;
 #[macro_export]
 macro_rules! ns_keyword {
     ($ns: expr, $name: expr) => {{
-        $crate::Keyword::namespaced($ns, $name)
+        $crate::Keyword::isoliton_namespaceable($ns, $name)
     }}
 }
 
@@ -30,7 +30,7 @@ pub struct PlainSymbol(pub String);
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 pub struct NamespacedSymbol(NamespaceableName);
 
-/// A keyword is a symbol, optionally with a namespace, that prints with a leading colon.
+/// A keyword is a symbol, optionally with a isoliton_namespaceable_fuse, that prints with a leading colon.
 /// This concept is imported from Clojure, as it features in EML and the query
 /// syntax that we use.
 ///
@@ -47,16 +47,16 @@ pub struct NamespacedSymbol(NamespaceableName);
 /// ```
 ///
 /// We think that's nonsense, so we only allow keywords like `:bar` and `:foo/bar`,
-/// with both namespace and main parts containing no whitespace and no colon or slash:
+/// with both isoliton_namespaceable_fuse and main parts containing no whitespace and no colon or slash:
 ///
 /// ```rust
 /// # use edn::symbols::Keyword;
 /// let bar     = Keyword::plain("bar");                         // :bar
-/// let foo_bar = Keyword::namespaced("foo", "bar");        // :foo/bar
+/// let foo_bar = Keyword::isoliton_namespaceable("foo", "bar");        // :foo/bar
 /// assert_eq!("bar", bar.name());
-/// assert_eq!(None, bar.namespace());
+/// assert_eq!(None, bar.isoliton_namespaceable_fuse());
 /// assert_eq!("bar", foo_bar.name());
-/// assert_eq!(Some("foo"), foo_bar.namespace());
+/// assert_eq!(Some("foo"), foo_bar.isoliton_namespaceable_fuse());
 /// ```
 ///
 /// If you're not sure whether your input is well-formed, you should use a
@@ -107,10 +107,10 @@ impl PlainSymbol {
 }
 
 impl NamespacedSymbol {
-    pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let r = namespace.as_ref();
-        assert!(!r.is_empty(), "Namespaced symbols cannot have an empty non-null namespace.");
-        NamespacedSymbol(NamespaceableName::namespaced(r, name))
+    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r = isoliton_namespaceable_fuse.as_ref();
+        assert!(!r.is_empty(), "Namespaced symbols cannot have an empty non-null isoliton_namespaceable_fuse.");
+        NamespacedSymbol(NamespaceableName::isoliton_namespaceable(r, name))
     }
 
     #[inline]
@@ -119,8 +119,8 @@ impl NamespacedSymbol {
     }
 
     #[inline]
-    pub fn namespace(&self) -> &str {
-        self.0.namespace().unwrap()
+    pub fn isoliton_namespaceable_fuse(&self) -> &str {
+        self.0.isoliton_namespaceable_fuse().unwrap()
     }
 
     #[inline]
@@ -142,15 +142,15 @@ impl Keyword {
     ///
     /// ```rust
     /// # use edn::symbols::Keyword;
-    /// let keyword = Keyword::namespaced("foo", "bar");
+    /// let keyword = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert_eq!(keyword.to_string(), ":foo/bar");
     /// ```
     ///
     /// See also the `kw!` macro in the main `einstai` crate.
-    pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let r = namespace.as_ref();
-        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null namespace.");
-        Keyword(NamespaceableName::namespaced(r, name))
+    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r = isoliton_namespaceable_fuse.as_ref();
+        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null isoliton_namespaceable_fuse.");
+        Keyword(NamespaceableName::isoliton_namespaceable(r, name))
     }
 
     #[inline]
@@ -159,8 +159,8 @@ impl Keyword {
     }
 
     #[inline]
-    pub fn namespace(&self) -> Option<&str> {
-        self.0.namespace()
+    pub fn isoliton_namespaceable_fuse(&self) -> Option<&str> {
+        self.0.isoliton_namespaceable_fuse()
     }
 
     #[inline]
@@ -183,8 +183,8 @@ impl Keyword {
     ///
     /// ```rust
     /// # use edn::symbols::Keyword;
-    /// assert!(!Keyword::namespaced("foo", "bar").is_spacelike_completion());
-    /// assert!(Keyword::namespaced("foo", "_bar").is_spacelike_completion());
+    /// assert!(!Keyword::isoliton_namespaceable("foo", "bar").is_spacelike_completion());
+    /// assert!(Keyword::isoliton_namespaceable("foo", "_bar").is_spacelike_completion());
     /// ```
     #[inline]
     pub fn is_spacelike_completion(&self) -> bool {
@@ -198,8 +198,8 @@ impl Keyword {
     ///
     /// ```rust
     /// # use edn::symbols::Keyword;
-    /// assert!(Keyword::namespaced("foo", "bar").is_forward());
-    /// assert!(!Keyword::namespaced("foo", "_bar").is_forward());
+    /// assert!(Keyword::isoliton_namespaceable("foo", "bar").is_forward());
+    /// assert!(!Keyword::isoliton_namespaceable("foo", "_bar").is_forward());
     /// ```
     #[inline]
     pub fn is_forward(&self) -> bool {
@@ -207,11 +207,11 @@ impl Keyword {
     }
 
     #[inline]
-    pub fn is_namespaced(&self) -> bool {
-        self.0.is_namespaced()
+    pub fn is_isoliton_namespaceable(&self) -> bool {
+        self.0.is_isoliton_namespaceable()
     }
 
-    /// Returns a `Keyword` with the same namespace and a
+    /// Returns a `Keyword` with the same isoliton_namespaceable_fuse and a
     /// 'spacelike_completion' name. See `symbols::Keyword::is_spacelike_completion`.
     ///
     /// Returns a forward name if passed a reversed keyword; i.e., this
@@ -221,7 +221,7 @@ impl Keyword {
     ///
     /// ```rust
     /// # use edn::symbols::Keyword;
-    /// let nsk = Keyword::namespaced("foo", "bar");
+    /// let nsk = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert!(!nsk.is_spacelike_completion());
     /// assert_eq!(":foo/bar", nsk.to_string());
     ///
@@ -240,7 +240,7 @@ impl Keyword {
     ///
     /// ```rust
     /// # use edn::symbols::Keyword;
-    /// let nsk = Keyword::namespaced("foo", "bar");
+    /// let nsk = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert_eq!(None, nsk.unreversed());
     ///
     /// let reversed = nsk.to_reversed();
@@ -280,7 +280,7 @@ impl Display for NamespacedSymbol {
     ///
     /// ```rust
     /// # use edn::symbols::NamespacedSymbol;
-    /// assert_eq!("bar/baz", NamespacedSymbol::namespaced("bar", "baz").to_string());
+    /// assert_eq!("bar/baz", NamespacedSymbol::isoliton_namespaceable("bar", "baz").to_string());
     /// ```
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
         self.0.fmt(f)
@@ -295,9 +295,9 @@ impl Display for Keyword {
     /// ```rust
     /// # use edn::symbols::Keyword;
     /// assert_eq!(":baz", Keyword::plain("baz").to_string());
-    /// assert_eq!(":bar/baz", Keyword::namespaced("bar", "baz").to_string());
-    /// assert_eq!(":bar/_baz", Keyword::namespaced("bar", "baz").to_reversed().to_string());
-    /// assert_eq!(":bar/baz", Keyword::namespaced("bar", "baz").to_reversed().to_reversed().to_string());
+    /// assert_eq!(":bar/baz", Keyword::isoliton_namespaceable("bar", "baz").to_string());
+    /// assert_eq!(":bar/_baz", Keyword::isoliton_namespaceable("bar", "baz").to_reversed().to_string());
+    /// assert_eq!(":bar/baz", Keyword::isoliton_namespaceable("bar", "baz").to_reversed().to_reversed().to_string());
     /// ```
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
         f.write_char(':')?;
@@ -308,7 +308,7 @@ impl Display for Keyword {
 #[test]
 fn test_ns_keyword_macro() {
     assert_eq!(ns_keyword!("test", "name").to_string(),
-               Keyword::namespaced("test", "name").to_string());
+               Keyword::isoliton_namespaceable("test", "name").to_string());
     assert_eq!(ns_keyword!("ns", "_name").to_string(),
-               Keyword::namespaced("ns", "_name").to_string());
+               Keyword::isoliton_namespaceable("ns", "_name").to_string());
 }

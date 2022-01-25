@@ -100,7 +100,7 @@ mod tests {
     };
 
     fn value_solitonid(ns: &str, name: &str) -> PatternValuePlace {
-        Keyword::namespaced(ns, name).into()
+        Keyword::isoliton_namespaceable(ns, name).into()
     }
 
     /// Tests that the top-level form is a valid `or`, returning the clauses.

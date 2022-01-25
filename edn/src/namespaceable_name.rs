@@ -31,15 +31,15 @@ use serde::ser::{
 // Data storage for both NamespaceableKeyword and NamespaceableSymbol.
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct NamespaceableName {
-    // The bytes that make up the namespace followed directly by those
-    // that make up the name. If there is a namespace, a solidus ('/') is between
+    // The bytes that make up the isoliton_namespaceable_fuse followed directly by those
+    // that make up the name. If there is a isoliton_namespaceable_fuse, a solidus ('/') is between
     // the two parts.
     components: String,
 
     // The index (in bytes) into `components` of the dividing solidus — the character
-    // between the namespace and the name.
+    // between the isoliton_namespaceable_fuse and the name.
     //
-    // If this is zero, it means that this is _not_ a namespaced value!
+    // If this is zero, it means that this is _not_ a isoliton_namespaceable value!
     //
     // Important: The following invariants around `boundary` must be maintained:
     //
@@ -48,7 +48,7 @@ pub struct NamespaceableName {
     //     and not point into the middle of a UTF-8 codepoint. That is,
     //    `components.is_char_boundary(boundary)` must always be true.
     //
-    // These invariants are enforced by `NamespaceableName::namespaced()`, and since
+    // These invariants are enforced by `NamespaceableName::isoliton_namespaceable()`, and since
     // we never mutate `NamespaceableName`s, that's the only place we need to
     // worry about them.
     boundary: usize,
@@ -67,14 +67,14 @@ impl NamespaceableName {
     }
 
     #[inline]
-    pub fn namespaced<N, T>(namespace: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
         let n = name.as_ref();
-        let ns = namespace.as_ref();
+        let ns = isoliton_namespaceable_fuse.as_ref();
 
         // Note: These invariants are not required for safety. That is, if we
         // decide to allow these we can safely remove them.
         assert!(!n.is_empty(), "Symbols and keywords cannot be unnamed.");
-        assert!(!ns.is_empty(), "Symbols and keywords cannot have an empty non-null namespace.");
+        assert!(!ns.is_empty(), "Symbols and keywords cannot have an empty non-null isoliton_namespaceable_fuse.");
 
         let mut dest = String::with_capacity(n.len() + ns.len());
 
@@ -90,15 +90,15 @@ impl NamespaceableName {
         }
     }
 
-    fn new<N, T>(namespace: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        if let Some(ns) = namespace {
-            Self::namespaced(ns, name)
+    fn new<N, T>(isoliton_namespaceable_fuse: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        if let Some(ns) = isoliton_namespaceable_fuse {
+            Self::isoliton_namespaceable(ns, name)
         } else {
             Self::plain(name.as_ref())
         }
     }
 
-    pub fn is_namespaced(&self) -> bool {
+    pub fn is_isoliton_namespaceable(&self) -> bool {
         self.boundary > 0
     }
 
@@ -116,14 +116,14 @@ impl NamespaceableName {
         let name = self.name();
 
         if name.starts_with('_') {
-            Self::new(self.namespace(), &name[1..])
+            Self::new(self.isoliton_namespaceable_fuse(), &name[1..])
         } else {
-            Self::new(self.namespace(), &format!("_{}", name))
+            Self::new(self.isoliton_namespaceable_fuse(), &format!("_{}", name))
         }
     }
 
     #[inline]
-    pub fn namespace(&self) -> Option<&str> {
+    pub fn isoliton_namespaceable_fuse(&self) -> Option<&str> {
         if self.boundary > 0 {
             Some(&self.components[0..self.boundary])
         } else {
@@ -152,8 +152,8 @@ impl NamespaceableName {
     }
 }
 
-// We order by namespace then by name.
-// Non-namespaced values always sort before.
+// We order by isoliton_namespaceable_fuse then by name.
+// Non-isoliton_namespaceable values always sort before.
 impl PartialOrd for NamespaceableName {
     fn partial_cmp(&self, other: &NamespaceableName) -> Option<Ordering> {
         match (self.boundary, other.boundary) {
@@ -178,7 +178,7 @@ impl Ord for NamespaceableName {
 impl fmt::Debug for NamespaceableName {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("NamespaceableName")
-           .field("namespace", &self.namespace())
+           .field("isoliton_namespaceable_fuse", &self.isoliton_namespaceable_fuse())
            .field("name", &self.name())
            .finish()
     }
@@ -204,7 +204,7 @@ impl fmt::Display for NamespaceableName {
 #[cfg_attr(feature = "serde_support", serde(rename = "NamespaceableName"))]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 struct SerializedNamespaceableName<'a> {
-    namespace: Option<&'a str>,
+    isoliton_namespaceable_fuse: Option<&'a str>,
     name: &'a str,
 }
 
@@ -215,11 +215,11 @@ impl<'de> Deserialize<'de> for NamespaceableName {
         if separated.name.len() == 0 {
             return Err(de::Error::custom("Empty name in keyword or symbol"));
         }
-        if let Some(ns) = separated.namespace {
+        if let Some(ns) = separated.isoliton_namespaceable_fuse {
             if ns.len() == 0 {
-                Err(de::Error::custom("Empty but present namespace in keyword or symbol"))
+                Err(de::Error::custom("Empty but present isoliton_namespaceable_fuse in keyword or symbol"))
             } else {
-                Ok(NamespaceableName::namespaced(ns, separated.name))
+                Ok(NamespaceableName::isoliton_namespaceable(ns, separated.name))
             }
         } else {
             Ok(NamespaceableName::plain(separated.name))
@@ -231,7 +231,7 @@ impl<'de> Deserialize<'de> for NamespaceableName {
 impl Serialize for NamespaceableName {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         let ser = SerializedNamespaceableName {
-            namespace: self.namespace(),
+            isoliton_namespaceable_fuse: self.isoliton_namespaceable_fuse(),
             name: self.name(),
         };
         ser.serialize(serializer)
@@ -245,39 +245,39 @@ mod test {
 
     #[test]
     fn test_new_invariants_maintained() {
-        assert!(panic::catch_unwind(|| NamespaceableName::namespaced("", "foo")).is_err(),
-                "Empty namespace should panic");
-        assert!(panic::catch_unwind(|| NamespaceableName::namespaced("foo", "")).is_err(),
+        assert!(panic::catch_unwind(|| NamespaceableName::isoliton_namespaceable("", "foo")).is_err(),
+                "Empty isoliton_namespaceable_fuse should panic");
+        assert!(panic::catch_unwind(|| NamespaceableName::isoliton_namespaceable("foo", "")).is_err(),
                 "Empty name should panic");
-        assert!(panic::catch_unwind(|| NamespaceableName::namespaced("", "")).is_err(),
+        assert!(panic::catch_unwind(|| NamespaceableName::isoliton_namespaceable("", "")).is_err(),
                 "Should panic if both fields are empty");
     }
 
     #[test]
     fn test_basic() {
-        let s = NamespaceableName::namespaced("aaaaa", "b");
-        assert_eq!(s.namespace(), Some("aaaaa"));
+        let s = NamespaceableName::isoliton_namespaceable("aaaaa", "b");
+        assert_eq!(s.isoliton_namespaceable_fuse(), Some("aaaaa"));
         assert_eq!(s.name(), "b");
         assert_eq!(s.components(), ("aaaaa", "b"));
 
-        let s = NamespaceableName::namespaced("b", "aaaaa");
-        assert_eq!(s.namespace(), Some("b"));
+        let s = NamespaceableName::isoliton_namespaceable("b", "aaaaa");
+        assert_eq!(s.isoliton_namespaceable_fuse(), Some("b"));
         assert_eq!(s.name(), "aaaaa");
         assert_eq!(s.components(), ("b", "aaaaa"));
     }
 
     #[test]
     fn test_order() {
-        let n0 = NamespaceableName::namespaced("a", "aa");
-        let n1 = NamespaceableName::namespaced("aa", "a");
+        let n0 = NamespaceableName::isoliton_namespaceable("a", "aa");
+        let n1 = NamespaceableName::isoliton_namespaceable("aa", "a");
 
-        let n2 = NamespaceableName::namespaced("a", "ab");
-        let n3 = NamespaceableName::namespaced("aa", "b");
+        let n2 = NamespaceableName::isoliton_namespaceable("a", "ab");
+        let n3 = NamespaceableName::isoliton_namespaceable("aa", "b");
 
-        let n4 = NamespaceableName::namespaced("b", "ab");
-        let n5 = NamespaceableName::namespaced("ba", "b");
+        let n4 = NamespaceableName::isoliton_namespaceable("b", "ab");
+        let n5 = NamespaceableName::isoliton_namespaceable("ba", "b");
 
-        let n6 = NamespaceableName::namespaced("z", "zz");
+        let n6 = NamespaceableName::isoliton_namespaceable("z", "zz");
 
         let mut arr = [
             n5.clone(),

@@ -150,11 +150,11 @@ mod testing {
 
     fn prepopulated_topograph() -> Topograph {
         let mut topograph = Topograph::default();
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "name"), 65);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "knows"), 66);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "parent"), 67);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "age"), 68);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "height"), 69);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "name"), 65);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "knows"), 66);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "parent"), 67);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "age"), 68);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "height"), 69);
         add_Attr(&mut topograph,
                       65,
                       Attr {

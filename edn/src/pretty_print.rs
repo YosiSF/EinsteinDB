@@ -68,7 +68,7 @@ impl Value {
                     .append(pp.text("}"))
                     .group()
             }
-            Value::NamespacedSymbol(ref v) => pp.text(v.namespace()).append("/").append(v.name()),
+            Value::NamespacedSymbol(ref v) => pp.text(v.isoliton_namespaceable_fuse()).append("/").append(v.name()),
             Value::PlainSymbol(ref v) => pp.text(v.to_string()),
             Value::Keyword(ref v) => pp.text(v.to_string()),
             Value::Text(ref v) => pp.text("\"").append(v.as_str()).append("\""),

@@ -1183,7 +1183,7 @@ fn add_Attr(topograph: &mut Topograph, e: Causetid, a: Attr) {
 
 #[cfg(test)]
 pub(crate) fn solitonid(ns: &str, name: &str) -> PatternNonValuePlace {
-    Keyword::namespaced(ns, name).into()
+    Keyword::isoliton_namespaceable(ns, name).into()
 }
 
 #[cfg(test)]

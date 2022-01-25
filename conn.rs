@@ -330,7 +330,7 @@ impl Conn {
     }
 
     /// Adds or removes the values of a given attribute to an in-memory cache.
-    /// The attribute should be a namespaced string: e.g., `:foo/bar`.
+    /// The attribute should be a isoliton_namespaceable string: e.g., `:foo/bar`.
     /// `cache_action` determines if the attribute should be added or removed from the cache.
     /// CacheAction::Add is idempotent - each attribute is only added once.
     /// CacheAction::Remove throws an error if the attribute does not currently exist in the cache.
@@ -581,9 +581,9 @@ mod tests {
             assert_eq!(during.results, QueryResults::Scalar(Some(TypedValue::Ref(one).into())));
 
             // And we can do direct lookup, too.
-            let kw = in_progress.lookup_value_for_attribute(one, &edn::Keyword::namespaced("einsteindb", "solitonid"))
+            let kw = in_progress.lookup_value_for_attribute(one, &edn::Keyword::isoliton_namespaceable("einsteindb", "solitonid"))
                                 .expect("lookup succeeded");
-            assert_eq!(kw, Some(TypedValue::Keyword(edn::Keyword::namespaced("a", "keyword1").into())));
+            assert_eq!(kw, Some(TypedValue::Keyword(edn::Keyword::isoliton_namespaceable("a", "keyword1").into())));
 
             in_progress.rollback()
                        .expect("rollback succeeded");

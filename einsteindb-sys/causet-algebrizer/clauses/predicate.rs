@@ -229,7 +229,7 @@ mod testing {
         let mut cc = ConjoiningClauses::default();
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Long,
             ..Default::default()
@@ -284,8 +284,8 @@ mod testing {
         let mut cc = ConjoiningClauses::default();
         let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
-        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "roz"), 98);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::isoliton_namespaceable("foo", "roz"), 98);
         add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Long,
             ..Default::default()

@@ -113,11 +113,11 @@ pub use types::{
     TransactableValue,
 };
 
-pub fn to_namespaced_keyword(s: &str) -> Result<symbols::Keyword> {
+pub fn to_isoliton_namespaceable_keyword(s: &str) -> Result<symbols::Keyword> {
     let splits = [':', '/'];
     let mut i = s.split(&splits[..]);
     let nsk = match (i.next(), i.next(), i.next(), i.next()) {
-        (Some(""), Some(namespace), Some(name), None) => Some(symbols::Keyword::namespaced(namespace, name)),
+        (Some(""), Some(isoliton_namespaceable_fuse), Some(name), None) => Some(symbols::Keyword::isoliton_namespaceable(isoliton_namespaceable_fuse, name)),
         _ => None,
     };
 

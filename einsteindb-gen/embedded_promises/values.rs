@@ -10,7 +10,7 @@
 
 #![allow(dead_code)]
 
-/// Literal `Value` instances in the the "einsteindb" namespace.
+/// Literal `Value` instances in the the "einsteindb" isoliton_namespaceable_fuse.
 ///
 /// Used through-out the transactor to match core einsteindb constructs.
 
@@ -18,11 +18,11 @@ use eeinsteindbn::types::Value;
 use eeinsteindbn::symbols;
 
 /// TODO: take just ":einsteindb.part/einsteindb" and define einsteindb_PART_einsteindb using "einsteindb.part" and "einsteindb".
-macro_rules! lazy_static_namespaced_keyword_value (
-    ($tag:solitonid, $namespace:expr, $name:expr) => (
+macro_rules! lazy_static_isoliton_namespaceable_keyword_value (
+    ($tag:solitonid, $isoliton_namespaceable_fuse:expr, $name:expr) => (
         lazy_static! {
             pub static ref $tag: Value = {
-                Value::Keyword(symbols::Keyword::namespaced($namespace, $name))
+                Value::Keyword(symbols::Keyword::isoliton_namespaceable($isoliton_namespaceable_fuse, $name))
             };
         }
     )
