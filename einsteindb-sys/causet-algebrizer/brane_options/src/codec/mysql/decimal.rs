@@ -1,4 +1,4 @@
-// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::cmp::Ordering;
 use std::fmt::{self, Display, Formatter};
@@ -10,7 +10,7 @@ use std::string::ToString;
 use std::{cmp, i32, i64, mem, u32, u64};
 
 use codec::prelude::*;
-use Einsteineinsteindb_util::escape;
+use EinsteinDB_util::escape;
 
 use crate::codec::convert::{self, ConvertTo};
 use crate::codec::data_type::*;
@@ -1840,7 +1840,7 @@ impl<'a> ConvertTo<Decimal> for JsonRef<'a> {
                 Decimal::from_str(self.get_str()?).or_else(|e| {
                     ctx.handle_truncate_err(e)?;
                     // FIXME: if Milevaeinsteindb's MyDecimal::FromString return err,
-                    //  it may has res. However, if Einsteineinsteindb's Decimal::from_str
+                    //  it may has res. However, if EinsteinDB's Decimal::from_str
                     //  return err, it has no res, so I return zero here,
                     //  but it may different from Milevaeinsteindb's MyDecimal::FromString
                     Ok(Decimal::zero())
@@ -2117,7 +2117,7 @@ fn read_word<T: BufferReader + ?Sized>(
     // Note: In Milevaeinsteindb's implementation, the first byte to read is flipped:
     // dCopy[0] ^= 0x80
     //
-    // In Einsteineinsteindb, we do zero copy so that we need `is_first` flag.
+    // In EinsteinDB, we do zero copy so that we need `is_first` flag.
     let buf = data.bytes();
     if buf.len() < size {
         return Err(Error::unexpected_eof());

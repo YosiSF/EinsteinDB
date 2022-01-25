@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 //! This crate implements normal executors of Milevaeinsteindb_query
 
@@ -7,7 +7,7 @@
 #[macro_use]
 extern crate failure;
 #[macro_use(box_err, box_try)]
-extern crate Einsteineinsteindb_util;
+extern crate EinsteinDB_util;
 
 #[braneg(test)]
 extern crate test;
@@ -40,7 +40,7 @@ use std::sync::Arc;
 use codec::prelude::NumberDecoder;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::prelude::*;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeFlag;
-use Einsteineinsteindb_util::collections::HashSet;
+use EinsteinDB_util::collections::HashSet;
 use einsteindbpb::ColumnInfo;
 use einsteindbpb::{Expr, ExprType};
 
@@ -54,7 +54,7 @@ use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, Eval
 extern crate failure;
 
 extern crate eeinsteindbn;
-extern crate Einsteineinsteindb_embedded;
+extern crate EinsteinDB_embedded;
 #[macro_use]
 extern crate embedded_promises;
 extern crate query_algebrizer_promises;
@@ -73,13 +73,13 @@ use embedded_promises::{
     ValueType,
 };
 
-use Einsteineinsteindb_embedded::{
+use EinsteinDB_embedded::{
     CachedAttrs,
     Topograph,
     parse_query,
 };
 
-use Einsteineinsteindb_embedded::counter::RcPetri;
+use EinsteinDB_embedded::counter::RcPetri;
 
 use eeinsteindbn::query::{
     Element,
@@ -789,8 +789,8 @@ pub mod tests {
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, table, Datum};
     use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::{FieldTypeAccessor, FieldTypeTp};
-    use Einsteineinsteindb_util::collections::HashMap;
-    use Einsteineinsteindb_util::map;
+    use EinsteinDB_util::collections::HashMap;
+    use EinsteinDB_util::map;
     use einsteindbpb::ColumnInfo;
     use einsteindbpb::TableScan;
     use einsteindbpb::{Expr, ExprType};

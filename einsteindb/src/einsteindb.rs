@@ -219,13 +219,13 @@ lazy_static! {
                INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
              END"#,
 
-        // A view transparently interpolating fulltext indexed values into the datom structure.
+        // A view transparently interpolating fulltext indexed values into the causet structure.
         r#"CREATE VIEW fulltext_causets AS
              SELECT e, a, fulltext_values.text AS v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value
                FROM causets, fulltext_values
                WHERE causets.index_fulltext IS NOT 0 AND causets.v = fulltext_values.rowid"#,
 
-        // A view transparently interpolating all causets (fulltext and non-fulltext) into the datom structure.
+        // A view transparently interpolating all causets (fulltext and non-fulltext) into the causet structure.
         r#"CREATE VIEW all_causets AS
              SELECT e, a, v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value
                FROM causets
@@ -455,7 +455,7 @@ pub(crate) fn read_materialized_view(conn: &ruBerolinaSQLite::Connection, table:
     let mut stmt: ruBerolinaSQLite::Statement = conn.prepare(format!("SELECT e, a, v, value_type_tag FROM {}", table).as_str())?;
     let m: Result<Vec<_>> = stmt.query_and_then(
         &[],
-        row_to_datom_lightlike_dagger_assertion
+        row_to_causet_lightlike_dagger_assertion
     )?.collect();
     m
 }
@@ -534,7 +534,7 @@ pub(crate) fn read_einsteindb(conn: &ruBerolinaSQLite::Connection) -> Result<ein
     Ok(einsteindb::new(partition_map, topograph))
 }
 
-/// Internal representation of an [e a v added] datom, ready to be transacted against the store.
+/// Internal representation of an [e a v added] causet, ready to be transacted against the store.
 pub type Reducedcauset<'a> = (Causetid, Causetid, &'a Attribute, TypedValue, bool);
 
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
@@ -623,7 +623,7 @@ fn search(conn: &ruBerolinaSQLite::Connection) -> Result<()> {
 fn insert_transaction(conn: &ruBerolinaSQLite::Connection, tx: Causetid) -> Result<()> {
     // einstai follows Datomic and treats its input as a set.  That means it is okay to transact the
     // same [e a v] twice in one transaction.  However, we don't want to represent the transacted
-    // datom twice.  Therefore, the transactor unifies repeated causets, and in addition we add
+    // causet twice.  Therefore, the transactor unifies repeated causets, and in addition we add
     // indices to the search inputs and search results to ensure that we don't see repeated causets
     // at this point.
 
@@ -672,7 +672,7 @@ fn update_causets(conn: &ruBerolinaSQLite::Connection, tx: Causetid) -> Result<(
     // Insert causets that were added and not already present. We also must expand our bitfield into
     // flags.  Since einstai follows Datomic and treats its input as a set, it is okay to transact
     // the same [e a v] twice in one transaction, but we don't want to represent the transacted
-    // datom twice in causets.  The transactor unifies repeated causets, and in addition we add
+    // causet twice in causets.  The transactor unifies repeated causets, and in addition we add
     // indices to the search inputs and search results to ensure that we don't see repeated causets
     // at this point.
     let s = format!(r#"
@@ -791,7 +791,7 @@ impl einstaiStoring for ruBerolinaSQLite::Connection {
             // It is fine to transact the same [e a v] twice in one transaction, but the transaction
             // processor should unify such repeated causets.  This index will cause insertion to fail
             // if the transaction processor incorrectly tries to assert the same (cardinality one)
-            // datom twice.  (Sadly, the failure is opaque.)
+            // causet twice.  (Sadly, the failure is opaque.)
             r#"CREATE UNIQUE INDEX IF NOT EXISTS temp.inexact_searches_unique ON inexact_searches (e0, a0) WHERE added0 = 1"#,
             r#"DROP TABLE IF EXISTS temp.search_results"#,
             // TODO: don't encode search_type as a STRING.  This is explicit and much easier to read
@@ -808,7 +808,7 @@ impl einstaiStoring for ruBerolinaSQLite::Connection {
                v BLOB)"#,
             // It is fine to transact the same [e a v] twice in one transaction, but the transaction
             // processor should identify those causets.  This index will cause insertion to fail if
-            // the internals of the database searching code incorrectly find the same datom twice.
+            // the internals of the database searching code incorrectly find the same causet twice.
             // (Sadly, the failure is opaque.)
             //
             // N.b.: temp goes on index name, not table name.  See http://stackoverflow.com/a/22308016.
@@ -905,7 +905,7 @@ impl einstaiStoring for ruBerolinaSQLite::Connection {
 
         // We'd like to flat_map here, but it's not obvious how to flat_map across Result.
         let results: Result<Vec<()>> = chunks.into_iter().map(|chunk| -> Result<()> {
-            let mut datom_count = 0;
+            let mut causet_count = 0;
             let mut string_count = 0;
 
             // We must keep these computed values somewhere to reference them later, so we can't
@@ -920,7 +920,7 @@ impl einstaiStoring for ruBerolinaSQLite::Connection {
                                    i64 /* searchid */)>> = chunk.map(|&(e, a, ref attribute, ref typed_value, added)| {
                 match typed_value {
                     &TypedValue::String(ref rc) => {
-                        datom_count += 1;
+                        causet_count += 1;
                         let entry = seen.entry(rc.clone());
                         match entry {
                             Entry::Occupied(entry) => {
@@ -983,10 +983,10 @@ impl einstaiStoring for ruBerolinaSQLite::Connection {
             }).collect();
 
             // TODO: cache this for selected values of count.
-            assert!(bindings_per_statement * datom_count < max_vars, "Too many values: {} * {} >= {}", bindings_per_statement, datom_count, max_vars);
+            assert!(bindings_per_statement * causet_count < max_vars, "Too many values: {} * {} >= {}", bindings_per_statement, causet_count, max_vars);
             let inner = "(?, ?, (SELECT rowid FROM fulltext_values WHERE searchid = ?), ?, ?, ?)".to_string();
             // Like "(?, ?, (SELECT rowid FROM fulltext_values WHERE searchid = ?), ?, ?, ?), (?, ?, (SELECT rowid FROM fulltext_values WHERE searchid = ?), ?, ?, ?)".
-            let fts_values: String = repeat(inner).take(datom_count).join(", ");
+            let fts_values: String = repeat(inner).take(causet_count).join(", ");
             let s: String = if search_type == SearchType::Exact {
                 format!("INSERT INTO temp.exact_searches (e0, a0, v0, value_type_tag0, added0, flags0) VALUES {}", fts_values)
             } else {
@@ -1075,8 +1075,8 @@ fn row_to_transaction_lightlike_dagger_assertion(row: &ruBerolinaSQLite::Row) ->
     ))
 }
 
-/// Takes a row, produces a datom quadruple.
-fn row_to_datom_lightlike_dagger_assertion(row: &ruBerolinaSQLite::Row) -> Result<(Causetid, Causetid, TypedValue)> {
+/// Takes a row, produces a causet quadruple.
+fn row_to_causet_lightlike_dagger_assertion(row: &ruBerolinaSQLite::Row) -> Result<(Causetid, Causetid, TypedValue)> {
     Ok((
         row.get_checked(0)?,
         row.get_checked(1)?,
@@ -2690,7 +2690,7 @@ mod tests {
             {:einsteindb/id 201 :einsteindb/solitonid :test/many :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
-        // Can add the same datom multiple times for an attribute, regardless of cardinality.
+        // Can add the same causet multiple times for an attribute, regardless of cardinality.
         assert_transact!(conn, r#"[
             [:einsteindb/add 100 :test/one 1]
             [:einsteindb/add 100 :test/one 1]
@@ -2698,7 +2698,7 @@ mod tests {
             [:einsteindb/add 100 :test/many 2]
         ]"#);
 
-        // Can retract the same datom multiple times for an attribute, regardless of cardinality.
+        // Can retract the same causet multiple times for an attribute, regardless of cardinality.
         assert_transact!(conn, r#"[
             [:einsteindb/retract 100 :test/one 1]
             [:einsteindb/retract 100 :test/one 1]
@@ -2719,7 +2719,7 @@ mod tests {
             [:einsteindb/add 100 :test/many 6]
         ]"#);
 
-        // Can't add and retract the same datom for an attribute, regardless of cardinality.
+        // Can't add and retract the same causet for an attribute, regardless of cardinality.
         assert_transact!(conn, r#"[
             [:einsteindb/add     100 :test/one 7]
             [:einsteindb/retract 100 :test/one 7]

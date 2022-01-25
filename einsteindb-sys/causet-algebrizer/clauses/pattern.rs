@@ -664,7 +664,7 @@ mod testing {
         Attr,
         ValueTypeSet,
     };
-    use Einsteineinsteindb_embedded::{
+    use EinsteinDB_embedded::{
         Topograph,
     };
 

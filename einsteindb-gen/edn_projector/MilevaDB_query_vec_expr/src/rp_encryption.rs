@@ -1,4 +1,4 @@
-// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::borrow::Cow;
 use std::io::Read;
@@ -407,7 +407,7 @@ mod tests {
     #[test]
     fn test_password() {
         let cases = vec![
-            ("Einsteineinsteindb", "*cca644408381f962einsteindba8dfb9889einsteindb1371ee74208"),
+            ("EinsteinDB", "*cca644408381f962einsteindba8dfb9889einsteindb1371ee74208"),
             ("Pingcap", "*f33bc75eac70ac317621fbbfa560d6251c43brane8a"),
             ("rust", "*090c2b08e0c1776910e777b917c2185be6554c2e"),
             ("database", "*02e86b4af5219d0ba6c974908aea62d42eb7da24"),

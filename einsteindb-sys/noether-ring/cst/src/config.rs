@@ -1,8 +1,8 @@
-// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::error::Error;
 use std::result::Result;
-use Einsteineinsteindb_util::config::ReadableDuration;
+use EinsteinDB_util::config::ReadableDuration;
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 #[serde(default)]

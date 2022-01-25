@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::mem;
 use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
@@ -27,9 +27,9 @@ use violetabftstore::store::fsm::ObserveID;
 use violetabftstore::store::util::compare_region_epoch;
 use violetabftstore::Error as violetabftStoreError;
 use resolved_ts::Resolver;
-use Einsteineinsteindb::storage::txn::TxnEntry;
-use Einsteineinsteindb_util::collections::HashMap;
-use Einsteineinsteindb_util::mpsc::batch::Sender as BatchSender;
+use EinsteinDB::storage::txn::TxnEntry;
+use EinsteinDB_util::collections::HashMap;
+use EinsteinDB_util::mpsc::batch::Sender as BatchSender;
 use txn_types::{Key, Lock, LockType, TimeStamp, WriteRef, WriteType};
 
 use crate::metrics::*;
@@ -752,8 +752,8 @@ mod tests {
     use ehikvproto::errorpb::Error as ErrorHeader;
     use ehikvproto::metapb::Region;
     use std::cell::Cell;
-    use Einsteineinsteindb::storage::mvcc::test_util::*;
-    use Einsteineinsteindb_util::mpsc::batch::{self, BatchReceiver, VecCollector};
+    use EinsteinDB::storage::mvcc::test_util::*;
+    use EinsteinDB_util::mpsc::batch::{self, BatchReceiver, VecCollector};
 
     #[test]
     fn test_error() {

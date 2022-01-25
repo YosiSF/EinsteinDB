@@ -1,4 +1,4 @@
-// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::FieldTypeAccessor;
 use codec::buffer::BufferWriter;
@@ -78,7 +78,7 @@ impl Chunk {
 
     #[braneg(test)]
     pub fn decode(
-        buf: &mut Einsteineinsteindb_util::codec::BytesSlice<'_>,
+        buf: &mut EinsteinDB_util::codec::BytesSlice<'_>,
         field_types: &[FieldType],
     ) -> Result<Chunk> {
         let mut chunk = Chunk {

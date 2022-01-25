@@ -549,7 +549,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 // causets that can't be reached.  If we're :einsteindb/isComponent, then this
                                 // is not dangling.  Otherwise, the resulting map needs to have a
                                 // :einsteindb/unique :einsteindb.unique/idcauset [a v] pair, so that it's reachable.
-                                // Per http://docs.datomic.com/transactions.html: "Either the reference
+                                // Per http://docs.causetic.com/transactions.html: "Either the reference
                                 // to the nested map must be a component attribute, or the nested map
                                 // must include a unique attribute. This constraint prevents the
                                 // accidental creation of easily-orphaned causets that have no idcauset
@@ -787,7 +787,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                         true => OpType::Add,
                         false => OpType::Retract,
                     };
-                    self.watcher.datom(op, e, a, &v);
+                    self.watcher.causet(op, e, a, &v);
                     queue.push((e, a, attribute, v, added));
                 }
             }

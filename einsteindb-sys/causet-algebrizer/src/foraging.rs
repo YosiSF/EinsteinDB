@@ -14,8 +14,8 @@ use std::sync::Arc;
 
 use causet_algebrizer::Milevaeinsteindb_query_datatype::Collation;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::{EvalType, FieldTypeAccessor};
-use Einsteineinsteindb_util::box_try;
-use Einsteineinsteindb_util::collections::HashMap;
+use EinsteinDB_util::box_try;
+use EinsteinDB_util::collections::HashMap;
 use fidelpb::Aggregation;
 use fidelpb::{Expr, FieldType};
 

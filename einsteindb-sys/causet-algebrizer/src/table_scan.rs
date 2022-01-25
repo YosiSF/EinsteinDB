@@ -11,7 +11,7 @@
 use std::sync::Arc;
 
 use ehikvproto::interlock::KeyRange;
-use Einsteineinsteindb_util::collections::HashSet;
+use EinsteinDB_util::collections::HashSet;
 use einsteindbpb::ColumnInfo;
 use einsteindbpb::TableScan;
 

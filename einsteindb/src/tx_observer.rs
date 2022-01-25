@@ -177,7 +177,7 @@ impl InProgressObserverTransactWatcher {
 }
 
 impl TransactWatcher for InProgressObserverTransactWatcher {
-    fn datom(&mut self, _op: OpType, _e: Causetid, a: Causetid, _v: &TypedValue) {
+    fn causet(&mut self, _op: OpType, _e: Causetid, a: Causetid, _v: &TypedValue) {
         self.collected_attributes.insert(a);
     }
 

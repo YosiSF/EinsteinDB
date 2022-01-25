@@ -97,7 +97,7 @@ mod testing {
         ValueTypeSet,
     };
 
-    use Einsteineinsteindb_embedded::{
+    use EinsteinDB_embedded::{
         Topograph,
     };
 

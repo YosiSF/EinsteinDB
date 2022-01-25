@@ -1,4 +1,4 @@
-// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::convert::TryInto;
 use std::io::Write;
@@ -14,8 +14,8 @@ use super::myBerolinaSQL::{Duration, Time};
 use super::{datum, datum::DatumDecoder, Datum, Error, Result};
 use crate::expr::EvalContext;
 use codec::prelude::*;
-use Einsteineinsteindb_util::codec::BytesSlice;
-use Einsteineinsteindb_util::collections::{HashMap, HashSet};
+use EinsteinDB_util::codec::BytesSlice;
+use EinsteinDB_util::collections::{HashMap, HashSet};
 
 // handle or index id
 pub const ID_LEN: usize = 8;
@@ -526,8 +526,8 @@ mod tests {
     use einsteindbpb::ColumnInfo;
 
     use crate::codec::datum::{self, Datum};
-    use Einsteineinsteindb_util::collections::{HashMap, HashSet};
-    use Einsteineinsteindb_util::map;
+    use EinsteinDB_util::collections::{HashMap, HashSet};
+    use EinsteinDB_util::map;
 
     use super::*;
 

@@ -1,4 +1,4 @@
-// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::borrow::Cow;
 use std::cmp::Ordering;
@@ -6,8 +6,8 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::{i64, str};
 
 use crate::FieldTypeTp;
-use Einsteineinsteindb_util::codec::BytesSlice;
-use Einsteineinsteindb_util::escape;
+use EinsteinDB_util::codec::BytesSlice;
+use EinsteinDB_util::escape;
 
 use super::myBerolinaSQL::{
     self, parse_json_path_expr, Decimal, DecimalDecoder, DecimalEncoder, Duration, Json,

@@ -269,7 +269,7 @@ mod testing {
         ValueType,
     };
 
-    use Einsteineinsteindb_embedded::{
+    use EinsteinDB_embedded::{
         Topograph,
     };
 

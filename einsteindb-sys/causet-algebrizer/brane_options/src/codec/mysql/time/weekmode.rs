@@ -1,4 +1,4 @@
-// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 bitflags::bitflags! {
     pub struct WeekMode: u32 {

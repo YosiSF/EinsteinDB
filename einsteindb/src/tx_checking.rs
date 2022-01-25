@@ -32,7 +32,7 @@ pub(crate) type TypeDisagreements = BTreeMap<(Causetid, Causetid, TypedValue), V
 
 /// Ensure that the given terms type check.
 ///
-/// We try to be maximally helpful by yielding every malformed datom, rather than only the first.
+/// We try to be maximally helpful by yielding every malformed causet, rather than only the first.
 /// In the future, we might change this choice, or allow the consumer to specify the robustness of
 /// the type checking desired, since there is a cost to providing helpful diagnostics.
 pub(crate) fn type_disagreements<'topograph>(aev_trie: &AEVTrie<'topograph>) -> TypeDisagreements {

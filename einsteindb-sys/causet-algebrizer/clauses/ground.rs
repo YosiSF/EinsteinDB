@@ -4,7 +4,7 @@ use embedded_promises::{
     TypedValue,
 };
 
-use Einsteineinsteindb_embedded::{
+use EinsteinDB_embedded::{
     Topograph,
 };
 

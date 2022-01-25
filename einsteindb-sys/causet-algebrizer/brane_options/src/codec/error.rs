@@ -126,7 +126,7 @@ impl Error {
     }
 
     pub fn unexpected_eof() -> Error {
-        Einsteineinsteindb_util::codec::Error::unexpected_eof().into()
+        EinsteinDB_util::codec::Error::unexpected_eof().into()
     }
 
     pub fn invalid_time_format(val: impl Display) -> Error {
@@ -184,15 +184,15 @@ impl From<ParseFloatError> for Error {
     }
 }
 
-impl From<Einsteineinsteindb_util::codec::Error> for Error {
-    fn from(err: Einsteineinsteindb_util::codec::Error) -> Error {
+impl From<EinsteinDB_util::codec::Error> for Error {
+    fn from(err: EinsteinDB_util::codec::Error) -> Error {
         box_err!("codec:{:?}", err)
     }
 }
 
 impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
-        let uerr: Einsteineinsteindb_util::codec::Error = err.into();
+        let uerr: EinsteinDB_util::codec::Error = err.into();
         uerr.into()
     }
 }

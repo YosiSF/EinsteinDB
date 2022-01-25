@@ -808,7 +808,7 @@ impl VocabularySource for SimpleVocabularySource {
 }
 
 impl<'a, 'c> VocabularyMechanics for InProgress<'a, 'c> {
-    /// Turn the vocabulary into datoms, transact them, and on success return the outcome.
+    /// Turn the vocabulary into causets, transact them, and on success return the outcome.
     fn install_vocabulary(&mut self, definition: &Definition) -> Result<VocabularyOutcome> {
         let (terms, _tempids) = definition.description(self)?;
         self.transact_causets(terms)?;
@@ -824,14 +824,14 @@ impl<'a, 'c> VocabularyMechanics for InProgress<'a, 'c> {
     /// Turn the declarative parts of the vocabulary into alterations. Run the 'pre' steps.
     /// Transact the changes. Run the 'post' steps. Return the result and the new `InProgress`!
     fn upgrade_vocabulary(&mut self, definition: &Definition, from_version: Vocabulary) -> Result<VocabularyOutcome> {
-        // It's sufficient for us to generate the datom form of each attribute and transact that.
+        // It's sufficient for us to generate the causet form of each attribute and transact that.
         // We trust that the vocabulary will implement a 'pre' function that cleans up data for any
         // failable conversion (e.g., cardinality-many to cardinality-one).
 
         definition.pre(self, &from_version)?;
 
         // TODO: don't do work for attributes that are unchanged. Here we rely on the transactor
-        // to elide duplicate datoms.
+        // to elide duplicate causets.
         let (terms, _tempids) = definition.description_diff(self, &from_version)?;
         self.transact_causets(terms)?;
 

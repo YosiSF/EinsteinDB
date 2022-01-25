@@ -1,4 +1,4 @@
-// Copyright 2021-2023 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::fmt;
 use std::sync::Arc;
@@ -15,14 +15,14 @@ use violetabftstore::router::violetabftStoreRouter;
 use violetabftstore::store::fsm::{ChangeCmd, ObserveID};
 use violetabftstore::store::msg::{Callback, ReadResponse, SignificantMsg};
 use resolved_ts::Resolver;
-use Einsteineinsteindb::storage::ehikv::Snapshot;
-use Einsteineinsteindb::storage::mvcc::{DeltaScanner, ScannerBuilder};
-use Einsteineinsteindb::storage::txn::TxnEntry;
-use Einsteineinsteindb::storage::txn::TxnEntryScanner;
-use Einsteineinsteindb_util::collections::HashMap;
-use Einsteineinsteindb_util::time::Instant;
-use Einsteineinsteindb_util::timer::{SteadyTimer, Timer};
-use Einsteineinsteindb_util::worker::{Runnable, RunnableWithTimer, ScheduleError, Scheduler};
+use EinsteinDB::storage::ehikv::Snapshot;
+use EinsteinDB::storage::mvcc::{DeltaScanner, ScannerBuilder};
+use EinsteinDB::storage::txn::TxnEntry;
+use EinsteinDB::storage::txn::TxnEntryScanner;
+use EinsteinDB_util::collections::HashMap;
+use EinsteinDB_util::time::Instant;
+use EinsteinDB_util::timer::{SteadyTimer, Timer};
+use EinsteinDB_util::worker::{Runnable, RunnableWithTimer, ScheduleError, Scheduler};
 use tokio_threadpool::{Builder, ThreadPool};
 use txn_types::{Key, Lock, LockType, TimeStamp};
 
@@ -438,7 +438,7 @@ impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Endpoint<
                 region_id,
             }
         };
-        let (cb, fut) = Einsteineinsteindb_util::future::paired_future_callback();
+        let (cb, fut) = EinsteinDB_util::future::paired_future_callback();
         let scheduler = self.scheduler.clone();
         let deregister_downstream = move |err| {
             warn!("cc send capture change cmd failed"; "region_id" => region_id, "error" => ?err);
@@ -882,12 +882,12 @@ mod tests {
     use tempfile::TemFIDelir;
     use test_violetabftstore::MocehikvioletabftStoreRouter;
     use test_violetabftstore::TestFIDelClient;
-    use Einsteineinsteindb::storage::ehikv::Engine;
-    use Einsteineinsteindb::storage::mvcc::tests::*;
-    use Einsteineinsteindb::storage::TestEngineBuilder;
-    use Einsteineinsteindb_util::collections::HashSet;
-    use Einsteineinsteindb_util::mpsc::batch;
-    use Einsteineinsteindb_util::worker::{dummy_scheduler, Builder as WorkerBuilder, Worker};
+    use EinsteinDB::storage::ehikv::Engine;
+    use EinsteinDB::storage::mvcc::tests::*;
+    use EinsteinDB::storage::TestEngineBuilder;
+    use EinsteinDB_util::collections::HashSet;
+    use EinsteinDB_util::mpsc::batch;
+    use EinsteinDB_util::worker::{dummy_scheduler, Builder as WorkerBuilder, Worker};
 
     struct ReceiverRunnable<T> {
         tx: Sender<T>,

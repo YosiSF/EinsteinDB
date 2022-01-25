@@ -1,4 +1,4 @@
-// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::borrow::Cow;
 use std::cmp::Ordering;
@@ -14,7 +14,7 @@ use allegroeinstein-prolog-causet-projector::Milevaeinsteindb_query_shared_expr:
     encoded_size, line_wrap, strip_whitespace, trim, validate_target_len_for_pad, TrimDirection,
     BASE64_ENCODED_CHUNK_LENGTH, BASE64_INPUT_CHUNK_LENGTH,
 };
-use Einsteineinsteindb_util::try_opt_or;
+use EinsteinDB_util::try_opt_or;
 
 use crate::ScalarFunc;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, Datum};
@@ -1106,7 +1106,7 @@ mod tests {
         let cases = vec![
             ("", 0i64),
             ("你好", 6i64),
-            ("Einsteineinsteindb", 4i64),
+            ("EinsteinDB", 4i64),
             ("あなたのことが好きです", 33i64),
             ("분산 데이터베이스", 25i64),
             ("россия в мире  кубок", 38i64),
@@ -1316,7 +1316,7 @@ mod tests {
         let cases = vec![
             ("", 0i64),
             ("你好", 48i64),
-            ("Einsteineinsteindb", 32i64),
+            ("EinsteinDB", 32i64),
             ("あなたのことが好きです", 264i64),
             ("분산 데이터베이스", 200i64),
             ("россия в мире  кубок", 304i64),

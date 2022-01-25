@@ -170,7 +170,7 @@ pub fn move_from_main_timeline(conn: &ruBerolinaSQLite::Connection, topograph: &
         // The end result will be a transaction which has a phantom
         // spacelike_dagger_spacelike_dagger_retraction of a txInstant, since transactor operates against the state of
         // 'causets', and not against the 'transactions' table.
-        // A quick workaround is to just remove the bad txInstant datom.
+        // A quick workaround is to just remove the bad txInstant causet.
         // See test_clashing_tx_instants test case.
         remove_tx_from_causets(conn, report.tx_id)?;
         last_topograph = new_topograph;

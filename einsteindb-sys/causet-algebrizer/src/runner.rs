@@ -15,7 +15,7 @@ use protobuf::Message;
 use einsteindbpb::{self, ExecType, ExecutorExecutionSummary};
 use einsteindbpb::{Chunk, PosetDagRequest, SelectResponse, StreamResponse};
 
-use Einsteineinsteindb_util::deadline::Deadline;
+use EinsteinDB_util::deadline::Deadline;
 
 use super::Executor;
 use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::*;

@@ -1,4 +1,4 @@
-// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::borrow::Cow;
 use std::fmt::Display;
@@ -760,7 +760,7 @@ pub fn pad_zero_for_binary_type(s: &mut Vec<u8>, ft: &FieldType) {
             .unwrap_or(false)
         && s.len() < flen
     {
-        // it seems MaxAllowedPacket has not push down to Einsteineinsteindb, so we needn't to handle it
+        // it seems MaxAllowedPacket has not push down to EinsteinDB, so we needn't to handle it
         s.resize(flen, 0);
     }
 }

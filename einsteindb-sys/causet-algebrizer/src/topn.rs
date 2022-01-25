@@ -169,7 +169,7 @@ pub mod tests {
 
     use codec::prelude::NumberEncoder;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
-    use Einsteineinsteindb_util::collections::HashMap;
+    use EinsteinDB_util::collections::HashMap;
     use einsteindbpb::{Expr, ExprType};
 
     use crate::OriginCols;

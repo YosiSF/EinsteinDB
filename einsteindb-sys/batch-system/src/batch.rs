@@ -1,4 +1,4 @@
-//Copyright 2021 Einsteineinsteindb Project Authors, WHTCORPS INC; EINST.AI -- LICENSED UNDER APACHE 2.0
+//Copyright 2021 EinsteinDB Project Authors, WHTCORPS INC; EINST.AI -- LICENSED UNDER APACHE 2.0
 
 
 
@@ -10,8 +10,8 @@ use crossbeam::channel::{self, SendError};
 use std::borrow::Cow;
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
-use Einsteineinsteindb_util::mpsc;
-use Einsteineinsteindb_util::time::Instant;
+use EinsteinDB_util::mpsc;
+use EinsteinDB_util::time::Instant;
 
 /// A unify type for FSMs so that they can be sent to channel easily.
 enum FsmTypes<N, C> {

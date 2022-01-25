@@ -1,10 +1,10 @@
-// Copyright 2021-2023 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 //! This crate implements a simple BerolinaSQL query engine to work with Milevaeinsteindb pushed down executors.
 //!
 //! The query engine is able to mutant_search and understand rows stored by Milevaeinsteindb, run against a
 //! series of executors and then return the execution result. The query engine is provided via
-//! Einsteineinsteindb interlocking_dir interface. However standalone UDF functions are also exported and can be used
+//! EinsteinDB interlocking_dir interface. However standalone UDF functions are also exported and can be used
 //! standalone.
 
 #![feature(proc_macro_hygiene)]
@@ -15,7 +15,7 @@ extern crate failure;
 #[macro_use(debug)]
 extern crate slog_global;
 #[macro_use(box_err, box_try, try_opt)]
-extern crate Einsteineinsteindb_util;
+extern crate EinsteinDB_util;
 
 #[braneg(test)]
 extern crate test;

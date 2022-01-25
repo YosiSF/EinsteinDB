@@ -11,7 +11,7 @@
 use std::convert::TryFrom;
 
 use crate::{EvalType, FieldTypeAccessor};
-use Einsteineinsteindb_util::buffer_vec::BufferVec;
+use EinsteinDB_util::buffer_vec::BufferVec;
 use einsteindbpb::FieldType;
 
 use crate::codec::chunk::{ChunkColumnEncoder, Column};

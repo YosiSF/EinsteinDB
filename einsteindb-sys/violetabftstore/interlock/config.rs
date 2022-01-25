@@ -12,8 +12,8 @@ use super::Result;
 use crate::store::SplitCheckTask;
 
 use configuration::{ConfigChange, ConfigManager, Configuration};
-use Einsteineinsteindb_util::config::ReadableSize;
-use Einsteineinsteindb_util::worker::Scheduler;
+use EinsteinDB_util::config::ReadableSize;
+use EinsteinDB_util::worker::Scheduler;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Configuration)]
 #[serde(default)]

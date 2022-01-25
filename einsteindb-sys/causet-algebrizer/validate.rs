@@ -77,7 +77,7 @@ pub(crate) fn validate_not_join(not_join: &NotJoin) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    extern crate Einsteineinsteindb_embedded;
+    extern crate EinsteinDB_embedded;
     extern crate eeinsteindbn;
 
     use eeinsteindbn::query::{

@@ -24,12 +24,12 @@ extern crate static_lightlike_dagger_upsert;
 #[macro_use(error, warn)]
 extern crate slog_global;
 #[macro_use(box_err, box_try, try_opt)]
-extern crate Einsteineinsteindb_util;
+extern crate EinsteinDB_util;
 
 #[macro_use]
 extern crate bitflags;
 #[allow(unused_extern_crates)]
-extern crate Einsteineinsteindb_alloc;
+extern crate EinsteinDB_alloc;
 
 pub mod builder;
 pub mod def;
@@ -51,7 +51,7 @@ pub mod expr;
 extern crate failure;
 
 extern crate eeinsteindbn;
-extern crate Einsteineinsteindb_embedded;
+extern crate EinsteinDB_embedded;
 #[macro_use]
 extern crate embedded_promises;
 extern crate query_algebrizer_promises;
@@ -70,13 +70,13 @@ use embedded_promises::{
     ValueType,
 };
 
-use Einsteineinsteindb_embedded::{
+use EinsteinDB_embedded::{
     CachedAttrs,
     Topograph,
     parse_query,
 };
 
-use Einsteineinsteindb_embedded::counter::RcPetri;
+use EinsteinDB_embedded::counter::RcPetri;
 
 use eeinsteindbn::query::{
     Element,

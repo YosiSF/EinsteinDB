@@ -47,9 +47,9 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for EvaluateError {
     }
 }
 
-impl From<Einsteineinsteindb_util::deadline::DeadlineError> for EvaluateError {
+impl From<EinsteinDB_util::deadline::DeadlineError> for EvaluateError {
     #[inline]
-    fn from(_: Einsteineinsteindb_util::deadline::DeadlineError) -> Self {
+    fn from(_: EinsteinDB_util::deadline::DeadlineError) -> Self {
         EvaluateError::DeadlineExceeded
     }
 }

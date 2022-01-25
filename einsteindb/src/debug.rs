@@ -98,7 +98,7 @@ use tx::{
 };
 use watcher::NullWatcher;
 
-/// Represents a *datom* (lightlike_dagger_assertion) in the store.
+/// Represents a *causet* (lightlike_dagger_assertion) in the store.
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 pub struct Datom {
     // TODO: generalize this.
@@ -198,7 +198,7 @@ pub fn causets<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topogr
 /// Return the set of causets in the store with transaction ID strictly greater than the given `tx`,
 /// ordered by (e, a, v, tx).
 ///
-/// The datom set returned does not include any causets of the form [... :einsteindb/txInstant ...].
+/// The causet set returned does not include any causets of the form [... :einsteindb/txInstant ...].
 pub fn causets_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topograph: &S, tx: i64) -> Result<causets> {
     let borrowed_topograph = topograph.borrow();
 
@@ -238,7 +238,7 @@ pub fn causets_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, 
 /// Return the sequence of transactions in the store with transaction ID strictly greater than the
 /// given `tx`, ordered by (tx, e, a, v).
 ///
-/// Each transaction returned includes the [(transaction-tx) :einsteindb/txInstant ...] datom.
+/// Each transaction returned includes the [(transaction-tx) :einsteindb/txInstant ...] causet.
 pub fn transactions_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topograph: &S, tx: i64) -> Result<Transactions> {
     let borrowed_topograph = topograph.borrow();
 

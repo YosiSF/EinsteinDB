@@ -433,7 +433,7 @@ mod tests {
     use std::i64;
 
     use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
-    use Einsteineinsteindb_util::collections::HashMap;
+    use EinsteinDB_util::collections::HashMap;
     use einsteindbpb::ColumnInfo;
     use einsteindbpb::{Expr, ExprType};
 

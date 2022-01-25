@@ -1,4 +1,4 @@
-// Copyright 2016 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::cmp::Ordering;
 use std::fmt::{self, Display, Formatter};

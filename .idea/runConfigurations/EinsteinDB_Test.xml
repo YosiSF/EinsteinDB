@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Einsteineinsteindb-Test" type="RustScratchRunConfiguration" factoryName="Rust Scratch" singleton="false">
+  <configuration default="false" name="EinsteinDB-Test" type="RustScratchRunConfiguration" factoryName="Rust Scratch" singleton="false">
     <option name="command" value="play" />
     <option name="isFromRun" value="true" />
     <option name="options" value="" />

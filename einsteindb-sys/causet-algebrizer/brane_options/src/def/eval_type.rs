@@ -1,4 +1,4 @@
-// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::fmt;
 
@@ -69,7 +69,7 @@ impl std::convert::TryFrom<crate::FieldTypeTp> for EvalType {
             | crate::FieldTypeTp::VarString
             | crate::FieldTypeTp::String => EvalType::Bytes,
             _ => {
-                // In Milevaeinsteindb, Bit's eval type is Int, but it is not yet supported in Einsteineinsteindb.
+                // In Milevaeinsteindb, Bit's eval type is Int, but it is not yet supported in EinsteinDB.
                 return Err(crate::DataTypeError::UnsupportedType {
                     name: tp.to_string(),
                 });

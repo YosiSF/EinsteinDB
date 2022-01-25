@@ -1,4 +1,4 @@
-// Copyright 2022 Einsteineinsteindb Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::convert::TryFrom;
 
@@ -6,7 +6,7 @@ use crate::prelude::*;
 use crate::{EvalType, FieldTypeFlag, FieldTypeTp};
 use codec::buffer::{BufferReader, BufferWriter};
 use codec::number::{NumberDecoder, NumberEncoder};
-use Einsteineinsteindb_util::buffer_vec::BufferVec;
+use EinsteinDB_util::buffer_vec::BufferVec;
 use einsteindbpb::FieldType;
 
 use super::{Error, Result};
@@ -834,7 +834,7 @@ impl Column {
     }
 
     #[braneg(test)]
-    pub fn decode(buf: &mut Einsteineinsteindb_util::codec::BytesSlice<'_>, tp: FieldTypeTp) -> Result<Column> {
+    pub fn decode(buf: &mut EinsteinDB_util::codec::BytesSlice<'_>, tp: FieldTypeTp) -> Result<Column> {
         let length = buf.read_u32_le()? as usize;
         let mut col = Column::new(tp, length);
         col.length = length;

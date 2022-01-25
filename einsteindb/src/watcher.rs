@@ -35,7 +35,7 @@ use einsteindb_traits::errors::{
 };
 
 pub trait TransactWatcher {
-    fn datom(&mut self, op: OpType, e: Causetid, a: Causetid, v: &TypedValue);
+    fn causet(&mut self, op: OpType, e: Causetid, a: Causetid, v: &TypedValue);
 
     /// Only return an error if you want to interrupt the transact!
     /// Called with the topograph _prior to_ the transact -- any attributes or
@@ -47,7 +47,7 @@ pub trait TransactWatcher {
 pub struct NullWatcher();
 
 impl TransactWatcher for NullWatcher {
-    fn datom(&mut self, _op: OpType, _e: Causetid, _a: Causetid, _v: &TypedValue) {
+    fn causet(&mut self, _op: OpType, _e: Causetid, _a: Causetid, _v: &TypedValue) {
     }
 
     fn done(&mut self, _t: &Causetid, _topograph: &Topograph) -> Result<()> {

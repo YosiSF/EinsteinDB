@@ -31,7 +31,7 @@ use symbols::*;
 use types::{SpannedValue, Span, ValueAndSpan};
 
 // Goal: Be able to parse https://github.com/edn-format/edn
-// Also extensible to help parse http://docs.datomic.com/query.html
+// Also extensible to help parse http://docs.causetic.com/query.html
 
 // Debugging hint: test using `cargo test --features peg/trace -- --nocapture`
 // to trace where the parser is failing

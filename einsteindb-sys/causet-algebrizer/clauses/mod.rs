@@ -126,7 +126,7 @@ impl<K: Clone + Ord, V: Clone> Intersection<K> for BTreeMap<K, V> {
     }
 
     /// Remove all keys from the map that are not present in `ks`.
-    /// This impleEinsteineinsteindbion is terrible because there's no mutable iterator for BTreeMap.
+    /// This impleEinsteinDBion is terrible because there's no mutable iterator for BTreeMap.
     fn keep_intersected_keys(&mut self, ks: &BTreeSet<K>) {
         if self.is_empty() {
             return;
@@ -162,7 +162,7 @@ pub type VariableBindings = BTreeMap<Variable, TypedValue>;
 /// - `not-join` is similar, but with explicit binding.
 /// - `or` turns into a collection of `UNION`s inside a subquery, or a simple
 ///   alternation.
-///   `or`'s docuEinsteineinsteindbion states that all clauses must include the same vars,
+///   `or`'s docuEinsteinDBion states that all clauses must include the same vars,
 ///   but that's an over-simplification: all clauses must refer to the external
 ///   unification vars.
 ///   The entire `UNION`-set is `JOIN`ed to any surrounding expressions per the `rule-vars`
@@ -1000,8 +1000,8 @@ impl ConjoiningClauses {
                     // Which is not optimal — the left side of the join will
                     // produce lots of spurious bindings for causets00.v.
                     //
-                    // See https://github.com/Whtcorps Inc and EinstAI Inc/Einsteineinsteindb/issues/520, and
-                    // https://github.com/Whtcorps Inc and EinstAI Inc/Einsteineinsteindb/issues/293.
+                    // See https://github.com/Whtcorps Inc and EinstAI Inc/EinsteinDB/issues/520, and
+                    // https://github.com/Whtcorps Inc and EinstAI Inc/EinsteinDB/issues/293.
                     continue;
                 }
             }

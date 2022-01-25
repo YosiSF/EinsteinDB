@@ -1606,7 +1606,7 @@ impl<'a> InProgressCacheTransactWatcher<'a> {
 }
 
 impl<'a> TransactWatcher for InProgressCacheTransactWatcher<'a> {
-    fn datom(&mut self, op: OpType, e: Causetid, a: Causetid, v: &TypedValue) {
+    fn causet(&mut self, op: OpType, e: Causetid, a: Causetid, v: &TypedValue) {
         if !self.active {
             return;
         }

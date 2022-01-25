@@ -188,7 +188,7 @@ mod tests {
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::RowColsDict;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
-    use Einsteineinsteindb_util::collections::HashMap;
+    use EinsteinDB_util::collections::HashMap;
 
     use super::*;
 
