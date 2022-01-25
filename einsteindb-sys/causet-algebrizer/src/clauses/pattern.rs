@@ -20,7 +20,7 @@ use EinsteinDB_embedded::{
     HasTopograph,
 };
 
-use eeinsteindbn::query::{
+use edn::query::{
     NonIntegerConstant,
     Pattern,
     PatternValuePlace,
@@ -611,7 +611,7 @@ mod testing {
         Topograph,
     };
 
-    use eeinsteindbn::query::{
+    use edn::query::{
         Keyword,
         Variable,
     };

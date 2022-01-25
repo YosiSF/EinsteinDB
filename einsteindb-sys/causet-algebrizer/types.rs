@@ -21,7 +21,7 @@ use embedded_promises::{
     ValueTypeSet,
 };
 
-use einsteindb_embedded::{
+use einsteindb_core::{
     ValueRc,
 };
 

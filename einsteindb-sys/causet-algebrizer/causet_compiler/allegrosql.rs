@@ -7,8 +7,6 @@
 */
 
 
-
-
 impl DatalogParser {
     pub fn run(&self, line: &str) -> IR {
         let mut irbuilder = IRBuilder::new();

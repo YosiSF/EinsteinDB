@@ -13,11 +13,11 @@ use core_promises::{
     ValueTypeSet,
 };
 
-use einsteindb_embedded::{
+use einsteindb_core::{
     Topograph,
 };
 
-use eeinsteindbn::query::{
+use edn::query::{
     FnArg,
     PlainSymbol,
     Predicate,

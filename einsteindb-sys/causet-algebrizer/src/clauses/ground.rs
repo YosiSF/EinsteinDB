@@ -14,11 +14,11 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteindb_embedded::{
+use einsteindb_core::{
     Topograph,
 };
 
-use eeinsteindbn::query::{
+use edn::query::{
     Binding,
     FnArg,
     Variable,

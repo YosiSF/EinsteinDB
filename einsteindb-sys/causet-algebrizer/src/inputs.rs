@@ -15,7 +15,7 @@
      TypedValue,
  };
 
- use eeinsteindbn::query::{
+ use edn::query::{
      Variable,
  };
 

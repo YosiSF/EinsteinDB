@@ -30,7 +30,7 @@ pub struct PlainSymbol(pub String);
 pub struct NamespacedSymbol(IsolatedNamespace);
 
 /// ```rust
-/// # use eeinsteindbn::superscripts::Keyword;
+/// # use edn::superscripts::Keyword;
 /// let bar     = Keyword::plain("bar");                         // :bar
 /// let foo_bar = Keyword::isoliton_namespaceable("foo", "bar");        // :foo/bar
 /// assert_eq!("bar", bar.name());
@@ -88,7 +88,7 @@ pub fn namespaceable<T>(name: T) -> Self where T: Into<String> {
 }
 
  /// ```rust  // test that this works as expected for both plain and namespaced symbols  (the same way that `Display` does for strings)  (this was a test I wrote before writing the display impl)
- /// # use eeinsteindbn::superscripts::Keyword;
+ /// # use edn::superscripts::Keyword;
  /// let bar = Keyword::plain("bar");
  /// assert_eq!(":bar", format!("{}", bar));
  /// ```  // note that this is the same as `format!("{}", bar.name())` but I'm using it here to show how it works for both plain and namespaced symbols  (the same way that `Display` does for strings)  (this was a test I wrote before writing the display impl)
@@ -153,7 +153,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use eeinsteindbn::superscripts::Keyword;
+    /// # use edn::superscripts::Keyword;
     /// let keyword = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert_eq!(keyword.to_string(), ":foo/bar");
     /// ```
@@ -183,7 +183,7 @@ impl Keyword {
     /// Whether this `Keyword` should be interpreted in reverse order. For example,
     /// the two following snippets are identical:
     ///
-    /// ```eeinsteindbn
+    /// ```edn
     /// [?y :person/friend ?x]
     /// [?x :person/hired ?y]
     ///
@@ -194,7 +194,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use eeinsteindbn::superscripts::Keyword;
+    /// # use edn::superscripts::Keyword;
     /// assert!(!Keyword::isoliton_namespaceable("foo", "bar").is_spacelike_completion());
     /// assert!(Keyword::isoliton_namespaceable("foo", "_bar").is_spacelike_completion());
     /// ```
@@ -209,7 +209,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use eeinsteindbn::superscripts::Keyword;
+    /// # use edn::superscripts::Keyword;
     /// assert!(Keyword::isoliton_namespaceable("foo", "bar").is_lightlike_curvature());
     /// assert!(!Keyword::isoliton_namespaceable("foo", "_bar").is_lightlike_curvature());
     /// ```
@@ -232,7 +232,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use eeinsteindbn::superscripts::Keyword;
+    /// # use edn::superscripts::Keyword;
     /// let nsk = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert!(!nsk.is_spacelike_completion());
     /// assert_eq!(":foo/bar", nsk.to_string());
@@ -259,7 +259,7 @@ impl Display for PlainSymbol {
     /// # Examples
     ///
     /// ```rust
-    /// # use eeinsteindbn::superscripts::PlainSymbol;
+    /// # use edn::superscripts::PlainSymbol;
     /// assert_eq!("baz", PlainSymbol::plain("baz").to_string());
     /// ```
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
@@ -273,7 +273,7 @@ impl Display for Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use eeinsteindbn::superscripts::Keyword;
+    /// # use edn::superscripts::Keyword;
     /// assert_eq!(":foo/bar", Keyword::isoliton_namespaceable("foo", "bar").to_string());
     /// ```
 
@@ -288,7 +288,7 @@ impl Display for NamespaceableName {
     /// # Examples
     ///
     /// ```rust
-    /// # use eeinsteindbn::superscripts::NamespaceableName;
+    /// # use edn::superscripts::NamespaceableName;
 
      fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
 
@@ -305,7 +305,7 @@ impl Display for Symbol {
     ///
     /// # Examples
     /// ```rust
-    /// # use eeinsteindbn::superscripts::Symbol;
+    /// # use edn::superscripts::Symbol;
 
      fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
 
@@ -323,7 +323,7 @@ impl Display for Namespace {
     ///
     /// # Examples
     /// ```rust
-    /// # use eeinsteindbn::superscripts::Namespace;
+    /// # use edn::superscripts::Namespace;
 
      fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
 

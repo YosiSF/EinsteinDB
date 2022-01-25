@@ -13,13 +13,13 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteindb_embedded::{
+use einsteindb_core::{
     HasTopograph,
 };
 
-use einsteindb_embedded::util::Either;
+use einsteindb_core::util::Either;
 
-use eeinsteindbn::query::{
+use edn::query::{
     Binding,
     FnArg,
     NonIntegerConstant,
@@ -273,7 +273,7 @@ mod testing {
         Topograph,
     };
 
-    use eeinsteindbn::query::{
+    use edn::query::{
         Binding,
         FnArg,
         Keyword,

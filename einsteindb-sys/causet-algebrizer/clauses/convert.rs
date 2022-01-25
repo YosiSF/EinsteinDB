@@ -14,13 +14,13 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteindb_embedded::{
+use einsteindb_core::{
     HasTopograph,
     Topograph,
     BerolinaSQLValueType,
 };
 
-use eeinsteindbn::query::{
+use edn::query::{
     FnArg,
     NonIntegerConstant,
     Variable,

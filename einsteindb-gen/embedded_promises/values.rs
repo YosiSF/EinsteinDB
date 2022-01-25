@@ -14,8 +14,8 @@
 ///
 /// Used through-out the transactor to match core einsteindb constructs.
 
-use eeinsteindbn::types::Value;
-use eeinsteindbn::symbols;
+use edn::types::Value;
+use edn::symbols;
 
 /// TODO: take just ":einsteindb.part/einsteindb" and define einsteindb_PART_einsteindb using "einsteindb.part" and "einsteindb".
 macro_rules! lazy_static_isoliton_namespaceable_keyword_value (

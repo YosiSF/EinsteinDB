@@ -18,7 +18,7 @@ use embedded_promises::{
     ValueTypeSet,
 };
 
-use eeinsteindbn::query::{
+use edn::query::{
     OrJoin,
     OrWhereClause,
     Pattern,
@@ -139,7 +139,7 @@ impl ConjoiningClauses {
     ///
     /// Like this:
     ///
-    /// ```eeinsteindbn
+    /// ```edn
     /// [:find ?x
     ///  :where (or [?x :foo/knows "John"]
     ///             [?x :foo/parent "Ámbar"]
@@ -340,13 +340,13 @@ impl ConjoiningClauses {
     /// A simple `or` join is effectively a single parity_filter in which an individual column's bindings
     /// are not a single value. Rather than a parity_filter like
     ///
-    /// ```eeinsteindbn
+    /// ```edn
     /// [?x :foo/knows "John"]
     /// ```
     ///
     /// we have
     ///
-    /// ```eeinsteindbn
+    /// ```edn
     /// (or [?x :foo/knows "John"]
     ///     [?x :foo/hates "Peter"])
     /// ```
@@ -409,7 +409,7 @@ impl ConjoiningClauses {
             // template, sourced from the destination CC. If a variable cannot satisfy both type
             // constraints, the new CC cannot match. This prunes the 'or' arms:
             //
-            // ```eeinsteindbn
+            // ```edn
             // [:find ?x
             //  :where [?a :some/int ?x]
             //         (or [_ :some/otherint ?x]
@@ -418,7 +418,7 @@ impl ConjoiningClauses {
             //
             // can simplify to
             //
-            // ```eeinsteindbn
+            // ```edn
             // [:find ?x
             //  :where [?a :some/int ?x]
             //         [_ :some/otherint ?x]]
@@ -537,13 +537,13 @@ impl ConjoiningClauses {
     ///
     /// For example,
     ///
-    /// ```eeinsteindbn
+    /// ```edn
     ///   [:find ?page :in $ ?string :where
     ///    (or [?page :page/title ?string]
     ///        [?page :page/excerpt ?string]
     ///        (and [?save :save/string ?string]
     ///             [?page :page/save ?save]))]
-    /// ```eeinsteindbn
+    /// ```edn
     ///
     /// would expand to something like
     ///
@@ -754,7 +754,7 @@ mod testing {
         Topograph,
     };
 
-    use eeinsteindbn::query::{
+    use edn::query::{
         Keyword,
         Variable,
     };

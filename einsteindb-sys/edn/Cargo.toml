@@ -1,5 +1,5 @@
 [package]
-name = "eeinsteindbn"
+name = "edn"
 version = "0.1.0"
 authors = ["Josh Leder <slushie@gmail.com>", "Karl Whitford<karl@einsteindb.com>"]
 workspace = "../.."

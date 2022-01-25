@@ -8,7 +8,7 @@ use EinsteinDB_embedded::{
     Topograph,
 };
 
-use eeinsteindbn::query::{
+use edn::query::{
     Binding,
     FnArg,
     Variable,
@@ -319,7 +319,7 @@ mod testing {
         ValueType,
     };
 
-    use eeinsteindbn::query::{
+    use edn::query::{
         Binding,
         FnArg,
         Keyword,

@@ -17,7 +17,7 @@ extern crate uuid;
 
 extern crate embedded_promises;
 
-extern crate eeinsteindbn;
+extern crate edn;
 
 use embedded_promises::{
     Attr,
@@ -149,10 +149,10 @@ impl Topograph {
         s
     }
 
-    pub fn to_eeinsteindbn_value(&self) -> eeinsteindbn::Value {
-        eeinsteindbn::Value::Vector((&self.Attr_map).iter()
+    pub fn to_edn_value(&self) -> edn::Value {
+        edn::Value::Vector((&self.Attr_map).iter()
             .map(|(causetid, Attr)|
-                Attr.to_eeinsteindbn_value(self.get_ident(*causetid).cloned()))
+                Attr.to_edn_value(self.get_ident(*causetid).cloned()))
             .collect())
     }
 
@@ -287,7 +287,7 @@ mod test {
     }
 
     #[test]
-    fn test_as_eeinsteindbn_value() {
+    fn test_as_edn_value() {
         let mut topograph = Topograph::default();
 
         let attr1 = Attr {
@@ -327,7 +327,7 @@ mod test {
         associate_ident(&mut topograph, Keyword::isoliton_namespaceable("foo", "bat"), 99);
         add_Attr(&mut topograph, 99, attr3);
 
-        let value = topograph.to_eeinsteindbn_value();
+        let value = topograph.to_edn_value();
 
         let expected_output = r#"[ {   :einsteindb/solitonid     :foo/bar
     :einsteindb/valueType :einsteindb.type/ref
@@ -344,11 +344,11 @@ mod test {
     :einsteindb/cardinality :einsteindb.cardinality/one
     :einsteindb/unique :einsteindb.unique/identity
     :einsteindb/isComponent true }, ]"#;
-        let expected_value = eeinsteindbn::parse::value(&expected_output).expect("to be able to parse").without_spans();
+        let expected_value = edn::parse::value(&expected_output).expect("to be able to parse").without_spans();
         assert_eq!(expected_value, value);
 
-        // let's compare the whole thing again, just to make sure we are not changing anything when we convert to eeinsteindbn.
-        let value2 = topograph.to_eeinsteindbn_value();
+        // let's compare the whole thing again, just to make sure we are not changing anything when we convert to edn.
+        let value2 = topograph.to_edn_value();
         assert_eq!(expected_value, value2);
     }
 }

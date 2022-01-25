@@ -53,7 +53,7 @@ use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, Eval
 
 extern crate failure;
 
-extern crate eeinsteindbn;
+extern crate edn;
 extern crate EinsteinDB_embedded;
 #[macro_use]
 extern crate embedded_promises;
@@ -81,7 +81,7 @@ use EinsteinDB_embedded::{
 
 use EinsteinDB_embedded::counter::RcPetri;
 
-use eeinsteindbn::query::{
+use edn::query::{
     Element,
     FindSpec,
     Limit,

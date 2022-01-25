@@ -34,15 +34,15 @@ use embedded_promises::{
     TypedValue,
 };
 
-use einsteindb_embedded::{
+use einsteindb_core::{
     Cloned,
     HasTopograph,
     Topograph,
 };
 
-use einsteindb_embedded::counter::RcPetri;
+use einsteindb_core::counter::RcPetri;
 
-use eeinsteindbn::query::{
+use edn::query::{
     Element,
     FindSpec,
     Keyword,
@@ -203,7 +203,7 @@ pub struct ConjoiningClauses {
     /// algebrized.
     ///
     /// Value bindings must agree with `known_types`. If you write a query like
-    /// ```eeinsteindbn
+    /// ```edn
     /// [:find ?x :in $ ?val :where [?x :foo/int ?val]]
     /// ```
     ///
@@ -914,7 +914,7 @@ impl ConjoiningClauses {
     ///
     /// For example, a bindings map associating a var to three places in the query, like
     ///
-    /// ```eeinsteindbn
+    /// ```edn
     ///   {?foo [causets12.e causets13.v causets14.e]}
     /// ```
     ///
@@ -1036,7 +1036,7 @@ impl ConjoiningClauses {
     /// It's possible at this point for the space of acceptable type tags to not intersect: e.g.,
     /// for the query
     ///
-    /// ```eeinsteindbn
+    /// ```edn
     /// [:find ?x :where
     ///  [?x ?y true]
     ///  [?z ?y ?x]]

@@ -58,7 +58,7 @@ use chrono::{
 
 use uuid::Uuid;
 
-use eeinsteindbn::{
+use edn::{
     Cloned,
     ValueRc,
     Utc,
@@ -67,7 +67,7 @@ use eeinsteindbn::{
     FromRc,
 };
 
-use eeinsteindbn::causets::{
+use edn::causets::{
     AttrPlace,
     EntityPlace,
     CausetidOrSolitonid,

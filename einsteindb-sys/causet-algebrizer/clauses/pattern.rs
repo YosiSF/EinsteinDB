@@ -15,12 +15,12 @@ use embedded_promises::{
     ValueTypeSet,
 };
 
-use einsteindb_embedded::{
+use einsteindb_core::{
     Cloned,
     HasTopograph,
 };
 
-use eeinsteindbn::query::{
+use edn::query::{
     NonIntegerConstant,
     Pattern,
     PatternValuePlace,
@@ -668,7 +668,7 @@ mod testing {
         Topograph,
     };
 
-    use eeinsteindbn::query::{
+    use edn::query::{
         Keyword,
         Variable,
     };
