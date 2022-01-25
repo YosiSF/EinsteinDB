@@ -169,7 +169,7 @@ mod tests {
     use super::*;
     use crate::codec::batch::QuiesceBatchColumn;
     use crate::codec::datum::{Datum, DatumEncoder};
-    use crate::codec::mysql::*;
+    use crate::codec::myBerolinaSQL::*;
     use crate::expr::EvalContext;
 
     #[test]

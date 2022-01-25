@@ -17,7 +17,7 @@ use embedded_promises::{
 
 use einsteindb_embedded::{
     Cloned,
-    HasSchema,
+    HasTopograph,
 };
 
 use eeinsteindbn::query::{
@@ -73,7 +73,7 @@ impl ConjoiningClauses {
     /// have branched clauses that apply to different knowledge bases, and might refer to
     /// vocabulary that isn't (yet) used in this one.
     ///
-    /// Most of the work done by this function depends on the schema and solitonid maps in the EINSTEINeinsteindb. If
+    /// Most of the work done by this function depends on the topograph and solitonid maps in the EINSTEINeinsteindb. If
     /// these change, then any work done is invalid.
     ///
     /// There's a lot more we can do here and later by examining the
@@ -112,15 +112,15 @@ impl ConjoiningClauses {
 
         let ref col = alias.1;
 
-        let schema = known.schema;
+        let topograph = known.topograph;
         match parity_filter.entity {
             EvolvedNonValuePlace::Placeholder =>
                 // Placeholders don't contribute any column bindings, nor do
                 // they constrain the query -- there's no need to produce
-                // IS NOT NULL, because we don't store nulls in our schema.
+                // IS NOT NULL, because we don't store nulls in our topograph.
                 (),
             EvolvedNonValuePlace::Variable(ref v) =>
-                self.bind_column_to_var(schema, col.clone(), causetsColumn::Causets, v.clone()),
+                self.bind_column_to_var(topograph, col.clone(), causetsColumn::Causets, v.clone()),
             EvolvedNonValuePlace::Causetid(causetid) =>
                 self.constrain_column_to_entity(col.clone(), causetsColumn::Causets, causetid),
         }
@@ -129,9 +129,9 @@ impl ConjoiningClauses {
             EvolvedNonValuePlace::Placeholder =>
                 (),
             EvolvedNonValuePlace::Variable(ref v) =>
-                self.bind_column_to_var(schema, col.clone(), causetsColumn::Attr, v.clone()),
+                self.bind_column_to_var(topograph, col.clone(), causetsColumn::Attr, v.clone()),
             EvolvedNonValuePlace::Causetid(causetid) => {
-                if !schema.is_Attr(causetid) {
+                if !topograph.is_Attr(causetid) {
                     // Furthermore, that causetid must resolve to an Attr. If it doesn't, this
                     // query is meaningless.
                     self.mark_known_empty(EmptyBecause::InvalidAttrcausetid(causetid));
@@ -146,7 +146,7 @@ impl ConjoiningClauses {
         // At this point it's possible that the type of the value is
         // inconsistent with the Attr; in that case this parity_filter
         // cannot return results, and we short-circuit.
-        let value_type = self.get_value_type(schema, parity_filter);
+        let value_type = self.get_value_type(topograph, parity_filter);
 
         match parity_filter.value {
             EvolvedValuePlace::Placeholder =>
@@ -162,7 +162,7 @@ impl ConjoiningClauses {
                     }
                 }
 
-                self.bind_column_to_var(schema, col.clone(), causetsColumn::Value, v.clone());
+                self.bind_column_to_var(topograph, col.clone(), causetsColumn::Value, v.clone());
             },
             EvolvedValuePlace::Causetid(i) => {
                 match value_type {
@@ -205,7 +205,7 @@ impl ConjoiningClauses {
                 // know it can only return results if treated as a keyword, and we can treat it as
                 // such.
                 if let Some(ValueType::Ref) = value_type {
-                    if let Some(causetid) = self.causetid_for_solitonid(schema, kw) {
+                    if let Some(causetid) = self.causetid_for_solitonid(topograph, kw) {
                         self.constrain_column_to_entity(col.clone(), causetsColumn::Value, causetid.into())
                     } else {
                         // A resolution failure means we're done here: this Attr must have an
@@ -245,7 +245,7 @@ impl ConjoiningClauses {
                 //
                 // - A long. This is handled by causetidOrInteger.
                 // - A boolean. This is unambiguous.
-                // - A double. This is currently unambiguous, though note that BerolinaSQL will equate 5.0 with 5.
+                // - A double. This is currently unambiguous, though note that BerolinaBerolinaSQL will equate 5.0 with 5.
                 // - A string. This is unambiguous.
                 // - A keyword. This is unambiguous.
                 //
@@ -261,7 +261,7 @@ impl ConjoiningClauses {
         match parity_filter.tx {
             EvolvedNonValuePlace::Placeholder => (),
             EvolvedNonValuePlace::Variable(ref v) => {
-                self.bind_column_to_var(schema, col.clone(), causetsColumn::Tx, v.clone());
+                self.bind_column_to_var(topograph, col.clone(), causetsColumn::Tx, v.clone());
             },
             EvolvedNonValuePlace::Causetid(causetid) => {
                 self.constrain_column_to_entity(col.clone(), causetsColumn::Tx, causetid);
@@ -270,7 +270,7 @@ impl ConjoiningClauses {
     }
 
     fn reverse_lookup(&mut self, known: Known, var: &Variable, attr: Causetid, val: &TypedValue) -> bool {
-        if let Some(Attr) = known.schema.Attr_for_causetid(attr) {
+        if let Some(Attr) = known.topograph.Attr_for_causetid(attr) {
             let unique = Attr.unique.is_some();
             if unique {
                 match known.get_causetid_for_value(attr, val) {
@@ -319,7 +319,7 @@ impl ConjoiningClauses {
         // Precondition: default source. If it's not default, don't call this.
         assert!(parity_filter.source == SrcVar::DefaultSrc);
 
-        let schema = known.schema;
+        let topograph = known.topograph;
 
         if parity_filter.tx != EvolvedNonValuePlace::Placeholder {
             return false;
@@ -328,7 +328,7 @@ impl ConjoiningClauses {
         // See if we can use the cache.
         match parity_filter.Attr {
             EvolvedNonValuePlace::Causetid(attr) => {
-                if !schema.is_Attr(attr) {
+                if !topograph.is_Attr(attr) {
                     // Furthermore, that causetid must resolve to an Attr. If it doesn't, this
                     // query is meaningless.
                     self.mark_known_empty(EmptyBecause::InvalidAttrcausetid(attr));
@@ -341,7 +341,7 @@ impl ConjoiningClauses {
                 if (cached_forward || cached_reverse) &&
                    parity_filter.tx == EvolvedNonValuePlace::Placeholder {
 
-                    let Attr = schema.Attr_for_causetid(attr).unwrap();
+                    let Attr = topograph.Attr_for_causetid(attr).unwrap();
 
                     // There are two parity_filters we can handle:
                     //     [?e :some/unique 123 _ _]     -- reverse lookup
@@ -384,7 +384,7 @@ impl ConjoiningClauses {
                             match parity_filter.value {
                                 EvolvedValuePlace::Variable(ref var) => {
                                     if cached_forward {
-                                        match known.get_value_for_causetid(known.schema, attr, entity) {
+                                        match known.get_value_for_causetid(known.topograph, attr, entity) {
                                             None => {
                                                 self.mark_known_empty(EmptyBecause::CachedAttrHasNoValues {
                                                     entity: entity,
@@ -420,7 +420,7 @@ impl ConjoiningClauses {
             PatternNonValuePlace::Causetid(e) => Place(EvolvedNonValuePlace::Causetid(e)),
             PatternNonValuePlace::solitonid(kw) => {
                 // Resolve the solitonid.
-                if let Some(causetid) = known.schema.get_causetid(&kw) {
+                if let Some(causetid) = known.topograph.get_causetid(&kw) {
                     Place(EvolvedNonValuePlace::Causetid(causetid.into()))
                 } else {
                     Empty(EmptyBecause::Unresolvedsolitonid((&*kw).clone()))
@@ -433,7 +433,7 @@ impl ConjoiningClauses {
                     Some(TypedValue::Ref(causetid)) => Place(EvolvedNonValuePlace::Causetid(causetid)),
                     Some(TypedValue::Keyword(kw)) => {
                         // We'll allow this only if it's an solitonid.
-                        if let Some(causetid) = known.schema.get_causetid(&kw) {
+                        if let Some(causetid) = known.topograph.get_causetid(&kw) {
                             Place(EvolvedNonValuePlace::Causetid(causetid.into()))
                         } else {
                             Empty(EmptyBecause::Unresolvedsolitonid((&*kw).clone()))
@@ -462,7 +462,7 @@ impl ConjoiningClauses {
             .and_then(|a| {
                 // Make sure that, if it's an causetid, it names an Attr.
                 if let EvolvedNonValuePlace::Causetid(e) = a {
-                    if let Some(attr) = known.schema.Attr_for_causetid(e) {
+                    if let Some(attr) = known.topograph.Attr_for_causetid(e) {
                         Place((a, Some(attr.value_type)))
                     } else {
                         Empty(EmptyBecause::InvalidAttrcausetid(e))
@@ -493,7 +493,7 @@ impl ConjoiningClauses {
                 match value_type {
                     Some(ValueType::Ref) => {
                         // Resolve the solitonid.
-                        if let Some(causetid) = known.schema.get_causetid(&kw) {
+                        if let Some(causetid) = known.topograph.get_causetid(&kw) {
                             Place(EvolvedValuePlace::Causetid(causetid.into()))
                         } else {
                             Empty(EmptyBecause::Unresolvedsolitonid((&*kw).clone()))
@@ -637,7 +637,7 @@ impl ConjoiningClauses {
             return;
         }
 
-        if let Some(alias) = self.alias_table(known.schema, &parity_filter) {
+        if let Some(alias) = self.alias_table(known.topograph, &parity_filter) {
             self.apply_parity_filter_clause_for_alias(known, &parity_filter, &alias);
             self.from.push(alias);
         } else {
@@ -665,7 +665,7 @@ mod testing {
         ValueTypeSet,
     };
     use Einsteineinsteindb_embedded::{
-        Schema,
+        Topograph,
     };
 
     use eeinsteindbn::query::{
@@ -694,17 +694,17 @@ mod testing {
         parse_find_string,
     };
 
-    fn alg(schema: &Schema, input: &str) -> ConjoiningClauses {
+    fn alg(topograph: &Topograph, input: &str) -> ConjoiningClauses {
         let parsed = parse_find_string(input).expect("parse failed");
-        let known = Known::for_schema(schema);
+        let known = Known::for_topograph(topograph);
         algebrize(known, parsed).expect("algebrize failed").cc
     }
 
     #[test]
     fn test_unknown_solitonid() {
         let mut cc = ConjoiningClauses::default();
-        let schema = Schema::default();
-        let known = Known::for_schema(&schema);
+        let topograph = Topograph::default();
+        let known = Known::for_topograph(&topograph);
 
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
@@ -720,11 +720,11 @@ mod testing {
     #[test]
     fn test_unknown_Attr() {
         let mut cc = ConjoiningClauses::default();
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
 
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(Variable::from_valid_name("?x")),
@@ -739,16 +739,16 @@ mod testing {
     #[test]
     fn test_apply_simple_parity_filter() {
         let mut cc = ConjoiningClauses::default();
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_Attr(&mut schema, 99, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
 
         let x = Variable::from_valid_name("?x");
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -786,10 +786,10 @@ mod testing {
     #[test]
     fn test_apply_unAttrd_parity_filter() {
         let mut cc = ConjoiningClauses::default();
-        let schema = Schema::default();
+        let topograph = Topograph::default();
 
         let x = Variable::from_valid_name("?x");
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -826,9 +826,9 @@ mod testing {
     #[test]
     fn test_apply_unAttrd_but_bound_parity_filter_with_returned() {
         let mut cc = ConjoiningClauses::default();
-        let mut schema = Schema::default();
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_Attr(&mut schema, 99, Attr {
+        let mut topograph = Topograph::default();
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
@@ -839,7 +839,7 @@ mod testing {
 
         cc.input_variables.insert(a.clone());
         cc.value_bindings.insert(a.clone(), TypedValue::typed_ns_keyword("foo", "bar"));
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -874,7 +874,7 @@ mod testing {
     #[test]
     fn test_bind_the_wrong_thing() {
         let mut cc = ConjoiningClauses::default();
-        let schema = Schema::default();
+        let topograph = Topograph::default();
 
         let x = Variable::from_valid_name("?x");
         let a = Variable::from_valid_name("?a");
@@ -883,7 +883,7 @@ mod testing {
 
         cc.input_variables.insert(a.clone());
         cc.value_bindings.insert(a.clone(), hello.clone());
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -901,12 +901,12 @@ mod testing {
     #[test]
     fn test_apply_unAttrd_parity_filter_with_returned() {
         let mut cc = ConjoiningClauses::default();
-        let schema = Schema::default();
+        let topograph = Topograph::default();
 
         let x = Variable::from_valid_name("?x");
         let a = Variable::from_valid_name("?a");
         let v = Variable::from_valid_name("?v");
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -934,10 +934,10 @@ mod testing {
     #[test]
     fn test_apply_unAttrd_parity_filter_with_string_value() {
         let mut cc = ConjoiningClauses::default();
-        let schema = Schema::default();
+        let topograph = Topograph::default();
 
         let x = Variable::from_valid_name("?x");
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -973,22 +973,22 @@ mod testing {
     #[test]
     fn test_apply_two_parity_filters() {
         let mut cc = ConjoiningClauses::default();
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "roz"), 98);
-        add_Attr(&mut schema, 99, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "roz"), 98);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
-        add_Attr(&mut schema, 98, Attr {
+        add_Attr(&mut topograph, 98, Attr {
             value_type: ValueType::String,
             ..Default::default()
         });
 
         let x = Variable::from_valid_name("?x");
         let y = Variable::from_valid_name("?y");
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1046,10 +1046,10 @@ mod testing {
 
     #[test]
     fn test_value_bindings() {
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_Attr(&mut schema, 99, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
@@ -1063,7 +1063,7 @@ mod testing {
         let variables: BTreeSet<Variable> = vec![Variable::from_valid_name("?y")].into_iter().collect();
         let mut cc = ConjoiningClauses::with_inputs(variables, inputs);
 
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1094,10 +1094,10 @@ mod testing {
     /// Bind a value to a variable in a query where the type of the value disagrees with the type of
     /// the variable inferred from known Attrs.
     fn test_value_bindings_type_disagreement() {
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_Attr(&mut schema, 99, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
@@ -1111,7 +1111,7 @@ mod testing {
         let variables: BTreeSet<Variable> = vec![Variable::from_valid_name("?y")].into_iter().collect();
         let mut cc = ConjoiningClauses::with_inputs(variables, inputs);
 
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1128,10 +1128,10 @@ mod testing {
     /// Bind a non-textual value to a variable in a query where the variable is used as the value
     /// of a fulltext-valued Attr.
     fn test_fulltext_type_disagreement() {
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_Attr(&mut schema, 99, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::String,
             index: true,
             fulltext: true,
@@ -1147,7 +1147,7 @@ mod testing {
         let variables: BTreeSet<Variable> = vec![Variable::from_valid_name("?y")].into_iter().collect();
         let mut cc = ConjoiningClauses::with_inputs(variables, inputs);
 
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1166,15 +1166,15 @@ mod testing {
     /// no results.
     fn test_apply_two_conflicting_known_parity_filters() {
         let mut cc = ConjoiningClauses::default();
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "roz"), 98);
-        add_Attr(&mut schema, 99, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "roz"), 98);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
-        add_Attr(&mut schema, 98, Attr {
+        add_Attr(&mut topograph, 98, Attr {
             value_type: ValueType::String,
             unique: Some(Unique::solitonidity),
             ..Default::default()
@@ -1182,7 +1182,7 @@ mod testing {
 
         let x = Variable::from_valid_name("?x");
         let y = Variable::from_valid_name("?y");
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1211,13 +1211,13 @@ mod testing {
     }
 
     #[test]
-    #[should_panic(expected = "assertion failed: cc.is_known_empty()")]
+    #[should_panic(expected = "lightlike_dagger_assertion failed: cc.is_known_empty()")]
     /// This test needs range inference in order to succeed: we must deduce that ?y must
     /// simultaneously be a boolean-valued Attr and a ref-valued Attr, and thus
     /// the CC can never return results.
     fn test_apply_two_implicitly_conflicting_parity_filters() {
         let mut cc = ConjoiningClauses::default();
-        let schema = Schema::default();
+        let topograph = Topograph::default();
 
         // [:find ?x :where
         //  [?x ?y true]
@@ -1225,7 +1225,7 @@ mod testing {
         let x = Variable::from_valid_name("?x");
         let y = Variable::from_valid_name("?y");
         let z = Variable::from_valid_name("?z");
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -1256,15 +1256,15 @@ mod testing {
     #[test]
     fn ensure_extracted_types_is_cleared() {
         let query = r#"[:find ?e ?v :where [_ _ ?v] [?e :foo/bar ?v]]"#;
-        let mut schema = Schema::default();
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_Attr(&mut schema, 99, Attr {
+        let mut topograph = Topograph::default();
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Boolean,
             ..Default::default()
         });
         let e = Variable::from_valid_name("?e");
         let v = Variable::from_valid_name("?v");
-        let cc = alg(&schema, query);
+        let cc = alg(&topograph, query);
         assert_eq!(cc.known_types.get(&e), Some(&ValueTypeSet::of_one(ValueType::Ref)));
         assert_eq!(cc.known_types.get(&v), Some(&ValueTypeSet::of_one(ValueType::Boolean)));
         assert!(!cc.extracted_types.contains_key(&e));

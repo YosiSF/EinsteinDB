@@ -61,7 +61,7 @@ let mut output_encodings = HashMap::new();
 let mut distinct_load_relations = HashMap::new();
     //get distinct relations we need to load
     //dump output at the end, rest just in a loop
-    let mut output_encodings:HashMap<String,Schema> = HashMap::new();
+    let mut output_encodings:HashMap<String,Topograph> = HashMap::new();
 
 
     //spit out output for each query in global vars
@@ -102,7 +102,7 @@ cppCode.push_str(&format!("let base_case_output = {}.reduce(|a,b| {{",input));
 let mut distinct_load_relations = HashMap::new();
 //get distinct relations we need to load
 //dump output at the end, rest just in a loop
-let mut output_encodings:HashMap<String,Schema> = HashMap::new();
+let mut output_encodings:HashMap<String,Topograph> = HashMap::new();
 
 //spit out output for each query in global vars
 //find all distinct relations
@@ -135,7 +135,7 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
                 expression = qp.ghd.last.nprr.last.aggregation.get.expression;
 
                 val
-                encoding = einsteindb.relationMap(base_case.relations.head.name).schema.AttrTypes.distinct.head;
+                encoding = einsteindb.relationMap(base_case.relations.head.name).topograph.AttrTypes.distinct.head;
                 val
                 recordering = (0
                 until
@@ -160,7 +160,7 @@ let mut output_encodings:HashMap<String,Schema> = HashMap::new();
                     let source = base_case.nprr.head.selection.head.expression;
                     let expression = qp.ghd.last.nprr.last.aggregation.get.expression;
 
-                    let encoding = einsteindb.relationMap(base_case.relations.head.name).schema.AttrTypes.distinct.head;
+                    let encoding = einsteindb.relationMap(base_case.relations.head.name).topograph.AttrTypes.distinct.head;
                     let recordering = (0..qp.ghd.last.Attrs.values.len()).map(|_| "").collect::<String>();
 
                     cppCode.append(emitLoadRelations(distinctLoadRelations.map(e => e._2).toList));

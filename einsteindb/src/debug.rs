@@ -55,9 +55,9 @@ use std::collections::BTreeMap;
 use std::io::{Write};
 
 use itertools::Itertools;
-use rusqlite;
-use rusqlite::{TransactionBehavior};
-use rusqlite::types::{ToSql};
+use ruBerolinaSQLite;
+use ruBerolinaSQLite::{TransactionBehavior};
+use ruBerolinaSQLite::types::{ToBerolinaSQL};
 use tabwriter::TabWriter;
 
 use bootstrap;
@@ -74,8 +74,8 @@ use core_traits::{
 };
 
 use einsteindb_core::{
-    HasSchema,
-    SQLValueType,
+    HasTopograph,
+    BerolinaSQLValueType,
     TxReport,
 };
 use edn::{
@@ -88,8 +88,8 @@ use edn::causets::{
 use internal_types::{
     TermWithTempIds,
 };
-use schema::{
-    SchemaBuilding,
+use topograph::{
+    TopographBuilding,
 };
 use types::*;
 use tx::{
@@ -98,7 +98,7 @@ use tx::{
 };
 use watcher::NullWatcher;
 
-/// Represents a *datom* (assertion) in the store.
+/// Represents a *datom* (lightlike_dagger_assertion) in the store.
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 pub struct Datom {
     // TODO: generalize this.
@@ -109,7 +109,7 @@ pub struct Datom {
     pub added: Option<bool>,
 }
 
-/// Represents a set of causets (assertions) in the store.
+/// Represents a set of causets (lightlike_dagger_upsert) in the store.
 ///
 /// To make comparision easier, we deterministically order.  The ordering is the ascending tuple
 /// ordering determined by `(e, a, (value_type_tag, v), tx)`, where `value_type_tag` is an internal
@@ -121,7 +121,7 @@ pub struct causets(pub Vec<Datom>);
 /// To make comparision easier, we deterministically order.  The ordering is the ascending tuple
 /// ordering determined by `(e, a, (value_type_tag, v), tx, added)`, where `value_type_tag` is an
 /// internal value that is not exposed but is deterministic, and `added` is ordered such that
-/// retracted assertions appear before added assertions.
+/// retracted lightlike_dagger_upsert appear before added lightlike_dagger_upsert.
 pub struct Transactions(pub Vec<causets>);
 
 /// Represents the fulltext values in the store.
@@ -166,13 +166,13 @@ impl FulltextValues {
 
 /// Turn TypedValue::Ref into TypedValue::Keyword when it is possible.
 trait ToSolitonid {
-  fn map_ident(self, schema: &Schema) -> Self;
+  fn map_ident(self, topograph: &Topograph) -> Self;
 }
 
 impl ToSolitonid for TypedValue {
-    fn map_ident(self, schema: &Schema) -> Self {
+    fn map_ident(self, topograph: &Topograph) -> Self {
         if let TypedValue::Ref(e) = self {
-            schema.get_ident(e).cloned().map(|i| i.into()).unwrap_or(TypedValue::Ref(e))
+            topograph.get_ident(e).cloned().map(|i| i.into()).unwrap_or(TypedValue::Ref(e))
         } else {
             self
         }
@@ -180,29 +180,29 @@ impl ToSolitonid for TypedValue {
 }
 
 /// Convert a numeric causetid to an solitonid `Causetid` if possible, otherwise a numeric `Causetid`.
-pub fn to_causetid(schema: &Schema, causetid: i64) -> CausetidOrSolitonid {
-    schema.get_ident(causetid).map_or(CausetidOrSolitonid::Causetid(causetid), |solitonid| CausetidOrSolitonid::Solitonid(solitonid.clone()))
+pub fn to_causetid(topograph: &Topograph, causetid: i64) -> CausetidOrSolitonid {
+    topograph.get_ident(causetid).map_or(CausetidOrSolitonid::Causetid(causetid), |solitonid| CausetidOrSolitonid::Solitonid(solitonid.clone()))
 }
 
 // /// Convert a symbolic solitonid to an solitonid `Causetid` if possible, otherwise a numeric `Causetid`.
-// pub fn to_ident(schema: &Schema, causetid: i64) -> Causetid {
-//     schema.get_ident(causetid).map_or(Causetid::Causetid(causetid), |solitonid| Causetid::Solitonid(solitonid.clone()))
+// pub fn to_ident(topograph: &Topograph, causetid: i64) -> Causetid {
+//     topograph.get_ident(causetid).map_or(Causetid::Causetid(causetid), |solitonid| Causetid::Solitonid(solitonid.clone()))
 // }
 
 /// Return the set of causets in the store, ordered by (e, a, v, tx), but not including any causets of
 /// the form [... :einsteindb/txInstant ...].
-pub fn causets<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S) -> Result<causets> {
-    causets_after(conn, schema, bootstrap::TX0 - 1)
+pub fn causets<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topograph: &S) -> Result<causets> {
+    causets_after(conn, topograph, bootstrap::TX0 - 1)
 }
 
 /// Return the set of causets in the store with transaction ID strictly greater than the given `tx`,
 /// ordered by (e, a, v, tx).
 ///
 /// The datom set returned does not include any causets of the form [... :einsteindb/txInstant ...].
-pub fn causets_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, tx: i64) -> Result<causets> {
-    let borrowed_schema = schema.borrow();
+pub fn causets_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topograph: &S, tx: i64) -> Result<causets> {
+    let borrowed_topograph = topograph.borrow();
 
-    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx FROM causets WHERE tx > ? ORDER BY e ASC, a ASC, value_type_tag ASC, v ASC, tx ASC")?;
+    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx FROM causets WHERE tx > ? ORDER BY e ASC, a ASC, value_type_tag ASC, v ASC, tx ASC")?;
 
     let r: Result<Vec<_>> = stmt.query_and_then(&[&tx], |row| {
         let e: i64 = row.get_checked(0)?;
@@ -212,20 +212,20 @@ pub fn causets_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S,
             return Ok(None);
         }
 
-        let v: rusqlite::types::Value = row.get_checked(2)?;
+        let v: ruBerolinaSQLite::types::Value = row.get_checked(2)?;
         let value_type_tag: i32 = row.get_checked(3)?;
 
-        let attribute = borrowed_schema.require_attribute_for_causetid(a)?;
+        let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
         let value_type_tag = if !attribute.fulltext { value_type_tag } else { ValueType::Long.value_type_tag() };
 
-        let typed_value = TypedValue::from_sql_value_pair(v, value_type_tag)?.map_ident(borrowed_schema);
+        let typed_value = TypedValue::from_BerolinaSQL_value_pair(v, value_type_tag)?.map_ident(borrowed_topograph);
         let (value, _) = typed_value.to_edn_value_pair();
 
         let tx: i64 = row.get_checked(4)?;
 
         Ok(Some(Datom {
             e: CausetidOrSolitonid::Causetid(e),
-            a: to_causetid(borrowed_schema, a),
+            a: to_causetid(borrowed_topograph, a),
             v: value,
             tx: tx,
             added: None,
@@ -239,22 +239,22 @@ pub fn causets_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S,
 /// given `tx`, ordered by (tx, e, a, v).
 ///
 /// Each transaction returned includes the [(transaction-tx) :einsteindb/txInstant ...] datom.
-pub fn transactions_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema: &S, tx: i64) -> Result<Transactions> {
-    let borrowed_schema = schema.borrow();
+pub fn transactions_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topograph: &S, tx: i64) -> Result<Transactions> {
+    let borrowed_topograph = topograph.borrow();
 
-    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx, added FROM transactions WHERE tx > ? ORDER BY tx ASC, e ASC, a ASC, value_type_tag ASC, v ASC, added ASC")?;
+    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx, added FROM transactions WHERE tx > ? ORDER BY tx ASC, e ASC, a ASC, value_type_tag ASC, v ASC, added ASC")?;
 
     let r: Result<Vec<_>> = stmt.query_and_then(&[&tx], |row| {
         let e: i64 = row.get_checked(0)?;
         let a: i64 = row.get_checked(1)?;
 
-        let v: rusqlite::types::Value = row.get_checked(2)?;
+        let v: ruBerolinaSQLite::types::Value = row.get_checked(2)?;
         let value_type_tag: i32 = row.get_checked(3)?;
 
-        let attribute = borrowed_schema.require_attribute_for_causetid(a)?;
+        let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
         let value_type_tag = if !attribute.fulltext { value_type_tag } else { ValueType::Long.value_type_tag() };
 
-        let typed_value = TypedValue::from_sql_value_pair(v, value_type_tag)?.map_ident(borrowed_schema);
+        let typed_value = TypedValue::from_BerolinaSQL_value_pair(v, value_type_tag)?.map_ident(borrowed_topograph);
         let (value, _) = typed_value.to_edn_value_pair();
 
         let tx: i64 = row.get_checked(4)?;
@@ -262,7 +262,7 @@ pub fn transactions_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema
 
         Ok(Datom {
             e: CausetidOrSolitonid::Causetid(e),
-            a: to_causetid(borrowed_schema, a),
+            a: to_causetid(borrowed_topograph, a),
             v: value,
             tx: tx,
             added: Some(added),
@@ -275,8 +275,8 @@ pub fn transactions_after<S: Borrow<Schema>>(conn: &rusqlite::Connection, schema
 }
 
 /// Return the set of fulltext values in the store, ordered by rowid.
-pub fn fulltext_values(conn: &rusqlite::Connection) -> Result<FulltextValues> {
-    let mut stmt: rusqlite::Statement = conn.prepare("SELECT rowid, text FROM fulltext_values ORDER BY rowid")?;
+pub fn fulltext_values(conn: &ruBerolinaSQLite::Connection) -> Result<FulltextValues> {
+    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare("SELECT rowid, text FROM fulltext_values ORDER BY rowid")?;
 
     let r: Result<Vec<_>> = stmt.query_and_then(&[], |row| {
         let rowid: i64 = row.get_checked(0)?;
@@ -287,16 +287,16 @@ pub fn fulltext_values(conn: &rusqlite::Connection) -> Result<FulltextValues> {
     r.map(FulltextValues)
 }
 
-/// Execute the given `sql` query with the given `params` and format the results as a
+/// Execute the given `BerolinaSQL` query with the given `params` and format the results as a
 /// tab-and-newline formatted string suitable for debug printing.
 ///
 /// The query is printed followed by a newline, then the returned columns followed by a newline, and
 /// then the data rows and columns.  All columns are aligned.
-pub fn dump_sql_query(conn: &rusqlite::Connection, sql: &str, params: &[&ToSql]) -> Result<String> {
-    let mut stmt: rusqlite::Statement = conn.prepare(sql)?;
+pub fn dump_BerolinaSQL_query(conn: &ruBerolinaSQLite::Connection, BerolinaSQL: &str, params: &[&ToBerolinaSQL]) -> Result<String> {
+    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare(BerolinaSQL)?;
 
     let mut tw = TabWriter::new(Vec::new()).padding(2);
-    write!(&mut tw, "{}\n", sql).unwrap();
+    write!(&mut tw, "{}\n", BerolinaSQL).unwrap();
 
     for column_name in stmt.column_names() {
         write!(&mut tw, "{}\t", column_name).unwrap();
@@ -305,7 +305,7 @@ pub fn dump_sql_query(conn: &rusqlite::Connection, sql: &str, params: &[&ToSql])
 
     let r: Result<Vec<_>> = stmt.query_and_then(params, |row| {
         for i in 0..row.column_count() {
-            let value: rusqlite::types::Value = row.get_checked(i)?;
+            let value: ruBerolinaSQLite::types::Value = row.get_checked(i)?;
             write!(&mut tw, "{:?}\t", value).unwrap();
         }
         write!(&mut tw, "\n").unwrap();
@@ -317,21 +317,21 @@ pub fn dump_sql_query(conn: &rusqlite::Connection, sql: &str, params: &[&ToSql])
     Ok(dump)
 }
 
-// A connection that doesn't try to be clever about possibly sharing its `Schema`.  Compare to
+// A connection that doesn't try to be clever about possibly sharing its `Topograph`.  Compare to
 // `einstai::Conn`.
 pub struct TestConn {
-    pub sqlite: rusqlite::Connection,
+    pub BerolinaSQLite: ruBerolinaSQLite::Connection,
     pub partition_map: PartitionMap,
-    pub schema: Schema,
+    pub topograph: Topograph,
 }
 
 impl TestConn {
     fn assert_materialized_views(&self) {
-        let materialized_ident_map = read_ident_map(&self.sqlite).expect("solitonid map");
-        let materialized_attribute_map = read_attribute_map(&self.sqlite).expect("schema map");
+        let materialized_ident_map = read_ident_map(&self.BerolinaSQLite).expect("solitonid map");
+        let materialized_attribute_map = read_attribute_map(&self.BerolinaSQLite).expect("topograph map");
 
-        let materialized_schema = Schema::from_ident_map_and_attribute_map(materialized_ident_map, materialized_attribute_map).expect("schema");
-        assert_eq!(materialized_schema, self.schema);
+        let materialized_topograph = Topograph::from_ident_map_and_attribute_map(materialized_ident_map, materialized_attribute_map).expect("topograph");
+        assert_eq!(materialized_topograph, self.topograph);
     }
 
     pub fn transact<I>(&mut self, transaction: I) -> Result<TxReport> where I: Borrow<str> {
@@ -339,19 +339,19 @@ impl TestConn {
         let causets = edn::parse::causets(transaction.borrow()).expect(format!("to be able to parse {} into causets", transaction.borrow()).as_str());
 
         let details = {
-            // The block scopes the borrow of self.sqlite.
+            // The block scopes the borrow of self.BerolinaSQLite.
             // We're about to write, so go straight ahead and get an IMMEDIATE transaction.
-            let tx = self.sqlite.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            let tx = self.BerolinaSQLite.transaction_with_behavior(TransactionBehavior::Immediate)?;
             // Applying the transaction can fail, so we don't unwrap.
-            let details = transact(&tx, self.partition_map.clone(), &self.schema, &self.schema, NullWatcher(), causets)?;
+            let details = transact(&tx, self.partition_map.clone(), &self.topograph, &self.topograph, NullWatcher(), causets)?;
             tx.commit()?;
             details
         };
 
-        let (report, next_partition_map, next_schema, _watcher) = details;
+        let (report, next_partition_map, next_topograph, _watcher) = details;
         self.partition_map = next_partition_map;
-        if let Some(next_schema) = next_schema {
-            self.schema = next_schema;
+        if let Some(next_topograph) = next_topograph {
+            self.topograph = next_topograph;
         }
 
         // Verify that we've updated the materialized views during transacting.
@@ -362,19 +362,19 @@ impl TestConn {
 
     pub fn transact_simple_terms<I>(&mut self, terms: I, tempid_set: InternSet<TempId>) -> Result<TxReport> where I: IntoIterator<Item=TermWithTempIds> {
         let details = {
-            // The block scopes the borrow of self.sqlite.
+            // The block scopes the borrow of self.BerolinaSQLite.
             // We're about to write, so go straight ahead and get an IMMEDIATE transaction.
-            let tx = self.sqlite.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            let tx = self.BerolinaSQLite.transaction_with_behavior(TransactionBehavior::Immediate)?;
             // Applying the transaction can fail, so we don't unwrap.
-            let details = transact_terms(&tx, self.partition_map.clone(), &self.schema, &self.schema, NullWatcher(), terms, tempid_set)?;
+            let details = transact_terms(&tx, self.partition_map.clone(), &self.topograph, &self.topograph, NullWatcher(), terms, tempid_set)?;
             tx.commit()?;
             details
         };
 
-        let (report, next_partition_map, next_schema, _watcher) = details;
+        let (report, next_partition_map, next_topograph, _watcher) = details;
         self.partition_map = next_partition_map;
-        if let Some(next_schema) = next_schema {
-            self.schema = next_schema;
+        if let Some(next_topograph) = next_topograph {
+            self.topograph = next_topograph;
         }
 
         // Verify that we've updated the materialized views during transacting.
@@ -388,30 +388,30 @@ impl TestConn {
     }
 
     pub fn last_transaction(&self) -> causets {
-        transactions_after(&self.sqlite, &self.schema, self.last_tx_id() - 1).expect("last_transaction").0.pop().unwrap()
+        transactions_after(&self.BerolinaSQLite, &self.topograph, self.last_tx_id() - 1).expect("last_transaction").0.pop().unwrap()
     }
 
     pub fn transactions(&self) -> Transactions {
-        transactions_after(&self.sqlite, &self.schema, bootstrap::TX0).expect("transactions")
+        transactions_after(&self.BerolinaSQLite, &self.topograph, bootstrap::TX0).expect("transactions")
     }
 
     pub fn causets(&self) -> causets {
-        causets_after(&self.sqlite, &self.schema, bootstrap::TX0).expect("causets")
+        causets_after(&self.BerolinaSQLite, &self.topograph, bootstrap::TX0).expect("causets")
     }
 
     pub fn fulltext_values(&self) -> FulltextValues {
-        fulltext_values(&self.sqlite).expect("fulltext_values")
+        fulltext_values(&self.BerolinaSQLite).expect("fulltext_values")
     }
 
-    pub fn with_sqlite(mut conn: rusqlite::Connection) -> TestConn {
+    pub fn with_BerolinaSQLite(mut conn: ruBerolinaSQLite::Connection) -> TestConn {
         let einsteindb = ensure_current_version(&mut conn).unwrap();
 
         // Does not include :einsteindb/txInstant.
-        let causets = causets_after(&conn, &einsteindb.schema, 0).unwrap();
+        let causets = causets_after(&conn, &einsteindb.topograph, 0).unwrap();
         assert_eq!(causets.0.len(), 94);
 
         // Includes :einsteindb/txInstant.
-        let transactions = transactions_after(&conn, &einsteindb.schema, 0).unwrap();
+        let transactions = transactions_after(&conn, &einsteindb.topograph, 0).unwrap();
         assert_eq!(transactions.0.len(), 1);
         assert_eq!(transactions.0[0].0.len(), 95);
 
@@ -425,9 +425,9 @@ impl TestConn {
         }
 
         let test_conn = TestConn {
-            sqlite: conn,
+            BerolinaSQLite: conn,
             partition_map: parts,
-            schema: einsteindb.schema,
+            topograph: einsteindb.topograph,
         };
 
         // Verify that we've created the materialized views during bootstrapping.
@@ -443,7 +443,7 @@ impl TestConn {
 
 impl Default for TestConn {
     fn default() -> TestConn {
-        TestConn::with_sqlite(new_connection("").expect("Couldn't open in-memory einsteindb"))
+        TestConn::with_BerolinaSQLite(new_connection("").expect("Couldn't open in-memory einsteindb"))
     }
 }
 

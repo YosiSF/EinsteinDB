@@ -18,7 +18,7 @@ use einsteindb_traits::errors::{
 use edn::types::Value;
 use edn::symbols;
 use causetids;
-use einsteindb::TypedSQLValue;
+use einsteindb::TypedBerolinaSQLValue;
 use edn::causets::causet;
 
 use core_traits::{
@@ -28,9 +28,9 @@ use core_traits::{
 
 use einsteindb_core::{
     solitonidMap,
-    Schema,
+    Topograph,
 };
-use schema::SchemaBuilding;
+use topograph::TopographBuilding;
 use types::{Partition, PartitionMap};
 
 /// The first transaction ID applied to the knowledge base.
@@ -41,7 +41,7 @@ pub const TX0: i64 = 0x10000000;
 /// This is the start of the :einsteindb.part/user partition.
 pub const USER0: i64 = 0x10000;
 
-// Corresponds to the version of the :einsteindb.schema/core vocabulary.
+// Corresponds to the version of the :einsteindb.topograph/core vocabulary.
 pub const CORE_SCHEMA_VERSION: u32 = 1;
 
 lazy_static! {
@@ -83,9 +83,9 @@ lazy_static! {
              (ns_keyword!("einsteindb.unique", "value"),      causetids::EINSTEINeinsteindb_UNIQUE_VALUE),
              (ns_keyword!("einsteindb.unique", "idcauset"),   causetids::EINSTEINeinsteindb_UNIQUE_IDcauset),
              (ns_keyword!("einsteindb", "doc"),               causetids::EINSTEINeinsteindb_DOC),
-             (ns_keyword!("einsteindb.schema", "version"),    causetids::EINSTEINeinsteindb_SCHEMA_VERSION),
-             (ns_keyword!("einsteindb.schema", "attribute"),  causetids::EINSTEINeinsteindb_SCHEMA_ATTRIBUTE),
-             (ns_keyword!("einsteindb.schema", "core"),       causetids::EINSTEINeinsteindb_SCHEMA_CORE),
+             (ns_keyword!("einsteindb.topograph", "version"),    causetids::EINSTEINeinsteindb_SCHEMA_VERSION),
+             (ns_keyword!("einsteindb.topograph", "attribute"),  causetids::EINSTEINeinsteindb_SCHEMA_ATTRIBUTE),
+             (ns_keyword!("einsteindb.topograph", "core"),       causetids::EINSTEINeinsteindb_SCHEMA_CORE),
         ]
     };
 
@@ -111,8 +111,8 @@ lazy_static! {
              (ns_keyword!("einsteindb", "fulltext")),
              (ns_keyword!("einsteindb", "noHistory")),
              (ns_keyword!("einsteindb.alter", "attribute")),
-             (ns_keyword!("einsteindb.schema", "version")),
-             (ns_keyword!("einsteindb.schema", "attribute")),
+             (ns_keyword!("einsteindb.topograph", "version")),
+             (ns_keyword!("einsteindb.topograph", "attribute")),
         ]
     };
 
@@ -152,12 +152,12 @@ lazy_static! {
                         :einsteindb/cardinality :einsteindb.cardinality/one}
  :einsteindb.alter/attribute   {:einsteindb/valueType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/many}
- :einsteindb.schema/version    {:einsteindb/valueType   :einsteindb.type/long
+ :einsteindb.topograph/version    {:einsteindb/valueType   :einsteindb.type/long
                         :einsteindb/cardinality :einsteindb.cardinality/one}
 
  ;; unique-value because an attribute can only belong to a single
- ;; schema fragment.
- :einsteindb.schema/attribute  {:einsteindb/valueType   :einsteindb.type/ref
+ ;; topograph fragment.
+ :einsteindb.topograph/attribute  {:einsteindb/valueType   :einsteindb.type/ref
                         :einsteindb/index       true
                         :einsteindb/unique      :einsteindb.unique/value
                         :einsteindb/cardinality :einsteindb.cardinality/many}}"#;
@@ -169,7 +169,7 @@ lazy_static! {
 }
 
 /// Convert (solitonid, causetid) pairs into [:einsteindb/add solitonid :einsteindb/solitonid solitonid] `Value` instances.
-fn solitonids_to_assertions(solitonids: &[(symbols::Keyword, i64)]) -> Vec<Value> {
+fn solitonids_to_lightlike_dagger_upsert(solitonids: &[(symbols::Keyword, i64)]) -> Vec<Value> {
     solitonids
         .into_iter()
         .map(|&(ref solitonid, _)| {
@@ -179,23 +179,23 @@ fn solitonids_to_assertions(solitonids: &[(symbols::Keyword, i64)]) -> Vec<Value
         .collect()
 }
 
-/// Convert an solitonid list into [:einsteindb/add :einsteindb.schema/core :einsteindb.schema/attribute solitonid] `Value` instances.
-fn schema_attrs_to_assertions(version: u32, solitonids: &[symbols::Keyword]) -> Vec<Value> {
-    let schema_core = Value::Keyword(ns_keyword!("einsteindb.schema", "core"));
-    let schema_attr = Value::Keyword(ns_keyword!("einsteindb.schema", "attribute"));
-    let schema_version = Value::Keyword(ns_keyword!("einsteindb.schema", "version"));
+/// Convert an solitonid list into [:einsteindb/add :einsteindb.topograph/core :einsteindb.topograph/attribute solitonid] `Value` instances.
+fn topograph_attrs_to_lightlike_dagger_upsert(version: u32, solitonids: &[symbols::Keyword]) -> Vec<Value> {
+    let topograph_core = Value::Keyword(ns_keyword!("einsteindb.topograph", "core"));
+    let topograph_attr = Value::Keyword(ns_keyword!("einsteindb.topograph", "attribute"));
+    let topograph_version = Value::Keyword(ns_keyword!("einsteindb.topograph", "version"));
     solitonids
         .into_iter()
         .map(|solitonid| {
             let value = Value::Keyword(solitonid.clone());
             Value::Vector(vec![values::EINSTEINeinsteindb_ADD.clone(),
-                               schema_core.clone(),
-                               schema_attr.clone(),
+                               topograph_core.clone(),
+                               topograph_attr.clone(),
                                value])
         })
         .chain(::std::iter::once(Value::Vector(vec![values::EINSTEINeinsteindb_ADD.clone(),
-                                             schema_core.clone(),
-                                             schema_version,
+                                             topograph_core.clone(),
+                                             topograph_version,
                                              Value::Integer(version as i64)])))
         .collect()
 }
@@ -204,12 +204,12 @@ fn schema_attrs_to_assertions(version: u32, solitonids: &[symbols::Keyword]) -> 
 /// vec![(symbols::Keyword(:solitonid), symbols::Keyword(:key), TypedValue(:value)), ...].
 ///
 /// Such triples are closer to what the transactor will produce when processing attribute
-/// assertions.
-fn symbolic_schema_to_triples(solitonid_map: &solitonidMap, symbolic_schema: &Value) -> Result<Vec<(symbols::Keyword, symbols::Keyword, TypedValue)>> {
+/// lightlike_dagger_upsert.
+fn symbolic_topograph_to_triples(solitonid_map: &solitonidMap, symbolic_topograph: &Value) -> Result<Vec<(symbols::Keyword, symbols::Keyword, TypedValue)>> {
     // Failure here is a coding error, not a runtime error.
     let mut triples: Vec<(symbols::Keyword, symbols::Keyword, TypedValue)> = vec![];
     // TODO: Consider `flat_map` and `map` rather than loop.
-    match *symbolic_schema {
+    match *symbolic_topograph {
         Value::Map(ref m) => {
             for (solitonid, mp) in m {
                 let solitonid = match solitonid {
@@ -226,12 +226,12 @@ fn symbolic_schema_to_triples(solitonid_map: &solitonidMap, symbolic_schema: &Va
 
                             // We have symbolic solitonids but the transactor handles causetids.  Ad-hoc
                             // convert right here.  This is a fundamental limitation on the
-                            // bootstrap symbolic schema format; we can't represent "real" keywords
+                            // bootstrap symbolic topograph format; we can't represent "real" keywords
                             // at this time.
                             //
                             // TODO: remove this limitation, perhaps by including a type tag in the
-                            // bootstrap symbolic schema, or by representing the initial bootstrap
-                            // schema directly as Rust data.
+                            // bootstrap symbolic topograph, or by representing the initial bootstrap
+                            // topograph directly as Rust data.
                             let typed_value = match TypedValue::from_edn_value(value) {
                                 Some(TypedValue::Keyword(ref k)) => {
                                     solitonid_map.get(k)
@@ -255,16 +255,16 @@ fn symbolic_schema_to_triples(solitonid_map: &solitonidMap, symbolic_schema: &Va
 }
 
 /// Convert {solitonid {:key :value ...} ...} to [[:einsteindb/add solitonid :key :value] ...].
-fn symbolic_schema_to_assertions(symbolic_schema: &Value) -> Result<Vec<Value>> {
+fn symbolic_topograph_to_lightlike_dagger_upsert(symbolic_topograph: &Value) -> Result<Vec<Value>> {
     // Failure here is a coding error, not a runtime error.
-    let mut assertions: Vec<Value> = vec![];
-    match *symbolic_schema {
+    let mut lightlike_dagger_upsert: Vec<Value> = vec![];
+    match *symbolic_topograph {
         Value::Map(ref m) => {
             for (solitonid, mp) in m {
                 match *mp {
                     Value::Map(ref mpp) => {
                         for (attr, value) in mpp {
-                            assertions.push(Value::Vector(vec![values::EINSTEINeinsteindb_ADD.clone(),
+                            lightlike_dagger_upsert.push(Value::Vector(vec![values::EINSTEINeinsteindb_ADD.clone(),
                                                                solitonid.clone(),
                                                                attr.clone(),
                                                                value.clone()]));
@@ -276,7 +276,7 @@ fn symbolic_schema_to_assertions(symbolic_schema: &Value) -> Result<Vec<Value>> 
         },
         _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition("Expected {...}".into()))
     }
-    Ok(assertions)
+    Ok(lightlike_dagger_upsert)
 }
 
 pub(crate) fn bootstrap_partition_map() -> PartitionMap {
@@ -291,21 +291,21 @@ pub(crate) fn bootstrap_solitonid_map() -> solitonidMap {
              .collect()
 }
 
-pub(crate) fn bootstrap_schema() -> Schema {
+pub(crate) fn bootstrap_topograph() -> Topograph {
     let solitonid_map = bootstrap_solitonid_map();
-    let bootstrap_triples = symbolic_schema_to_triples(&solitonid_map, &V1_SYMBOLIC_SCHEMA).expect("symbolic schema");
-    Schema::from_solitonid_map_and_triples(solitonid_map, bootstrap_triples).unwrap()
+    let bootstrap_triples = symbolic_topograph_to_triples(&solitonid_map, &V1_SYMBOLIC_SCHEMA).expect("symbolic topograph");
+    Topograph::from_solitonid_map_and_triples(solitonid_map, bootstrap_triples).unwrap()
 }
 
 pub(crate) fn bootstrap_causets() -> Vec<causet<edn::ValueAndSpan>> {
-    let bootstrap_assertions: Value = Value::Vector([
-        symbolic_schema_to_assertions(&V1_SYMBOLIC_SCHEMA).expect("symbolic schema"),
-        solitonids_to_assertions(&V1_solitonidS[..]),
-        schema_attrs_to_assertions(CORE_SCHEMA_VERSION, V1_CORE_SCHEMA.as_ref()),
+    let bootstrap_lightlike_dagger_upsert: Value = Value::Vector([
+        symbolic_topograph_to_lightlike_dagger_upsert(&V1_SYMBOLIC_SCHEMA).expect("symbolic topograph"),
+        solitonids_to_lightlike_dagger_upsert(&V1_solitonidS[..]),
+        topograph_attrs_to_lightlike_dagger_upsert(CORE_SCHEMA_VERSION, V1_CORE_SCHEMA.as_ref()),
     ].concat());
 
     // Failure here is a coding error (since the inputs are fixed), not a runtime error.
     // TODO: represent these bootstrap data errors rather than just panicing.
-    let bootstrap_causets: Vec<causet<edn::ValueAndSpan>> = edn::parse::causets(&bootstrap_assertions.to_string()).expect("bootstrap assertions");
+    let bootstrap_causets: Vec<causet<edn::ValueAndSpan>> = edn::parse::causets(&bootstrap_lightlike_dagger_upsert.to_string()).expect("bootstrap lightlike_dagger_upsert");
     return bootstrap_causets;
 }

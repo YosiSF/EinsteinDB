@@ -11,9 +11,9 @@
 use einsteindbpb::Limit;
 
 use crate::{Executor, Row};
-use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;
-use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
-use allegroeinstein-prolog-causet-sql::Result;
+use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::ExecuteStats;
+use allegroeinstein-prolog-causet-BerolinaSQL::storage::IntervalRange;
+use allegroeinstein-prolog-causet-BerolinaSQL::Result;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalWarnings;
 
 /// Retrieves rows from the source executor and only produces part of the rows.

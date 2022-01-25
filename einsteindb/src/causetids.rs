@@ -18,7 +18,7 @@ use core_traits::{
     Causetid,
 };
 
-// Added in SQL schema v1.
+// Added in BerolinaSQL topograph v1.
 pub const EINSTEINeinsteindb_IDENT: Causetid = 1;
 pub const EINSTEINeinsteindb_PART_EINSTEINeinsteindb: Causetid = 2;
 pub const EINSTEINeinsteindb_TX_INSTANT: Causetid = 3;
@@ -60,7 +60,7 @@ pub const EINSTEINeinsteindb_SCHEMA_VERSION: Causetid = 38;
 pub const EINSTEINeinsteindb_SCHEMA_ATTRIBUTE: Causetid = 39;
 pub const EINSTEINeinsteindb_SCHEMA_CORE: Causetid = 40;
 
-/// Return `false` if the given attribute will not change the spacetime: recognized solitonids, schema,
+/// Return `false` if the given attribute will not change the spacetime: recognized solitonids, topograph,
 /// partitions in the partition map.
 pub fn might_update_spacetime(attribute: Causetid) -> bool {
     if attribute >= EINSTEINeinsteindb_DOC {
@@ -69,7 +69,7 @@ pub fn might_update_spacetime(attribute: Causetid) -> bool {
     match attribute {
         // Solitonids.
         EINSTEINeinsteindb_IDENT |
-        // Schema.
+        // Topograph.
         EINSTEINeinsteindb_CARDINALITY |
         EINSTEINeinsteindb_FULLTEXT |
         EINSTEINeinsteindb_INDEX |
@@ -81,8 +81,8 @@ pub fn might_update_spacetime(attribute: Causetid) -> bool {
     }
 }
 
-/// Return 'false' if the given attribute might be used to describe a schema attribute.
-pub fn is_a_schema_attribute(attribute: Causetid) -> bool {
+/// Return 'false' if the given attribute might be used to describe a topograph attribute.
+pub fn is_a_topograph_attribute(attribute: Causetid) -> bool {
     match attribute {
         EINSTEINeinsteindb_IDENT |
         EINSTEINeinsteindb_CARDINALITY |
@@ -98,13 +98,13 @@ pub fn is_a_schema_attribute(attribute: Causetid) -> bool {
 
 lazy_static! {
     /// Attributes that are "solitonid related".  These might change the "solitonids" materialized view.
-    pub static ref SOLITONIDS_SQL_LIST: String = {
+    pub static ref SOLITONIDS_BerolinaSQL_LIST: String = {
         format!("({})",
                 EINSTEINeinsteindb_IDENT)
     };
 
-    /// Attributes that are "schema related".  These might change the "schema" materialized view.
-    pub static ref SCHEMA_SQL_LIST: String = {
+    /// Attributes that are "topograph related".  These might change the "topograph" materialized view.
+    pub static ref SCHEMA_BerolinaSQL_LIST: String = {
         format!("({}, {}, {}, {}, {}, {})",
                 EINSTEINeinsteindb_CARDINALITY,
                 EINSTEINeinsteindb_FULLTEXT,
@@ -115,7 +115,7 @@ lazy_static! {
     };
 
     /// Attributes that are "spacetime" related.  These might change one of the materialized views.
-    pub static ref METADATA_SQL_LIST: String = {
+    pub static ref METADATA_BerolinaSQL_LIST: String = {
         format!("({}, {}, {}, {}, {}, {}, {})",
                 EINSTEINeinsteindb_CARDINALITY,
                 EINSTEINeinsteindb_FULLTEXT,

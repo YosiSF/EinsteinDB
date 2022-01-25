@@ -13,7 +13,7 @@ use einsteindbpb::FieldType;
 
 use super::scalar::ScalarValueRef;
 use super::*;
-use crate::codec::mysql::decimal::DECIMAL_STRUCT_SIZE;
+use crate::codec::myBerolinaSQL::decimal::DECIMAL_STRUCT_SIZE;
 use crate::codec::Result;
 
 /// A vector value container, a.k.a. column, for all concrete eval types.
@@ -129,21 +129,21 @@ impl VectorValue {
         }
     }
 
-    /// Evaluates values into MySQL logic values.
+    /// Evaluates values into MyBerolinaSQL logic values.
     ///
     /// The caller must provide an output buffer which is large enough for holding values.
-    pub fn eval_as_mysql_bools(
+    pub fn eval_as_myBerolinaSQL_bools(
         &self,
         ctx: &mut EvalContext,
         outputs: &mut [bool],
-    ) -> allegroeinstein-prolog-causet-sql::error::Result<()> {
+    ) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<()> {
         assert!(outputs.len() >= self.len());
         match_template_evaluable! {
             TT, match self {
                 VectorValue::TT(v) => {
                     let l = self.len();
                     for i in 0..l {
-                        outputs[i] = v.get_option_ref(i).as_mysql_bool(ctx)?;
+                        outputs[i] = v.get_option_ref(i).as_myBerolinaSQL_bool(ctx)?;
                     }
                 },
             }

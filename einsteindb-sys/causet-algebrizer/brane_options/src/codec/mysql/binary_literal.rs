@@ -68,7 +68,7 @@ impl BinaryLiteral {
     }
 
     /// Parses hexadecimal string literal.
-    /// See https://dev.mysql.com/doc/refman/5.7/en/hexadecimal-literals.html
+    /// See https://dev.myBerolinaSQL.com/doc/refman/5.7/en/hexadecimal-literals.html
     pub fn from_hex_str(s: &str) -> Result<Self> {
         if s.is_empty() {
             return Err(box_err!(
@@ -108,7 +108,7 @@ impl BinaryLiteral {
 
     /// Parses bit string.
     /// The string format can be b'val', B'val' or 0bval, val must be 0 or 1.
-    /// See https://dev.mysql.com/doc/refman/5.7/en/bit-value-literals.html
+    /// See https://dev.myBerolinaSQL.com/doc/refman/5.7/en/bit-value-literals.html
     pub fn from_bit_str(s: &str) -> Result<Self> {
         if s.is_empty() {
             return Err(box_err!("invalid empty string for parsing bit type"));
@@ -310,7 +310,7 @@ mod tests {
             ("x'01+'", vec![], true),
             ("0x123", vec![0x01, 0x23], false),
             ("0x10", vec![0x10], false),
-            ("0x4D7953514C", b"MySQL".to_vec(), false),
+            ("0x4D7953514C", b"MyBerolinaSQL".to_vec(), false),
             (
                 "0x4920616D2061206C6F6E672068657820737472696E67",
                 b"I am a long hex string".to_vec(),

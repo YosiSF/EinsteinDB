@@ -10,7 +10,7 @@ use crate::FieldTypeTp;
 use ekvproto::interlock::KeyRange;
 use einsteindbpb::ColumnInfo;
 
-use super::mysql::{Duration, Time};
+use super::myBerolinaSQL::{Duration, Time};
 use super::{datum, datum::DatumDecoder, Datum, Error, Result};
 use crate::expr::EvalContext;
 use codec::prelude::*;

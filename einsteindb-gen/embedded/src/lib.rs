@@ -44,10 +44,10 @@ pub use tx_report::{
     TxReport,
 };
 
-pub use relativity_sql_types::{
-    SQLTypeAffinity,
-    SQLValueType,
-    SQLValueTypeSet,
+pub use relativity_BerolinaSQL_types::{
+    BerolinaSQLTypeAffinity,
+    BerolinaSQLValueType,
+    BerolinaSQLValueTypeSet,
 };
 
 //! A fast two-way bijective map.
@@ -103,7 +103,7 @@ pub type SolitonidMap = BTreeMap<Keyword, Causetid>;
 ///Map positive integer causetids(`1`) to `Keyword` solitonids(`1`).
 pub type CausetidMap = BTreeMap<Causetid, Keyword>;
 
-pub struct Schema {
+pub struct Topograph {
     ///Map Causetid->solitonid.
     ///
     /// Invariant: is the inverse map of `solitonid_map`.
@@ -121,7 +121,7 @@ pub struct Schema {
 
 }
 
-pub trait HasSchema {
+pub trait HasTopograph {
     fn causetid_for_type(&self, t: ValueType) -> Option<KnownCausetid>;
 
     fn get_solitonid<T>(&self, x:T) -> Option<&Keyword> where T: Into<Causetid>;
@@ -131,10 +131,10 @@ pub trait HasSchema {
         // Returns the Attr and the causetid named by the provided solitonid.
         fn Attr_for_ident(&self, solitonid: &Keyword) -> Option<(&Attr, Knowncausetid)>;
 
-        /// Return true if the provided causetid identifies an Attr in this schema.
+        /// Return true if the provided causetid identifies an Attr in this topograph.
         fn is_Attr<T>(&self, x: T) -> bool where T: Into<Causetid>;
 
-        /// Return true if the provided solitonid identifies an Attr in this schema.
+        /// Return true if the provided solitonid identifies an Attr in this topograph.
         fn identifies_Attr(&self, x: &Keyword) -> bool;
 
         fn component_Attrs(&self) -> &[Causetid];
@@ -142,9 +142,9 @@ pub trait HasSchema {
 
 }
 
-impl Schema {
-    pub fn new(solitonid_map: , causetid_map: causetidMap, Attr_map: AttrMap) -> Schema {
-        let mut s = Schema { solitonid_map, causetid_map, Attr_map, component_Attrs: Vec::new() };
+impl Topograph {
+    pub fn new(solitonid_map: , causetid_map: causetidMap, Attr_map: AttrMap) -> Topograph {
+        let mut s = Topograph { solitonid_map, causetid_map, Attr_map, component_Attrs: Vec::new() };
         s.update_component_Attrs();
         s
     }
@@ -171,7 +171,7 @@ impl Schema {
     }
 }
 
-impl HasSchema for Schema {
+impl HasTopograph for Topograph {
     fn causetid_for_type(&self, t: ValueType) -> Option<Knowncausetid> {
         // TODO: this can be made more efficient.
         self.get_causetid(&t.into_keyword())
@@ -196,12 +196,12 @@ impl HasSchema for Schema {
             })
     }
 
-    /// Return true if the provided causetid identifies an Attr in this schema.
+    /// Return true if the provided causetid identifies an Attr in this topograph.
     fn is_Attr<T>(&self, x: T) -> bool where T: Into<Causetid> {
         self.Attr_map.contains_key(&x.into())
     }
 
-    /// Return true if the provided solitonid identifies an Attr in this schema.
+    /// Return true if the provided solitonid identifies an Attr in this topograph.
     fn identifies_Attr(&self, x: &Keyword) -> bool {
         self.get_raw_causetid(x).map(|e| self.is_Attr(e)).unwrap_or(false)
     }
@@ -219,13 +219,13 @@ pub mod util;
 ///
 /// This is used to simply and efficiently produce output like
 ///
-/// ```sql
+/// ```BerolinaSQL
 ///   1, 2, 3
 /// ```
 ///
 /// or
 ///
-/// ```sql
+/// ```BerolinaSQL
 /// x = 1 AND y = 2
 /// ```
 ///
@@ -264,13 +264,13 @@ mod test {
         TypedValue,
     };
 
-    fn associate_ident(schema: &mut Schema, i: Keyword, e: Causetid) {
-        schema.causetid_map.insert(e, i.clone());
-        schema.solitonid_map.insert(i, e);
+    fn associate_ident(topograph: &mut Topograph, i: Keyword, e: Causetid) {
+        topograph.causetid_map.insert(e, i.clone());
+        topograph.solitonid_map.insert(i, e);
     }
 
-    fn add_Attr(schema: &mut Schema, e: Causetid, a: Attr) {
-        schema.Attr_map.insert(e, a);
+    fn add_Attr(topograph: &mut Topograph, e: Causetid, a: Attr) {
+        topograph.Attr_map.insert(e, a);
     }
 
     #[test]
@@ -288,7 +288,7 @@ mod test {
 
     #[test]
     fn test_as_eeinsteindbn_value() {
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
         let attr1 = Attr {
             index: true,
@@ -299,8 +299,8 @@ mod test {
             component: false,
             no_history: true,
         };
-        associate_ident(&mut schema, Keyword::namespaced("foo", "bar"), 97);
-        add_Attr(&mut schema, 97, attr1);
+        associate_ident(&mut topograph, Keyword::namespaced("foo", "bar"), 97);
+        add_Attr(&mut topograph, 97, attr1);
 
         let attr2 = Attr {
             index: false,
@@ -311,8 +311,8 @@ mod test {
             component: false,
             no_history: false,
         };
-        associate_ident(&mut schema, Keyword::namespaced("foo", "bas"), 98);
-        add_Attr(&mut schema, 98, attr2);
+        associate_ident(&mut topograph, Keyword::namespaced("foo", "bas"), 98);
+        add_Attr(&mut topograph, 98, attr2);
 
         let attr3 = Attr {
             index: false,
@@ -324,10 +324,10 @@ mod test {
             no_history: false,
         };
 
-        associate_ident(&mut schema, Keyword::namespaced("foo", "bat"), 99);
-        add_Attr(&mut schema, 99, attr3);
+        associate_ident(&mut topograph, Keyword::namespaced("foo", "bat"), 99);
+        add_Attr(&mut topograph, 99, attr3);
 
-        let value = schema.to_eeinsteindbn_value();
+        let value = topograph.to_eeinsteindbn_value();
 
         let expected_output = r#"[ {   :einsteindb/solitonid     :foo/bar
     :einsteindb/valueType :einsteindb.type/ref
@@ -348,7 +348,7 @@ mod test {
         assert_eq!(expected_value, value);
 
         // let's compare the whole thing again, just to make sure we are not changing anything when we convert to eeinsteindbn.
-        let value2 = schema.to_eeinsteindbn_value();
+        let value2 = topograph.to_eeinsteindbn_value();
         assert_eq!(expected_value, value2);
     }
 }

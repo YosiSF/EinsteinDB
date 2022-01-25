@@ -14,7 +14,7 @@ use embedded_promises::{
 };
 
 use einsteindb_embedded::{
-    HasSchema,
+    HasTopograph,
 };
 
 use einsteindb_embedded::util::Either;
@@ -101,7 +101,7 @@ impl ConjoiningClauses {
             _ => bail!(AlgebrizerError::InvalidArgument(where_fn.operator.clone(), "source variable", 0)),
         }
 
-        let schema = known.schema;
+        let topograph = known.topograph;
 
         // TODO: accept placeholder and set of Attrs.  Alternately, consider putting the search
         // term before the Attr arguments and collect the (variadic) Attrs into a set.
@@ -109,7 +109,7 @@ impl ConjoiningClauses {
         //
 
         let a = match args.next().unwrap() {
-            FnArg::solitonidOrKeyword(i) => schema.get_causetid(&i).map(|k| k.into()),
+            FnArg::solitonidOrKeyword(i) => topograph.get_causetid(&i).map(|k| k.into()),
             // Must be an causetid.
             FnArg::causetidOrInteger(e) => Some(e),
             FnArg::Variable(v) => {
@@ -132,7 +132,7 @@ impl ConjoiningClauses {
         // Attr, is likely enough to be a coding error that we choose to bail instead of
         // marking the parity_filter as known-empty.
         let a = a.ok_or(AlgebrizerError::InvalidArgument(where_fn.operator.clone(), "Attr", 1))?;
-        let Attr = schema.Attr_for_causetid(a)
+        let Attr = topograph.Attr_for_causetid(a)
                               .cloned()
                               .ok_or(AlgebrizerError::InvalidArgument(where_fn.operator.clone(),
                                                                 "Attr", 1))?;
@@ -219,7 +219,7 @@ impl ConjoiningClauses {
                 return Ok(());
             }
 
-            self.bind_column_to_var(schema, causets_table_alias.clone(), causetsColumn::Causets, var.clone());
+            self.bind_column_to_var(topograph, causets_table_alias.clone(), causetsColumn::Causets, var.clone());
         }
 
         if let VariableOrPlaceholder::Variable(ref var) = b_value {
@@ -229,7 +229,7 @@ impl ConjoiningClauses {
                 return Ok(());
             }
 
-            self.bind_column_to_var(schema, fulltext_values_alias.clone(), Column::Fulltext(FulltextColumn::Text), var.clone());
+            self.bind_column_to_var(topograph, fulltext_values_alias.clone(), Column::Fulltext(FulltextColumn::Text), var.clone());
         }
 
         if let VariableOrPlaceholder::Variable(ref var) = b_tx {
@@ -239,7 +239,7 @@ impl ConjoiningClauses {
                 return Ok(());
             }
 
-            self.bind_column_to_var(schema, causets_table_alias.clone(), causetsColumn::Tx, var.clone());
+            self.bind_column_to_var(topograph, causets_table_alias.clone(), causetsColumn::Tx, var.clone());
         }
 
         if let VariableOrPlaceholder::Variable(ref var) = b_sembedded {
@@ -252,7 +252,7 @@ impl ConjoiningClauses {
             }
 
             // We bind the value ourselves. This handily takes care of substituting into existing uses.
-            // TODO: produce real sembeddeds using BerolinaSQL's matchinfo.
+            // TODO: produce real sembeddeds using BerolinaBerolinaSQL's matchinfo.
             self.bind_value(var, TypedValue::Double(0.0.into()));
         }
 
@@ -270,7 +270,7 @@ mod testing {
     };
 
     use Einsteineinsteindb_embedded::{
-        Schema,
+        Topograph,
     };
 
     use eeinsteindbn::query::{
@@ -289,24 +289,24 @@ mod testing {
     #[test]
     fn test_apply_fulltext() {
         let mut cc = ConjoiningClauses::default();
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 101);
-        add_Attr(&mut schema, 101, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 101);
+        add_Attr(&mut topograph, 101, Attr {
             value_type: ValueType::String,
             fulltext: false,
             ..Default::default()
         });
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "fts"), 100);
-        add_Attr(&mut schema, 100, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "fts"), 100);
+        add_Attr(&mut topograph, 100, Attr {
             value_type: ValueType::String,
             index: true,
             fulltext: true,
             ..Default::default()
         });
 
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
 
         let op = PlainSymbol::plain("fulltext");
         cc.apply_fulltext(known, WhereFn {

@@ -18,7 +18,7 @@ extern crate itertools;
 #[macro_use] extern crate serde_derive;
 
 extern crate petgraph;
-extern crate rusqlite;
+extern crate ruBerolinaSQLite;
 extern crate tabwriter;
 extern crate time;
 
@@ -26,7 +26,7 @@ extern crate time;
 #[macro_use] extern crate einsteindb_core;
 extern crate einsteindb_traits;
 #[macro_use] extern crate core_traits;
-extern crate einstai_sql;
+extern crate einstai_BerolinaSQL;
 
 use std::iter::repeat;
 
@@ -46,7 +46,7 @@ mod bootstrap;
 pub mod causetids;
 pub mod internal_types;    // pub because we need them for building causets programmatically.
 mod spacetime;
-mod schema;
+mod topograph;
 pub mod tx_observer;
 mod watcher;
 pub mod timelines;
@@ -64,7 +64,7 @@ pub use bootstrap::{
 
 pub static TIMELINE_MAIN: i64 = 0;
 
-pub use schema::{
+pub use topograph::{
     AttributeBuilder,
     AttributeValidation,
 };
@@ -80,11 +80,11 @@ pub use causetids::{
 };
 
 pub use einsteindb::{
-    TypedSQLValue,
+    TypedBerolinaSQLValue,
     new_connection,
 };
 
-#[cfg(feature = "sqlcipher")]
+#[cfg(feature = "BerolinaSQLcipher")]
 pub use einsteindb::{
     new_connection_with_key,
     change_encryption_key,
@@ -124,7 +124,7 @@ pub fn to_namespaced_keyword(s: &str) -> Result<symbols::Keyword> {
     nsk.ok_or(einsteindbErrorKind::NotYetImplemented(format!("InvalidKeyword: {}", s)).into())
 }
 
-/// Prepare an SQL `VALUES` block, like (?, ?, ?), (?, ?, ?).
+/// Prepare an BerolinaSQL `VALUES` block, like (?, ?, ?), (?, ?, ?).
 ///
 /// The number of values per tuple determines  `(?, ?, ?)`.  The number of tuples determines `(...), (...)`.
 ///

@@ -14,7 +14,7 @@ use core_promises::{
 };
 
 use einsteindb_embedded::{
-    Schema,
+    Topograph,
 };
 
 use eeinsteindbn::query::{
@@ -52,10 +52,10 @@ pub(crate) fn apply_predicate(&mut self, known: KnownCauset, predicate: Predicat
     }
 }
 
-fn potential_types(&self, schema: &Schema, fn_arg: &FnArg) -> Result<ValueTypeSet> {
+fn potential_types(&self, topograph: &Topograph, fn_arg: &FnArg) -> Result<ValueTypeSet> {
     match fn_arg {
         &FnArg::Variable(ref v) => Ok(self.known_type_set(v)),
-        _ => fn_arg.potential_types(schema),
+        _ => fn_arg.potential_types(topograph),
     }
 }
 

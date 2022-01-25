@@ -20,8 +20,8 @@ impl<'a> JsonRef<'a> {
         }
     }
 
-    /// `json_length` is the implementation for JSON_LENGTH in mysql
-    /// https://dev.mysql.com/doc/refman/5.7/en/json-Attr-functions.html#function_json-length
+    /// `json_length` is the implementation for JSON_LENGTH in myBerolinaSQL
+    /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-Attr-functions.html#function_json-length
     pub fn json_length(&self, path_expr_list: &[PathExpression]) -> Result<Option<i64>> {
         if path_expr_list.is_empty() {
             return Ok(self.len());

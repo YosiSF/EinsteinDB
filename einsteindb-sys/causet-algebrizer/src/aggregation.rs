@@ -19,9 +19,9 @@ use indexmap::IndexMap as OrderMap;
 
 use super::aggregate::{self, AggrFunc};
 use super::{Executor, ExprColumnRefVisitor, Row};
-use allegroeinstein-prolog-causet-sql::execute_stats::ExecuteStats;
-use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
-use allegroeinstein-prolog-causet-sql::Result;
+use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::ExecuteStats;
+use allegroeinstein-prolog-causet-BerolinaSQL::storage::IntervalRange;
+use allegroeinstein-prolog-causet-BerolinaSQL::Result;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum};
 use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
 use Milevaeinsteindb_query_normal_expr::Expression;
@@ -442,7 +442,7 @@ mod tests {
     use super::super::tests::*;
     use super::*;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum};
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::decimal::Decimal;
+    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::myBerolinaSQL::decimal::Decimal;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table;
 
     fn build_group_by(col_ids: &[i64]) -> Vec<Expr> {

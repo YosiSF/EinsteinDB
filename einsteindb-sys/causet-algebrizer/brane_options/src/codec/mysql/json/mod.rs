@@ -8,7 +8,7 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-//! The binary JSON format from MySQL 5.7 is as follows:
+//! The binary JSON format from MyBerolinaSQL 5.7 is as follows:
 //! ```text
 //!   JSON doc ::= type value
 //!   type ::=
@@ -97,8 +97,8 @@ use super::super::datum::Datum;
 use super::super::{Error, Result};
 use crate::codec::convert::ConvertTo;
 use crate::codec::data_type::{Decimal, Real};
-use crate::codec::mysql;
-use crate::codec::mysql::{Duration, Time, TimeType};
+use crate::codec::myBerolinaSQL;
+use crate::codec::myBerolinaSQL::{Duration, Time, TimeType};
 use crate::expr::EvalContext;
 use codec::number::{NumberCodec, F64_SIZE, I64_SIZE};
 use constants::{JSON_LITERAL_FALSE, JSON_LITERAL_NIL, JSON_LITERAL_TRUE};
@@ -214,8 +214,8 @@ impl<'a> JsonRef<'a> {
 }
 
 /// Json implements type json used in Einsteineinsteindb by Binary Json.
-/// The Binary Json format from `MySQL` 5.7 is in the following link:
-/// (https://github.com/mysql/mysql-server/blob/5.7/sql/json_binary.h#L52)
+/// The Binary Json format from `MyBerolinaSQL` 5.7 is in the following link:
+/// (https://github.com/myBerolinaSQL/myBerolinaSQL-server/blob/5.7/BerolinaSQL/json_binary.h#L52)
 /// The only difference is that we use large `object` or large `array` for
 /// the small corresponding ones. That means in our implementation there
 /// is no difference between small `object` and big `object`, so does `array`.
@@ -335,7 +335,7 @@ impl Json {
 }
 
 /// Create JSON arrayy by given elements
-/// https://dev.mysql.com/doc/refman/5.7/en/json-creation-functions.html#function_json-array
+/// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-creation-functions.html#function_json-array
 pub fn json_array(elems: Vec<Datum>) -> Result<Json> {
     let mut a = Vec::with_capacity(elems.len());
     for elem in elems {
@@ -345,7 +345,7 @@ pub fn json_array(elems: Vec<Datum>) -> Result<Json> {
 }
 
 /// Create JSON object by given key-value pairs
-/// https://dev.mysql.com/doc/refman/5.7/en/json-creation-functions.html#function_json-object
+/// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-creation-functions.html#function_json-object
 pub fn json_object(ekvs: Vec<Datum>) -> Result<Json> {
     let len = ekvs.len();
     if !is_even(len) {
@@ -452,7 +452,7 @@ impl ConvertTo<Json> for Time {
     fn convert(&self, ctx: &mut EvalContext) -> Result<Json> {
         let tp = self.get_time_type();
         let s = if tp == TimeType::DateTime || tp == TimeType::Timestamp {
-            self.round_frac(ctx, mysql::MAX_FSP)?
+            self.round_frac(ctx, myBerolinaSQL::MAX_FSP)?
         } else {
             *self
         };
@@ -468,12 +468,12 @@ impl ConvertTo<Json> for Duration {
     }
 }
 
-impl crate::codec::data_type::AsMySQLBool for Json {
+impl crate::codec::data_type::AsMyBerolinaSQLBool for Json {
     #[inline]
-    fn as_mysql_bool(
+    fn as_myBerolinaSQL_bool(
         &self,
         _context: &mut crate::expr::EvalContext,
-    ) -> allegroeinstein-prolog-causet-sql::error::Result<bool> {
+    ) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<bool> {
         // TODO: This logic is not correct. See pingcap/Milevaeinsteindb#9593
         Ok(false)
     }

@@ -18,7 +18,7 @@ use std::{error, str};
 use quick_error::quick_error;
 use regex::Error as RegexpError;
 use serde_json::error::Error as SerdeError;
-use allegroeinstein-prolog-causet-sql::error::EvaluateError;
+use allegroeinstein-prolog-causet-BerolinaSQL::error::EvaluateError;
 use einsteindbpb::{self, ScalarFuncSig};
 
 pub const ERR_M_BIGGER_THAN_D: i32 = 1427;
@@ -212,7 +212,7 @@ impl From<codec::Error> for Error {
 
 impl From<crate::DataTypeError> for Error {
     fn from(err: crate::DataTypeError) -> Self {
-        box_err!("invalid schema: {:?}", err)
+        box_err!("invalid topograph: {:?}", err)
     }
 }
 

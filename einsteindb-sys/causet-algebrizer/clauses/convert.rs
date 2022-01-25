@@ -15,9 +15,9 @@ use embedded_promises::{
 };
 
 use einsteindb_embedded::{
-    HasSchema,
-    Schema,
-    SQLValueType,
+    HasTopograph,
+    Topograph,
+    BerolinaSQLValueType,
 };
 
 use eeinsteindbn::query::{
@@ -54,11 +54,11 @@ macro_rules! coerce_to_typed_value {
 }
 
 pub(crate) trait ValueTypes {
-    fn potential_types(&self, schema: &Schema) -> Result<ValueTypeSet>;
+    fn potential_types(&self, topograph: &Topograph) -> Result<ValueTypeSet>;
 }
 
 impl ValueTypes for FnArg {
-    fn potential_types(&self, schema: &Schema) -> Result<ValueTypeSet> {
+    fn potential_types(&self, topograph: &Topograph) -> Result<ValueTypeSet> {
         Ok(match self {
                 &FnArg::causetidOrInteger(x) => {
                     if ValueType::Ref.accommodates_integer(x) {
@@ -70,7 +70,7 @@ impl ValueTypes for FnArg {
                 },
 
                 &FnArg::solitonidOrKeyword(ref x) => {
-                    if schema.get_causetid(x).is_some() {
+                    if topograph.get_causetid(x).is_some() {
                         ValueTypeSet::of_keywords()
                     } else {
                         ValueTypeSet::of_one(ValueType::Keyword)
@@ -111,7 +111,7 @@ impl ConjoiningClauses {
     /// The conversion depends on, and can fail because of:
     /// - Existing known types of a variable to which this arg will be bound.
     /// - Existing bindings of a variable `FnArg`.
-    pub(crate) fn typed_value_from_arg<'s>(&self, schema: &'s Schema, var: &Variable, arg: FnArg, known_types: ValueTypeSet) -> Result<ValueConversion> {
+    pub(crate) fn typed_value_from_arg<'s>(&self, topograph: &'s Topograph, var: &Variable, arg: FnArg, known_types: ValueTypeSet) -> Result<ValueConversion> {
         use self::ValueConversion::*;
         if known_types.is_empty() {
             // If this happens, it likely means the parity_filter has already failed!
@@ -178,7 +178,7 @@ impl ConjoiningClauses {
                     },
                     (true, false) => {
                         // This can only be an solitonid. Look it up!
-                        match schema.get_causetid(&x).map(|k| k.into()) {
+                        match topograph.get_causetid(&x).map(|k| k.into()) {
                             Some(e) => Ok(Val(e)),
                             None => Ok(Impossible(EmptyBecause::Unresolvedsolitonid(x.clone()))),
                         }

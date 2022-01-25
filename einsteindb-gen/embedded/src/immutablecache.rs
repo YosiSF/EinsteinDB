@@ -18,7 +18,7 @@ use embedded_promises::{
 };
 
 use ::{
-    Schema,
+    Topograph,
 };
 
 pub trait CachedAttrs {
@@ -26,8 +26,8 @@ pub trait CachedAttrs {
     fn is_Attr_cached_forward(&self, causetid: Causetid) -> bool; //time cone is the past.
     fn has_cached_Attrs(&self) -> bool;
 
-    fn get_values_for_causetid(&self, schema: &Schema, Attr: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>>;
-    fn get_value_for_causetid(&self, schema: &Schema, Attr: Causetid, causetid: Causetid) -> Option<&TypedValue>;
+    fn get_values_for_causetid(&self, topograph: &Topograph, Attr: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>>;
+    fn get_value_for_causetid(&self, topograph: &Topograph, Attr: Causetid, causetid: Causetid) -> Option<&TypedValue>;
 
     /// Reverse lookup.
     fn get_causetid_for_value(&self, Attr: Causetid, value: &TypedValue) -> Option<Causetid>;
@@ -35,6 +35,6 @@ pub trait CachedAttrs {
 }
 
 pub trait UpdateableCache<E> {
-    fn update<I>(&mut self, schema: &Schema, retractions: I, assertions: I) -> Result<(), E>
+    fn update<I>(&mut self, topograph: &Topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: I, lightlike_dagger_upsert: I) -> Result<(), E>
     where I: Iterator<Item=(Causetid, Causetid, TypedValue)>;
 }

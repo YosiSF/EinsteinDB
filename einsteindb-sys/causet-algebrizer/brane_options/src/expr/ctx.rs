@@ -5,12 +5,12 @@ use std::sync::Arc;
 use std::{i64, mem, u64};
 
 use super::{Error, Result};
-use crate::codec::mysql::Tz;
+use crate::codec::myBerolinaSQL::Tz;
 use einsteindbpb::PosetDagRequest;
 
 bitflags! {
-    /// Please refer to SQLMode in `mysql/const.go` in repo `pingcap/parser` for details.
-    pub struct SqlMode: u64 {
+    /// Please refer to BerolinaSQLMode in `myBerolinaSQL/const.go` in repo `pingcap/parser` for details.
+    pub struct BerolinaSQLMode: u64 {
         const STRICT_TRANS_TABLES = 1 << 22;
         const STRICT_ALL_TABLES = 1 << 23;
         const NO_ZERO_IN_DATE = 1 << 24;
@@ -29,10 +29,10 @@ bitflags! {
         /// truncate error.
         const IGNORE_TRUNCATE = 1;
         /// `TRUNCATE_AS_WARNING` indicates if truncate error should be returned as warning.
-        /// This flag only matters if `IGNORE_TRUNCATE` is not set, in strict sql mode, truncate error
-        /// should be returned as error, in non-strict sql mode, truncate error should be saved as warning.
+        /// This flag only matters if `IGNORE_TRUNCATE` is not set, in strict BerolinaSQL mode, truncate error
+        /// should be returned as error, in non-strict BerolinaSQL mode, truncate error should be saved as warning.
         const TRUNCATE_AS_WARNING = 1 << 1;
-        /// `PAD_CHAR_TO_FULL_LENGTH` indicates if sql_mode 'PAD_CHAR_TO_FULL_LENGTH' is set.
+        /// `PAD_CHAR_TO_FULL_LENGTH` indicates if BerolinaSQL_mode 'PAD_CHAR_TO_FULL_LENGTH' is set.
         const PAD_CHAR_TO_FULL_LENGTH = 1 << 2;
         /// `IN_INSERT_STMT` indicates if this is a INSERT statement.
         const IN_INSERT_STMT = 1 << 3;
@@ -41,8 +41,8 @@ bitflags! {
         /// `IN_SELECT_STMT` indicates if this is a SELECT statement.
         const IN_SELECT_STMT = 1 << 5;
         /// `OVERFLOW_AS_WARNING` indicates if overflow error should be returned as warning.
-        /// In strict sql mode, overflow error should be returned as error,
-        /// in non-strict sql mode, overflow error should be saved as warning.
+        /// In strict BerolinaSQL mode, overflow error should be returned as error,
+        /// in non-strict BerolinaSQL mode, overflow error should be saved as warning.
         const OVERFLOW_AS_WARNING = 1 << 6;
 
         /// DIVIDED_BY_ZERO_AS_WARNING indicates if DivideeinsteindbyZero should be returned as warning.
@@ -52,10 +52,10 @@ bitflags! {
     }
 }
 
-impl SqlMode {
+impl BerolinaSQLMode {
     /// Returns if 'STRICT_TRANS_TABLES' or 'STRICT_ALL_TABLES' mode is set.
     pub fn is_strict(self) -> bool {
-        self.contains(SqlMode::STRICT_TRANS_TABLES) || self.contains(SqlMode::STRICT_ALL_TABLES)
+        self.contains(BerolinaSQLMode::STRICT_TRANS_TABLES) || self.contains(BerolinaSQLMode::STRICT_ALL_TABLES)
     }
 }
 
@@ -69,7 +69,7 @@ pub struct EvalConfig {
     // TODO: max warning count is not really a EvalConfig. Instead it is a ExecutionConfig, because
     // warning is a executor stuff instead of a evaluation stuff.
     pub max_warning_cnt: usize,
-    pub sql_mode: SqlMode,
+    pub BerolinaSQL_mode: BerolinaSQLMode,
 }
 
 impl Default for EvalConfig {
@@ -93,8 +93,8 @@ impl EvalConfig {
         if req.has_max_warning_count() {
             eval_braneg.set_max_warning_cnt(req.get_max_warning_count() as usize);
         }
-        if req.has_sql_mode() {
-            eval_braneg.set_sql_mode(SqlMode::from_bits_truncate(req.get_sql_mode()));
+        if req.has_BerolinaSQL_mode() {
+            eval_braneg.set_BerolinaSQL_mode(BerolinaSQLMode::from_bits_truncate(req.get_BerolinaSQL_mode()));
         }
         Ok(eval_braneg)
     }
@@ -104,7 +104,7 @@ impl EvalConfig {
             tz: Tz::utc(),
             flag: Flag::empty(),
             max_warning_cnt: DEFAULT_MAX_WARNING_CNT,
-            sql_mode: SqlMode::empty(),
+            BerolinaSQL_mode: BerolinaSQLMode::empty(),
         }
     }
 
@@ -119,8 +119,8 @@ impl EvalConfig {
         self
     }
 
-    pub fn set_sql_mode(&mut self, new_value: SqlMode) -> &mut Self {
-        self.sql_mode = new_value;
+    pub fn set_BerolinaSQL_mode(&mut self, new_value: BerolinaSQLMode) -> &mut Self {
+        self.BerolinaSQL_mode = new_value;
         self
     }
 
@@ -255,12 +255,12 @@ impl EvalContext {
         {
             if !self
                 .braneg
-                .sql_mode
-                .contains(SqlMode::ERROR_FOR_DIVISION_BY_ZERO)
+                .BerolinaSQL_mode
+                .contains(BerolinaSQLMode::ERROR_FOR_DIVISION_BY_ZERO)
             {
                 return Ok(());
             }
-            if self.braneg.sql_mode.is_strict()
+            if self.braneg.BerolinaSQL_mode.is_strict()
                 && !self.braneg.flag.contains(Flag::DIVIDED_BY_ZERO_AS_WARNING)
             {
                 return Err(Error::division_by_zero());
@@ -274,7 +274,7 @@ impl EvalContext {
         // FIXME: Only some of the errors can be converted to warning.
         // See `handleInvalidTimeError` in Milevaeinsteindb.
 
-        if self.braneg.sql_mode.is_strict()
+        if self.braneg.BerolinaSQL_mode.is_strict()
             && (self.braneg.flag.contains(Flag::IN_INSERT_STMT)
                 || self.braneg.flag.contains(Flag::IN_UFIDelATE_OR_DELETE_STMT))
         {
@@ -314,8 +314,8 @@ impl EvalContext {
 
     /// Indicates whether values less than 0 should be clipped to 0 for unsigned
     /// integer types. This is the case for `insert`, `uFIDelate`, `alter table` and
-    /// `load data infile` statements, when not in strict SQL mode.
-    /// see https://dev.mysql.com/doc/refman/5.7/en/out-of-range-and-overflow.html
+    /// `load data infile` statements, when not in strict BerolinaSQL mode.
+    /// see https://dev.myBerolinaSQL.com/doc/refman/5.7/en/out-of-range-and-overflow.html
     pub fn should_clip_to_zero(&self) -> bool {
         self.braneg.flag.contains(Flag::IN_INSERT_STMT)
             || self.braneg.flag.contains(Flag::IN_LOAD_DATA_STMT)
@@ -366,42 +366,42 @@ mod tests {
     #[test]
     fn test_handle_division_by_zero() {
         let cases = vec![
-            //(flag,sql_mode,is_ok,is_empty)
-            (Flag::empty(), SqlMode::empty(), true, false), //warning
+            //(flag,BerolinaSQL_mode,is_ok,is_empty)
+            (Flag::empty(), BerolinaSQLMode::empty(), true, false), //warning
             (
                 Flag::IN_INSERT_STMT,
-                SqlMode::ERROR_FOR_DIVISION_BY_ZERO,
+                BerolinaSQLMode::ERROR_FOR_DIVISION_BY_ZERO,
                 true,
                 false,
             ), //warning
             (
                 Flag::IN_UFIDelATE_OR_DELETE_STMT,
-                SqlMode::ERROR_FOR_DIVISION_BY_ZERO,
+                BerolinaSQLMode::ERROR_FOR_DIVISION_BY_ZERO,
                 true,
                 false,
             ), //warning
             (
                 Flag::IN_UFIDelATE_OR_DELETE_STMT,
-                SqlMode::ERROR_FOR_DIVISION_BY_ZERO | SqlMode::STRICT_ALL_TABLES,
+                BerolinaSQLMode::ERROR_FOR_DIVISION_BY_ZERO | BerolinaSQLMode::STRICT_ALL_TABLES,
                 false,
                 true,
             ), //error
             (
                 Flag::IN_UFIDelATE_OR_DELETE_STMT,
-                SqlMode::STRICT_ALL_TABLES,
+                BerolinaSQLMode::STRICT_ALL_TABLES,
                 true,
                 true,
             ), //ok
             (
                 Flag::IN_UFIDelATE_OR_DELETE_STMT | Flag::DIVIDED_BY_ZERO_AS_WARNING,
-                SqlMode::ERROR_FOR_DIVISION_BY_ZERO | SqlMode::STRICT_ALL_TABLES,
+                BerolinaSQLMode::ERROR_FOR_DIVISION_BY_ZERO | BerolinaSQLMode::STRICT_ALL_TABLES,
                 true,
                 false,
             ), //warning
         ];
-        for (flag, sql_mode, is_ok, is_empty) in cases {
+        for (flag, BerolinaSQL_mode, is_ok, is_empty) in cases {
             let mut braneg = EvalConfig::new();
-            braneg.set_flag(flag).set_sql_mode(sql_mode);
+            braneg.set_flag(flag).set_BerolinaSQL_mode(BerolinaSQL_mode);
             let mut ctx = EvalContext::new(Arc::new(braneg));
             assert_eq!(ctx.handle_division_by_zero().is_ok(), is_ok);
             assert_eq!(ctx.take_warnings().warnings.is_empty(), is_empty);
@@ -411,7 +411,7 @@ mod tests {
     #[test]
     fn test_handle_invalid_time_error() {
         let cases = vec![
-            //(flag,strict_sql_mode,is_ok,is_empty)
+            //(flag,strict_BerolinaSQL_mode,is_ok,is_empty)
             (Flag::empty(), false, true, false),        //warning
             (Flag::empty(), true, true, false),         //warning
             (Flag::IN_INSERT_STMT, false, true, false), //warning
@@ -419,12 +419,12 @@ mod tests {
             (Flag::IN_UFIDelATE_OR_DELETE_STMT, true, false, true), //error
             (Flag::IN_INSERT_STMT, true, false, true),  //error
         ];
-        for (flag, strict_sql_mode, is_ok, is_empty) in cases {
+        for (flag, strict_BerolinaSQL_mode, is_ok, is_empty) in cases {
             let err = Error::invalid_time_format("");
             let mut braneg = EvalConfig::new();
             braneg.set_flag(flag);
-            if strict_sql_mode {
-                braneg.sql_mode.insert(SqlMode::STRICT_ALL_TABLES);
+            if strict_BerolinaSQL_mode {
+                braneg.BerolinaSQL_mode.insert(BerolinaSQLMode::STRICT_ALL_TABLES);
             }
             let mut ctx = EvalContext::new(Arc::new(braneg));
             assert_eq!(ctx.handle_invalid_time_error(err).is_ok(), is_ok);

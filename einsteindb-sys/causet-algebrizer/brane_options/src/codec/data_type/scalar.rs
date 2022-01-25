@@ -83,12 +83,12 @@ impl ScalarValue {
     }
 }
 
-impl AsMySQLBool for ScalarValue {
+impl AsMyBerolinaSQLBool for ScalarValue {
     #[inline]
-    fn as_mysql_bool(&self, context: &mut EvalContext) -> Result<bool> {
+    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
         match_template_evaluable! {
             TT, match self {
-                ScalarValue::TT(v) => v.as_ref().as_mysql_bool(context),
+                ScalarValue::TT(v) => v.as_ref().as_myBerolinaSQL_bool(context),
             }
         }
     }
@@ -474,7 +474,7 @@ impl<'a> PartialOrd for ScalarValueRef<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match_template_evaluable! {
             TT, match (self, other) {
-                // v1 and v2 are `Option<T>`. However, in MySQL NULL values are considered lower
+                // v1 and v2 are `Option<T>`. However, in MyBerolinaSQL NULL values are considered lower
                 // than any non-NULL value, so using `Option::PartialOrd` directly is fine.
                 (ScalarValueRef::TT(v1), ScalarValueRef::TT(v2)) => Some(v1.cmp(v2)),
                 _ => None,

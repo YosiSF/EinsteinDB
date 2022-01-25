@@ -10,7 +10,7 @@ use einsteindbpb::FieldType;
 use super::{check_fsp, Decimal, DEFAULT_FSP};
 use crate::codec::convert::ConvertTo;
 use crate::codec::error::{ERR_DATA_OUT_OF_RANGE, ERR_TRUNCATE_WRONG_VALUE};
-use crate::codec::mysql::{Time as DateTime, TimeType, MAX_FSP};
+use crate::codec::myBerolinaSQL::{Time as DateTime, TimeType, MAX_FSP};
 use crate::codec::{Error, Result, TEN_POW};
 use crate::expr::EvalContext;
 
@@ -418,7 +418,7 @@ impl Duration {
 
     /// Parses the time from a formatted string with a fractional seconds part,
     /// returns the duration type `Time` value.
-    /// See: http://dev.mysql.com/doc/refman/5.7/en/fractional-seconds.html
+    /// See: http://dev.myBerolinaSQL.com/doc/refman/5.7/en/fractional-seconds.html
     pub fn parse(ctx: &mut EvalContext, input: &[u8], fsp: i8) -> Result<Duration> {
         let input = std::str::from_utf8(input)?.trim();
         let fsp = check_fsp(fsp)?;
@@ -642,12 +642,12 @@ pub trait DurationDecoder: NumberDecoder {
 
 impl<T: BufferReader> DurationDecoder for T {}
 
-impl crate::codec::data_type::AsMySQLBool for Duration {
+impl crate::codec::data_type::AsMyBerolinaSQLBool for Duration {
     #[inline]
-    fn as_mysql_bool(
+    fn as_myBerolinaSQL_bool(
         &self,
         _context: &mut crate::expr::EvalContext,
-    ) -> allegroeinstein-prolog-causet-sql::error::Result<bool> {
+    ) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<bool> {
         Ok(!self.is_zero())
     }
 }
@@ -656,7 +656,7 @@ impl crate::codec::data_type::AsMySQLBool for Duration {
 mod tests {
     use super::*;
     use crate::codec::data_type::DateTime;
-    use crate::codec::mysql::UNSPECIFIED_FSP;
+    use crate::codec::myBerolinaSQL::UNSPECIFIED_FSP;
     use crate::expr::{EvalConfig, EvalContext, Flag};
     use std::f64::EPSILON;
     use std::sync::Arc;
@@ -1010,7 +1010,7 @@ mod tests {
 
     #[test]
     fn test_checked_add_and_sub_duration() {
-        /// `MAX_TIME_IN_SECS` is the maximum for mysql time type.
+        /// `MAX_TIME_IN_SECS` is the maximum for myBerolinaSQL time type.
         const MAX_TIME_IN_SECS: i64 = MAX_HOUR_PART as i64 * SECS_PER_HOUR as i64
             + MAX_MINUTE_PART as i64 * SECS_PER_MINUTE
             + MAX_SECOND_PART as i64;
@@ -1228,7 +1228,7 @@ mod tests {
 #[braneg(test)]
 mod benches {
     use super::*;
-    use crate::codec::mysql::MAX_FSP;
+    use crate::codec::myBerolinaSQL::MAX_FSP;
 
     #[bench]
     fn bench_parse(b: &mut test::Bencher) {

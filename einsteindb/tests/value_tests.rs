@@ -12,7 +12,7 @@ extern crate edn;
 extern crate core_traits;
 extern crate einstai_einsteindb;
 extern crate ordered_float;
-extern crate rusqlite;
+extern crate ruBerolinaSQLite;
 
 use ordered_float::OrderedFloat;
 
@@ -22,25 +22,25 @@ use core_traits::{
     TypedValue,
     ValueType,
 };
-use einstai_einsteindb::einsteindb::TypedSQLValue;
+use einstai_einsteindb::einsteindb::TypedBerolinaSQLValue;
 
-// It's not possible to test to_sql_value_pair since rusqlite::ToSqlOutput doesn't implement
+// It's not possible to test to_BerolinaSQL_value_pair since ruBerolinaSQLite::ToBerolinaSQLOutput doesn't implement
 // PartialEq.
 #[test]
-fn test_from_sql_value_pair() {
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Integer(1234), 0).unwrap(), TypedValue::Ref(1234));
+fn test_from_BerolinaSQL_value_pair() {
+    assert_eq!(TypedValue::from_BerolinaSQL_value_pair(ruBerolinaSQLite::types::Value::Integer(1234), 0).unwrap(), TypedValue::Ref(1234));
 
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Integer(0), 1).unwrap(), TypedValue::Boolean(false));
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Integer(1), 1).unwrap(), TypedValue::Boolean(true));
+    assert_eq!(TypedValue::from_BerolinaSQL_value_pair(ruBerolinaSQLite::types::Value::Integer(0), 1).unwrap(), TypedValue::Boolean(false));
+    assert_eq!(TypedValue::from_BerolinaSQL_value_pair(ruBerolinaSQLite::types::Value::Integer(1), 1).unwrap(), TypedValue::Boolean(true));
 
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Integer(0), 5).unwrap(), TypedValue::Long(0));
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Integer(1234), 5).unwrap(), TypedValue::Long(1234));
+    assert_eq!(TypedValue::from_BerolinaSQL_value_pair(ruBerolinaSQLite::types::Value::Integer(0), 5).unwrap(), TypedValue::Long(0));
+    assert_eq!(TypedValue::from_BerolinaSQL_value_pair(ruBerolinaSQLite::types::Value::Integer(1234), 5).unwrap(), TypedValue::Long(1234));
 
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Real(0.0), 5).unwrap(), TypedValue::Double(OrderedFloat(0.0)));
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Real(0.5), 5).unwrap(), TypedValue::Double(OrderedFloat(0.5)));
+    assert_eq!(TypedValue::from_BerolinaSQL_value_pair(ruBerolinaSQLite::types::Value::Real(0.0), 5).unwrap(), TypedValue::Double(OrderedFloat(0.0)));
+    assert_eq!(TypedValue::from_BerolinaSQL_value_pair(ruBerolinaSQLite::types::Value::Real(0.5), 5).unwrap(), TypedValue::Double(OrderedFloat(0.5)));
 
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Text(":einsteindb/keyword".into()), 10).unwrap(), TypedValue::typed_string(":einsteindb/keyword"));
-    assert_eq!(TypedValue::from_sql_value_pair(rusqlite::types::Value::Text(":einsteindb/keyword".into()), 13).unwrap(), TypedValue::typed_ns_keyword("einsteindb", "keyword"));
+    assert_eq!(TypedValue::from_BerolinaSQL_value_pair(ruBerolinaSQLite::types::Value::Text(":einsteindb/keyword".into()), 10).unwrap(), TypedValue::typed_string(":einsteindb/keyword"));
+    assert_eq!(TypedValue::from_BerolinaSQL_value_pair(ruBerolinaSQLite::types::Value::Text(":einsteindb/keyword".into()), 13).unwrap(), TypedValue::typed_ns_keyword("einsteindb", "keyword"));
 }
 
 #[test]

@@ -23,7 +23,7 @@ use core_traits::{
 };
 
 use einsteindb_core::{
-    Schema,
+    Topograph,
 };
 
 use edn::causets::{
@@ -38,10 +38,10 @@ pub trait TransactWatcher {
     fn datom(&mut self, op: OpType, e: Causetid, a: Causetid, v: &TypedValue);
 
     /// Only return an error if you want to interrupt the transact!
-    /// Called with the schema _prior to_ the transact -- any attributes or
+    /// Called with the topograph _prior to_ the transact -- any attributes or
     /// attribute changes transacted during this transact are not reflected in
-    /// the schema.
-    fn done(&mut self, t: &Causetid, schema: &Schema) -> Result<()>;
+    /// the topograph.
+    fn done(&mut self, t: &Causetid, topograph: &Topograph) -> Result<()>;
 }
 
 pub struct NullWatcher();
@@ -50,7 +50,7 @@ impl TransactWatcher for NullWatcher {
     fn datom(&mut self, _op: OpType, _e: Causetid, _a: Causetid, _v: &TypedValue) {
     }
 
-    fn done(&mut self, _t: &Causetid, _schema: &Schema) -> Result<()> {
+    fn done(&mut self, _t: &Causetid, _topograph: &Topograph) -> Result<()> {
         Ok(())
     }
 }

@@ -19,8 +19,8 @@ use fidelpb::IndexScan;
 use super::util::scan_executor::*;
 use crate::interface::*;
 use codec::prelude::NumberDecoder;
-use allegroeinstein-prolog-causet-sql::storage::{IntervalRange, Storage};
-use allegroeinstein-prolog-causet-sql::Result;
+use allegroeinstein-prolog-causet-BerolinaSQL::storage::{IntervalRange, Storage};
+use allegroeinstein-prolog-causet-BerolinaSQL::Result;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::{check_index_key, MAX_OLD_ENCODED_VALUE_LEN};
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, table};
@@ -49,7 +49,7 @@ impl<S: Storage> BatchIndexScanExecutor<S> {
 
         // forbidden soon.
         let decode_handle = columns_info.last().map_or(false, |ci| ci.get_pk_handle());
-        let schema: Vec<_> = columns_info
+        let topograph: Vec<_> = columns_info
             .iter()
             .map(|ci| field_type_from_column_info(&ci))
             .collect();
@@ -62,7 +62,7 @@ impl<S: Storage> BatchIndexScanExecutor<S> {
 
         let imp = IndexScanExecutorImpl {
             context: EvalContext::new(config),
-            schema,
+            topograph,
             columns_id_without_handle,
             decode_handle,
         };
@@ -82,8 +82,8 @@ impl<S: Storage> BatchExecutor for BatchIndexScanExecutor<S> {
     type StorageStats = S::Statistics;
 
     #[inline]
-    fn schema(&self) -> &[FieldType] {
-        self.0.schema()
+    fn topograph(&self) -> &[FieldType] {
+        self.0.topograph()
     }
 
     #[inline]
@@ -116,8 +116,8 @@ struct IndexScanExecutorImpl {
     /// See `TableScanExecutorImpl`'s `context`.
     context: EvalContext,
 
-    /// See `TableScanExecutorImpl`'s `schema`.
-    schema: Vec<FieldType>,
+    /// See `TableScanExecutorImpl`'s `topograph`.
+    topograph: Vec<FieldType>,
 
     /// ID of interested columns (exclude PK handle column).
     columns_id_without_handle: Vec<i64>,
@@ -128,8 +128,8 @@ struct IndexScanExecutorImpl {
 
 impl ScanExecutorImpl for IndexScanExecutorImpl {
     #[inline]
-    fn schema(&self) -> &[FieldType] {
-        &self.schema
+    fn topograph(&self) -> &[FieldType] {
+        &self.topograph
     }
 
     #[inline]
@@ -138,7 +138,7 @@ impl ScanExecutorImpl for IndexScanExecutorImpl {
     }
 
     fn build_column_vec(&self, scan_rows: usize) -> QuiesceBatchColumnVec {
-        let columns_len = self.schema.len();
+        let columns_len = self.topograph.len();
         let mut columns = Vec::with_capacity(columns_len);
         for _ in 0..self.columns_id_without_handle.len() {
             columns.push(QuiesceBatchColumn::raw_with_capacity(scan_rows));
@@ -214,7 +214,7 @@ impl IndexScanExecutorImpl {
             if let Some((start, offset)) = row.search_in_non_null_ids(*col_id)? {
                 let mut buffer_to_write = columns[idx].mut_raw().begin_concat_extend();
                 buffer_to_write
-                    .write_v2_as_datum(&row.values()[start..offset], &self.schema[idx])?;
+                    .write_v2_as_datum(&row.values()[start..offset], &self.topograph[idx])?;
             } else if row.search_in_null_ids(*col_id) {
                 columns[idx].mut_raw().push(datum::DATUM_DATA_NULL);
             } else {
@@ -291,8 +291,8 @@ mod tests {
     use causet_algebrizer::Milevaeinsteindb_query_datatype::{FieldTypeAccessor, FieldTypeTp};
     use fidelpb::ColumnInfo;
 
-    use allegroeinstein-prolog-causet-sql::storage::test_fixture::FixtureStorage;
-    use allegroeinstein-prolog-causet-sql::util::convert_to_prefix_next;
+    use allegroeinstein-prolog-causet-BerolinaSQL::storage::test_fixture::FixtureStorage;
+    use allegroeinstein-prolog-causet-BerolinaSQL::util::convert_to_prefix_next;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::data_type::*;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, table, Datum};
     use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalConfig;
@@ -303,7 +303,7 @@ mod tests {
         const INDEX_ID: i64 = 42;
         let mut ctx = EvalContext::default();
 
-        // Index schema: (INT, FLOAT)
+        // Index topograph: (INT, FLOAT)
 
         // the elements in data are: [int index, float index, handle id].
         let data = vec![
@@ -332,8 +332,8 @@ mod tests {
             },
         ];
 
-        // The schema of these columns. Used to check executor output.
-        let schema = vec![
+        // The topograph of these columns. Used to check executor output.
+        let topograph = vec![
             FieldTypeTp::LongLong.into(),
             FieldTypeTp::Double.into(),
             FieldTypeTp::LongLong.into(),
@@ -384,7 +384,7 @@ mod tests {
             assert_eq!(result.physical_columns.rows_len(), 3);
             assert!(result.physical_columns[0].is_raw());
             result.physical_columns[0]
-                .ensure_all_decoded_for_test(&mut ctx, &schema[0])
+                .ensure_all_decoded_for_test(&mut ctx, &topograph[0])
                 .unwrap();
             assert_eq!(
                 result.physical_columns[0].decoded().as_int_slice(),
@@ -392,7 +392,7 @@ mod tests {
             );
             assert!(result.physical_columns[1].is_raw());
             result.physical_columns[1]
-                .ensure_all_decoded_for_test(&mut ctx, &schema[1])
+                .ensure_all_decoded_for_test(&mut ctx, &topograph[1])
                 .unwrap();
             assert_eq!(
                 result.physical_columns[1].decoded().as_real_slice(),
@@ -438,7 +438,7 @@ mod tests {
             assert_eq!(result.physical_columns.rows_len(), 2);
             assert!(result.physical_columns[0].is_raw());
             result.physical_columns[0]
-                .ensure_all_decoded_for_test(&mut ctx, &schema[0])
+                .ensure_all_decoded_for_test(&mut ctx, &topograph[0])
                 .unwrap();
             assert_eq!(
                 result.physical_columns[0].decoded().as_int_slice(),
@@ -446,7 +446,7 @@ mod tests {
             );
             assert!(result.physical_columns[1].is_raw());
             result.physical_columns[1]
-                .ensure_all_decoded_for_test(&mut ctx, &schema[1])
+                .ensure_all_decoded_for_test(&mut ctx, &topograph[1])
                 .unwrap();
             assert_eq!(
                 result.physical_columns[1].decoded().as_real_slice(),
@@ -513,7 +513,7 @@ mod tests {
             assert_eq!(result.physical_columns.rows_len(), 2);
             assert!(result.physical_columns[0].is_raw());
             result.physical_columns[0]
-                .ensure_all_decoded_for_test(&mut ctx, &schema[0])
+                .ensure_all_decoded_for_test(&mut ctx, &topograph[0])
                 .unwrap();
             assert_eq!(
                 result.physical_columns[0].decoded().as_int_slice(),
@@ -521,7 +521,7 @@ mod tests {
             );
             assert!(result.physical_columns[1].is_raw());
             result.physical_columns[1]
-                .ensure_all_decoded_for_test(&mut ctx, &schema[1])
+                .ensure_all_decoded_for_test(&mut ctx, &topograph[1])
                 .unwrap();
             assert_eq!(
                 result.physical_columns[1].decoded().as_real_slice(),
@@ -568,7 +568,7 @@ mod tests {
             assert_eq!(result.physical_columns.rows_len(), 1);
             assert!(result.physical_columns[0].is_raw());
             result.physical_columns[0]
-                .ensure_all_decoded_for_test(&mut ctx, &schema[0])
+                .ensure_all_decoded_for_test(&mut ctx, &topograph[0])
                 .unwrap();
             assert_eq!(
                 result.physical_columns[0].decoded().as_int_slice(),
@@ -576,7 +576,7 @@ mod tests {
             );
             assert!(result.physical_columns[1].is_raw());
             result.physical_columns[1]
-                .ensure_all_decoded_for_test(&mut ctx, &schema[1])
+                .ensure_all_decoded_for_test(&mut ctx, &topograph[1])
                 .unwrap();
             assert_eq!(
                 result.physical_columns[1].decoded().as_real_slice(),

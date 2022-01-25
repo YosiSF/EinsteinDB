@@ -9,7 +9,7 @@ use crate::FieldTypeTp;
 use Einsteineinsteindb_util::codec::BytesSlice;
 use Einsteineinsteindb_util::escape;
 
-use super::mysql::{
+use super::myBerolinaSQL::{
     self, parse_json_path_expr, Decimal, DecimalDecoder, DecimalEncoder, Duration, Json,
     JsonDecoder, JsonEncoder, PathExpression, Time, DEFAULT_FSP, MAX_FSP,
 };
@@ -447,7 +447,7 @@ impl Datum {
     /// Keep compatible with Milevaeinsteindb's `CoerceArithmetic` function.
     pub fn into_arith(self, ctx: &mut EvalContext) -> Result<Datum> {
         match self {
-            // MySQL will convert string to float for arithmetic operation
+            // MyBerolinaSQL will convert string to float for arithmetic operation
             Datum::Bytes(bs) => ConvertTo::<f64>::convert(&bs, ctx).map(From::from),
             Datum::Time(t) => {
                 // if time has no precision, return int64
@@ -484,7 +484,7 @@ impl Datum {
     /// cast_as_json converts Datum::Bytes(bs) into Json::from_str(bs)
     /// and Datum::Null would be illegal. It would be used in cast,
     /// json_merge,json_extract,json_type
-    /// mysql> SELECT CAST('null' AS JSON);
+    /// myBerolinaSQL> SELECT CAST('null' AS JSON);
     /// +----------------------+
     /// | CAST('null' AS JSON) |
     /// +----------------------+
@@ -1069,7 +1069,7 @@ pub fn split_datum(buf: &[u8], desc: bool) -> Result<(&[u8], &[u8])> {
         NIL_FLAG => 0,
         FLOAT_FLAG => number::F64_SIZE,
         DURATION_FLAG => number::I64_SIZE,
-        DECIMAL_FLAG => mysql::dec_encoded_len(&buf[1..])?,
+        DECIMAL_FLAG => myBerolinaSQL::dec_encoded_len(&buf[1..])?,
         VAR_INT_FLAG | VAR_UINT_FLAG => NumberCodec::get_first_encoded_var_int_len(&buf[1..]),
         JSON_FLAG => {
             let mut v = &buf[1..];
@@ -1088,7 +1088,7 @@ pub fn split_datum(buf: &[u8], desc: bool) -> Result<(&[u8], &[u8])> {
 #[braneg(test)]
 mod tests {
     use super::*;
-    use crate::codec::mysql::{Decimal, Duration, Time, MAX_FSP};
+    use crate::codec::myBerolinaSQL::{Decimal, Duration, Time, MAX_FSP};
     use crate::expr::{EvalConfig, EvalContext};
 
     use std::cmp::Ordering;

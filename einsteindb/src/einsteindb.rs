@@ -24,10 +24,10 @@ use std::path::Path;
 
 use itertools;
 use itertools::Itertools;
-use rusqlite;
-use rusqlite::TransactionBehavior;
-use rusqlite::limits::Limit;
-use rusqlite::types::{ToSql, ToSqlOutput};
+use ruBerolinaSQLite;
+use ruBerolinaSQLite::TransactionBehavior;
+use ruBerolinaSQLite::limits::Limit;
+use ruBerolinaSQLite::types::{ToBerolinaSQL, ToBerolinaSQLOutput};
 
 use ::{repeat_values, to_namespaced_keyword};
 use bootstrap;
@@ -54,7 +54,7 @@ use einsteindb_core::{
     AttributeMap,
     FromMicros,
     SolitonidMap,
-    Schema,
+    Topograph,
     ToMicros,
     ValueRc,
 };
@@ -65,8 +65,8 @@ use einsteindb_traits::errors::{
 };
 
 use spacetime;
-use schema::{
-    SchemaBuilding,
+use topograph::{
+    TopographBuilding,
 };
 use types::{
     AVMap,
@@ -86,17 +86,17 @@ fn escape_string_for_pragma(s: &str) -> String {
     s.replace("'", "''")
 }
 
-fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> rusqlite::Result<rusqlite::Connection> {
+fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> ruBerolinaSQLite::Result<ruBerolinaSQLite::Connection> {
     let conn = match uri.to_string_lossy().len() {
-        0 => rusqlite::Connection::open_in_memory()?,
-        _ => rusqlite::Connection::open(uri)?,
+        0 => ruBerolinaSQLite::Connection::open_in_memory()?,
+        _ => ruBerolinaSQLite::Connection::open(uri)?,
     };
 
     let page_size = 32768;
 
     let initial_pragmas = if let Some(encryption_key) = maybe_encryption_key {
-        assert!(cfg!(feature = "sqlcipher"),
-                "This function shouldn't be called with a key unless we have sqlcipher support");
+        assert!(cfg!(feature = "BerolinaSQLcipher"),
+                "This function shouldn't be called with a key unless we have BerolinaSQLcipher support");
 
         format!("
             PRAGMA key='{}';
@@ -119,18 +119,18 @@ fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> rusqlite::
     Ok(conn)
 }
 
-pub fn new_connection<T>(uri: T) -> rusqlite::Result<rusqlite::Connection> where T: AsRef<Path> {
+pub fn new_connection<T>(uri: T) -> ruBerolinaSQLite::Result<ruBerolinaSQLite::Connection> where T: AsRef<Path> {
     make_connection(uri.as_ref(), None)
 }
 
-#[cfg(feature = "sqlcipher")]
-pub fn new_connection_with_key<P, S>(uri: P, encryption_key: S) -> rusqlite::Result<rusqlite::Connection>
+#[cfg(feature = "BerolinaSQLcipher")]
+pub fn new_connection_with_key<P, S>(uri: P, encryption_key: S) -> ruBerolinaSQLite::Result<ruBerolinaSQLite::Connection>
 where P: AsRef<Path>, S: AsRef<str> {
     make_connection(uri.as_ref(), Some(encryption_key.as_ref()))
 }
 
-#[cfg(feature = "sqlcipher")]
-pub fn change_encryption_key<S>(conn: &rusqlite::Connection, encryption_key: S) -> rusqlite::Result<()>
+#[cfg(feature = "BerolinaSQLcipher")]
+pub fn change_encryption_key<S>(conn: &ruBerolinaSQLite::Connection, encryption_key: S) -> ruBerolinaSQLite::Result<()>
 where S: AsRef<str> {
     let escaped = escape_string_for_pragma(encryption_key.as_ref());
     // `conn.execute` complains that this returns a result, and using a query
@@ -140,26 +140,26 @@ where S: AsRef<str> {
 
 /// Version history:
 ///
-/// 1: initial Rust einstai schema.
+/// 1: initial Rust einstai topograph.
 pub const CURRENT_VERSION: i32 = 1;
 
-/// MIN_SQLITE_VERSION should be changed when there's a new minimum version of sqlite required
+/// MIN_BerolinaSQLITE_VERSION should be changed when there's a new minimum version of BerolinaSQLite required
 /// for the project to work.
-const MIN_SQLITE_VERSION: i32 = 3008000;
+const MIN_BerolinaSQLITE_VERSION: i32 = 3008000;
 
 const TRUE: &'static bool = &true;
 const FALSE: &'static bool = &false;
 
 /// Turn an owned bool into a static reference to a bool.
 ///
-/// `rusqlite` is designed around references to values; this lets us use computed bools easily.
+/// `ruBerolinaSQLite` is designed around references to values; this lets us use computed bools easily.
 #[inline(always)]
 fn to_bool_ref(x: bool) -> &'static bool {
     if x { TRUE } else { FALSE }
 }
 
 lazy_static! {
-    /// SQL statements to be executed, in order, to create the einstai SQL schema (version 1).
+    /// BerolinaSQL statements to be executed, in order, to create the einstai BerolinaSQL topograph (version 1).
     #[cfg_attr(rustfmt, rustfmt_skip)]
     static ref V1_STATEMENTS: Vec<&'static str> = { vec![
         r#"CREATE TABLE causets (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL,
@@ -183,7 +183,7 @@ lazy_static! {
         r#"CREATE INDEX idx_causets_fulltext ON causets (value_type_tag, v, a, e) WHERE index_fulltext IS NOT 0"#,
 
         // TODO: possibly remove this index.  :einsteindb.unique/{value,idcauset} should be asserted by the
-        // transactor in all cases, but the index may speed up some of SQLite's query planning.  For now,
+        // transactor in all cases, but the index may speed up some of BerolinaSQLite's query planning.  For now,
         // it serves to validate the transactor impleeinstaiion.  Note that tag is needed here to
         // differentiate, e.g., keywords and strings.
         r#"CREATE UNIQUE INDEX idx_causets_unique_value ON causets (a, value_type_tag, v) WHERE unique_value IS NOT 0"#,
@@ -237,8 +237,8 @@ lazy_static! {
         // Materialized views of the spacetime.
         r#"CREATE TABLE solitonids (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, value_type_tag SMALLINT NOT NULL)"#,
         r#"CREATE INDEX idx_solitonids_unique ON solitonids (e, a, v, value_type_tag)"#,
-        r#"CREATE TABLE schema (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, value_type_tag SMALLINT NOT NULL)"#,
-        r#"CREATE INDEX idx_schema_unique ON schema (e, a, v, value_type_tag)"#,
+        r#"CREATE TABLE topograph (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, value_type_tag SMALLINT NOT NULL)"#,
+        r#"CREATE INDEX idx_topograph_unique ON topograph (e, a, v, value_type_tag)"#,
 
         // TODO: store causetid instead of solitonid for partition name.
         r#"CREATE TABLE known_parts (part TEXT NOT NULL PRIMARY KEY, start INTEGER NOT NULL, end INTEGER NOT NULL, allow_excision SMALLINT NOT NULL)"#,
@@ -246,21 +246,21 @@ lazy_static! {
     };
 }
 
-/// Set the SQLite user version.
+/// Set the BerolinaSQLite user version.
 ///
-/// einstai manages its own SQL schema version using the user version.  See the [SQLite
-/// docueinstaiion](https://www.sqlite.org/pragma.html#pragma_user_version).
-fn set_user_version(conn: &rusqlite::Connection, version: i32) -> Result<()> {
+/// einstai manages its own BerolinaSQL topograph version using the user version.  See the [BerolinaSQLite
+/// docueinstaiion](https://www.BerolinaSQLite.org/pragma.html#pragma_user_version).
+fn set_user_version(conn: &ruBerolinaSQLite::Connection, version: i32) -> Result<()> {
     conn.execute(&format!("PRAGMA user_version = {}", version), &[])
         .context(einsteindbErrorKind::CouldNotSetVersionPragma)?;
     Ok(())
 }
 
-/// Get the SQLite user version.
+/// Get the BerolinaSQLite user version.
 ///
-/// einstai manages its own SQL schema version using the user version.  See the [SQLite
-/// docueinstaiion](https://www.sqlite.org/pragma.html#pragma_user_version).
-fn get_user_version(conn: &rusqlite::Connection) -> Result<i32> {
+/// einstai manages its own BerolinaSQL topograph version using the user version.  See the [BerolinaSQLite
+/// docueinstaiion](https://www.BerolinaSQLite.org/pragma.html#pragma_user_version).
+fn get_user_version(conn: &ruBerolinaSQLite::Connection) -> Result<i32> {
     let v = conn.query_row("PRAGMA user_version", &[], |row| {
         row.get(0)
     }).context(einsteindbErrorKind::CouldNotGetVersionPragma)?;
@@ -268,7 +268,7 @@ fn get_user_version(conn: &rusqlite::Connection) -> Result<i32> {
 }
 
 /// Do just enough work that either `create_current_version` or sync can populate the einsteindb.
-pub fn create_empty_current_version(conn: &mut rusqlite::Connection) -> Result<(rusqlite::Transaction, einsteindb)> {
+pub fn create_empty_current_version(conn: &mut ruBerolinaSQLite::Connection) -> Result<(ruBerolinaSQLite::Transaction, einsteindb)> {
     let tx = conn.transaction_with_behavior(TransactionBehavior::Exclusive)?;
 
     for statement in (&V1_STATEMENTS).iter() {
@@ -277,15 +277,15 @@ pub fn create_empty_current_version(conn: &mut rusqlite::Connection) -> Result<(
 
     set_user_version(&tx, CURRENT_VERSION)?;
 
-    let bootstrap_schema = bootstrap::bootstrap_schema();
+    let bootstrap_topograph = bootstrap::bootstrap_topograph();
     let bootstrap_partition_map = bootstrap::bootstrap_partition_map();
 
-    Ok((tx, einsteindb::new(bootstrap_partition_map, bootstrap_schema)))
+    Ok((tx, einsteindb::new(bootstrap_partition_map, bootstrap_topograph)))
 }
 
 /// Creates a partition map view for the main timeline based on partitions
 /// defined in 'known_parts'.
-fn create_current_partition_view(conn: &rusqlite::Connection) -> Result<()> {
+fn create_current_partition_view(conn: &ruBerolinaSQLite::Connection) -> Result<()> {
     let mut stmt = conn.prepare("SELECT part, end FROM known_parts ORDER BY end ASC")?;
     let known_parts: Result<Vec<(String, i64)>> = stmt.query_and_then(&[], |row| {
         Ok((
@@ -312,30 +312,30 @@ fn create_current_partition_view(conn: &rusqlite::Connection) -> Result<()> {
     Ok(())
 }
 
-// TODO: rename "SQL" functions to align with "causets" functions.
-pub fn create_current_version(conn: &mut rusqlite::Connection) -> Result<einsteindb> {
+// TODO: rename "BerolinaSQL" functions to align with "causets" functions.
+pub fn create_current_version(conn: &mut ruBerolinaSQLite::Connection) -> Result<einsteindb> {
     let (tx, mut einsteindb) = create_empty_current_version(conn)?;
 
     // TODO: think more carefully about allocating new parts and bitmasking part ranges.
-    // TODO: install these using bootstrap assertions.  It's tricky because the part ranges are implicit.
+    // TODO: install these using bootstrap lightlike_dagger_upsert.  It's tricky because the part ranges are implicit.
     // TODO: one insert, chunk into 999/3 sections, for safety.
     // This is necessary: `transact` will only UPDATE parts, not INSERT them if they're missing.
     for (part, partition) in einsteindb.partition_map.iter() {
-        // TODO: Convert "keyword" part to SQL using Value conversion.
+        // TODO: Convert "keyword" part to BerolinaSQL using Value conversion.
         tx.execute("INSERT INTO known_parts (part, start, end, allow_excision) VALUES (?, ?, ?, ?)", &[part, &partition.start, &partition.end, &partition.allow_excision])?;
     }
 
     create_current_partition_view(&tx)?;
 
-    // TODO: return to transact_internal to self-manage the encompassing SQLite transaction.
-    let bootstrap_schema_for_mutation = Schema::default(); // The bootstrap transaction will populate this schema.
+    // TODO: return to transact_internal to self-manage the encompassing BerolinaSQLite transaction.
+    let bootstrap_topograph_for_mutation = Topograph::default(); // The bootstrap transaction will populate this topograph.
 
-    let (_report, next_partition_map, next_schema, _watcher) = transact(&tx, einsteindb.partition_map, &bootstrap_schema_for_mutation, &einsteindb.schema, NullWatcher(), bootstrap::bootstrap_causets())?;
+    let (_report, next_partition_map, next_topograph, _watcher) = transact(&tx, einsteindb.partition_map, &bootstrap_topograph_for_mutation, &einsteindb.topograph, NullWatcher(), bootstrap::bootstrap_causets())?;
 
-    // TODO: validate spacetime mutations that aren't schema related, like additional partitions.
-    if let Some(next_schema) = next_schema {
-        if next_schema != einsteindb.schema {
-            bail!(einsteindbErrorKind::NotYetImplemented(format!("Initial bootstrap transaction did not produce expected bootstrap schema")));
+    // TODO: validate spacetime mutations that aren't topograph related, like additional partitions.
+    if let Some(next_topograph) = next_topograph {
+        if next_topograph != einsteindb.topograph {
+            bail!(einsteindbErrorKind::NotYetImplemented(format!("Initial bootstrap transaction did not produce expected bootstrap topograph")));
         }
     }
 
@@ -346,9 +346,9 @@ pub fn create_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
     Ok(einsteindb)
 }
 
-pub fn ensure_current_version(conn: &mut rusqlite::Connection) -> Result<einsteindb> {
-    if rusqlite::version_number() < MIN_SQLITE_VERSION {
-        panic!("einstai requires at least sqlite {}", MIN_SQLITE_VERSION);
+pub fn ensure_current_version(conn: &mut ruBerolinaSQLite::Connection) -> Result<einsteindb> {
+    if ruBerolinaSQLite::version_number() < MIN_BerolinaSQLITE_VERSION {
+        panic!("einstai requires at least BerolinaSQLite {}", MIN_BerolinaSQLITE_VERSION);
     }
 
     let user_version = get_user_version(&conn)?;
@@ -361,41 +361,41 @@ pub fn ensure_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
     }
 }
 
-pub trait TypedSQLValue {
-    fn from_sql_value_pair(value: rusqlite::types::Value, value_type_tag: i32) -> Result<TypedValue>;
-    fn to_sql_value_pair<'a>(&'a self) -> (ToSqlOutput<'a>, i32);
+pub trait TypedBerolinaSQLValue {
+    fn from_BerolinaSQL_value_pair(value: ruBerolinaSQLite::types::Value, value_type_tag: i32) -> Result<TypedValue>;
+    fn to_BerolinaSQL_value_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32);
     fn from_edn_value(value: &Value) -> Option<TypedValue>;
     fn to_edn_value_pair(&self) -> (Value, ValueType);
 }
 
-impl TypedSQLValue for TypedValue {
-    /// Given a SQLite `value` and a `value_type_tag`, return the corresponding `TypedValue`.
-    fn from_sql_value_pair(value: rusqlite::types::Value, value_type_tag: i32) -> Result<TypedValue> {
+impl TypedBerolinaSQLValue for TypedValue {
+    /// Given a BerolinaSQLite `value` and a `value_type_tag`, return the corresponding `TypedValue`.
+    fn from_BerolinaSQL_value_pair(value: ruBerolinaSQLite::types::Value, value_type_tag: i32) -> Result<TypedValue> {
         match (value_type_tag, value) {
-            (0, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Ref(x)),
-            (1, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Boolean(0 != x)),
+            (0, ruBerolinaSQLite::types::Value::Integer(x)) => Ok(TypedValue::Ref(x)),
+            (1, ruBerolinaSQLite::types::Value::Integer(x)) => Ok(TypedValue::Boolean(0 != x)),
 
             // Negative integers are simply times before 1970.
-            (4, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Instant(DateTime::<Utc>::from_micros(x))),
+            (4, ruBerolinaSQLite::types::Value::Integer(x)) => Ok(TypedValue::Instant(DateTime::<Utc>::from_micros(x))),
 
-            // SQLite distinguishes integral from decimal types, allowing long and double to
+            // BerolinaSQLite distinguishes integral from decimal types, allowing long and double to
             // share a tag.
-            (5, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Long(x)),
-            (5, rusqlite::types::Value::Real(x)) => Ok(TypedValue::Double(x.into())),
-            (10, rusqlite::types::Value::Text(x)) => Ok(x.into()),
-            (11, rusqlite::types::Value::Blob(x)) => {
+            (5, ruBerolinaSQLite::types::Value::Integer(x)) => Ok(TypedValue::Long(x)),
+            (5, ruBerolinaSQLite::types::Value::Real(x)) => Ok(TypedValue::Double(x.into())),
+            (10, ruBerolinaSQLite::types::Value::Text(x)) => Ok(x.into()),
+            (11, ruBerolinaSQLite::types::Value::Blob(x)) => {
                 let u = Uuid::from_bytes(x.as_slice());
                 if u.is_err() {
                     // Rather than exposing Uuid's ParseError…
-                    bail!(einsteindbErrorKind::BadSQLValuePair(rusqlite::types::Value::Blob(x),
+                    bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(ruBerolinaSQLite::types::Value::Blob(x),
                                                      value_type_tag));
                 }
                 Ok(TypedValue::Uuid(u.unwrap()))
             },
-            (13, rusqlite::types::Value::Text(x)) => {
+            (13, ruBerolinaSQLite::types::Value::Text(x)) => {
                 to_namespaced_keyword(&x).map(|k| k.into())
             },
-            (_, value) => bail!(einsteindbErrorKind::BadSQLValuePair(value, value_type_tag)),
+            (_, value) => bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(value, value_type_tag)),
         }
     }
 
@@ -419,18 +419,18 @@ impl TypedSQLValue for TypedValue {
         }
     }
 
-    /// Return the corresponding SQLite `value` and `value_type_tag` pair.
-    fn to_sql_value_pair<'a>(&'a self) -> (ToSqlOutput<'a>, i32) {
+    /// Return the corresponding BerolinaSQLite `value` and `value_type_tag` pair.
+    fn to_BerolinaSQL_value_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32) {
         match self {
-            &TypedValue::Ref(x) => (rusqlite::types::Value::Integer(x).into(), 0),
-            &TypedValue::Boolean(x) => (rusqlite::types::Value::Integer(if x { 1 } else { 0 }).into(), 1),
-            &TypedValue::Instant(x) => (rusqlite::types::Value::Integer(x.to_micros()).into(), 4),
-            // SQLite distinguishes integral from decimal types, allowing long and double to share a tag.
-            &TypedValue::Long(x) => (rusqlite::types::Value::Integer(x).into(), 5),
-            &TypedValue::Double(x) => (rusqlite::types::Value::Real(x.into_inner()).into(), 5),
-            &TypedValue::String(ref x) => (rusqlite::types::ValueRef::Text(x.as_str()).into(), 10),
-            &TypedValue::Uuid(ref u) => (rusqlite::types::Value::Blob(u.as_bytes().to_vec()).into(), 11),
-            &TypedValue::Keyword(ref x) => (rusqlite::types::ValueRef::Text(&x.to_string()).into(), 13),
+            &TypedValue::Ref(x) => (ruBerolinaSQLite::types::Value::Integer(x).into(), 0),
+            &TypedValue::Boolean(x) => (ruBerolinaSQLite::types::Value::Integer(if x { 1 } else { 0 }).into(), 1),
+            &TypedValue::Instant(x) => (ruBerolinaSQLite::types::Value::Integer(x.to_micros()).into(), 4),
+            // BerolinaSQLite distinguishes integral from decimal types, allowing long and double to share a tag.
+            &TypedValue::Long(x) => (ruBerolinaSQLite::types::Value::Integer(x).into(), 5),
+            &TypedValue::Double(x) => (ruBerolinaSQLite::types::Value::Real(x.into_inner()).into(), 5),
+            &TypedValue::String(ref x) => (ruBerolinaSQLite::types::ValueRef::Text(x.as_str()).into(), 10),
+            &TypedValue::Uuid(ref u) => (ruBerolinaSQLite::types::Value::Blob(u.as_bytes().to_vec()).into(), 11),
+            &TypedValue::Keyword(ref x) => (ruBerolinaSQLite::types::ValueRef::Text(&x.to_string()).into(), 13),
         }
     }
 
@@ -449,19 +449,19 @@ impl TypedSQLValue for TypedValue {
     }
 }
 
-/// Read an arbitrary [e a v value_type_tag] materialized view from the given table in the SQL
+/// Read an arbitrary [e a v value_type_tag] materialized view from the given table in the BerolinaSQL
 /// store.
-pub(crate) fn read_materialized_view(conn: &rusqlite::Connection, table: &str) -> Result<Vec<(Causetid, Causetid, TypedValue)>> {
-    let mut stmt: rusqlite::Statement = conn.prepare(format!("SELECT e, a, v, value_type_tag FROM {}", table).as_str())?;
+pub(crate) fn read_materialized_view(conn: &ruBerolinaSQLite::Connection, table: &str) -> Result<Vec<(Causetid, Causetid, TypedValue)>> {
+    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare(format!("SELECT e, a, v, value_type_tag FROM {}", table).as_str())?;
     let m: Result<Vec<_>> = stmt.query_and_then(
         &[],
-        row_to_datom_assertion
+        row_to_datom_lightlike_dagger_assertion
     )?.collect();
     m
 }
 
-/// Read the partition map materialized view from the given SQL store.
-pub fn read_partition_map(conn: &rusqlite::Connection) -> Result<PartitionMap> {
+/// Read the partition map materialized view from the given BerolinaSQL store.
+pub fn read_partition_map(conn: &ruBerolinaSQLite::Connection) -> Result<PartitionMap> {
     // An obviously expensive query, but we use it infrequently:
     // - on first start,
     // - while moving timelines,
@@ -469,7 +469,7 @@ pub fn read_partition_map(conn: &rusqlite::Connection) -> Result<PartitionMap> {
     // First part of the union sprinkles 'allow_excision' into the 'parts' view.
     // Second part of the union takes care of partitions which are known
     // but don't have any transactions.
-    let mut stmt: rusqlite::Statement = conn.prepare("
+    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare("
         SELECT
             known_parts.part,
             known_parts.start,
@@ -501,8 +501,8 @@ pub fn read_partition_map(conn: &rusqlite::Connection) -> Result<PartitionMap> {
     m
 }
 
-/// Read the solitonid map materialized view from the given SQL store.
-pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<SolitonidMap> {
+/// Read the solitonid map materialized view from the given BerolinaSQL store.
+pub(crate) fn read_ident_map(conn: &ruBerolinaSQLite::Connection) -> Result<SolitonidMap> {
     let v = read_materialized_view(conn, "solitonids")?;
     v.into_iter().map(|(e, a, typed_value)| {
         if a != causetids::einsteindb_IDENT {
@@ -516,22 +516,22 @@ pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<SolitonidMap
     }).collect()
 }
 
-/// Read the schema materialized view from the given SQL store.
-pub(crate) fn read_attribute_map(conn: &rusqlite::Connection) -> Result<AttributeMap> {
-    let causetid_triples = read_materialized_view(conn, "schema")?;
+/// Read the topograph materialized view from the given BerolinaSQL store.
+pub(crate) fn read_attribute_map(conn: &ruBerolinaSQLite::Connection) -> Result<AttributeMap> {
+    let causetid_triples = read_materialized_view(conn, "topograph")?;
     let mut attribute_map = AttributeMap::default();
     spacetime::update_attribute_map_from_causetid_triples(&mut attribute_map, causetid_triples, vec![])?;
     Ok(attribute_map)
 }
 
-/// Read the materialized views from the given SQL store and return a einstai `einsteindb` for querying and
+/// Read the materialized views from the given BerolinaSQL store and return a einstai `einsteindb` for querying and
 /// applying transactions.
-pub(crate) fn read_einsteindb(conn: &rusqlite::Connection) -> Result<einsteindb> {
+pub(crate) fn read_einsteindb(conn: &ruBerolinaSQLite::Connection) -> Result<einsteindb> {
     let partition_map = read_partition_map(conn)?;
     let ident_map = read_ident_map(conn)?;
     let attribute_map = read_attribute_map(conn)?;
-    let schema = Schema::from_ident_map_and_attribute_map(ident_map, attribute_map)?;
-    Ok(einsteindb::new(partition_map, schema))
+    let topograph = Topograph::from_ident_map_and_attribute_map(ident_map, attribute_map)?;
+    Ok(einsteindb::new(partition_map, topograph))
 }
 
 /// Internal representation of an [e a v added] datom, ready to be transacted against the store.
@@ -546,8 +546,8 @@ pub enum SearchType {
 /// `einstaiStoring` will be the trait that encapsulates the storage layer.  It is consumed by the
 /// transaction processing layer.
 ///
-/// Right now, the only impleeinstaiion of `einstaiStoring` is the SQLite-specific SQL schema.  In the
-/// future, we might consider other SQL engines (perhaps with different fulltext indexing), or
+/// Right now, the only impleeinstaiion of `einstaiStoring` is the BerolinaSQLite-specific BerolinaSQL topograph.  In the
+/// future, we might consider other BerolinaSQL engines (perhaps with different fulltext indexing), or
 /// entirely different data stores, say ones shaped like key-value stores.
 pub trait einstaiStoring {
     /// Given a slice of [a v] lookup-refs, look up the corresponding [e a v] triples.
@@ -557,7 +557,7 @@ pub trait einstaiStoring {
     /// chosen non-deterministically, if one exists.)
     ///
     /// Returns a map &(a, v) -> e, to avoid cloning potentially large values.  The keys of the map
-    /// are exactly those (a, v) pairs that have an assertion [e a v] in the store.
+    /// are exactly those (a, v) pairs that have an lightlike_dagger_assertion [e a v] in the store.
     fn resolve_avs<'a>(&self, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>>;
 
     /// Begin (or prepare) the underlying storage layer for a new einstai transaction.
@@ -566,7 +566,7 @@ pub trait einstaiStoring {
     /// `insert_non_fts_searches` invocation.
     fn begin_tx_application(&self) -> Result<()>;
 
-    // TODO: this is not a reasonable abstraction, but I don't want to really consider non-SQL storage just yet.
+    // TODO: this is not a reasonable abstraction, but I don't want to really consider non-BerolinaSQL storage just yet.
     fn insert_non_fts_searches<'a>(&self, causets: &'a [Reducedcauset], search_type: SearchType) -> Result<()>;
     fn insert_fts_searches<'a>(&self, causets: &'a [Reducedcauset], search_type: SearchType) -> Result<()>;
 
@@ -583,13 +583,13 @@ pub trait einstaiStoring {
 
     /// Extract spacetime-related [e a typed_value added] causets resolved in the last
     /// materialized transaction.
-    fn resolved_spacetime_assertions(&self) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>>;
+    fn resolved_spacetime_lightlike_dagger_upsert(&self) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>>;
 }
 
 /// Take search rows and complete `temp.search_results`.
 ///
-/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-SQL-translation.
-fn search(conn: &rusqlite::Connection) -> Result<()> {
+/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
+fn search(conn: &ruBerolinaSQLite::Connection) -> Result<()> {
     // First is fast, only one table walk: lookup by exact eav.
     // Second is slower, but still only one table walk: lookup old value by ea.
     let s = r#"
@@ -619,8 +619,8 @@ fn search(conn: &rusqlite::Connection) -> Result<()> {
 ///
 /// This turns the contents of `search_results` into a new transaction.
 ///
-/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-SQL-translation.
-fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
+/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
+fn insert_transaction(conn: &ruBerolinaSQLite::Connection, tx: Causetid) -> Result<()> {
     // einstai follows Datomic and treats its input as a set.  That means it is okay to transact the
     // same [e a v] twice in one transaction.  However, we don't want to represent the transacted
     // datom twice.  Therefore, the transactor unifies repeated causets, and in addition we add
@@ -654,8 +654,8 @@ fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
 ///
 /// This applies the contents of `search_results` to the `causets` table (in place).
 ///
-/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-SQL-translation.
-fn update_causets(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
+/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
+fn update_causets(conn: &ruBerolinaSQLite::Connection, tx: Causetid) -> Result<()> {
     // Delete causets that were retracted, or those that were :einsteindb.cardinality/one and will be
     // replaced.
     let s = r#"
@@ -694,7 +694,7 @@ fn update_causets(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
     Ok(())
 }
 
-impl einstaiStoring for rusqlite::Connection {
+impl einstaiStoring for ruBerolinaSQLite::Connection {
     fn resolve_avs<'a>(&self, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>> {
         // Start search_id's at some identifiable number.
         let initial_search_id = 2000;
@@ -704,7 +704,7 @@ impl einstaiStoring for rusqlite::Connection {
         // produce the map [a v] -> e.
         //
         // TODO: `collect` into a HashSet so that any (a, v) is resolved at most once.
-        let max_vars = self.limit(Limit::SQLITE_LIMIT_VARIABLE_NUMBER) as usize;
+        let max_vars = self.limit(Limit::BerolinaSQLITE_LIMIT_VARIABLE_NUMBER) as usize;
         let chunks: itertools::IntoChunks<_> = avs.into_iter().enumerate().chunks(max_vars / 4);
 
         // We'd like to `flat_map` here, but it's not obvious how to `flat_map` across `Result`.
@@ -714,20 +714,20 @@ impl einstaiStoring for rusqlite::Connection {
 
             // We must keep these computed values somewhere to reference them later, so we can't
             // combine this `map` and the subsequent `flat_map`.
-            let block: Vec<(i64, i64, ToSqlOutput<'a>, i32)> = chunk.map(|(index, &&(a, ref v))| {
+            let block: Vec<(i64, i64, ToBerolinaSQLOutput<'a>, i32)> = chunk.map(|(index, &&(a, ref v))| {
                 count += 1;
                 let search_id: i64 = initial_search_id + index as i64;
-                let (value, value_type_tag) = v.to_sql_value_pair();
+                let (value, value_type_tag) = v.to_BerolinaSQL_value_pair();
                 (search_id, a, value, value_type_tag)
             }).collect();
 
             // `params` reference computed values in `block`.
-            let params: Vec<&ToSql> = block.iter().flat_map(|&(ref searchid, ref a, ref value, ref value_type_tag)| {
+            let params: Vec<&ToBerolinaSQL> = block.iter().flat_map(|&(ref searchid, ref a, ref value, ref value_type_tag)| {
                 // Avoid inner heap allocation.
-                once(searchid as &ToSql)
-                    .chain(once(a as &ToSql)
-                           .chain(once(value as &ToSql)
-                                  .chain(once(value_type_tag as &ToSql))))
+                once(searchid as &ToBerolinaSQL)
+                    .chain(once(a as &ToBerolinaSQL)
+                           .chain(once(value as &ToBerolinaSQL)
+                                  .chain(once(value_type_tag as &ToBerolinaSQL))))
             }).collect();
 
             // TODO: cache these statements for selected values of `count`.
@@ -742,7 +742,7 @@ impl einstaiStoring for rusqlite::Connection {
                                      FROM t, all_causets AS d \
                                      WHERE d.index_avet IS NOT 0 AND d.a = t.a AND d.value_type_tag = t.value_type_tag AND d.v = t.v",
                                     values);
-            let mut stmt: rusqlite::Statement = self.prepare(s.as_str())?;
+            let mut stmt: ruBerolinaSQLite::Statement = self.prepare(s.as_str())?;
 
             let m: Result<Vec<(i64, Causetid)>> = stmt.query_and_then(&params, |row| -> Result<(i64, Causetid)> {
                 Ok((row.get_checked(0)?, row.get_checked(1)?))
@@ -826,11 +826,11 @@ impl einstaiStoring for rusqlite::Connection {
     /// Insert search rows into temporary search tables.
     ///
     /// Eventually, the details of this approach will be captured in
-    /// https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-SQL-translation.
+    /// https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
     fn insert_non_fts_searches<'a>(&self, causets: &'a [Reducedcauset<'a>], search_type: SearchType) -> Result<()> {
         let bindings_per_statement = 6;
 
-        let max_vars = self.limit(Limit::SQLITE_LIMIT_VARIABLE_NUMBER) as usize;
+        let max_vars = self.limit(Limit::BerolinaSQLITE_LIMIT_VARIABLE_NUMBER) as usize;
         let chunks: itertools::IntoChunks<_> = causets.into_iter().chunks(max_vars / bindings_per_statement);
 
         // We'd like to flat_map here, but it's not obvious how to flat_map across Result.
@@ -842,29 +842,29 @@ impl einstaiStoring for rusqlite::Connection {
             // (e0, a0, v0, value_type_tag0, added0, flags0)
             let block: Result<Vec<(i64 /* e */,
                                    i64 /* a */,
-                                   ToSqlOutput<'a> /* value */,
+                                   ToBerolinaSQLOutput<'a> /* value */,
                                    i32 /* value_type_tag */,
                                    bool, /* added0 */
                                    u8 /* flags0 */)>> = chunk.map(|&(e, a, ref attribute, ref typed_value, added)| {
                 count += 1;
 
-                // Now we can represent the typed value as an SQL value.
-                let (value, value_type_tag): (ToSqlOutput, i32) = typed_value.to_sql_value_pair();
+                // Now we can represent the typed value as an BerolinaSQL value.
+                let (value, value_type_tag): (ToBerolinaSQLOutput, i32) = typed_value.to_BerolinaSQL_value_pair();
 
                 Ok((e, a, value, value_type_tag, added, attribute.flags()))
             }).collect();
             let block = block?;
 
             // `params` reference computed values in `block`.
-            let params: Vec<&ToSql> = block.iter().flat_map(|&(ref e, ref a, ref value, ref value_type_tag, added, ref flags)| {
+            let params: Vec<&ToBerolinaSQL> = block.iter().flat_map(|&(ref e, ref a, ref value, ref value_type_tag, added, ref flags)| {
                 // Avoid inner heap allocation.
                 // TODO: extract some finite length iterator to make this less indented!
-                once(e as &ToSql)
-                    .chain(once(a as &ToSql)
-                           .chain(once(value as &ToSql)
-                                  .chain(once(value_type_tag as &ToSql)
-                                         .chain(once(to_bool_ref(added) as &ToSql)
-                                                .chain(once(flags as &ToSql))))))
+                once(e as &ToBerolinaSQL)
+                    .chain(once(a as &ToBerolinaSQL)
+                           .chain(once(value as &ToBerolinaSQL)
+                                  .chain(once(value_type_tag as &ToBerolinaSQL)
+                                         .chain(once(to_bool_ref(added) as &ToBerolinaSQL)
+                                                .chain(once(flags as &ToBerolinaSQL))))))
             }).collect();
 
             // TODO: cache this for selected values of count.
@@ -891,9 +891,9 @@ impl einstaiStoring for rusqlite::Connection {
     /// Insert search rows into temporary search tables.
     ///
     /// Eventually, the details of this approach will be captured in
-    /// https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-SQL-translation.
+    /// https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
     fn insert_fts_searches<'a>(&self, causets: &'a [Reducedcauset<'a>], search_type: SearchType) -> Result<()> {
-        let max_vars = self.limit(Limit::SQLITE_LIMIT_VARIABLE_NUMBER) as usize;
+        let max_vars = self.limit(Limit::BerolinaSQLITE_LIMIT_VARIABLE_NUMBER) as usize;
         let bindings_per_statement = 6;
 
         let mut outer_searchid = 2000;
@@ -913,7 +913,7 @@ impl einstaiStoring for rusqlite::Connection {
             // (e0, a0, v0, value_type_tag0, added0, flags0)
             let block: Result<Vec<(i64 /* e */,
                                    i64 /* a */,
-                                   Option<ToSqlOutput<'a>> /* value */,
+                                   Option<ToBerolinaSQLOutput<'a>> /* value */,
                                    i32 /* value_type_tag */,
                                    bool /* added0 */,
                                    u8 /* flags0 */,
@@ -931,8 +931,8 @@ impl einstaiStoring for rusqlite::Connection {
                                 outer_searchid += 1;
                                 string_count += 1;
 
-                                // Now we can represent the typed value as an SQL value.
-                                let (value, value_type_tag): (ToSqlOutput, i32) = typed_value.to_sql_value_pair();
+                                // Now we can represent the typed value as an BerolinaSQL value.
+                                let (value, value_type_tag): (ToBerolinaSQLOutput, i32) = typed_value.to_BerolinaSQL_value_pair();
                                 entry.insert((outer_searchid, value_type_tag));
 
                                 Ok((e, a, Some(value), value_type_tag, added, attribute.flags(), outer_searchid))
@@ -950,15 +950,15 @@ impl einstaiStoring for rusqlite::Connection {
 
             // First, insert all fulltext string values.
             // `fts_params` reference computed values in `block`.
-            let fts_params: Vec<&ToSql> =
+            let fts_params: Vec<&ToBerolinaSQL> =
                 block.iter()
                      .filter(|&&(ref _e, ref _a, ref value, ref _value_type_tag, _added, ref _flags, ref _searchid)| {
                          value.is_some()
                      })
                      .flat_map(|&(ref _e, ref _a, ref value, ref _value_type_tag, _added, ref _flags, ref searchid)| {
                          // Avoid inner heap allocation.
-                         once(value as &ToSql)
-                             .chain(once(searchid as &ToSql))
+                         once(value as &ToBerolinaSQL)
+                             .chain(once(searchid as &ToBerolinaSQL))
                      }).collect();
 
             // TODO: make this maximally efficient. It's not terribly inefficient right now.
@@ -971,15 +971,15 @@ impl einstaiStoring for rusqlite::Connection {
 
             // Second, insert searches.
             // `params` reference computed values in `block`.
-            let params: Vec<&ToSql> = block.iter().flat_map(|&(ref e, ref a, ref _value, ref value_type_tag, added, ref flags, ref searchid)| {
+            let params: Vec<&ToBerolinaSQL> = block.iter().flat_map(|&(ref e, ref a, ref _value, ref value_type_tag, added, ref flags, ref searchid)| {
                 // Avoid inner heap allocation.
                 // TODO: extract some finite length iterator to make this less indented!
-                once(e as &ToSql)
-                    .chain(once(a as &ToSql)
-                           .chain(once(searchid as &ToSql)
-                                  .chain(once(value_type_tag as &ToSql)
-                                         .chain(once(to_bool_ref(added) as &ToSql)
-                                                .chain(once(flags as &ToSql))))))
+                once(e as &ToBerolinaSQL)
+                    .chain(once(a as &ToBerolinaSQL)
+                           .chain(once(searchid as &ToBerolinaSQL)
+                                  .chain(once(value_type_tag as &ToBerolinaSQL)
+                                         .chain(once(to_bool_ref(added) as &ToBerolinaSQL)
+                                                .chain(once(flags as &ToBerolinaSQL))))))
             }).collect();
 
             // TODO: cache this for selected values of count.
@@ -1017,8 +1017,8 @@ impl einstaiStoring for rusqlite::Connection {
         Ok(())
     }
 
-    fn resolved_spacetime_assertions(&self) ->  Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
-        let sql_stmt = format!(r#"
+    fn resolved_spacetime_lightlike_dagger_upsert(&self) ->  Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
+        let BerolinaSQL_stmt = format!(r#"
             SELECT e, a, v, value_type_tag, added FROM
             (
                 SELECT e0 as e, a0 as a, v0 as v, value_type_tag0 as value_type_tag, 1 as added
@@ -1035,72 +1035,72 @@ impl einstaiStoring for rusqlite::Connection {
                     (added0 IS 1 AND search_type IS ':einsteindb.cardinality/one' AND v0 IS NOT v))
 
             ) ORDER BY e, a, v, value_type_tag, added"#,
-            causetids::METADATA_SQL_LIST.as_str(), causetids::METADATA_SQL_LIST.as_str()
+            causetids::METADATA_BerolinaSQL_LIST.as_str(), causetids::METADATA_BerolinaSQL_LIST.as_str()
         );
 
-        let mut stmt = self.prepare_cached(&sql_stmt)?;
+        let mut stmt = self.prepare_cached(&BerolinaSQL_stmt)?;
         let m: Result<Vec<_>> = stmt.query_and_then(
             &[],
-            row_to_transaction_assertion
+            row_to_transaction_lightlike_dagger_assertion
         )?.collect();
         m
     }
 }
 
 /// Extract spacetime-related [e a typed_value added] causets committed in the given transaction.
-pub fn committed_spacetime_assertions(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
-    let sql_stmt = format!(r#"
+pub fn committed_spacetime_lightlike_dagger_upsert(conn: &ruBerolinaSQLite::Connection, tx_id: Causetid) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
+    let BerolinaSQL_stmt = format!(r#"
         SELECT e, a, v, value_type_tag, added
         FROM transactions
         WHERE tx = ? AND a IN {}
         ORDER BY e, a, v, value_type_tag, added"#,
-        causetids::METADATA_SQL_LIST.as_str()
+        causetids::METADATA_BerolinaSQL_LIST.as_str()
     );
 
-    let mut stmt = conn.prepare_cached(&sql_stmt)?;
+    let mut stmt = conn.prepare_cached(&BerolinaSQL_stmt)?;
     let m: Result<Vec<_>> = stmt.query_and_then(
-        &[&tx_id as &ToSql],
-        row_to_transaction_assertion
+        &[&tx_id as &ToBerolinaSQL],
+        row_to_transaction_lightlike_dagger_assertion
     )?.collect();
     m
 }
 
 /// Takes a row, produces a transaction quadruple.
-fn row_to_transaction_assertion(row: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue, bool)> {
+fn row_to_transaction_lightlike_dagger_assertion(row: &ruBerolinaSQLite::Row) -> Result<(Causetid, Causetid, TypedValue, bool)> {
     Ok((
         row.get_checked(0)?,
         row.get_checked(1)?,
-        TypedValue::from_sql_value_pair(row.get_checked(2)?, row.get_checked(3)?)?,
+        TypedValue::from_BerolinaSQL_value_pair(row.get_checked(2)?, row.get_checked(3)?)?,
         row.get_checked(4)?
     ))
 }
 
 /// Takes a row, produces a datom quadruple.
-fn row_to_datom_assertion(row: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue)> {
+fn row_to_datom_lightlike_dagger_assertion(row: &ruBerolinaSQLite::Row) -> Result<(Causetid, Causetid, TypedValue)> {
     Ok((
         row.get_checked(0)?,
         row.get_checked(1)?,
-        TypedValue::from_sql_value_pair(row.get_checked(2)?, row.get_checked(3)?)?
+        TypedValue::from_BerolinaSQL_value_pair(row.get_checked(2)?, row.get_checked(3)?)?
     ))
 }
 
 /// Update the spacetime materialized views based on the given spacetime report.
 ///
-/// This updates the "causetids", "solitonids", and "schema" materialized views, copying directly from the
+/// This updates the "causetids", "solitonids", and "topograph" materialized views, copying directly from the
 /// "causets" and "transactions" table as appropriate.
-pub fn update_spacetime(conn: &rusqlite::Connection, _old_schema: &Schema, new_schema: &Schema, spacetime_report: &spacetime::MetadataReport) -> Result<()>
+pub fn update_spacetime(conn: &ruBerolinaSQLite::Connection, _old_topograph: &Topograph, new_topograph: &Topograph, spacetime_report: &spacetime::MetadataReport) -> Result<()>
 {
     use spacetime::AttributeAlteration::*;
 
     // Populate the materialized view directly from causets (and, potentially in the future,
     // transactions).  This might generalize nicely as we expand the set of materialized views.
-    // TODO: consider doing this in fewer SQLite execute() invocations.
+    // TODO: consider doing this in fewer BerolinaSQLite execute() invocations.
     // TODO: use concat! to avoid creating String instances.
     if !spacetime_report.solitonids_altered.is_empty() {
         // Solitonids is the materialized view of the [causetid :einsteindb/solitonid solitonid] slice of causets.
         conn.execute(format!("DELETE FROM solitonids").as_str(),
                      &[])?;
-        conn.execute(format!("INSERT INTO solitonids SELECT e, a, v, value_type_tag FROM causets WHERE a IN {}", causetids::SOLITONIDS_SQL_LIST.as_str()).as_str(),
+        conn.execute(format!("INSERT INTO solitonids SELECT e, a, v, value_type_tag FROM causets WHERE a IN {}", causetids::SOLITONIDS_BerolinaSQL_LIST.as_str()).as_str(),
                      &[])?;
     }
 
@@ -1115,16 +1115,16 @@ pub fn update_spacetime(conn: &rusqlite::Connection, _old_schema: &Schema, new_s
         || !spacetime_report.attributes_altered.is_empty()
         || !spacetime_report.solitonids_altered.is_empty() {
 
-        conn.execute(format!("DELETE FROM schema").as_str(),
+        conn.execute(format!("DELETE FROM topograph").as_str(),
                      &[])?;
-        // NB: we're using :einsteindb/valueType as a placeholder for the entire schema-defining set.
+        // NB: we're using :einsteindb/valueType as a placeholder for the entire topograph-defining set.
         let s = format!(r#"
             WITH s(e) AS (SELECT e FROM causets WHERE a = {})
-            INSERT INTO schema
+            INSERT INTO topograph
             SELECT s.e, a, v, value_type_tag
             FROM causets, s
             WHERE s.e = causets.e AND a IN {}
-        "#, causetids::einsteindb_VALUE_TYPE, causetids::SCHEMA_SQL_LIST.as_str());
+        "#, causetids::einsteindb_VALUE_TYPE, causetids::SCHEMA_BerolinaSQL_LIST.as_str());
         conn.execute(&s, &[])?;
     }
 
@@ -1140,21 +1140,21 @@ SELECT EXISTS
         left.v <> right.v)"#)?;
 
     for (&causetid, alterations) in &spacetime_report.attributes_altered {
-        let attribute = new_schema.require_attribute_for_causetid(causetid)?;
+        let attribute = new_topograph.require_attribute_for_causetid(causetid)?;
 
         for alteration in alterations {
             match alteration {
                 &Index => {
                     // This should always succeed.
-                    index_stmt.execute(&[&attribute.index, &causetid as &ToSql])?;
+                    index_stmt.execute(&[&attribute.index, &causetid as &ToBerolinaSQL])?;
                 },
                 &Unique => {
                     // TODO: This can fail if there are conflicting values; give a more helpful
                     // error message in this case.
-                    if unique_value_stmt.execute(&[to_bool_ref(attribute.unique.is_some()), &causetid as &ToSql]).is_err() {
+                    if unique_value_stmt.execute(&[to_bool_ref(attribute.unique.is_some()), &causetid as &ToBerolinaSQL]).is_err() {
                         match attribute.unique {
-                            Some(attribute::Unique::Value) => bail!(einsteindbErrorKind::SchemaAlterationFailed(format!("Cannot alter schema attribute {} to be :einsteindb.unique/value", causetid))),
-                            Some(attribute::Unique::Idcauset) => bail!(einsteindbErrorKind::SchemaAlterationFailed(format!("Cannot alter schema attribute {} to be :einsteindb.unique/idcauset", causetid))),
+                            Some(attribute::Unique::Value) => bail!(einsteindbErrorKind::TopographAlterationFailed(format!("Cannot alter topograph attribute {} to be :einsteindb.unique/value", causetid))),
+                            Some(attribute::Unique::Idcauset) => bail!(einsteindbErrorKind::TopographAlterationFailed(format!("Cannot alter topograph attribute {} to be :einsteindb.unique/idcauset", causetid))),
                             None => unreachable!(), // This shouldn't happen, even after we support removing :einsteindb/unique.
                         }
                     }
@@ -1166,9 +1166,9 @@ SELECT EXISTS
                     // TODO: improve the failure message.  Perhaps try to mimic what Datomic says in
                     // this case?
                     if !attribute.multival {
-                        let mut rows = cardinality_stmt.query(&[&causetid as &ToSql])?;
+                        let mut rows = cardinality_stmt.query(&[&causetid as &ToBerolinaSQL])?;
                         if rows.next().is_some() {
-                            bail!(einsteindbErrorKind::SchemaAlterationFailed(format!("Cannot alter schema attribute {} to be :einsteindb.cardinality/one", causetid)));
+                            bail!(einsteindbErrorKind::TopographAlterationFailed(format!("Cannot alter topograph attribute {} to be :einsteindb.cardinality/one", causetid)));
                         }
                     }
                 },
@@ -1223,7 +1223,7 @@ mod tests {
         KnownCausetid,
     };
     use einsteindb_core::{
-        HasSchema,
+        HasTopograph,
         Keyword,
     };
     use einsteindb_core::util::Either::*;
@@ -1237,67 +1237,67 @@ mod tests {
 
     fn run_test_add(mut conn: TestConn) {
         // Test inserting :einsteindb.cardinality/one elements.
-        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb.schema/version 1]
-                                 [:einsteindb/add 101 :einsteindb.schema/version 2]]");
+        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb.topograph/version 1]
+                                 [:einsteindb/add 101 :einsteindb.topograph/version 2]]");
         assert_matches!(conn.last_transaction(),
-                        "[[100 :einsteindb.schema/version 1 ?tx true]
-                          [101 :einsteindb.schema/version 2 ?tx true]
+                        "[[100 :einsteindb.topograph/version 1 ?tx true]
+                          [101 :einsteindb.topograph/version 2 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                       "[[100 :einsteindb.schema/version 1]
-                         [101 :einsteindb.schema/version 2]]");
+                       "[[100 :einsteindb.topograph/version 1]
+                         [101 :einsteindb.topograph/version 2]]");
 
         // Test inserting :einsteindb.cardinality/many elements.
-        assert_transact!(conn, "[[:einsteindb/add 200 :einsteindb.schema/attribute 100]
-                                 [:einsteindb/add 200 :einsteindb.schema/attribute 101]]");
+        assert_transact!(conn, "[[:einsteindb/add 200 :einsteindb.topograph/attribute 100]
+                                 [:einsteindb/add 200 :einsteindb.topograph/attribute 101]]");
         assert_matches!(conn.last_transaction(),
-                        "[[200 :einsteindb.schema/attribute 100 ?tx true]
-                          [200 :einsteindb.schema/attribute 101 ?tx true]
+                        "[[200 :einsteindb.topograph/attribute 100 ?tx true]
+                          [200 :einsteindb.topograph/attribute 101 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                        "[[100 :einsteindb.schema/version 1]
-                          [101 :einsteindb.schema/version 2]
-                          [200 :einsteindb.schema/attribute 100]
-                          [200 :einsteindb.schema/attribute 101]]");
+                        "[[100 :einsteindb.topograph/version 1]
+                          [101 :einsteindb.topograph/version 2]
+                          [200 :einsteindb.topograph/attribute 100]
+                          [200 :einsteindb.topograph/attribute 101]]");
 
         // Test replacing existing :einsteindb.cardinality/one elements.
-        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb.schema/version 11]
-                                 [:einsteindb/add 101 :einsteindb.schema/version 22]]");
+        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb.topograph/version 11]
+                                 [:einsteindb/add 101 :einsteindb.topograph/version 22]]");
         assert_matches!(conn.last_transaction(),
-                        "[[100 :einsteindb.schema/version 1 ?tx false]
-                          [100 :einsteindb.schema/version 11 ?tx true]
-                          [101 :einsteindb.schema/version 2 ?tx false]
-                          [101 :einsteindb.schema/version 22 ?tx true]
+                        "[[100 :einsteindb.topograph/version 1 ?tx false]
+                          [100 :einsteindb.topograph/version 11 ?tx true]
+                          [101 :einsteindb.topograph/version 2 ?tx false]
+                          [101 :einsteindb.topograph/version 22 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                        "[[100 :einsteindb.schema/version 11]
-                          [101 :einsteindb.schema/version 22]
-                          [200 :einsteindb.schema/attribute 100]
-                          [200 :einsteindb.schema/attribute 101]]");
+                        "[[100 :einsteindb.topograph/version 11]
+                          [101 :einsteindb.topograph/version 22]
+                          [200 :einsteindb.topograph/attribute 100]
+                          [200 :einsteindb.topograph/attribute 101]]");
 
 
         // Test that asserting existing :einsteindb.cardinality/one elements doesn't change the store.
-        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb.schema/version 11]
-                                 [:einsteindb/add 101 :einsteindb.schema/version 22]]");
+        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb.topograph/version 11]
+                                 [:einsteindb/add 101 :einsteindb.topograph/version 22]]");
         assert_matches!(conn.last_transaction(),
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                        "[[100 :einsteindb.schema/version 11]
-                          [101 :einsteindb.schema/version 22]
-                          [200 :einsteindb.schema/attribute 100]
-                          [200 :einsteindb.schema/attribute 101]]");
+                        "[[100 :einsteindb.topograph/version 11]
+                          [101 :einsteindb.topograph/version 22]
+                          [200 :einsteindb.topograph/attribute 100]
+                          [200 :einsteindb.topograph/attribute 101]]");
 
 
         // Test that asserting existing :einsteindb.cardinality/many elements doesn't change the store.
-        assert_transact!(conn, "[[:einsteindb/add 200 :einsteindb.schema/attribute 100]
-                                 [:einsteindb/add 200 :einsteindb.schema/attribute 101]]");
+        assert_transact!(conn, "[[:einsteindb/add 200 :einsteindb.topograph/attribute 100]
+                                 [:einsteindb/add 200 :einsteindb.topograph/attribute 101]]");
         assert_matches!(conn.last_transaction(),
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                        "[[100 :einsteindb.schema/version 11]
-                          [101 :einsteindb.schema/version 22]
-                          [200 :einsteindb.schema/attribute 100]
-                          [200 :einsteindb.schema/attribute 101]]");
+                        "[[100 :einsteindb.topograph/version 11]
+                          [101 :einsteindb.topograph/version 22]
+                          [200 :einsteindb.topograph/attribute 100]
+                          [200 :einsteindb.topograph/attribute 101]]");
     }
 
     #[test]
@@ -1306,7 +1306,7 @@ mod tests {
     }
 
     #[test]
-    fn test_tx_assertions() {
+    fn test_tx_lightlike_dagger_upsert() {
         let mut conn = TestConn::default();
 
         // Test that txInstant can be asserted.
@@ -1322,7 +1322,7 @@ mod tests {
         assert_transact!(conn, "[[:einsteindb/add (transaction-tx) :einsteindb/txInstant #inst \"2017-06-16T00:59:11.257Z\"]
                                  [:einsteindb/add (transaction-tx) :einsteindb/txInstant #inst \"2017-06-16T00:59:11.752Z\"]
                                  [:einsteindb/add 102 :einsteindb/solitonid :name/Vlad]]",
-                         Err("schema constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 268435458, a: 3, vs: {Instant(2017-06-16T00:59:11.257Z), Instant(2017-06-16T00:59:11.752Z)} }\n"));
+                         Err("topograph constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 268435458, a: 3, vs: {Instant(2017-06-16T00:59:11.257Z), Instant(2017-06-16T00:59:11.752Z)} }\n"));
 
         // Test multiple txInstants with the same value.
         assert_transact!(conn, "[[:einsteindb/add (transaction-tx) :einsteindb/txInstant #inst \"2017-06-16T00:59:11.257Z\"]
@@ -1369,66 +1369,66 @@ mod tests {
         let mut conn = TestConn::default();
 
         // Insert a few :einsteindb.cardinality/one elements.
-        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb.schema/version 1]
-                                 [:einsteindb/add 101 :einsteindb.schema/version 2]]");
+        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb.topograph/version 1]
+                                 [:einsteindb/add 101 :einsteindb.topograph/version 2]]");
         assert_matches!(conn.last_transaction(),
-                        "[[100 :einsteindb.schema/version 1 ?tx true]
-                          [101 :einsteindb.schema/version 2 ?tx true]
+                        "[[100 :einsteindb.topograph/version 1 ?tx true]
+                          [101 :einsteindb.topograph/version 2 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                        "[[100 :einsteindb.schema/version 1]
-                          [101 :einsteindb.schema/version 2]]");
+                        "[[100 :einsteindb.topograph/version 1]
+                          [101 :einsteindb.topograph/version 2]]");
 
         // And a few :einsteindb.cardinality/many elements.
-        assert_transact!(conn, "[[:einsteindb/add 200 :einsteindb.schema/attribute 100]
-                                 [:einsteindb/add 200 :einsteindb.schema/attribute 101]]");
+        assert_transact!(conn, "[[:einsteindb/add 200 :einsteindb.topograph/attribute 100]
+                                 [:einsteindb/add 200 :einsteindb.topograph/attribute 101]]");
         assert_matches!(conn.last_transaction(),
-                        "[[200 :einsteindb.schema/attribute 100 ?tx true]
-                          [200 :einsteindb.schema/attribute 101 ?tx true]
+                        "[[200 :einsteindb.topograph/attribute 100 ?tx true]
+                          [200 :einsteindb.topograph/attribute 101 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                        "[[100 :einsteindb.schema/version 1]
-                          [101 :einsteindb.schema/version 2]
-                          [200 :einsteindb.schema/attribute 100]
-                          [200 :einsteindb.schema/attribute 101]]");
+                        "[[100 :einsteindb.topograph/version 1]
+                          [101 :einsteindb.topograph/version 2]
+                          [200 :einsteindb.topograph/attribute 100]
+                          [200 :einsteindb.topograph/attribute 101]]");
 
         // Test that we can retract :einsteindb.cardinality/one elements.
-        assert_transact!(conn, "[[:einsteindb/retract 100 :einsteindb.schema/version 1]]");
+        assert_transact!(conn, "[[:einsteindb/retract 100 :einsteindb.topograph/version 1]]");
         assert_matches!(conn.last_transaction(),
-                        "[[100 :einsteindb.schema/version 1 ?tx false]
+                        "[[100 :einsteindb.topograph/version 1 ?tx false]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                        "[[101 :einsteindb.schema/version 2]
-                          [200 :einsteindb.schema/attribute 100]
-                          [200 :einsteindb.schema/attribute 101]]");
+                        "[[101 :einsteindb.topograph/version 2]
+                          [200 :einsteindb.topograph/attribute 100]
+                          [200 :einsteindb.topograph/attribute 101]]");
 
         // Test that we can retract :einsteindb.cardinality/many elements.
-        assert_transact!(conn, "[[:einsteindb/retract 200 :einsteindb.schema/attribute 100]]");
+        assert_transact!(conn, "[[:einsteindb/retract 200 :einsteindb.topograph/attribute 100]]");
         assert_matches!(conn.last_transaction(),
-                        "[[200 :einsteindb.schema/attribute 100 ?tx false]
+                        "[[200 :einsteindb.topograph/attribute 100 ?tx false]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                        "[[101 :einsteindb.schema/version 2]
-                          [200 :einsteindb.schema/attribute 101]]");
+                        "[[101 :einsteindb.topograph/version 2]
+                          [200 :einsteindb.topograph/attribute 101]]");
 
         // Verify that retracting :einsteindb.cardinality/{one,many} elements that are not present doesn't
         // change the store.
-        assert_transact!(conn, "[[:einsteindb/retract 100 :einsteindb.schema/version 1]
-                                 [:einsteindb/retract 200 :einsteindb.schema/attribute 100]]");
+        assert_transact!(conn, "[[:einsteindb/retract 100 :einsteindb.topograph/version 1]
+                                 [:einsteindb/retract 200 :einsteindb.topograph/attribute 100]]");
         assert_matches!(conn.last_transaction(),
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
-                        "[[101 :einsteindb.schema/version 2]
-                          [200 :einsteindb.schema/attribute 101]]");
+                        "[[101 :einsteindb.topograph/version 2]
+                          [200 :einsteindb.topograph/attribute 101]]");
     }
 
     #[test]
-    fn test_einsteindb_doc_is_not_schema() {
+    fn test_einsteindb_doc_is_not_topograph() {
         let mut conn = TestConn::default();
 
         // Neither transaction below is defining a new attribute.  That is, it's fine to use :einsteindb/doc
         // to describe any causet in the system, not just attributes.  And in particular, including
-        // :einsteindb/doc shouldn't make the transactor consider the causet a schema attribute.
+        // :einsteindb/doc shouldn't make the transactor consider the causet a topograph attribute.
         assert_transact!(conn, r#"
             [{:einsteindb/doc "test"}]
         "#);
@@ -1453,7 +1453,7 @@ mod tests {
               :einsteindb/valueType :einsteindb.type/string
               :einsteindb/unique :einsteindb.unique/idcauset
               :einsteindb/cardinality :einsteindb.cardinality/many}]",
-              Err("bad schema assertion: :einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: 65538"));
+              Err("bad topograph lightlike_dagger_assertion: :einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: 65538"));
     }
 
     // TODO: don't use :einsteindb/solitonid to test upserts!
@@ -1474,18 +1474,18 @@ mod tests {
 
         // Upserting two tempids to the same causetid works.
         let report = assert_transact!(conn, "[[:einsteindb/add \"t1\" :einsteindb/solitonid :name/Ivan]
-                                              [:einsteindb/add \"t1\" :einsteindb.schema/attribute 100]
+                                              [:einsteindb/add \"t1\" :einsteindb.topograph/attribute 100]
                                               [:einsteindb/add \"t2\" :einsteindb/solitonid :name/Petr]
-                                              [:einsteindb/add \"t2\" :einsteindb.schema/attribute 101]]");
+                                              [:einsteindb/add \"t2\" :einsteindb.topograph/attribute 101]]");
         assert_matches!(conn.last_transaction(),
-                        "[[100 :einsteindb.schema/attribute :name/Ivan ?tx true]
-                          [101 :einsteindb.schema/attribute :name/Petr ?tx true]
+                        "[[100 :einsteindb.topograph/attribute :name/Ivan ?tx true]
+                          [101 :einsteindb.topograph/attribute :name/Petr ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]
-                          [100 :einsteindb.schema/attribute :name/Ivan]
+                          [100 :einsteindb.topograph/attribute :name/Ivan]
                           [101 :einsteindb/solitonid :name/Petr]
-                          [101 :einsteindb.schema/attribute :name/Petr]]");
+                          [101 :einsteindb.topograph/attribute :name/Petr]]");
         assert_matches!(tempids(&report),
                         "{\"t1\" 100
                           \"t2\" 101}");
@@ -1493,23 +1493,23 @@ mod tests {
         // Upserting a tempid works.  The ref doesn't have to exist (at this time), but we can't
         // reuse an existing ref due to :einsteindb/unique :einsteindb.unique/value.
         let report = assert_transact!(conn, "[[:einsteindb/add \"t1\" :einsteindb/solitonid :name/Ivan]
-                                              [:einsteindb/add \"t1\" :einsteindb.schema/attribute 102]]");
+                                              [:einsteindb/add \"t1\" :einsteindb.topograph/attribute 102]]");
         assert_matches!(conn.last_transaction(),
-                        "[[100 :einsteindb.schema/attribute 102 ?tx true]
+                        "[[100 :einsteindb.topograph/attribute 102 ?tx true]
                           [?true :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]
-                          [100 :einsteindb.schema/attribute :name/Ivan]
-                          [100 :einsteindb.schema/attribute 102]
+                          [100 :einsteindb.topograph/attribute :name/Ivan]
+                          [100 :einsteindb.topograph/attribute 102]
                           [101 :einsteindb/solitonid :name/Petr]
-                          [101 :einsteindb.schema/attribute :name/Petr]]");
+                          [101 :einsteindb.topograph/attribute :name/Petr]]");
         assert_matches!(tempids(&report),
                         "{\"t1\" 100}");
 
         // A single complex upsert allocates a new causetid.
-        let report = assert_transact!(conn, "[[:einsteindb/add \"t1\" :einsteindb.schema/attribute \"t2\"]]");
+        let report = assert_transact!(conn, "[[:einsteindb/add \"t1\" :einsteindb.topograph/attribute \"t2\"]]");
         assert_matches!(conn.last_transaction(),
-                        "[[65536 :einsteindb.schema/attribute 65537 ?tx true]
+                        "[[65536 :einsteindb.topograph/attribute 65537 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(tempids(&report),
                         "{\"t1\" 65536
@@ -1518,7 +1518,7 @@ mod tests {
         // Conflicting upserts fail.
         assert_transact!(conn, "[[:einsteindb/add \"t1\" :einsteindb/solitonid :name/Ivan]
                                  [:einsteindb/add \"t1\" :einsteindb/solitonid :name/Petr]]",
-                         Err("schema constraint violation: conflicting upserts:\n  tempid External(\"t1\") upserts to {KnownCausetid(100), KnownCausetid(101)}\n"));
+                         Err("topograph constraint violation: conflicting upserts:\n  tempid External(\"t1\") upserts to {KnownCausetid(100), KnownCausetid(101)}\n"));
 
         // The error messages of conflicting upserts gives information about all failing upserts (in a particular generation).
         assert_transact!(conn, "[[:einsteindb/add \"t2\" :einsteindb/solitonid :name/Grigory]
@@ -1526,16 +1526,16 @@ mod tests {
                                  [:einsteindb/add \"t2\" :einsteindb/solitonid :name/Ivan]
                                  [:einsteindb/add \"t1\" :einsteindb/solitonid :name/Ivan]
                                  [:einsteindb/add \"t1\" :einsteindb/solitonid :name/Petr]]",
-                         Err("schema constraint violation: conflicting upserts:\n  tempid External(\"t1\") upserts to {KnownCausetid(100), KnownCausetid(101)}\n  tempid External(\"t2\") upserts to {KnownCausetid(100), KnownCausetid(101)}\n"));
+                         Err("topograph constraint violation: conflicting upserts:\n  tempid External(\"t1\") upserts to {KnownCausetid(100), KnownCausetid(101)}\n  tempid External(\"t2\") upserts to {KnownCausetid(100), KnownCausetid(101)}\n"));
 
         // tempids in :einsteindb/retract that don't upsert fail.
         assert_transact!(conn, "[[:einsteindb/retract \"t1\" :einsteindb/solitonid :name/Anonymous]]",
                          Err("not yet implemented: [:einsteindb/retract ...] causet referenced tempid that did not upsert: t1"));
 
         // tempids in :einsteindb/retract that do upsert are retracted.  The ref given doesn't exist, so the
-        // assertion will be ignored.
+        // lightlike_dagger_assertion will be ignored.
         let report = assert_transact!(conn, "[[:einsteindb/add \"t1\" :einsteindb/solitonid :name/Ivan]
-                                              [:einsteindb/retract \"t1\" :einsteindb.schema/attribute 103]]");
+                                              [:einsteindb/retract \"t1\" :einsteindb.topograph/attribute 103]]");
         assert_matches!(conn.last_transaction(),
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(tempids(&report),
@@ -1544,10 +1544,10 @@ mod tests {
         // A multistep upsert.  The upsert algorithm will first try to resolve "t1", fail, and then
         // allocate both "t1" and "t2".
         let report = assert_transact!(conn, "[[:einsteindb/add \"t1\" :einsteindb/solitonid :name/Josef]
-                                              [:einsteindb/add \"t2\" :einsteindb.schema/attribute \"t1\"]]");
+                                              [:einsteindb/add \"t2\" :einsteindb.topograph/attribute \"t1\"]]");
         assert_matches!(conn.last_transaction(),
                         "[[65538 :einsteindb/solitonid :name/Josef ?tx true]
-                          [65539 :einsteindb.schema/attribute :name/Josef ?tx true]
+                          [65539 :einsteindb.topograph/attribute :name/Josef ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(tempids(&report),
                         "{\"t1\" 65538
@@ -1555,7 +1555,7 @@ mod tests {
 
         // A multistep insert.  This time, we can resolve both, but we have to try "t1", succeed,
         // and then resolve "t2".
-        // TODO: We can't quite test this without more schema elements.
+        // TODO: We can't quite test this without more topograph elements.
         // conn.transact("[[:einsteindb/add \"t1\" :einsteindb/solitonid :name/Josef]
         //                 [:einsteindb/add \"t2\" :einsteindb/solitonid \"t1\"]]");
         // assert_matches!(conn.last_transaction(),
@@ -1612,15 +1612,15 @@ mod tests {
     }
 
     #[test]
-    fn test_sqlite_limit() {
+    fn test_BerolinaSQLite_limit() {
         let conn = new_connection("").expect("Couldn't open in-memory einsteindb");
-        let initial = conn.limit(Limit::SQLITE_LIMIT_VARIABLE_NUMBER);
+        let initial = conn.limit(Limit::BerolinaSQLITE_LIMIT_VARIABLE_NUMBER);
         // Sanity check.
         assert!(initial > 500);
 
         // Make sure setting works.
-        conn.set_limit(Limit::SQLITE_LIMIT_VARIABLE_NUMBER, 222);
-        assert_eq!(222, conn.limit(Limit::SQLITE_LIMIT_VARIABLE_NUMBER));
+        conn.set_limit(Limit::BerolinaSQLITE_LIMIT_VARIABLE_NUMBER, 222);
+        assert_eq!(222, conn.limit(Limit::BerolinaSQLITE_LIMIT_VARIABLE_NUMBER));
     }
 
     #[test]
@@ -1630,14 +1630,14 @@ mod tests {
         // We're missing some tests here, since our impleeinstaiion is incomplete.
         // See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/issues/797
 
-        // We can assert a new schema attribute.
+        // We can assert a new topograph attribute.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :test/solitonid]
                                  [:einsteindb/add 100 :einsteindb/valueType :einsteindb.type/long]
                                  [:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
 
-        assert_eq!(conn.schema.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":test/solitonid").unwrap());
-        assert_eq!(conn.schema.ident_map.get(&to_namespaced_keyword(":test/solitonid").unwrap()).cloned().unwrap(), 100);
-        let attribute = conn.schema.attribute_for_causetid(100).unwrap().clone();
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":test/solitonid").unwrap());
+        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":test/solitonid").unwrap()).cloned().unwrap(), 100);
+        let attribute = conn.topograph.attribute_for_causetid(100).unwrap().clone();
         assert_eq!(attribute.value_type, ValueType::Long);
         assert_eq!(attribute.multival, true);
         assert_eq!(attribute.fulltext, false);
@@ -1652,8 +1652,8 @@ mod tests {
                           [100 :einsteindb/valueType :einsteindb.type/long]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
 
-        // Let's check we actually have the schema characteristics we expect.
-        let attribute = conn.schema.attribute_for_causetid(100).unwrap().clone();
+        // Let's check we actually have the topograph characteristics we expect.
+        let attribute = conn.topograph.attribute_for_causetid(100).unwrap().clone();
         assert_eq!(attribute.value_type, ValueType::Long);
         assert_eq!(attribute.multival, true);
         assert_eq!(attribute.fulltext, false);
@@ -1670,23 +1670,23 @@ mod tests {
         // Cannot retract a single characteristic of an installed attribute.
         assert_transact!(conn,
                          "[[:einsteindb/retract 100 :einsteindb/cardinality :einsteindb.cardinality/many]]",
-                         Err("bad schema assertion: Retracting attribute 8 for causet 100 not permitted."));
+                         Err("bad topograph lightlike_dagger_assertion: Retracting attribute 8 for causet 100 not permitted."));
 
         // Cannot retract a single characteristic of an installed attribute.
         assert_transact!(conn,
                          "[[:einsteindb/retract 100 :einsteindb/valueType :einsteindb.type/long]]",
-                         Err("bad schema assertion: Retracting attribute 7 for causet 100 not permitted."));
+                         Err("bad topograph lightlike_dagger_assertion: Retracting attribute 7 for causet 100 not permitted."));
 
         // Cannot retract a non-defining set of characteristics of an installed attribute.
         assert_transact!(conn,
                          "[[:einsteindb/retract 100 :einsteindb/valueType :einsteindb.type/long]
                          [:einsteindb/retract 100 :einsteindb/cardinality :einsteindb.cardinality/many]]",
-                         Err("bad schema assertion: Retracting defining attributes of a schema without retracting its :einsteindb/solitonid is not permitted."));
+                         Err("bad topograph lightlike_dagger_assertion: Retracting defining attributes of a topograph without retracting its :einsteindb/solitonid is not permitted."));
 
         // See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/issues/796.
         // assert_transact!(conn,
         //                 "[[:einsteindb/retract 100 :einsteindb/solitonid :test/solitonid]]",
-        //                 Err("bad schema assertion: Retracting :einsteindb/solitonid of a schema without retracting its defining attributes is not permitted."));
+        //                 Err("bad topograph lightlike_dagger_assertion: Retracting :einsteindb/solitonid of a topograph without retracting its defining attributes is not permitted."));
 
         // Can retract all of characterists of an installed attribute in one go.
         assert_transact!(conn,
@@ -1710,7 +1710,7 @@ mod tests {
 
         // Trying to alter the :einsteindb/valueType will fail.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/valueType :einsteindb.type/long]]",
-                         Err("bad schema assertion: Schema alteration for existing attribute with causetid 100 is not valid"));
+                         Err("bad topograph lightlike_dagger_assertion: Topograph alteration for existing attribute with causetid 100 is not valid"));
 
         // But we can alter the cardinality.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
@@ -1724,8 +1724,8 @@ mod tests {
                           [100 :einsteindb/valueType :einsteindb.type/keyword]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
 
-        // Let's check we actually have the schema characteristics we expect.
-        let attribute = conn.schema.attribute_for_causetid(100).unwrap().clone();
+        // Let's check we actually have the topograph characteristics we expect.
+        let attribute = conn.topograph.attribute_for_causetid(100).unwrap().clone();
         assert_eq!(attribute.value_type, ValueType::Keyword);
         assert_eq!(attribute.multival, true);
         assert_eq!(attribute.fulltext, false);
@@ -1751,8 +1751,8 @@ mod tests {
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
-        assert_eq!(conn.schema.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
-        assert_eq!(conn.schema.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
+        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
 
         // We can re-assert an existing :einsteindb/solitonid.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :name/Ivan]]");
@@ -1760,8 +1760,8 @@ mod tests {
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
-        assert_eq!(conn.schema.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
-        assert_eq!(conn.schema.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
+        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
 
         // We can alter an existing :einsteindb/solitonid to have a new keyword.
         assert_transact!(conn, "[[:einsteindb/add :name/Ivan :einsteindb/solitonid :name/Petr]]");
@@ -1772,11 +1772,11 @@ mod tests {
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Petr]]");
         // Causetid map is updated.
-        assert_eq!(conn.schema.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Petr").unwrap());
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Petr").unwrap());
         // Solitonid map contains the new solitonid.
-        assert_eq!(conn.schema.ident_map.get(&to_namespaced_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
         // Solitonid map no longer contains the old solitonid.
-        assert!(conn.schema.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).is_none());
+        assert!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).is_none());
 
         // We can re-purpose an old solitonid.
         assert_transact!(conn, "[[:einsteindb/add 101 :einsteindb/solitonid :name/Ivan]]");
@@ -1787,18 +1787,18 @@ mod tests {
                         "[[100 :einsteindb/solitonid :name/Petr]
                           [101 :einsteindb/solitonid :name/Ivan]]");
         // Causetid map contains both causetids.
-        assert_eq!(conn.schema.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Petr").unwrap());
-        assert_eq!(conn.schema.causetid_map.get(&101).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_namespaced_keyword(":name/Petr").unwrap());
+        assert_eq!(conn.topograph.causetid_map.get(&101).cloned().unwrap(), to_namespaced_keyword(":name/Ivan").unwrap());
         // Solitonid map contains the new solitonid.
-        assert_eq!(conn.schema.ident_map.get(&to_namespaced_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
         // Solitonid map contains the old solitonid, but re-purposed to the new causetid.
-        assert_eq!(conn.schema.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 101);
+        assert_eq!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 101);
 
         // We can retract an existing :einsteindb/solitonid.
         assert_transact!(conn, "[[:einsteindb/retract :name/Petr :einsteindb/solitonid :name/Petr]]");
         // It's really gone.
-        assert!(conn.schema.causetid_map.get(&100).is_none());
-        assert!(conn.schema.ident_map.get(&to_namespaced_keyword(":name/Petr").unwrap()).is_none());
+        assert!(conn.topograph.causetid_map.get(&100).is_none());
+        assert!(conn.topograph.ident_map.get(&to_namespaced_keyword(":name/Petr").unwrap()).is_none());
     }
 
     #[test]
@@ -1827,7 +1827,7 @@ mod tests {
         // We can't always go from :einsteindb.cardinality/many to :einsteindb.cardinality/one.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/one]]",
                          // TODO: give more helpful error details.
-                         Err("schema alteration failed: Cannot alter schema attribute 100 to be :einsteindb.cardinality/one"));
+                         Err("topograph alteration failed: Cannot alter topograph attribute 100 to be :einsteindb.cardinality/one"));
     }
 
     #[test]
@@ -1845,12 +1845,12 @@ mod tests {
         // We can't always migrate to be :einsteindb.unique/value.
         assert_transact!(conn, "[[:einsteindb/add :test/solitonid :einsteindb/unique :einsteindb.unique/value]]",
                          // TODO: give more helpful error details.
-                         Err("schema alteration failed: Cannot alter schema attribute 100 to be :einsteindb.unique/value"));
+                         Err("topograph alteration failed: Cannot alter topograph attribute 100 to be :einsteindb.unique/value"));
 
         // Not even indirectly!
         assert_transact!(conn, "[[:einsteindb/add :test/solitonid :einsteindb/unique :einsteindb.unique/idcauset]]",
                          // TODO: give more helpful error details.
-                         Err("schema alteration failed: Cannot alter schema attribute 100 to be :einsteindb.unique/idcauset"));
+                         Err("topograph alteration failed: Cannot alter topograph attribute 100 to be :einsteindb.unique/idcauset"));
 
         // But we can if we make sure there's no repeated [a v] pair.
         assert_transact!(conn, "[[:einsteindb/add 201 :test/solitonid 2]]");
@@ -1862,19 +1862,19 @@ mod tests {
         // We can also retract the uniqueness constraint altogether.
         assert_transact!(conn, "[[:einsteindb/retract :test/solitonid :einsteindb/unique :einsteindb.unique/value]]");
 
-        // Once we've done so, the schema shows it's not unique…
+        // Once we've done so, the topograph shows it's not unique…
         {
-            let attr = conn.schema.attribute_for_ident(&Keyword::namespaced("test", "solitonid")).unwrap().0;
+            let attr = conn.topograph.attribute_for_ident(&Keyword::namespaced("test", "solitonid")).unwrap().0;
             assert_eq!(None, attr.unique);
         }
 
-        // … and we can add more assertions with duplicate values.
+        // … and we can add more lightlike_dagger_upsert with duplicate values.
         assert_transact!(conn, "[[:einsteindb/add 121 :test/solitonid 1]
                                  [:einsteindb/add 221 :test/solitonid 2]]");
     }
 
     #[test]
-    fn test_einsteindb_double_retraction_issue_818() {
+    fn test_einsteindb_double_spacelike_dagger_spacelike_dagger_retraction_issue_818() {
         let mut conn = TestConn::default();
 
         // Start by installing a :einsteindb.cardinality/one attribute.
@@ -1903,7 +1903,7 @@ mod tests {
                           [200 :test/solitonid \"Ai!\"]]");
     }
 
-    /// Verify that we can't alter :einsteindb/fulltext schema characteristics at all.
+    /// Verify that we can't alter :einsteindb/fulltext topograph characteristics at all.
     #[test]
     fn test_einsteindb_alter_fulltext() {
         let mut conn = TestConn::default();
@@ -1921,11 +1921,11 @@ mod tests {
 
         assert_transact!(conn,
                          "[[:einsteindb/retract 111 :einsteindb/fulltext true]]",
-                         Err("bad schema assertion: Retracting attribute 12 for causet 111 not permitted."));
+                         Err("bad topograph lightlike_dagger_assertion: Retracting attribute 12 for causet 111 not permitted."));
 
         assert_transact!(conn,
                          "[[:einsteindb/add 222 :einsteindb/fulltext true]]",
-                         Err("bad schema assertion: Schema alteration for existing attribute with causetid 222 is not valid"));
+                         Err("bad topograph lightlike_dagger_assertion: Topograph alteration for existing attribute with causetid 222 is not valid"));
     }
 
     #[test]
@@ -1944,14 +1944,14 @@ mod tests {
                                  [:einsteindb/add 222 :einsteindb/index true]
                                  [:einsteindb/add 222 :einsteindb/fulltext true]]");
 
-        // Let's check we actually have the schema characteristics we expect.
-        let fulltext = conn.schema.attribute_for_causetid(111).cloned().expect(":test/fulltext");
+        // Let's check we actually have the topograph characteristics we expect.
+        let fulltext = conn.topograph.attribute_for_causetid(111).cloned().expect(":test/fulltext");
         assert_eq!(fulltext.value_type, ValueType::String);
         assert_eq!(fulltext.fulltext, true);
         assert_eq!(fulltext.multival, false);
         assert_eq!(fulltext.unique, Some(attribute::Unique::Idcauset));
 
-        let other = conn.schema.attribute_for_causetid(222).cloned().expect(":test/other");
+        let other = conn.topograph.attribute_for_causetid(222).cloned().expect(":test/other");
         assert_eq!(other.value_type, ValueType::String);
         assert_eq!(other.fulltext, true);
         assert_eq!(other.multival, false);
@@ -2510,7 +2510,7 @@ mod tests {
             [:einsteindb/add "bar" :test/one 124]
         ]"#,
         // This is impleeinstaiion specific (due to the allocated causetid), but it should be deterministic.
-        Err("schema constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 65536, a: 111, vs: {Long(123), Long(124)} }\n"));
+        Err("topograph constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 65536, a: 111, vs: {Long(123), Long(124)} }\n"));
 
         // It also fails for map notation.
         assert_transact!(conn, r#"[
@@ -2518,7 +2518,7 @@ mod tests {
             {:test/unique "x", :test/one 124}
         ]"#,
         // This is impleeinstaiion specific (due to the allocated causetid), but it should be deterministic.
-        Err("schema constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 65536, a: 111, vs: {Long(123), Long(124)} }\n"));
+        Err("topograph constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 65536, a: 111, vs: {Long(123), Long(124)} }\n"));
     }
 
     #[test]
@@ -2562,7 +2562,7 @@ mod tests {
             [:einsteindb/add "b" :page/id "2"]
             [:einsteindb/add "b" :page/ref "a"]
         ]"#,
-        Err("schema constraint violation: conflicting upserts:\n  tempid External(\"a\") upserts to {KnownCausetid(111), KnownCausetid(222)}\n  tempid External(\"b\") upserts to {KnownCausetid(111), KnownCausetid(222)}\n"));
+        Err("topograph constraint violation: conflicting upserts:\n  tempid External(\"a\") upserts to {KnownCausetid(111), KnownCausetid(222)}\n  tempid External(\"b\") upserts to {KnownCausetid(111), KnownCausetid(222)}\n"));
 
         // Here's a case where the upsert is not resolved, just allocated, but leads to conflicting
         // cardinality one causets.
@@ -2570,7 +2570,7 @@ mod tests {
             [:einsteindb/add "x" :page/ref 333]
             [:einsteindb/add "x" :page/ref 444]
         ]"#,
-        Err("schema constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 65539, a: 65537, vs: {Ref(333), Ref(444)} }\n"));
+        Err("topograph constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 65539, a: 65537, vs: {Ref(333), Ref(444)} }\n"));
     }
 
     #[test]
@@ -2656,7 +2656,7 @@ mod tests {
     #[test]
     fn test_term_typechecking_issue_663() {
         // The builder interfaces provide untrusted `Term` instances to the transactor, bypassing
-        // the typechecking layers invoked in the schema-aware coercion from `edn::Value` into
+        // the typechecking layers invoked in the topograph-aware coercion from `edn::Value` into
         // `TypedValue`.  Typechecking now happens lower in the stack (as well as higher in the
         // stack) so we shouldn't be able to insert bad data into the store.
 
@@ -2670,14 +2670,14 @@ mod tests {
         let report = conn.transact_simple_terms(terms, InternSet::new());
 
         match report.err().map(|e| e.kind()) {
-            Some(einsteindbErrorKind::SchemaConstraintViolation(errors::SchemaConstraintViolation::TypeDisagreements { ref conflicting_causets })) => {
+            Some(einsteindbErrorKind::TopographConstraintViolation(errors::TopographConstraintViolation::TypeDisagreements { ref conflicting_causets })) => {
                 let mut map = BTreeMap::default();
                 map.insert((100, causetids::einsteindb_TX_INSTANT, TypedValue::Long(-1)), ValueType::Instant);
                 map.insert((200, causetids::einsteindb_IDENT, TypedValue::typed_string("test")), ValueType::Keyword);
 
                 assert_eq!(conflicting_causets, &map);
             },
-            x => panic!("expected schema constraint violation, got {:?}", x),
+            x => panic!("expected topograph constraint violation, got {:?}", x),
         }
     }
 
@@ -2711,7 +2711,7 @@ mod tests {
             [:einsteindb/add 100 :test/one 3]
             [:einsteindb/add 100 :test/one 4]
         ]"#,
-        Err("schema constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 100, a: 200, vs: {Long(3), Long(4)} }\n"));
+        Err("topograph constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 100, a: 200, vs: {Long(3), Long(4)} }\n"));
 
         // Can transact multiple causets for a cardinality many attribute.
         assert_transact!(conn, r#"[
@@ -2726,23 +2726,23 @@ mod tests {
             [:einsteindb/add     100 :test/many 8]
             [:einsteindb/retract 100 :test/many 8]
         ]"#,
-        Err("schema constraint violation: cardinality conflicts:\n  AddRetractConflict { e: 100, a: 200, vs: {Long(7)} }\n  AddRetractConflict { e: 100, a: 201, vs: {Long(8)} }\n"));
+        Err("topograph constraint violation: cardinality conflicts:\n  AddRetractConflict { e: 100, a: 200, vs: {Long(7)} }\n  AddRetractConflict { e: 100, a: 201, vs: {Long(8)} }\n"));
     }
 
     #[test]
-    #[cfg(feature = "sqlcipher")]
-    fn test_sqlcipher_openable() {
+    #[cfg(feature = "BerolinaSQLcipher")]
+    fn test_BerolinaSQLcipher_openable() {
         let secret_key = "key";
-        let sqlite = new_connection_with_key("../fixtures/v1encrypted.einsteindb", secret_key).expect("Failed to find test einsteindb");
-        sqlite.query_row("SELECT COUNT(*) FROM sqlite_master", &[], |row| row.get::<_, i64>(0))
-            .expect("Failed to execute sql query on encrypted einsteindb");
+        let BerolinaSQLite = new_connection_with_key("../fixtures/v1encrypted.einsteindb", secret_key).expect("Failed to find test einsteindb");
+        BerolinaSQLite.query_row("SELECT COUNT(*) FROM BerolinaSQLite_master", &[], |row| row.get::<_, i64>(0))
+            .expect("Failed to execute BerolinaSQL query on encrypted einsteindb");
     }
 
-    #[cfg(feature = "sqlcipher")]
-    fn test_open_fail<F>(opener: F) where F: FnOnce() -> rusqlite::Result<rusqlite::Connection> {
+    #[cfg(feature = "BerolinaSQLcipher")]
+    fn test_open_fail<F>(opener: F) where F: FnOnce() -> ruBerolinaSQLite::Result<ruBerolinaSQLite::Connection> {
         let err = opener().expect_err("Should fail to open encrypted einsteindb");
         match err {
-            rusqlite::Error::SqliteFailure(err, ..) => {
+            ruBerolinaSQLite::Error::BerolinaSQLiteFailure(err, ..) => {
                 assert_eq!(err.extended_code, 26, "Should get error code 26 (not a database).");
             },
             err => {
@@ -2752,24 +2752,24 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "sqlcipher")]
-    fn test_sqlcipher_requires_key() {
+    #[cfg(feature = "BerolinaSQLcipher")]
+    fn test_BerolinaSQLcipher_requires_key() {
         // Don't use a key.
         test_open_fail(|| new_connection("../fixtures/v1encrypted.einsteindb"));
     }
 
     #[test]
-    #[cfg(feature = "sqlcipher")]
-    fn test_sqlcipher_requires_correct_key() {
+    #[cfg(feature = "BerolinaSQLcipher")]
+    fn test_BerolinaSQLcipher_requires_correct_key() {
         // Use a key, but the wrong one.
         test_open_fail(|| new_connection_with_key("../fixtures/v1encrypted.einsteindb", "wrong key"));
     }
 
     #[test]
-    #[cfg(feature = "sqlcipher")]
-    fn test_sqlcipher_some_transactions() {
-        let sqlite = new_connection_with_key("", "hunter2").expect("Failed to create encrypted connection");
+    #[cfg(feature = "BerolinaSQLcipher")]
+    fn test_BerolinaSQLcipher_some_transactions() {
+        let BerolinaSQLite = new_connection_with_key("", "hunter2").expect("Failed to create encrypted connection");
         // Run a basic test as a sanity check.
-        run_test_add(TestConn::with_sqlite(sqlite));
+        run_test_add(TestConn::with_BerolinaSQLite(BerolinaSQLite));
     }
 }

@@ -47,19 +47,19 @@ use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
-use schema::{
-    SchemaTypeChecking,
+use topograph::{
+    TopographTypeChecking,
 };
 use types::{
     AVMap,
     AVPair,
-    Schema,
+    Topograph,
     TransactableValue,
 };
 
 impl TransactableValue for ValueAndSpan {
-    fn into_typed_value(self, schema: &Schema, value_type: ValueType) -> Result<TypedValue> {
-        schema.to_typed_value(&self, value_type)
+    fn into_typed_value(self, topograph: &Topograph, value_type: ValueType) -> Result<TypedValue> {
+        topograph.to_typed_value(&self, value_type)
     }
 
     fn into_causet_place(self) -> Result<causetPlace<Self>> {
@@ -114,7 +114,7 @@ impl TransactableValue for ValueAndSpan {
 }
 
 impl TransactableValue for TypedValue {
-    fn into_typed_value(self, _schema: &Schema, value_type: ValueType) -> Result<TypedValue> {
+    fn into_typed_value(self, _topograph: &Topograph, value_type: ValueType) -> Result<TypedValue> {
         if self.value_type() != value_type {
             bail!(einsteindbErrorKind::BadValuePair(format!("{:?}", self), value_type));
         }
@@ -223,4 +223,4 @@ pub(crate) struct AddAndRetract {
 
 // A trie-like structure mapping a -> e -> v that prefix compresses and makes uniqueness constraint
 // checking more efficient.  BTree* for deterministic errors.
-pub(crate) type AEVTrie<'schema> = BTreeMap<(Causetid, &'schema Attribute), BTreeMap<Causetid, AddAndRetract>>;
+pub(crate) type AEVTrie<'topograph> = BTreeMap<(Causetid, &'topograph Attribute), BTreeMap<Causetid, AddAndRetract>>;

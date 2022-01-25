@@ -32,7 +32,7 @@ use core_traits::{
 };
 
 use einsteindb_core::{
-    Schema,
+    Topograph,
 };
 
 use edn::causets::{
@@ -181,7 +181,7 @@ impl TransactWatcher for InProgressObserverTransactWatcher {
         self.collected_attributes.insert(a);
     }
 
-    fn done(&mut self, t: &Causetid, _schema: &Schema) -> Result<()> {
+    fn done(&mut self, t: &Causetid, _topograph: &Topograph) -> Result<()> {
         let collected_attributes = ::std::mem::replace(&mut self.collected_attributes, Default::default());
         self.txes.insert(*t, collected_attributes);
         Ok(())

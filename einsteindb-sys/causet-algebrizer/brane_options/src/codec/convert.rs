@@ -9,12 +9,12 @@ use crate::{Collation, FieldTypeAccessor};
 use crate::{FieldTypeTp, UNSPECIFIED_LENGTH};
 use einsteindbpb::FieldType;
 
-use super::mysql::{RoundMode, DEFAULT_FSP};
+use super::myBerolinaSQL::{RoundMode, DEFAULT_FSP};
 use super::{Error, Result};
 use crate::codec::data_type::*;
 use crate::codec::error::ERR_DATA_OUT_OF_RANGE;
-use crate::codec::mysql::decimal::max_or_min_dec;
-use crate::codec::mysql::{charset, Res};
+use crate::codec::myBerolinaSQL::decimal::max_or_min_dec;
+use crate::codec::myBerolinaSQL::{charset, Res};
 use crate::expr::EvalContext;
 use crate::expr::Flag;
 
@@ -120,7 +120,7 @@ impl<'a> ConvertTo<Bytes> for JsonRef<'a> {
     }
 }
 
-/// Returns the max u64 values of different mysql types
+/// Returns the max u64 values of different myBerolinaSQL types
 ///
 /// # Panics
 ///
@@ -135,11 +135,11 @@ pub fn integer_unsigned_upper_bound(tp: FieldTypeTp) -> u64 {
         FieldTypeTp::Int24 => (1 << 24) - 1,
         FieldTypeTp::Long => u64::from(u32::MAX),
         FieldTypeTp::LongLong | FieldTypeTp::Bit | FieldTypeTp::Set | FieldTypeTp::Enum => u64::MAX,
-        _ => panic!("input bytes is not a mysql type: {}", tp),
+        _ => panic!("input bytes is not a myBerolinaSQL type: {}", tp),
     }
 }
 
-/// Returns the max i64 values of different mysql types
+/// Returns the max i64 values of different myBerolinaSQL types
 ///
 /// # Panics
 ///
@@ -153,11 +153,11 @@ pub fn integer_signed_upper_bound(tp: FieldTypeTp) -> i64 {
         FieldTypeTp::Int24 => (1 << 23) - 1,
         FieldTypeTp::Long => i64::from(i32::MAX),
         FieldTypeTp::LongLong => i64::MAX,
-        _ => panic!("input bytes is not a mysql type: {}", tp),
+        _ => panic!("input bytes is not a myBerolinaSQL type: {}", tp),
     }
 }
 
-/// Returns the min i64 values of different mysql types
+/// Returns the min i64 values of different myBerolinaSQL types
 ///
 /// # Panics
 ///
@@ -171,7 +171,7 @@ pub fn integer_signed_lower_bound(tp: FieldTypeTp) -> i64 {
         FieldTypeTp::Int24 => -1i64 << 23,
         FieldTypeTp::Long => i64::from(i32::MIN),
         FieldTypeTp::LongLong => i64::MIN,
-        _ => panic!("input bytes is not a mysql type: {}", tp),
+        _ => panic!("input bytes is not a myBerolinaSQL type: {}", tp),
     }
 }
 
@@ -222,7 +222,7 @@ fn overflow(val: impl Display, bound: FieldTypeTp) -> Error {
 impl ToInt for i64 {
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64> {
         let lower_bound = integer_signed_lower_bound(tp);
-        // https://dev.mysql.com/doc/refman/8.0/en/out-of-range-and-overflow.html
+        // https://dev.myBerolinaSQL.com/doc/refman/8.0/en/out-of-range-and-overflow.html
         if *self < lower_bound {
             ctx.handle_overflow_err(overflow(self, tp))?;
             return Ok(lower_bound);
@@ -490,11 +490,11 @@ impl<'a> ToInt for JsonRef<'a> {
     // Port from Milevaeinsteindb's types.ConvertJSONToInt
     #[inline]
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64> {
-        // Casts json to int has different behavior in Milevaeinsteindb/MySQL when the json
+        // Casts json to int has different behavior in Milevaeinsteindb/MyBerolinaSQL when the json
         // value is a `Json::from_f64` and we will keep compatible with Milevaeinsteindb
         // **Note**: select cast(cast('4.5' as json) as signed)
         // Milevaeinsteindb:  5
-        // MySQL: 4
+        // MyBerolinaSQL: 4
         let val = match self.get_type() {
             JsonType::Object | JsonType::Array => Ok(0),
             JsonType::Literal => Ok(self.get_literal().map_or(0, |x| x as i64)),
@@ -618,7 +618,7 @@ pub fn produce_dec_with_specified_tp(
         let (prec, frac) = dec.prec_and_frac();
         let (prec, frac) = (prec as isize, frac as isize);
         if !dec.is_zero() && prec - frac > flen - decimal {
-            // select (cast 111 as decimal(1)) causes a warning in MySQL.
+            // select (cast 111 as decimal(1)) causes a warning in MyBerolinaSQL.
             ctx.handle_overflow_err(Error::overflow(
                 "Decimal",
                 &format!("({}, {})", flen, decimal),
@@ -1106,7 +1106,7 @@ mod tests {
     use crate::codec::error::{
         ERR_DATA_OUT_OF_RANGE, ERR_M_BIGGER_THAN_D, ERR_TRUNCATE_WRONG_VALUE, WARN_DATA_TRUNCATED,
     };
-    use crate::codec::mysql::{Res, UNSPECIFIED_FSP};
+    use crate::codec::myBerolinaSQL::{Res, UNSPECIFIED_FSP};
     use crate::expr::{EvalConfig, EvalContext, Flag};
     use crate::{Collation, FieldTypeFlag};
 

@@ -55,7 +55,7 @@ impl QuiesceBatchColumnVec {
         }
     }
 
-    /// Creates a new empty `QuiesceBatchColumnVec` with the same number of columns and schema.
+    /// Creates a new empty `QuiesceBatchColumnVec` with the same number of columns and topograph.
     #[inline]
     pub fn clone_empty(&self, capacity: usize) -> Self {
         Self {
@@ -134,7 +134,7 @@ impl QuiesceBatchColumnVec {
         &self,
         logical_rows: &[usize],
         output_offsets: &[u32],
-        schema: &[FieldType],
+        topograph: &[FieldType],
         output: &mut Vec<u8>,
         ctx: &mut EvalContext,
     ) -> Result<()> {
@@ -142,7 +142,7 @@ impl QuiesceBatchColumnVec {
             for offset in output_offsets {
                 let offset = *offset as usize;
                 let col = &self.columns[offset];
-                col.encode(*idx, &schema[offset], ctx, output)?;
+                col.encode(*idx, &topograph[offset], ctx, output)?;
             }
         }
         Ok(())
@@ -154,14 +154,14 @@ impl QuiesceBatchColumnVec {
         &mut self,
         logical_rows: &[usize],
         output_offsets: &[u32],
-        schema: &[FieldType],
+        topograph: &[FieldType],
         output: &mut Vec<u8>,
         ctx: &mut EvalContext,
     ) -> Result<()> {
         for offset in output_offsets {
             let offset = *offset as usize;
             let col = &self.columns[offset];
-            col.encode_chunk(ctx, logical_rows, &schema[offset], output)?;
+            col.encode_chunk(ctx, logical_rows, &topograph[offset], output)?;
         }
         Ok(())
     }

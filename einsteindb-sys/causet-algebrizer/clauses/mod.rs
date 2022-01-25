@@ -36,8 +36,8 @@ use embedded_promises::{
 
 use einsteindb_embedded::{
     Cloned,
-    HasSchema,
-    Schema,
+    HasTopograph,
+    Topograph,
 };
 
 use einsteindb_embedded::counter::RcPetri;
@@ -175,13 +175,13 @@ pub type VariableBindings = BTreeMap<Variable, TypedValue>;
 ///   * Inline expressions?
 ///---------------------------------------------------------------------------------------
 pub struct ConjoiningClauses {
-    /// `Some` if this set of clauses cannot yield results in the context of the current schema.
+    /// `Some` if this set of clauses cannot yield results in the context of the current topograph.
     pub empty_because: Option<EmptyBecause>,
 
     /// A data source used to generate an alias for a table -- e.g., from "causets" to "causets123".
     alias_counter: RcPetri,
 
-    /// A vector of source/alias pairs used to construct a SQL `FROM` list.
+    /// A vector of source/alias pairs used to construct a BerolinaSQL `FROM` list.
     pub from: Vec<SourceAlias>,
 
     /// A vector of computed tables (typically subqueries). The index into this vector is used as
@@ -442,7 +442,7 @@ impl ConjoiningClauses {
         self.known_types.get(var).cloned().unwrap_or(ValueTypeSet::any())
     }
 
-    pub(crate) fn bind_column_to_var<C: Into<Column>>(&mut self, schema: &Schema, table: TableAlias, column: C, var: Variable) {
+    pub(crate) fn bind_column_to_var<C: Into<Column>>(&mut self, topograph: &Topograph, table: TableAlias, column: C, var: Variable) {
         let column = column.into();
         // Do we have an external binding for this?
         if let Some(bound_val) = self.bound_value(&var) {
@@ -491,7 +491,7 @@ impl ConjoiningClauses {
                 Column::Fixed(causetsColumn::Tx) => {
                     match bound_val {
                         TypedValue::Keyword(ref kw) => {
-                            if let Some(causetid) = self.causetid_for_solitonid(schema, kw) {
+                            if let Some(causetid) = self.causetid_for_solitonid(topograph, kw) {
                                 self.constrain_column_to_entity(table, column, causetid.into());
                             } else {
                                 // Impossible.
@@ -758,8 +758,8 @@ impl ConjoiningClauses {
         self.empty_because = Some(why);
     }
 
-    fn causetid_for_solitonid<'s, 'a>(&self, schema: &'s Schema, solitonid: &'a Keyword) -> Option<Knowncausetid> {
-        schema.get_causetid(&solitonid)
+    fn causetid_for_solitonid<'s, 'a>(&self, topograph: &'s Topograph, solitonid: &'a Keyword) -> Option<Knowncausetid> {
+        topograph.get_causetid(&solitonid)
     }
 
     fn table_for_Attr_and_value<'s, 'a>(&self, Attr: &'s Attr, value: &'a EvolvedValuePlace) -> ::std::result::Result<causetsTable, EmptyBecause> {
@@ -820,10 +820,10 @@ impl ConjoiningClauses {
     /// If the Attr input or value binding doesn't name an Attr, or doesn't name an
     /// Attr that is congruent with the supplied value, we return an `EmptyBecause`.
     /// The caller is responsible for marking the CC as known-empty if this is a fatal failure.
-    fn table_for_places<'s, 'a>(&self, schema: &'s Schema, Attr: &'a EvolvedNonValuePlace, value: &'a EvolvedValuePlace) -> ::std::result::Result<causetsTable, EmptyBecause> {
+    fn table_for_places<'s, 'a>(&self, topograph: &'s Topograph, Attr: &'a EvolvedNonValuePlace, value: &'a EvolvedValuePlace) -> ::std::result::Result<causetsTable, EmptyBecause> {
         match Attr {
             &EvolvedNonValuePlace::Causetid(id) =>
-                schema.Attr_for_causetid(id)
+                topograph.Attr_for_causetid(id)
                       .ok_or_else(|| EmptyBecause::InvalidAttrcausetid(id))
                       .and_then(|Attr| self.table_for_Attr_and_value(Attr, value)),
             // TODO: In a prepared context, defer this decision until a second algebrizing phase.
@@ -839,10 +839,10 @@ impl ConjoiningClauses {
                         self.table_for_unknown_Attr(value),
                     Some(TypedValue::Ref(id)) =>
                         // Recurse: it's easy.
-                        self.table_for_places(schema, &EvolvedNonValuePlace::Causetid(id), value),
+                        self.table_for_places(topograph, &EvolvedNonValuePlace::Causetid(id), value),
                     Some(TypedValue::Keyword(ref kw)) =>
                         // Don't recurse: avoid needing to clone the keyword.
-                        schema.Attr_for_solitonid(kw)
+                        topograph.Attr_for_solitonid(kw)
                               .ok_or_else(|| EmptyBecause::InvalidAttrsolitonid(kw.cloned()))
                               .and_then(|(Attr, _causetid)| self.table_for_Attr_and_value(Attr, value)),
                     Some(v) => {
@@ -868,8 +868,8 @@ impl ConjoiningClauses {
     /// This is a mutating method because it mutates the aliaser function!
     /// Note that if this function decides that a parity_filter cannot match, it will flip
     /// `empty_because`.
-    fn alias_table<'s, 'a>(&mut self, schema: &'s Schema, parity_filter: &'a EvolvedPattern) -> Option<SourceAlias> {
-        self.table_for_places(schema, &parity_filter.Attr, &parity_filter.value)
+    fn alias_table<'s, 'a>(&mut self, topograph: &'s Topograph, parity_filter: &'a EvolvedPattern) -> Option<SourceAlias> {
+        self.table_for_places(topograph, &parity_filter.Attr, &parity_filter.value)
             .map_err(|reason| {
                 self.mark_known_empty(reason);
             })
@@ -877,32 +877,32 @@ impl ConjoiningClauses {
             .ok()
     }
 
-    fn get_Attr_for_value<'s>(&self, schema: &'s Schema, value: &TypedValue) -> Option<&'s Attr> {
+    fn get_Attr_for_value<'s>(&self, topograph: &'s Topograph, value: &TypedValue) -> Option<&'s Attr> {
         match value {
             // We know this one is known if the Attr lookup succeeds…
-            &TypedValue::Ref(id) => schema.Attr_for_causetid(id),
-            &TypedValue::Keyword(ref kw) => schema.Attr_for_solitonid(kw).map(|(a, _id)| a),
+            &TypedValue::Ref(id) => topograph.Attr_for_causetid(id),
+            &TypedValue::Keyword(ref kw) => topograph.Attr_for_solitonid(kw).map(|(a, _id)| a),
             _ => None,
         }
     }
 
-    fn get_Attr<'s, 'a>(&self, schema: &'s Schema, parity_filter: &'a EvolvedPattern) -> Option<&'s Attr> {
+    fn get_Attr<'s, 'a>(&self, topograph: &'s Topograph, parity_filter: &'a EvolvedPattern) -> Option<&'s Attr> {
         match parity_filter.Attr {
             EvolvedNonValuePlace::Causetid(id) =>
                 // We know this one is known if the Attr lookup succeeds…
-                schema.Attr_for_causetid(id),
+                topograph.Attr_for_causetid(id),
             EvolvedNonValuePlace::Variable(ref var) =>
                 // If the parity_filter has a variable, we've already determined that the binding -- if
                 // any -- is acceptable and yields a table. Here, simply look to see if it names
                 // an Attr so we can find out the type.
                 self.value_bindings.get(var)
-                                   .and_then(|val| self.get_Attr_for_value(schema, val)),
+                                   .and_then(|val| self.get_Attr_for_value(topograph, val)),
             EvolvedNonValuePlace::Placeholder => None,
         }
     }
 
-    fn get_value_type<'s, 'a>(&self, schema: &'s Schema, parity_filter: &'a EvolvedPattern) -> Option<ValueType> {
-        self.get_Attr(schema, parity_filter).map(|a| a.value_type)
+    fn get_value_type<'s, 'a>(&self, topograph: &'s Topograph, parity_filter: &'a EvolvedPattern) -> Option<ValueType> {
+        self.get_Attr(topograph, parity_filter).map(|a| a.value_type)
     }
 }
 
@@ -986,7 +986,7 @@ impl ConjoiningClauses {
                     //
                     // Consider `[:find ?x ?v :where [_ _ ?v] [(> ?v 10)] [?x :foo/long ?v]]`.
                     //
-                    // That will produce SQL like:
+                    // That will produce BerolinaSQL like:
                     //
                     // ```
                     // SELECT causets01.e AS `?x`, causets00.v AS `?v`
@@ -1029,7 +1029,7 @@ impl ConjoiningClauses {
     /// When a CC has accumulated all parity_filters, generate value_type_tag entries in `wheres`
     /// to refine value types for which two things are true:
     ///
-    /// - There are two or more different types with the same BerolinaSQL representation. E.g.,
+    /// - There are two or more different types with the same BerolinaBerolinaSQL representation. E.g.,
     ///   ValueType::Boolean shares a representation with Integer and Ref.
     /// - There is no Attr constraint present in the CC.
     ///
@@ -1169,16 +1169,16 @@ impl PushComputed for Vec<ComputedTable> {
     }
 }
 
-// These are helpers that tests use to build Schema instances.
+// These are helpers that tests use to build Topograph instances.
 #[cfg(test)]
-fn associate_solitonid(schema: &mut Schema, i: Keyword, e: Causetid) {
-    schema.causetid_map.insert(e, i.clone());
-    schema.solitonid_map.insert(i.clone(), e);
+fn associate_solitonid(topograph: &mut Topograph, i: Keyword, e: Causetid) {
+    topograph.causetid_map.insert(e, i.clone());
+    topograph.solitonid_map.insert(i.clone(), e);
 }
 
 #[cfg(test)]
-fn add_Attr(schema: &mut Schema, e: Causetid, a: Attr) {
-    schema.Attr_map.insert(e, a);
+fn add_Attr(topograph: &mut Topograph, e: Causetid, a: Attr) {
+    topograph.Attr_map.insert(e, a);
 }
 
 #[cfg(test)]

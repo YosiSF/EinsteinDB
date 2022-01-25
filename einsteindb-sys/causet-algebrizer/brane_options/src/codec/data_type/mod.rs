@@ -17,7 +17,7 @@ pub type Int = i64;
 pub type Real = ordered_float::NotNan<f64>;
 pub type Bytes = Vec<u8>;
 pub type BytesRef<'a> = &'a [u8];
-pub use crate::codec::mysql::{json::JsonRef, Decimal, Duration, Json, JsonType, Time as DateTime};
+pub use crate::codec::myBerolinaSQL::{json::JsonRef, Decimal, Duration, Json, JsonType, Time as DateTime};
 pub use not_chunked_vec::NotChunkedVec;
 
 // Dynamic eval types.
@@ -28,82 +28,82 @@ use crate::EvalType;
 
 use crate::codec::convert::ConvertTo;
 use crate::expr::EvalContext;
-use allegroeinstein-prolog-causet-sql::error::Result;
+use allegroeinstein-prolog-causet-BerolinaSQL::error::Result;
 
 
-pub trait AsMySQLBool {
-    /// Evaluates into a MySQL logic value.
-    fn as_mysql_bool(&self, context: &mut EvalContext) -> Result<bool>;
+pub trait AsMyBerolinaSQLBool {
+    /// Evaluates into a MyBerolinaSQL logic value.
+    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool>;
 }
 
-impl AsMySQLBool for Int {
+impl AsMyBerolinaSQLBool for Int {
     #[inline]
-    fn as_mysql_bool(&self, _context: &mut EvalContext) -> Result<bool> {
+    fn as_myBerolinaSQL_bool(&self, _context: &mut EvalContext) -> Result<bool> {
         Ok(*self != 0)
     }
 }
 
-impl AsMySQLBool for Real {
+impl AsMyBerolinaSQLBool for Real {
     #[inline]
-    fn as_mysql_bool(&self, _context: &mut EvalContext) -> Result<bool> {
+    fn as_myBerolinaSQL_bool(&self, _context: &mut EvalContext) -> Result<bool> {
         Ok(self.into_inner() != 0f64)
     }
 }
 
-impl<'a, T: AsMySQLBool> AsMySQLBool for &'a T {
+impl<'a, T: AsMyBerolinaSQLBool> AsMyBerolinaSQLBool for &'a T {
     #[inline]
-    fn as_mysql_bool(&self, context: &mut EvalContext) -> Result<bool> {
-        (&**self).as_mysql_bool(context)
+    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
+        (&**self).as_myBerolinaSQL_bool(context)
     }
 }
 
-impl AsMySQLBool for Bytes {
+impl AsMyBerolinaSQLBool for Bytes {
     #[inline]
-    fn as_mysql_bool(&self, context: &mut EvalContext) -> Result<bool> {
-        self.as_slice().as_mysql_bool(context)
+    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
+        self.as_slice().as_myBerolinaSQL_bool(context)
     }
 }
 
-impl<'a> AsMySQLBool for BytesRef<'a> {
+impl<'a> AsMyBerolinaSQLBool for BytesRef<'a> {
     #[inline]
-    fn as_mysql_bool(&self, context: &mut EvalContext) -> Result<bool> {
+    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
         Ok(!self.is_empty() && ConvertTo::<f64>::convert(self, context)? != 0f64)
     }
 }
 
-impl<'a, T> AsMySQLBool for Option<&'a T>
+impl<'a, T> AsMyBerolinaSQLBool for Option<&'a T>
 where
-    T: AsMySQLBool,
+    T: AsMyBerolinaSQLBool,
 {
-    fn as_mysql_bool(&self, context: &mut EvalContext) -> Result<bool> {
+    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
         match self {
             None => Ok(false),
-            Some(ref v) => v.as_mysql_bool(context),
+            Some(ref v) => v.as_myBerolinaSQL_bool(context),
         }
     }
 }
 
-impl<'a> AsMySQLBool for JsonRef<'a> {
-    fn as_mysql_bool(&self, _context: &mut EvalContext) -> Result<bool> {
+impl<'a> AsMyBerolinaSQLBool for JsonRef<'a> {
+    fn as_myBerolinaSQL_bool(&self, _context: &mut EvalContext) -> Result<bool> {
         // TODO: This logic is not correct. See pingcap/Milevaeinsteindb#9593
         Ok(false)
     }
 }
 
-impl<'a> AsMySQLBool for Option<BytesRef<'a>> {
-    fn as_mysql_bool(&self, context: &mut EvalContext) -> Result<bool> {
+impl<'a> AsMyBerolinaSQLBool for Option<BytesRef<'a>> {
+    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
         match self {
             None => Ok(false),
-            Some(ref v) => v.as_mysql_bool(context),
+            Some(ref v) => v.as_myBerolinaSQL_bool(context),
         }
     }
 }
 
-impl<'a> AsMySQLBool for Option<JsonRef<'a>> {
-    fn as_mysql_bool(&self, context: &mut EvalContext) -> Result<bool> {
+impl<'a> AsMyBerolinaSQLBool for Option<JsonRef<'a>> {
+    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
         match self {
             None => Ok(false),
-            Some(ref v) => v.as_mysql_bool(context),
+            Some(ref v) => v.as_myBerolinaSQL_bool(context),
         }
     }
 }
@@ -430,7 +430,7 @@ mod tests {
 
         let mut ctx = EvalContext::default();
         for (i, (v, expect)) in tests.into_iter().enumerate() {
-            let rb: Result<bool> = v.to_vec().as_mysql_bool(&mut ctx);
+            let rb: Result<bool> = v.to_vec().as_myBerolinaSQL_bool(&mut ctx);
             match expect {
                 Some(val) => {
                     assert_eq!(rb.unwrap(), val);
@@ -453,7 +453,7 @@ mod tests {
             .to_string()
             .as_bytes()
             .to_vec()
-            .as_mysql_bool(&mut ctx);
+            .as_myBerolinaSQL_bool(&mut ctx);
         assert!(val.is_err());
 
         let mut ctx = EvalContext::default();
@@ -461,7 +461,7 @@ mod tests {
             .to_string()
             .as_bytes()
             .to_vec()
-            .as_mysql_bool(&mut ctx);
+            .as_myBerolinaSQL_bool(&mut ctx);
         assert!(val.is_err());
     }
 
@@ -485,7 +485,7 @@ mod tests {
         for (f, expected) in tests {
             match Real::new(f) {
                 Ok(b) => {
-                    let r = b.as_mysql_bool(&mut ctx).unwrap();
+                    let r = b.as_myBerolinaSQL_bool(&mut ctx).unwrap();
                     assert_eq!(r, expected.unwrap());
                 }
                 Err(_) => assert!(expected.is_none(), "{} to bool should fail", f,),

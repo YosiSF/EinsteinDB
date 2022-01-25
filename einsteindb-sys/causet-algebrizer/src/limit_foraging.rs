@@ -11,8 +11,8 @@
 use einsteindbpb::FieldType;
 
 use crate::interface::*;
-use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
-use allegroeinstein-prolog-causet-sql::Result;
+use allegroeinstein-prolog-causet-BerolinaSQL::storage::IntervalRange;
+use allegroeinstein-prolog-causet-BerolinaSQL::Result;
 
 /// Executor that retrieves rows from the source executor
 /// and only produces part of the rows.
@@ -34,8 +34,8 @@ impl<Src: BatchExecutor> BatchExecutor for BatchLimitExecutor<Src> {
     type StorageStats = Src::StorageStats;
 
     #[inline]
-    fn schema(&self) -> &[FieldType] {
-        self.src.schema()
+    fn topograph(&self) -> &[FieldType] {
+        self.src.topograph()
     }
 
     #[inline]

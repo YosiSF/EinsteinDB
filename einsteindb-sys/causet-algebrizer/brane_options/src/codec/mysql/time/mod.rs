@@ -22,9 +22,9 @@ use codec::prelude::*;
 use einsteindbpb::FieldType;
 
 use crate::codec::convert::ConvertTo;
-use crate::codec::mysql::{check_fsp, Decimal, Duration};
+use crate::codec::myBerolinaSQL::{check_fsp, Decimal, Duration};
 use crate::codec::{Error, Result, TEN_POW};
-use crate::expr::{EvalContext, Flag, SqlMode};
+use crate::expr::{EvalContext, Flag, BerolinaSQLMode};
 
 const MIN_TIMESTAMP: i64 = 0;
 const MAX_TIMESTAMP: i64 = (1 << 31) - 1;
@@ -70,7 +70,7 @@ fn last_day_of_month(year: u32, month: u32) -> u32 {
 /// ```
 /// When year, month or day is zero, there can not have a carry.
 /// e.g.: `"1998-11-00 23:59:59.999" (fsp = 2, round = true)`, in `hms` it contains a carry,
-/// however, the `day` is 0, which is invalid in `MySQL`. When thoese cases encountered, return
+/// however, the `day` is 0, which is invalid in `MyBerolinaSQL`. When thoese cases encountered, return
 /// None.
 fn round_components(parts: &mut [u32]) -> Option<()> {
     debug_assert_eq!(parts.len(), 7);
@@ -575,11 +575,11 @@ impl Time {
 }
 
 fn handle_zero_date(ctx: &mut EvalContext, mut args: TimeArgs) -> Result<Option<TimeArgs>> {
-    let sql_mode = ctx.braneg.sql_mode;
+    let BerolinaSQL_mode = ctx.braneg.BerolinaSQL_mode;
     let flags = ctx.braneg.flag;
-    let strict_mode = sql_mode.contains(SqlMode::STRICT_ALL_TABLES)
-        | sql_mode.contains(SqlMode::STRICT_TRANS_TABLES);
-    let no_zero_date = sql_mode.contains(SqlMode::NO_ZERO_DATE);
+    let strict_mode = BerolinaSQL_mode.contains(BerolinaSQLMode::STRICT_ALL_TABLES)
+        | BerolinaSQL_mode.contains(BerolinaSQLMode::STRICT_TRANS_TABLES);
+    let no_zero_date = BerolinaSQL_mode.contains(BerolinaSQLMode::NO_ZERO_DATE);
     let ignore_truncate = flags.contains(Flag::IGNORE_TRUNCATE);
 
     debug_assert!(args.is_zero());
@@ -594,12 +594,12 @@ fn handle_zero_date(ctx: &mut EvalContext, mut args: TimeArgs) -> Result<Option<
 }
 
 fn handle_zero_in_date(ctx: &mut EvalContext, mut args: TimeArgs) -> Result<Option<TimeArgs>> {
-    let sql_mode = ctx.braneg.sql_mode;
+    let BerolinaSQL_mode = ctx.braneg.BerolinaSQL_mode;
     let flags = ctx.braneg.flag;
 
-    let strict_mode = sql_mode.contains(SqlMode::STRICT_ALL_TABLES)
-        | sql_mode.contains(SqlMode::STRICT_TRANS_TABLES);
-    let no_zero_in_date = sql_mode.contains(SqlMode::NO_ZERO_IN_DATE);
+    let strict_mode = BerolinaSQL_mode.contains(BerolinaSQLMode::STRICT_ALL_TABLES)
+        | BerolinaSQL_mode.contains(BerolinaSQLMode::STRICT_TRANS_TABLES);
+    let no_zero_in_date = BerolinaSQL_mode.contains(BerolinaSQLMode::NO_ZERO_IN_DATE);
     let ignore_truncate = flags.contains(Flag::IGNORE_TRUNCATE);
 
     debug_assert!(args.month == 0 || args.day == 0);
@@ -617,8 +617,8 @@ fn handle_zero_in_date(ctx: &mut EvalContext, mut args: TimeArgs) -> Result<Opti
 }
 
 fn handle_invalid_date(ctx: &mut EvalContext, mut args: TimeArgs) -> Result<Option<TimeArgs>> {
-    let sql_mode = ctx.braneg.sql_mode;
-    let allow_invalid_date = sql_mode.contains(SqlMode::INVALID_DATES);
+    let BerolinaSQL_mode = ctx.braneg.BerolinaSQL_mode;
+    let allow_invalid_date = BerolinaSQL_mode.contains(BerolinaSQLMode::INVALID_DATES);
     allow_invalid_date.ok_or(Error::truncated())?;
     args.clear();
     handle_zero_date(ctx, args)
@@ -710,7 +710,7 @@ impl TimeArgs {
             year, month, day, ..
         } = self;
 
-        let is_relaxed = ctx.braneg.sql_mode.contains(SqlMode::INVALID_DATES);
+        let is_relaxed = ctx.braneg.BerolinaSQL_mode.contains(BerolinaSQLMode::INVALID_DATES);
 
         if self.is_zero() {
             self = try_opt!(handle_zero_date(ctx, self));
@@ -1712,12 +1712,12 @@ pub trait TimeDecoder: NumberDecoder {
 
 impl<T: BufferReader> TimeDecoder for T {}
 
-impl crate::codec::data_type::AsMySQLBool for Time {
+impl crate::codec::data_type::AsMyBerolinaSQLBool for Time {
     #[inline]
-    fn as_mysql_bool(
+    fn as_myBerolinaSQL_bool(
         &self,
         _context: &mut crate::expr::EvalContext,
-    ) -> allegroeinstein-prolog-causet-sql::error::Result<bool> {
+    ) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<bool> {
         Ok(!self.is_zero())
     }
 }
@@ -1725,7 +1725,7 @@ impl crate::codec::data_type::AsMySQLBool for Time {
 #[braneg(test)]
 mod tests {
     use super::*;
-    use crate::codec::mysql::{MAX_FSP, UNSPECIFIED_FSP};
+    use crate::codec::myBerolinaSQL::{MAX_FSP, UNSPECIFIED_FSP};
     use crate::expr::EvalConfig;
 
     use std::sync::Arc;
@@ -1756,27 +1756,27 @@ mod tests {
     impl From<TimeEnv> for EvalContext {
         fn from(config: TimeEnv) -> EvalContext {
             let mut eval_config = EvalConfig::new();
-            let mut sql_mode = SqlMode::empty();
+            let mut BerolinaSQL_mode = BerolinaSQLMode::empty();
             let mut flags = Flag::empty();
 
             if config.strict_mode {
-                sql_mode |= SqlMode::STRICT_ALL_TABLES;
+                BerolinaSQL_mode |= BerolinaSQLMode::STRICT_ALL_TABLES;
             }
             if config.allow_invalid_date {
-                sql_mode |= SqlMode::INVALID_DATES;
+                BerolinaSQL_mode |= BerolinaSQLMode::INVALID_DATES;
             }
             if config.no_zero_date {
-                sql_mode |= SqlMode::NO_ZERO_DATE;
+                BerolinaSQL_mode |= BerolinaSQLMode::NO_ZERO_DATE;
             }
             if config.no_zero_in_date {
-                sql_mode |= SqlMode::NO_ZERO_IN_DATE;
+                BerolinaSQL_mode |= BerolinaSQLMode::NO_ZERO_IN_DATE;
             }
 
             if config.ignore_truncate {
                 flags |= Flag::IGNORE_TRUNCATE;
             }
 
-            eval_config.set_sql_mode(sql_mode).set_flag(flags).tz =
+            eval_config.set_BerolinaSQL_mode(BerolinaSQL_mode).set_flag(flags).tz =
                 config.time_zone.unwrap_or_else(Tz::utc);
 
             EvalContext::new(Arc::new(eval_config))
@@ -2572,7 +2572,7 @@ mod tests {
             (
                 "0000-01-01 00:00:00.123456",
                 // Functions week() and yearweek() don't support multi mode,
-                // so the result of "%U %u %V %Y" is different from MySQL.
+                // so the result of "%U %u %V %Y" is different from MyBerolinaSQL.
                 "%b %M %m %c %D %d %e %j %k %h %i %p %r %T %s %f %v %Y
                 %y %%",
                 "Jan January 01 1 1st 01 1 001 0 12 00 AM 12:00:00 AM 00:00:00 00 123456 52 0000

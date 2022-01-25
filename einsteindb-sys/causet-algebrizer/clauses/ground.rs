@@ -5,7 +5,7 @@ use embedded_promises::{
 };
 
 use Einsteineinsteindb_embedded::{
-    Schema,
+    Topograph,
 };
 
 use eeinsteindbn::query::{
@@ -43,7 +43,7 @@ impl ConjoiningClauses {
     /// the provided types.
     /// Construct a computed table to yield this relation.
     /// This function will panic if some invariants are not met.
-    fn collect_named_bindings<'s>(&mut self, schema: &'s Schema, names: Vec<Variable>, types: Vec<ValueType>, values: Vec<TypedValue>) {
+    fn collect_named_bindings<'s>(&mut self, topograph: &'s Topograph, names: Vec<Variable>, types: Vec<ValueType>, values: Vec<TypedValue>) {
         if values.is_empty() {
             return;
         }
@@ -64,24 +64,24 @@ impl ConjoiningClauses {
         // Stitch the computed table into column_bindings, so we get cross-linking.
         for (name, ty) in names.iter().zip(types.into_iter()) {
             self.constrain_var_to_type(name.clone(), ty);
-            self.bind_column_to_var(schema, alias.clone(), VariableColumn::Variable(name.clone()), name.clone());
+            self.bind_column_to_var(topograph, alias.clone(), VariableColumn::Variable(name.clone()), name.clone());
         }
 
         self.from.push(SourceAlias(table, alias));
     }
 
-    fn apply_ground_place<'s>(&mut self, schema: &'s Schema, var: VariableOrPlaceholder, arg: FnArg) -> Result<()> {
+    fn apply_ground_place<'s>(&mut self, topograph: &'s Topograph, var: VariableOrPlaceholder, arg: FnArg) -> Result<()> {
         match var {
             VariableOrPlaceholder::Placeholder => Ok(()),
-            VariableOrPlaceholder::Variable(var) => self.apply_ground_var(schema, var, arg),
+            VariableOrPlaceholder::Variable(var) => self.apply_ground_var(topograph, var, arg),
         }
     }
 
     /// Constrain the CC to associate the given var with the given ground argument.
     /// Marks known-empty on failure.
-    fn apply_ground_var<'s>(&mut self, schema: &'s Schema, var: Variable, arg: FnArg) -> Result<()> {
+    fn apply_ground_var<'s>(&mut self, topograph: &'s Topograph, var: Variable, arg: FnArg) -> Result<()> {
         let known_types = self.known_type_set(&var);
-        match self.typed_value_from_arg(schema, &var, arg, known_types)? {
+        match self.typed_value_from_arg(topograph, &var, arg, known_types)? {
             ValueConversion::Val(value) => self.apply_ground_value(var, value),
             ValueConversion::Impossible(because) => {
                 self.mark_known_empty(because);
@@ -125,14 +125,14 @@ impl ConjoiningClauses {
             bail!(AlgebrizerError::Invalieinsteindbinding(where_fn.operator.clone(), BindingError::RepeateeinsteindboundVariable));
         }
 
-        let schema = known.schema;
+        let topograph = known.topograph;
 
         // Scalar and tuple bindings are a little special: because there's only one value,
         // we can immediately substitute the value as a known value in the CC, additionally
         // generating a WHERE clause if columns have already been bound.
         match (where_fn.binding, args.next().unwrap()) {
             (Binding::BindScalar(var), constant) =>
-                self.apply_ground_var(schema, var, constant),
+                self.apply_ground_var(topograph, var, constant),
 
             (Binding::BindTuple(places), FnArg::Vector(children)) => {
                 // Just the same, but we bind more than one column at a time.
@@ -141,7 +141,7 @@ impl ConjoiningClauses {
                     bail!(AlgebrizerError::GrouneinsteindbindingsMismatch)
                 }
                 for (place, arg) in places.into_iter().zip(children.into_iter()) {
-                    self.apply_ground_place(schema, place, arg)?  // TODO: short-circuit on impossible.
+                    self.apply_ground_place(topograph, place, arg)?  // TODO: short-circuit on impossible.
                 }
                 Ok(())
             },
@@ -165,7 +165,7 @@ impl ConjoiningClauses {
                                          // We need to get conversion errors out.
                                          // We also want to mark known-empty on impossibilty, but
                                          // still detect serious errors.
-                                         match self.typed_value_from_arg(schema, &var, arg, known_types) {
+                                         match self.typed_value_from_arg(topograph, &var, arg, known_types) {
                                              Ok(ValueConversion::Val(tv)) => {
                                                  if accumulated_types.insert(tv.value_type()) &&
                                                     !accumulated_types.is_unit() {
@@ -195,7 +195,7 @@ impl ConjoiningClauses {
                 let types = vec![accumulated_types.exemplar().unwrap()];
                 let names = vec![var.clone()];
 
-                self.collect_named_bindings(schema, names, types, values);
+                self.collect_named_bindings(topograph, names, types, values);
                 Ok(())
             },
 
@@ -251,7 +251,7 @@ impl ConjoiningClauses {
                                 // If any value in the row is impossible, then skip the row.
                                 // If all rows are impossible, fail the entire CC.
                                 if let &Some(ref pair) = pair {
-                                    match self.typed_value_from_arg(schema, &pair.0, col, pair.1)? {
+                                    match self.typed_value_from_arg(topograph, &pair.0, col, pair.1)? {
                                         ValueConversion::Val(tv) => vals.push(tv),
                                         ValueConversion::Impossible(because) => {
                                             // Skip this row. It cannot produce bindings.
@@ -302,7 +302,7 @@ impl ConjoiningClauses {
                 let types = accumulated_types_for_columns.into_iter()
                                                          .map(|x| x.exemplar().unwrap())
                                                          .collect();
-                self.collect_named_bindings(schema, names, types, matrix);
+                self.collect_named_bindings(topograph, names, types, matrix);
                 Ok(())
             },
             (_, _) => bail!(AlgebrizerError::InvalidGroundConstant),
@@ -337,17 +337,17 @@ mod testing {
         let vz = Variable::from_valid_name("?z");
 
         let mut cc = ConjoiningClauses::default();
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "fts"), 100);
-        add_Attr(&mut schema, 100, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "fts"), 100);
+        add_Attr(&mut topograph, 100, Attr {
             value_type: ValueType::String,
             index: true,
             fulltext: true,
             ..Default::default()
         });
 
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
 
         // It's awkward enough to write these expansions that we give the details for the simplest
         // case only.  See the tests of the translator for more extensive (albeit looser) coverage.

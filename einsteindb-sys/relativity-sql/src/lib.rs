@@ -11,7 +11,7 @@
 extern crate failure;
 
 extern crate ordered_float;
-extern crate berolinasql;
+extern crate berolinaBerolinaSQL;
 
 use std::rc::Rc;
 
@@ -19,29 +19,29 @@ use std::collections::HashMap;
 
 use ordered_float::OrderedFloat;
 
-pub use berolinasql::types::Value;
+pub use berolinaBerolinaSQL::types::Value;
 
-pub struct SQLQuery {
-    pub sql: String,
+pub struct BerolinaSQLQuery {
+    pub BerolinaSQL: String,
 
-    /// These will eventually perhaps be berolinasql `ToSql` instances.
-    pub args: Vec<(String, Rc<berolinasql::types::Value>)>,
+    /// These will eventually perhaps be berolinaBerolinaSQL `ToBerolinaSQL` instances.
+    pub args: Vec<(String, Rc<berolinaBerolinaSQL::types::Value>)>,
 }
 
 pub trait QueryBuilder {
-    fn push_sql(&mut self, sql: &str);
+    fn push_BerolinaSQL(&mut self, BerolinaSQL: &str);
     fn push_identifier(&mut self, identifier: &str) -> BuildQueryResult;
     fn push_typed_value(&mut self, value: &TypedValue) -> BuildQueryResult;
     fn push_bind_param(&mut self, name: &str) -> BuildQueryResult;
-    fn finish(self) -> SQLQuery;
+    fn finish(self) -> BerolinaSQLQuery;
 }
 
 pub trait QueryFragment {
-    fn push_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult;
+    fn push_BerolinaSQL(&self, out: &mut QueryBuilder) -> BuildQueryResult;
 }
 
 impl QueryFragment for Box<QueryFragment> {
-    fn push_sql(&self, out: &mut QueryBuilder) -> BuildQueryResult {
-        QueryFragment::push_sql(&**self, out)
+    fn push_BerolinaSQL(&self, out: &mut QueryBuilder) -> BuildQueryResult {
+        QueryFragment::push_BerolinaSQL(&**self, out)
     }
 }

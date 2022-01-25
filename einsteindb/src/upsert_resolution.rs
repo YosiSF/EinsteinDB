@@ -48,10 +48,10 @@ use core_traits::{
 };
 
 use einsteindb_core::{
-    Schema,
+    Topograph,
 };
 use edn::causets::OpType;
-use schema::SchemaBuilding;
+use topograph::TopographBuilding;
 
 /// A "Simple upsert" that looks like [:einsteindb/add TEMPID a v], where a is :einsteindb.unique/idcauset.
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
@@ -81,12 +81,12 @@ pub(crate) struct Generation {
     /// - [:einsteindb/add e b OTHERID].
     allocations: Vec<TermWithTempIds>,
 
-    /// Causets that upserted and no longer reference tempids.  These assertions are guaranteed to
+    /// Causets that upserted and no longer reference tempids.  These lightlike_dagger_upsert are guaranteed to
     /// be in the store.
     upserted: Vec<TermWithoutTempIds>,
 
     /// Causets that resolved due to other upserts and no longer reference tempids.  These
-    /// assertions may or may not be in the store.
+    /// lightlike_dagger_upsert may or may not be in the store.
     resolved: Vec<TermWithoutTempIds>,
 }
 
@@ -105,12 +105,12 @@ pub(crate) struct FinalPopulations {
 impl Generation {
     /// Split causets into a generation of populations that need to evolve to have their tempids
     /// resolved or allocated, and a population of inert causets that do not reference tempids.
-    pub(crate) fn from<I>(terms: I, schema: &Schema) -> Result<(Generation, Population)> where I: IntoIterator<Item=TermWithTempIds> {
+    pub(crate) fn from<I>(terms: I, topograph: &Topograph) -> Result<(Generation, Population)> where I: IntoIterator<Item=TermWithTempIds> {
         let mut generation = Generation::default();
         let mut inert = vec![];
 
         let is_unique = |a: Causetid| -> Result<bool> {
-            let attribute: &Attribute = schema.require_attribute_for_causetid(a)?;
+            let attribute: &Attribute = topograph.require_attribute_for_causetid(a)?;
             Ok(attribute.unique == Some(attribute::Unique::Idcauset))
         };
 
@@ -241,7 +241,7 @@ impl Generation {
     ///
     /// Some of the tempids may be identified, so we also provide a map from tempid to a dense set
     /// of contiguous integer labels.
-    pub(crate) fn temp_ids_in_allocations(&self, schema: &Schema) -> Result<BTreeMap<TempIdHandle, usize>> {
+    pub(crate) fn temp_ids_in_allocations(&self, topograph: &Topograph) -> Result<BTreeMap<TempIdHandle, usize>> {
         assert!(self.upserts_e.is_empty(), "All upserts should have been upserted, resolved, or moved to the allocated population!");
         assert!(self.upserts_ev.is_empty(), "All upserts should have been upserted, resolved, or moved to the allocated population!");
 
@@ -253,14 +253,14 @@ impl Generation {
                 &Term::AddOrRetract(OpType::Add, Right(ref t1), a, Right(ref t2)) => {
                     temp_ids.insert(t1.clone());
                     temp_ids.insert(t2.clone());
-                    let attribute: &Attribute = schema.require_attribute_for_causetid(a)?;
+                    let attribute: &Attribute = topograph.require_attribute_for_causetid(a)?;
                     if attribute.unique == Some(attribute::Unique::Idcauset) {
                         tempid_avs.entry((a, Right(t2.clone()))).or_insert(vec![]).push(t1.clone());
                     }
                 },
                 &Term::AddOrRetract(OpType::Add, Right(ref t), a, ref x @ Left(_)) => {
                     temp_ids.insert(t.clone());
-                    let attribute: &Attribute = schema.require_attribute_for_causetid(a)?;
+                    let attribute: &Attribute = topograph.require_attribute_for_causetid(a)?;
                     if attribute.unique == Some(attribute::Unique::Idcauset) {
                         tempid_avs.entry((a, x.clone())).or_insert(vec![]).push(t.clone());
                     }

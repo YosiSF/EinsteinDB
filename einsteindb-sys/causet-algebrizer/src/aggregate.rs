@@ -3,8 +3,8 @@
 use std::cmp::Ordering;
 use einsteindbpb::ExprType;
 
-use allegroeinstein-prolog-causet-sql::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::mysql::Decimal;
+use allegroeinstein-prolog-causet-BerolinaSQL::Result;
+use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::myBerolinaSQL::Decimal;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
 
 use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;

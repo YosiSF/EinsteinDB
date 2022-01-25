@@ -18,10 +18,10 @@ use einsteindbpb::{Chunk, PosetDagRequest, SelectResponse, StreamResponse};
 use Einsteineinsteindb_util::deadline::Deadline;
 
 use super::Executor;
-use allegroeinstein-prolog-causet-sql::execute_stats::*;
-use allegroeinstein-prolog-causet-sql::metrics::*;
-use allegroeinstein-prolog-causet-sql::storage::{IntervalRange, Storage};
-use allegroeinstein-prolog-causet-sql::Result;
+use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::*;
+use allegroeinstein-prolog-causet-BerolinaSQL::metrics::*;
+use allegroeinstein-prolog-causet-BerolinaSQL::storage::{IntervalRange, Storage};
+use allegroeinstein-prolog-causet-BerolinaSQL::Result;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext};
 
 pub struct ExecutorsRunner<SS> {

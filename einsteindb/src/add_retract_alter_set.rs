@@ -12,8 +12,8 @@
 
 use std::collections::BTreeMap;
 
-/// Witness assertions and retractions, folding (assertion, retraction) pairs into alterations.
-/// Assumes that no assertion or retraction will be witnessed more than once.
+/// Witness lightlike_dagger_upsert and spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions, folding (lightlike_dagger_assertion, spacelike_dagger_spacelike_dagger_retraction) pairs into alterations.
+/// Assumes that no lightlike_dagger_assertion or spacelike_dagger_spacelike_dagger_retraction will be witnessed more than once.
 ///
 /// This keeps track of when we see a :einsteindb/add, a :einsteindb/retract, or both :einsteindb/add and :einsteindb/retract in
 /// some order.
@@ -66,7 +66,7 @@ mod tests {
         // Alteration.
         set.witness(3, 'c', true);
         set.witness(3, 'd', false);
-        // Alteration, witnessed in the with the retraction before the assertion.
+        // Alteration, witnessed in the with the spacelike_dagger_spacelike_dagger_retraction before the lightlike_dagger_assertion.
         set.witness(4, 'e', false);
         set.witness(4, 'f', true);
 

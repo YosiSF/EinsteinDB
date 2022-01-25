@@ -13,7 +13,7 @@ extern crate Einsteineinsteindb_util;
 extern crate test;
 
 #[macro_use(other_err)]
-extern crate allegroeinstein-prolog-causet-sql;
+extern crate allegroeinstein-prolog-causet-BerolinaSQL;
 
 mod aggregate;
 mod aggregation;
@@ -44,9 +44,9 @@ use Einsteineinsteindb_util::collections::HashSet;
 use einsteindbpb::ColumnInfo;
 use einsteindbpb::{Expr, ExprType};
 
-use allegroeinstein-prolog-causet-sql::execute_stats::*;
-use allegroeinstein-prolog-causet-sql::storage::IntervalRange;
-use allegroeinstein-prolog-causet-sql::Result;
+use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::*;
+use allegroeinstein-prolog-causet-BerolinaSQL::storage::IntervalRange;
+use allegroeinstein-prolog-causet-BerolinaSQL::Result;
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum, DatumEncoder};
 use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::{self, RowColsDict};
 use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, EvalWarnings};
@@ -75,7 +75,7 @@ use embedded_promises::{
 
 use Einsteineinsteindb_embedded::{
     CachedAttrs,
-    Schema,
+    Topograph,
     parse_query,
 };
 
@@ -107,27 +107,27 @@ pub use types::{
     FindQuery,
 };
 
-/// A convenience wrapper around things known in memory: the schema and caches.
+/// A convenience wrapper around things known in memory: the topograph and caches.
 /// We use a trait object here to avoid making dozens of functions generic over the type
 /// of the cache. If performance becomes a concern, we should hard-code specific kinds of
 /// cache right here, and/or eliminate the Option.
 #[derive(Clone, Copy)]
 pub struct KnownCauset<'s, 'c> {
-    pub schema: &'s Schema,
+    pub topograph: &'s Topograph,
     pub cache: Option<&'c CachedAttrs>,
 }
 
 impl<'s, 'c> KnownCauset<'s, 'c> {
-    pub fn for_schema(s: &'s Schema) -> KnownCauset<'s, 'static> {
+    pub fn for_topograph(s: &'s Topograph) -> KnownCauset<'s, 'static> {
         KnownCauset {
-            schema: s,
+            topograph: s,
             cache: None,
         }
     }
 
-    pub fn new(s: &'s Schema, c: Option<&'c CachedAttrs>) -> KnownCauset<'s, 'c> {
+    pub fn new(s: &'s Topograph, c: Option<&'c CachedAttrs>) -> KnownCauset<'s, 'c> {
         KnownCauset {
-            schema: s,
+            topograph: s,
             cache: c,
         }
     }
@@ -148,14 +148,14 @@ impl<'s, 'c> KnownCauset<'s, 'c> {
             .unwrap_or(false)
     }
 
-    pub fn get_values_for_causetid<U, V>(&self, schema: &Schema, Attr: U, causetid: V) -> Option<&Vec<TypedValue>>
+    pub fn get_values_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&Vec<TypedValue>>
     where U: Into<Causetid>, V: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_values_for_causetid(schema, Attr.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_values_for_causetid(topograph, Attr.into(), causetid.into()))
     }
 
-    pub fn get_value_for_causetid<U, V>(&self, schema: &Schema, Attr: U, causetid: V) -> Option<&TypedValue>
+    pub fn get_value_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&TypedValue>
     where U: Into<Causetid>, V: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_value_for_causetid(schema, Attr.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_value_for_causetid(topograph, Attr.into(), causetid.into()))
     }
 
     pub fn get_causetid_for_value<U>(&self, Attr: U, value: &TypedValue) -> Option<Causetid>
@@ -181,7 +181,7 @@ pub struct AlgebraicQuery {
     /// non-aggregated projection list.
     pub with: BTreeSet<Variable>,
 
-    /// Some query features, such as ordering, are implemented by implicit reference to SQL columns.
+    /// Some query features, such as ordering, are implemented by implicit reference to BerolinaSQL columns.
     /// In order for these references to be 'live', those columns must be projected.
     /// This is the set of variables that must be so projected.
     /// This is not necessarily every variable that will be so required -- some variables
@@ -217,7 +217,7 @@ impl AlgebraicQuery {
     }
 
     /// Return true if every variable in the find spec is fully bound to a single value,
-    /// and evaluating the query doesn't require running SQL.
+    /// and evaluating the query doesn't require running BerolinaSQL.
     pub fn is_fully_unit_bound(&self) -> bool {
         self.cc.wheres.is_empty() &&
         self.is_fully_bound()
@@ -785,7 +785,7 @@ pub mod tests {
     use super::{Executor, TableScanExecutor};
     use codec::prelude::NumberEncoder;
     use ekvproto::interlock::KeyRange;
-    use allegroeinstein-prolog-causet-sql::storage::test_fixture::FixtureStorage;
+    use allegroeinstein-prolog-causet-BerolinaSQL::storage::test_fixture::FixtureStorage;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, table, Datum};
     use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::{FieldTypeAccessor, FieldTypeTp};
@@ -834,7 +834,7 @@ pub mod tests {
     pub fn get_point_range(table_id: i64, handle: i64) -> KeyRange {
         let start_key = table::encode_row_key(table_id, handle);
         let mut end = start_key.clone();
-        allegroeinstein-prolog-causet-sql::util::convert_to_prefix_next(&mut end);
+        allegroeinstein-prolog-causet-BerolinaSQL::util::convert_to_prefix_next(&mut end);
         let mut key_range = KeyRange::default();
         key_range.set_start(start_key);
         key_range.set_end(end);

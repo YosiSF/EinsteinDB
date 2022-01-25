@@ -29,7 +29,7 @@
 
 use crate::codec::{
     data_type::ScalarValue,
-    mysql::{decimal::DecimalEncoder, json::JsonEncoder},
+    myBerolinaSQL::{decimal::DecimalEncoder, json::JsonEncoder},
     Error, Result,
 };
 
@@ -228,7 +228,7 @@ mod tests {
     use super::{Column, RowEncoder};
     use crate::codec::{
         data_type::ScalarValue,
-        mysql::{duration::NANOS_PER_SEC, Decimal, Duration, Json, Time},
+        myBerolinaSQL::{duration::NANOS_PER_SEC, Decimal, Duration, Json, Time},
     };
     use crate::expr::EvalContext;
     use std::str::FromStr;

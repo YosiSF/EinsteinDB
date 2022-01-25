@@ -27,21 +27,21 @@ mod clauses;
 
 #[derive(Clone, Copy)]
 pub struct KnownCauset<'s, 'c> {
-    pub schema: &'s Schema,
+    pub topograph: &'s Topograph,
     pub cache: Option<&'c CachedAttrs>,
 }
 
 impl<'s, 'c> KnownCauset<'s, 'c> {
-    pub fn for_schema(s: &'s Schema) -> KnownCauset<'s, 'static> {
+    pub fn for_topograph(s: &'s Topograph) -> KnownCauset<'s, 'static> {
         KnownCauset {
-            schema: s,
+            topograph: s,
             cache: None,
         }
     }
 
-    pub fn new(s: &'s Schema, c: Option<&'c CachedAttrs>) -> KnownCauset<'s, 'c> {
+    pub fn new(s: &'s Topograph, c: Option<&'c CachedAttrs>) -> KnownCauset<'s, 'c> {
         KnownCauset {
-            schema: s,
+            topograph: s,
             cache: c,
         }
     }
@@ -60,14 +60,14 @@ impl<'s, 'c> KnownCauset<'s, 'c> {
             .unwrap_or(false)
     }
 
-    pub fn get_values_for_causetid<U, V>(&self, schema: &Schema, Attr: U, causetid: V) -> Option<&Vec<TypedValue>>
+    pub fn get_values_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&Vec<TypedValue>>
         where U: Into<causetid>, V: Into<causetid> {
-        self.cache.and_then(|cache| cache.get_values_for_causetid(schema, Attr.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_values_for_causetid(topograph, Attr.into(), causetid.into()))
     }
 
-    pub fn get_value_for_causetid<U, V>(&self, schema: &Schema, Attr: U, causetid: V) -> Option<&TypedValue>
+    pub fn get_value_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&TypedValue>
         where U: Into<causetid>, V: Into<causetid> {
-        self.cache.and_then(|cache| cache.get_value_for_causetid(schema, Attr.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_value_for_causetid(topograph, Attr.into(), causetid.into()))
     }
 
     pub fn get_causetid_for_value<U>(&self, Attr: U, value: &TypedValue) -> Option<causetid>
@@ -92,7 +92,7 @@ pub struct AlgebraicQuery {
     //if no variables are supplied, then no additional grouping is necessary
     pub with: BTreeSet<Variable>,
 
-    /// Some query features, such as ordering, are implemented by implicit reference to SQL columns.
+    /// Some query features, such as ordering, are implemented by implicit reference to BerolinaSQL columns.
  /// In order for these references to be 'live', those columns must be projected.
  /// This is the set of variables that must be so projected.
  /// This is not necessarily every variable that will be so required -- some variables

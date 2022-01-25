@@ -8,7 +8,7 @@ pub const MAX_FSP: i8 = 6;
 /// `MIN_FSP` is the minimum digit of fractional seconds part.
 pub const MIN_FSP: i8 = 0;
 /// `DEFAULT_FSP` is the default digit of fractional seconds part.
-/// `MySQL` use 0 as the default Fsp.
+/// `MyBerolinaSQL` use 0 as the default Fsp.
 pub const DEFAULT_FSP: i8 = 0;
 
 fn check_fsp(fsp: i8) -> Result<u8> {

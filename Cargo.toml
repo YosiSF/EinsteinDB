@@ -14,9 +14,9 @@ edition = "2022"
 publish = "false"
 
 [features]
-default = ["bundled_sqlite3", "syncable"]
-bundled_sqlite3 = ["rusqlite/bundled"]
-sqlcipher = ["rusqlite/sqlcipher", "einsteindb_einsteindb/sqlcipher"]
+default = ["bundled_BerolinaSQLite3", "syncable"]
+bundled_BerolinaSQLite3 = ["ruBerolinaSQLite/bundled"]
+BerolinaSQLcipher = ["ruBerolinaSQLite/BerolinaSQLcipher", "einsteindb_einsteindb/BerolinaSQLcipher"]
 syncable = ["einsteindb_lenin", "lenin_traits", "einsteindb_einsteindb/syncable"]
 
 
@@ -141,12 +141,12 @@ mime = "0.3.13"
 farmhash = "1.1.5"
 failure = "0.1.1"
 
-[dependencies.berolinasql]
-version = "0.13"
-features = ["limits"]
+[dependencies.einsteindb-gen]
+version = "0.0.1"
+features = ["foundationdb-rs"]
 
-[dependencies.eeinsteindb]
-path = "eeinsteindb"
+[dependencies.einsteindb]
+path = "einsteindb"
 
 [dependencies.embedded_promises]
 path = "embedded-promises"

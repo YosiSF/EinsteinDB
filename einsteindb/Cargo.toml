@@ -5,7 +5,7 @@ workspace = ".."
 
 [features]
 default = []
-sqlcipher = ["rusqlite/sqlcipher"]
+BerolinaSQLcipher = ["ruBerolinaSQLite/BerolinaSQLcipher"]
 syncable = ["serde", "serde_json", "serde_derive"]
 
 [dependencies]
@@ -21,7 +21,7 @@ serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
 serde_derive = { version = "1.0", optional = true }
 
-[dependencies.rusqlite]
+[dependencies.ruBerolinaSQLite]
 version = "0.26.3"
 features = ["limits"]
 
@@ -37,8 +37,8 @@ path = "../core-traits"
 [dependencies.einsteindb_traits]
 path = "../einsteindb-traits"
 
-[dependencies.einstai_sql]
-path = "../sql"
+[dependencies.einstai_BerolinaSQL]
+path = "../BerolinaSQL"
 
 # Should be dev-dependencies.
 [dependencies.tabwriter]

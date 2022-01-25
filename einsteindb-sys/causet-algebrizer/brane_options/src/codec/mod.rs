@@ -21,7 +21,7 @@ pub mod data_type;
 pub mod datum;
 pub mod datum_codec;
 pub mod error;
-pub mod mysql;
+pub mod myBerolinaSQL;
 mod overflow;
 pub mod row;
 pub mod table;

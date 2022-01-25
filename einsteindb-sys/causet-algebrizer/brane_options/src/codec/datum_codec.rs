@@ -17,7 +17,7 @@ use einsteindbpb::FieldType;
 
 use super::data_type::*;
 use crate::codec::datum;
-use crate::codec::mysql::{
+use crate::codec::myBerolinaSQL::{
     DecimalDecoder, DecimalEncoder, DurationDecoder, JsonDecoder, JsonEncoder, TimeDecoder,
 };
 use crate::codec::{Error, Result};

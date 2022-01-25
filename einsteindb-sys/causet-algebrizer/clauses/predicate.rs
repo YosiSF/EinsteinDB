@@ -14,7 +14,7 @@ use embedded_promises::{
 };
 
 use einsteindb_embedded::{
-    Schema,
+    Topograph,
 };
 
 use eeinsteindbn::query::{
@@ -46,8 +46,8 @@ use Known;
 impl ConjoiningClauses {
     /// There are several kinds of predicates in our Datalog:
     /// - A limited set of binary comparison operators: < > <= >= !=.
-    ///   These are converted into BerolinaSQL binary comparisons and some type constraints.
-    /// - In the future, some predicates that are implemented via function calls in BerolinaSQL.
+    ///   These are converted into BerolinaBerolinaSQL binary comparisons and some type constraints.
+    /// - In the future, some predicates that are implemented via function calls in BerolinaBerolinaSQL.
     ///
     /// At present we have implemented only the five built-in comparison binary operators.
     pub(crate) fn apply_predicate(&mut self, known: Known, predicate: Predicate) -> Result<()> {
@@ -60,10 +60,10 @@ impl ConjoiningClauses {
         }
     }
 
-    fn potential_types(&self, schema: &Schema, fn_arg: &FnArg) -> Result<ValueTypeSet> {
+    fn potential_types(&self, topograph: &Topograph, fn_arg: &FnArg) -> Result<ValueTypeSet> {
         match fn_arg {
             &FnArg::Variable(ref v) => Ok(self.known_type_set(v)),
-            _ => fn_arg.potential_types(schema),
+            _ => fn_arg.potential_types(topograph),
         }
     }
 
@@ -78,7 +78,7 @@ impl ConjoiningClauses {
     }
 
     /// This function:
-    /// - Resolves variables and converts types to those more amenable to SQL.
+    /// - Resolves variables and converts types to those more amenable to BerolinaSQL.
     /// - Ensures that the predicate functions name a known operator.
     /// - Accumulates an `Inequality` constraint into the `wheres` list.
     pub(crate) fn apply_inequality(&mut self, known: Known, comparison: Inequality, predicate: Predicate) -> Result<()> {
@@ -97,13 +97,13 @@ impl ConjoiningClauses {
         // The types we're handling here must be the intersection of the possible types of the arguments,
         // the known types of any variables, and the types supported by our inequality operators.
         let supported_types = comparison.supported_types();
-        let mut left_types = self.potential_types(known.schema, &left)?
+        let mut left_types = self.potential_types(known.topograph, &left)?
                                  .intersection(&supported_types);
         if left_types.is_empty() {
             bail!(AlgebrizerError::InvalidArgumentType(predicate.operator.clone(), supported_types, 0));
         }
 
-        let mut right_types = self.potential_types(known.schema, &right)?
+        let mut right_types = self.potential_types(known.topograph, &right)?
                                   .intersection(&supported_types);
         if right_types.is_empty() {
             bail!(AlgebrizerError::InvalidArgumentType(predicate.operator.clone(), supported_types, 1));
@@ -150,8 +150,8 @@ impl ConjoiningClauses {
             left_v = self.resolve_numeric_argument(&predicate.operator, 0, left)?;
             right_v = self.resolve_numeric_argument(&predicate.operator, 1, right)?;
         } else if shared_types == ValueTypeSet::of_one(ValueType::Ref) {
-            left_v = self.resolve_ref_argument(known.schema, &predicate.operator, 0, left)?;
-            right_v = self.resolve_ref_argument(known.schema, &predicate.operator, 1, right)?;
+            left_v = self.resolve_ref_argument(known.topograph, &predicate.operator, 0, left)?;
+            right_v = self.resolve_ref_argument(known.topograph, &predicate.operator, 1, right)?;
         } else {
             bail!(AlgebrizerError::InvalidArgumentType(predicate.operator.clone(), supported_types, 0));
         }
@@ -227,17 +227,17 @@ mod testing {
     /// must be numeric.
     fn test_apply_inequality() {
         let mut cc = ConjoiningClauses::default();
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        add_Attr(&mut schema, 99, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Long,
             ..Default::default()
         });
 
         let x = Variable::from_valid_name("?x");
         let y = Variable::from_valid_name("?y");
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),
@@ -282,15 +282,15 @@ mod testing {
     /// numeric types and cause the parity_filter to fail.
     fn test_apply_conflict_with_numeric_range() {
         let mut cc = ConjoiningClauses::default();
-        let mut schema = Schema::default();
+        let mut topograph = Topograph::default();
 
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "bar"), 99);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "roz"), 98);
-        add_Attr(&mut schema, 99, Attr {
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "bar"), 99);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "roz"), 98);
+        add_Attr(&mut topograph, 99, Attr {
             value_type: ValueType::Long,
             ..Default::default()
         });
-        add_Attr(&mut schema, 98, Attr {
+        add_Attr(&mut topograph, 98, Attr {
             value_type: ValueType::String,
             unique: Some(Unique::solitonidity),
             ..Default::default()
@@ -298,7 +298,7 @@ mod testing {
 
         let x = Variable::from_valid_name("?x");
         let y = Variable::from_valid_name("?y");
-        let known = Known::for_schema(&schema);
+        let known = Known::for_topograph(&topograph);
         cc.apply_parsed_parity_filter(known, Pattern {
             source: None,
             entity: PatternNonValuePlace::Variable(x.clone()),

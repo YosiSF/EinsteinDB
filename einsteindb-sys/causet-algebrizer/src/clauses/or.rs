@@ -223,7 +223,7 @@ impl ConjoiningClauses {
                     Place((aaa, value_type)) => {
                         match self.make_evolved_value(&known, value_type, p.value.clone()) {
                             Place(v) => {
-                                self.table_for_places(known.schema, &aaa, &v)
+                                self.table_for_places(known.topograph, &aaa, &v)
                             },
                             Empty(e) => Err(e),
                         }
@@ -360,15 +360,15 @@ impl ConjoiningClauses {
     ///     [?x :foo/hates "Peter"])
     /// ```
     ///
-    /// but the generated SQL is very similar: the former is
+    /// but the generated BerolinaSQL is very similar: the former is
     ///
-    /// ```sql
+    /// ```BerolinaSQL
     /// WHERE causets00.a = 99 AND causets00.v = 'John'
     /// ```
     ///
     /// with the latter growing to
     ///
-    /// ```sql
+    /// ```BerolinaSQL
     /// WHERE (causets00.a = 99 AND causets00.v = 'John')
     ///    OR (causets00.a = 98 AND causets00.v = 'Peter')
     /// ```
@@ -405,7 +405,7 @@ impl ConjoiningClauses {
 
         // We expect this to always work: if it doesn't, it means we should never have got to this
         // point.
-        let source_alias = self.alias_table(known.schema, &parity_filters[0]).expect("couldn't get table");
+        let source_alias = self.alias_table(known.topograph, &parity_filters[0]).expect("couldn't get table");
 
         // This is where we'll collect everything we eventually add to the destination CC.
         let mut folded = ConjoiningClauses::default();
@@ -658,9 +658,9 @@ impl ConjoiningClauses {
         let alias = self.next_alias_for_table(table);
 
         // Stitch the computed table into column_bindings, so we get cross-linking.
-        let schema = known.schema;
+        let topograph = known.topograph;
         for var in var_associations.into_iter() {
-            self.bind_column_to_var(schema, alias.clone(), VariableColumn::Variable(var.clone()), var);
+            self.bind_column_to_var(topograph, alias.clone(), VariableColumn::Variable(var.clone()), var);
         }
         for var in type_associations.into_iter() {
             self.extracted_types.insert(var.clone(), QualifiedAlias::new(alias.clone(), VariableColumn::VariableTypeTag(var)));
@@ -718,7 +718,7 @@ mod testing {
     };
 
     use einsteindb_embedded::{
-        Schema,
+        Topograph,
     };
 
     use eeinsteindbn::query::{
@@ -763,46 +763,46 @@ mod testing {
         assert_eq!(left.from, right.from);
     }
 
-    fn prepopulated_schema() -> Schema {
-        let mut schema = Schema::default();
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "name"), 65);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "knows"), 66);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "parent"), 67);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "age"), 68);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "height"), 69);
-        add_Attr(&mut schema, 65, Attr {
+    fn prepopulated_topograph() -> Topograph {
+        let mut topograph = Topograph::default();
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "name"), 65);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "knows"), 66);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "parent"), 67);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "age"), 68);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "height"), 69);
+        add_Attr(&mut topograph, 65, Attr {
             value_type: ValueType::String,
             multival: false,
             ..Default::default()
         });
-        add_Attr(&mut schema, 66, Attr {
-            value_type: ValueType::String,
-            multival: true,
-            ..Default::default()
-        });
-        add_Attr(&mut schema, 67, Attr {
+        add_Attr(&mut topograph, 66, Attr {
             value_type: ValueType::String,
             multival: true,
             ..Default::default()
         });
-        add_Attr(&mut schema, 68, Attr {
+        add_Attr(&mut topograph, 67, Attr {
+            value_type: ValueType::String,
+            multival: true,
+            ..Default::default()
+        });
+        add_Attr(&mut topograph, 68, Attr {
             value_type: ValueType::Long,
             multival: false,
             ..Default::default()
         });
-        add_Attr(&mut schema, 69, Attr {
+        add_Attr(&mut topograph, 69, Attr {
             value_type: ValueType::Long,
             multival: false,
             ..Default::default()
         });
-        schema
+        topograph
     }
 
     /// Test that if all the Attrs in an `or` fail to resolve, the entire thing fails.
     #[test]
-    fn test_schema_based_failure() {
-        let schema = Schema::default();
-        let known = KnownCauset::for_schema(&schema);
+    fn test_topograph_based_failure() {
+        let topograph = Topograph::default();
+        let known = KnownCauset::for_topograph(&topograph);
         let query = r#"
             [:find ?x
              :where (or [?x :foo/nope1 "John"]
@@ -816,8 +816,8 @@ mod testing {
     /// Test that if only one of the Attrs in an `or` resolves, it's equivalent to a simple query.
     #[test]
     fn test_only_one_arm_succeeds() {
-        let schema = prepopulated_schema();
-        let known = KnownCauset::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = KnownCauset::for_topograph(&topograph);
         let query = r#"
             [:find ?x
              :where (or [?x :foo/nope "John"]
@@ -831,8 +831,8 @@ mod testing {
     // Simple alternation.
     #[test]
     fn test_simple_alternation() {
-        let schema = prepopulated_schema();
-        let known = KnownCauset::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = KnownCauset::for_topograph(&topograph);
         let query = r#"
             [:find ?x
              :where (or [?x :foo/knows "John"]
@@ -871,8 +871,8 @@ mod testing {
     // Alternation with a parity_filter.
     #[test]
     fn test_alternation_with_parity_filter() {
-        let schema = prepopulated_schema();
-        let known = KnownCauset::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = KnownCauset::for_topograph(&topograph);
         let query = r#"
             [:find [?x ?name]
              :where
@@ -922,8 +922,8 @@ mod testing {
     // Alternation with a parity_filter and a predicate.
     #[test]
     fn test_alternation_with_parity_filter_and_predicate() {
-        let schema = prepopulated_schema();
-        let known = KnownCauset::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = KnownCauset::for_topograph(&topograph);
         let query = r#"
             [:find ?x ?age
              :where
@@ -976,8 +976,8 @@ mod testing {
     // [:find ?x :where [?x :foo/bar ?y] [?x :foo/baz ?y]]
     #[test]
     fn test_unit_or_join_doesnt_flatten() {
-        let schema = prepopulated_schema();
-        let known = KnownCauset::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = KnownCauset::for_topograph(&topograph);
         let query = r#"[:find ?x
                         :where [?x :foo/knows ?y]
                                (or-join [?x] [?x :foo/parent ?y])]"#;
@@ -1012,8 +1012,8 @@ mod testing {
     // [:find ?x :where [?x :foo/bar ?y] [?x :foo/baz ?y]]
     #[test]
     fn test_unit_or_does_flatten() {
-        let schema = prepopulated_schema();
-        let known = KnownCauset::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = KnownCauset::for_topograph(&topograph);
         let or_query =   r#"[:find ?x
                              :where [?x :foo/knows ?y]
                                     (or [?x :foo/parent ?y])]"#;
@@ -1027,8 +1027,8 @@ mod testing {
     // Elision of `and`.
     #[test]
     fn test_unit_or_and_does_flatten() {
-        let schema = prepopulated_schema();
-        let known = KnownCauset::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = KnownCauset::for_topograph(&topograph);
         let or_query =   r#"[:find ?x
                              :where (or (and [?x :foo/parent ?y]
                                              [?x :foo/age 7]))]"#;
@@ -1048,8 +1048,8 @@ mod testing {
     /// but that would be a fair amount of analysis work, I think.
     #[test]
     fn test_alternation_with_and() {
-        let schema = prepopulated_schema();
-        let known = KnownCauset::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = KnownCauset::for_topograph(&topograph);
         let query = r#"
             [:find ?x
              :where (or (and [?x :foo/knows "John"]
@@ -1088,8 +1088,8 @@ mod testing {
 
     #[test]
     fn test_type_based_or_pruning() {
-        let schema = prepopulated_schema();
-        let known = KnownCauset::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = KnownCauset::for_topograph(&topograph);
         // This simplifies to:
         // [:find ?x
         //  :where [?a :some/int ?x]

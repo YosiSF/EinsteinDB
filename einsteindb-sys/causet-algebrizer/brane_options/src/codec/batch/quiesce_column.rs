@@ -59,7 +59,7 @@ impl QuiesceBatchColumn {
         QuiesceBatchColumn::Decoded(VectorValue::with_capacity(capacity, eval_tp))
     }
 
-    /// Creates a new empty `QuiesceBatchColumn` with the same schema.
+    /// Creates a new empty `QuiesceBatchColumn` with the same topograph.
     #[inline]
     pub fn clone_empty(&self, capacity: usize) -> Self {
         match self {

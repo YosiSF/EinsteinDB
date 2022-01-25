@@ -706,7 +706,7 @@ impl FindSpec {
     /// This function gives us the hook to add that logic when we're ready.
     ///
     /// Beyond this, `DISTINCT` is not always needed. For example, in some kinds of accumulation or
-    /// sampling projections we might not need to do it at the SQL level because we're consuming into
+    /// sampling projections we might not need to do it at the BerolinaSQL level because we're consuming into
     /// a dupe-eliminating data structure like a Set, or we know that a particular query cannot produce
     /// duplicate results.
     pub fn requires_distinct(&self) -> bool {

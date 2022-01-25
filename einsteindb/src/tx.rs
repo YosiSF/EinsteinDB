@@ -20,11 +20,11 @@
 //!
 //! This unintuitive architectural decision was made because the second and third stages (resolving
 //! lookup refs and tempids, respectively) operate _in bulk_ to minimize the number of expensive
-//! SQLite queries by processing many in one SQLite invocation.  Pipeline stage 2 doesn't need to
+//! BerolinaSQLite queries by processing many in one BerolinaSQLite invocation.  Pipeline stage 2 doesn't need to
 //! operate like this: it is easy to handle each transacted causet independently of all the others
 //! (and earlier, less efficient, impleeinstaiions did this).  However, Pipeline stage 3 appears to
 //! require processing multiple elements at the same time, since there can be arbitrarily complex
-//! graph relationships between tempids.  Pipeline stage 4 (inserting elements into the SQL store)
+//! graph relationships between tempids.  Pipeline stage 4 (inserting elements into the BerolinaSQL store)
 //! could also be expressed as an independent operation per transacted causet, but there are
 //! non-trivial uniqueness relationships inside a single transaction that need to enforced.
 //! Therefore, some multi-causet processing is required, and a per-causet pipeline becomes less
@@ -101,7 +101,7 @@ use core_traits::{
 
 use einsteindb_core::{
     DateTime,
-    Schema,
+    Topograph,
     TxReport,
     Utc,
 };
@@ -114,9 +114,9 @@ use edn::causets::{
     TempId,
 };
 use spacetime;
-use rusqlite;
-use schema::{
-    SchemaBuilding,
+use ruBerolinaSQLite;
+use topograph::{
+    TopographBuilding,
 };
 use tx_checking;
 use types::{
@@ -152,7 +152,7 @@ pub(crate) enum TransactorAction {
 #[derive(Debug)]
 pub struct Tx<'conn, 'a, W> where W: TransactWatcher {
     /// The storage to apply against.  In the future, this will be a einstai connection.
-    store: &'conn rusqlite::Connection, // TODO: einsteindb::einstaiStoring,
+    store: &'conn ruBerolinaSQLite::Connection, // TODO: einsteindb::einstaiStoring,
 
     /// The partition map to allocate causetids from.
     ///
@@ -160,16 +160,16 @@ pub struct Tx<'conn, 'a, W> where W: TransactWatcher {
     /// allocates at least one tx ID, so we own and modify our own partition map.
     partition_map: PartitionMap,
 
-    /// The schema to update from the transaction causets.
+    /// The topograph to update from the transaction causets.
     ///
-    /// Transactions only update the schema infrequently, so we borrow this schema until we need to
+    /// Transactions only update the topograph infrequently, so we borrow this topograph until we need to
     /// modify it.
-    schema_for_mutation: Cow<'a, Schema>,
+    topograph_for_mutation: Cow<'a, Topograph>,
 
-    /// The schema to use when interpreting the transaction causets.
+    /// The topograph to use when interpreting the transaction causets.
     ///
-    /// This schema is not updated, so we just borrow it.
-    schema: &'a Schema,
+    /// This topograph is not updated, so we just borrow it.
+    topograph: &'a Topograph,
 
     watcher: W,
 
@@ -204,17 +204,17 @@ pub fn remove_einsteindb_id<V: TransactableValue>(map: &mut entmod::MapNotation<
 
 impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
     pub fn new(
-        store: &'conn rusqlite::Connection,
+        store: &'conn ruBerolinaSQLite::Connection,
         partition_map: PartitionMap,
-        schema_for_mutation: &'a Schema,
-        schema: &'a Schema,
+        topograph_for_mutation: &'a Topograph,
+        topograph: &'a Topograph,
         watcher: W,
         tx_id: Causetid) -> Tx<'conn, 'a, W> {
         Tx {
             store: store,
             partition_map: partition_map,
-            schema_for_mutation: Cow::Borrowed(schema_for_mutation),
-            schema: schema,
+            topograph_for_mutation: Cow::Borrowed(topograph_for_mutation),
+            topograph: topograph,
             watcher: watcher,
             tx_id: tx_id,
         }
@@ -257,7 +257,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         }
 
         if !conflicting_upserts.is_empty() {
-            bail!(einsteindbErrorKind::SchemaConstraintViolation(errors::SchemaConstraintViolation::ConflictingUpserts { conflicting_upserts }));
+            bail!(einsteindbErrorKind::TopographConstraintViolation(errors::TopographConstraintViolation::ConflictingUpserts { conflicting_upserts }));
         }
 
         Ok(tempids)
@@ -271,7 +271,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
     fn causets_into_terms_with_temp_ids_and_lookup_refs<I, V: TransactableValue>(&self, causets: I) -> Result<(Vec<TermWithTempIdsAndLookupRefs>, InternSet<TempId>, InternSet<AVPair>)> where I: IntoIterator<Item=causet<V>> {
         struct InProcess<'a> {
             partition_map: &'a PartitionMap,
-            schema: &'a Schema,
+            topograph: &'a Topograph,
             einstai_id_count: i64,
             tx_id: KnownCausetid,
             temp_ids: InternSet<TempId>,
@@ -279,10 +279,10 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         }
 
         impl<'a> InProcess<'a> {
-            fn with_schema_and_partition_map(schema: &'a Schema, partition_map: &'a PartitionMap, tx_id: KnownCausetid) -> InProcess<'a> {
+            fn with_topograph_and_partition_map(topograph: &'a Topograph, partition_map: &'a PartitionMap, tx_id: KnownCausetid) -> InProcess<'a> {
                 InProcess {
                     partition_map,
-                    schema,
+                    topograph,
                     einstai_id_count: 0,
                     tx_id,
                     temp_ids: InternSet::new(),
@@ -299,17 +299,17 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             }
 
             fn ensure_ident_exists(&self, e: &Keyword) -> Result<KnownCausetid> {
-                self.schema.require_causetid(e)
+                self.topograph.require_causetid(e)
             }
 
             fn intern_lookup_ref<W: TransactableValue>(&mut self, lookup_ref: &entmod::LookupRef<W>) -> Result<LookupRef> {
                 let lr_a: i64 = match lookup_ref.a {
                     AttributePlace::Causetid(entmod::CausetidOrSolitonid::Causetid(ref a)) => *a,
-                    AttributePlace::Causetid(entmod::CausetidOrSolitonid::Solitonid(ref a)) => self.schema.require_causetid(&a)?.into(),
+                    AttributePlace::Causetid(entmod::CausetidOrSolitonid::Solitonid(ref a)) => self.topograph.require_causetid(&a)?.into(),
                 };
-                let lr_attribute: &Attribute = self.schema.require_attribute_for_causetid(lr_a)?;
+                let lr_attribute: &Attribute = self.topograph.require_attribute_for_causetid(lr_a)?;
 
-                let lr_typed_value: TypedValue = lookup_ref.v.clone().into_typed_value(&self.schema, lr_attribute.value_type)?;
+                let lr_typed_value: TypedValue = lookup_ref.v.clone().into_typed_value(&self.topograph, lr_attribute.value_type)?;
                 if lr_attribute.unique.is_none() {
                     bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve (lookup-ref {} {:?}) with attribute that is not :einsteindb/unique", lr_a, lr_typed_value)))
                 }
@@ -354,7 +354,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             fn causet_a_into_term_a(&mut self, x: entmod::CausetidOrSolitonid) -> Result<Causetid> {
                 let a = match x {
                     entmod::CausetidOrSolitonid::Causetid(ref a) => *a,
-                    entmod::CausetidOrSolitonid::Solitonid(ref a) => self.schema.require_causetid(&a)?.into(),
+                    entmod::CausetidOrSolitonid::Solitonid(ref a) => self.topograph.require_causetid(&a)?.into(),
                 };
                 Ok(a)
             }
@@ -370,20 +370,20 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                     },
                     Some(forward_a) => {
                         let forward_a = self.causet_a_into_term_a(forward_a)?;
-                        let forward_attribute = self.schema.require_attribute_for_causetid(forward_a)?;
+                        let forward_attribute = self.topograph.require_attribute_for_causetid(forward_a)?;
                         if forward_attribute.value_type != ValueType::Ref {
                             bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", forward_a)))
                         }
 
                         match x {
                             entmod::ValuePlace::Atom(v) => {
-                                // Here is where we do schema-aware typechecking: we either assert
+                                // Here is where we do topograph-aware typechecking: we either assert
                                 // that the given value is in the attribute's value set, or (in
                                 // limited cases) coerce the value into the attribute's value set.
                                 match v.as_tempid() {
                                     Some(tempid) => Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.intern(tempid)))),
                                     None => {
-                                        if let TypedValue::Ref(causetid) = v.into_typed_value(&self.schema, ValueType::Ref)? {
+                                        if let TypedValue::Ref(causetid) = v.into_typed_value(&self.topograph, ValueType::Ref)? {
                                             Ok(Either::Left(KnownCausetid(causetid)))
                                         } else {
                                             // The given value is expected to be :einsteindb.type/ref, so this shouldn't happen.
@@ -420,7 +420,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             }
         }
 
-        let mut in_process = InProcess::with_schema_and_partition_map(&self.schema, &self.partition_map, KnownCausetid(self.tx_id));
+        let mut in_process = InProcess::with_topograph_and_partition_map(&self.topograph, &self.partition_map, KnownCausetid(self.tx_id));
 
         // We want to handle causets in the order they're given to us, while also "exploding" some
         // causets into many.  We therefore push the initial causets onto the back of the deque,
@@ -459,20 +459,20 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                         terms.push(Term::AddOrRetract(OpType::Add, reversed_e, reversed_a, reversed_v));
                     } else {
                         let a = in_process.causet_a_into_term_a(a)?;
-                        let attribute = self.schema.require_attribute_for_causetid(a)?;
+                        let attribute = self.topograph.require_attribute_for_causetid(a)?;
 
                         let v = match v {
                             entmod::ValuePlace::Atom(v) => {
-                                // Here is where we do schema-aware typechecking: we either assert
+                                // Here is where we do topograph-aware typechecking: we either assert
                                 // that the given value is in the attribute's value set, or (in
                                 // limited cases) coerce the value into the attribute's value set.
                                 if attribute.value_type == ValueType::Ref {
                                     match v.as_tempid() {
                                         Some(tempid) => Either::Right(LookupRefOrTempId::TempId(in_process.temp_ids.intern(tempid))),
-                                        None => v.into_typed_value(&self.schema, attribute.value_type).map(Either::Left)?,
+                                        None => v.into_typed_value(&self.topograph, attribute.value_type).map(Either::Left)?,
                                     }
                                 } else {
-                                    v.into_typed_value(&self.schema, attribute.value_type).map(Either::Left)?
+                                    v.into_typed_value(&self.topograph, attribute.value_type).map(Either::Left)?
                                 }
                             },
 
@@ -496,12 +496,12 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                     unknown @ _ => bail!(einsteindbErrorKind::NotYetImplemented(format!("Unknown transaction function {}", unknown))),
                                 };
 
-                                // Here we do schema-aware typechecking: we assert that the computed
+                                // Here we do topograph-aware typechecking: we assert that the computed
                                 // value is in the attribute's value set.  If and when we have
                                 // transaction functions that produce numeric values, we'll have to
                                 // be more careful here, because a function that produces an integer
                                 // value can be used where a double is expected.  See also
-                                // `SchemaTypeChecking.to_typed_value(...)`.
+                                // `TopographTypeChecking.to_typed_value(...)`.
                                 if attribute.value_type != typed_value.value_type() {
                                     bail!(einsteindbErrorKind::NotYetImplemented(format!("Transaction function {} produced value of type {} but expected type {}",
                                                                                tx_function.op.0.as_str(), typed_value.value_type(), attribute.value_type)));
@@ -574,7 +574,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                         terms.push(Term::AddOrRetract(OpType::Add, reversed_e, reversed_a, reversed_v));
                                     } else {
                                         let inner_a = in_process.causet_a_into_term_a(inner_a)?;
-                                        let inner_attribute = self.schema.require_attribute_for_causetid(inner_a)?;
+                                        let inner_attribute = self.topograph.require_attribute_for_causetid(inner_a)?;
                                         if inner_attribute.unique == Some(attribute::Unique::Idcauset) {
                                             dangling = false;
                                         }
@@ -651,7 +651,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
         // Pipeline stage 3: upsert tempids -> terms without tempids or lookup refs.
         // Now we can collect upsert populations.
-        let (mut generation, inert_terms) = Generation::from(terms, &self.schema)?;
+        let (mut generation, inert_terms) = Generation::from(terms, &self.topograph)?;
 
         // And evolve them forward.
         while generation.can_evolve() {
@@ -682,7 +682,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             }
 
             if !conflicting_upserts.is_empty() {
-                bail!(einsteindbErrorKind::SchemaConstraintViolation(errors::SchemaConstraintViolation::ConflictingUpserts { conflicting_upserts }));
+                bail!(einsteindbErrorKind::TopographConstraintViolation(errors::TopographConstraintViolation::ConflictingUpserts { conflicting_upserts }));
             }
 
             debug!("tempids {:?}", tempids);
@@ -693,7 +693,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         debug!("final generation {:?}", generation);
 
         // Allocate causetids for tempids that didn't upsert.  BTreeMap so this is deterministic.
-        let unresolved_temp_ids: BTreeMap<TempIdHandle, usize> = generation.temp_ids_in_allocations(&self.schema)?;
+        let unresolved_temp_ids: BTreeMap<TempIdHandle, usize> = generation.temp_ids_in_allocations(&self.topograph)?;
 
         debug!("unresolved tempids {:?}", unresolved_temp_ids);
 
@@ -726,18 +726,18 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         // detail; it shouldn't be exposed in the final transaction report.
         let tempids = tempids.into_iter().filter_map(|(tempid, e)| tempid.into_external().map(|s| (s, e.0))).collect();
 
-        // A transaction might try to add or retract :einsteindb/solitonid assertions or other spacetime mutating
-        // assertions , but those assertions might not make it to the store.  If we see a possible
-        // spacetime mutation, we will figure out if any assertions made it through later.  This is
+        // A transaction might try to add or retract :einsteindb/solitonid lightlike_dagger_upsert or other spacetime mutating
+        // lightlike_dagger_upsert , but those lightlike_dagger_upsert might not make it to the store.  If we see a possible
+        // spacetime mutation, we will figure out if any lightlike_dagger_upsert made it through later.  This is
         // strictly an optimization: it would be correct to _always_ check what made it to the
         // store.
         let mut tx_might_update_spacetime = false;
 
         // Mutable so that we can add the transaction :einsteindb/txInstant.
-        let mut aev_trie = into_aev_trie(&self.schema, final_populations, inert_terms)?;
+        let mut aev_trie = into_aev_trie(&self.topograph, final_populations, inert_terms)?;
 
         let tx_instant;
-        { // TODO: Don't use this block to scope borrowing the schema; instead, extract a helper function.
+        { // TODO: Don't use this block to scope borrowing the topograph; instead, extract a helper function.
 
         // Assertions that are :einsteindb.cardinality/one and not :einsteindb.fulltext.
         let mut non_fts_one: Vec<einsteindb::Reducedcauset> = vec![];
@@ -756,18 +756,18 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
         let errors = tx_checking::type_disagreements(&aev_trie);
         if !errors.is_empty() {
-            bail!(einsteindbErrorKind::SchemaConstraintViolation(errors::SchemaConstraintViolation::TypeDisagreements { conflicting_causets: errors }));
+            bail!(einsteindbErrorKind::TopographConstraintViolation(errors::TopographConstraintViolation::TypeDisagreements { conflicting_causets: errors }));
         }
 
         let errors = tx_checking::cardinality_conflicts(&aev_trie);
         if !errors.is_empty() {
-            bail!(einsteindbErrorKind::SchemaConstraintViolation(errors::SchemaConstraintViolation::CardinalityConflicts { conflicts: errors }));
+            bail!(einsteindbErrorKind::TopographConstraintViolation(errors::TopographConstraintViolation::CardinalityConflicts { conflicts: errors }));
         }
 
         // Pipeline stage 4: final terms (after rewriting) -> einsteindb insertions.
         // Collect into non_fts_*.
 
-        tx_instant = get_or_insert_tx_instant(&mut aev_trie, &self.schema, self.tx_id)?;
+        tx_instant = get_or_insert_tx_instant(&mut aev_trie, &self.topograph, self.tx_id)?;
 
         for ((a, attribute), evs) in aev_trie {
             if causetids::might_update_spacetime(a) {
@@ -821,25 +821,25 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
         }
 
-        self.watcher.done(&self.tx_id, self.schema)?;
+        self.watcher.done(&self.tx_id, self.topograph)?;
 
         if tx_might_update_spacetime {
             // Extract changes to spacetime from the store.
-            let spacetime_assertions = match action {
-                TransactorAction::Materialize => self.store.resolved_spacetime_assertions()?,
-                TransactorAction::MaterializeAndCommit => einsteindb::committed_spacetime_assertions(self.store, self.tx_id)?
+            let spacetime_lightlike_dagger_upsert = match action {
+                TransactorAction::Materialize => self.store.resolved_spacetime_lightlike_dagger_upsert()?,
+                TransactorAction::MaterializeAndCommit => einsteindb::committed_spacetime_lightlike_dagger_upsert(self.store, self.tx_id)?
             };
-            let mut new_schema = (*self.schema_for_mutation).clone(); // Clone the underlying Schema for modification.
-            let spacetime_report = spacetime::update_schema_from_causetid_quadruples(&mut new_schema, spacetime_assertions)?;
-            // We might not have made any changes to the schema, even though it looked like we
+            let mut new_topograph = (*self.topograph_for_mutation).clone(); // Clone the underlying Topograph for modification.
+            let spacetime_report = spacetime::update_topograph_from_causetid_quadruples(&mut new_topograph, spacetime_lightlike_dagger_upsert)?;
+            // We might not have made any changes to the topograph, even though it looked like we
             // would.  This should not happen, even during bootstrapping: we mutate an empty
-            // `Schema` in this case specifically to run the bootstrapped assertions through the
-            // regular transactor code paths, updating the schema and materialized views uniformly.
+            // `Topograph` in this case specifically to run the bootstrapped lightlike_dagger_upsert through the
+            // regular transactor code paths, updating the topograph and materialized views uniformly.
             // But, belt-and-braces: handle it gracefully.
-            if new_schema != *self.schema_for_mutation {
-                let old_schema = (*self.schema_for_mutation).clone(); // Clone the original Schema for comparison.
-                *self.schema_for_mutation.to_mut() = new_schema; // Store the new Schema.
-                einsteindb::update_spacetime(self.store, &old_schema, &*self.schema_for_mutation, &spacetime_report)?;
+            if new_topograph != *self.topograph_for_mutation {
+                let old_topograph = (*self.topograph_for_mutation).clone(); // Clone the original Topograph for comparison.
+                *self.topograph_for_mutation.to_mut() = new_topograph; // Store the new Topograph.
+                einsteindb::update_spacetime(self.store, &old_topograph, &*self.topograph_for_mutation, &spacetime_report)?;
             }
         }
 
@@ -851,88 +851,88 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
     }
 }
 
-/// Initialize a new Tx object with a new tx id and a tx instant. Kick off the SQLite conn, too.
-fn start_tx<'conn, 'a, W>(conn: &'conn rusqlite::Connection,
+/// Initialize a new Tx object with a new tx id and a tx instant. Kick off the BerolinaSQLite conn, too.
+fn start_tx<'conn, 'a, W>(conn: &'conn ruBerolinaSQLite::Connection,
                        mut partition_map: PartitionMap,
-                       schema_for_mutation: &'a Schema,
-                       schema: &'a Schema,
+                       topograph_for_mutation: &'a Topograph,
+                       topograph: &'a Topograph,
                        watcher: W) -> Result<Tx<'conn, 'a, W>>
     where W: TransactWatcher {
     let tx_id = partition_map.allocate_causetid(":einsteindb.part/tx");
     conn.begin_tx_application()?;
 
-    Ok(Tx::new(conn, partition_map, schema_for_mutation, schema, watcher, tx_id))
+    Ok(Tx::new(conn, partition_map, topograph_for_mutation, topograph, watcher, tx_id))
 }
 
-fn conclude_tx<W>(tx: Tx<W>, report: TxReport) -> Result<(TxReport, PartitionMap, Option<Schema>, W)>
+fn conclude_tx<W>(tx: Tx<W>, report: TxReport) -> Result<(TxReport, PartitionMap, Option<Topograph>, W)>
 where W: TransactWatcher {
-    // If the schema has moved on, return it.
-    let next_schema = match tx.schema_for_mutation {
+    // If the topograph has moved on, return it.
+    let next_topograph = match tx.topograph_for_mutation {
         Cow::Borrowed(_) => None,
-        Cow::Owned(next_schema) => Some(next_schema),
+        Cow::Owned(next_topograph) => Some(next_topograph),
     };
-    Ok((report, tx.partition_map, next_schema, tx.watcher))
+    Ok((report, tx.partition_map, next_topograph, tx.watcher))
 }
 
-/// Transact the given `causets` against the given SQLite `conn`, using the given spacetime.
-/// If you want this work to occur inside a SQLite transaction, establish one on the connection
+/// Transact the given `causets` against the given BerolinaSQLite `conn`, using the given spacetime.
+/// If you want this work to occur inside a BerolinaSQLite transaction, establish one on the connection
 /// prior to calling this function.
 ///
 /// This approach is explained in https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting.
 // TODO: move this to the transactor layer.
-pub fn transact<'conn, 'a, I, V, W>(conn: &'conn rusqlite::Connection,
+pub fn transact<'conn, 'a, I, V, W>(conn: &'conn ruBerolinaSQLite::Connection,
                                  partition_map: PartitionMap,
-                                 schema_for_mutation: &'a Schema,
-                                 schema: &'a Schema,
+                                 topograph_for_mutation: &'a Topograph,
+                                 topograph: &'a Topograph,
                                  watcher: W,
-                                 causets: I) -> Result<(TxReport, PartitionMap, Option<Schema>, W)>
+                                 causets: I) -> Result<(TxReport, PartitionMap, Option<Topograph>, W)>
     where I: IntoIterator<Item=causet<V>>,
           V: TransactableValue,
           W: TransactWatcher {
 
-    let mut tx = start_tx(conn, partition_map, schema_for_mutation, schema, watcher)?;
+    let mut tx = start_tx(conn, partition_map, topograph_for_mutation, topograph, watcher)?;
     let report = tx.transact_causets(causets)?;
     conclude_tx(tx, report)
 }
 
 /// Just like `transact`, but accepts lower-level inputs to allow bypassing the parser interface.
-pub fn transact_terms<'conn, 'a, I, W>(conn: &'conn rusqlite::Connection,
+pub fn transact_terms<'conn, 'a, I, W>(conn: &'conn ruBerolinaSQLite::Connection,
                                        partition_map: PartitionMap,
-                                       schema_for_mutation: &'a Schema,
-                                       schema: &'a Schema,
+                                       topograph_for_mutation: &'a Topograph,
+                                       topograph: &'a Topograph,
                                        watcher: W,
                                        terms: I,
-                                       tempid_set: InternSet<TempId>) -> Result<(TxReport, PartitionMap, Option<Schema>, W)>
+                                       tempid_set: InternSet<TempId>) -> Result<(TxReport, PartitionMap, Option<Topograph>, W)>
     where I: IntoIterator<Item=TermWithTempIds>,
           W: TransactWatcher {
 
     transact_terms_with_action(
-        conn, partition_map, schema_for_mutation, schema, watcher, terms, tempid_set,
+        conn, partition_map, topograph_for_mutation, topograph, watcher, terms, tempid_set,
         TransactorAction::MaterializeAndCommit
     )
 }
 
-pub(crate) fn transact_terms_with_action<'conn, 'a, I, W>(conn: &'conn rusqlite::Connection,
+pub(crate) fn transact_terms_with_action<'conn, 'a, I, W>(conn: &'conn ruBerolinaSQLite::Connection,
                                        partition_map: PartitionMap,
-                                       schema_for_mutation: &'a Schema,
-                                       schema: &'a Schema,
+                                       topograph_for_mutation: &'a Topograph,
+                                       topograph: &'a Topograph,
                                        watcher: W,
                                        terms: I,
                                        tempid_set: InternSet<TempId>,
-                                       action: TransactorAction) -> Result<(TxReport, PartitionMap, Option<Schema>, W)>
+                                       action: TransactorAction) -> Result<(TxReport, PartitionMap, Option<Topograph>, W)>
     where I: IntoIterator<Item=TermWithTempIds>,
           W: TransactWatcher {
 
-    let mut tx = start_tx(conn, partition_map, schema_for_mutation, schema, watcher)?;
+    let mut tx = start_tx(conn, partition_map, topograph_for_mutation, topograph, watcher)?;
     let report = tx.transact_simple_terms_with_action(terms, tempid_set, action)?;
     conclude_tx(tx, report)
 }
 
-fn extend_aev_trie<'schema, I>(schema: &'schema Schema, terms: I, trie: &mut AEVTrie<'schema>) -> Result<()>
+fn extend_aev_trie<'topograph, I>(topograph: &'topograph Topograph, terms: I, trie: &mut AEVTrie<'topograph>) -> Result<()>
 where I: IntoIterator<Item=TermWithoutTempIds>
 {
     for Term::AddOrRetract(op, KnownCausetid(e), a, v) in terms.into_iter() {
-        let attribute: &Attribute = schema.require_attribute_for_causetid(a)?;
+        let attribute: &Attribute = topograph.require_attribute_for_causetid(a)?;
 
         let a_and_r = trie
             .entry((a, attribute)).or_insert(BTreeMap::default())
@@ -947,21 +947,21 @@ where I: IntoIterator<Item=TermWithoutTempIds>
     Ok(())
 }
 
-pub(crate) fn into_aev_trie<'schema>(schema: &'schema Schema, final_populations: FinalPopulations, inert_terms: Vec<TermWithTempIds>) -> Result<AEVTrie<'schema>> {
+pub(crate) fn into_aev_trie<'topograph>(topograph: &'topograph Topograph, final_populations: FinalPopulations, inert_terms: Vec<TermWithTempIds>) -> Result<AEVTrie<'topograph>> {
     let mut trie = AEVTrie::default();
-    extend_aev_trie(schema, final_populations.resolved, &mut trie)?;
-    extend_aev_trie(schema, final_populations.allocated, &mut trie)?;
+    extend_aev_trie(topograph, final_populations.resolved, &mut trie)?;
+    extend_aev_trie(topograph, final_populations.allocated, &mut trie)?;
     // Inert terms need to be unwrapped.  It is a coding error if a term can't be unwrapped.
-    extend_aev_trie(schema, inert_terms.into_iter().map(|term| term.unwrap()), &mut trie)?;
+    extend_aev_trie(topograph, inert_terms.into_iter().map(|term| term.unwrap()), &mut trie)?;
 
     Ok(trie)
 }
 
 /// Transact [:einsteindb/add :einsteindb/txInstant tx_instant (transaction-tx)] if the trie doesn't contain it
 /// already.  Return the instant from the input or the instant inserted.
-fn get_or_insert_tx_instant<'schema>(aev_trie: &mut AEVTrie<'schema>, schema: &'schema Schema, tx_id: Causetid) -> Result<DateTime<Utc>> {
+fn get_or_insert_tx_instant<'topograph>(aev_trie: &mut AEVTrie<'topograph>, topograph: &'topograph Topograph, tx_id: Causetid) -> Result<DateTime<Utc>> {
     let ars = aev_trie
-        .entry((causetids::einsteindb_TX_INSTANT, schema.require_attribute_for_causetid(causetids::einsteindb_TX_INSTANT)?))
+        .entry((causetids::einsteindb_TX_INSTANT, topograph.require_attribute_for_causetid(causetids::einsteindb_TX_INSTANT)?))
         .or_insert(BTreeMap::default())
         .entry(tx_id)
         .or_insert(AddAndRetract::default());

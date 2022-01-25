@@ -1114,7 +1114,7 @@ impl Decimal {
         }
         if !self.is_zero() && prec - frac > flen - decimal {
             return Ok(max_or_min_dec(self.negative, flen, decimal));
-            // TODO:select (cast 111 as decimal(1)) causes a warning in MySQL.
+            // TODO:select (cast 111 as decimal(1)) causes a warning in MyBerolinaSQL.
         }
 
         if frac == decimal {
@@ -1930,9 +1930,9 @@ impl Display for Decimal {
     }
 }
 
-impl crate::codec::data_type::AsMySQLBool for Decimal {
+impl crate::codec::data_type::AsMyBerolinaSQLBool for Decimal {
     #[inline]
-    fn as_mysql_bool(&self, _ctx: &mut EvalContext) -> allegroeinstein-prolog-causet-sql::error::Result<bool> {
+    fn as_myBerolinaSQL_bool(&self, _ctx: &mut EvalContext) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<bool> {
         Ok(!self.is_zero())
     }
 }

@@ -346,7 +346,7 @@ mod test {
         // These are false because _ is a symbol and sets guarantee
         // uniqueness of children. So pattern matching will fail because
         // the pattern is a set of length 2, while the matched ednis a set
-        // of length 3. If _ were unique, all of these assertions would
+        // of length 3. If _ were unique, all of these lightlike_dagger_upsert would
         // be true. Need to better handle pattern rules.
 
         assert_match!("#{1 _ _}" !~ "#{1 2 3}");
@@ -401,7 +401,7 @@ mod test {
         // These are false because _ is a symbol and maps guarantee
         // uniqueness of keys. So pattern matching will fail because
         // the pattern is a map of length 2, while the matched ednis a map
-        // of length 3. If _ were unique, all of these assertions would
+        // of length 3. If _ were unique, all of these lightlike_dagger_upsert would
         // be true. Need to better handle pattern rules.
 
         assert_match!("{1 2, _ 4, _ 6}" !~ "{1 2, 3 4, 5 6}");

@@ -98,7 +98,7 @@ mod testing {
     };
 
     use Einsteineinsteindb_embedded::{
-        Schema,
+        Topograph,
     };
 
     use eeinsteindbn::query::{
@@ -136,61 +136,61 @@ mod testing {
         parse_find_string,
     };
 
-    fn alg(schema: &Schema, input: &str) -> ConjoiningClauses {
-        let known = Known::for_schema(schema);
+    fn alg(topograph: &Topograph, input: &str) -> ConjoiningClauses {
+        let known = Known::for_topograph(topograph);
         let parsed = parse_find_string(input).expect("parse failed");
         algebrize(known, parsed).expect("algebrize failed").cc
     }
 
-    fn alg_with_inputs(schema: &Schema, input: &str, inputs: QueryInputs) -> ConjoiningClauses {
-        let known = Known::for_schema(schema);
+    fn alg_with_inputs(topograph: &Topograph, input: &str, inputs: QueryInputs) -> ConjoiningClauses {
+        let known = Known::for_topograph(topograph);
         let parsed = parse_find_string(input).expect("parse failed");
         algebrize_with_inputs(known, parsed, 0, inputs).expect("algebrize failed").cc
     }
 
-    fn prepopulated_schema() -> Schema {
-        let mut schema = Schema::default();
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "name"), 65);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "knows"), 66);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "parent"), 67);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "age"), 68);
-        associate_solitonid(&mut schema, Keyword::namespaced("foo", "height"), 69);
-        add_Attr(&mut schema,
+    fn prepopulated_topograph() -> Topograph {
+        let mut topograph = Topograph::default();
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "name"), 65);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "knows"), 66);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "parent"), 67);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "age"), 68);
+        associate_solitonid(&mut topograph, Keyword::namespaced("foo", "height"), 69);
+        add_Attr(&mut topograph,
                       65,
                       Attr {
                           value_type: ValueType::String,
                           multival: false,
                           ..Default::default()
                       });
-        add_Attr(&mut schema,
+        add_Attr(&mut topograph,
                       66,
                       Attr {
                           value_type: ValueType::String,
                           multival: true,
                           ..Default::default()
                       });
-        add_Attr(&mut schema,
+        add_Attr(&mut topograph,
                       67,
                       Attr {
                           value_type: ValueType::String,
                           multival: true,
                           ..Default::default()
                       });
-        add_Attr(&mut schema,
+        add_Attr(&mut topograph,
                       68,
                       Attr {
                           value_type: ValueType::Long,
                           multival: false,
                           ..Default::default()
                       });
-        add_Attr(&mut schema,
+        add_Attr(&mut topograph,
                       69,
                       Attr {
                           value_type: ValueType::Long,
                           multival: false,
                           ..Default::default()
                       });
-        schema
+        topograph
     }
 
     fn compare_ccs(left: ConjoiningClauses, right: ConjoiningClauses) {
@@ -201,13 +201,13 @@ mod testing {
     // not.
     #[test]
     fn test_successful_not() {
-        let schema = prepopulated_schema();
+        let topograph = prepopulated_topograph();
         let query = r#"
             [:find ?x
              :where [?x :foo/knows "John"]
                     (not [?x :foo/parent "Ámbar"]
                          [?x :foo/knows "Daphne"])]"#;
-        let cc = alg(&schema, query);
+        let cc = alg(&topograph, query);
 
         let vx = Variable::from_valid_name("?x");
 
@@ -259,7 +259,7 @@ mod testing {
     // not-join.
     #[test]
     fn test_successful_not_join() {
-        let schema = prepopulated_schema();
+        let topograph = prepopulated_topograph();
         let query = r#"
             [:find ?x
              :where [?x :foo/knows ?y]
@@ -267,7 +267,7 @@ mod testing {
                     [?x :foo/name "John"]
                     (not-join [?x ?y]
                               [?x :foo/parent ?y])]"#;
-        let cc = alg(&schema, query);
+        let cc = alg(&topograph, query);
 
         let vx = Variable::from_valid_name("?x");
         let vy = Variable::from_valid_name("?y");
@@ -332,7 +332,7 @@ mod testing {
     // Not with a parity_filter and a predicate.
     #[test]
     fn test_not_with_parity_filter_and_predicate() {
-        let schema = prepopulated_schema();
+        let topograph = prepopulated_topograph();
         let query = r#"
             [:find ?x ?age
              :where
@@ -340,7 +340,7 @@ mod testing {
              [(< ?age 30)]
              (not [?x :foo/knows "John"]
                   [?x :foo/knows "Daphne"])]"#;
-        let cc = alg(&schema, query);
+        let cc = alg(&topograph, query);
 
         let vx = Variable::from_valid_name("?x");
 
@@ -395,14 +395,14 @@ mod testing {
     // not with an or
     #[test]
     fn test_not_with_or() {
-        let schema = prepopulated_schema();
+        let topograph = prepopulated_topograph();
         let query = r#"
             [:find ?x
              :where [?x :foo/knows "Bill"]
                     (not (or [?x :foo/knows "John"]
                              [?x :foo/knows "Ámbar"])
                         [?x :foo/parent "Daphne"])]"#;
-        let cc = alg(&schema, query);
+        let cc = alg(&topograph, query);
 
         let d0 = "causets00".to_string();
         let d0e = QualifiedAlias::new(d0.clone(), causetsColumn::Causets);
@@ -460,7 +460,7 @@ mod testing {
     // not-join with an input variable
     #[test]
     fn test_not_with_in() {
-        let schema = prepopulated_schema();
+        let topograph = prepopulated_topograph();
         let query = r#"
             [:find ?x
              :in ?y
@@ -470,7 +470,7 @@ mod testing {
         let inputs = QueryInputs::with_value_sequence(vec![
             (Variable::from_valid_name("?y"), "John".into())
         ]);
-        let cc = alg_with_inputs(&schema, query, inputs);
+        let cc = alg_with_inputs(&topograph, query, inputs);
 
         let vx = Variable::from_valid_name("?x");
         let vy = Variable::from_valid_name("?y");
@@ -516,40 +516,40 @@ mod testing {
     // Test that if any single clause in the `not` fails to resolve the whole clause is considered empty
     #[test]
     fn test_fails_if_any_clause_invalid() {
-        let schema = prepopulated_schema();
+        let topograph = prepopulated_topograph();
         let query = r#"
             [:find ?x
              :where [?x :foo/knows "Bill"]
                     (not [?x :foo/nope "John"]
                          [?x :foo/parent "Ámbar"]
                          [?x :foo/nope "Daphne"])]"#;
-        let cc = alg(&schema, query);
+        let cc = alg(&topograph, query);
         assert!(!cc.is_known_empty());
         compare_ccs(cc,
-                    alg(&schema,
+                    alg(&topograph,
                         r#"[:find ?x :where [?x :foo/knows "Bill"]]"#));
     }
 
     /// Test that if all the Attrs in an `not` fail to resolve, the `cc` isn't considered empty.
     #[test]
     fn test_no_clauses_succeed() {
-        let schema = prepopulated_schema();
+        let topograph = prepopulated_topograph();
         let query = r#"
             [:find ?x
              :where [?x :foo/knows "John"]
                     (not [?x :foo/nope "Ámbar"]
                          [?x :foo/nope "Daphne"])]"#;
-        let cc = alg(&schema, query);
+        let cc = alg(&topograph, query);
         assert!(!cc.is_known_empty());
         compare_ccs(cc,
-                    alg(&schema, r#"[:find ?x :where [?x :foo/knows "John"]]"#));
+                    alg(&topograph, r#"[:find ?x :where [?x :foo/knows "John"]]"#));
 
     }
 
     #[test]
     fn test_unbound_var_fails() {
-        let schema = prepopulated_schema();
-        let known = Known::for_schema(&schema);
+        let topograph = prepopulated_topograph();
+        let known = Known::for_topograph(&topograph);
         let query = r#"
         [:find ?x
          :in ?y

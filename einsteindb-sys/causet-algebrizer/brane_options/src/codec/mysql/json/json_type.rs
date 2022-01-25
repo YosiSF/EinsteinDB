@@ -21,7 +21,7 @@ const JSON_TYPE_ARRAY: &[u8] = b"ARRAY";
 
 impl<'a> JsonRef<'a> {
     /// `json_type` is the implementation for
-    /// https://dev.mysql.com/doc/refman/5.7/en/json-Attr-functions.html#function_json-type
+    /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-Attr-functions.html#function_json-type
     pub fn json_type(&self) -> &'static [u8] {
         match self.get_type() {
             JsonType::Object => JSON_TYPE_OBJECT,

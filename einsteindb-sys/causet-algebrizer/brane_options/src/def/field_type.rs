@@ -9,13 +9,13 @@ use crate::error::DataTypeError;
 
 /// Valid values of `einsteindbpb::FieldType::tp` and `einsteindbpb::ColumnInfo::tp`.
 ///
-/// `FieldType` is the field type of a column defined by schema.
+/// `FieldType` is the field type of a column defined by topograph.
 ///
 /// `ColumnInfo` describes a column. It contains `FieldType` and some other column specific
 /// information. However for historical reasons, fields in `FieldType` (for example, `tp`)
 /// are flattened into `ColumnInfo`. Semantically these fields are identical.
 ///
-/// Please refer to [mysql/type.go](https://github.com/pingcap/parser/blob/master/mysql/type.go).
+/// Please refer to [myBerolinaSQL/type.go](https://github.com/pingcap/parser/blob/master/myBerolinaSQL/type.go).
 #[derive(PartialEq, Debug, Clone, Copy)]
 #[repr(i32)]
 pub enum FieldTypeTp {

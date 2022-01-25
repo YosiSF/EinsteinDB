@@ -15,7 +15,7 @@ use embedded_promises::{
 };
 
 use einsteindb_embedded::{
-    Schema,
+    Topograph,
 };
 
 use eeinsteindbn::query::{
@@ -53,7 +53,7 @@ impl ConjoiningClauses {
     /// the provided types.
     /// Construct a computed table to yield this relation.
     /// This function will panic if some invariants are not met.
-    fn collect_named_bindings<'s>(&mut self, schema: &'s Schema, names: Vec<Variable>, types: Vec<ValueType>, values: Vec<TypedValue>) {
+    fn collect_named_bindings<'s>(&mut self, topograph: &'s Topograph, names: Vec<Variable>, types: Vec<ValueType>, values: Vec<TypedValue>) {
         if values.is_empty() {
             return;
         }
@@ -74,15 +74,15 @@ impl ConjoiningClauses {
         // Stitch the computed table into column_bindings, so we get cross-linking.
         for (name, ty) in names.iter().zip(types.into_iter()) {
             self.constrain_var_to_type(name.clone(), ty);
-            self.bind_column_to_var(schema, alias.clone(), VariableColumn::Variable(name.clone()), name.clone());
+            self.bind_column_to_var(topograph, alias.clone(), VariableColumn::Variable(name.clone()), name.clone());
         }
 
         self.from.push(SourceAlias(table, alias));
     }
 
-    fn apply_ground_place<'s>(&mut self, schema: &'s Schema, var: VariableOrPlaceholder, arg: FnArg) -> Result<()> {
+    fn apply_ground_place<'s>(&mut self, topograph: &'s Topograph, var: VariableOrPlaceholder, arg: FnArg) -> Result<()> {
         match var {
             VariableOrPlaceholder::Placeholder => Ok(()),
-            VariableOrPlaceholder::Variable(var) => self.apply_ground_var(schema, var, arg),
+            VariableOrPlaceholder::Variable(var) => self.apply_ground_var(topograph, var, arg),
         }
     }
