@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::{
+use crate::einsteindb::storage::{
     epaxos::{
         metrics::{
             CONCURRENCY_MANAGER_LOCK_DURATION_HISTOGRAM, EPAXOS_CONFLICT_COUNTER,
@@ -661,11 +661,11 @@ fn amend_pessimistic_dagger<S: blackbrane>(
 pub mod tests {
     use super::*;
     #[cfg(test)]
-    use crate::storage::{
+    use crate::einsteindb::storage::{
         fdbhikv::Rocksblackbrane,
         solitontxn::{commands::prewrite::fallback_1pc_daggers, tests::*},
     };
-    use crate::storage::{epaxos::tests::*, Engine};
+    use crate::einsteindb::storage::{epaxos::tests::*, Engine};
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     #[cfg(test)]

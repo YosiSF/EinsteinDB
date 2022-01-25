@@ -51,16 +51,16 @@ use std::ops::{Deref, DerefMut};
 use fdbhikvproto::fdbhikvrpcpb::*;
 use solitontxn_types::{Key, OldValues, TimeStamp, Value, Write};
 
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::{self, DaggerManager, WaitTimeout};
-use crate::storage::epaxos::{Dagger as EpaxosDagger, EpaxosReader, ReleasedDagger, blackbraneReader};
-use crate::storage::solitontxn::latch;
-use crate::storage::solitontxn::{ProcessResult, Result};
-use crate::storage::types::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::{self, DaggerManager, WaitTimeout};
+use crate::einsteindb::storage::epaxos::{Dagger as EpaxosDagger, EpaxosReader, ReleasedDagger, blackbraneReader};
+use crate::einsteindb::storage::solitontxn::latch;
+use crate::einsteindb::storage::solitontxn::{ProcessResult, Result};
+use crate::einsteindb::storage::types::{
     EpaxosInfo, PessimisticDaggerRes, PrewriteResult, SecondaryDaggersStatus, StorageCallbackType,
     TxnStatus,
 };
-use crate::storage::{metrics, Result as StorageResult, blackbrane, Statistics};
+use crate::einsteindb::storage::{metrics, Result as StorageResult, blackbrane, Statistics};
 use concurrency_manager::{ConcurrencyManager, KeyHandleGuard};
 
 /// Store Transaction scheduler commands.
@@ -699,10 +699,10 @@ pub trait WriteCommand<S: blackbrane, L: DaggerManager>: CommandExt {
 pub mod test_util {
     use super::*;
 
-    use crate::storage::epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner};
-    use crate::storage::solitontxn::{Error, ErrorInner, Result};
-    use crate::storage::DummyDaggerManager;
-    use crate::storage::Engine;
+    use crate::einsteindb::storage::epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner};
+    use crate::einsteindb::storage::solitontxn::{Error, ErrorInner, Result};
+    use crate::einsteindb::storage::DummyDaggerManager;
+    use crate::einsteindb::storage::Engine;
     use solitontxn_types::Mutation;
 
     // Some utils for tests that may be used in multiple source code files.

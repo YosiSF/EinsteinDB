@@ -3,16 +3,16 @@
 // #[PerformanceCriticalPath]
 use solitontxn_types::{Key, TimeStamp};
 
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::DaggerManager;
-use crate::storage::epaxos::{EpaxosTxn, blackbraneReader};
-use crate::storage::solitontxn::actions::check_solitontxn_status::*;
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::DaggerManager;
+use crate::einsteindb::storage::epaxos::{EpaxosTxn, blackbraneReader};
+use crate::einsteindb::storage::solitontxn::actions::check_solitontxn_status::*;
+use crate::einsteindb::storage::solitontxn::commands::{
     Command, CommandExt, ReaderWithStats, ReleasedDaggers, ResponsePolicy, TypedCommand,
     WriteCommand, WriteContext, WriteResult,
 };
-use crate::storage::solitontxn::Result;
-use crate::storage::{ProcessResult, blackbrane, TxnStatus};
+use crate::einsteindb::storage::solitontxn::Result;
+use crate::einsteindb::storage::{ProcessResult, blackbrane, TxnStatus};
 
 command! {
     /// Check the status of a transaction. This is usually invoked by a transaction that meets
@@ -139,13 +139,13 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for CheckTxnStatus {
 pub mod tests {
     use super::TxnStatus::*;
     use super::*;
-    use crate::storage::fdbhikv::Engine;
-    use crate::storage::dagger_manager::DummyDaggerManager;
-    use crate::storage::epaxos::tests::*;
-    use crate::storage::solitontxn::commands::{pessimistic_rollback, WriteCommand, WriteContext};
-    use crate::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
-    use crate::storage::solitontxn::tests::*;
-    use crate::storage::{types::TxnStatus, ProcessResult, TestEngineBuilder};
+    use crate::einsteindb::storage::fdbhikv::Engine;
+    use crate::einsteindb::storage::dagger_manager::DummyDaggerManager;
+    use crate::einsteindb::storage::epaxos::tests::*;
+    use crate::einsteindb::storage::solitontxn::commands::{pessimistic_rollback, WriteCommand, WriteContext};
+    use crate::einsteindb::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
+    use crate::einsteindb::storage::solitontxn::tests::*;
+    use crate::einsteindb::storage::{types::TxnStatus, ProcessResult, TestEngineBuilder};
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use einstfdbhikv_util::deadline::Deadline;

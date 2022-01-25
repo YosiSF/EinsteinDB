@@ -24,15 +24,15 @@ use ehikvproto::metapb;
 use ehikvproto::FIDelpb::{self, Member};
 use ehikvproto::replication_modepb::{RegionReplicationStatus, ReplicationStatus};
 use security::SecurityManager;
-use Einsteineinsteindb_util::time::duration_to_sec;
-use Einsteineinsteindb_util::{Either, HandyRwLock};
+use EinsteinDb_util::time::duration_to_sec;
+use EinsteinDb_util::{Either, HandyRwLock};
 use txn_types::TimeStamp;
 
 use super::metrics::*;
 use super::util::{check_resp_header, sync_request, validate_endpoints, Inner, LeaderClient};
 use super::{ClusterVersion, Config, FIDelFuture, UnixSecs};
 use super::{Error, FIDelClient, RegionInfo, RegionStat, Result, REQUEST_TIMEOUT};
-use Einsteineinsteindb_util::timer::GLOBAL_TIMER_HANDLE;
+use EinsteinDb_util::timer::GLOBAL_TIMER_HANDLE;
 
 const CQ_COUNT: usize = 1;
 const CLIENT_PREFIX: &str = "FIDel";
@@ -43,7 +43,7 @@ pub struct RpcClient {
 }
 
 impl RpcClient {
-    pub fn new(braneg: &Config, security_mgr: Arc<SecurityManager>) -> Result<RpcClient> {
+    pub fn new(blacklbraned: &Config, security_mgr: Arc<SecurityManager>) -> Result<RpcClient> {
         let env = Arc::new(
             EnvBuilder::new()
                 .cq_count(CQ_COUNT)
@@ -52,12 +52,12 @@ impl RpcClient {
         );
 
         // -1 means the max.
-        let retries = match braneg.retry_max_count {
+        let retries = match blacklbraned.retry_max_count {
             -1 => std::isize::MAX,
             v => v.checked_add(1).unwrap_or(std::isize::MAX),
         };
         for i in 0..retries {
-            match validate_endpoints(Arc::clone(&env), braneg, security_mgr.clone()) {
+            match validate_endpoints(Arc::clone(&env), blacklbraned, security_mgr.clone()) {
                 Ok((client, members)) => {
                     let rpc_client = RpcClient {
                         cluster_id: members.get_header().get_cluster_id(),
@@ -69,10 +69,10 @@ impl RpcClient {
                         )),
                     };
 
-                    // spawn a background future to uFIDelate FIDel information periodically
-                    let duration = braneg.uFIDelate_interval.0;
+                    // spawn a background future to FIDelio FIDel information periodically
+                    let duration = blacklbraned.FIDelio_interval.0;
                     let client = Arc::downgrade(&rpc_client.leader_client);
-                    let uFIDelate_loop = async move {
+                    let FIDelio_loop = async move {
                         loop {
                             let ok = GLOBAL_TIMER_HANDLE
                                 .delay(Instant::now() + duration)
@@ -89,8 +89,8 @@ impl RpcClient {
                                 Some(cli) => {
                                     let req = cli.reconnect().await;
                                     if req.is_err() {
-                                        warn!("uFIDelate FIDel information failed");
-                                        // will uFIDelate later anyway
+                                        warn!("FIDelio FIDel information failed");
+                                        // will FIDelio later anyway
                                     }
                                 }
                                 // if the client has been dropped, we can stop
@@ -104,15 +104,15 @@ impl RpcClient {
                         .inner
                         .rl()
                         .client_stub
-                        .spawn(Compat::new(uFIDelate_loop.unit_error().boxed()));
+                        .spawn(Compat::new(FIDelio_loop.unit_error().boxed()));
 
                     return Ok(rpc_client);
                 }
                 Err(e) => {
-                    if i as usize % braneg.retry_log_every == 0 {
+                    if i as usize % blacklbraned.retry_log_every == 0 {
                         warn!("validate FIDel endpoints failed"; "err" => ?e);
                     }
-                    thread::sleep(braneg.retry_interval.0);
+                    thread::sleep(blacklbraned.retry_interval.0);
                 }
             }
         }

@@ -1,15 +1,15 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::DaggerManager;
-use crate::storage::epaxos::{EpaxosTxn, Result as EpaxosResult, blackbraneReader};
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::DaggerManager;
+use crate::einsteindb::storage::epaxos::{EpaxosTxn, Result as EpaxosResult, blackbraneReader};
+use crate::einsteindb::storage::solitontxn::commands::{
     Command, CommandExt, ReaderWithStats, ReleasedDaggers, ResponsePolicy, TypedCommand,
     WriteCommand, WriteContext, WriteResult,
 };
-use crate::storage::solitontxn::Result;
-use crate::storage::{ProcessResult, Result as StorageResult, blackbrane};
+use crate::einsteindb::storage::solitontxn::Result;
+use crate::einsteindb::storage::{ProcessResult, Result as StorageResult, blackbrane};
 use std::mem;
 use solitontxn_types::{Key, DaggerType, TimeStamp};
 
@@ -93,13 +93,13 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for PessimisticRollback
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::storage::fdbhikv::Engine;
-    use crate::storage::dagger_manager::DummyDaggerManager;
-    use crate::storage::epaxos::tests::*;
-    use crate::storage::solitontxn::commands::{WriteCommand, WriteContext};
-    use crate::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
-    use crate::storage::solitontxn::tests::*;
-    use crate::storage::TestEngineBuilder;
+    use crate::einsteindb::storage::fdbhikv::Engine;
+    use crate::einsteindb::storage::dagger_manager::DummyDaggerManager;
+    use crate::einsteindb::storage::epaxos::tests::*;
+    use crate::einsteindb::storage::solitontxn::commands::{WriteCommand, WriteContext};
+    use crate::einsteindb::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
+    use crate::einsteindb::storage::solitontxn::tests::*;
+    use crate::einsteindb::storage::TestEngineBuilder;
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use einstfdbhikv_util::deadline::Deadline;

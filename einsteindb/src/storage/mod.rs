@@ -64,13 +64,13 @@ pub use self::{
 };
 
 use crate::read_pool::{ReadPool, ReadPoolHandle};
-use crate::storage::metrics::CommandKind;
-use crate::storage::epaxos::EpaxosReader;
-use crate::storage::solitontxn::commands::{cocausetStore, cocausetCompareAndSwap};
-use crate::storage::solitontxn::flow_controller::FlowController;
+use crate::einsteindb::storage::metrics::CommandKind;
+use crate::einsteindb::storage::epaxos::EpaxosReader;
+use crate::einsteindb::storage::solitontxn::commands::{cocausetStore, cocausetCompareAndSwap};
+use crate::einsteindb::storage::solitontxn::flow_controller::FlowController;
 
 use crate::server::dagger_manager::waiter_manager;
-use crate::storage::{
+use crate::einsteindb::storage::{
     config::Config,
     fdbhikv::{with_tls_engine, Modify, WriteData},
     dagger_manager::{DummyDaggerManager, DaggerManager},
@@ -82,7 +82,7 @@ use crate::storage::{
 
 use api_version::{match_template_api_version, APIVersion, KeyMode, cocausetValue, APIV2};
 use concurrency_manager::ConcurrencyManager;
-use engine_promises::{cocauset_ttl::ttl_to_expire_ts, CfName, CF_DEFAULT, CF_LOCK, CF_WRITE, DATA_CFS};
+use einsteindb-gen::{cocauset_ttl::ttl_to_expire_ts, CfName, CF_DEFAULT, CF_LOCK, CF_WRITE, DATA_CFS};
 use futures::prelude::*;
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use fdbhikvproto::fdbhikvrpcpb::{
@@ -1218,7 +1218,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         cmd: TypedCommand<T>,
         callback: Callback<T>,
     ) -> Result<()> {
-        use crate::storage::solitontxn::commands::{
+        use crate::einsteindb::storage::solitontxn::commands::{
             AcquirePessimisticDagger, Prewrite, PrewritePessimistic,
         };
 
@@ -2614,7 +2614,7 @@ pub trait ResponseBatchConsumer<ConsumeResponse: Sized>: Send {
 
 pub mod test_util {
     use super::*;
-    use crate::storage::solitontxn::commands;
+    use crate::einsteindb::storage::solitontxn::commands;
     use std::sync::Mutex;
     use std::{
         fmt::Debug,
@@ -2822,12 +2822,12 @@ mod tests {
     };
 
     use crate::config::TitanDBConfig;
-    use crate::storage::fdbhikv::{ExpectedWrite, MockEngineBuilder};
-    use crate::storage::dagger_manager::DiagnosticContext;
-    use crate::storage::epaxos::DaggerType;
-    use crate::storage::solitontxn::commands::{AcquirePessimisticDagger, Prewrite};
-    use crate::storage::solitontxn::tests::must_rollback;
-    use crate::storage::{
+    use crate::einsteindb::storage::fdbhikv::{ExpectedWrite, MockEngineBuilder};
+    use crate::einsteindb::storage::dagger_manager::DiagnosticContext;
+    use crate::einsteindb::storage::epaxos::DaggerType;
+    use crate::einsteindb::storage::solitontxn::commands::{AcquirePessimisticDagger, Prewrite};
+    use crate::einsteindb::storage::solitontxn::tests::must_rollback;
+    use crate::einsteindb::storage::{
         config::BdaggerCacheConfig,
         fdbhikv::{Error as HikvError, ErrorInner as EngineErrorInner},
         dagger_manager::{Dagger, WaitTimeout},
@@ -2836,7 +2836,7 @@ mod tests {
     };
     use collections::HashMap;
     use engine_rocks::cocauset_util::CFOptions;
-    use engine_promises::{cocauset_ttl::ttl_current_ts, ALL_CFS, CF_LOCK, CF_RAFT, CF_WRITE};
+    use einsteindb-gen::{cocauset_ttl::ttl_current_ts, ALL_CFS, CF_LOCK, CF_RAFT, CF_WRITE};
     use error_code::ErrorCodeExt;
     use errors::extract_key_error;
     use futures::executor::bdagger_on;
@@ -5637,7 +5637,7 @@ mod tests {
 
     #[test]
     fn test_resolve_dagger() {
-        use crate::storage::solitontxn::RESOLVE_LOCK_BATCH_SIZE;
+        use crate::einsteindb::storage::solitontxn::RESOLVE_LOCK_BATCH_SIZE;
 
         let storage = TestStorageBuilder::new(DummyDaggerManager {}, ApiVersion::V1)
             .build()

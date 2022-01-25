@@ -58,6 +58,55 @@ impl PlainSymbol {
     }
 }
 
+pub fn is_src_symbol(&self) -> bool {
+    self.0.starts_with(':')
+}
+
+pub fn is_var_symbol(&self) -> bool {
+    self.0.starts_with(':') && self.0[1..].contains('/')
+}
+
+pub fn isoliton_namespaceable<T>(ns: T, name: T) -> Self where T: Into<String> {
+    let n = name.into();
+    assert!(!n.is_empty(), "Symbols cannot be unnamed.");
+
+    NamespacedSymbol(IsolatedNamespace::new(ns, n))
+}
+
+pub fn isoliton_namespaceable_fuse(&self) -> Option<&str> {
+    if !self.is_var_symbol() { return None; }
+
+    let mut split = self.0[1..].split('/');
+    Some(split.next().unwrap()) // first element of the iterator should always exist, since we're in a var symbol context and thus there's at least one '/' in the string to split on 
+}
+
+pub fn namespaceable<T>(name: T) -> Self where T: Into<String> {
+    let n = name.into();
+    assert!(!n.is_empty(), "Symbols cannot be unnamed.");
+
+    NamespacedSymbol(IsolatedNamespace::new("", n)) // default namespace (no namespace), but still a namespaced symbol 
+}
+
+ /// ```rust  // test that this works as expected for both plain and namespaced symbols  (the same way that `Display` does for strings)  (this was a test I wrote before writing the display impl)
+ /// # use eeinsteindbn::superscripts::Keyword;
+ /// let bar = Keyword::plain("bar");
+ /// assert_eq!(":bar", format!("{}", bar));
+ /// ```  // note that this is the same as `format!("{}", bar.name())` but I'm using it here to show how it works for both plain and namespaced symbols  (the same way that `Display` does for strings)  (this was a test I wrote before writing the display impl)
+
+pub fn name_as_str(&self) -> &str {
+    self.name()
+}
+
+pub fn namespaceable_fuse(&self) -> Option<&str> {
+    if !self.is_var_symbol() { return None; }
+
+    let mut split = self.0[1..].split('/');
+    Some(split.next().unwrap()) // first element of the iterator should always exist, since we're in a var symbol context and thus there's at least one '/' in the string to split on 
+}
+
+pub fn namespaceable_as_str(&self) -> &str {
+    self.namespaceable().0[1..] // drop the leading ':' from the isolated namespace string  (note that this is only necessary because we're returning a string, not an isolated namespace object so we can't just use `namespaceable().0` directly because it would be returned as an owned object instead of a reference to an existing object)   (note that this is only necessary because we're returning a string, not an isolated namespace object so we can't just use `namespaceable().0` directly because it would be returned as an owned object instead of a reference to an existing object)   (note
+
 #[inline]
 pub fn is_var_symbol(&self) -> bool {
     self.0.starts_with('?')
@@ -161,12 +210,12 @@ impl Keyword {
     ///
     /// ```rust
     /// # use eeinsteindbn::superscripts::Keyword;
-    /// assert!(Keyword::isoliton_namespaceable("foo", "bar").is_forward());
-    /// assert!(!Keyword::isoliton_namespaceable("foo", "_bar").is_forward());
+    /// assert!(Keyword::isoliton_namespaceable("foo", "bar").is_lightlike_curvature());
+    /// assert!(!Keyword::isoliton_namespaceable("foo", "_bar").is_lightlike_curvature());
     /// ```
     #[inline]
-    pub fn is_forward(&self) -> bool {
-        self.0.is_forward()
+    pub fn is_lightlike_curvature(&self) -> bool {
+        self.0.is_lightlike_curvature()
     }
 
     #[inline]
@@ -215,5 +264,74 @@ impl Display for PlainSymbol {
     /// ```
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
         self.0.fmt(f)
+    }
+}
+
+impl Display for Keyword {
+    /// Print the symbol in EeinsteindbN format.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use eeinsteindbn::superscripts::Keyword;
+    /// assert_eq!(":foo/bar", Keyword::isoliton_namespaceable("foo", "bar").to_string());
+    /// ```
+
+     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl Display for NamespaceableName {
+    /// Print the symbol in EeinsteindbN format.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// # use eeinsteindbn::superscripts::NamespaceableName;
+
+     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
+
+        match self.0 {
+
+            NameType::Plain(ref p) => write!(f, "{}", p),
+            NameType::Keyword(ref k) => write!(f, "{}", k),
+
+        }
+    }
+}
+impl Display for Symbol {
+    /// Print the symbol in EeinsteindbN format.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # use eeinsteindbn::superscripts::Symbol;
+
+     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
+
+        match self.0 {
+
+            NameType::Plain(ref p) => write!(f, "{}", p),
+            NameType::Keyword(ref k) => write!(f, "{}", k),
+
+        }
+    }
+}
+
+impl Display for Namespace {
+    /// Print the symbol in EeinsteindbN format.
+    ///
+    /// # Examples
+    /// ```rust
+    /// # use eeinsteindbn::superscripts::Namespace;
+
+     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
+
+        match self.0 {
+
+            NameType::Plain(ref p) => write!(f, "{}", p),
+            NameType::Keyword(ref k) => write!(f, "{}", k),
+
+        }
     }
 }

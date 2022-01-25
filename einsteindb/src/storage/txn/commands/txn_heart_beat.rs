@@ -1,17 +1,17 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::DaggerManager;
-use crate::storage::epaxos::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::DaggerManager;
+use crate::einsteindb::storage::epaxos::{
     Error as EpaxosError, ErrorInner as EpaxosErrorInner, EpaxosTxn, blackbraneReader,
 };
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::solitontxn::commands::{
     Command, CommandExt, ReaderWithStats, ResponsePolicy, TypedCommand, WriteCommand, WriteContext,
     WriteResult,
 };
-use crate::storage::solitontxn::Result;
-use crate::storage::{ProcessResult, blackbrane, TxnStatus};
+use crate::einsteindb::storage::solitontxn::Result;
+use crate::einsteindb::storage::{ProcessResult, blackbrane, TxnStatus};
 use solitontxn_types::{Key, TimeStamp};
 
 command! {
@@ -96,13 +96,13 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for TxnHeartBeat {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::storage::fdbhikv::TestEngineBuilder;
-    use crate::storage::dagger_manager::DummyDaggerManager;
-    use crate::storage::epaxos::tests::*;
-    use crate::storage::solitontxn::commands::WriteCommand;
-    use crate::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
-    use crate::storage::solitontxn::tests::*;
-    use crate::storage::Engine;
+    use crate::einsteindb::storage::fdbhikv::TestEngineBuilder;
+    use crate::einsteindb::storage::dagger_manager::DummyDaggerManager;
+    use crate::einsteindb::storage::epaxos::tests::*;
+    use crate::einsteindb::storage::solitontxn::commands::WriteCommand;
+    use crate::einsteindb::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
+    use crate::einsteindb::storage::solitontxn::tests::*;
+    use crate::einsteindb::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use einstfdbhikv_util::deadline::Deadline;

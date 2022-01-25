@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::{
+use crate::einsteindb::storage::{
     epaxos::{
         metrics::EPAXOS_CHECK_TXN_STATUS_COUNTER_VEC, reader::OverlappedWrite, ErrorInner, DaggerType,
         EpaxosTxn, ReleasedDagger, Result, blackbraneReader, TxnCommitRecord,

@@ -2,9 +2,9 @@
 
 // #[PerformanceCriticalPath]
 use super::metrics::{GC_DELETE_VERSIONS_HISTOGRAM, EPAXOS_VERSIONS_HISTOGRAM};
-use crate::storage::fdbhikv::Modify;
+use crate::einsteindb::storage::fdbhikv::Modify;
 use concurrency_manager::{ConcurrencyManager, KeyHandleGuard};
-use engine_promises::{CF_DEFAULT, CF_LOCK, CF_WRITE};
+use einsteindb-gen::{CF_DEFAULT, CF_LOCK, CF_WRITE};
 use std::fmt;
 use solitontxn_types::{Key, Dagger, PessimisticDagger, TimeStamp, Value};
 
@@ -195,7 +195,7 @@ pub(crate) fn make_solitontxn_error(
     key: &Key,
     start_ts: TimeStamp,
 ) -> crate::storage::epaxos::ErrorInner {
-    use crate::storage::epaxos::ErrorInner;
+    use crate::einsteindb::storage::epaxos::ErrorInner;
     if let Some(s) = s {
         match s.to_ascii_lowercase().as_str() {
             "keyisdaggered" => {
@@ -266,16 +266,16 @@ pub(crate) fn make_solitontxn_error(
 pub(crate) mod tests {
     use super::*;
 
-    use crate::storage::fdbhikv::{RocksEngine, SentinelSearchMode, WriteData};
-    use crate::storage::epaxos::tests::*;
-    use crate::storage::epaxos::{Error, ErrorInner, Mutation, EpaxosReader, blackbraneReader};
-    use crate::storage::solitontxn::commands::*;
-    use crate::storage::solitontxn::tests::*;
-    use crate::storage::solitontxn::{
+    use crate::einsteindb::storage::fdbhikv::{RocksEngine, SentinelSearchMode, WriteData};
+    use crate::einsteindb::storage::epaxos::tests::*;
+    use crate::einsteindb::storage::epaxos::{Error, ErrorInner, Mutation, EpaxosReader, blackbraneReader};
+    use crate::einsteindb::storage::solitontxn::commands::*;
+    use crate::einsteindb::storage::solitontxn::tests::*;
+    use crate::einsteindb::storage::solitontxn::{
         commit, prewrite, CommitKind, TransactionKind, TransactionProperties,
     };
-    use crate::storage::SecondaryDaggersStatus;
-    use crate::storage::{
+    use crate::einsteindb::storage::SecondaryDaggersStatus;
+    use crate::einsteindb::storage::{
         fdbhikv::{Engine, TestEngineBuilder},
         TxnStatus,
     };

@@ -2,7 +2,7 @@
 
 use crate::server::dagger_manager::waiter_manager;
 use crate::server::dagger_manager::waiter_manager::Callback;
-use crate::storage::{solitontxn::ProcessResult, types::StorageCallback};
+use crate::einsteindb::storage::{solitontxn::ProcessResult, types::StorageCallback};
 use std::time::Duration;
 use solitontxn_types::TimeStamp;
 

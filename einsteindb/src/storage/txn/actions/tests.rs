@@ -3,10 +3,10 @@
 //! This file contains tests and testing tools which affects multiple actions
 
 use super::*;
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::epaxos::tests::write;
-use crate::storage::epaxos::{Error, Key, Mutation, EpaxosTxn, blackbraneReader, TimeStamp};
-use crate::storage::{solitontxn, Engine};
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::epaxos::tests::write;
+use crate::einsteindb::storage::epaxos::{Error, Key, Mutation, EpaxosTxn, blackbraneReader, TimeStamp};
+use crate::einsteindb::storage::{solitontxn, Engine};
 use concurrency_manager::ConcurrencyManager;
 use fdbhikvproto::fdbhikvrpcpb::{Assertion, AssertionLevel, Context};
 use prewrite::{prewrite, CommitKind, TransactionKind, TransactionProperties};

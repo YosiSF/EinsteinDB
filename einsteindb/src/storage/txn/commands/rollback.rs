@@ -1,15 +1,15 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::DaggerManager;
-use crate::storage::epaxos::{EpaxosTxn, blackbraneReader};
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::DaggerManager;
+use crate::einsteindb::storage::epaxos::{EpaxosTxn, blackbraneReader};
+use crate::einsteindb::storage::solitontxn::commands::{
     Command, CommandExt, ReaderWithStats, ReleasedDaggers, ResponsePolicy, TypedCommand,
     WriteCommand, WriteContext, WriteResult,
 };
-use crate::storage::solitontxn::{cleanup, Result};
-use crate::storage::{ProcessResult, blackbrane};
+use crate::einsteindb::storage::solitontxn::{cleanup, Result};
+use crate::einsteindb::storage::{ProcessResult, blackbrane};
 use solitontxn_types::{Key, TimeStamp};
 
 command! {
@@ -68,8 +68,8 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for Rollback {
 
 #[cfg(test)]
 mod tests {
-    use crate::storage::solitontxn::tests::*;
-    use crate::storage::TestEngineBuilder;
+    use crate::einsteindb::storage::solitontxn::tests::*;
+    use crate::einsteindb::storage::TestEngineBuilder;
 
     #[test]
     fn rollback_dagger_with_existing_rollback() {

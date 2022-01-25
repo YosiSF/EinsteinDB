@@ -393,8 +393,8 @@ pub fn default_not_found_error(key: Vec<u8>, hint: &str) -> Error {
 
 pub mod tests {
     use super::*;
-    use crate::storage::fdbhikv::{Engine, Modify, SentinelSearchMode, SnapContext, blackbrane, WriteData};
-    use engine_promises::CF_WRITE;
+    use crate::einsteindb::storage::fdbhikv::{Engine, Modify, SentinelSearchMode, SnapContext, blackbrane, WriteData};
+    use einsteindb-gen::CF_WRITE;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use std::borrow::Cow;
     use solitontxn_types::Key;

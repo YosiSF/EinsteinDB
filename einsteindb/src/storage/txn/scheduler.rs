@@ -30,7 +30,7 @@ use std::{mem, u64};
 use collections::HashMap;
 use concurrency_manager::{ConcurrencyManager, KeyHandleGuard};
 use crossbeam::utils::CachePadded;
-use engine_promises::CF_LOCK;
+use einsteindb-gen::CF_LOCK;
 use futures::compat::Future01CompatExt;
 use fdbhikvproto::fdbhikvrpcpb::{CommandPri, Context, DiskFullOpt, ExtraOp};
 use fdbhikvproto::pdpb::QueryKind;
@@ -42,25 +42,25 @@ use einstfdbhikv_util::{time::Instant, timer::GLOBAL_TIMER_HANDLE};
 use solitontxn_types::TimeStamp;
 
 use crate::server::dagger_manager::waiter_manager;
-use crate::storage::config::Config;
-use crate::storage::fdbhikv::{
+use crate::einsteindb::storage::config::Config;
+use crate::einsteindb::storage::fdbhikv::{
     self, with_tls_engine, Engine, ExtCallback, Result as EngineResult, SnapContext, Statistics,
 };
-use crate::storage::dagger_manager::{self, DiagnosticContext, DaggerManager, WaitTimeout};
-use crate::storage::metrics::{self, *};
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::dagger_manager::{self, DiagnosticContext, DaggerManager, WaitTimeout};
+use crate::einsteindb::storage::metrics::{self, *};
+use crate::einsteindb::storage::solitontxn::commands::{
     ResponsePolicy, WriteContext, WriteResult, WriteResultDaggerInfo,
 };
-use crate::storage::solitontxn::sched_pool::tls_collect_query;
-use crate::storage::solitontxn::{
+use crate::einsteindb::storage::solitontxn::sched_pool::tls_collect_query;
+use crate::einsteindb::storage::solitontxn::{
     commands::Command,
     flow_controller::FlowController,
     latch::{Latches, Dagger},
     sched_pool::{tls_collect_read_duration, tls_collect_mutant_search_details, SchedPool},
     Error, ProcessResult,
 };
-use crate::storage::DynamicConfigs;
-use crate::storage::{
+use crate::einsteindb::storage::DynamicConfigs;
+use crate::einsteindb::storage::{
     get_priority_tag, fdbhikv::FlowStatsReporter, types::StorageCallback, Error as StorageError,
     ErrorInner as StorageErrorInner,
 };
@@ -1088,13 +1088,13 @@ mod tests {
     use std::thread;
 
     use super::*;
-    use crate::storage::{
+    use crate::einsteindb::storage::{
         dagger_manager::DummyDaggerManager,
         epaxos::{self, Mutation},
         solitontxn::commands::TypedCommand,
         TxnStatus,
     };
-    use crate::storage::{
+    use crate::einsteindb::storage::{
         solitontxn::{commands, latch::*},
         TestEngineBuilder,
     };

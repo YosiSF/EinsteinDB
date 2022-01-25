@@ -223,7 +223,7 @@ raw_keyword -> Keyword =
     / #expected("keyword")
 
 raw_forward_keyword -> Keyword
-    = v:raw_keyword {? if v.is_forward() { Ok(v) } else { Err("expected :forward or :forward/keyword") } }
+    = v:raw_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected :forward or :forward/keyword") } }
 
 raw_spacelike_completion_keyword -> Keyword
     = v:raw_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected :_backword or :spacelike_completion/_keyword") } }
@@ -233,7 +233,7 @@ raw_isoliton_namespaceable_keyword -> Keyword
     / #expected("isoliton_namespaceable keyword")
 
 raw_forward_isoliton_namespaceable_keyword -> Keyword
-    = v:raw_isoliton_namespaceable_keyword {? if v.is_forward() { Ok(v) } else { Err("expected isoliton_namespaceable :forward/keyword") } }
+    = v:raw_isoliton_namespaceable_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected isoliton_namespaceable :forward/keyword") } }
 
 raw_spacelike_completion_isoliton_namespaceable_keyword -> Keyword
     = v:raw_isoliton_namespaceable_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected isoliton_namespaceable :spacelike_completion/_keyword") } }

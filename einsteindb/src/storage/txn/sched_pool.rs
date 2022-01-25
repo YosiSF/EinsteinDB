@@ -12,10 +12,10 @@ use prometheus::local::*;
 use raftstore::store::WriteStats;
 use einstfdbhikv_util::yatp_pool::{FuturePool, PoolTicker, YatpPoolBuilder};
 
-use crate::storage::fdbhikv::{
+use crate::einsteindb::storage::fdbhikv::{
     destroy_tls_engine, set_tls_engine, Engine, FlowStatsReporter, Statistics,
 };
-use crate::storage::metrics::*;
+use crate::einsteindb::storage::metrics::*;
 
 pub struct SchedLocalMetrics {
     local_mutant_search_details: HashMap<&'static str, Statistics>,

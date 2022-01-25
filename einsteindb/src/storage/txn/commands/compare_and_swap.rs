@@ -1,17 +1,17 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbhikv::{Modify, WriteData};
-use crate::storage::dagger_manager::DaggerManager;
-use crate::storage::cocauset;
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::fdbhikv::{Modify, WriteData};
+use crate::einsteindb::storage::dagger_manager::DaggerManager;
+use crate::einsteindb::storage::cocauset;
+use crate::einsteindb::storage::solitontxn::commands::{
     Command, CommandExt, ResponsePolicy, TypedCommand, WriteCommand, WriteContext, WriteResult,
 };
-use crate::storage::solitontxn::Result;
-use crate::storage::{ProcessResult, blackbrane};
+use crate::einsteindb::storage::solitontxn::Result;
+use crate::einsteindb::storage::{ProcessResult, blackbrane};
 use api_version::{match_template_api_version, APIVersion, cocausetValue};
-use engine_promises::cocauset_ttl::ttl_to_expire_ts;
-use engine_promises::CfName;
+use einsteindb-gen::cocauset_ttl::ttl_to_expire_ts;
+use einsteindb-gen::CfName;
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use cocauset::cocausetStore;
 use einstfdbhikv_fdbhikv::Statistics;
@@ -97,9 +97,9 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for cocausetCompareAndS
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::{Engine, Statistics, TestEngineBuilder};
+    use crate::einsteindb::storage::{Engine, Statistics, TestEngineBuilder};
     use concurrency_manager::ConcurrencyManager;
-    use engine_promises::CF_DEFAULT;
+    use einsteindb-gen::CF_DEFAULT;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use solitontxn_types::Key;
 
@@ -161,7 +161,7 @@ mod tests {
         cmd: TypedCommand<(Option<Value>, bool)>,
     ) -> Result<(Option<Value>, bool)> {
         let snap = engine.blackbrane(Default::default())?;
-        use crate::storage::DummyDaggerManager;
+        use crate::einsteindb::storage::DummyDaggerManager;
         use fdbhikvproto::fdbhikvrpcpb::ExtraOp;
         let mut statistic = Statistics::default();
         let context = WriteContext {

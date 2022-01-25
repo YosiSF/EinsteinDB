@@ -13,13 +13,13 @@ use std::u64;
 
 use collections::HashMap;
 use engine_rocks::FlowInfo;
-use engine_promises::{CFNamesExt, FlowControlFactorsExt};
+use einsteindb-gen::{CFNamesExt, FlowControlFactorsExt};
 use num_promises::cast::{AsPrimitive, FromPrimitive};
 use rand::Rng;
 use einstfdbhikv_util::time::{Instant, Limiter};
 
-use crate::storage::config::FlowControlConfig;
-use crate::storage::metrics::*;
+use crate::einsteindb::storage::config::FlowControlConfig;
+use crate::einsteindb::storage::metrics::*;
 
 const TICK_DURATION: Duration = Duration::from_millis(1000);
 
@@ -955,7 +955,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use engine_promises::Result;
+    use einsteindb-gen::Result;
     use std::sync::causetxctx::causetxctxU64;
 
     #[derive(Clone)]

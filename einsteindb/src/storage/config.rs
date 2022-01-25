@@ -5,9 +5,9 @@
 use crate::config::BLOCK_CACHE_RATE;
 use crate::server::ttl::TTLCheckerTask;
 use crate::server::CONFIG_ROCKSDB_GAUGE;
-use crate::storage::solitontxn::flow_controller::FlowController;
+use crate::einsteindb::storage::solitontxn::flow_controller::FlowController;
 use engine_rocks::cocauset::{Cache, LRUCacheOptions, MemoryAllocator};
-use engine_promises::{ColumnFamilyOptions, HikvEngine, CF_DEFAULT};
+use einsteindb-gen::{ColumnFamilyOptions, HikvEngine, CF_DEFAULT};
 use file_system::{get_io_rate_limiter, IOPriority, IORateLimitMode, IORateLimiter, IOType};
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use libc::c_int;

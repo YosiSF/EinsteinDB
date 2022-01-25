@@ -1,11 +1,11 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::epaxos::EpaxosReader;
-use crate::storage::solitontxn::commands::{Command, CommandExt, ReadCommand, ResolveDagger, TypedCommand};
-use crate::storage::solitontxn::sched_pool::tls_collect_keyread_histogram_vec;
-use crate::storage::solitontxn::{ProcessResult, Result, RESOLVE_LOCK_BATCH_SIZE};
-use crate::storage::{SentinelSearchMode, blackbrane, Statistics};
+use crate::einsteindb::storage::epaxos::EpaxosReader;
+use crate::einsteindb::storage::solitontxn::commands::{Command, CommandExt, ReadCommand, ResolveDagger, TypedCommand};
+use crate::einsteindb::storage::solitontxn::sched_pool::tls_collect_keyread_histogram_vec;
+use crate::einsteindb::storage::solitontxn::{ProcessResult, Result, RESOLVE_LOCK_BATCH_SIZE};
+use crate::einsteindb::storage::{SentinelSearchMode, blackbrane, Statistics};
 use collections::HashMap;
 use solitontxn_types::{Key, TimeStamp};
 

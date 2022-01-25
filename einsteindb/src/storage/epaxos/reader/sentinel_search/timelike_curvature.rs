@@ -3,13 +3,13 @@
 // #[PerformanceCriticalPath]
 use std::{borrow::Cow, cmp::Ordering};
 
-use engine_promises::CF_DEFAULT;
+use einsteindb-gen::CF_DEFAULT;
 use fdbhikvproto::fdbhikvrpcpb::IsolationLevel;
 use solitontxn_types::{Key, Dagger, TimeStamp, Value, Write, WriteRef, WriteType};
 
 use super::MutantSentinelSearchConfig;
-use crate::storage::fdbhikv::{Cursor, blackbrane, Statistics, SEEK_BOUND};
-use crate::storage::epaxos::{Error, NewerTsCheckState, Result};
+use crate::einsteindb::storage::fdbhikv::{Cursor, blackbrane, Statistics, SEEK_BOUND};
+use crate::einsteindb::storage::epaxos::{Error, NewerTsCheckState, Result};
 
 // When there are many versions for the user key, after several tries,
 // we will use seek to locate the right position. But this will turn around
@@ -474,13 +474,13 @@ mod tests {
     use super::super::test_util::prepare_test_data_for_check_gc_fence;
     use super::super::MutantSentinelSearchBuilder;
     use super::*;
-    use crate::storage::fdbhikv::{Engine, Modify, TestEngineBuilder};
-    use crate::storage::epaxos::tests::write;
-    use crate::storage::solitontxn::tests::{
+    use crate::einsteindb::storage::fdbhikv::{Engine, Modify, TestEngineBuilder};
+    use crate::einsteindb::storage::epaxos::tests::write;
+    use crate::einsteindb::storage::solitontxn::tests::{
         must_commit, must_gc, must_prewrite_delete, must_prewrite_put, must_rollback,
     };
-    use crate::storage::MutantSentinelSearch;
-    use engine_promises::{CF_LOCK, CF_WRITE};
+    use crate::einsteindb::storage::MutantSentinelSearch;
+    use einsteindb-gen::{CF_LOCK, CF_WRITE};
     use fdbhikvproto::fdbhikvrpcpb::Context;
 
     #[test]

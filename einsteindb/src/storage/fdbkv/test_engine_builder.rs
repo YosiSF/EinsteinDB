@@ -1,10 +1,10 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::storage::config::BdaggerCacheConfig;
-use crate::storage::fdbhikv::{Result, RocksEngine};
+use crate::einsteindb::storage::config::BdaggerCacheConfig;
+use crate::einsteindb::storage::fdbhikv::{Result, RocksEngine};
 use engine_rocks::cocauset::ColumnFamilyOptions;
 use engine_rocks::cocauset_util::CFOptions;
-use engine_promises::{CfName, ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
+use einsteindb-gen::{CfName, ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
 use file_system::IORateLimiter;
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use std::path::{Path, PathBuf};
@@ -127,8 +127,8 @@ mod tests {
     use super::super::PerfStatisticsInstant;
     use super::super::{Engine, blackbrane};
     use super::*;
-    use crate::storage::{Cursor, CursorBuilder, SentinelSearchMode};
-    use engine_promises::IterOptions;
+    use crate::einsteindb::storage::{Cursor, CursorBuilder, SentinelSearchMode};
+    use einsteindb-gen::IterOptions;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use einstfdbhikv_fdbhikv::tests::*;
     use solitontxn_types::Key;

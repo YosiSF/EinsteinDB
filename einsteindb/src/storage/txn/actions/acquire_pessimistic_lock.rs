@@ -1,12 +1,12 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::epaxos::{
+use crate::einsteindb::storage::epaxos::{
     metrics::{EPAXOS_CONFLICT_COUNTER, EPAXOS_DUPLICATE_CMD_COUNTER_VEC},
     ErrorInner, EpaxosTxn, Result as EpaxosResult, blackbraneReader,
 };
-use crate::storage::solitontxn::actions::check_data_constraint::check_data_constraint;
-use crate::storage::blackbrane;
+use crate::einsteindb::storage::solitontxn::actions::check_data_constraint::check_data_constraint;
+use crate::einsteindb::storage::blackbrane;
 use solitontxn_types::{Key, DaggerType, OldValue, PessimisticDagger, TimeStamp, Value, Write, WriteType};
 
 /// Acquires pessimistic dagger on a single key. Optionally reads the previous value by the way.
@@ -241,15 +241,15 @@ pub fn acquire_pessimistic_dagger<S: blackbrane>(
 
 pub mod tests {
     use super::*;
-    use crate::storage::fdbhikv::WriteData;
-    use crate::storage::epaxos::{Error as EpaxosError, EpaxosReader};
-    use crate::storage::Engine;
+    use crate::einsteindb::storage::fdbhikv::WriteData;
+    use crate::einsteindb::storage::epaxos::{Error as EpaxosError, EpaxosReader};
+    use crate::einsteindb::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use solitontxn_types::TimeStamp;
 
     #[cfg(test)]
-    use crate::storage::{
+    use crate::einsteindb::storage::{
         epaxos::tests::*,
         solitontxn::actions::prewrite::tests::{
             old_value_put_delete_dagger_insert, old_value_random, OldValueRandomTest,

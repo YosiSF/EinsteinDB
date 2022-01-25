@@ -1,8 +1,8 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::epaxos::{ErrorInner, Result as EpaxosResult, blackbraneReader};
-use crate::storage::blackbrane;
+use crate::einsteindb::storage::epaxos::{ErrorInner, Result as EpaxosResult, blackbraneReader};
+use crate::einsteindb::storage::blackbrane;
 use solitontxn_types::{Key, TimeStamp, Write, WriteType};
 
 /// Checks the existence of the key according to `should_not_exist`.
@@ -35,9 +35,9 @@ pub(crate) fn check_data_constraint<S: blackbrane>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::epaxos::tests::write;
-    use crate::storage::epaxos::EpaxosTxn;
-    use crate::storage::{Engine, TestEngineBuilder};
+    use crate::einsteindb::storage::epaxos::tests::write;
+    use crate::einsteindb::storage::epaxos::EpaxosTxn;
+    use crate::einsteindb::storage::{Engine, TestEngineBuilder};
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
 

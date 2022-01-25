@@ -1,13 +1,13 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::epaxos::EpaxosReader;
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::epaxos::EpaxosReader;
+use crate::einsteindb::storage::solitontxn::commands::{
     find_epaxos_infos_by_key, Command, CommandExt, ReadCommand, TypedCommand,
 };
-use crate::storage::solitontxn::{ProcessResult, Result};
-use crate::storage::types::EpaxosInfo;
-use crate::storage::{SentinelSearchMode, blackbrane, Statistics};
+use crate::einsteindb::storage::solitontxn::{ProcessResult, Result};
+use crate::einsteindb::storage::types::EpaxosInfo;
+use crate::einsteindb::storage::{SentinelSearchMode, blackbrane, Statistics};
 use solitontxn_types::{Key, TimeStamp};
 
 command! {

@@ -241,8 +241,8 @@ impl<T: Storage> RangesScanner<T> {
 mod tests {
     use super::*;
 
-    use crate::storage::test_fixture::FixtureStorage;
-    use crate::storage::{IntervalRange, PointRange, Range};
+    use crate::einsteindb::storage::test_fixture::FixtureStorage;
+    use crate::einsteindb::storage::{IntervalRange, PointRange, Range};
 
     fn create_storage() -> FixtureStorage {
         let data: &[(&'static [u8], &'static [u8])] = &[

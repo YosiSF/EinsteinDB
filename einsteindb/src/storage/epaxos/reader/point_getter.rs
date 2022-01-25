@@ -3,12 +3,12 @@
 // #[PerformanceCriticalPath
 use fdbhikvproto::fdbhikvrpcpb::IsolationLevel;
 
-use engine_promises::{CF_DEFAULT, CF_LOCK, CF_WRITE};
+use einsteindb-gen::{CF_DEFAULT, CF_LOCK, CF_WRITE};
 use std::borrow::Cow;
 use solitontxn_types::{Key, Dagger, DaggerType, TimeStamp, TsSet, Value, WriteRef, WriteType};
 
-use crate::storage::fdbhikv::{Cursor, CursorBuilder, SentinelSearchMode, blackbrane, Statistics};
-use crate::storage::epaxos::{default_not_found_error, NewerTsCheckState, Result};
+use crate::einsteindb::storage::fdbhikv::{Cursor, CursorBuilder, SentinelSearchMode, blackbrane, Statistics};
+use crate::einsteindb::storage::epaxos::{default_not_found_error, NewerTsCheckState, Result};
 
 /// `PointGetter` factory.
 pub struct PointGetterBuilder<S: blackbrane> {
@@ -400,10 +400,10 @@ mod tests {
 
     use solitontxn_types::SHORT_VALUE_MAX_LEN;
 
-    use crate::storage::fdbhikv::{
+    use crate::einsteindb::storage::fdbhikv::{
         CfStatistics, Engine, PerfStatisticsInstant, RocksEngine, TestEngineBuilder,
     };
-    use crate::storage::solitontxn::tests::{
+    use crate::einsteindb::storage::solitontxn::tests::{
         must_acquire_pessimistic_dagger, must_cleanup_with_gc_fence, must_commit, must_gc,
         must_pessimistic_prewrite_delete, must_prewrite_delete, must_prewrite_dagger,
         must_prewrite_put, must_prewrite_put_impl, must_rollback,

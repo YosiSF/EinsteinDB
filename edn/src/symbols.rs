@@ -198,12 +198,12 @@ impl Keyword {
     ///
     /// ```rust
     /// # use edn::symbols::Keyword;
-    /// assert!(Keyword::isoliton_namespaceable("foo", "bar").is_forward());
-    /// assert!(!Keyword::isoliton_namespaceable("foo", "_bar").is_forward());
+    /// assert!(Keyword::isoliton_namespaceable("foo", "bar").is_lightlike_curvature());
+    /// assert!(!Keyword::isoliton_namespaceable("foo", "_bar").is_lightlike_curvature());
     /// ```
     #[inline]
-    pub fn is_forward(&self) -> bool {
-        self.0.is_forward()
+    pub fn is_lightlike_curvature(&self) -> bool {
+        self.0.is_lightlike_curvature()
     }
 
     #[inline]

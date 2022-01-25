@@ -1,15 +1,15 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbhikv::{
+use crate::einsteindb::storage::fdbhikv::{
     Cursor, CursorBuilder, Error as HikvError, SentinelSearchMode, blackbrane as Engineblackbrane, Statistics,
 };
-use crate::storage::epaxos::{
+use crate::einsteindb::storage::epaxos::{
     default_not_found_error,
     reader::{OverlappedWrite, TxnCommitRecord},
     Result,
 };
-use engine_promises::{CF_DEFAULT, CF_LOCK, CF_WRITE};
+use einsteindb-gen::{CF_DEFAULT, CF_LOCK, CF_WRITE};
 use fdbhikvproto::errorpb::{self, EpochNotMatch, StaleCommand};
 use fdbhikvproto::fdbhikvrpcpb::Context;
 use einstfdbhikv_fdbhikv::blackbraneExt;
@@ -613,21 +613,21 @@ impl<S: Engineblackbrane> EpaxosReader<S> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::storage::fdbhikv::Modify;
-    use crate::storage::epaxos::{tests::write, EpaxosReader, EpaxosTxn};
-    use crate::storage::solitontxn::{
+    use crate::einsteindb::storage::fdbhikv::Modify;
+    use crate::einsteindb::storage::epaxos::{tests::write, EpaxosReader, EpaxosTxn};
+    use crate::einsteindb::storage::solitontxn::{
         acquire_pessimistic_dagger, cleanup, commit, gc, prewrite, CommitKind, TransactionKind,
         TransactionProperties,
     };
-    use crate::storage::{Engine, TestEngineBuilder};
+    use crate::einsteindb::storage::{Engine, TestEngineBuilder};
     use concurrency_manager::ConcurrencyManager;
     use engine_rocks::properties::EpaxosPropertiesCollectorFactory;
     use engine_rocks::cocauset::DB;
     use engine_rocks::cocauset::{ColumnFamilyOptions, DBOptions};
     use engine_rocks::cocauset_util::CFOptions;
     use engine_rocks::{Compat, Rocksblackbrane};
-    use engine_promises::{IterOptions, Mutable, WriteBatch, WriteBatchExt};
-    use engine_promises::{ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
+    use einsteindb-gen::{IterOptions, Mutable, WriteBatch, WriteBatchExt};
+    use einsteindb-gen::{ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
     use fdbhikvproto::fdbhikvrpcpb::{AssertionLevel, Context};
     use fdbhikvproto::metapb::{Peer, Region};
     use raftstore::store::Regionblackbrane;

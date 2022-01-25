@@ -6,7 +6,7 @@
 //! handling of the commands is similar. We therefore have a single type (Prewriter) to handle both
 //! kinds of prewrite.
 
-use crate::storage::{
+use crate::einsteindb::storage::{
     fdbhikv::WriteData,
     dagger_manager::DaggerManager,
     epaxos::{
@@ -24,7 +24,7 @@ use crate::storage::{
     types::PrewriteResult,
     Context, Error as StorageError, ProcessResult, blackbrane,
 };
-use engine_promises::CF_WRITE;
+use einsteindb-gen::CF_WRITE;
 use fdbhikvproto::fdbhikvrpcpb::{AssertionLevel, ExtraOp};
 use std::mem;
 use einstfdbhikv_fdbhikv::blackbraneExt;
@@ -782,12 +782,12 @@ pub(in crate::storage::solitontxn) fn fallback_1pc_daggers(solitontxn: &mut Epax
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::solitontxn::actions::acquire_pessimistic_dagger::tests::must_pessimistic_daggered;
-    use crate::storage::solitontxn::actions::tests::{
+    use crate::einsteindb::storage::solitontxn::actions::acquire_pessimistic_dagger::tests::must_pessimistic_daggered;
+    use crate::einsteindb::storage::solitontxn::actions::tests::{
         must_pessimistic_prewrite_put_async_commit, must_prewrite_delete, must_prewrite_put,
         must_prewrite_put_async_commit,
     };
-    use crate::storage::{
+    use crate::einsteindb::storage::{
         epaxos::{tests::*, Error as EpaxosError, ErrorInner as EpaxosErrorInner},
         solitontxn::{
             commands::test_util::prewrite_command,
@@ -800,7 +800,7 @@ mod tests {
         DummyDaggerManager, Engine, blackbrane, Statistics, TestEngineBuilder,
     };
     use concurrency_manager::ConcurrencyManager;
-    use engine_promises::CF_WRITE;
+    use einsteindb-gen::CF_WRITE;
     use fdbhikvproto::fdbhikvrpcpb::{Context, ExtraOp};
     use solitontxn_types::{Key, Mutation, TimeStamp};
 
@@ -925,7 +925,7 @@ mod tests {
     #[test]
     fn test_prewrite_skip_too_many_tombstone() {
         use crate::server::gc_worker::gc_by_compact;
-        use crate::storage::fdbhikv::PerfStatisticsInstant;
+        use crate::einsteindb::storage::fdbhikv::PerfStatisticsInstant;
         use engine_rocks::{set_perf_level, PerfLevel};
         let mut mutations = Vec::default();
         let pri_key_number = 0;
@@ -975,7 +975,7 @@ mod tests {
 
     #[test]
     fn test_prewrite_1pc() {
-        use crate::storage::epaxos::tests::{must_get, must_get_commit_ts, must_undaggered};
+        use crate::einsteindb::storage::epaxos::tests::{must_get, must_get_commit_ts, must_undaggered};
 
         let engine = TestEngineBuilder::new().build().unwrap();
         let cm = concurrency_manager::ConcurrencyManager::new(1.into());
@@ -1329,9 +1329,9 @@ mod tests {
 
     #[test]
     fn test_out_of_sync_max_ts() {
-        use crate::storage::{fdbhikv::Result, CfName, ConcurrencyManager, DummyDaggerManager, Value};
+        use crate::einsteindb::storage::{fdbhikv::Result, CfName, ConcurrencyManager, DummyDaggerManager, Value};
         use engine_test::fdbhikv::HikvTestEngineIterator;
-        use engine_promises::{IterOptions, ReadOptions};
+        use einsteindb-gen::{IterOptions, ReadOptions};
         use fdbhikvproto::fdbhikvrpcpb::ExtraOp;
         #[derive(Clone)]
         struct Mockblackbrane;

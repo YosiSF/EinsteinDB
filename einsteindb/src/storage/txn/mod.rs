@@ -20,7 +20,7 @@ use thiserror::Error;
 use error_code::{self, ErrorCode, ErrorCodeExt};
 use solitontxn_types::{Key, TimeStamp, Value};
 
-use crate::storage::{
+use crate::einsteindb::storage::{
     epaxos::Error as EpaxosError,
     types::{EpaxosInfo, PessimisticDaggerRes, PrewriteResult, SecondaryDaggersStatus, TxnStatus},
     Error as StorageError, Result as StorageResult,

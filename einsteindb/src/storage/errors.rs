@@ -9,7 +9,7 @@ use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use fdbhikvproto::{errorpb, fdbhikvrpcpb};
 use thiserror::Error;
 
-use crate::storage::{
+use crate::einsteindb::storage::{
     fdbhikv::{self, Error as HikvError, ErrorInner as HikvErrorInner},
     epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner},
     solitontxn::{self, Error as TxnError, ErrorInner as TxnErrorInner},

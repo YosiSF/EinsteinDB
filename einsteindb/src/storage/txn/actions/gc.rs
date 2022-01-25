@@ -1,7 +1,7 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::storage::epaxos::{GcInfo, EpaxosReader, EpaxosTxn, Result as EpaxosResult, MAX_TXN_WRITE_SIZE};
-use crate::storage::blackbrane;
+use crate::einsteindb::storage::epaxos::{GcInfo, EpaxosReader, EpaxosTxn, Result as EpaxosResult, MAX_TXN_WRITE_SIZE};
+use crate::einsteindb::storage::blackbrane;
 use solitontxn_types::{Key, TimeStamp, Write, WriteType};
 
 pub fn gc<'a, S: blackbrane>(
@@ -118,14 +118,14 @@ impl State {
 
 pub mod tests {
     use super::*;
-    use crate::storage::fdbhikv::SnapContext;
-    use crate::storage::epaxos::tests::write;
-    use crate::storage::{Engine, SentinelSearchMode};
+    use crate::einsteindb::storage::fdbhikv::SnapContext;
+    use crate::einsteindb::storage::epaxos::tests::write;
+    use crate::einsteindb::storage::{Engine, SentinelSearchMode};
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
 
     #[cfg(test)]
-    use crate::storage::{
+    use crate::einsteindb::storage::{
         epaxos::tests::{must_get, must_get_none},
         solitontxn::tests::*,
         RocksEngine, TestEngineBuilder,

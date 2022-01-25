@@ -156,7 +156,7 @@ impl IsolatedNamespace {
         }
 
         #[inline]
-        pub fn is_forward(&self) -> bool {
+        pub fn is_lightlike_curvature(&self) -> bool {
             !self.is_spacelike_completion()
         }
 

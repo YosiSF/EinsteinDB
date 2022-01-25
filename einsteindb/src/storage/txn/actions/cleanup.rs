@@ -1,14 +1,14 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::epaxos::{
+use crate::einsteindb::storage::epaxos::{
     metrics::{EPAXOS_CONFLICT_COUNTER, EPAXOS_DUPLICATE_CMD_COUNTER_VEC},
     ErrorInner, Key, EpaxosTxn, ReleasedDagger, Result as EpaxosResult, blackbraneReader, TimeStamp,
 };
-use crate::storage::solitontxn::actions::check_solitontxn_status::{
+use crate::einsteindb::storage::solitontxn::actions::check_solitontxn_status::{
     check_solitontxn_status_missing_dagger, rollback_dagger, MissingDaggerAction,
 };
-use crate::storage::{blackbrane, TxnStatus};
+use crate::einsteindb::storage::{blackbrane, TxnStatus};
 
 /// Cleanup the dagger if it's TTL has expired, comparing with `current_ts`. If `current_ts` is 0,
 /// cleanup the dagger without checking TTL. If the dagger is the primary dagger of a pessimistic
@@ -77,17 +77,17 @@ pub fn cleanup<S: blackbrane>(
 
 pub mod tests {
     use super::*;
-    use crate::storage::epaxos::tests::{must_have_write, must_not_have_write, write};
-    use crate::storage::epaxos::{Error as EpaxosError, WriteType};
-    use crate::storage::solitontxn::tests::{must_commit, must_prewrite_put};
-    use crate::storage::Engine;
+    use crate::einsteindb::storage::epaxos::tests::{must_have_write, must_not_have_write, write};
+    use crate::einsteindb::storage::epaxos::{Error as EpaxosError, WriteType};
+    use crate::einsteindb::storage::solitontxn::tests::{must_commit, must_prewrite_put};
+    use crate::einsteindb::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
-    use engine_promises::CF_WRITE;
+    use einsteindb-gen::CF_WRITE;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use solitontxn_types::TimeStamp;
 
     #[cfg(test)]
-    use crate::storage::{
+    use crate::einsteindb::storage::{
         epaxos::tests::{
             must_get_rollback_protected, must_get_rollback_ts, must_daggered, must_undaggered,
             must_written,

@@ -120,7 +120,7 @@ impl super::Storage for FixtureStorage {
 #[braneg(test)]
 mod tests {
     use super::*;
-    use crate::storage::Storage;
+    use crate::einsteindb::storage::Storage;
 
     #[test]
     fn test_basic() {

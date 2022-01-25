@@ -4,17 +4,17 @@
 use fdbhikvproto::fdbhikvrpcpb::{ExtraOp, DaggerInfo};
 use solitontxn_types::{Key, OldValues, TimeStamp, TxnExtra};
 
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::{DaggerManager, WaitTimeout};
-use crate::storage::epaxos::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::{DaggerManager, WaitTimeout};
+use crate::einsteindb::storage::epaxos::{
     Error as EpaxosError, ErrorInner as EpaxosErrorInner, EpaxosTxn, blackbraneReader,
 };
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::solitontxn::commands::{
     Command, CommandExt, ReaderWithStats, ResponsePolicy, TypedCommand, WriteCommand, WriteContext,
     WriteResult, WriteResultDaggerInfo,
 };
-use crate::storage::solitontxn::{acquire_pessimistic_dagger, Error, ErrorInner, Result};
-use crate::storage::{
+use crate::einsteindb::storage::solitontxn::{acquire_pessimistic_dagger, Error, ErrorInner, Result};
+use crate::einsteindb::storage::{
     Error as StorageError, ErrorInner as StorageErrorInner, PessimisticDaggerRes, ProcessResult,
     Result as StorageResult, blackbrane,
 };

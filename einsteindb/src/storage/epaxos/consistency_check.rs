@@ -7,11 +7,11 @@ use std::marker::PhantomData;
 use std::sync::causetxctx::{causetxctxU64, Ordering as causetxctxOrdering};
 use std::sync::Arc;
 
-use crate::storage::epaxos::{Dagger, DaggerType, WriteRef, WriteType};
-use engine_promises::{
+use crate::einsteindb::storage::epaxos::{Dagger, DaggerType, WriteRef, WriteType};
+use einsteindb-gen::{
     IterOptions, Iterable, Iterator as EngineIterator, HikvEngine, Peekable, SeekKey,
 };
-use engine_promises::{CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
+use einsteindb-gen::{CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
 use fdbhikvproto::fdbhikvrpcpb::{EpaxosInfo, EpaxosDagger, EpaxosValue, EpaxosWrite, Op};
 use raftstore::coprocessor::{ConsistencyCheckMethod, ConsistencyCheckObserver, Coprocessor};
 use raftstore::Result;
@@ -418,9 +418,9 @@ impl EpaxosInfoObserver for EpaxosChecksum {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::fdbhikv::TestEngineBuilder;
-    use crate::storage::solitontxn::tests::must_rollback;
-    use crate::storage::solitontxn::tests::{must_commit, must_prewrite_delete, must_prewrite_put};
+    use crate::einsteindb::storage::fdbhikv::TestEngineBuilder;
+    use crate::einsteindb::storage::solitontxn::tests::must_rollback;
+    use crate::einsteindb::storage::solitontxn::tests::{must_commit, must_prewrite_delete, must_prewrite_put};
     use engine_test::fdbhikv::HikvTestEngine;
 
     #[test]
@@ -471,9 +471,9 @@ mod tests {
 
     #[test]
     fn test_epaxos_info_collector() {
-        use crate::storage::epaxos::Write;
+        use crate::einsteindb::storage::epaxos::Write;
         use engine_test::ctor::{CFOptions, ColumnFamilyOptions, DBOptions};
-        use engine_promises::SyncMutable;
+        use einsteindb-gen::SyncMutable;
         use solitontxn_types::TimeStamp;
 
         let tmp = tempfile::Builder::new()

@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::mem;
 
 use crate::server::metrics::{GcKeysCF as ServerGcKeysCF, GcKeysDetail as ServerGcKeysDetail};
-use crate::storage::fdbhikv::{FlowStatsReporter, PerfStatisticsDelta, Statistics};
+use crate::einsteindb::storage::fdbhikv::{FlowStatsReporter, PerfStatisticsDelta, Statistics};
 use collections::HashMap;
 use fdbhikvproto::fdbhikvrpcpb::KeyRange;
 use fdbhikvproto::metapb;

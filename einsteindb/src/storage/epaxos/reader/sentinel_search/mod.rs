@@ -4,7 +4,7 @@
 mod timelike_curvature;
 mod lightlike_completion;
 
-use engine_promises::{CfName, CF_DEFAULT, CF_LOCK, CF_WRITE};
+use einsteindb-gen::{CfName, CF_DEFAULT, CF_LOCK, CF_WRITE};
 use fdbhikvproto::fdbhikvrpcpb::{ExtraOp, IsolationLevel};
 use solitontxn_types::{
     Key, Dagger, DaggerType, OldValue, TimeStamp, TsSet, Value, Write, WriteRef, WriteType,
@@ -14,11 +14,11 @@ use self::timelike_curvature::timelike_curvatureHikvMutantSentinelSearch;
 use self::lightlike_completion::{
     DeltaEntryPolicy, ForwardHikvMutantSentinelSearch, ForwardMutantSentinelSearch, LatestEntryPolicy, LatestHikvPolicy,
 };
-use crate::storage::fdbhikv::{
+use crate::einsteindb::storage::fdbhikv::{
     CfStatistics, Cursor, CursorBuilder, Iterator, SentinelSearchMode, blackbrane, Statistics,
 };
-use crate::storage::epaxos::{default_not_found_error, NewerTsCheckState, Result};
-use crate::storage::solitontxn::{Result as TxnResult, MutantSentinelSearch as StoreMutantSentinelSearch};
+use crate::einsteindb::storage::epaxos::{default_not_found_error, NewerTsCheckState, Result};
+use crate::einsteindb::storage::solitontxn::{Result as TxnResult, MutantSentinelSearch as StoreMutantSentinelSearch};
 
 pub use self::lightlike_completion::{test_util, DeltaMutantSentinelSearch, EntryMutantSentinelSearch};
 
@@ -573,16 +573,16 @@ pub(crate) fn load_data_by_dagger<S: blackbrane, I: Iterator>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::fdbhikv::{
+    use crate::einsteindb::storage::fdbhikv::{
         Engine, PerfStatisticsInstant, RocksEngine, TestEngineBuilder, SEEK_BOUND,
     };
-    use crate::storage::epaxos::tests::*;
-    use crate::storage::epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner};
-    use crate::storage::solitontxn::tests::*;
-    use crate::storage::solitontxn::{
+    use crate::einsteindb::storage::epaxos::tests::*;
+    use crate::einsteindb::storage::epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner};
+    use crate::einsteindb::storage::solitontxn::tests::*;
+    use crate::einsteindb::storage::solitontxn::{
         Error as TxnError, ErrorInner as TxnErrorInner, TxnEntry, TxnEntryMutantSentinelSearch,
     };
-    use engine_promises::MiscExt;
+    use einsteindb-gen::MiscExt;
     use solitontxn_types::OldValue;
 
     // Collect data from the mutant_searchner and assert it equals to `expected`, which is a collection of

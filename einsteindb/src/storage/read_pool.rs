@@ -3,8 +3,8 @@
 //! Distinct thread pools to handle read commands having different priority levels.
 
 use crate::config::StorageReadPoolConfig;
-use crate::storage::fdbhikv::{destroy_tls_engine, set_tls_engine, Engine, FlowStatsReporter};
-use crate::storage::metrics;
+use crate::einsteindb::storage::fdbhikv::{destroy_tls_engine, set_tls_engine, Engine, FlowStatsReporter};
+use crate::einsteindb::storage::metrics;
 use file_system::{set_io_type, IOType};
 use std::sync::{Arc, Mutex};
 use einstfdbhikv_util::yatp_pool::{Config, DefaultTicker, FuturePool, PoolTicker, YatpPoolBuilder};

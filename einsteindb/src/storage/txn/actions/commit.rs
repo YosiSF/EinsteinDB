@@ -1,11 +1,11 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::epaxos::{
+use crate::einsteindb::storage::epaxos::{
     metrics::{EPAXOS_CONFLICT_COUNTER, EPAXOS_DUPLICATE_CMD_COUNTER_VEC},
     ErrorInner, DaggerType, EpaxosTxn, ReleasedDagger, Result as EpaxosResult, blackbraneReader,
 };
-use crate::storage::blackbrane;
+use crate::einsteindb::storage::blackbrane;
 use solitontxn_types::{Key, TimeStamp, Write, WriteType};
 
 pub fn commit<S: blackbrane>(
@@ -103,21 +103,21 @@ pub fn commit<S: blackbrane>(
 
 pub mod tests {
     use super::*;
-    use crate::storage::epaxos::tests::*;
-    use crate::storage::epaxos::EpaxosTxn;
-    use crate::storage::Engine;
+    use crate::einsteindb::storage::epaxos::tests::*;
+    use crate::einsteindb::storage::epaxos::EpaxosTxn;
+    use crate::einsteindb::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use solitontxn_types::TimeStamp;
 
     #[cfg(test)]
-    use crate::storage::solitontxn::tests::{
+    use crate::einsteindb::storage::solitontxn::tests::{
         must_acquire_pessimistic_dagger_for_large_solitontxn, must_prewrite_delete, must_prewrite_dagger,
         must_prewrite_put, must_prewrite_put_for_large_solitontxn, must_prewrite_put_impl, must_rollback,
     };
 
     #[cfg(test)]
-    use crate::storage::{
+    use crate::einsteindb::storage::{
         epaxos::SHORT_VALUE_MAX_LEN, solitontxn::commands::check_solitontxn_status, TestEngineBuilder, TxnStatus,
     };
 

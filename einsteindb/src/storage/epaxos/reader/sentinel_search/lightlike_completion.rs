@@ -3,15 +3,15 @@
 // #[PerformanceCriticalPath]
 use std::{borrow::Cow, cmp::Ordering};
 
-use engine_promises::CF_DEFAULT;
+use einsteindb-gen::CF_DEFAULT;
 use fdbhikvproto::fdbhikvrpcpb::{ExtraOp, IsolationLevel};
 use solitontxn_types::{Key, Dagger, DaggerType, OldValue, TimeStamp, Value, WriteRef, WriteType};
 
 use super::MutantSentinelSearchConfig;
-use crate::storage::fdbhikv::SEEK_BOUND;
-use crate::storage::epaxos::{NewerTsCheckState, Result};
-use crate::storage::solitontxn::{Result as TxnResult, TxnEntry, TxnEntryMutantSentinelSearch};
-use crate::storage::{Cursor, blackbrane, Statistics};
+use crate::einsteindb::storage::fdbhikv::SEEK_BOUND;
+use crate::einsteindb::storage::epaxos::{NewerTsCheckState, Result};
+use crate::einsteindb::storage::solitontxn::{Result as TxnResult, TxnEntry, TxnEntryMutantSentinelSearch};
+use crate::einsteindb::storage::{Cursor, blackbrane, Statistics};
 
 /// Defines the behavior of the mutant_searchner.
 pub trait SentinelSearchPolicy<S: blackbrane> {
@@ -843,12 +843,12 @@ where
 
 pub mod test_util {
     use super::*;
-    use crate::storage::epaxos::Write;
-    use crate::storage::solitontxn::tests::{
+    use crate::einsteindb::storage::epaxos::Write;
+    use crate::einsteindb::storage::solitontxn::tests::{
         must_cleanup_with_gc_fence, must_commit, must_prewrite_delete, must_prewrite_dagger,
         must_prewrite_put,
     };
-    use crate::storage::Engine;
+    use crate::einsteindb::storage::Engine;
 
     pub struct EntryBuilder {
         pub key: Vec<u8>,
@@ -1080,11 +1080,11 @@ mod latest_fdbhikv_tests {
     use super::super::MutantSentinelSearchBuilder;
     use super::test_util::prepare_test_data_for_check_gc_fence;
     use super::*;
-    use crate::storage::fdbhikv::{Engine, Modify, TestEngineBuilder};
-    use crate::storage::epaxos::tests::write;
-    use crate::storage::solitontxn::tests::*;
-    use crate::storage::MutantSentinelSearch;
-    use engine_promises::{CF_LOCK, CF_WRITE};
+    use crate::einsteindb::storage::fdbhikv::{Engine, Modify, TestEngineBuilder};
+    use crate::einsteindb::storage::epaxos::tests::write;
+    use crate::einsteindb::storage::solitontxn::tests::*;
+    use crate::einsteindb::storage::MutantSentinelSearch;
+    use einsteindb-gen::{CF_LOCK, CF_WRITE};
     use fdbhikvproto::fdbhikvrpcpb::Context;
 
     /// Check whether everything works as usual when `ForwardHikvMutantSentinelSearch::get()` goes out of bound.
@@ -1473,13 +1473,13 @@ mod latest_fdbhikv_tests {
 mod latest_entry_tests {
     use super::super::MutantSentinelSearchBuilder;
     use super::*;
-    use crate::storage::solitontxn::tests::{must_commit, must_prewrite_delete, must_prewrite_put};
-    use crate::storage::{Engine, Modify, TestEngineBuilder};
+    use crate::einsteindb::storage::solitontxn::tests::{must_commit, must_prewrite_delete, must_prewrite_put};
+    use crate::einsteindb::storage::{Engine, Modify, TestEngineBuilder};
 
     use super::test_util::*;
-    use crate::storage::epaxos::tests::write;
-    use crate::storage::solitontxn::EntryBatch;
-    use engine_promises::{CF_LOCK, CF_WRITE};
+    use crate::einsteindb::storage::epaxos::tests::write;
+    use crate::einsteindb::storage::solitontxn::EntryBatch;
+    use einsteindb-gen::{CF_LOCK, CF_WRITE};
     use fdbhikvproto::fdbhikvrpcpb::Context;
 
     /// Check whether everything works as usual when `EntryMutantSentinelSearch::get()` goes out of bound.
@@ -1909,14 +1909,14 @@ mod latest_entry_tests {
 mod delta_entry_tests {
     use super::super::MutantSentinelSearchBuilder;
     use super::*;
-    use crate::storage::solitontxn::tests::*;
-    use crate::storage::{Engine, Modify, TestEngineBuilder};
+    use crate::einsteindb::storage::solitontxn::tests::*;
+    use crate::einsteindb::storage::{Engine, Modify, TestEngineBuilder};
 
     use solitontxn_types::{is_short_value, SHORT_VALUE_MAX_LEN};
 
     use super::test_util::*;
-    use crate::storage::epaxos::tests::write;
-    use engine_promises::{CF_LOCK, CF_WRITE};
+    use crate::einsteindb::storage::epaxos::tests::write;
+    use einsteindb-gen::{CF_LOCK, CF_WRITE};
     use fdbhikvproto::fdbhikvrpcpb::Context;
     /// Check whether everything works as usual when `Delta::get()` goes out of bound.
     #[test]

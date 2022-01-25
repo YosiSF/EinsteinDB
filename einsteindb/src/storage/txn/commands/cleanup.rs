@@ -3,15 +3,15 @@
 // #[PerformanceCriticalPath]
 use solitontxn_types::{Key, TimeStamp};
 
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::DaggerManager;
-use crate::storage::epaxos::{EpaxosTxn, blackbraneReader};
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::DaggerManager;
+use crate::einsteindb::storage::epaxos::{EpaxosTxn, blackbraneReader};
+use crate::einsteindb::storage::solitontxn::commands::{
     Command, CommandExt, ReaderWithStats, ReleasedDaggers, ResponsePolicy, TypedCommand,
     WriteCommand, WriteContext, WriteResult,
 };
-use crate::storage::solitontxn::{cleanup, Result};
-use crate::storage::{ProcessResult, blackbrane};
+use crate::einsteindb::storage::solitontxn::{cleanup, Result};
+use crate::einsteindb::storage::{ProcessResult, blackbrane};
 
 command! {
     /// Rollback mutations on a single key.

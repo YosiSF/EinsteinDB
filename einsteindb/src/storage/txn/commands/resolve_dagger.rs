@@ -1,17 +1,17 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::DaggerManager;
-use crate::storage::epaxos::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::DaggerManager;
+use crate::einsteindb::storage::epaxos::{
     Error as EpaxosError, ErrorInner as EpaxosErrorInner, EpaxosTxn, blackbraneReader, MAX_TXN_WRITE_SIZE,
 };
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::solitontxn::commands::{
     Command, CommandExt, ReaderWithStats, ReleasedDaggers, ResolveDaggerReadPhase, ResponsePolicy,
     TypedCommand, WriteCommand, WriteContext, WriteResult,
 };
-use crate::storage::solitontxn::{cleanup, commit, Error, ErrorInner, Result};
-use crate::storage::{ProcessResult, blackbrane};
+use crate::einsteindb::storage::solitontxn::{cleanup, commit, Error, ErrorInner, Result};
+use crate::einsteindb::storage::{ProcessResult, blackbrane};
 use collections::HashMap;
 use solitontxn_types::{Key, Dagger, TimeStamp};
 

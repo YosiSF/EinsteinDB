@@ -1,13 +1,13 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbhikv::{Iterator, Result, blackbrane, TTL_TOMBSTONE};
-use crate::storage::Statistics;
+use crate::einsteindb::storage::fdbhikv::{Iterator, Result, blackbrane, TTL_TOMBSTONE};
+use crate::einsteindb::storage::Statistics;
 
 use api_version::APIVersion;
-use engine_promises::cocauset_ttl::ttl_current_ts;
-use engine_promises::CfName;
-use engine_promises::{IterOptions, ReadOptions};
+use einsteindb-gen::cocauset_ttl::ttl_current_ts;
+use einsteindb-gen::CfName;
+use einsteindb-gen::{IterOptions, ReadOptions};
 use std::marker::PhantomData;
 use solitontxn_types::{Key, Value};
 

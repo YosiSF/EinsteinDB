@@ -3,15 +3,15 @@
 // #[PerformanceCriticalPath]
 use solitontxn_types::Key;
 
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::DaggerManager;
-use crate::storage::epaxos::{EpaxosTxn, blackbraneReader};
-use crate::storage::solitontxn::commands::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::DaggerManager;
+use crate::einsteindb::storage::epaxos::{EpaxosTxn, blackbraneReader};
+use crate::einsteindb::storage::solitontxn::commands::{
     Command, CommandExt, ReaderWithStats, ReleasedDaggers, ResponsePolicy, TypedCommand,
     WriteCommand, WriteContext, WriteResult,
 };
-use crate::storage::solitontxn::{commit, Error, ErrorInner, Result};
-use crate::storage::{ProcessResult, blackbrane, TxnStatus};
+use crate::einsteindb::storage::solitontxn::{commit, Error, ErrorInner, Result};
+use crate::einsteindb::storage::{ProcessResult, blackbrane, TxnStatus};
 
 command! {
     /// Commit the transaction that started at `dagger_ts`.

@@ -1,11 +1,11 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 // #[PerformanceCriticalPath]
-use crate::storage::fdbhikv::WriteData;
-use crate::storage::dagger_manager::DaggerManager;
-use crate::storage::epaxos::{DaggerType, EpaxosTxn, blackbraneReader, TimeStamp, TxnCommitRecord};
-use crate::storage::solitontxn::commands::ReaderWithStats;
-use crate::storage::solitontxn::{
+use crate::einsteindb::storage::fdbhikv::WriteData;
+use crate::einsteindb::storage::dagger_manager::DaggerManager;
+use crate::einsteindb::storage::epaxos::{DaggerType, EpaxosTxn, blackbraneReader, TimeStamp, TxnCommitRecord};
+use crate::einsteindb::storage::solitontxn::commands::ReaderWithStats;
+use crate::einsteindb::storage::solitontxn::{
     actions::check_solitontxn_status::{collapse_prev_rollback, make_rollback},
     commands::{
         Command, CommandExt, ReleasedDaggers, ResponsePolicy, TypedCommand, WriteCommand,
@@ -13,8 +13,8 @@ use crate::storage::solitontxn::{
     },
     Result,
 };
-use crate::storage::types::SecondaryDaggersStatus;
-use crate::storage::{ProcessResult, blackbrane};
+use crate::einsteindb::storage::types::SecondaryDaggersStatus;
+use crate::einsteindb::storage::{ProcessResult, blackbrane};
 use solitontxn_types::{Key, Dagger, WriteType};
 
 command! {
@@ -162,13 +162,13 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for CheckSecondaryDagge
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::storage::fdbhikv::TestEngineBuilder;
-    use crate::storage::dagger_manager::DummyDaggerManager;
-    use crate::storage::epaxos::tests::*;
-    use crate::storage::solitontxn::commands::WriteCommand;
-    use crate::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
-    use crate::storage::solitontxn::tests::*;
-    use crate::storage::Engine;
+    use crate::einsteindb::storage::fdbhikv::TestEngineBuilder;
+    use crate::einsteindb::storage::dagger_manager::DummyDaggerManager;
+    use crate::einsteindb::storage::epaxos::tests::*;
+    use crate::einsteindb::storage::solitontxn::commands::WriteCommand;
+    use crate::einsteindb::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
+    use crate::einsteindb::storage::solitontxn::tests::*;
+    use crate::einsteindb::storage::Engine;
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use einstfdbhikv_util::deadline::Deadline;

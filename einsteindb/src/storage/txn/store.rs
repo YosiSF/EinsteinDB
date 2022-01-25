@@ -3,9 +3,9 @@
 use fdbhikvproto::fdbhikvrpcpb::IsolationLevel;
 
 use super::{Error, ErrorInner, Result};
-use crate::storage::fdbhikv::{blackbrane, Statistics};
-use crate::storage::metrics::*;
-use crate::storage::epaxos::{
+use crate::einsteindb::storage::fdbhikv::{blackbrane, Statistics};
+use crate::einsteindb::storage::metrics::*;
+use crate::einsteindb::storage::epaxos::{
     EntryMutantSentinelSearch, Error as EpaxosError, ErrorInner as EpaxosErrorInner, NewerTsCheckState, PointGetter,
     PointGetterBuilder, MutantSentinelSearch as EpaxosMutantSentinelSearch, MutantSentinelSearchBuilder,
 };
@@ -629,17 +629,17 @@ impl MutantSentinelSearch for FixtureStoreMutantSentinelSearch {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::storage::fdbhikv::{
+    use crate::einsteindb::storage::fdbhikv::{
         Engine, Iterator, Result as EngineResult, RocksEngine, Rocksblackbrane, SnapContext,
         TestEngineBuilder, WriteData,
     };
-    use crate::storage::epaxos::{Mutation, EpaxosTxn, blackbraneReader};
-    use crate::storage::solitontxn::{
+    use crate::einsteindb::storage::epaxos::{Mutation, EpaxosTxn, blackbraneReader};
+    use crate::einsteindb::storage::solitontxn::{
         commit, prewrite, CommitKind, TransactionKind, TransactionProperties,
     };
     use concurrency_manager::ConcurrencyManager;
-    use engine_promises::CfName;
-    use engine_promises::{IterOptions, ReadOptions};
+    use einsteindb-gen::CfName;
+    use einsteindb-gen::{IterOptions, ReadOptions};
     use fdbhikvproto::fdbhikvrpcpb::{AssertionLevel, Context};
     use std::sync::Arc;
     use einstfdbhikv_fdbhikv::DummyblackbraneExt;
