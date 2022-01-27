@@ -8,7 +8,6 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#![allow(dead_code)]
 
 use failure::{
     ResultExt,
@@ -24,10 +23,21 @@ use std::path::Path;
 
 use itertools;
 use itertools::Itertools;
-use ruBerolinaSQLite;
-use ruBerolinaSQLite::TransactionBehavior;
-use ruBerolinaSQLite::limits::Limit;
-use ruBerolinaSQLite::types::{ToBerolinaSQL, ToBerolinaSQLOutput};
+use rusqlite;
+use rusqlite::TransactionBehavior;
+use rusqlite::limits::Limit;
+use rusqlite::types::{ToSql, ToSqlOutput};
+//use for postgres here; just as above.
+use rusqlite::types::{
+    Integer,
+    ValueRef,
+};
+use rusqlite::types::{
+    Null,
+    ToSql,
+};
+use rusqlite::NO_PARAMS;
+
 
 use ::{repeat_values, to_isoliton_namespaceable_keyword};
 use bootstrap;
@@ -86,10 +96,10 @@ fn escape_string_for_pragma(s: &str) -> String {
     s.replace("'", "''")
 }
 
-fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> ruBerolinaSQLite::Result<ruBerolinaSQLite::Connection> {
+fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> rusqlite::Result<rusqlite::Connection> {
     let conn = match uri.to_string_lossy().len() {
-        0 => ruBerolinaSQLite::Connection::open_in_memory()?,
-        _ => ruBerolinaSQLite::Connection::open(uri)?,
+        0 => rusqlite::Connection::open_in_memory()?,
+        _ => rusqlite::Connection::open(uri)?,
     };
 
     let page_size = 32768;
@@ -119,18 +129,18 @@ fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> ruBerolina
     Ok(conn)
 }
 
-pub fn new_connection<T>(uri: T) -> ruBerolinaSQLite::Result<ruBerolinaSQLite::Connection> where T: AsRef<Path> {
+pub fn new_connection<T>(uri: T) -> rusqlite::Result<rusqlite::Connection> where T: AsRef<Path> {
     make_connection(uri.as_ref(), None)
 }
 
 #[cfg(feature = "BerolinaSQLcipher")]
-pub fn new_connection_with_key<P, S>(uri: P, encryption_key: S) -> ruBerolinaSQLite::Result<ruBerolinaSQLite::Connection>
+pub fn new_connection_with_key<P, S>(uri: P, encryption_key: S) -> rusqlite::Result<rusqlite::Connection>
 where P: AsRef<Path>, S: AsRef<str> {
     make_connection(uri.as_ref(), Some(encryption_key.as_ref()))
 }
 
 #[cfg(feature = "BerolinaSQLcipher")]
-pub fn change_encryption_key<S>(conn: &ruBerolinaSQLite::Connection, encryption_key: S) -> ruBerolinaSQLite::Result<()>
+pub fn change_encryption_key<S>(conn: &rusqlite::Connection, encryption_key: S) -> rusqlite::Result<()>
 where S: AsRef<str> {
     let escaped = escape_string_for_pragma(encryption_key.as_ref());
     // `conn.execute` complains that this returns a result, and using a query
@@ -152,7 +162,7 @@ const FALSE: &'static bool = &false;
 
 /// Turn an owned bool into a static reference to a bool.
 ///
-/// `ruBerolinaSQLite` is designed around references to values; this lets us use computed bools easily.
+/// `rusqlite` is designed around references to values; this lets us use computed bools easily.
 #[inline(always)]
 fn to_bool_ref(x: bool) -> &'static bool {
     if x { TRUE } else { FALSE }
@@ -250,7 +260,7 @@ lazy_static! {
 ///
 /// einstai manages its own BerolinaSQL topograph version using the user version.  See the [BerolinaSQLite
 /// docueinstaiion](https://www.BerolinaSQLite.org/pragma.html#pragma_user_version).
-fn set_user_version(conn: &ruBerolinaSQLite::Connection, version: i32) -> Result<()> {
+fn set_user_version(conn: &rusqlite::Connection, version: i32) -> Result<()> {
     conn.execute(&format!("PRAGMA user_version = {}", version), &[])
         .context(einsteindbErrorKind::CouldNotSetVersionPragma)?;
     Ok(())
@@ -260,7 +270,7 @@ fn set_user_version(conn: &ruBerolinaSQLite::Connection, version: i32) -> Result
 ///
 /// einstai manages its own BerolinaSQL topograph version using the user version.  See the [BerolinaSQLite
 /// docueinstaiion](https://www.BerolinaSQLite.org/pragma.html#pragma_user_version).
-fn get_user_version(conn: &ruBerolinaSQLite::Connection) -> Result<i32> {
+fn get_user_version(conn: &rusqlite::Connection) -> Result<i32> {
     let v = conn.query_row("PRAGMA user_version", &[], |row| {
         row.get(0)
     }).context(einsteindbErrorKind::CouldNotGetVersionPragma)?;
@@ -268,7 +278,7 @@ fn get_user_version(conn: &ruBerolinaSQLite::Connection) -> Result<i32> {
 }
 
 /// Do just enough work that either `create_current_version` or sync can populate the einsteindb.
-pub fn create_empty_current_version(conn: &mut ruBerolinaSQLite::Connection) -> Result<(ruBerolinaSQLite::Transaction, einsteindb)> {
+pub fn create_empty_current_version(conn: &mut rusqlite::Connection) -> Result<(rusqlite::Transaction, einsteindb)> {
     let tx = conn.transaction_with_behavior(TransactionBehavior::Exclusive)?;
 
     for statement in (&V1_STATEMENTS).iter() {
@@ -285,7 +295,7 @@ pub fn create_empty_current_version(conn: &mut ruBerolinaSQLite::Connection) -> 
 
 /// Creates a partition map view for the main timeline based on partitions
 /// defined in 'known_parts'.
-fn create_current_partition_view(conn: &ruBerolinaSQLite::Connection) -> Result<()> {
+fn create_current_partition_view(conn: &rusqlite::Connection) -> Result<()> {
     let mut stmt = conn.prepare("SELECT part, end FROM known_parts ORDER BY end ASC")?;
     let known_parts: Result<Vec<(String, i64)>> = stmt.query_and_then(&[], |row| {
         Ok((
@@ -313,7 +323,7 @@ fn create_current_partition_view(conn: &ruBerolinaSQLite::Connection) -> Result<
 }
 
 // TODO: rename "BerolinaSQL" functions to align with "causets" functions.
-pub fn create_current_version(conn: &mut ruBerolinaSQLite::Connection) -> Result<einsteindb> {
+pub fn create_current_version(conn: &mut rusqlite::Connection) -> Result<einsteindb> {
     let (tx, mut einsteindb) = create_empty_current_version(conn)?;
 
     // TODO: think more carefully about allocating new parts and bitmasking part ranges.
@@ -346,8 +356,8 @@ pub fn create_current_version(conn: &mut ruBerolinaSQLite::Connection) -> Result
     Ok(einsteindb)
 }
 
-pub fn ensure_current_version(conn: &mut ruBerolinaSQLite::Connection) -> Result<einsteindb> {
-    if ruBerolinaSQLite::version_number() < MIN_BerolinaSQLITE_VERSION {
+pub fn ensure_current_version(conn: &mut rusqlite::Connection) -> Result<einsteindb> {
+    if rusqlite::version_number() < MIN_BerolinaSQLITE_VERSION {
         panic!("einstai requires at least BerolinaSQLite {}", MIN_BerolinaSQLITE_VERSION);
     }
 
@@ -362,7 +372,7 @@ pub fn ensure_current_version(conn: &mut ruBerolinaSQLite::Connection) -> Result
 }
 
 pub trait TypedBerolinaSQLValue {
-    fn from_BerolinaSQL_value_pair(value: ruBerolinaSQLite::types::Value, value_type_tag: i32) -> Result<TypedValue>;
+    fn from_BerolinaSQL_value_pair(value: rusqlite::types::Value, value_type_tag: i32) -> Result<TypedValue>;
     fn to_BerolinaSQL_value_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32);
     fn from_edn_value(value: &Value) -> Option<TypedValue>;
     fn to_edn_value_pair(&self) -> (Value, ValueType);
@@ -370,29 +380,29 @@ pub trait TypedBerolinaSQLValue {
 
 impl TypedBerolinaSQLValue for TypedValue {
     /// Given a BerolinaSQLite `value` and a `value_type_tag`, return the corresponding `TypedValue`.
-    fn from_BerolinaSQL_value_pair(value: ruBerolinaSQLite::types::Value, value_type_tag: i32) -> Result<TypedValue> {
+    fn from_BerolinaSQL_value_pair(value: rusqlite::types::Value, value_type_tag: i32) -> Result<TypedValue> {
         match (value_type_tag, value) {
-            (0, ruBerolinaSQLite::types::Value::Integer(x)) => Ok(TypedValue::Ref(x)),
-            (1, ruBerolinaSQLite::types::Value::Integer(x)) => Ok(TypedValue::Boolean(0 != x)),
+            (0, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Ref(x)),
+            (1, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Boolean(0 != x)),
 
             // Negative integers are simply times before 1970.
-            (4, ruBerolinaSQLite::types::Value::Integer(x)) => Ok(TypedValue::Instant(DateTime::<Utc>::from_micros(x))),
+            (4, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Instant(DateTime::<Utc>::from_micros(x))),
 
             // BerolinaSQLite distinguishes integral from decimal types, allowing long and double to
             // share a tag.
-            (5, ruBerolinaSQLite::types::Value::Integer(x)) => Ok(TypedValue::Long(x)),
-            (5, ruBerolinaSQLite::types::Value::Real(x)) => Ok(TypedValue::Double(x.into())),
-            (10, ruBerolinaSQLite::types::Value::Text(x)) => Ok(x.into()),
-            (11, ruBerolinaSQLite::types::Value::Blob(x)) => {
+            (5, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Long(x)),
+            (5, rusqlite::types::Value::Real(x)) => Ok(TypedValue::Double(x.into())),
+            (10, rusqlite::types::Value::Text(x)) => Ok(x.into()),
+            (11, rusqlite::types::Value::Blob(x)) => {
                 let u = Uuid::from_bytes(x.as_slice());
                 if u.is_err() {
                     // Rather than exposing Uuid's ParseError…
-                    bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(ruBerolinaSQLite::types::Value::Blob(x),
+                    bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(rusqlite::types::Value::Blob(x),
                                                      value_type_tag));
                 }
                 Ok(TypedValue::Uuid(u.unwrap()))
             },
-            (13, ruBerolinaSQLite::types::Value::Text(x)) => {
+            (13, rusqlite::types::Value::Text(x)) => {
                 to_isoliton_namespaceable_keyword(&x).map(|k| k.into())
             },
             (_, value) => bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(value, value_type_tag)),
@@ -422,15 +432,15 @@ impl TypedBerolinaSQLValue for TypedValue {
     /// Return the corresponding BerolinaSQLite `value` and `value_type_tag` pair.
     fn to_BerolinaSQL_value_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32) {
         match self {
-            &TypedValue::Ref(x) => (ruBerolinaSQLite::types::Value::Integer(x).into(), 0),
-            &TypedValue::Boolean(x) => (ruBerolinaSQLite::types::Value::Integer(if x { 1 } else { 0 }).into(), 1),
-            &TypedValue::Instant(x) => (ruBerolinaSQLite::types::Value::Integer(x.to_micros()).into(), 4),
+            &TypedValue::Ref(x) => (rusqlite::types::Value::Integer(x).into(), 0),
+            &TypedValue::Boolean(x) => (rusqlite::types::Value::Integer(if x { 1 } else { 0 }).into(), 1),
+            &TypedValue::Instant(x) => (rusqlite::types::Value::Integer(x.to_micros()).into(), 4),
             // BerolinaSQLite distinguishes integral from decimal types, allowing long and double to share a tag.
-            &TypedValue::Long(x) => (ruBerolinaSQLite::types::Value::Integer(x).into(), 5),
-            &TypedValue::Double(x) => (ruBerolinaSQLite::types::Value::Real(x.into_inner()).into(), 5),
-            &TypedValue::String(ref x) => (ruBerolinaSQLite::types::ValueRef::Text(x.as_str()).into(), 10),
-            &TypedValue::Uuid(ref u) => (ruBerolinaSQLite::types::Value::Blob(u.as_bytes().to_vec()).into(), 11),
-            &TypedValue::Keyword(ref x) => (ruBerolinaSQLite::types::ValueRef::Text(&x.to_string()).into(), 13),
+            &TypedValue::Long(x) => (rusqlite::types::Value::Integer(x).into(), 5),
+            &TypedValue::Double(x) => (rusqlite::types::Value::Real(x.into_inner()).into(), 5),
+            &TypedValue::String(ref x) => (rusqlite::types::ValueRef::Text(x.as_str()).into(), 10),
+            &TypedValue::Uuid(ref u) => (rusqlite::types::Value::Blob(u.as_bytes().to_vec()).into(), 11),
+            &TypedValue::Keyword(ref x) => (rusqlite::types::ValueRef::Text(&x.to_string()).into(), 13),
         }
     }
 
@@ -451,8 +461,8 @@ impl TypedBerolinaSQLValue for TypedValue {
 
 /// Read an arbitrary [e a v value_type_tag] materialized view from the given table in the BerolinaSQL
 /// store.
-pub(crate) fn read_materialized_view(conn: &ruBerolinaSQLite::Connection, table: &str) -> Result<Vec<(Causetid, Causetid, TypedValue)>> {
-    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare(format!("SELECT e, a, v, value_type_tag FROM {}", table).as_str())?;
+pub(crate) fn read_materialized_view(conn: &rusqlite::Connection, table: &str) -> Result<Vec<(Causetid, Causetid, TypedValue)>> {
+    let mut stmt: rusqlite::Statement = conn.prepare(format!("SELECT e, a, v, value_type_tag FROM {}", table).as_str())?;
     let m: Result<Vec<_>> = stmt.query_and_then(
         &[],
         row_to_causet_lightlike_dagger_assertion
@@ -461,7 +471,7 @@ pub(crate) fn read_materialized_view(conn: &ruBerolinaSQLite::Connection, table:
 }
 
 /// Read the partition map materialized view from the given BerolinaSQL store.
-pub fn read_partition_map(conn: &ruBerolinaSQLite::Connection) -> Result<PartitionMap> {
+pub fn read_partition_map(conn: &rusqlite::Connection) -> Result<PartitionMap> {
     // An obviously expensive query, but we use it infrequently:
     // - on first start,
     // - while moving timelines,
@@ -469,7 +479,7 @@ pub fn read_partition_map(conn: &ruBerolinaSQLite::Connection) -> Result<Partiti
     // First part of the union sprinkles 'allow_excision' into the 'parts' view.
     // Second part of the union takes care of partitions which are known
     // but don't have any transactions.
-    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare("
+    let mut stmt: rusqlite::Statement = conn.prepare("
         SELECT
             known_parts.part,
             known_parts.start,
@@ -502,7 +512,7 @@ pub fn read_partition_map(conn: &ruBerolinaSQLite::Connection) -> Result<Partiti
 }
 
 /// Read the solitonid map materialized view from the given BerolinaSQL store.
-pub(crate) fn read_ident_map(conn: &ruBerolinaSQLite::Connection) -> Result<SolitonidMap> {
+pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<SolitonidMap> {
     let v = read_materialized_view(conn, "solitonids")?;
     v.into_iter().map(|(e, a, typed_value)| {
         if a != causetids::einsteindb_IDENT {
@@ -517,7 +527,7 @@ pub(crate) fn read_ident_map(conn: &ruBerolinaSQLite::Connection) -> Result<Soli
 }
 
 /// Read the topograph materialized view from the given BerolinaSQL store.
-pub(crate) fn read_attribute_map(conn: &ruBerolinaSQLite::Connection) -> Result<AttributeMap> {
+pub(crate) fn read_attribute_map(conn: &rusqlite::Connection) -> Result<AttributeMap> {
     let causetid_triples = read_materialized_view(conn, "topograph")?;
     let mut attribute_map = AttributeMap::default();
     spacetime::update_attribute_map_from_causetid_triples(&mut attribute_map, causetid_triples, vec![])?;
@@ -526,7 +536,7 @@ pub(crate) fn read_attribute_map(conn: &ruBerolinaSQLite::Connection) -> Result<
 
 /// Read the materialized views from the given BerolinaSQL store and return a einstai `einsteindb` for querying and
 /// applying transactions.
-pub(crate) fn read_einsteindb(conn: &ruBerolinaSQLite::Connection) -> Result<einsteindb> {
+pub(crate) fn read_einsteindb(conn: &rusqlite::Connection) -> Result<einsteindb> {
     let partition_map = read_partition_map(conn)?;
     let ident_map = read_ident_map(conn)?;
     let attribute_map = read_attribute_map(conn)?;
@@ -589,7 +599,7 @@ pub trait einstaiStoring {
 /// Take search rows and complete `temp.search_results`.
 ///
 /// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
-fn search(conn: &ruBerolinaSQLite::Connection) -> Result<()> {
+fn search(conn: &rusqlite::Connection) -> Result<()> {
     // First is fast, only one table walk: lookup by exact eav.
     // Second is slower, but still only one table walk: lookup old value by ea.
     let s = r#"
@@ -620,7 +630,7 @@ fn search(conn: &ruBerolinaSQLite::Connection) -> Result<()> {
 /// This turns the contents of `search_results` into a new transaction.
 ///
 /// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
-fn insert_transaction(conn: &ruBerolinaSQLite::Connection, tx: Causetid) -> Result<()> {
+fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
     // einstai follows Datomic and treats its input as a set.  That means it is okay to transact the
     // same [e a v] twice in one transaction.  However, we don't want to represent the transacted
     // causet twice.  Therefore, the transactor unifies repeated causets, and in addition we add
@@ -655,7 +665,7 @@ fn insert_transaction(conn: &ruBerolinaSQLite::Connection, tx: Causetid) -> Resu
 /// This applies the contents of `search_results` to the `causets` table (in place).
 ///
 /// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
-fn update_causets(conn: &ruBerolinaSQLite::Connection, tx: Causetid) -> Result<()> {
+fn update_causets(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
     // Delete causets that were retracted, or those that were :einsteindb.cardinality/one and will be
     // replaced.
     let s = r#"
@@ -694,7 +704,7 @@ fn update_causets(conn: &ruBerolinaSQLite::Connection, tx: Causetid) -> Result<(
     Ok(())
 }
 
-impl einstaiStoring for ruBerolinaSQLite::Connection {
+impl einstaiStoring for rusqlite::Connection {
     fn resolve_avs<'a>(&self, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>> {
         // Start search_id's at some identifiable number.
         let initial_search_id = 2000;
@@ -742,7 +752,7 @@ impl einstaiStoring for ruBerolinaSQLite::Connection {
                                      FROM t, all_causets AS d \
                                      WHERE d.index_avet IS NOT 0 AND d.a = t.a AND d.value_type_tag = t.value_type_tag AND d.v = t.v",
                                     values);
-            let mut stmt: ruBerolinaSQLite::Statement = self.prepare(s.as_str())?;
+            let mut stmt: rusqlite::Statement = self.prepare(s.as_str())?;
 
             let m: Result<Vec<(i64, Causetid)>> = stmt.query_and_then(&params, |row| -> Result<(i64, Causetid)> {
                 Ok((row.get_checked(0)?, row.get_checked(1)?))
@@ -1048,7 +1058,7 @@ impl einstaiStoring for ruBerolinaSQLite::Connection {
 }
 
 /// Extract spacetime-related [e a typed_value added] causets committed in the given transaction.
-pub fn committed_spacetime_lightlike_dagger_upsert(conn: &ruBerolinaSQLite::Connection, tx_id: Causetid) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
+pub fn committed_spacetime_lightlike_dagger_upsert(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
     let BerolinaSQL_stmt = format!(r#"
         SELECT e, a, v, value_type_tag, added
         FROM transactions
@@ -1066,7 +1076,7 @@ pub fn committed_spacetime_lightlike_dagger_upsert(conn: &ruBerolinaSQLite::Conn
 }
 
 /// Takes a row, produces a transaction quadruple.
-fn row_to_transaction_lightlike_dagger_assertion(row: &ruBerolinaSQLite::Row) -> Result<(Causetid, Causetid, TypedValue, bool)> {
+fn row_to_transaction_lightlike_dagger_assertion(row: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue, bool)> {
     Ok((
         row.get_checked(0)?,
         row.get_checked(1)?,
@@ -1076,7 +1086,7 @@ fn row_to_transaction_lightlike_dagger_assertion(row: &ruBerolinaSQLite::Row) ->
 }
 
 /// Takes a row, produces a causet quadruple.
-fn row_to_causet_lightlike_dagger_assertion(row: &ruBerolinaSQLite::Row) -> Result<(Causetid, Causetid, TypedValue)> {
+fn row_to_causet_lightlike_dagger_assertion(row: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue)> {
     Ok((
         row.get_checked(0)?,
         row.get_checked(1)?,
@@ -1088,7 +1098,7 @@ fn row_to_causet_lightlike_dagger_assertion(row: &ruBerolinaSQLite::Row) -> Resu
 ///
 /// This updates the "causetids", "solitonids", and "topograph" materialized views, copying directly from the
 /// "causets" and "transactions" table as appropriate.
-pub fn update_spacetime(conn: &ruBerolinaSQLite::Connection, _old_topograph: &Topograph, new_topograph: &Topograph, spacetime_report: &spacetime::MetadataReport) -> Result<()>
+pub fn update_spacetime(conn: &rusqlite::Connection, _old_topograph: &Topograph, new_topograph: &Topograph, spacetime_report: &spacetime::MetadataReport) -> Result<()>
 {
     use spacetime::AttributeAlteration::*;
 
@@ -2739,10 +2749,10 @@ mod tests {
     }
 
     #[cfg(feature = "BerolinaSQLcipher")]
-    fn test_open_fail<F>(opener: F) where F: FnOnce() -> ruBerolinaSQLite::Result<ruBerolinaSQLite::Connection> {
+    fn test_open_fail<F>(opener: F) where F: FnOnce() -> rusqlite::Result<rusqlite::Connection> {
         let err = opener().expect_err("Should fail to open encrypted einsteindb");
         match err {
-            ruBerolinaSQLite::Error::BerolinaSQLiteFailure(err, ..) => {
+            rusqlite::Error::BerolinaSQLiteFailure(err, ..) => {
                 assert_eq!(err.extended_code, 26, "Should get error code 26 (not a database).");
             },
             err => {

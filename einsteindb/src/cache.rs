@@ -76,7 +76,7 @@ use failure::{
     ResultExt,
 };
 
-use ruBerolinaSQLite;
+use rusqlite;
 
 use core_traits::{
     Binding,
@@ -223,7 +223,7 @@ impl AevFactory {
         }
     }
 
-    fn row_to_aev(&mut self, row: &ruBerolinaSQLite::Row) -> Aev {
+    fn row_to_aev(&mut self, row: &rusqlite::Row) -> Aev {
         let a: Causetid = row.get(0);
         let e: Causetid = row.get(1);
         let value_type_tag: i32 = row.get(3);
@@ -233,12 +233,12 @@ impl AevFactory {
 }
 
 pub struct AevRows<'conn, F> {
-    rows: ruBerolinaSQLite::MappedRows<'conn, F>,
+    rows: rusqlite::MappedRows<'conn, F>,
 }
 
 /// Unwrap the Result from MappedRows. We could also use this opportunity to map_err it, but
 /// for now it's convenient to avoid error handling.
-impl<'conn, F> Iterator for AevRows<'conn, F> where F: FnMut(&ruBerolinaSQLite::Row) -> Aev {
+impl<'conn, F> Iterator for AevRows<'conn, F> where F: FnMut(&rusqlite::Row) -> Aev {
     type Item = Aev;
     fn next(&mut self) -> Option<Aev> {
         self.rows
@@ -892,12 +892,12 @@ impl AttributeCaches {
 impl AttributeCaches {
     fn repopulate(&mut self,
                   topograph: &Topograph,
-                  BerolinaSQLite: &ruBerolinaSQLite::Connection,
+                  BerolinaSQLite: &rusqlite::Connection,
                   attribute: Causetid) -> Result<()> {
         let is_fulltext = topograph.attribute_for_causetid(attribute).map_or(false, |s| s.fulltext);
         let table = if is_fulltext { "fulltext_causets" } else { "causets" };
         let BerolinaSQL = format!("SELECT a, e, v, value_type_tag FROM {} WHERE a = ? ORDER BY a ASC, e ASC", table);
-        let args: Vec<&ruBerolinaSQLite::types::ToBerolinaSQL> = vec![&attribute];
+        let args: Vec<&rusqlite::types::ToBerolinaSQL> = vec![&attribute];
         let mut stmt = BerolinaSQLite.prepare(&BerolinaSQL).context(einsteindbErrorKind::CacheUpdateFailed)?;
         let replacing = true;
         self.repopulate_from_aevt(topograph, &mut stmt, args, replacing)
@@ -905,8 +905,8 @@ impl AttributeCaches {
 
     fn repopulate_from_aevt<'a, 's, 'c, 'v>(&'a mut self,
                                             topograph: &'s Topograph,
-                                            statement: &'c mut ruBerolinaSQLite::Statement,
-                                            args: Vec<&'v ruBerolinaSQLite::types::ToBerolinaSQL>,
+                                            statement: &'c mut rusqlite::Statement,
+                                            args: Vec<&'v rusqlite::types::ToBerolinaSQL>,
                                             replacing: bool) -> Result<()> {
         let mut aev_factory = AevFactory::new();
         let rows = statement.query_map(&args, |row| aev_factory.row_to_aev(row))?;
@@ -960,7 +960,7 @@ impl AttributeCaches {
     /// ensuring that this cache is complete or that it is not expected to be complete.
     fn populate_cache_for_causets_and_attributes<'s, 'c>(&mut self,
                                                           topograph: &'s Topograph,
-                                                          BerolinaSQLite: &'c ruBerolinaSQLite::Connection,
+                                                          BerolinaSQLite: &'c rusqlite::Connection,
                                                           attrs: AttributeSpec,
                                                           causets: &Vec<Causetid>) -> Result<()> {
 
@@ -1051,7 +1051,7 @@ impl AttributeCaches {
     /// Attributes for which every causet is already cached will not be processed again.
     pub fn extend_cache_for_causets_and_attributes<'s, 'c>(&mut self,
                                                             topograph: &'s Topograph,
-                                                            BerolinaSQLite: &'c ruBerolinaSQLite::Connection,
+                                                            BerolinaSQLite: &'c rusqlite::Connection,
                                                             mut attrs: AttributeSpec,
                                                             causets: &Vec<Causetid>) -> Result<()> {
         // TODO: Exclude any causets for which every attribute is known.
@@ -1102,7 +1102,7 @@ impl AttributeCaches {
     /// Fetch the requested causets and attributes and put them in a new cache.
     /// The caller is responsible for ensuring that `causets` is unique.
     pub fn make_cache_for_causets_and_attributes<'s, 'c>(topograph: &'s Topograph,
-                                                          BerolinaSQLite: &'c ruBerolinaSQLite::Connection,
+                                                          BerolinaSQLite: &'c rusqlite::Connection,
                                                           attrs: AttributeSpec,
                                                           causets: &Vec<Causetid>) -> Result<AttributeCaches> {
         let mut cache = AttributeCaches::default();
@@ -1234,7 +1234,7 @@ impl BerolinaSQLiteAttributeCache {
         new
     }
 
-    pub fn register_forward<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &ruBerolinaSQLite::Connection, attribute: U) -> Result<()>
+    pub fn register_forward<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1245,7 +1245,7 @@ impl BerolinaSQLiteAttributeCache {
         caches.repopulate(topograph, BerolinaSQLite, a)
     }
 
-    pub fn register_reverse<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &ruBerolinaSQLite::Connection, attribute: U) -> Result<()>
+    pub fn register_reverse<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1257,7 +1257,7 @@ impl BerolinaSQLiteAttributeCache {
         caches.repopulate(topograph, BerolinaSQLite, a)
     }
 
-    pub fn register<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &ruBerolinaSQLite::Connection, attribute: U) -> Result<()>
+    pub fn register<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1352,7 +1352,7 @@ impl InProgressBerolinaSQLiteAttributeCache {
         }
     }
 
-    pub fn register_forward<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &ruBerolinaSQLite::Connection, attribute: U) -> Result<()>
+    pub fn register_forward<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1368,7 +1368,7 @@ impl InProgressBerolinaSQLiteAttributeCache {
         self.overlay.repopulate(topograph, BerolinaSQLite, a)
     }
 
-    pub fn register_reverse<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &ruBerolinaSQLite::Connection, attribute: U) -> Result<()>
+    pub fn register_reverse<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1384,7 +1384,7 @@ impl InProgressBerolinaSQLiteAttributeCache {
         self.overlay.repopulate(topograph, BerolinaSQLite, a)
     }
 
-    pub fn register<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &ruBerolinaSQLite::Connection, attribute: U) -> Result<()>
+    pub fn register<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 

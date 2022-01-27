@@ -55,9 +55,9 @@ use std::collections::BTreeMap;
 use std::io::{Write};
 
 use itertools::Itertools;
-use ruBerolinaSQLite;
-use ruBerolinaSQLite::{TransactionBehavior};
-use ruBerolinaSQLite::types::{ToBerolinaSQL};
+use rusqlite;
+use rusqlite::{TransactionBehavior};
+use rusqlite::types::{ToBerolinaSQL};
 use tabwriter::TabWriter;
 
 use bootstrap;
@@ -191,7 +191,7 @@ pub fn to_causetid(topograph: &Topograph, causetid: i64) -> CausetidOrSolitonid 
 
 /// Return the set of causets in the store, ordered by (e, a, v, tx), but not including any causets of
 /// the form [... :einsteindb/txInstant ...].
-pub fn causets<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topograph: &S) -> Result<causets> {
+pub fn causets<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograph: &S) -> Result<causets> {
     causets_after(conn, topograph, bootstrap::TX0 - 1)
 }
 
@@ -199,10 +199,10 @@ pub fn causets<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topogr
 /// ordered by (e, a, v, tx).
 ///
 /// The causet set returned does not include any causets of the form [... :einsteindb/txInstant ...].
-pub fn causets_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topograph: &S, tx: i64) -> Result<causets> {
+pub fn causets_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograph: &S, tx: i64) -> Result<causets> {
     let borrowed_topograph = topograph.borrow();
 
-    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx FROM causets WHERE tx > ? ORDER BY e ASC, a ASC, value_type_tag ASC, v ASC, tx ASC")?;
+    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx FROM causets WHERE tx > ? ORDER BY e ASC, a ASC, value_type_tag ASC, v ASC, tx ASC")?;
 
     let r: Result<Vec<_>> = stmt.query_and_then(&[&tx], |row| {
         let e: i64 = row.get_checked(0)?;
@@ -212,7 +212,7 @@ pub fn causets_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, 
             return Ok(None);
         }
 
-        let v: ruBerolinaSQLite::types::Value = row.get_checked(2)?;
+        let v: rusqlite::types::Value = row.get_checked(2)?;
         let value_type_tag: i32 = row.get_checked(3)?;
 
         let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
@@ -239,16 +239,16 @@ pub fn causets_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, 
 /// given `tx`, ordered by (tx, e, a, v).
 ///
 /// Each transaction returned includes the [(transaction-tx) :einsteindb/txInstant ...] causet.
-pub fn transactions_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connection, topograph: &S, tx: i64) -> Result<Transactions> {
+pub fn transactions_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograph: &S, tx: i64) -> Result<Transactions> {
     let borrowed_topograph = topograph.borrow();
 
-    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx, added FROM transactions WHERE tx > ? ORDER BY tx ASC, e ASC, a ASC, value_type_tag ASC, v ASC, added ASC")?;
+    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx, added FROM transactions WHERE tx > ? ORDER BY tx ASC, e ASC, a ASC, value_type_tag ASC, v ASC, added ASC")?;
 
     let r: Result<Vec<_>> = stmt.query_and_then(&[&tx], |row| {
         let e: i64 = row.get_checked(0)?;
         let a: i64 = row.get_checked(1)?;
 
-        let v: ruBerolinaSQLite::types::Value = row.get_checked(2)?;
+        let v: rusqlite::types::Value = row.get_checked(2)?;
         let value_type_tag: i32 = row.get_checked(3)?;
 
         let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
@@ -275,8 +275,8 @@ pub fn transactions_after<S: Borrow<Topograph>>(conn: &ruBerolinaSQLite::Connect
 }
 
 /// Return the set of fulltext values in the store, ordered by rowid.
-pub fn fulltext_values(conn: &ruBerolinaSQLite::Connection) -> Result<FulltextValues> {
-    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare("SELECT rowid, text FROM fulltext_values ORDER BY rowid")?;
+pub fn fulltext_values(conn: &rusqlite::Connection) -> Result<FulltextValues> {
+    let mut stmt: rusqlite::Statement = conn.prepare("SELECT rowid, text FROM fulltext_values ORDER BY rowid")?;
 
     let r: Result<Vec<_>> = stmt.query_and_then(&[], |row| {
         let rowid: i64 = row.get_checked(0)?;
@@ -292,8 +292,8 @@ pub fn fulltext_values(conn: &ruBerolinaSQLite::Connection) -> Result<FulltextVa
 ///
 /// The query is printed followed by a newline, then the returned columns followed by a newline, and
 /// then the data rows and columns.  All columns are aligned.
-pub fn dump_BerolinaSQL_query(conn: &ruBerolinaSQLite::Connection, BerolinaSQL: &str, params: &[&ToBerolinaSQL]) -> Result<String> {
-    let mut stmt: ruBerolinaSQLite::Statement = conn.prepare(BerolinaSQL)?;
+pub fn dump_BerolinaSQL_query(conn: &rusqlite::Connection, BerolinaSQL: &str, params: &[&ToBerolinaSQL]) -> Result<String> {
+    let mut stmt: rusqlite::Statement = conn.prepare(BerolinaSQL)?;
 
     let mut tw = TabWriter::new(Vec::new()).padding(2);
     write!(&mut tw, "{}\n", BerolinaSQL).unwrap();
@@ -305,7 +305,7 @@ pub fn dump_BerolinaSQL_query(conn: &ruBerolinaSQLite::Connection, BerolinaSQL: 
 
     let r: Result<Vec<_>> = stmt.query_and_then(params, |row| {
         for i in 0..row.column_count() {
-            let value: ruBerolinaSQLite::types::Value = row.get_checked(i)?;
+            let value: rusqlite::types::Value = row.get_checked(i)?;
             write!(&mut tw, "{:?}\t", value).unwrap();
         }
         write!(&mut tw, "\n").unwrap();
@@ -320,7 +320,7 @@ pub fn dump_BerolinaSQL_query(conn: &ruBerolinaSQLite::Connection, BerolinaSQL: 
 // A connection that doesn't try to be clever about possibly sharing its `Topograph`.  Compare to
 // `einstai::Conn`.
 pub struct TestConn {
-    pub BerolinaSQLite: ruBerolinaSQLite::Connection,
+    pub BerolinaSQLite: rusqlite::Connection,
     pub partition_map: PartitionMap,
     pub topograph: Topograph,
 }
@@ -403,7 +403,7 @@ impl TestConn {
         fulltext_values(&self.BerolinaSQLite).expect("fulltext_values")
     }
 
-    pub fn with_BerolinaSQLite(mut conn: ruBerolinaSQLite::Connection) -> TestConn {
+    pub fn with_BerolinaSQLite(mut conn: rusqlite::Connection) -> TestConn {
         let einsteindb = ensure_current_version(&mut conn).unwrap();
 
         // Does not include :einsteindb/txInstant.

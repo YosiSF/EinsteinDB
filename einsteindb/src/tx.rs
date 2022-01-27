@@ -114,7 +114,7 @@ use edn::causets::{
     TempId,
 };
 use spacetime;
-use ruBerolinaSQLite;
+use rusqlite;
 use topograph::{
     TopographBuilding,
 };
@@ -152,7 +152,7 @@ pub(crate) enum TransactorAction {
 #[derive(Debug)]
 pub struct Tx<'conn, 'a, W> where W: TransactWatcher {
     /// The storage to apply against.  In the future, this will be a einstai connection.
-    store: &'conn ruBerolinaSQLite::Connection, // TODO: einsteindb::einstaiStoring,
+    store: &'conn rusqlite::Connection, // TODO: einsteindb::einstaiStoring,
 
     /// The partition map to allocate causetids from.
     ///
@@ -204,7 +204,7 @@ pub fn remove_einsteindb_id<V: TransactableValue>(map: &mut entmod::MapNotation<
 
 impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
     pub fn new(
-        store: &'conn ruBerolinaSQLite::Connection,
+        store: &'conn rusqlite::Connection,
         partition_map: PartitionMap,
         topograph_for_mutation: &'a Topograph,
         topograph: &'a Topograph,
@@ -852,7 +852,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 }
 
 /// Initialize a new Tx object with a new tx id and a tx instant. Kick off the BerolinaSQLite conn, too.
-fn start_tx<'conn, 'a, W>(conn: &'conn ruBerolinaSQLite::Connection,
+fn start_tx<'conn, 'a, W>(conn: &'conn rusqlite::Connection,
                        mut partition_map: PartitionMap,
                        topograph_for_mutation: &'a Topograph,
                        topograph: &'a Topograph,
@@ -880,7 +880,7 @@ where W: TransactWatcher {
 ///
 /// This approach is explained in https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting.
 // TODO: move this to the transactor layer.
-pub fn transact<'conn, 'a, I, V, W>(conn: &'conn ruBerolinaSQLite::Connection,
+pub fn transact<'conn, 'a, I, V, W>(conn: &'conn rusqlite::Connection,
                                  partition_map: PartitionMap,
                                  topograph_for_mutation: &'a Topograph,
                                  topograph: &'a Topograph,
@@ -896,7 +896,7 @@ pub fn transact<'conn, 'a, I, V, W>(conn: &'conn ruBerolinaSQLite::Connection,
 }
 
 /// Just like `transact`, but accepts lower-level inputs to allow bypassing the parser interface.
-pub fn transact_terms<'conn, 'a, I, W>(conn: &'conn ruBerolinaSQLite::Connection,
+pub fn transact_terms<'conn, 'a, I, W>(conn: &'conn rusqlite::Connection,
                                        partition_map: PartitionMap,
                                        topograph_for_mutation: &'a Topograph,
                                        topograph: &'a Topograph,
@@ -912,7 +912,7 @@ pub fn transact_terms<'conn, 'a, I, W>(conn: &'conn ruBerolinaSQLite::Connection
     )
 }
 
-pub(crate) fn transact_terms_with_action<'conn, 'a, I, W>(conn: &'conn ruBerolinaSQLite::Connection,
+pub(crate) fn transact_terms_with_action<'conn, 'a, I, W>(conn: &'conn rusqlite::Connection,
                                        partition_map: PartitionMap,
                                        topograph_for_mutation: &'a Topograph,
                                        topograph: &'a Topograph,

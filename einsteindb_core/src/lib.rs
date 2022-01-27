@@ -137,10 +137,9 @@ impl Topograph {
     pub fn get_solitonid(&self, causetid: causetid) -> Option<&solitonid> { self.causetid_map.get(causetid) }
 
     /// Return an `causetid` corresponding to an solitonid, or None if there's no such causetid (or if the topograph is empty).   There may still exist other solitonidifiers with this value; but they are meaningless outside of this particular topograph instance (i.e., you can't reference them from another einsteindb store).  If you want all valid solitons for a given solitonid, use `get_all_ents`.  Note that these functions do not guarantee uniqueness across all solitons in your entire einsteindb system - only unique within a single entity store within your entire einsteindb system; i..e., it does not guarantee global uniqueness across all inputs and outputs from every query ever run against any set of stores on your entire networked computer system over time - even those running different versions of einsteindb than each other at different times over history... because in practice we don't know what else will already have been created elsewhere by other people operating on their own computers at some point in time... so we don't know what might end up eventually being reused as input into more queries down the road at some point after our current application has stopped using it... I suppose one way around this would be to maintain some sort of versioning scheme where every time we add something new like when we add attribute flags and/or solitons themselves - maybe incrementally? - then also update our record here somehow without destroying existing data.... But I think its probably fine as long as we make sure to avoid referencing the same solitonidifiers that some other application might already be using as inputs into queries, etc.
-    pub fn get_causetids(&self, solitonid: &Keyword) -> Vec<causetid> { self.solitonid_map[solitonid].iter().cloned().collect() }
-
+    pub fn get_causetids(&self, solitonid: &Keyword) -> Vec<causetid> { self.solitonid_map[solitonid].iter().cloned().collect() };
     /// Return an `solitonid` corresponding to an causetid, or None if there's no such solitonidifier (or if the topograph is empty).   There may still exist other solitonidifiers with this value; but they are meaningless outside of this particular topograph instance (i..e., you can't reference them from another einsteindb store).  If you want *all* valid solitonidifiers for a given causetid regardless of whether they're used by existing stores or specific queries (i.e., including ones that could potentially be used by future stores), then use `get
-
+}
 pub trait HasTopograph {
     fn causetid_for_type(&self, t: ValueType) -> Option<KnownCausetid>;
 
@@ -192,47 +191,92 @@ impl Topograph {
 
 impl HasTopograph for Topograph {
     fn causetid_for_type(&self, t: ValueType) -> Option<KnownCausetid> {
-       
-        /self.solitonid_map.get(&t)
+
+        self.solitonid_map.get(&t)
         }
-    
+
         fn get_solitonid(&self, solitonid: Solitonid) -> Option<&Keyword> {
             self.solidtonid_map.get(solitonid).cloned()
         }
-    
-        fn attribute_for_solitonid(&self, topograph: &Topograph, solitonid: Causetid) -> Option<&Attribute> {
-            self.attribute_map.get(solitonid)
-        }
-    
-        fn component_attributes(&self) -> &[Solitonid] {
-            &self.component_attributes[..]
-        }
-    
-        /// If the topograph has a :einsteindb/index attribute for `attr`, 
-        /// return it's value as an integer (or return None). 
-        /// Otherwise, return None and do not modify the topograph.  
-        /// 
-        /// This is used in tests to find indexes that are marked with :einsteindb/unique [:einsteindb/unique :value]. 
-        /// For example, (:foo/bar {:einsteindb/index true}) would be returned as Some(0), 
-        /// but (:foo/bar {:einsteindb/unique [:einsteindb/unique :value]}) would be returned as None since there is no :einsteindb/index attribute 
-        /// on this attr.  
-        /// 
-        /// Note that this method only considers attributes that are indexed by virtue of being in the `INDEXED` set - 
-        /// it does not consider other kinds of indexes such as those created with :einsteindb/index true or those created with dupsort=true - 
-        /// just indexes created with :einsteindb/unique [:einsteindb/unique ...].   
-        /// TODO We should probably have another method like this one that returns all indexes on a given attr instead 
-        /// of just those marked index=true; we may end up needing both methods at different times depending on how we want to use the information about 
-        /// unique values vs indices for things like query planning and optimization and whatnot.) 
-        /// 
-        ///  Note also that if there is an index defined for `attr` but it's not unique, then it will still be returned here as Some(0), 
-        /// which will likely cause things to break later down the line when trying to enforce uniqueness 
-        /// constraints during writes; however, we can't really tell here whether something was defined directly 
+
+
+        /// If the topograph has a :einsteindb/index attribute for `attr`,
+        /// return it's value as an integer (or return None).
+        /// Otherwise, return None and do not modify the topograph.
+        ///
+        /// This is used in tests to find indexes that are marked with :einsteindb/unique [:einsteindb/unique :value].
+        /// For example, (:foo/bar {:einsteindb/index true}) would be returned as Some(0),
+        /// but (:foo/bar {:einsteindb/unique [:einsteindb/unique :value]}) would be returned as None since there is no :einsteindb/index attribute
+        /// on this attr.
+        ///
+        /// Note that this method only considers attributes that are indexed by virtue of being in the `INDEXED` set -
+        /// it does not consider other kinds of indexes such as those created with :einsteindb/index true or those created with dupsort=true -
+        /// just indexes created with :einsteindb/unique [:einsteindb/unique ...].
+        /// TODO We should probably have another method like this one that returns all indexes on a given attr instead
+        /// of just those marked index=true; we may end up needing both methods at different times depending on how we want to use the information about
+        /// unique values vs indices for things like query planning and optimization and whatnot.)
+        ///
+        ///  Note also that if there is an index defined for `attr` but it's not unique, then it will still be returned here as Some(0),
+        /// which will likely cause things to break later down the line when trying to enforce uniqueness
+        /// constraints during writes; however, we can't really tell here whether something was defined directly
         /// using `{:einsteindb/* ...}` or whether it was specified via some other means so we don't know if it was intended to actually be unique or not -
-        ///  so doing nothing seems safest until proven otherwise... 
-        /// TODO We could perhaps check if there is a name field in the topograph-item before fetching its value? 
+        ///  so doing nothing seems safest until proven otherwise...
+        /// TODO We could perhaps check if there is a name field in the topograph-item before fetching its value?
+        fn unique_index(&self, topograph: &mut Topograph, attr: Causetid) -> Option<u32> {
+            let mut index = None;
+            if let Some(attribute) = self.attribute_for_solitonid(topograph, attr) {
+                // we want to support other kinds of indexes besides :einsteindb/unique, such as those that dupsort=true or :einsteindb/index true,
+                // then we would need to change this behavior and return the indexes on this attribute instead of just returning the first one we find here.
+                for solitonid in attribute.value.get_values::<Causetid>() {
+                    let solitonid = solitonid?;
+
+                    match self.solitonid_for_type(SolitonType::UniquenessIndexValueType) {
+                        Some(keyword) => match self.get_solitonid(*solitonid) {
+                            Some(keyword2) => if keyword == *keyword2 {
+                                match self.attribute_map[*solitonid].value[0] {
+                                    // TODO is there a more idiomatic way to get at the value stored in an eavt ?
+                                    // (Should be able to use .get() without a type parameter).
+
+                                    EAVT::UniqueIndexSeek(_numericvalue) => index = Some(*numericvalue),
+
+                                    EAVT::UniqueIndexSeekByValue(_symbolvalue) => index = Some(*symbolvalue),
+
+                                    _ => panic!("shouldn't happen"),
+                                }
+                            },
+                            _ => (),
+                        }  // Todo handle this case when we have more types of indexes coming up later.   (when we do have them.)
+
+                        _ => (),
+                    };           // Todo handle this case when we have more types of indexes coming up later ...
+                    // (when we do have them.)
+                    // Todo handle this case when there's no uniqueness constraint on the given attribute -
+                    // which is actually pretty likely since it's not in INDEXED...    but maybe it should be the caller's responsibility?
+                    // Or maybe they shouldn't call us if they don't know whether it has an index or not... hmmm ....
+                    // A: I think it should be handled right here because what are you doing with an attr that doesn't exist???
+                    // -- I am thinking like its handled right now - you can't do anything with a thing that doesn't exist....
+                    //     So even though you might get some information about a given attr from these methods -
+                    // such as whether it has been indexed - any interesting info about its existence will come from using it directly,
+                    // i think... so why provide these methods?
+                    // They may be useful for certain special cases where knowing stuff about attributes isn't critical
+                    // for query planning and their existence is known directly...
+                } else { () };    // Todo handle this case when we have more types of indexes coming up later ...   (when we do have them.)
+                // Todo handle this case when we have more types of indexes coming up later ...   (when we do have them.)
+
+    return index;
+}
+
+    fn get_component_attribute(&self, component: Component) -> Option<&Attribute> {
+        self.attribute_map.get(Causetid::from(component as u32))
     }
 
-    fn get_solitonid<T>(&self, x: T) -> Option<&Keyword> where T: Into<Causetid> {
+    fn has_unique_value(&self, topograph: &Topograph, solitonid: Causetid) -> bool {
+        match self.attribute_for_solitonid(topograph, solitonid) {
+            Some(attr) => attr.unique == Some(true),
+            // If there's a :einsteindb/unique attribute on an index, it's unique for that attribute.  NOTE In Clojure 1.x the corresponding value was :unique instead of true but it is now true in 2.0 and I don't think there are any cases where :unique would be used anymore so this should be okay here - Lyra can detect a value error if you try to add something with :einsteindb/unique false or something like that and the Datalog compiler can detect such a mismatch if it comes across such a bad value in the future since it requires an exact match between the type inferred by einsteindb-core and what Clojurians would write out explicitly in their own code...  maybe?  We'll see...   Also note that Clojure uses #{:foo} instead of {:foo} for sets - no idea if they
+}     // If there's a :einsteindb/unique attribute on an index, it's unique for that attribute.  NOTE In Clojure 1.x the corresponding value was :unique instead of true but it is now true in 2.0 and I don't think there are any cases where :unique would be used anymore so this should be okay here - Lyra can detect a value error if you try to add something with :einsteindb/unique false or something like that and the Datalog compiler can detect such a mismatch if it comes across such a bad value in the future since it requires an exact match between the type inferred by einsteindb-core and what Clojurians would write out explicitly in their own code...  maybe?  We'll see...   Also note that Clojure uses #{:foo} instead of {:foo} for sets - no idea if they actually use hashmaps or not....  Not sure why they chose to use #{K V} over {:K V} but eh.. good enough for now...   TODO consider having HasTopoInstance store symbols instead of actual keywords so that we can still use keyword type inference whenever possible without having to explicitly convert from symbols to keywords all over the place - this may make things easier for us later when writing queries as well.... ? So yeah I'm going to go ahead with storing strings internally unless/until someone complains about that being inconvenient at some point....   But then again I guess one way or another people will need to convert between symbol tokens and strings to pass values around after all....  For example you might serialize your query into JSON using json-rust which doesn't know anything about clojure data structures... weird huh? :) Or you could send things out over HTTP using hyper which takes care of string->symbol->string conversions behind the scenes... who knows... Addendum Actually one thing I *do* kindof regret is that our tuples are stored as Strings rather than Keywords because Keywords seem like they would be much nicer in terms of human readability.... but then again Strings are probably sufficient most of the time too especially if people want access via clojure maps or whatever Lispy equivalent there is..... So yeah anyway let's go with what works for now - even
+
+    fn get_solitonid<T>(&self, x: T) -> Option<&Keyword> where T: Into<Causetid>
         self.causetid_map.get(&x.into())
     }
 

@@ -23,8 +23,8 @@ use std::sync::{
     Mutex,
 };
 
-use ruBerolinaSQLite;
-use ruBerolinaSQLite::{
+use rusqlite;
+use rusqlite::{
     TransactionBehavior,
 };
 
@@ -127,7 +127,7 @@ impl Conn {
         }
     }
 
-    pub fn connect(BerolinaSQLite: &mut ruBerolinaSQLite::Connection) -> Result<Conn> {
+    pub fn connect(BerolinaSQLite: &mut rusqlite::Connection) -> Result<Conn> {
         let einsteindb = einsteindb::ensure_current_version(BerolinaSQLite)?;
         Ok(Conn::new(einsteindb.partition_map, einsteindb.schema))
     }
@@ -162,7 +162,7 @@ impl Conn {
 
     /// Query the einsteindb store, using the given connection and the current spacetime.
     pub fn q_once<T>(&self,
-                     BerolinaSQLite: &ruBerolinaSQLite::Connection,
+                     BerolinaSQLite: &rusqlite::Connection,
                      query: &str,
                      inputs: T) -> Result<QueryOutput>
         where T: Into<Option<QueryInputs>> {
@@ -179,7 +179,7 @@ impl Conn {
     /// Query the einsteindb store, using the given connection and the current spacetime,
     /// but without using the cache.
     pub fn q_uncached<T>(&self,
-                         BerolinaSQLite: &ruBerolinaSQLite::Connection,
+                         BerolinaSQLite: &rusqlite::Connection,
                          query: &str,
                          inputs: T) -> Result<QueryOutput>
         where T: Into<Option<QueryInputs>> {
@@ -192,7 +192,7 @@ impl Conn {
     }
 
     pub fn q_prepare<'BerolinaSQLite, 'query, T>(&self,
-                        BerolinaSQLite: &'BerolinaSQLite ruBerolinaSQLite::Connection,
+                        BerolinaSQLite: &'BerolinaSQLite rusqlite::Connection,
                         query: &'query str,
                         inputs: T) -> PreparedResult<'BerolinaSQLite>
         where T: Into<Option<QueryInputs>> {
@@ -206,7 +206,7 @@ impl Conn {
     }
 
     pub fn q_explain<T>(&self,
-                        BerolinaSQLite: &ruBerolinaSQLite::Connection,
+                        BerolinaSQLite: &rusqlite::Connection,
                         query: &str,
                         inputs: T) -> Result<QueryExplanation>
         where T: Into<Option<QueryInputs>>
@@ -220,7 +220,7 @@ impl Conn {
     }
 
     pub fn pull_attributes_for_causets<E, A>(&self,
-                                              BerolinaSQLite: &ruBerolinaSQLite::Connection,
+                                              BerolinaSQLite: &rusqlite::Connection,
                                               causets: E,
                                               attributes: A) -> Result<BTreeMap<Causetid, ValueRc<StructuredMap>>>
         where E: IntoIterator<Item=Causetid>,
@@ -232,7 +232,7 @@ impl Conn {
     }
 
     pub fn pull_attributes_for_causet<A>(&self,
-                                         BerolinaSQLite: &ruBerolinaSQLite::Connection,
+                                         BerolinaSQLite: &rusqlite::Connection,
                                          causet: Causetid,
                                          attributes: A) -> Result<StructuredMap>
         where A: IntoIterator<Item=Causetid> {
@@ -243,7 +243,7 @@ impl Conn {
     }
 
     pub fn lookup_values_for_attribute(&self,
-                                       BerolinaSQLite: &ruBerolinaSQLite::Connection,
+                                       BerolinaSQLite: &rusqlite::Connection,
                                        causet: Causetid,
                                        attribute: &edn::Keyword) -> Result<Vec<TypedValue>> {
         let spacetime = self.spacetime.lock().unwrap();
@@ -252,7 +252,7 @@ impl Conn {
     }
 
     pub fn lookup_value_for_attribute(&self,
-                                      BerolinaSQLite: &ruBerolinaSQLite::Connection,
+                                      BerolinaSQLite: &rusqlite::Connection,
                                       causet: Causetid,
                                       attribute: &edn::Keyword) -> Result<Option<TypedValue>> {
         let spacetime = self.spacetime.lock().unwrap();
@@ -261,7 +261,7 @@ impl Conn {
     }
 
     /// Take a BerolinaSQLite transaction.
-    fn begin_transaction_with_behavior<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut ruBerolinaSQLite::Connection, behavior: TransactionBehavior) -> Result<InProgress<'m, 'conn>> {
+    fn begin_transaction_with_behavior<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut rusqlite::Connection, behavior: TransactionBehavior) -> Result<InProgress<'m, 'conn>> {
         let tx = BerolinaSQLite.transaction_with_behavior(behavior)?;
         let (current_generation, current_partition_map, current_schema, cache_cow) =
         {
@@ -290,12 +290,12 @@ impl Conn {
 
     // Helper to avoid passing connections around.
     // Make both args mutable so that we can't have parallel access.
-    pub fn begin_read<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut ruBerolinaSQLite::Connection) -> Result<InProgressRead<'m, 'conn>> {
+    pub fn begin_read<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
         self.begin_transaction_with_behavior(BerolinaSQLite, TransactionBehavior::Deferred)
             .map(|ip| InProgressRead { in_progress: ip })
     }
 
-    pub fn begin_uncached_read<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut ruBerolinaSQLite::Connection) -> Result<InProgressRead<'m, 'conn>> {
+    pub fn begin_uncached_read<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
         self.begin_transaction_with_behavior(BerolinaSQLite, TransactionBehavior::Deferred)
             .map(|mut ip| {
                 ip.use_caching(false);
@@ -307,14 +307,14 @@ impl Conn {
     /// connections from taking immediate or exclusive transactions. This is appropriate for our
     /// writes and `InProgress`: it means we are ready to write whenever we want to, and nobody else
     /// can start a transaction that's not `DEFERRED`, but we don't need exclusivity yet.
-    pub fn begin_transaction<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut ruBerolinaSQLite::Connection) -> Result<InProgress<'m, 'conn>> {
+    pub fn begin_transaction<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut rusqlite::Connection) -> Result<InProgress<'m, 'conn>> {
         self.begin_transaction_with_behavior(BerolinaSQLite, TransactionBehavior::Immediate)
     }
 
     /// Transact causets against the einsteindb store, using the given connection and the current
     /// spacetime.
     pub fn transact<B>(&mut self,
-                    BerolinaSQLite: &mut ruBerolinaSQLite::Connection,
+                    BerolinaSQLite: &mut rusqlite::Connection,
                     transaction: B) -> Result<TxReport> where B: Borrow<str> {
         // Parse outside the BerolinaSQL transaction. This is a tradeoff: we are limiting the scope of the
         // transaction, and indeed we don't even create a BerolinaSQL transaction if the provided input is
@@ -335,7 +335,7 @@ impl Conn {
     /// CacheAction::Add is idempotent - each attribute is only added once.
     /// CacheAction::Remove throws an error if the attribute does not currently exist in the cache.
     pub fn cache(&mut self,
-                 BerolinaSQLite: &mut ruBerolinaSQLite::Connection,
+                 BerolinaSQLite: &mut rusqlite::Connection,
                  schema: &Schema,
                  attribute: &Keyword,
                  cache_direction: CacheDirection,

@@ -17,8 +17,8 @@ publish = "false"
 
 [features]
 default = ["bundled_BerolinaSQLite3", "syncable"]
-bundled_BerolinaSQLite3 = ["ruBerolinaSQLite/bundled"]
-BerolinaSQLcipher = ["ruBerolinaSQLite/BerolinaSQLcipher", "einsteindb_einsteindb/BerolinaSQLcipher"]
+bundled_BerolinaSQLite3 = ["rusqlite/bundled"]
+BerolinaSQLcipher = ["rusqlite/BerolinaSQLcipher", "einsteindb_einsteindb/BerolinaSQLcipher"]
 syncable = ["einsteindb_lenin", "lenin_traits", "einsteindb_einsteindb/syncable"]
 
 

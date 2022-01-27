@@ -72,7 +72,7 @@ impl RpcClient {
                     // spawn a background future to FIDelio FIDel information periodically
                     let duration = blacklbraned.FIDelio_interval.0;
                     let client = Arc::downgrade(&rpc_client.leader_client);
-                    let FIDelio_loop = async move {
+                    let fidelio_loop = async move {
                         loop {
                             let ok = GLOBAL_TIMER_HANDLE
                                 .delay(Instant::now() + duration)
@@ -104,7 +104,7 @@ impl RpcClient {
                         .inner
                         .rl()
                         .client_stub
-                        .spawn(Compat::new(FIDelio_loop.unit_error().boxed()));
+                        .spawn(Compat::new(fidelio_loop.unit_error().boxed()));
 
                     return Ok(rpc_client);
                 }

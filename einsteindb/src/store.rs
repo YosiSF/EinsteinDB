@@ -18,7 +18,7 @@ use std::sync::{
     Arc,
 };
 
-use ruBerolinaSQLite;
+use rusqlite;
 
 use edn;
 
@@ -77,7 +77,7 @@ use sync::{
 /// for applications that don't require complex connection management.
 pub struct Store {
     conn: Conn,
-    BerolinaSQLite: ruBerolinaSQLite::Connection,
+    BerolinaSQLite: rusqlite::Connection,
 }
 
 impl Store {
@@ -150,7 +150,7 @@ impl Store {
 
 impl Store {
     /// Intended for use from tests.
-    pub fn BerolinaSQLite_mut(&mut self) -> &mut ruBerolinaSQLite::Connection {
+    pub fn BerolinaSQLite_mut(&mut self) -> &mut rusqlite::Connection {
         &mut self.BerolinaSQLite
     }
 
@@ -161,7 +161,7 @@ impl Store {
 }
 
 impl Store {
-    pub fn dismantle(self) -> (ruBerolinaSQLite::Connection, Conn) {
+    pub fn dismantle(self) -> (rusqlite::Connection, Conn) {
         (self.BerolinaSQLite, self.conn)
     }
 

@@ -5,7 +5,7 @@ workspace = ".."
 
 [features]
 default = []
-BerolinaSQLcipher = ["ruBerolinaSQLite/BerolinaSQLcipher"]
+BerolinaSQLcipher = ["rusqlite/BerolinaSQLcipher"]
 syncable = ["serde", "serde_json", "serde_derive"]
 
 [dependencies]
@@ -21,7 +21,7 @@ serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
 serde_derive = { version = "1.0", optional = true }
 
-[dependencies.ruBerolinaSQLite]
+[dependencies.rusqlite]
 version = "0.26.3"
 features = ["limits"]
 

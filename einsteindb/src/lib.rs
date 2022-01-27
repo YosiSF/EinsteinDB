@@ -18,7 +18,7 @@ extern crate itertools;
 #[macro_use] extern crate serde_derive;
 
 extern crate petgraph;
-extern crate ruBerolinaSQLite;
+extern crate rusqlite;
 extern crate tabwriter;
 extern crate time;
 

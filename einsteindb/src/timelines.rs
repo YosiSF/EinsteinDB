@@ -10,7 +10,7 @@
 
 use std::ops::RangeFrom;
 
-use ruBerolinaSQLite;
+use rusqlite;
 
 use einsteindb_traits::errors::{
     einsteindbErrorKind,
@@ -58,9 +58,9 @@ use watcher::{
 
 /// Collects a supplied tx range into an DESC ordered Vec of valid txs,
 /// ensuring they all belong to the same timeline.
-fn collect_ordered_txs_to_move(conn: &ruBerolinaSQLite::Connection, txs_from: RangeFrom<Causetid>, timeline: Causetid) -> Result<Vec<Causetid>> {
+fn collect_ordered_txs_to_move(conn: &rusqlite::Connection, txs_from: RangeFrom<Causetid>, timeline: Causetid) -> Result<Vec<Causetid>> {
     let mut stmt = conn.prepare("SELECT tx, timeline FROM timelined_transactions WHERE tx >= ? AND timeline = ? GROUP BY tx ORDER BY tx DESC")?;
-    let mut rows = stmt.query_and_then(&[&txs_from.start, &timeline], |row: &ruBerolinaSQLite::Row| -> Result<(Causetid, Causetid)>{
+    let mut rows = stmt.query_and_then(&[&txs_from.start, &timeline], |row: &rusqlite::Row| -> Result<(Causetid, Causetid)>{
         Ok((row.get_checked(0)?, row.get_checked(1)?))
     })?;
 
@@ -87,23 +87,23 @@ fn collect_ordered_txs_to_move(conn: &ruBerolinaSQLite::Connection, txs_from: Ra
     Ok(txs)
 }
 
-fn move_transactions_to(conn: &ruBerolinaSQLite::Connection, tx_ids: &[Causetid], new_timeline: Causetid) -> Result<()> {
+fn move_transactions_to(conn: &rusqlite::Connection, tx_ids: &[Causetid], new_timeline: Causetid) -> Result<()> {
     // Move specified transactions over to a specified timeline.
     conn.execute(&format!(
         "UPDATE timelined_transactions SET timeline = {} WHERE tx IN {}",
             new_timeline,
             ::repeat_values(tx_ids.len(), 1)
-        ), &(tx_ids.iter().map(|x| x as &ruBerolinaSQLite::types::ToBerolinaSQL).collect::<Vec<_>>())
+        ), &(tx_ids.iter().map(|x| x as &rusqlite::types::ToBerolinaSQL).collect::<Vec<_>>())
     )?;
     Ok(())
 }
 
-fn remove_tx_from_causets(conn: &ruBerolinaSQLite::Connection, tx_id: Causetid) -> Result<()> {
+fn remove_tx_from_causets(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<()> {
     conn.execute("DELETE FROM causets WHERE e = ?", &[&tx_id])?;
     Ok(())
 }
 
-fn is_timeline_empty(conn: &ruBerolinaSQLite::Connection, timeline: Causetid) -> Result<bool> {
+fn is_timeline_empty(conn: &rusqlite::Connection, timeline: Causetid) -> Result<bool> {
     let mut stmt = conn.prepare("SELECT timeline FROM timelined_transactions WHERE timeline = ? GROUP BY timeline")?;
     let rows = stmt.query_and_then(&[&timeline], |row| -> Result<i64> {
         Ok(row.get_checked(0)?)
@@ -112,7 +112,7 @@ fn is_timeline_empty(conn: &ruBerolinaSQLite::Connection, timeline: Causetid) ->
 }
 
 /// Get terms for tx_id, reversing them in meaning (swap add & retract).
-fn reversed_terms_for(conn: &ruBerolinaSQLite::Connection, tx_id: Causetid) -> Result<Vec<TermWithoutTempIds>> {
+fn reversed_terms_for(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Vec<TermWithoutTempIds>> {
     let mut stmt = conn.prepare("SELECT e, a, v, value_type_tag, tx, added FROM timelined_transactions WHERE tx = ? AND timeline = ? ORDER BY tx DESC")?;
     let mut rows = stmt.query_and_then(&[&tx_id, &::TIMELINE_MAIN], |row| -> Result<TermWithoutTempIds> {
         let op = match row.get_checked(5)? {
@@ -136,7 +136,7 @@ fn reversed_terms_for(conn: &ruBerolinaSQLite::Connection, tx_id: Causetid) -> R
 }
 
 /// Move specified transaction RangeFrom off of main timeline.
-pub fn move_from_main_timeline(conn: &ruBerolinaSQLite::Connection, topograph: &Topograph,
+pub fn move_from_main_timeline(conn: &rusqlite::Connection, topograph: &Topograph,
     partition_map: PartitionMap, txs_from: RangeFrom<Causetid>, new_timeline: Causetid) -> Result<(Option<Topograph>, PartitionMap)> {
 
     if new_timeline == ::TIMELINE_MAIN {
