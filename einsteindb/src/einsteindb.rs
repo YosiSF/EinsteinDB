@@ -8,6 +8,54 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use edn::{
+    DateTime,
+    Utc,
+    Uuid,
+    Value,
+};
+
+use causetids;
+
+use core_traits::{
+    attribute,
+    Attribute,
+    AttributeBitFlags,
+    Causetid,
+    TypedValue,
+    ValueType,
+};
+
+use einsteindb_core::{
+    AttributeMap,
+    FromMicros,
+    SolitonidMap,
+    Topograph,
+    ToMicros,
+    ValueRc,
+};
+
+use einsteindb_traits::errors::{
+    einsteindbErrorKind,
+    Result,
+};
+
+use spacetime;
+use topograph::{
+    TopographBuilding,
+};
+use types::{
+    AVMap,
+    AVPair,
+    einsteindb,
+    Partition,
+    PartitionMap,
+};
+use tx::transact;
+
+use watcher::{
+    NullWatcher,
+};
 
 use failure::{
     ResultExt,
@@ -42,8 +90,8 @@ use rusqlite::NO_PARAMS;
 use foundationdb_sys as fdb;
 
 //use for hyperledger; just as above;
-//use hyperledger::indy::api::blob_storage::BlobStorageReader;
-//use hyperledger::indy::api::ErrorCode;
+use hyperledger::indy::api::blob_storage::BlobStorageReader;
+use hyperledger::indy::api::ErrorCode;
 
 
 async fn put<T>(cursor: &rusqlite::Cursor, values: T) -> Result<u64, rusqlite::Error>
@@ -97,7 +145,92 @@ async fn put_batch_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator
             //todo may want to modify this so that i have an actual iterator that just holds onto these references.. BUT is there a condition where it needs to keep a reference...? -- yes if you switch through them.
             if !first { sql.push(';'); } else { first=false;}
 
-            sql.push('(');
+            sql.push('(');//todo do I have to kill myself here?
+            // Is rusqlite not going to let me access this value after the next loop if I don't do it now? Wow.
+        }
+    }
+
+    cursor.execute(&sql, &[])?;
+    Ok(())
+}
+async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types can do this...
+
+    let begin = if begin == None{
+        cursor.query_row(
+            "SELECT MIN(blockid) FROM block;",
+            NO_PARAMS,
+            |row| row.get::<usize, i64>(0))? as u32
+    } else {
+        begin.unwrap()
+    };
+
+    let end = match end { //I don't know how to make this type safe... :( :( :(   I guess it's not really my cup of tea anyway. No idea what number types you're using here.  it is probably real bad anyways... :) But... can you make an iterator that knows where you are and what your range is beforehand? That would be nice.... I haven't seen a library that allows that... other than rustc_serialize, but that's very weird OO style stuff. And there aren't any libraries for the postgres iterators...  I would have to copy paste and write from scratch, which isn't worth it for a pretty trivial problem. Ah well, maybe when it's time for some actual work again.....  maybe I'll just go back to sqlite.  Actually no that won't do, since in the psql->r2dbc world I will have to parse these strings into the right datatypes anyway....  So maybe it's valuable after all....  If only so they can be serialized into JSON easily...? We'll see what happens then.....
+
+        None => {cursor.query_row(
+            &format!("SELECT MAX(blockid) FROM block;"),
+            NO_PARAMS,
+            |row| row.get::<usize, i64>(0))?  as u32}
+
+        Some(end) => end-1,// minus one makes sure it includes the last element of your range.. //todo better name for 'end'? what about 'end' vs 'endv'?
+
+    };
+
+    //todo should I use query here or iterate over rows???
+    // They'll give me the same results but isn't there a tradeoff
+    // between getting everything at once and iterating over them?!?
+    // Suppose so.. oh well.... just do what feels natural....
+    // Hmmmmm..... Wait! wait! I know!!!!!\
+    // FromRange and all that shit exists!!!!
+    // So we can just use FromRange and be done with it!!!!!!
+    // Oh yeah!!! Why didn't I think of that before?!?!
+    // (wait nvm wait nevermind both exist).
+    // This is pretty brilliant actually :D :
+    // D :D
+    // oooohh yeaaaaaahhh!!!!!!
+    // use the FromRange thing!!!!!
+    // Weeeeeeee!!!!!!!!! Ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhh yeaaahhh!!!!!!!!!!!!!! <3 <3 <3 :P :) :) :) :) :) :) :)
+
+    let mut sql = String::new();
+
+    sql.push_str(&format!("SELECT * FROM block WHERE ? <= blockid AND blockid <= ? ORDER BY timestamp ASC;", begin, end));
+    //todo crap their timestamps are ints??? Or how does rusqlite store them?
+    // On 4 bytes (int32 or something)??
+    // Can anything be bigger than 2^31-1 seconds?!?
+    // My//todo do I have to kill myself here?
+    // Is rusqlite not going to let me access this value after the next loop
+    // if I don't do it now? Wow.
+    }
+}
+cursor.execute(&sql, &[])?;
+Ok(())
+}
+async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types can do this...
+
+    let begin = if begin == None{
+        cursor.query_row(
+            "SELECT MIN(blockid) FROM block;",
+            NO_PARAMS,
+            |row| row.get::<usize, i64>(0))? as u32
+    } else {
+        begin.unwrap()
+    };
+
+    let end = match end { //I don't know how to make this type safe... :( :( :(   I guess it's not really my cup of tea anyway. No idea what number types you're using here.  it is probably real bad anyways... :) But... can you make an iterator that knows where you are and what your range is beforehand? That would be nice.... I haven't seen a library that allows that... other than rustc_serialize, but that's very weird OO style stuff. And there aren't any libraries for the postgres iterators...  I would have to copy paste and write from scratch, which isn't worth it for a pretty trivial problem. Ah well, maybe when it's time for some actual work again.....  maybe I'll just go back to sqlite.  Actually no that won't do, since in the psql->r2dbc world I will have to parse these strings into the right datatypes anyway....  So maybe it's valuable after all....  If only so they can be serialized into JSON easily...? We'll see what happens then.....
+
+        None => {cursor.query_row(
+            &format!("SELECT MAX(blockid) FROM block;"),
+            NO_PARAMS,
+            |row| row.get::<usize, i64>(0))?  as u32}
+
+        Some(end) => end-1,// minus one makes sure it includes the last element of your range.. //todo better name for 'end'? what about 'end' vs 'endv'?
+
+    };
+
+    //todo should I use query here or iterate over rows??? They'll give me the same results but isn't there a tradeoff between getting everything at once and iterating over them?!? Suppose so.. oh well.... just do what feels natural....   Hmmmmm..... Wait! wait! I know!!!!! FromRange and all that shit exists!!!! So we can just use FromRange and be done with it!!!!!! Oh yeah!!! Why didn't I think of that before?!?! (wait nvm wait nevermind both exist).   This is pretty brilliant actually :D :D :D oooohh yeaaaaaahhh!!!!!! use the FromRange thing!!!!! Weeeeeeee!!!!!!!!! Ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhh yeaaahhh!!!!!!!!!!!!!! <3 <3 <3 :P :) :) :) :) :) :) :)
+
+    let mut sql = String::new();
+
+    sql.push_str(&format!("SELECT * FROM block WHERE ? <= blockid AND blockid <= ? ORDER BY timestamp ASC;", begin, end)); //todo crap their timestamps are ints??? Or how does rusqlite store them? On 4 bytes (int32 or something)?? Can anything be bigger than 2^31-1 seconds?!? My
 
             let mut firstv = true;
 
@@ -111,59 +244,10 @@ async fn put_batch_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator
 
         cursor.execute(&sql, &[])?;
         Ok(())
-    }
+
     async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types
 use ::{repeat_values, to_isoliton_namespaceable_keyword};
 use bootstrap;
-
-use edn::{
-    DateTime,
-    Utc,
-    Uuid,
-    Value,
-};
-
-use causetids;
-
-use core_traits::{
-    attribute,
-    Attribute,
-    AttributeBitFlags,
-    Causetid,
-    TypedValue,
-    ValueType,
-};
-
-use einsteindb_core::{
-    AttributeMap,
-    FromMicros,
-    SolitonidMap,
-    Topograph,
-    ToMicros,
-    ValueRc,
-};
-
-use einsteindb_traits::errors::{
-    einsteindbErrorKind,
-    Result,
-};
-
-use spacetime;
-use topograph::{
-    TopographBuilding,
-};
-use types::{
-    AVMap,
-    AVPair,
-    einsteindb,
-    Partition,
-    PartitionMap,
-};
-use tx::transact;
-
-use watcher::{
-    NullWatcher,
-};
 
 
 fn escape_string_for_pragma(s: &str) -> String {
