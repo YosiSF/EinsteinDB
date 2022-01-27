@@ -38,7 +38,81 @@ use rusqlite::types::{
 };
 use rusqlite::NO_PARAMS;
 
+//use for foundationdb; just as above;
+use foundationdb_sys as fdb;
 
+//use for hyperledger; just as above;
+//use hyperledger::indy::api::blob_storage::BlobStorageReader;
+//use hyperledger::indy::api::ErrorCode;
+
+
+async fn put<T>(cursor: &rusqlite::Cursor, values: T) -> Result<u64, rusqlite::Error>
+    where
+        T: ToSql,
+{
+    Ok(cursor.insert(NO_PARAMS, values)?)
+}
+async fn put_batch_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator<Item=impl IntoIterator<Item=ToSql>>) -> Result<(), rusqlite::Error> {
+
+    let mut sql = String::new();
+
+    sql.push_str("INSERT INTO block (blockid, timestamp, version, prevblockid ) VALUES ");
+
+    let mut first = true;
+
+    while let Some(values) = row_iter.next() {
+
+        if !first { sql.push(';'); } else { first=false;}
+
+        sql.push('(');
+
+        let mut firstv = true;
+
+        for v in values { // this is a bit awkward but I don't know how to do it better...  todo does the range return an iterator? --yes it does! YAY! I can write my own code and not copy paste! :) :) :) :) :) :) :)*(((((())((*((/*8)))))))*)*)))))));) *jesus im great ;)   ok take 2... no wait... maybe try itertools? This might be the best way of doing this....  I mean, we have iterators all over the place... but anyway....
+
+            if !firstv { sql.push(','); } else { firstv=false;}
+
+            sql.push('?'); // note that doing it this way means we should be more careful since there's no type checking here... I will have to make sure that all the types match up correctly or else this will fail :(((((())))).  It would also be nice if rust had a function like python that returned an object that could then be inserted into the string using string interpolation ... hmm.. If those are some of the things I had to fix in C# then maybe in theory, with enough time I could figure out how to do this in Rust?  ugh... functional languages are SO much better than procedural languages!!! so much more powerful!!! and so much less error prone!! and LLVM helps a lot!!!! ugh... :}   ok so i need to store my data on disk somehow.. maybe we can use SQLite for now -.-'   How about use SQLite for now and see what happens???  we should talk about future plans later.... ok? Ok??
+        }
+
+        cursor.execute(&sql, &[])?;
+        return Ok(())
+    }
+
+    async fn put_batch<T>(cursor: &mut rusqlite::Cursor, rows: Vec<T>) -> Result<(), rusqlite::Error>
+        where
+            T: ToSql,
+    {
+
+        let mut sql = String::new();
+
+        sql.push_str("INSERT INTO block (blockid, timestamp, version, prevblockid ) VALUES ");
+
+        let mut first = true;
+
+        for row in rows { // this is a bit awkward but I don't know how to do it better...  todo does the range return an iterator? --yes it does! YAY! I can write my own code and not copy paste! :) :) :) :) :) :) :)*(((((())((*((/*8)))))))*)*)))))));) *jesus im great ;)   ok take 2... no wait... maybe try itertools?
+            // This might be the best way of doing this....
+            // I mean, we have iterators all over the place... but anyway....
+
+            //todo may want to modify this so that i have an actual iterator that just holds onto these references.. BUT is there a condition where it needs to keep a reference...? -- yes if you switch through them.
+            if !first { sql.push(';'); } else { first=false;}
+
+            sql.push('(');
+
+            let mut firstv = true;
+
+            for v in once(&row).chain(repeat(&row)) { // this is a bit awkward but I don't know how to do it better...  todo does the range return an iterator? --yes it does! YAY! I can write my own code and not copy paste! :) :) :) :) :) :) :)*(((((())((*((/*8)))))))*)*)))))));) *jesus im great ;)   ok take 2... no wait... maybe try itertools? This might be the best way of doing this....  I mean, we have iterators all over the place... but anyway....
+
+                if !firstv { sql.push(','); } else { firstv=false;}
+
+                sql.push('?'); //todo do I have to kill myself here?  Is rusqlite not going to let me access this value after the next loop if I don't do it now? Wow.
+            }
+        }
+
+        cursor.execute(&sql, &[])?;
+        Ok(())
+    }
+    async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types
 use ::{repeat_values, to_isoliton_namespaceable_keyword};
 use bootstrap;
 
