@@ -179,7 +179,7 @@ impl ConjoiningClauses {
                 let typed_value_type = typed_value.value_type();
                 self.constrain_column_to_constant(col.clone(), causetsColumn::Value, typed_value);
 
-                // If we can't already determine the range of values in the EINSTEINeinsteindb from the Attr,
+                // If we can't already determine the range of values in the EINSTEINDB from the Attr,
                 // then we must also constrain the type tag.
                 //
                 // Input values might be:

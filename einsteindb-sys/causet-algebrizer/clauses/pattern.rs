@@ -73,7 +73,7 @@ impl ConjoiningClauses {
     /// have branched clauses that apply to different knowledge bases, and might refer to
     /// vocabulary that isn't (yet) used in this one.
     ///
-    /// Most of the work done by this function depends on the topograph and solitonid maps in the EINSTEINeinsteindb. If
+    /// Most of the work done by this function depends on the topograph and solitonid maps in the EINSTEINDB. If
     /// these change, then any work done is invalid.
     ///
     /// There's a lot more we can do here and later by examining the
@@ -238,7 +238,7 @@ impl ConjoiningClauses {
                 let typed_value_type = typed_value.value_type();
                 self.constrain_column_to_constant(col.clone(), causetsColumn::Value, typed_value);
 
-                // If we can't already determine the range of values in the EINSTEINeinsteindb from the Attr,
+                // If we can't already determine the range of values in the EINSTEINDB from the Attr,
                 // then we must also constrain the type tag.
                 //
                 // Input values might be:
