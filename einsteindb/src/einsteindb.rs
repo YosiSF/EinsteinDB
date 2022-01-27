@@ -153,7 +153,8 @@ async fn put_batch_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator
     cursor.execute(&sql, &[])?;
     Ok(())
 }
-async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types can do this...
+async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{
+//todo should probably make some sort of trait that impls FromRow so that my complex types can do this...
 
     let begin = if begin == None{
         cursor.query_row(
@@ -171,7 +172,8 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
             NO_PARAMS,
             |row| row.get::<usize, i64>(0))?  as u32}
 
-        Some(end) => end-1,// minus one makes sure it includes the last element of your range.. //todo better name for 'end'? what about 'end' vs 'endv'?
+        Some(end) => end-1,// minus one makes sure it includes the last element of your range..
+        // todo better name for 'end'? what about 'end' vs 'endv'?
 
     };
 
@@ -199,11 +201,12 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
     // My//todo do I have to kill myself here?
     // Is rusqlite not going to let me access this value after the next loop
     // if I don't do it now? Wow.
-    }
-}
+
+
 cursor.execute(&sql, &[])?;
 Ok(())
 }
+/*
 async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types can do this...
 
     let begin = if begin == None{
@@ -244,8 +247,8 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
 
         cursor.execute(&sql, &[])?;
         Ok(())
-
-    async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types
+*/
+  async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types
 use ::{repeat_values, to_isoliton_namespaceable_keyword};
 use bootstrap;
 
