@@ -247,9 +247,11 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
 
         cursor.execute(&sql, &[])?;
         Ok(())
-*/
-  async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types
+
+  async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types */
+
 use ::{repeat_values, to_isoliton_namespaceable_keyword};
+ */
 use bootstrap;
 
 
