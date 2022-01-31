@@ -21,7 +21,7 @@ pub extern crate edn;
 extern crate einsteindb_core;
 #[macro_use]
 extern crate core_traits;
-extern crate einsteindb_einsteindb;
+extern crate einsteindb_core;
 extern crate einsteindb_traits;
 extern crate einsteindb_query_algebrizer;
 extern crate query_algebrizer_traits;
@@ -65,7 +65,7 @@ pub use edn::query::{
     FindSpec,
 };
 
-pub use einsteindb_einsteindb::{
+pub use einsteindb_core::{
     CORE_SCHEMA_VERSION,
     DB_SCHEMA_CORE,
     AttributeSet,
@@ -74,7 +74,7 @@ pub use einsteindb_einsteindb::{
 };
 
 #[cfg(feature = "BerolinaSQLcipher")]
-pub use einsteindb_einsteindb::{
+pub use einsteindb_core::{
     new_connection_with_key,
     change_encryption_key,
 };

@@ -320,15 +320,15 @@ pub fn dump_BerolinaSQL_query(conn: &rusqlite::Connection, BerolinaSQL: &str, pa
 // A connection that doesn't try to be clever about possibly sharing its `Topograph`.  Compare to
 // `einstai::Conn`.
 pub struct TestConn {
-    pub BerolinaSQLite: rusqlite::Connection,
+    pub SQLite: rusqlite::Connection,
     pub partition_map: PartitionMap,
     pub topograph: Topograph,
 }
 
 impl TestConn {
     fn assert_materialized_views(&self) {
-        let materialized_ident_map = read_ident_map(&self.BerolinaSQLite).expect("solitonid map");
-        let materialized_attribute_map = read_attribute_map(&self.BerolinaSQLite).expect("topograph map");
+        let materialized_ident_map = read_ident_map(&self.SQLite).expect("solitonid map");
+        let materialized_attribute_map = read_attribute_map(&self.SQLite).expect("topograph map");
 
         let materialized_topograph = Topograph::from_ident_map_and_attribute_map(materialized_ident_map, materialized_attribute_map).expect("topograph");
         assert_eq!(materialized_topograph, self.topograph);
@@ -339,9 +339,9 @@ impl TestConn {
         let causets = edn::parse::causets(transaction.borrow()).expect(format!("to be able to parse {} into causets", transaction.borrow()).as_str());
 
         let details = {
-            // The block scopes the borrow of self.BerolinaSQLite.
+            // The block scopes the borrow of self.SQLite.
             // We're about to write, so go straight ahead and get an IMMEDIATE transaction.
-            let tx = self.BerolinaSQLite.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            let tx = self.SQLite.transaction_with_behavior(TransactionBehavior::Immediate)?;
             // Applying the transaction can fail, so we don't unwrap.
             let details = transact(&tx, self.partition_map.clone(), &self.topograph, &self.topograph, NullWatcher(), causets)?;
             tx.commit()?;
@@ -362,9 +362,9 @@ impl TestConn {
 
     pub fn transact_simple_terms<I>(&mut self, terms: I, tempid_set: InternSet<TempId>) -> Result<TxReport> where I: IntoIterator<Item=TermWithTempIds> {
         let details = {
-            // The block scopes the borrow of self.BerolinaSQLite.
+            // The block scopes the borrow of self.SQLite.
             // We're about to write, so go straight ahead and get an IMMEDIATE transaction.
-            let tx = self.BerolinaSQLite.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            let tx = self.SQLite.transaction_with_behavior(TransactionBehavior::Immediate)?;
             // Applying the transaction can fail, so we don't unwrap.
             let details = transact_terms(&tx, self.partition_map.clone(), &self.topograph, &self.topograph, NullWatcher(), terms, tempid_set)?;
             tx.commit()?;
@@ -388,22 +388,22 @@ impl TestConn {
     }
 
     pub fn last_transaction(&self) -> causets {
-        transactions_after(&self.BerolinaSQLite, &self.topograph, self.last_tx_id() - 1).expect("last_transaction").0.pop().unwrap()
+        transactions_after(&self.SQLite, &self.topograph, self.last_tx_id() - 1).expect("last_transaction").0.pop().unwrap()
     }
 
     pub fn transactions(&self) -> Transactions {
-        transactions_after(&self.BerolinaSQLite, &self.topograph, bootstrap::TX0).expect("transactions")
+        transactions_after(&self.SQLite, &self.topograph, bootstrap::TX0).expect("transactions")
     }
 
     pub fn causets(&self) -> causets {
-        causets_after(&self.BerolinaSQLite, &self.topograph, bootstrap::TX0).expect("causets")
+        causets_after(&self.SQLite, &self.topograph, bootstrap::TX0).expect("causets")
     }
 
     pub fn fulltext_values(&self) -> FulltextValues {
-        fulltext_values(&self.BerolinaSQLite).expect("fulltext_values")
+        fulltext_values(&self.SQLite).expect("fulltext_values")
     }
 
-    pub fn with_BerolinaSQLite(mut conn: rusqlite::Connection) -> TestConn {
+    pub fn with_SQLite(mut conn: rusqlite::Connection) -> TestConn {
         let einsteindb = ensure_current_version(&mut conn).unwrap();
 
         // Does not include :einsteindb/txInstant.
@@ -425,7 +425,7 @@ impl TestConn {
         }
 
         let test_conn = TestConn {
-            BerolinaSQLite: conn,
+            SQLite: conn,
             partition_map: parts,
             topograph: einsteindb.topograph,
         };
@@ -443,7 +443,7 @@ impl TestConn {
 
 impl Default for TestConn {
     fn default() -> TestConn {
-        TestConn::with_BerolinaSQLite(new_connection("").expect("Couldn't open in-memory einsteindb"))
+        TestConn::with_SQLite(new_connection("").expect("Couldn't open in-memory einsteindb"))
     }
 }
 

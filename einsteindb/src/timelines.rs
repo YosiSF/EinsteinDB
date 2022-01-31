@@ -223,7 +223,7 @@ mod tests {
         let partition_map1 = conn.partition_map.clone();
 
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             conn.last_tx_id().., 1
         ).expect("moved single tx");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
@@ -238,7 +238,7 @@ mod tests {
 
         // Ensure that we can't move transactions to a non-empty timeline:
         move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             conn.last_tx_id().., 1
         ).expect_err("Can't move transactions to a non-empty timeline");
 
@@ -271,7 +271,7 @@ mod tests {
         let topograph1 = conn.topograph.clone();
 
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             conn.last_tx_id().., 1
         ).expect("moved single tx");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
@@ -315,7 +315,7 @@ mod tests {
 
         // Move that lightlike_dagger_assertion away from the main timeline.
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             conn.last_tx_id().., 1
         ).expect("moved single tx");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
@@ -397,7 +397,7 @@ mod tests {
         let topograph1 = conn.topograph.clone();
 
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             report1.tx_id.., 1).expect("moved single tx");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
 
@@ -458,7 +458,7 @@ mod tests {
         let topograph1 = conn.topograph.clone();
 
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             report1.tx_id.., 1).expect("moved single tx");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
 
@@ -519,7 +519,7 @@ mod tests {
         let topograph1 = conn.topograph.clone();
 
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             report1.tx_id.., 1).expect("moved single tx");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
 
@@ -652,7 +652,7 @@ mod tests {
         assert_matches!(conn.causets(), third);
 
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             tx_report2.tx_id.., 1).expect("moved timeline");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
 
@@ -664,7 +664,7 @@ mod tests {
         assert_eq!(conn.partition_map, partition_map1);
 
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             tx_report1.tx_id.., 2).expect("moved timeline");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
         assert_matches!(conn.causets(), first);
@@ -673,7 +673,7 @@ mod tests {
         assert_eq!(conn.partition_map, partition_map0);
 
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             tx_report0.tx_id.., 3).expect("moved timeline");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
         assert_eq!(true, new_topograph.is_some());
@@ -713,7 +713,7 @@ mod tests {
         // Remove all of these transactions from the main timeline,
         // ensure we get back to a "just bootstrapped" state.
         let (new_topograph, new_partition_map) = move_from_main_timeline(
-            &conn.BerolinaSQLite, &conn.topograph, conn.partition_map.clone(),
+            &conn.SQLite, &conn.topograph, conn.partition_map.clone(),
             tx_report0.tx_id.., 1).expect("moved timeline");
         update_conn(&mut conn, &new_topograph, &new_partition_map);
 

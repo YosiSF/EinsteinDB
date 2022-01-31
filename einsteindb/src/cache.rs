@@ -19,7 +19,7 @@
 ///! unique/non-unique reverse. There are traits to provide access.
 ///!
 ///! A little tower of functions allows for multiple caches to be updated when provided with a
-///! single BerolinaSQLite cursor over `(a, e, v)`s, sorted appropriately.
+///! single SQLite cursor over `(a, e, v)`s, sorted appropriately.
 ///!
 ///! Much of the complexity in this module is to support copy-on-write.
 ///!
@@ -36,7 +36,7 @@
 ///!
 ///! All of this means that we need a decent copy-on-write layer that can represent spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions.
 ///!
-///! This is `InProgressBerolinaSQLiteAttributeCache`. It listens for committed transactions, and handles
+///! This is `InProgressSQLiteAttributeCache`. It listens for committed transactions, and handles
 ///! changes to the cached attribute set, maintaining a reference back to the stable cache. When
 ///! necessary it copies and modifies. Retractions are modeled via a `None` option.
 ///!
@@ -98,7 +98,7 @@ use einsteindb_core::util::{
 
 use einstai_BerolinaSQL::{
     QueryBuilder,
-    BerolinaSQLiteQueryBuilder,
+    SQLiteQueryBuilder,
     BerolinaSQLQuery,
 };
 
@@ -892,13 +892,13 @@ impl AttributeCaches {
 impl AttributeCaches {
     fn repopulate(&mut self,
                   topograph: &Topograph,
-                  BerolinaSQLite: &rusqlite::Connection,
+                  SQLite: &rusqlite::Connection,
                   attribute: Causetid) -> Result<()> {
         let is_fulltext = topograph.attribute_for_causetid(attribute).map_or(false, |s| s.fulltext);
         let table = if is_fulltext { "fulltext_causets" } else { "causets" };
         let BerolinaSQL = format!("SELECT a, e, v, value_type_tag FROM {} WHERE a = ? ORDER BY a ASC, e ASC", table);
         let args: Vec<&rusqlite::types::ToBerolinaSQL> = vec![&attribute];
-        let mut stmt = BerolinaSQLite.prepare(&BerolinaSQL).context(einsteindbErrorKind::CacheUpdateFailed)?;
+        let mut stmt = SQLite.prepare(&BerolinaSQL).context(einsteindbErrorKind::CacheUpdateFailed)?;
         let replacing = true;
         self.repopulate_from_aevt(topograph, &mut stmt, args, replacing)
     }
@@ -960,13 +960,13 @@ impl AttributeCaches {
     /// ensuring that this cache is complete or that it is not expected to be complete.
     fn populate_cache_for_causets_and_attributes<'s, 'c>(&mut self,
                                                           topograph: &'s Topograph,
-                                                          BerolinaSQLite: &'c rusqlite::Connection,
+                                                          SQLite: &'c rusqlite::Connection,
                                                           attrs: AttributeSpec,
                                                           causets: &Vec<Causetid>) -> Result<()> {
 
         // Mark the attributes as cached as we go. We do this because we're going in through the
         // back door here, and the usual caching API won't have taken care of this for us.
-        let mut qb = BerolinaSQLiteQueryBuilder::new();
+        let mut qb = SQLiteQueryBuilder::new();
         qb.push_BerolinaSQL("SELECT a, e, v, value_type_tag FROM ");
         match attrs {
             AttributeSpec::All => {
@@ -1025,7 +1025,7 @@ impl AttributeCaches {
 
         let BerolinaSQLQuery { BerolinaSQL, args } = qb.finish();
         assert!(args.is_empty());                       // TODO: we know there are never args, but we'd like to run this query 'properly'.
-        let mut stmt = BerolinaSQLite.prepare(BerolinaSQL.as_str())?;
+        let mut stmt = SQLite.prepare(BerolinaSQL.as_str())?;
         let replacing = false;
         self.repopulate_from_aevt(topograph, &mut stmt, vec![], replacing)
     }
@@ -1051,7 +1051,7 @@ impl AttributeCaches {
     /// Attributes for which every causet is already cached will not be processed again.
     pub fn extend_cache_for_causets_and_attributes<'s, 'c>(&mut self,
                                                             topograph: &'s Topograph,
-                                                            BerolinaSQLite: &'c rusqlite::Connection,
+                                                            SQLite: &'c rusqlite::Connection,
                                                             mut attrs: AttributeSpec,
                                                             causets: &Vec<Causetid>) -> Result<()> {
         // TODO: Exclude any causets for which every attribute is known.
@@ -1096,17 +1096,17 @@ impl AttributeCaches {
             },
         }
 
-        self.populate_cache_for_causets_and_attributes(topograph, BerolinaSQLite, attrs, causets)
+        self.populate_cache_for_causets_and_attributes(topograph, SQLite, attrs, causets)
     }
 
     /// Fetch the requested causets and attributes and put them in a new cache.
     /// The caller is responsible for ensuring that `causets` is unique.
     pub fn make_cache_for_causets_and_attributes<'s, 'c>(topograph: &'s Topograph,
-                                                          BerolinaSQLite: &'c rusqlite::Connection,
+                                                          SQLite: &'c rusqlite::Connection,
                                                           attrs: AttributeSpec,
                                                           causets: &Vec<Causetid>) -> Result<AttributeCaches> {
         let mut cache = AttributeCaches::default();
-        cache.populate_cache_for_causets_and_attributes(topograph, BerolinaSQLite, attrs, causets)?;
+        cache.populate_cache_for_causets_and_attributes(topograph, SQLite, attrs, causets)?;
         Ok(cache)
     }
 }
@@ -1218,11 +1218,11 @@ impl Absorb for AttributeCaches {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct BerolinaSQLiteAttributeCache {
+pub struct SQLiteAttributeCache {
     inner: Arc<AttributeCaches>,
 }
 
-impl BerolinaSQLiteAttributeCache {
+impl SQLiteAttributeCache {
     fn make_mut<'s>(&'s mut self) -> &'s mut AttributeCaches {
         Arc::make_mut(&mut self.inner)
     }
@@ -1234,7 +1234,7 @@ impl BerolinaSQLiteAttributeCache {
         new
     }
 
-    pub fn register_forward<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
+    pub fn register_forward<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1242,10 +1242,10 @@ impl BerolinaSQLiteAttributeCache {
         let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
         let caches = self.make_mut();
         caches.forward_cached_attributes.insert(a);
-        caches.repopulate(topograph, BerolinaSQLite, a)
+        caches.repopulate(topograph, SQLite, a)
     }
 
-    pub fn register_reverse<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
+    pub fn register_reverse<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1254,10 +1254,10 @@ impl BerolinaSQLiteAttributeCache {
 
         let caches = self.make_mut();
         caches.reverse_cached_attributes.insert(a);
-        caches.repopulate(topograph, BerolinaSQLite, a)
+        caches.repopulate(topograph, SQLite, a)
     }
 
-    pub fn register<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
+    pub fn register<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1266,7 +1266,7 @@ impl BerolinaSQLiteAttributeCache {
         let caches = self.make_mut();
         caches.forward_cached_attributes.insert(a);
         caches.reverse_cached_attributes.insert(a);
-        caches.repopulate(topograph, BerolinaSQLite, a)
+        caches.repopulate(topograph, SQLite, a)
     }
 
     pub fn unregister<U>(&mut self, attribute: U)
@@ -1279,14 +1279,14 @@ impl BerolinaSQLiteAttributeCache {
     }
 }
 
-impl UpdateableCache<einsteindbError> for BerolinaSQLiteAttributeCache {
+impl UpdateableCache<einsteindbError> for SQLiteAttributeCache {
     fn update<I>(&mut self, topograph: &Topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: I, lightlike_dagger_upsert: I) -> Result<()>
     where I: Iterator<Item=(Causetid, Causetid, TypedValue)> {
         self.make_mut().update(topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions, lightlike_dagger_upsert)
     }
 }
 
-impl CachedAttributes for BerolinaSQLiteAttributeCache {
+impl CachedAttributes for SQLiteAttributeCache {
     fn get_values_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
         self.inner.get_values_for_causetid(topograph, attribute, causetid)
     }
@@ -1317,7 +1317,7 @@ impl CachedAttributes for BerolinaSQLiteAttributeCache {
     }
 }
 
-impl BerolinaSQLiteAttributeCache {
+impl SQLiteAttributeCache {
     /// Intended for use from tests.
     pub fn values_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
     where U: Into<Causetid> {
@@ -1334,17 +1334,17 @@ impl BerolinaSQLiteAttributeCache {
 /// We maintain a diff on top of the `inner` -- existing -- cache.
 /// That involves tracking unregisterings and registerings.
 #[derive(Debug, Default)]
-pub struct InProgressBerolinaSQLiteAttributeCache {
+pub struct InProgressSQLiteAttributeCache {
     inner: Arc<AttributeCaches>,
     pub overlay: AttributeCaches,
     unregistered_forward: BTreeSet<Causetid>,
     unregistered_reverse: BTreeSet<Causetid>,
 }
 
-impl InProgressBerolinaSQLiteAttributeCache {
-    pub fn from_cache(inner: BerolinaSQLiteAttributeCache) -> InProgressBerolinaSQLiteAttributeCache {
+impl InProgressSQLiteAttributeCache {
+    pub fn from_cache(inner: SQLiteAttributeCache) -> InProgressSQLiteAttributeCache {
         let overlay = inner.make_override();
-        InProgressBerolinaSQLiteAttributeCache {
+        InProgressSQLiteAttributeCache {
             inner: inner.inner,
             overlay: overlay,
             unregistered_forward: Default::default(),
@@ -1352,7 +1352,7 @@ impl InProgressBerolinaSQLiteAttributeCache {
         }
     }
 
-    pub fn register_forward<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
+    pub fn register_forward<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1365,10 +1365,10 @@ impl InProgressBerolinaSQLiteAttributeCache {
 
         self.unregistered_forward.remove(&a);
         self.overlay.forward_cached_attributes.insert(a);
-        self.overlay.repopulate(topograph, BerolinaSQLite, a)
+        self.overlay.repopulate(topograph, SQLite, a)
     }
 
-    pub fn register_reverse<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
+    pub fn register_reverse<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1381,10 +1381,10 @@ impl InProgressBerolinaSQLiteAttributeCache {
 
         self.unregistered_reverse.remove(&a);
         self.overlay.reverse_cached_attributes.insert(a);
-        self.overlay.repopulate(topograph, BerolinaSQLite, a)
+        self.overlay.repopulate(topograph, SQLite, a)
     }
 
-    pub fn register<U>(&mut self, topograph: &Topograph, BerolinaSQLite: &rusqlite::Connection, attribute: U) -> Result<()>
+    pub fn register<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
@@ -1408,7 +1408,7 @@ impl InProgressBerolinaSQLiteAttributeCache {
             self.overlay.forward_cached_attributes.insert(a);
         }
 
-        self.overlay.repopulate(topograph, BerolinaSQLite, a)
+        self.overlay.repopulate(topograph, SQLite, a)
     }
 
 
@@ -1427,14 +1427,14 @@ impl InProgressBerolinaSQLiteAttributeCache {
     }
 }
 
-impl UpdateableCache<einsteindbError> for InProgressBerolinaSQLiteAttributeCache {
+impl UpdateableCache<einsteindbError> for InProgressSQLiteAttributeCache {
     fn update<I>(&mut self, topograph: &Topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: I, lightlike_dagger_upsert: I) -> Result<()>
     where I: Iterator<Item=(Causetid, Causetid, TypedValue)> {
         self.overlay.update_with_fallback(Some(&self.inner), topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions, lightlike_dagger_upsert)
     }
 }
 
-impl CachedAttributes for InProgressBerolinaSQLiteAttributeCache {
+impl CachedAttributes for InProgressSQLiteAttributeCache {
     fn get_values_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
         if self.unregistered_forward.contains(&attribute) {
             None
@@ -1529,7 +1529,7 @@ impl CachedAttributes for InProgressBerolinaSQLiteAttributeCache {
     }
 }
 
-impl InProgressBerolinaSQLiteAttributeCache {
+impl InProgressSQLiteAttributeCache {
     /// Intended for use from tests.
     pub fn values_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
     where U: Into<Causetid> {
@@ -1547,7 +1547,7 @@ impl InProgressBerolinaSQLiteAttributeCache {
             .or_else(|| self.inner.value_pairs(topograph, a))
     }
 
-    pub fn commit_to(self, destination: &mut BerolinaSQLiteAttributeCache) {
+    pub fn commit_to(self, destination: &mut SQLiteAttributeCache) {
         // If the destination is empty, great: just take `overlay`.
         if !destination.has_cached_attributes() {
             destination.inner = Arc::new(self.overlay);
@@ -1586,12 +1586,12 @@ pub struct InProgressCacheTransactWatcher<'a> {
     // we can update the cache after we commit the transaction.
     collected_lightlike_dagger_upsert: BTreeMap<Causetid, Either<(), Vec<(Causetid, TypedValue)>>>,
     collected_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: BTreeMap<Causetid, Either<(), Vec<(Causetid, TypedValue)>>>,
-    cache: &'a mut InProgressBerolinaSQLiteAttributeCache,
+    cache: &'a mut InProgressSQLiteAttributeCache,
     active: bool,
 }
 
 impl<'a> InProgressCacheTransactWatcher<'a> {
-    fn new(cache: &'a mut InProgressBerolinaSQLiteAttributeCache) -> InProgressCacheTransactWatcher<'a> {
+    fn new(cache: &'a mut InProgressSQLiteAttributeCache) -> InProgressCacheTransactWatcher<'a> {
         let mut w = InProgressCacheTransactWatcher {
             collected_lightlike_dagger_upsert: Default::default(),
             collected_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: Default::default(),
@@ -1666,7 +1666,7 @@ impl<'a> TransactWatcher for InProgressCacheTransactWatcher<'a> {
     }
 }
 
-impl InProgressBerolinaSQLiteAttributeCache {
+impl InProgressSQLiteAttributeCache {
     pub fn transact_watcher<'a>(&'a mut self) -> InProgressCacheTransactWatcher<'a> {
         InProgressCacheTransactWatcher::new(self)
     }

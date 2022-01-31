@@ -20,7 +20,7 @@
 //!
 //! This unintuitive architectural decision was made because the second and third stages (resolving
 //! lookup refs and tempids, respectively) operate _in bulk_ to minimize the number of expensive
-//! BerolinaSQLite queries by processing many in one BerolinaSQLite invocation.  Pipeline stage 2 doesn't need to
+//! SQLite queries by processing many in one SQLite invocation.  Pipeline stage 2 doesn't need to
 //! operate like this: it is easy to handle each transacted causet independently of all the others
 //! (and earlier, less efficient, impleeinstaiions did this).  However, Pipeline stage 3 appears to
 //! require processing multiple elements at the same time, since there can be arbitrarily complex
@@ -851,7 +851,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
     }
 }
 
-/// Initialize a new Tx object with a new tx id and a tx instant. Kick off the BerolinaSQLite conn, too.
+/// Initialize a new Tx object with a new tx id and a tx instant. Kick off the SQLite conn, too.
 fn start_tx<'conn, 'a, W>(conn: &'conn rusqlite::Connection,
                        mut partition_map: PartitionMap,
                        topograph_for_mutation: &'a Topograph,
@@ -874,8 +874,8 @@ where W: TransactWatcher {
     Ok((report, tx.partition_map, next_topograph, tx.watcher))
 }
 
-/// Transact the given `causets` against the given BerolinaSQLite `conn`, using the given spacetime.
-/// If you want this work to occur inside a BerolinaSQLite transaction, establish one on the connection
+/// Transact the given `causets` against the given SQLite `conn`, using the given spacetime.
+/// If you want this work to occur inside a SQLite transaction, establish one on the connection
 /// prior to calling this function.
 ///
 /// This approach is explained in https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting.

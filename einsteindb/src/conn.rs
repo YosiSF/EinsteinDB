@@ -47,13 +47,13 @@ use einsteindb_core::{
     ValueRc,
 };
 
-use einsteindb_einsteindb::cache::{
-    InProgressBerolinaSQLiteAttributeCache,
-    BerolinaSQLiteAttributeCache,
+use einsteindb_core::cache::{
+    InProgressSQLiteAttributeCache,
+    SQLiteAttributeCache,
 };
 
-use einsteindb_einsteindb::einsteindb;
-use einsteindb_einsteindb::{
+use einsteindb_core::einsteindb;
+use einsteindb_core::{
     InProgressObserverTransactWatcher,
     PartitionMap,
     TxObservationService,
@@ -105,13 +105,13 @@ pub struct Conn {
     ///
     /// We want the attribute cache to be isolated across transactions, updated within
     /// `InProgress` writes, and updated in the `Conn` on commit. To achieve this we
-    /// store the cache itself in an `Arc` inside `BerolinaSQLiteAttributeCache`, so that `.get_mut()`
+    /// store the cache itself in an `Arc` inside `SQLiteAttributeCache`, so that `.get_mut()`
     /// gives us copy-on-write semantics.
     /// We store that cached `Arc` here in a `Mutex`, so that the main copy can be carefully
     /// replaced on commit.
     spacetime: Mutex<Metadata>,
 
-    // TODO: maintain set of change listeners or handles to transaction report queues. #298.
+    // TODO: maintain set of change listeners or handles to transaction report queues.
 
     // TODO: maintain cache of query plans that could be shared across threads and invalidated when
     // the schema changes. #315.
@@ -127,8 +127,8 @@ impl Conn {
         }
     }
 
-    pub fn connect(BerolinaSQLite: &mut rusqlite::Connection) -> Result<Conn> {
-        let einsteindb = einsteindb::ensure_current_version(BerolinaSQLite)?;
+    pub fn connect(SQLite: &mut rusqlite::Connection) -> Result<Conn> {
+        let einsteindb = einsteindb::ensure_current_version(SQLite)?;
         Ok(Conn::new(einsteindb.partition_map, einsteindb.schema))
     }
 
@@ -149,7 +149,7 @@ impl Conn {
         self.spacetime.lock().unwrap().schema.clone()
     }
 
-    pub fn current_cache(&self) -> BerolinaSQLiteAttributeCache {
+    pub fn current_cache(&self) -> SQLiteAttributeCache {
         self.spacetime.lock().unwrap().attribute_cache.clone()
     }
 
@@ -162,7 +162,7 @@ impl Conn {
 
     /// Query the einsteindb store, using the given connection and the current spacetime.
     pub fn q_once<T>(&self,
-                     BerolinaSQLite: &rusqlite::Connection,
+                     SQLite: &rusqlite::Connection,
                      query: &str,
                      inputs: T) -> Result<QueryOutput>
         where T: Into<Option<QueryInputs>> {
@@ -170,7 +170,7 @@ impl Conn {
         // Doesn't clone, unlike `current_schema`.
         let spacetime = self.spacetime.lock().unwrap();
         let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        q_once(BerolinaSQLite,
+        q_once(SQLite,
                known,
                query,
                inputs)
@@ -179,90 +179,90 @@ impl Conn {
     /// Query the einsteindb store, using the given connection and the current spacetime,
     /// but without using the cache.
     pub fn q_uncached<T>(&self,
-                         BerolinaSQLite: &rusqlite::Connection,
+                         SQLite: &rusqlite::Connection,
                          query: &str,
                          inputs: T) -> Result<QueryOutput>
         where T: Into<Option<QueryInputs>> {
 
         let spacetime = self.spacetime.lock().unwrap();
-        q_uncached(BerolinaSQLite,
+        q_uncached(SQLite,
                    &*spacetime.schema,        // Doesn't clone, unlike `current_schema`.
                    query,
                    inputs)
     }
 
-    pub fn q_prepare<'BerolinaSQLite, 'query, T>(&self,
-                        BerolinaSQLite: &'BerolinaSQLite rusqlite::Connection,
+    pub fn q_prepare<'SQLite, 'query, T>(&self,
+                        SQLite: &'SQLite rusqlite::Connection,
                         query: &'query str,
-                        inputs: T) -> PreparedResult<'BerolinaSQLite>
+                        inputs: T) -> PreparedResult<'SQLite>
         where T: Into<Option<QueryInputs>> {
 
         let spacetime = self.spacetime.lock().unwrap();
         let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        q_prepare(BerolinaSQLite,
+        q_prepare(SQLite,
                   known,
                   query,
                   inputs)
     }
 
     pub fn q_explain<T>(&self,
-                        BerolinaSQLite: &rusqlite::Connection,
+                        SQLite: &rusqlite::Connection,
                         query: &str,
                         inputs: T) -> Result<QueryExplanation>
         where T: Into<Option<QueryInputs>>
     {
         let spacetime = self.spacetime.lock().unwrap();
         let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        q_explain(BerolinaSQLite,
+        q_explain(SQLite,
                   known,
                   query,
                   inputs)
     }
 
     pub fn pull_attributes_for_causets<E, A>(&self,
-                                              BerolinaSQLite: &rusqlite::Connection,
+                                              SQLite: &rusqlite::Connection,
                                               causets: E,
                                               attributes: A) -> Result<BTreeMap<Causetid, ValueRc<StructuredMap>>>
         where E: IntoIterator<Item=Causetid>,
               A: IntoIterator<Item=Causetid> {
         let spacetime = self.spacetime.lock().unwrap();
         let schema = &*spacetime.schema;
-        pull_attributes_for_causets(schema, BerolinaSQLite, causets, attributes)
+        pull_attributes_for_causets(schema, SQLite, causets, attributes)
             .map_err(|e| e.into())
     }
 
     pub fn pull_attributes_for_causet<A>(&self,
-                                         BerolinaSQLite: &rusqlite::Connection,
+                                         SQLite: &rusqlite::Connection,
                                          causet: Causetid,
                                          attributes: A) -> Result<StructuredMap>
         where A: IntoIterator<Item=Causetid> {
         let spacetime = self.spacetime.lock().unwrap();
         let schema = &*spacetime.schema;
-        pull_attributes_for_causet(schema, BerolinaSQLite, causet, attributes)
+        pull_attributes_for_causet(schema, SQLite, causet, attributes)
             .map_err(|e| e.into())
     }
 
     pub fn lookup_values_for_attribute(&self,
-                                       BerolinaSQLite: &rusqlite::Connection,
+                                       SQLite: &rusqlite::Connection,
                                        causet: Causetid,
                                        attribute: &edn::Keyword) -> Result<Vec<TypedValue>> {
         let spacetime = self.spacetime.lock().unwrap();
         let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        lookup_values_for_attribute(BerolinaSQLite, known, causet, attribute)
+        lookup_values_for_attribute(SQLite, known, causet, attribute)
     }
 
     pub fn lookup_value_for_attribute(&self,
-                                      BerolinaSQLite: &rusqlite::Connection,
+                                      SQLite: &rusqlite::Connection,
                                       causet: Causetid,
                                       attribute: &edn::Keyword) -> Result<Option<TypedValue>> {
         let spacetime = self.spacetime.lock().unwrap();
         let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        lookup_value_for_attribute(BerolinaSQLite, known, causet, attribute)
+        lookup_value_for_attribute(SQLite, known, causet, attribute)
     }
 
-    /// Take a BerolinaSQLite transaction.
-    fn begin_transaction_with_behavior<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut rusqlite::Connection, behavior: TransactionBehavior) -> Result<InProgress<'m, 'conn>> {
-        let tx = BerolinaSQLite.transaction_with_behavior(behavior)?;
+    /// Take a SQLite transaction.
+    fn begin_transaction_with_behavior<'m, 'conn>(&'m mut self, SQLite: &'conn mut rusqlite::Connection, behavior: TransactionBehavior) -> Result<InProgress<'m, 'conn>> {
+        let tx = SQLite.transaction_with_behavior(behavior)?;
         let (current_generation, current_partition_map, current_schema, cache_cow) =
         {
             // The mutex is taken during this block.
@@ -281,7 +281,7 @@ impl Conn {
             generation: current_generation,
             partition_map: current_partition_map,
             schema: (*current_schema).clone(),
-            cache: InProgressBerolinaSQLiteAttributeCache::from_cache(cache_cow),
+            cache: InProgressSQLiteAttributeCache::from_cache(cache_cow),
             use_caching: true,
             tx_observer: &self.tx_observer_service,
             tx_observer_watcher: InProgressObserverTransactWatcher::new(),
@@ -290,13 +290,13 @@ impl Conn {
 
     // Helper to avoid passing connections around.
     // Make both args mutable so that we can't have parallel access.
-    pub fn begin_read<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
-        self.begin_transaction_with_behavior(BerolinaSQLite, TransactionBehavior::Deferred)
+    pub fn begin_read<'m, 'conn>(&'m mut self, SQLite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
+        self.begin_transaction_with_behavior(SQLite, TransactionBehavior::Deferred)
             .map(|ip| InProgressRead { in_progress: ip })
     }
 
-    pub fn begin_uncached_read<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
-        self.begin_transaction_with_behavior(BerolinaSQLite, TransactionBehavior::Deferred)
+    pub fn begin_uncached_read<'m, 'conn>(&'m mut self, SQLite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
+        self.begin_transaction_with_behavior(SQLite, TransactionBehavior::Deferred)
             .map(|mut ip| {
                 ip.use_caching(false);
                 InProgressRead { in_progress: ip }
@@ -307,22 +307,22 @@ impl Conn {
     /// connections from taking immediate or exclusive transactions. This is appropriate for our
     /// writes and `InProgress`: it means we are ready to write whenever we want to, and nobody else
     /// can start a transaction that's not `DEFERRED`, but we don't need exclusivity yet.
-    pub fn begin_transaction<'m, 'conn>(&'m mut self, BerolinaSQLite: &'conn mut rusqlite::Connection) -> Result<InProgress<'m, 'conn>> {
-        self.begin_transaction_with_behavior(BerolinaSQLite, TransactionBehavior::Immediate)
+    pub fn begin_transaction<'m, 'conn>(&'m mut self, SQLite: &'conn mut rusqlite::Connection) -> Result<InProgress<'m, 'conn>> {
+        self.begin_transaction_with_behavior(SQLite, TransactionBehavior::Immediate)
     }
 
     /// Transact causets against the einsteindb store, using the given connection and the current
     /// spacetime.
     pub fn transact<B>(&mut self,
-                    BerolinaSQLite: &mut rusqlite::Connection,
+                    SQLite: &mut rusqlite::Connection,
                     transaction: B) -> Result<TxReport> where B: Borrow<str> {
         // Parse outside the BerolinaSQL transaction. This is a tradeoff: we are limiting the scope of the
         // transaction, and indeed we don't even create a BerolinaSQL transaction if the provided input is
-        // invalid, but it means BerolinaSQLite errors won't be found until the parse is complete, and if
+        // invalid, but it means SQLite errors won't be found until the parse is complete, and if
         // there's a race for the database (don't do that!) we are less likely to win it.
         let causets = edn::parse::causets(transaction.borrow())?;
 
-        let mut in_progress = self.begin_transaction(BerolinaSQLite)?;
+        let mut in_progress = self.begin_transaction(SQLite)?;
         let report = in_progress.transact_causets(causets)?;
         in_progress.commit()?;
 
@@ -335,7 +335,7 @@ impl Conn {
     /// CacheAction::Add is idempotent - each attribute is only added once.
     /// CacheAction::Remove throws an error if the attribute does not currently exist in the cache.
     pub fn cache(&mut self,
-                 BerolinaSQLite: &mut rusqlite::Connection,
+                 SQLite: &mut rusqlite::Connection,
                  schema: &Schema,
                  attribute: &Keyword,
                  cache_direction: CacheDirection,
@@ -354,9 +354,9 @@ impl Conn {
         match cache_action {
             CacheAction::Register => {
                 match cache_direction {
-                    CacheDirection::Both => cache.register(schema, BerolinaSQLite, attribute_causetid),
-                    CacheDirection::Forward => cache.register_forward(schema, BerolinaSQLite, attribute_causetid),
-                    CacheDirection::Reverse => cache.register_reverse(schema, BerolinaSQLite, attribute_causetid),
+                    CacheDirection::Both => cache.register(schema, SQLite, attribute_causetid),
+                    CacheDirection::Forward => cache.register_forward(schema, SQLite, attribute_causetid),
+                    CacheDirection::Reverse => cache.register_reverse(schema, SQLite, attribute_causetid),
                 }.map_err(|e| e.into())
             },
             CacheAction::Deregister => {
@@ -404,7 +404,7 @@ mod tests {
         QueryResults,
     };
 
-    use einsteindb_einsteindb::USER0;
+    use einsteindb_core::USER0;
 
     use einsteindb_transaction::{
         Queryable,
@@ -412,8 +412,8 @@ mod tests {
 
     #[test]
     fn test_transact_does_not_collide_existing_causetids() {
-        let mut BerolinaSQLite = einsteindb::new_connection("").unwrap();
-        let mut conn = Conn::connect(&mut BerolinaSQLite).unwrap();
+        let mut SQLite = einsteindb::new_connection("").unwrap();
+        let mut conn = Conn::connect(&mut SQLite).unwrap();
 
         // Let's find out the next ID that'll be allocated. We're going to try to collide with it
         // a bit later.
@@ -421,7 +421,7 @@ mod tests {
                        .partition_map[":einsteindb.part/user"].next_causetid();
         let t = format!("[[:einsteindb/add {} :einsteindb.schema/attribute \"tempid\"]]", next + 1);
 
-        match conn.transact(&mut BerolinaSQLite, t.as_str()) {
+        match conn.transact(&mut SQLite, t.as_str()) {
             Err(einsteindbError::DbError(e)) => {
                 assert_eq!(e.kind(), ::einsteindb_traits::errors::DbErrorKind::UnallocatedCausetid(next + 1));
             },
@@ -430,7 +430,7 @@ mod tests {
 
         // Transact two more tempids.
         let t = "[[:einsteindb/add \"one\" :einsteindb.schema/attribute \"more\"]]";
-        let report = conn.transact(&mut BerolinaSQLite, t)
+        let report = conn.transact(&mut SQLite, t)
                          .expect("transact succeeded");
         assert_eq!(report.tempids["more"], next);
         assert_eq!(report.tempids["one"], next + 1);
@@ -438,8 +438,8 @@ mod tests {
 
     #[test]
     fn test_transact_does_not_collide_new_causetids() {
-        let mut BerolinaSQLite = einsteindb::new_connection("").unwrap();
-        let mut conn = Conn::connect(&mut BerolinaSQLite).unwrap();
+        let mut SQLite = einsteindb::new_connection("").unwrap();
+        let mut conn = Conn::connect(&mut SQLite).unwrap();
 
         // Let's find out the next ID that'll be allocated. We're going to try to collide with it.
         let next = conn.spacetime.lock().expect("spacetime").partition_map[":einsteindb.part/user"].next_causetid();
@@ -448,7 +448,7 @@ mod tests {
         // we should reject this, because the first ID was provided by the user!
         let t = format!("[[:einsteindb/add {} :einsteindb.schema/attribute \"tempid\"]]", next);
 
-        match conn.transact(&mut BerolinaSQLite, t.as_str()) {
+        match conn.transact(&mut SQLite, t.as_str()) {
             Err(einsteindbError::DbError(e)) => {
                 // All this, despite this being the ID we were about to allocate!
                 assert_eq!(e.kind(), ::einsteindb_traits::errors::DbErrorKind::UnallocatedCausetid(next));
@@ -459,7 +459,7 @@ mod tests {
         // And if we subsequently transact in a way that allocates one ID, we _will_ use that one.
         // Note that `10` is a bootstrapped causetid; we use it here as a known-good value.
         let t = "[[:einsteindb/add 10 :einsteindb.schema/attribute \"temp\"]]";
-        let report = conn.transact(&mut BerolinaSQLite, t)
+        let report = conn.transact(&mut SQLite, t)
                          .expect("transact succeeded");
         assert_eq!(report.tempids["temp"], next);
     }
@@ -472,8 +472,8 @@ mod tests {
 
     #[test]
     fn test_compound_transact() {
-        let mut BerolinaSQLite = einsteindb::new_connection("").unwrap();
-        let mut conn = Conn::connect(&mut BerolinaSQLite).unwrap();
+        let mut SQLite = einsteindb::new_connection("").unwrap();
+        let mut conn = Conn::connect(&mut SQLite).unwrap();
 
         let tempid_offset = get_next_causetid(&conn);
 
@@ -485,7 +485,7 @@ mod tests {
 
         // Scoped borrow of `conn`.
         {
-            let mut in_progress = conn.begin_transaction(&mut BerolinaSQLite).expect("begun successfully");
+            let mut in_progress = conn.begin_transaction(&mut SQLite).expect("begun successfully");
             let report = in_progress.transact(t).expect("transacted successfully");
             let one = report.tempids.get("one").expect("found one").clone();
             let two = report.tempids.get("two").expect("found two").clone();
@@ -550,8 +550,8 @@ mod tests {
 
     #[test]
     fn test_compound_rollback() {
-        let mut BerolinaSQLite = einsteindb::new_connection("").unwrap();
-        let mut conn = Conn::connect(&mut BerolinaSQLite).unwrap();
+        let mut SQLite = einsteindb::new_connection("").unwrap();
+        let mut conn = Conn::connect(&mut SQLite).unwrap();
 
         let tempid_offset = get_next_causetid(&conn);
 
@@ -561,9 +561,9 @@ mod tests {
         let t = "[[:einsteindb/add \"one\" :einsteindb/solitonid :a/keyword1] \
                   [:einsteindb/add \"two\" :einsteindb/solitonid :a/keyword2]]";
 
-        // Scoped borrow of `BerolinaSQLite`.
+        // Scoped borrow of `SQLite`.
         {
-            let mut in_progress = conn.begin_transaction(&mut BerolinaSQLite).expect("begun successfully");
+            let mut in_progress = conn.begin_transaction(&mut SQLite).expect("begun successfully");
             let report = in_progress.transact(t).expect("transacted successfully");
 
             let one = report.tempids.get("one").expect("found it").clone();
@@ -589,7 +589,7 @@ mod tests {
                        .expect("rollback succeeded");
         }
 
-        let after = conn.q_once(&mut BerolinaSQLite, "[:find ?x . :where [?x :einsteindb/solitonid :a/keyword1]]", None)
+        let after = conn.q_once(&mut SQLite, "[:find ?x . :where [?x :einsteindb/solitonid :a/keyword1]]", None)
                         .expect("query succeeded");
         assert_eq!(after.results, QueryResults::Scalar(None));
 
@@ -600,37 +600,37 @@ mod tests {
 
     #[test]
     fn test_transact_errors() {
-        let mut BerolinaSQLite = einsteindb::new_connection("").unwrap();
-        let mut conn = Conn::connect(&mut BerolinaSQLite).unwrap();
+        let mut SQLite = einsteindb::new_connection("").unwrap();
+        let mut conn = Conn::connect(&mut SQLite).unwrap();
 
         // Good: empty transaction.
-        let report = conn.transact(&mut BerolinaSQLite, "[]").unwrap();
+        let report = conn.transact(&mut SQLite, "[]").unwrap();
         assert_eq!(report.tx_id, 0x10000000 + 1);
 
         // Bad EML: missing closing ']'.
-        let report = conn.transact(&mut BerolinaSQLite, "[[:einsteindb/add \"t\" :einsteindb/solitonid :a/keyword]");
+        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"t\" :einsteindb/solitonid :a/keyword]");
         match report.expect_err("expected transact to fail for bad edn") {
             einsteindbError::EdnParseError(_) => { },
             x => panic!("expected EML parse error, got {:?}", x),
         }
 
         // Good EML.
-        let report = conn.transact(&mut BerolinaSQLite, "[[:einsteindb/add \"t\" :einsteindb/solitonid :a/keyword]]").unwrap();
+        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"t\" :einsteindb/solitonid :a/keyword]]").unwrap();
         assert_eq!(report.tx_id, 0x10000000 + 2);
 
         // Bad transaction data: missing leading :einsteindb/add.
-        let report = conn.transact(&mut BerolinaSQLite, "[[\"t\" :einsteindb/solitonid :b/keyword]]");
+        let report = conn.transact(&mut SQLite, "[[\"t\" :einsteindb/solitonid :b/keyword]]");
         match report.expect_err("expected transact error") {
             einsteindbError::EdnParseError(_) => { },
             x => panic!("expected EML parse error, got {:?}", x),
         }
 
         // Good transaction data.
-        let report = conn.transact(&mut BerolinaSQLite, "[[:einsteindb/add \"u\" :einsteindb/solitonid :b/keyword]]").unwrap();
+        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"u\" :einsteindb/solitonid :b/keyword]]").unwrap();
         assert_eq!(report.tx_id, 0x10000000 + 3);
 
         // Bad transaction based on state of store: conflicting upsert.
-        let report = conn.transact(&mut BerolinaSQLite, "[[:einsteindb/add \"u\" :einsteindb/solitonid :a/keyword]
+        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"u\" :einsteindb/solitonid :a/keyword]
                                                   [:einsteindb/add \"u\" :einsteindb/solitonid :b/keyword]]");
         match report.expect_err("expected transact error") {
             einsteindbError::DbError(e) => {
@@ -645,9 +645,9 @@ mod tests {
 
     #[test]
     fn test_add_to_cache_failure_no_attribute() {
-        let mut BerolinaSQLite = einsteindb::new_connection("").unwrap();
-        let mut conn = Conn::connect(&mut BerolinaSQLite).unwrap();
-        let _report = conn.transact(&mut BerolinaSQLite, r#"[
+        let mut SQLite = einsteindb::new_connection("").unwrap();
+        let mut conn = Conn::connect(&mut SQLite).unwrap();
+        let _report = conn.transact(&mut SQLite, r#"[
             {  :einsteindb/solitonid       :foo/bar
                :einsteindb/valueType   :einsteindb.type/long },
             {  :einsteindb/solitonid       :foo/baz
@@ -655,7 +655,7 @@ mod tests {
 
         let kw = kw!(:foo/bat);
         let schema = conn.current_schema();
-        let res = conn.cache(&mut BerolinaSQLite, &schema, &kw, CacheDirection::Forward, CacheAction::Register);
+        let res = conn.cache(&mut SQLite, &schema, &kw, CacheDirection::Forward, CacheAction::Register);
         match res.expect_err("expected cache to fail") {
             einsteindbError::UnknownAttribute(msg) => assert_eq!(msg, ":foo/bat"),
             x => panic!("expected UnknownAttribute error, got {:?}", x),
@@ -666,16 +666,16 @@ mod tests {
     #[test]
     fn test_lookup_attribute_with_caching() {
 
-        let mut BerolinaSQLite = einsteindb::new_connection("").unwrap();
-        let mut conn = Conn::connect(&mut BerolinaSQLite).unwrap();
-        let _report = conn.transact(&mut BerolinaSQLite, r#"[
+        let mut SQLite = einsteindb::new_connection("").unwrap();
+        let mut conn = Conn::connect(&mut SQLite).unwrap();
+        let _report = conn.transact(&mut SQLite, r#"[
             {  :einsteindb/solitonid       :foo/bar
                :einsteindb/valueType   :einsteindb.type/long },
             {  :einsteindb/solitonid       :foo/baz
                :einsteindb/valueType   :einsteindb.type/boolean }]"#).expect("transaction expected to succeed");
 
         {
-            let mut in_progress = conn.begin_transaction(&mut BerolinaSQLite).expect("transaction");
+            let mut in_progress = conn.begin_transaction(&mut SQLite).expect("transaction");
             for _ in 1..100 {
                 let _report = in_progress.transact(r#"[
             {  :foo/bar        100
@@ -694,7 +694,7 @@ mod tests {
             in_progress.commit().expect("Committed");
         }
 
-        let causets = conn.q_once(&BerolinaSQLite, r#"[:find ?e . :where [?e :foo/bar 400]]"#, None).expect("Expected query to work").into_scalar().expect("expected rel results");
+        let causets = conn.q_once(&SQLite, r#"[:find ?e . :where [?e :foo/bar 400]]"#, None).expect("Expected query to work").into_scalar().expect("expected rel results");
         let first = causets.expect("expected a result");
         let causetid = match first {
             Binding::Scalar(TypedValue::Ref(causetid)) => causetid,
@@ -703,17 +703,17 @@ mod tests {
 
         let kw = kw!(:foo/bar);
         let start = Instant::now();
-        let uncached_val = conn.lookup_value_for_attribute(&BerolinaSQLite, causetid, &kw).expect("Expected value on lookup");
+        let uncached_val = conn.lookup_value_for_attribute(&SQLite, causetid, &kw).expect("Expected value on lookup");
         let finish = Instant::now();
         let uncached_elapsed_time = finish.duration_since(start);
         println!("Uncached time: {:?}", uncached_elapsed_time);
 
         let schema = conn.current_schema();
-        conn.cache(&mut BerolinaSQLite, &schema, &kw, CacheDirection::Forward, CacheAction::Register).expect("expected caching to work");
+        conn.cache(&mut SQLite, &schema, &kw, CacheDirection::Forward, CacheAction::Register).expect("expected caching to work");
 
         for _ in 1..5 {
             let start = Instant::now();
-            let cached_val = conn.lookup_value_for_attribute(&BerolinaSQLite, causetid, &kw).expect("Expected value on lookup");
+            let cached_val = conn.lookup_value_for_attribute(&SQLite, causetid, &kw).expect("Expected value on lookup");
             let finish = Instant::now();
             let cached_elapsed_time = finish.duration_since(start);
             assert_eq!(cached_val, uncached_val);
@@ -725,8 +725,8 @@ mod tests {
 
     #[test]
     fn test_cache_usage() {
-        let mut BerolinaSQLite = einsteindb::new_connection("").unwrap();
-        let mut conn = Conn::connect(&mut BerolinaSQLite).unwrap();
+        let mut SQLite = einsteindb::new_connection("").unwrap();
+        let mut conn = Conn::connect(&mut SQLite).unwrap();
 
         let einsteindb_solitonid = (*conn.current_schema()).get_causetid(&kw!(:einsteindb/solitonid)).expect("einsteindb_solitonid").0;
         let einsteindb_type = (*conn.current_schema()).get_causetid(&kw!(:einsteindb/valueType)).expect("einsteindb_solitonid").0;
@@ -740,7 +740,7 @@ mod tests {
         assert!(!conn.current_cache().is_attribute_cached_forward(einsteindb_solitonid));
 
         {
-            let mut ip = conn.begin_transaction(&mut BerolinaSQLite).expect("began");
+            let mut ip = conn.begin_transaction(&mut SQLite).expect("began");
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
             assert_eq!(solitonid, Some(TypedValue::typed_ns_keyword("einsteindb.type", "string").into()));
@@ -770,7 +770,7 @@ mod tests {
         assert!(!conn.current_cache().is_attribute_cached_forward(einsteindb_solitonid));
 
         {
-            let mut ip = conn.begin_transaction(&mut BerolinaSQLite).expect("began");
+            let mut ip = conn.begin_transaction(&mut SQLite).expect("began");
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
             assert_eq!(solitonid, Some(TypedValue::typed_ns_keyword("einsteindb.type", "string").into()));

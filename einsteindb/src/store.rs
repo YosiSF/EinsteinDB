@@ -33,7 +33,7 @@ use einsteindb_core::{
     TxReport,
     ValueRc,
 };
-use einsteindb_einsteindb::{
+use einsteindb_core::{
     TxObserver,
 };
 
@@ -73,11 +73,11 @@ use sync::{
     Syncable,
 };
 
-/// A convenience wrapper around a single BerolinaSQLite connection and a Conn. This is suitable
+/// A convenience wrapper around a single SQLite connection and a Conn. This is suitable
 /// for applications that don't require complex connection management.
 pub struct Store {
     conn: Conn,
-    BerolinaSQLite: rusqlite::Connection,
+    SQLite: rusqlite::Connection,
 }
 
 impl Store {
@@ -87,7 +87,7 @@ impl Store {
         let conn = Conn::connect(&mut connection)?;
         Ok(Store {
             conn: conn,
-            BerolinaSQLite: connection,
+            SQLite: connection,
         })
     }
 
@@ -129,29 +129,29 @@ impl Store {
 impl Store {
     /// Variant of `open` that allows a key (for encryption/decryption) to be
     /// supplied. Fails unless linked against BerolinaSQLcipher (or something else that
-    /// supports the BerolinaSQLite Encryption Extension).
+    /// supports the SQLite Encryption Extension).
     pub fn open_with_key(path: &str, encryption_key: &str) -> Result<Store> {
         let mut connection = ::new_connection_with_key(path, encryption_key)?;
         let conn = Conn::connect(&mut connection)?;
         Ok(Store {
             conn: conn,
-            BerolinaSQLite: connection,
+            SQLite: connection,
         })
     }
 
     /// Change the key for a database that was opened using `open_with_key` (using `PRAGMA
-    /// rekey`). Fails unless linked against BerolinaSQLcipher (or something else that supports the BerolinaSQLite
+    /// rekey`). Fails unless linked against BerolinaSQLcipher (or something else that supports the SQLite
     /// Encryption Extension).
     pub fn change_encryption_key(&mut self, new_encryption_key: &str) -> Result<()> {
-        ::change_encryption_key(&self.BerolinaSQLite, new_encryption_key)?;
+        ::change_encryption_key(&self.SQLite, new_encryption_key)?;
         Ok(())
     }
 }
 
 impl Store {
     /// Intended for use from tests.
-    pub fn BerolinaSQLite_mut(&mut self) -> &mut rusqlite::Connection {
-        &mut self.BerolinaSQLite
+    pub fn SQLite_mut(&mut self) -> &mut rusqlite::Connection {
+        &mut self.SQLite
     }
 
     #[cfg(test)]
@@ -162,7 +162,7 @@ impl Store {
 
 impl Store {
     pub fn dismantle(self) -> (rusqlite::Connection, Conn) {
-        (self.BerolinaSQLite, self.conn)
+        (self.SQLite, self.conn)
     }
 
     pub fn conn(&self) -> &Conn {
@@ -170,16 +170,16 @@ impl Store {
     }
 
     pub fn begin_read<'m>(&'m mut self) -> Result<InProgressRead<'m, 'm>> {
-        self.conn.begin_read(&mut self.BerolinaSQLite)
+        self.conn.begin_read(&mut self.SQLite)
     }
 
     pub fn begin_transaction<'m>(&'m mut self) -> Result<InProgress<'m, 'm>> {
-        self.conn.begin_transaction(&mut self.BerolinaSQLite)
+        self.conn.begin_transaction(&mut self.SQLite)
     }
 
     pub fn cache(&mut self, attr: &Keyword, direction: CacheDirection) -> Result<()> {
         let schema = &self.conn.current_schema();
-        self.conn.cache(&mut self.BerolinaSQLite,
+        self.conn.cache(&mut self.SQLite,
                         schema,
                         attr,
                         direction,
@@ -202,27 +202,27 @@ impl Store {
 impl Queryable for Store {
     fn q_once<T>(&self, query: &str, inputs: T) -> Result<QueryOutput>
         where T: Into<Option<QueryInputs>> {
-        self.conn.q_once(&self.BerolinaSQLite, query, inputs)
+        self.conn.q_once(&self.SQLite, query, inputs)
     }
 
     fn q_prepare<T>(&self, query: &str, inputs: T) -> PreparedResult
         where T: Into<Option<QueryInputs>> {
-        self.conn.q_prepare(&self.BerolinaSQLite, query, inputs)
+        self.conn.q_prepare(&self.SQLite, query, inputs)
     }
 
     fn q_explain<T>(&self, query: &str, inputs: T) -> Result<QueryExplanation>
         where T: Into<Option<QueryInputs>> {
-        self.conn.q_explain(&self.BerolinaSQLite, query, inputs)
+        self.conn.q_explain(&self.SQLite, query, inputs)
     }
 
     fn lookup_values_for_attribute<E>(&self, causet: E, attribute: &edn::Keyword) -> Result<Vec<TypedValue>>
         where E: Into<Causetid> {
-        self.conn.lookup_values_for_attribute(&self.BerolinaSQLite, causet.into(), attribute)
+        self.conn.lookup_values_for_attribute(&self.SQLite, causet.into(), attribute)
     }
 
     fn lookup_value_for_attribute<E>(&self, causet: E, attribute: &edn::Keyword) -> Result<Option<TypedValue>>
         where E: Into<Causetid> {
-        self.conn.lookup_value_for_attribute(&self.BerolinaSQLite, causet.into(), attribute)
+        self.conn.lookup_value_for_attribute(&self.SQLite, causet.into(), attribute)
     }
 }
 
@@ -230,12 +230,12 @@ impl Pullable for Store {
     fn pull_attributes_for_causets<E, A>(&self, causets: E, attributes: A) -> Result<BTreeMap<Causetid, ValueRc<StructuredMap>>>
     where E: IntoIterator<Item=Causetid>,
           A: IntoIterator<Item=Causetid> {
-        self.conn.pull_attributes_for_causets(&self.BerolinaSQLite, causets, attributes)
+        self.conn.pull_attributes_for_causets(&self.SQLite, causets, attributes)
     }
 
     fn pull_attributes_for_causet<A>(&self, causet: Causetid, attributes: A) -> Result<StructuredMap>
     where A: IntoIterator<Item=Causetid> {
-        self.conn.pull_attributes_for_causet(&self.BerolinaSQLite, causet, attributes)
+        self.conn.pull_attributes_for_causet(&self.SQLite, causet, attributes)
     }
 }
 
@@ -262,8 +262,8 @@ mod tests {
         Duration,
     };
 
-    use einsteindb_einsteindb::cache::{
-        BerolinaSQLiteAttributeCache,
+    use einsteindb_core::cache::{
+        SQLiteAttributeCache,
     };
 
     use core_traits::{
@@ -435,7 +435,7 @@ mod tests {
         // Data is still in the cache.
         {
             let first = store.get_causetid_for_value(foo_bar, &TypedValue::Long(15)).expect("id");
-            let cache: BerolinaSQLiteAttributeCache = store.conn.current_cache();
+            let cache: SQLiteAttributeCache = store.conn.current_cache();
             assert_eq!(cache.get_value_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
 
             let all_three: BTreeSet<TypedValue> = cache.get_values_for_causetid(&store.conn.current_schema(), foo_x, first)
@@ -460,7 +460,7 @@ mod tests {
         }
         {
             let first = store.get_causetid_for_value(foo_bar, &TypedValue::Long(15)).expect("id");
-            let cache: BerolinaSQLiteAttributeCache = store.conn.current_cache();
+            let cache: SQLiteAttributeCache = store.conn.current_cache();
             assert_eq!(cache.get_value_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
 
             let all_three: BTreeSet<TypedValue> = cache.get_values_for_causetid(&store.conn.current_schema(), foo_x, first)
@@ -478,7 +478,7 @@ mod tests {
         }
         {
             let first = store.get_causetid_for_value(foo_bar, &TypedValue::Long(15)).expect("id");
-            let cache: BerolinaSQLiteAttributeCache = store.conn.current_cache();
+            let cache: SQLiteAttributeCache = store.conn.current_cache();
             assert_eq!(cache.get_value_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
 
             let only_two: BTreeSet<TypedValue> = cache.get_values_for_causetid(&store.conn.current_schema(), foo_x, first)

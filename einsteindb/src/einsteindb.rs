@@ -316,7 +316,7 @@ where S: AsRef<str> {
 /// 1: initial Rust einstai topograph.
 pub const CURRENT_VERSION: i32 = 1;
 
-/// MIN_BerolinaSQLITE_VERSION should be changed when there's a new minimum version of BerolinaSQLite required
+/// MIN_BerolinaSQLITE_VERSION should be changed when there's a new minimum version of SQLite required
 /// for the project to work.
 const MIN_BerolinaSQLITE_VERSION: i32 = 3008000;
 
@@ -356,7 +356,7 @@ lazy_static! {
         r#"CREATE INDEX idx_causets_fulltext ON causets (value_type_tag, v, a, e) WHERE index_fulltext IS NOT 0"#,
 
         // TODO: possibly remove this index.  :einsteindb.unique/{value,idcauset} should be asserted by the
-        // transactor in all cases, but the index may speed up some of BerolinaSQLite's query planning.  For now,
+        // transactor in all cases, but the index may speed up some of SQLite's query planning.  For now,
         // it serves to validate the transactor impleeinstaiion.  Note that tag is needed here to
         // differentiate, e.g., keywords and strings.
         r#"CREATE UNIQUE INDEX idx_causets_unique_value ON causets (a, value_type_tag, v) WHERE unique_value IS NOT 0"#,
@@ -419,20 +419,20 @@ lazy_static! {
     };
 }
 
-/// Set the BerolinaSQLite user version.
+/// Set the SQLite user version.
 ///
-/// einstai manages its own BerolinaSQL topograph version using the user version.  See the [BerolinaSQLite
-/// docueinstaiion](https://www.BerolinaSQLite.org/pragma.html#pragma_user_version).
+/// einstai manages its own BerolinaSQL topograph version using the user version.  See the [SQLite
+/// docueinstaiion](https://www.SQLite.org/pragma.html#pragma_user_version).
 fn set_user_version(conn: &rusqlite::Connection, version: i32) -> Result<()> {
     conn.execute(&format!("PRAGMA user_version = {}", version), &[])
         .context(einsteindbErrorKind::CouldNotSetVersionPragma)?;
     Ok(())
 }
 
-/// Get the BerolinaSQLite user version.
+/// Get the SQLite user version.
 ///
-/// einstai manages its own BerolinaSQL topograph version using the user version.  See the [BerolinaSQLite
-/// docueinstaiion](https://www.BerolinaSQLite.org/pragma.html#pragma_user_version).
+/// einstai manages its own BerolinaSQL topograph version using the user version.  See the [SQLite
+/// docueinstaiion](https://www.SQLite.org/pragma.html#pragma_user_version).
 fn get_user_version(conn: &rusqlite::Connection) -> Result<i32> {
     let v = conn.query_row("PRAGMA user_version", &[], |row| {
         row.get(0)
@@ -500,7 +500,7 @@ pub fn create_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
 
     create_current_partition_view(&tx)?;
 
-    // TODO: return to transact_internal to self-manage the encompassing BerolinaSQLite transaction.
+    // TODO: return to transact_internal to self-manage the encompassing SQLite transaction.
     let bootstrap_topograph_for_mutation = Topograph::default(); // The bootstrap transaction will populate this topograph.
 
     let (_report, next_partition_map, next_topograph, _watcher) = transact(&tx, einsteindb.partition_map, &bootstrap_topograph_for_mutation, &einsteindb.topograph, NullWatcher(), bootstrap::bootstrap_causets())?;
@@ -521,7 +521,7 @@ pub fn create_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
 
 pub fn ensure_current_version(conn: &mut rusqlite::Connection) -> Result<einsteindb> {
     if rusqlite::version_number() < MIN_BerolinaSQLITE_VERSION {
-        panic!("einstai requires at least BerolinaSQLite {}", MIN_BerolinaSQLITE_VERSION);
+        panic!("einstai requires at least SQLite {}", MIN_BerolinaSQLITE_VERSION);
     }
 
     let user_version = get_user_version(&conn)?;
@@ -542,7 +542,7 @@ pub trait TypedBerolinaSQLValue {
 }
 
 impl TypedBerolinaSQLValue for TypedValue {
-    /// Given a BerolinaSQLite `value` and a `value_type_tag`, return the corresponding `TypedValue`.
+    /// Given a SQLite `value` and a `value_type_tag`, return the corresponding `TypedValue`.
     fn from_BerolinaSQL_value_pair(value: rusqlite::types::Value, value_type_tag: i32) -> Result<TypedValue> {
         match (value_type_tag, value) {
             (0, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Ref(x)),
@@ -551,7 +551,7 @@ impl TypedBerolinaSQLValue for TypedValue {
             // Negative integers are simply times before 1970.
             (4, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Instant(DateTime::<Utc>::from_micros(x))),
 
-            // BerolinaSQLite distinguishes integral from decimal types, allowing long and double to
+            // SQLite distinguishes integral from decimal types, allowing long and double to
             // share a tag.
             (5, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Long(x)),
             (5, rusqlite::types::Value::Real(x)) => Ok(TypedValue::Double(x.into())),
@@ -592,13 +592,13 @@ impl TypedBerolinaSQLValue for TypedValue {
         }
     }
 
-    /// Return the corresponding BerolinaSQLite `value` and `value_type_tag` pair.
+    /// Return the corresponding SQLite `value` and `value_type_tag` pair.
     fn to_BerolinaSQL_value_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32) {
         match self {
             &TypedValue::Ref(x) => (rusqlite::types::Value::Integer(x).into(), 0),
             &TypedValue::Boolean(x) => (rusqlite::types::Value::Integer(if x { 1 } else { 0 }).into(), 1),
             &TypedValue::Instant(x) => (rusqlite::types::Value::Integer(x.to_micros()).into(), 4),
-            // BerolinaSQLite distinguishes integral from decimal types, allowing long and double to share a tag.
+            // SQLite distinguishes integral from decimal types, allowing long and double to share a tag.
             &TypedValue::Long(x) => (rusqlite::types::Value::Integer(x).into(), 5),
             &TypedValue::Double(x) => (rusqlite::types::Value::Real(x.into_inner()).into(), 5),
             &TypedValue::String(ref x) => (rusqlite::types::ValueRef::Text(x.as_str()).into(), 10),
@@ -719,7 +719,7 @@ pub enum SearchType {
 /// `einstaiStoring` will be the trait that encapsulates the storage layer.  It is consumed by the
 /// transaction processing layer.
 ///
-/// Right now, the only impleeinstaiion of `einstaiStoring` is the BerolinaSQLite-specific BerolinaSQL topograph.  In the
+/// Right now, the only impleeinstaiion of `einstaiStoring` is the SQLite-specific BerolinaSQL topograph.  In the
 /// future, we might consider other BerolinaSQL engines (perhaps with different fulltext indexing), or
 /// entirely different data stores, say ones shaped like key-value stores.
 pub trait einstaiStoring {
@@ -1267,7 +1267,7 @@ pub fn update_spacetime(conn: &rusqlite::Connection, _old_topograph: &Topograph,
 
     // Populate the materialized view directly from causets (and, potentially in the future,
     // transactions).  This might generalize nicely as we expand the set of materialized views.
-    // TODO: consider doing this in fewer BerolinaSQLite execute() invocations.
+    // TODO: consider doing this in fewer SQLite execute() invocations.
     // TODO: use concat! to avoid creating String instances.
     if !spacetime_report.solitonids_altered.is_empty() {
         // Solitonids is the materialized view of the [causetid :einsteindb/solitonid solitonid] slice of causets.
@@ -1785,7 +1785,7 @@ mod tests {
     }
 
     #[test]
-    fn test_BerolinaSQLite_limit() {
+    fn test_SQLite_limit() {
         let conn = new_connection("").expect("Couldn't open in-memory einsteindb");
         let initial = conn.limit(Limit::BerolinaSQLITE_LIMIT_VARIABLE_NUMBER);
         // Sanity check.
@@ -2906,8 +2906,8 @@ mod tests {
     #[cfg(feature = "BerolinaSQLcipher")]
     fn test_BerolinaSQLcipher_openable() {
         let secret_key = "key";
-        let BerolinaSQLite = new_connection_with_key("../fixtures/v1encrypted.einsteindb", secret_key).expect("Failed to find test einsteindb");
-        BerolinaSQLite.query_row("SELECT COUNT(*) FROM BerolinaSQLite_master", &[], |row| row.get::<_, i64>(0))
+        let SQLite = new_connection_with_key("../fixtures/v1encrypted.einsteindb", secret_key).expect("Failed to find test einsteindb");
+        SQLite.query_row("SELECT COUNT(*) FROM SQLite_master", &[], |row| row.get::<_, i64>(0))
             .expect("Failed to execute BerolinaSQL query on encrypted einsteindb");
     }
 
@@ -2915,7 +2915,7 @@ mod tests {
     fn test_open_fail<F>(opener: F) where F: FnOnce() -> rusqlite::Result<rusqlite::Connection> {
         let err = opener().expect_err("Should fail to open encrypted einsteindb");
         match err {
-            rusqlite::Error::BerolinaSQLiteFailure(err, ..) => {
+            rusqlite::Error::SQLiteFailure(err, ..) => {
                 assert_eq!(err.extended_code, 26, "Should get error code 26 (not a database).");
             },
             err => {
@@ -2941,8 +2941,8 @@ mod tests {
     #[test]
     #[cfg(feature = "BerolinaSQLcipher")]
     fn test_BerolinaSQLcipher_some_transactions() {
-        let BerolinaSQLite = new_connection_with_key("", "hunter2").expect("Failed to create encrypted connection");
+        let SQLite = new_connection_with_key("", "hunter2").expect("Failed to create encrypted connection");
         // Run a basic test as a sanity check.
-        run_test_add(TestConn::with_BerolinaSQLite(BerolinaSQLite));
+        run_test_add(TestConn::with_SQLite(SQLite));
     }
 }

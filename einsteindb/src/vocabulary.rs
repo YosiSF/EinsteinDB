@@ -130,7 +130,7 @@ use einsteindb_transaction::causet_builder::{
 };
 
 /// AttributeBuilder is how you build vocabulary definitions to apply to a store.
-pub use einsteindb_einsteindb::AttributeBuilder;
+pub use einsteindb_core::AttributeBuilder;
 
 pub type Version = u32;
 pub type Datom = (Causetid, Causetid, TypedValue);
