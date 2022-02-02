@@ -1,9 +1,9 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePanicEngine;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{Mutable, Result, WriteBatch, WriteBatchExt, WriteOptions};
 
-impl WriteBatchExt for PanicEngine {
+impl WriteBatchExt for Paniceinstein_merkle_tree {
     type WriteBatch = PanicWriteBatch;
     type WriteBatchVec = PanicWriteBatch;
 
@@ -23,8 +23,8 @@ impl WriteBatchExt for PanicEngine {
 
 pub struct PanicWriteBatch;
 
-impl WriteBatch<PanicEngine> for PanicWriteBatch {
-    fn with_capacity(_: &PanicEngine, _: usize) -> Self {
+impl WriteBatch<Paniceinstein_merkle_tree> for PanicWriteBatch {
+    fn with_capacity(_: &Paniceinstein_merkle_tree, _: usize) -> Self {
         panic!()
     }
 
@@ -41,7 +41,7 @@ impl WriteBatch<PanicEngine> for PanicWriteBatch {
     fn is_empty(&self) -> bool {
         panic!()
     }
-    fn should_write_to_engine(&self) -> bool {
+    fn should_write_to_einstein_merkle_tree(&self) -> bool {
         panic!()
     }
 

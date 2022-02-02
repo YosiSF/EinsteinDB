@@ -13,7 +13,7 @@ pub use aws::{Config as S3Config, S3Storage};
 pub use azure::{AzureStorage, Config as AzureConfig};
 use fdb_traits::FileEncryptionInfo;
 #[cfg(feature = "cloud-gcp")]
-pub use gcp::{Config as GCSConfig, GCSStorage};
+pub use gcp::{Config as GCSConfig, GCCausetorage};
 
 use ekvproto::brpb::CloudDynamic;
 pub use ekvproto::brpb::StorageBackend_oneof_backend as Backend;
@@ -31,7 +31,7 @@ use encryption::DataKeyManager;
 use external_timelike_storage::dylib_client;
 #[cfg(feature = "cloud-timelike_storage-grpc")]
 use external_timelike_storage::grpc_client;
-use external_timelike_storage::{encrypt_wrap_reader, record_timelike_storage_create, BackendConfig, HdfsStorage};
+use external_timelike_storage::{encrypt_wrap_reader, record_timelike_storage_create, BackendConfig, HdfCausetorage};
 pub use external_timelike_storage::{
     read_external_timelike_storage_into_file, ExternalStorage, LocalStorage, NoopStorage, UnpinReader,
 };
@@ -178,7 +178,7 @@ fn create_backend_inner(
             Box::new(LocalStorage::new(p)?) as Box<dyn ExternalStorage>
         }
         Backend::Hdfs(hdfs) => {
-            Box::new(HdfsStorage::new(&hdfs.remote, backend_config.hdfs_config)?)
+            Box::new(HdfCausetorage::new(&hdfs.remote, backend_config.hdfs_config)?)
         }
         Backend::Noop(_) => Box::new(NoopStorage::default()) as Box<dyn ExternalStorage>,
         #[cfg(feature = "cloud-aws")]
@@ -188,14 +188,14 @@ fn create_backend_inner(
             blob_timelike_store(s)
         }
         #[cfg(feature = "cloud-gcp")]
-        Backend::Gcs(config) => blob_timelike_store(GCSStorage::from_input(config.clone())?),
+        Backend::Gcs(config) => blob_timelike_store(GCCausetorage::from_input(config.clone())?),
         #[cfg(feature = "cloud-azure")]
         Backend::AzureBlobStorage(config) => blob_timelike_store(AzureStorage::from_input(config.clone())?),
         Backend::CloudDynamic(dyn_backend) => match dyn_backend.provider_name.as_str() {
             #[cfg(feature = "cloud-aws")]
             "aws" | "s3" => blob_timelike_store(S3Storage::from_cloud_dynamic(dyn_backend)?),
             #[cfg(feature = "cloud-gcp")]
-            "gcp" | "gcs" => blob_timelike_store(GCSStorage::from_cloud_dynamic(dyn_backend)?),
+            "gcp" | "gcs" => blob_timelike_store(GCCausetorage::from_cloud_dynamic(dyn_backend)?),
             #[cfg(feature = "cloud-azure")]
             "azure" | "azblob" => blob_timelike_store(AzureStorage::from_cloud_dynamic(dyn_backend)?),
             _ => {

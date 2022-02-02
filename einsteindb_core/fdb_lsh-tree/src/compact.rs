@@ -4,10 +4,10 @@ use fdb_traits::{NAMESPACEDNamesExt, CompactExt, Result};
 use foundationdb::{CompactionOptions, CompactOptions, DBCompressionType};
 use std::cmp;
 
-use crate::fdb_lsh_treeFdbEngine;
+use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 use crate::util;
 
-impl CompactExt for FdbEngine {
+impl CompactExt for Fdbeinstein_merkle_tree {
     type CompactedEvent = crate::compact_listener::FdbCompactedEvent;
 
     fn auto_jet_bundles_is_disabled(&self) -> Result<bool> {
@@ -141,7 +141,7 @@ mod tests {
     use tempfile::Builder;
 
     use crate::Compat;
-    use crate::raw_util::{NAMESPACEDOptions, new_engine};
+    use crate::raw_util::{NAMESPACEDOptions, new_einstein_merkle_tree};
 
     #[test]
     fn test_compact_files_in_range() {
@@ -156,7 +156,7 @@ mod tests {
             NAMESPACEDOptions::new("default", namespaced_opts.clone()),
             NAMESPACEDOptions::new("test", namespaced_opts),
         ];
-        let einsteindb = new_engine(
+        let einsteindb = new_einstein_merkle_tree(
             temp_dir.path().to_str().unwrap(),
             None,
             &["default", "test"],

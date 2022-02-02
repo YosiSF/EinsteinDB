@@ -401,7 +401,7 @@ mod tests {
     use solitontxn_types::SHORT_VALUE_MAX_LEN;
 
     use crate::einsteindb::storage::fdbhikv::{
-        CfStatistics, Engine, PerfStatisticsInstant, RocksEngine, TestEngineBuilder,
+        CfStatistics, einstein_merkle_tree, PerfStatisticsInstant, Rockseinstein_merkle_tree, Testeinstein_merkle_treeBuilder,
     };
     use crate::einsteindb::storage::solitontxn::tests::{
         must_acquire_pessimistic_dagger, must_cleanup_with_gc_fence, must_commit, must_gc,
@@ -410,16 +410,16 @@ mod tests {
     };
     use fdbhikvproto::fdbhikvrpcpb::{Assertion, AssertionLevel};
 
-    fn new_multi_point_getter<E: Engine>(engine: &E, ts: TimeStamp) -> PointGetter<E::Snap> {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    fn new_multi_point_getter<E: einstein_merkle_tree>(einstein_merkle_tree: &E, ts: TimeStamp) -> PointGetter<E::Snap> {
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         PointGetterBuilder::new(blackbrane, ts)
             .isolation_level(IsolationLevel::Si)
             .build()
             .unwrap()
     }
 
-    fn new_single_point_getter<E: Engine>(engine: &E, ts: TimeStamp) -> PointGetter<E::Snap> {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    fn new_single_point_getter<E: einstein_merkle_tree>(einstein_merkle_tree: &E, ts: TimeStamp) -> PointGetter<E::Snap> {
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         PointGetterBuilder::new(blackbrane, ts)
             .isolation_level(IsolationLevel::Si)
             .multi(false)
@@ -436,14 +436,14 @@ mod tests {
         assert!(val.starts_with(prefix));
     }
 
-    fn must_met_newer_ts_data<E: Engine>(
-        engine: &E,
+    fn must_met_newer_ts_data<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         getter_ts: impl Into<TimeStamp>,
         key: &[u8],
         value: &[u8],
         expected_met_newer_ts_data: bool,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let ts = getter_ts.into();
         let mut point_getter = PointGetterBuilder::new(blackbrane.clone(), ts)
             .isolation_level(IsolationLevel::Si)
@@ -495,7 +495,7 @@ mod tests {
         );
     }
 
-    /// Builds a sample engine with the following data:
+    /// Builds a sample einstein_merkle_tree with the following data:
     /// LOCK    bar                     (commit at 11)
     /// PUT     bar     -> barvvv...    (commit at 5)
     /// PUT     box     -> boxvv....    (commit at 9)
@@ -508,101 +508,101 @@ mod tests {
     /// PUT     foo2    -> foo2vv...    (commit at 5)
     /// DELETE  xxx                     (commit at 7)
     /// PUT     zz       -> zvzv....    (commit at 103)
-    fn new_sample_engine() -> RocksEngine {
+    fn new_sample_einstein_merkle_tree() -> Rockseinstein_merkle_tree {
         let suffix = "v".repeat(SHORT_VALUE_MAX_LEN + 1);
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         must_prewrite_put(
-            &engine,
+            &einstein_merkle_tree,
             b"foo1",
             &format!("foo1{}", suffix).into_bytes(),
             b"foo1",
             2,
         );
-        must_commit(&engine, b"foo1", 2, 3);
+        must_commit(&einstein_merkle_tree, b"foo1", 2, 3);
         must_prewrite_put(
-            &engine,
+            &einstein_merkle_tree,
             b"foo2",
             &format!("foo2{}", suffix).into_bytes(),
             b"foo2",
             4,
         );
         must_prewrite_put(
-            &engine,
+            &einstein_merkle_tree,
             b"bar",
             &format!("bar{}", suffix).into_bytes(),
             b"foo2",
             4,
         );
-        must_commit(&engine, b"foo2", 4, 5);
-        must_commit(&engine, b"bar", 4, 5);
-        must_prewrite_delete(&engine, b"xxx", b"xxx", 6);
-        must_commit(&engine, b"xxx", 6, 7);
+        must_commit(&einstein_merkle_tree, b"foo2", 4, 5);
+        must_commit(&einstein_merkle_tree, b"bar", 4, 5);
+        must_prewrite_delete(&einstein_merkle_tree, b"xxx", b"xxx", 6);
+        must_commit(&einstein_merkle_tree, b"xxx", 6, 7);
         must_prewrite_put(
-            &engine,
+            &einstein_merkle_tree,
             b"box",
             &format!("box{}", suffix).into_bytes(),
             b"box",
             8,
         );
-        must_prewrite_delete(&engine, b"foo1", b"box", 8);
-        must_commit(&engine, b"box", 8, 9);
-        must_commit(&engine, b"foo1", 8, 9);
-        must_prewrite_dagger(&engine, b"bar", b"bar", 10);
-        must_commit(&engine, b"bar", 10, 11);
+        must_prewrite_delete(&einstein_merkle_tree, b"foo1", b"box", 8);
+        must_commit(&einstein_merkle_tree, b"box", 8, 9);
+        must_commit(&einstein_merkle_tree, b"foo1", 8, 9);
+        must_prewrite_dagger(&einstein_merkle_tree, b"bar", b"bar", 10);
+        must_commit(&einstein_merkle_tree, b"bar", 10, 11);
         for i in 20..100 {
             if i % 2 == 0 {
-                must_prewrite_dagger(&engine, b"foo2", b"foo2", i);
-                must_commit(&engine, b"foo2", i, i + 1);
+                must_prewrite_dagger(&einstein_merkle_tree, b"foo2", b"foo2", i);
+                must_commit(&einstein_merkle_tree, b"foo2", i, i + 1);
             }
         }
         must_prewrite_put(
-            &engine,
+            &einstein_merkle_tree,
             b"zz",
             &format!("zz{}", suffix).into_bytes(),
             b"zz",
             102,
         );
-        must_commit(&engine, b"zz", 102, 103);
-        engine
+        must_commit(&einstein_merkle_tree, b"zz", 102, 103);
+        einstein_merkle_tree
     }
 
-    /// Builds a sample engine that contains transactions on the way and some short
+    /// Builds a sample einstein_merkle_tree that contains transactions on the way and some short
     /// values embedded in the write CF. The data is as follows:
     /// DELETE  bar                     (start at 4)
     /// PUT     bar     -> barval       (commit at 3)
     /// PUT     foo1    -> foo1vv...    (commit at 3)
     /// PUT     foo2    -> foo2vv...    (start at 4)
-    fn new_sample_engine_2() -> RocksEngine {
+    fn new_sample_einstein_merkle_tree_2() -> Rockseinstein_merkle_tree {
         let suffix = "v".repeat(SHORT_VALUE_MAX_LEN + 1);
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         must_prewrite_put(
-            &engine,
+            &einstein_merkle_tree,
             b"foo1",
             &format!("foo1{}", suffix).into_bytes(),
             b"foo1",
             2,
         );
-        must_prewrite_put(&engine, b"bar", b"barval", b"foo1", 2);
-        must_commit(&engine, b"foo1", 2, 3);
-        must_commit(&engine, b"bar", 2, 3);
+        must_prewrite_put(&einstein_merkle_tree, b"bar", b"barval", b"foo1", 2);
+        must_commit(&einstein_merkle_tree, b"foo1", 2, 3);
+        must_commit(&einstein_merkle_tree, b"bar", 2, 3);
 
         must_prewrite_put(
-            &engine,
+            &einstein_merkle_tree,
             b"foo2",
             &format!("foo2{}", suffix).into_bytes(),
             b"foo2",
             4,
         );
-        must_prewrite_delete(&engine, b"bar", b"foo2", 4);
-        engine
+        must_prewrite_delete(&einstein_merkle_tree, b"bar", b"foo2", 4);
+        einstein_merkle_tree
     }
 
     /// No ts larger than get ts
     #[test]
     fn test_multi_basic_1() {
-        let engine = new_sample_engine();
+        let einstein_merkle_tree = new_sample_einstein_merkle_tree();
 
-        let mut getter = new_multi_point_getter(&engine, 200.into());
+        let mut getter = new_multi_point_getter(&einstein_merkle_tree, 200.into());
 
         // Get a deleted key
         must_get_none(&mut getter, b"foo1");
@@ -669,42 +669,42 @@ mod tests {
 
     #[test]
     fn test_use_prefix_seek() {
-        let engine = TestEngineBuilder::new().build().unwrap();
-        must_prewrite_put(&engine, b"foo1", b"bar1", b"foo1", 10);
-        must_commit(&engine, b"foo1", 10, 20);
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        must_prewrite_put(&einstein_merkle_tree, b"foo1", b"bar1", b"foo1", 10);
+        must_commit(&einstein_merkle_tree, b"foo1", 10, 20);
 
         // Mustn't get the next user key even if point getter doesn't compare user key.
-        let mut getter = new_single_point_getter(&engine, 30.into());
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, 30.into());
         must_get_none(&mut getter, b"foo0");
 
-        let mut getter = new_multi_point_getter(&engine, 30.into());
+        let mut getter = new_multi_point_getter(&einstein_merkle_tree, 30.into());
         must_get_none(&mut getter, b"foo");
         must_get_none(&mut getter, b"foo0");
     }
 
     #[test]
     fn test_multi_tombstone() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
-        must_prewrite_put(&engine, b"foo", b"bar", b"foo", 10);
-        must_prewrite_put(&engine, b"foo1", b"bar1", b"foo", 10);
-        must_prewrite_put(&engine, b"foo2", b"bar2", b"foo", 10);
-        must_prewrite_put(&engine, b"foo3", b"bar3", b"foo", 10);
-        must_commit(&engine, b"foo", 10, 20);
-        must_commit(&engine, b"foo1", 10, 20);
-        must_commit(&engine, b"foo2", 10, 20);
-        must_commit(&engine, b"foo3", 10, 20);
-        must_prewrite_delete(&engine, b"foo1", b"foo1", 30);
-        must_prewrite_delete(&engine, b"foo2", b"foo1", 30);
-        must_commit(&engine, b"foo1", 30, 40);
-        must_commit(&engine, b"foo2", 30, 40);
+        must_prewrite_put(&einstein_merkle_tree, b"foo", b"bar", b"foo", 10);
+        must_prewrite_put(&einstein_merkle_tree, b"foo1", b"bar1", b"foo", 10);
+        must_prewrite_put(&einstein_merkle_tree, b"foo2", b"bar2", b"foo", 10);
+        must_prewrite_put(&einstein_merkle_tree, b"foo3", b"bar3", b"foo", 10);
+        must_commit(&einstein_merkle_tree, b"foo", 10, 20);
+        must_commit(&einstein_merkle_tree, b"foo1", 10, 20);
+        must_commit(&einstein_merkle_tree, b"foo2", 10, 20);
+        must_commit(&einstein_merkle_tree, b"foo3", 10, 20);
+        must_prewrite_delete(&einstein_merkle_tree, b"foo1", b"foo1", 30);
+        must_prewrite_delete(&einstein_merkle_tree, b"foo2", b"foo1", 30);
+        must_commit(&einstein_merkle_tree, b"foo1", 30, 40);
+        must_commit(&einstein_merkle_tree, b"foo2", 30, 40);
 
-        must_gc(&engine, b"foo", 50);
-        must_gc(&engine, b"foo1", 50);
-        must_gc(&engine, b"foo2", 50);
-        must_gc(&engine, b"foo3", 50);
+        must_gc(&einstein_merkle_tree, b"foo", 50);
+        must_gc(&einstein_merkle_tree, b"foo1", 50);
+        must_gc(&einstein_merkle_tree, b"foo2", 50);
+        must_gc(&einstein_merkle_tree, b"foo3", 50);
 
-        let mut getter = new_multi_point_getter(&engine, TimeStamp::max());
+        let mut getter = new_multi_point_getter(&einstein_merkle_tree, TimeStamp::max());
         let perf_statistics = PerfStatisticsInstant::new();
         must_get_value(&mut getter, b"foo", b"bar");
         assert_eq!(perf_statistics.delta().0.internal_delete_skipped_count, 0);
@@ -724,11 +724,11 @@ mod tests {
 
     #[test]
     fn test_multi_with_iter_lower_bound() {
-        let engine = TestEngineBuilder::new().build().unwrap();
-        must_prewrite_put(&engine, b"foo", b"bar", b"foo", 10);
-        must_commit(&engine, b"foo", 10, 20);
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        must_prewrite_put(&einstein_merkle_tree, b"foo", b"bar", b"foo", 10);
+        must_commit(&einstein_merkle_tree, b"foo", 10, 20);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let write_cursor = CursorBuilder::new(&blackbrane, CF_WRITE)
             .prefix_seek(true)
             .mutant_search_mode(SentinelSearchMode::Mixed)
@@ -757,9 +757,9 @@ mod tests {
     /// Some ts larger than get ts
     #[test]
     fn test_multi_basic_2() {
-        let engine = new_sample_engine();
+        let einstein_merkle_tree = new_sample_einstein_merkle_tree();
 
-        let mut getter = new_multi_point_getter(&engine, 5.into());
+        let mut getter = new_multi_point_getter(&einstein_merkle_tree, 5.into());
 
         must_get_value(&mut getter, b"bar", b"barv");
         let s = getter.take_statistics();
@@ -824,9 +824,9 @@ mod tests {
     /// All ts larger than get ts
     #[test]
     fn test_multi_basic_3() {
-        let engine = new_sample_engine();
+        let einstein_merkle_tree = new_sample_einstein_merkle_tree();
 
-        let mut getter = new_multi_point_getter(&engine, 2.into());
+        let mut getter = new_multi_point_getter(&einstein_merkle_tree, 2.into());
 
         must_get_none(&mut getter, b"foo1");
         let s = getter.take_statistics();
@@ -848,9 +848,9 @@ mod tests {
     /// There are some daggers in the Dagger CF.
     #[test]
     fn test_multi_daggered() {
-        let engine = new_sample_engine_2();
+        let einstein_merkle_tree = new_sample_einstein_merkle_tree_2();
 
-        let mut getter = new_multi_point_getter(&engine, 1.into());
+        let mut getter = new_multi_point_getter(&einstein_merkle_tree, 1.into());
         must_get_none(&mut getter, b"a");
         must_get_none(&mut getter, b"bar");
         must_get_none(&mut getter, b"foo1");
@@ -859,7 +859,7 @@ mod tests {
         assert_seek_next_prev(&s.write, 4, 0, 0);
         assert_eq!(s.processed_size, 0);
 
-        let mut getter = new_multi_point_getter(&engine, 3.into());
+        let mut getter = new_multi_point_getter(&einstein_merkle_tree, 3.into());
         must_get_none(&mut getter, b"a");
         must_get_value(&mut getter, b"bar", b"barv");
         must_get_value(&mut getter, b"bar", b"barv");
@@ -878,7 +878,7 @@ mod tests {
                     * 2
         );
 
-        let mut getter = new_multi_point_getter(&engine, 4.into());
+        let mut getter = new_multi_point_getter(&einstein_merkle_tree, 4.into());
         must_get_none(&mut getter, b"a");
         must_get_err(&mut getter, b"bar");
         must_get_err(&mut getter, b"bar");
@@ -898,40 +898,40 @@ mod tests {
     /// Single Point Getter can only get once.
     #[test]
     fn test_single_basic() {
-        let engine = new_sample_engine_2();
+        let einstein_merkle_tree = new_sample_einstein_merkle_tree_2();
 
-        let mut getter = new_single_point_getter(&engine, 1.into());
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, 1.into());
         must_get_none(&mut getter, b"foo1");
 
-        let mut getter = new_single_point_getter(&engine, 3.into());
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, 3.into());
         must_get_value(&mut getter, b"bar", b"barv");
         must_get_none(&mut getter, b"bar");
         must_get_none(&mut getter, b"foo1");
 
-        let mut getter = new_single_point_getter(&engine, 3.into());
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, 3.into());
         must_get_value(&mut getter, b"foo1", b"foo1v");
         must_get_none(&mut getter, b"foo2");
 
-        let mut getter = new_single_point_getter(&engine, 3.into());
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, 3.into());
         must_get_none(&mut getter, b"foo2");
         must_get_none(&mut getter, b"foo2");
 
-        let mut getter = new_single_point_getter(&engine, 4.into());
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, 4.into());
         must_get_err(&mut getter, b"bar");
         must_get_none(&mut getter, b"bar");
         must_get_none(&mut getter, b"a");
         must_get_none(&mut getter, b"foo1");
 
-        let mut getter = new_single_point_getter(&engine, 4.into());
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, 4.into());
         must_get_value(&mut getter, b"foo1", b"foo1v");
         must_get_none(&mut getter, b"foo1");
     }
 
     #[test]
     fn test_omit_value() {
-        let engine = new_sample_engine_2();
+        let einstein_merkle_tree = new_sample_einstein_merkle_tree_2();
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         let mut getter = PointGetterBuilder::new(blackbrane.clone(), 4.into())
             .isolation_level(IsolationLevel::Si)
@@ -970,48 +970,48 @@ mod tests {
 
     #[test]
     fn test_get_latest_value() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         let (key, val) = (b"foo", b"bar");
-        must_prewrite_put(&engine, key, val, key, 10);
-        must_commit(&engine, key, 10, 20);
+        must_prewrite_put(&einstein_merkle_tree, key, val, key, 10);
+        must_commit(&einstein_merkle_tree, key, 10, 20);
 
-        let mut getter = new_single_point_getter(&engine, TimeStamp::max());
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, TimeStamp::max());
         must_get_value(&mut getter, key, val);
 
         // Ignore the primary dagger if read with max ts.
-        must_prewrite_delete(&engine, key, key, 30);
-        let mut getter = new_single_point_getter(&engine, TimeStamp::max());
+        must_prewrite_delete(&einstein_merkle_tree, key, key, 30);
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, TimeStamp::max());
         must_get_value(&mut getter, key, val);
-        must_rollback(&engine, key, 30, false);
+        must_rollback(&einstein_merkle_tree, key, 30, false);
 
         // Should not ignore the secondary dagger even though reading the latest version
-        must_prewrite_delete(&engine, key, b"bar", 40);
-        let mut getter = new_single_point_getter(&engine, TimeStamp::max());
+        must_prewrite_delete(&einstein_merkle_tree, key, b"bar", 40);
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, TimeStamp::max());
         must_get_err(&mut getter, key);
-        must_rollback(&engine, key, 40, false);
+        must_rollback(&einstein_merkle_tree, key, 40, false);
 
         // Should get the latest committed value if there is a primary dagger with a ts less than
         // the latest Write's commit_ts.
         //
         // write.start_ts(10) < primary_dagger.start_ts(15) < write.commit_ts(20)
-        must_acquire_pessimistic_dagger(&engine, key, key, 15, 50);
-        must_pessimistic_prewrite_delete(&engine, key, key, 15, 50, true);
-        let mut getter = new_single_point_getter(&engine, TimeStamp::max());
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, key, key, 15, 50);
+        must_pessimistic_prewrite_delete(&einstein_merkle_tree, key, key, 15, 50, true);
+        let mut getter = new_single_point_getter(&einstein_merkle_tree, TimeStamp::max());
         must_get_value(&mut getter, key, val);
     }
 
     #[test]
     fn test_get_bypass_daggers() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         let (key, val) = (b"foo", b"bar");
-        must_prewrite_put(&engine, key, val, key, 10);
-        must_commit(&engine, key, 10, 20);
+        must_prewrite_put(&einstein_merkle_tree, key, val, key, 10);
+        must_commit(&einstein_merkle_tree, key, 10, 20);
 
-        must_prewrite_delete(&engine, key, key, 30);
+        must_prewrite_delete(&einstein_merkle_tree, key, key, 30);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut getter = PointGetterBuilder::new(blackbrane, 60.into())
             .isolation_level(IsolationLevel::Si)
             .bypass_daggers(TsSet::from_u64s(vec![30, 40, 50]))
@@ -1019,7 +1019,7 @@ mod tests {
             .unwrap();
         must_get_value(&mut getter, key, val);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut getter = PointGetterBuilder::new(blackbrane, 60.into())
             .isolation_level(IsolationLevel::Si)
             .bypass_daggers(TsSet::from_u64s(vec![31, 29]))
@@ -1030,9 +1030,9 @@ mod tests {
 
     #[test]
     fn test_get_access_daggers() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let build_getter = |ts: u64, bypass_daggers, access_daggers| {
-            let blackbrane = engine.blackbrane(Default::default()).unwrap();
+            let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             PointGetterBuilder::new(blackbrane, ts.into())
                 .isolation_level(IsolationLevel::Si)
                 .bypass_daggers(TsSet::from_u64s(bypass_daggers))
@@ -1043,42 +1043,42 @@ mod tests {
 
         // short value
         let (key, val) = (b"foo", b"bar");
-        must_prewrite_put(&engine, key, val, key, 10);
+        must_prewrite_put(&einstein_merkle_tree, key, val, key, 10);
         must_get_value(&mut build_getter(20, vec![], vec![10]), key, val);
-        must_commit(&engine, key, 10, 15);
+        must_commit(&einstein_merkle_tree, key, 10, 15);
         must_get_value(&mut build_getter(20, vec![], vec![]), key, val);
 
         // load value from default cf.
         let val = "v".repeat(SHORT_VALUE_MAX_LEN + 1);
         let val = val.as_bytes();
-        must_prewrite_put(&engine, key, val, key, 20);
+        must_prewrite_put(&einstein_merkle_tree, key, val, key, 20);
         must_get_value(&mut build_getter(30, vec![], vec![20]), key, val);
-        must_commit(&engine, key, 20, 25);
+        must_commit(&einstein_merkle_tree, key, 20, 25);
         must_get_value(&mut build_getter(30, vec![], vec![]), key, val);
 
         // delete
-        must_prewrite_delete(&engine, key, key, 30);
+        must_prewrite_delete(&einstein_merkle_tree, key, key, 30);
         must_get_none(&mut build_getter(40, vec![], vec![30]), key);
-        must_commit(&engine, key, 30, 35);
+        must_commit(&einstein_merkle_tree, key, 30, 35);
         must_get_none(&mut build_getter(40, vec![], vec![]), key);
 
         // ignore daggers not bdaggering read
         let (key, val) = (b"foo", b"bar");
         // dagger's ts > read's ts
-        must_prewrite_put(&engine, key, val, key, 50);
+        must_prewrite_put(&einstein_merkle_tree, key, val, key, 50);
         must_get_none(&mut build_getter(45, vec![], vec![50]), key);
-        must_commit(&engine, key, 50, 55);
+        must_commit(&einstein_merkle_tree, key, 50, 55);
         // DaggerType::Dagger
-        must_prewrite_dagger(&engine, key, key, 60);
+        must_prewrite_dagger(&einstein_merkle_tree, key, key, 60);
         must_get_value(&mut build_getter(65, vec![], vec![60]), key, val);
-        must_commit(&engine, key, 60, 65);
+        must_commit(&einstein_merkle_tree, key, 60, 65);
         // DaggerType::Pessimistic
-        must_acquire_pessimistic_dagger(&engine, key, key, 70, 70);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, key, key, 70, 70);
         must_get_value(&mut build_getter(75, vec![], vec![70]), key, val);
-        must_rollback(&engine, key, 70, false);
+        must_rollback(&einstein_merkle_tree, key, 70, false);
         // dagger's min_commit_ts > read's ts
         must_prewrite_put_impl(
-            &engine,
+            &einstein_merkle_tree,
             key,
             &val[..1],
             key,
@@ -1095,117 +1095,117 @@ mod tests {
             AssertionLevel::Off,
         );
         must_get_value(&mut build_getter(85, vec![], vec![80]), key, val);
-        must_rollback(&engine, key, 80, false);
+        must_rollback(&einstein_merkle_tree, key, 80, false);
         // read'ts == max && dagger is a primary dagger.
-        must_prewrite_put(&engine, key, &val[..1], key, 90);
+        must_prewrite_put(&einstein_merkle_tree, key, &val[..1], key, 90);
         must_get_value(
             &mut build_getter(TimeStamp::max().into_inner(), vec![], vec![90]),
             key,
             val,
         );
-        must_rollback(&engine, key, 90, false);
+        must_rollback(&einstein_merkle_tree, key, 90, false);
         // dagger in resolve_keys(it can't happen).
-        must_prewrite_put(&engine, key, &val[..1], key, 100);
+        must_prewrite_put(&einstein_merkle_tree, key, &val[..1], key, 100);
         must_get_value(&mut build_getter(105, vec![100], vec![100]), key, val);
-        must_rollback(&engine, key, 100, false);
+        must_rollback(&einstein_merkle_tree, key, 100, false);
     }
 
     #[test]
     fn test_met_newer_ts_data() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         let (key, val1) = (b"foo", b"bar1");
-        must_prewrite_put(&engine, key, val1, key, 10);
-        must_commit(&engine, key, 10, 20);
+        must_prewrite_put(&einstein_merkle_tree, key, val1, key, 10);
+        must_commit(&einstein_merkle_tree, key, 10, 20);
 
         let (key, val2) = (b"foo", b"bar2");
-        must_prewrite_put(&engine, key, val2, key, 30);
-        must_commit(&engine, key, 30, 40);
+        must_prewrite_put(&einstein_merkle_tree, key, val2, key, 30);
+        must_commit(&einstein_merkle_tree, key, 30, 40);
 
-        must_met_newer_ts_data(&engine, 20, key, val1, true);
-        must_met_newer_ts_data(&engine, 30, key, val1, true);
-        must_met_newer_ts_data(&engine, 40, key, val2, false);
-        must_met_newer_ts_data(&engine, 50, key, val2, false);
+        must_met_newer_ts_data(&einstein_merkle_tree, 20, key, val1, true);
+        must_met_newer_ts_data(&einstein_merkle_tree, 30, key, val1, true);
+        must_met_newer_ts_data(&einstein_merkle_tree, 40, key, val2, false);
+        must_met_newer_ts_data(&einstein_merkle_tree, 50, key, val2, false);
 
-        must_prewrite_dagger(&engine, key, key, 60);
+        must_prewrite_dagger(&einstein_merkle_tree, key, key, 60);
 
-        must_met_newer_ts_data(&engine, 50, key, val2, true);
-        must_met_newer_ts_data(&engine, 60, key, val2, true);
+        must_met_newer_ts_data(&einstein_merkle_tree, 50, key, val2, true);
+        must_met_newer_ts_data(&einstein_merkle_tree, 60, key, val2, true);
     }
 
     #[test]
     fn test_point_get_check_gc_fence() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         // PUT,      Read
         //  `--------------^
-        must_prewrite_put(&engine, b"k1", b"v1", b"k1", 10);
-        must_commit(&engine, b"k1", 10, 20);
-        must_cleanup_with_gc_fence(&engine, b"k1", 20, 0, 50, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k1", b"v1", b"k1", 10);
+        must_commit(&einstein_merkle_tree, b"k1", 10, 20);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k1", 20, 0, 50, true);
 
         // PUT,      Read
         //  `---------^
-        must_prewrite_put(&engine, b"k2", b"v2", b"k2", 11);
-        must_commit(&engine, b"k2", 11, 20);
-        must_cleanup_with_gc_fence(&engine, b"k2", 20, 0, 40, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k2", b"v2", b"k2", 11);
+        must_commit(&einstein_merkle_tree, b"k2", 11, 20);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k2", 20, 0, 40, true);
 
         // PUT,      Read
         //  `-----^
-        must_prewrite_put(&engine, b"k3", b"v3", b"k3", 12);
-        must_commit(&engine, b"k3", 12, 20);
-        must_cleanup_with_gc_fence(&engine, b"k3", 20, 0, 30, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k3", b"v3", b"k3", 12);
+        must_commit(&einstein_merkle_tree, b"k3", 12, 20);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k3", 20, 0, 30, true);
 
         // PUT,   PUT,       Read
         //  `-----^ `----^
-        must_prewrite_put(&engine, b"k4", b"v4", b"k4", 13);
-        must_commit(&engine, b"k4", 13, 14);
-        must_prewrite_put(&engine, b"k4", b"v4x", b"k4", 15);
-        must_commit(&engine, b"k4", 15, 20);
-        must_cleanup_with_gc_fence(&engine, b"k4", 14, 0, 20, false);
-        must_cleanup_with_gc_fence(&engine, b"k4", 20, 0, 30, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k4", b"v4", b"k4", 13);
+        must_commit(&einstein_merkle_tree, b"k4", 13, 14);
+        must_prewrite_put(&einstein_merkle_tree, b"k4", b"v4x", b"k4", 15);
+        must_commit(&einstein_merkle_tree, b"k4", 15, 20);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k4", 14, 0, 20, false);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k4", 20, 0, 30, true);
 
         // PUT,   DEL,       Read
         //  `-----^ `----^
-        must_prewrite_put(&engine, b"k5", b"v5", b"k5", 13);
-        must_commit(&engine, b"k5", 13, 14);
-        must_prewrite_delete(&engine, b"k5", b"v5", 15);
-        must_commit(&engine, b"k5", 15, 20);
-        must_cleanup_with_gc_fence(&engine, b"k5", 14, 0, 20, false);
-        must_cleanup_with_gc_fence(&engine, b"k5", 20, 0, 30, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k5", b"v5", b"k5", 13);
+        must_commit(&einstein_merkle_tree, b"k5", 13, 14);
+        must_prewrite_delete(&einstein_merkle_tree, b"k5", b"v5", 15);
+        must_commit(&einstein_merkle_tree, b"k5", 15, 20);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k5", 14, 0, 20, false);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k5", 20, 0, 30, true);
 
         // PUT, LOCK, LOCK,   Read
         //  `------------------------^
-        must_prewrite_put(&engine, b"k6", b"v6", b"k6", 16);
-        must_commit(&engine, b"k6", 16, 20);
-        must_prewrite_dagger(&engine, b"k6", b"k6", 25);
-        must_commit(&engine, b"k6", 25, 26);
-        must_prewrite_dagger(&engine, b"k6", b"k6", 28);
-        must_commit(&engine, b"k6", 28, 29);
-        must_cleanup_with_gc_fence(&engine, b"k6", 20, 0, 50, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k6", b"v6", b"k6", 16);
+        must_commit(&einstein_merkle_tree, b"k6", 16, 20);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k6", b"k6", 25);
+        must_commit(&einstein_merkle_tree, b"k6", 25, 26);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k6", b"k6", 28);
+        must_commit(&einstein_merkle_tree, b"k6", 28, 29);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k6", 20, 0, 50, true);
 
         // PUT, LOCK,   LOCK,   Read
         //  `---------^
-        must_prewrite_put(&engine, b"k7", b"v7", b"k7", 16);
-        must_commit(&engine, b"k7", 16, 20);
-        must_prewrite_dagger(&engine, b"k7", b"k7", 25);
-        must_commit(&engine, b"k7", 25, 26);
-        must_cleanup_with_gc_fence(&engine, b"k7", 20, 0, 27, true);
-        must_prewrite_dagger(&engine, b"k7", b"k7", 28);
-        must_commit(&engine, b"k7", 28, 29);
+        must_prewrite_put(&einstein_merkle_tree, b"k7", b"v7", b"k7", 16);
+        must_commit(&einstein_merkle_tree, b"k7", 16, 20);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k7", b"k7", 25);
+        must_commit(&einstein_merkle_tree, b"k7", 25, 26);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k7", 20, 0, 27, true);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k7", b"k7", 28);
+        must_commit(&einstein_merkle_tree, b"k7", 28, 29);
 
         // PUT,  Read
         //  * (GC fence ts is 0)
-        must_prewrite_put(&engine, b"k8", b"v8", b"k8", 17);
-        must_commit(&engine, b"k8", 17, 30);
-        must_cleanup_with_gc_fence(&engine, b"k8", 30, 0, 0, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k8", b"v8", b"k8", 17);
+        must_commit(&einstein_merkle_tree, b"k8", 17, 30);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k8", 30, 0, 0, true);
 
         // PUT, LOCK,     Read
         // `-----------^
-        must_prewrite_put(&engine, b"k9", b"v9", b"k9", 18);
-        must_commit(&engine, b"k9", 18, 20);
-        must_prewrite_dagger(&engine, b"k9", b"k9", 25);
-        must_commit(&engine, b"k9", 25, 26);
-        must_cleanup_with_gc_fence(&engine, b"k9", 20, 0, 27, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k9", b"v9", b"k9", 18);
+        must_commit(&einstein_merkle_tree, b"k9", 18, 20);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k9", b"k9", 25);
+        must_commit(&einstein_merkle_tree, b"k9", 25, 26);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k9", 20, 0, 27, true);
 
         let expected_results = vec![
             (b"k1", Some(b"v1")),
@@ -1220,12 +1220,12 @@ mod tests {
         ];
 
         for (k, v) in &expected_results {
-            let mut single_getter = new_single_point_getter(&engine, 40.into());
+            let mut single_getter = new_single_point_getter(&einstein_merkle_tree, 40.into());
             let value = single_getter.get(&Key::from_cocauset(*k)).unwrap();
             assert_eq!(value, v.map(|v| v.to_vec()));
         }
 
-        let mut multi_getter = new_multi_point_getter(&engine, 40.into());
+        let mut multi_getter = new_multi_point_getter(&einstein_merkle_tree, 40.into());
         for (k, v) in &expected_results {
             let value = multi_getter.get(&Key::from_cocauset(*k)).unwrap();
             assert_eq!(value, v.map(|v| v.to_vec()));

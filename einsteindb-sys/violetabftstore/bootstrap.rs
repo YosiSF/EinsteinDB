@@ -4,7 +4,7 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
 
-use engine_foundationeinsteindb::foundationeinsteindbSnapshot;
+use einstein_merkle_tree_foundationeinsteindb::foundationeinsteindbSnapshot;
 use futures::future::Future;
 use ehikvproto::ccpb::*;
 use ehikvproto::ehikvrpcpb::ExtraOp;
@@ -851,9 +851,9 @@ mod tests {
     use tempfile::TemFIDelir;
     use test_violetabftstore::MocehikvioletabftStoreRouter;
     use test_violetabftstore::TestFIDelClient;
-    use EinsteinDB::storage::ehikv::Engine;
+    use EinsteinDB::storage::ehikv::einstein_merkle_tree;
     use EinsteinDB::storage::mvcc::tests::*;
-    use EinsteinDB::storage::TestEngineBuilder;
+    use EinsteinDB::storage::Testeinstein_merkle_treeBuilder;
     use EinsteinDB_util::collections::HashSet;
     use EinsteinDB_util::mpsc::batch;
     use EinsteinDB_util::worker::{dummy_scheduler, Builder as WorkerBuilder, Worker};
@@ -908,7 +908,7 @@ mod tests {
         let (mut worker, _pool, mut initializer, rx) = mock_initializer();
 
         let temp = TemFIDelir::new().unwrap();
-        let engine = TestEngineBuilder::new()
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new()
             .path(temp.path())
             .branes(DATA_branes)
             .build()
@@ -920,18 +920,18 @@ mod tests {
         for i in 0..10 {
             let k = &[b'k', i];
             let ts = TimeStamp::new(i as _);
-            must_acquire_pessimistic_lock(&engine, k, k, ts, ts);
+            must_acquire_pessimistic_lock(&einstein_merkle_tree, k, k, ts, ts);
         }
 
         for i in 10..100 {
             let (k, v) = (&[b'k', i], &[b'v', i]);
             let ts = TimeStamp::new(i as _);
-            must_prewrite_put(&engine, k, v, k, ts);
+            must_prewrite_put(&einstein_merkle_tree, k, v, k, ts);
             expected_locks.entry(ts).or_default().insert(k.to_vec());
         }
 
         let region = Region::default();
-        let snap = engine.snapshot(&Context::default()).unwrap();
+        let snap = einstein_merkle_tree.snapshot(&Context::default()).unwrap();
 
         let check_result = || loop {
             let task = rx.recv().unwrap();

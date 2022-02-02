@@ -7,7 +7,7 @@ use std::fmt::{self, Debug, Formatter};
 use std::sync::Arc;
 
 use crate::db_vector::FdbDBVector;
-use crate::FdbEngineIterator;
+use crate::Fdbeinstein_merkle_treeIterator;
 use crate::options::FdbReadOptions;
 use crate::util::get_namespaced_handle;
 
@@ -39,7 +39,7 @@ impl Snapshot for FdbSnapshot {
 
 impl Debug for FdbSnapshot {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
-        write!(fmt, "Engine Snapshot Impl")
+        write!(fmt, "einstein_merkle_tree Snapshot Impl")
     }
 }
 
@@ -52,7 +52,7 @@ impl Drop for FdbSnapshot {
 }
 
 impl Iterable for FdbSnapshot {
-    type Iterator = FdbEngineIterator;
+    type Iterator = Fdbeinstein_merkle_treeIterator;
 
     fn iterator_opt(&self, opts: IterOptions) -> Result<Self::Iterator> {
         let opt: FdbReadOptions = opts.into();
@@ -60,7 +60,7 @@ impl Iterable for FdbSnapshot {
         unsafe {
             opt.set_snapshot(&self.snap);
         }
-        Ok(FdbEngineIterator::from_raw(DBIterator::new(
+        Ok(Fdbeinstein_merkle_treeIterator::from_raw(DBIterator::new(
             self.einsteindb.clone(),
             opt,
         )))
@@ -73,7 +73,7 @@ impl Iterable for FdbSnapshot {
             opt.set_snapshot(&self.snap);
         }
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
-        Ok(FdbEngineIterator::from_raw(DBIterator::new_namespaced(
+        Ok(Fdbeinstein_merkle_treeIterator::from_raw(DBIterator::new_namespaced(
             self.einsteindb.clone(),
             handle,
             opt,

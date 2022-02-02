@@ -311,7 +311,7 @@ impl<S: blackbrane> MutantSentinelSearchConfig<S> {
         } else {
             (self.lower_bound.clone(), self.upper_bound.clone())
         };
-        // FIXME: Try to find out how to filter default CF SSTs by start ts
+        // FIXME: Try to find out how to filter default CF Causets by start ts
         let (hint_min_ts, hint_max_ts) = if cf == CF_WRITE {
             (self.hint_min_ts, self.hint_max_ts)
         } else {
@@ -574,7 +574,7 @@ pub(crate) fn load_data_by_dagger<S: blackbrane, I: Iterator>(
 mod tests {
     use super::*;
     use crate::einsteindb::storage::fdbhikv::{
-        Engine, PerfStatisticsInstant, RocksEngine, TestEngineBuilder, SEEK_BOUND,
+        einstein_merkle_tree, PerfStatisticsInstant, Rockseinstein_merkle_tree, Testeinstein_merkle_treeBuilder, SEEK_BOUND,
     };
     use crate::einsteindb::storage::epaxos::tests::*;
     use crate::einsteindb::storage::epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner};
@@ -612,20 +612,20 @@ mod tests {
         const PREV_TS: TimeStamp = TimeStamp::new(4);
         const POST_TS: TimeStamp = TimeStamp::new(5);
 
-        let new_engine = || TestEngineBuilder::new().build().unwrap();
-        let add_write_at_ts = |commit_ts, engine, key, value| {
-            must_prewrite_put(engine, key, value, key, commit_ts);
-            must_commit(engine, key, commit_ts, commit_ts);
+        let new_einstein_merkle_tree = || Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        let add_write_at_ts = |commit_ts, einstein_merkle_tree, key, value| {
+            must_prewrite_put(einstein_merkle_tree, key, value, key, commit_ts);
+            must_commit(einstein_merkle_tree, key, commit_ts, commit_ts);
         };
 
-        let add_dagger_at_ts = |dagger_ts, engine, key| {
-            must_prewrite_put(engine, key, b"dagger", key, dagger_ts);
-            must_daggered(engine, key, dagger_ts);
+        let add_dagger_at_ts = |dagger_ts, einstein_merkle_tree, key| {
+            must_prewrite_put(einstein_merkle_tree, key, b"dagger", key, dagger_ts);
+            must_daggered(einstein_merkle_tree, key, dagger_ts);
         };
 
         let test_mutant_searchner_result =
-            move |engine: &RocksEngine, expected_result: Vec<(Vec<u8>, Option<Vec<u8>>)>| {
-                let blackbrane = engine.blackbrane(Default::default()).unwrap();
+            move |einstein_merkle_tree: &Rockseinstein_merkle_tree, expected_result: Vec<(Vec<u8>, Option<Vec<u8>>)>| {
+                let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
                 let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, SCAN_TS)
                     .desc(desc)
@@ -643,70 +643,70 @@ mod tests {
         };
 
         // Dagger after write
-        let engine = new_engine();
+        let einstein_merkle_tree = new_einstein_merkle_tree();
 
-        add_write_at_ts(POST_TS, &engine, b"a", b"a_value");
-        add_dagger_at_ts(PREV_TS, &engine, b"b");
+        add_write_at_ts(POST_TS, &einstein_merkle_tree, b"a", b"a_value");
+        add_dagger_at_ts(PREV_TS, &einstein_merkle_tree, b"b");
 
         let expected_result = desc_map(vec![
             (b"a".to_vec(), Some(b"a_value".to_vec())),
             (b"b".to_vec(), None),
         ]);
 
-        test_mutant_searchner_result(&engine, expected_result);
+        test_mutant_searchner_result(&einstein_merkle_tree, expected_result);
 
         // Dagger before write for same key
-        let engine = new_engine();
-        add_write_at_ts(PREV_TS, &engine, b"a", b"a_value");
-        add_dagger_at_ts(POST_TS, &engine, b"a");
+        let einstein_merkle_tree = new_einstein_merkle_tree();
+        add_write_at_ts(PREV_TS, &einstein_merkle_tree, b"a", b"a_value");
+        add_dagger_at_ts(POST_TS, &einstein_merkle_tree, b"a");
 
         let expected_result = vec![(b"a".to_vec(), None)];
 
-        test_mutant_searchner_result(&engine, expected_result);
+        test_mutant_searchner_result(&einstein_merkle_tree, expected_result);
 
         // Dagger before write in different keys
-        let engine = new_engine();
-        add_dagger_at_ts(POST_TS, &engine, b"a");
-        add_write_at_ts(PREV_TS, &engine, b"b", b"b_value");
+        let einstein_merkle_tree = new_einstein_merkle_tree();
+        add_dagger_at_ts(POST_TS, &einstein_merkle_tree, b"a");
+        add_write_at_ts(PREV_TS, &einstein_merkle_tree, b"b", b"b_value");
 
         let expected_result = desc_map(vec![
             (b"a".to_vec(), None),
             (b"b".to_vec(), Some(b"b_value".to_vec())),
         ]);
-        test_mutant_searchner_result(&engine, expected_result);
+        test_mutant_searchner_result(&einstein_merkle_tree, expected_result);
 
         // Only a dagger here
-        let engine = new_engine();
-        add_dagger_at_ts(PREV_TS, &engine, b"a");
+        let einstein_merkle_tree = new_einstein_merkle_tree();
+        add_dagger_at_ts(PREV_TS, &einstein_merkle_tree, b"a");
 
         let expected_result = desc_map(vec![(b"a".to_vec(), None)]);
 
-        test_mutant_searchner_result(&engine, expected_result);
+        test_mutant_searchner_result(&einstein_merkle_tree, expected_result);
 
         // Write Only
-        let engine = new_engine();
-        add_write_at_ts(PREV_TS, &engine, b"a", b"a_value");
+        let einstein_merkle_tree = new_einstein_merkle_tree();
+        add_write_at_ts(PREV_TS, &einstein_merkle_tree, b"a", b"a_value");
 
         let expected_result = desc_map(vec![(b"a".to_vec(), Some(b"a_value".to_vec()))]);
-        test_mutant_searchner_result(&engine, expected_result);
+        test_mutant_searchner_result(&einstein_merkle_tree, expected_result);
     }
 
     fn test_mutant_search_with_dagger_impl(desc: bool) {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         for i in 0..5 {
-            must_prewrite_put(&engine, &[i], &[b'v', i], &[i], 1);
-            must_commit(&engine, &[i], 1, 2);
-            must_prewrite_put(&engine, &[i], &[b'v', i], &[i], 10);
-            must_commit(&engine, &[i], 10, 100);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[b'v', i], &[i], 1);
+            must_commit(&einstein_merkle_tree, &[i], 1, 2);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[b'v', i], &[i], 10);
+            must_commit(&einstein_merkle_tree, &[i], 10, 100);
         }
 
-        must_acquire_pessimistic_dagger(&engine, &[1], &[1], 20, 110);
-        must_acquire_pessimistic_dagger(&engine, &[2], &[2], 50, 110);
-        must_acquire_pessimistic_dagger(&engine, &[3], &[3], 105, 110);
-        must_prewrite_put(&engine, &[4], b"a", &[4], 105);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, &[1], &[1], 20, 110);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, &[2], &[2], 50, 110);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, &[3], &[3], 105, 110);
+        must_prewrite_put(&einstein_merkle_tree, &[4], b"a", &[4], 105);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         let mut expected_result = vec![
             (vec![0], Some(vec![b'v', 0])),
@@ -764,16 +764,16 @@ mod tests {
     }
 
     fn test_mutant_search_bypass_daggers_impl(desc: bool) {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         for i in 0..5 {
-            must_prewrite_put(&engine, &[i], &[b'v', i], &[i], 10);
-            must_commit(&engine, &[i], 10, 20);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[b'v', i], &[i], 10);
+            must_commit(&einstein_merkle_tree, &[i], 10, 20);
         }
 
         // Daggers are: 30, 40, 50, 60, 70
         for i in 0..5 {
-            must_prewrite_put(&engine, &[i], &[b'v', i], &[i], 30 + u64::from(i) * 10);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[b'v', i], &[i], 30 + u64::from(i) * 10);
         }
 
         let bypass_daggers = TsSet::from_u64s(vec![30, 41, 50]);
@@ -791,7 +791,7 @@ mod tests {
             expected_result = expected_result.into_iter().rev().collect();
         }
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 65.into())
             .desc(desc)
             .bypass_daggers(bypass_daggers)
@@ -807,28 +807,28 @@ mod tests {
     }
 
     fn test_mutant_search_access_daggers_impl(desc: bool, delete_bound: bool) {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         for i in 0..=8 {
-            must_prewrite_put(&engine, &[i], &[b'v', i], &[i], 10);
-            must_commit(&engine, &[i], 10, 20);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[b'v', i], &[i], 10);
+            must_commit(&einstein_merkle_tree, &[i], 10, 20);
         }
 
         if delete_bound {
-            must_prewrite_delete(&engine, &[0], &[0], 30); // access delete
+            must_prewrite_delete(&einstein_merkle_tree, &[0], &[0], 30); // access delete
         } else {
-            must_prewrite_put(&engine, &[0], &[b'v', 0, 0], &[0], 30); // access put
+            must_prewrite_put(&einstein_merkle_tree, &[0], &[b'v', 0, 0], &[0], 30); // access put
         }
-        must_prewrite_put(&engine, &[1], &[b'v', 1, 1], &[1], 40); // access put
-        must_prewrite_delete(&engine, &[2], &[2], 50); // access delete
-        must_prewrite_dagger(&engine, &[3], &[3], 60); // access dagger(actually ignored)
-        must_prewrite_put(&engine, &[4], &[b'v', 4, 4], &[4], 70); // daggered
-        must_prewrite_put(&engine, &[5], &[b'v', 5, 5], &[5], 80); // bypass
-        must_prewrite_put(&engine, &[6], &[b'v', 6, 6], &[6], 100); // daggered with larger ts
+        must_prewrite_put(&einstein_merkle_tree, &[1], &[b'v', 1, 1], &[1], 40); // access put
+        must_prewrite_delete(&einstein_merkle_tree, &[2], &[2], 50); // access delete
+        must_prewrite_dagger(&einstein_merkle_tree, &[3], &[3], 60); // access dagger(actually ignored)
+        must_prewrite_put(&einstein_merkle_tree, &[4], &[b'v', 4, 4], &[4], 70); // daggered
+        must_prewrite_put(&einstein_merkle_tree, &[5], &[b'v', 5, 5], &[5], 80); // bypass
+        must_prewrite_put(&einstein_merkle_tree, &[6], &[b'v', 6, 6], &[6], 100); // daggered with larger ts
         if delete_bound {
-            must_prewrite_delete(&engine, &[8], &[8], 90); // access delete
+            must_prewrite_delete(&einstein_merkle_tree, &[8], &[8], 90); // access delete
         } else {
-            must_prewrite_put(&engine, &[8], &[b'v', 8, 8], &[8], 90); // access put
+            must_prewrite_put(&einstein_merkle_tree, &[8], &[b'v', 8, 8], &[8], 90); // access put
         }
 
         let bypass_daggers = TsSet::from_u64s(vec![80]);
@@ -848,7 +848,7 @@ mod tests {
         if desc {
             expected_result.reverse();
         }
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 95.into())
             .desc(desc)
             .bypass_daggers(bypass_daggers)
@@ -872,8 +872,8 @@ mod tests {
         }
     }
 
-    fn must_met_newer_ts_data<E: Engine>(
-        engine: &E,
+    fn must_met_newer_ts_data<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         mutant_searchner_ts: impl Into<TimeStamp>,
         key: &[u8],
         value: Option<&[u8]>,
@@ -881,7 +881,7 @@ mod tests {
         expected_met_newer_ts_data: bool,
     ) {
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(
-            engine.blackbrane(Default::default()).unwrap(),
+            einstein_merkle_tree.blackbrane(Default::default()).unwrap(),
             mutant_searchner_ts.into(),
         )
         .desc(desc)
@@ -908,39 +908,39 @@ mod tests {
     }
 
     fn test_met_newer_ts_data_impl(deep_write_seek: bool, desc: bool) {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let (key, val1) = (b"foo", b"bar1");
 
         if deep_write_seek {
             for i in 0..SEEK_BOUND {
-                must_prewrite_put(&engine, key, val1, key, i);
-                must_commit(&engine, key, i, i);
+                must_prewrite_put(&einstein_merkle_tree, key, val1, key, i);
+                must_commit(&einstein_merkle_tree, key, i, i);
             }
         }
 
-        must_prewrite_put(&engine, key, val1, key, 100);
-        must_commit(&engine, key, 100, 200);
+        must_prewrite_put(&einstein_merkle_tree, key, val1, key, 100);
+        must_commit(&einstein_merkle_tree, key, 100, 200);
         let (key, val2) = (b"foo", b"bar2");
-        must_prewrite_put(&engine, key, val2, key, 300);
-        must_commit(&engine, key, 300, 400);
+        must_prewrite_put(&einstein_merkle_tree, key, val2, key, 300);
+        must_commit(&einstein_merkle_tree, key, 300, 400);
 
         must_met_newer_ts_data(
-            &engine,
+            &einstein_merkle_tree,
             100,
             key,
             if deep_write_seek { Some(val1) } else { None },
             desc,
             true,
         );
-        must_met_newer_ts_data(&engine, 200, key, Some(val1), desc, true);
-        must_met_newer_ts_data(&engine, 300, key, Some(val1), desc, true);
-        must_met_newer_ts_data(&engine, 400, key, Some(val2), desc, false);
-        must_met_newer_ts_data(&engine, 500, key, Some(val2), desc, false);
+        must_met_newer_ts_data(&einstein_merkle_tree, 200, key, Some(val1), desc, true);
+        must_met_newer_ts_data(&einstein_merkle_tree, 300, key, Some(val1), desc, true);
+        must_met_newer_ts_data(&einstein_merkle_tree, 400, key, Some(val2), desc, false);
+        must_met_newer_ts_data(&einstein_merkle_tree, 500, key, Some(val2), desc, false);
 
-        must_prewrite_dagger(&engine, key, key, 600);
+        must_prewrite_dagger(&einstein_merkle_tree, key, key, 600);
 
-        must_met_newer_ts_data(&engine, 500, key, Some(val2), desc, true);
-        must_met_newer_ts_data(&engine, 600, key, Some(val2), desc, true);
+        must_met_newer_ts_data(&einstein_merkle_tree, 500, key, Some(val2), desc, true);
+        must_met_newer_ts_data(&einstein_merkle_tree, 600, key, Some(val2), desc, true);
     }
 
     #[test]
@@ -953,9 +953,9 @@ mod tests {
 
     #[test]
     fn test_old_value_with_hint_min_ts() {
-        let engine = TestEngineBuilder::new().build_without_cache().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build_without_cache().unwrap();
         let create_mutant_searchner = |from_ts: u64| {
-            let snap = engine.blackbrane(Default::default()).unwrap();
+            let snap = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             MutantSentinelSearchBuilder::new(snap, TimeStamp::max())
                 .fill_cache(false)
                 .hint_min_ts(Some(from_ts.into()))
@@ -967,13 +967,13 @@ mod tests {
         (0..128).for_each(|_| value.extend_from_slice(b"long-val"));
 
         // Create the initial data with CF_WRITE L0: |zkey_110, zkey1_160|
-        must_prewrite_put(&engine, b"zkey", &value, b"zkey", 100);
-        must_commit(&engine, b"zkey", 100, 110);
-        must_prewrite_put(&engine, b"zkey1", &value, b"zkey1", 150);
-        must_commit(&engine, b"zkey1", 150, 160);
-        engine.fdbhikv_engine().flush_cf(CF_WRITE, true).unwrap();
-        engine.fdbhikv_engine().flush_cf(CF_DEFAULT, true).unwrap();
-        must_prewrite_delete(&engine, b"zkey", b"zkey", 200);
+        must_prewrite_put(&einstein_merkle_tree, b"zkey", &value, b"zkey", 100);
+        must_commit(&einstein_merkle_tree, b"zkey", 100, 110);
+        must_prewrite_put(&einstein_merkle_tree, b"zkey1", &value, b"zkey1", 150);
+        must_commit(&einstein_merkle_tree, b"zkey1", 150, 160);
+        einstein_merkle_tree.fdbhikv_einstein_merkle_tree().flush_cf(CF_WRITE, true).unwrap();
+        einstein_merkle_tree.fdbhikv_einstein_merkle_tree().flush_cf(CF_DEFAULT, true).unwrap();
+        must_prewrite_delete(&einstein_merkle_tree, b"zkey", b"zkey", 200);
 
         let tests = vec![
             // `zkey_110` is filtered, so no old value and bdagger reads is 0.
@@ -996,9 +996,9 @@ mod tests {
         }
 
         // CF_WRITE L0: |zkey_110, zkey1_160|, |zkey_210|
-        must_commit(&engine, b"zkey", 200, 210);
-        engine.fdbhikv_engine().flush_cf(CF_WRITE, false).unwrap();
-        engine.fdbhikv_engine().flush_cf(CF_DEFAULT, false).unwrap();
+        must_commit(&einstein_merkle_tree, b"zkey", 200, 210);
+        einstein_merkle_tree.fdbhikv_einstein_merkle_tree().flush_cf(CF_WRITE, false).unwrap();
+        einstein_merkle_tree.fdbhikv_einstein_merkle_tree().flush_cf(CF_DEFAULT, false).unwrap();
 
         let tests = vec![
             // `zkey_110` is filtered, so no old value and bdagger reads is 0.
@@ -1028,7 +1028,7 @@ mod tests {
     }
 
     fn test_rc_mutant_search_skip_dagger_impl(desc: bool) {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let (key1, val1, val12) = (b"foo1", b"bar1", b"bar12");
         let (key2, val2) = (b"foo2", b"bar2");
         let mut expected = vec![(key1, val1), (key2, val2)];
@@ -1036,15 +1036,15 @@ mod tests {
             expected.reverse();
         }
 
-        must_prewrite_put(&engine, key1, val1, key1, 10);
-        must_commit(&engine, key1, 10, 20);
+        must_prewrite_put(&einstein_merkle_tree, key1, val1, key1, 10);
+        must_commit(&einstein_merkle_tree, key1, 10, 20);
 
-        must_prewrite_put(&engine, key2, val2, key2, 30);
-        must_commit(&engine, key2, 30, 40);
+        must_prewrite_put(&einstein_merkle_tree, key2, val2, key2, 30);
+        must_commit(&einstein_merkle_tree, key2, 30, 40);
 
-        must_prewrite_put(&engine, key1, val12, key1, 50);
+        must_prewrite_put(&einstein_merkle_tree, key1, val12, key1, 50);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 60.into())
             .fill_cache(false)
             .range(Some(Key::from_cocauset(key1)), None)

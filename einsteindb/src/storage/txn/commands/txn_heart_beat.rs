@@ -96,26 +96,26 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for TxnHeartBeat {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::einsteindb::storage::fdbhikv::TestEngineBuilder;
+    use crate::einsteindb::storage::fdbhikv::Testeinstein_merkle_treeBuilder;
     use crate::einsteindb::storage::dagger_manager::DummyDaggerManager;
     use crate::einsteindb::storage::epaxos::tests::*;
     use crate::einsteindb::storage::solitontxn::commands::WriteCommand;
     use crate::einsteindb::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
     use crate::einsteindb::storage::solitontxn::tests::*;
-    use crate::einsteindb::storage::Engine;
+    use crate::einsteindb::storage::einstein_merkle_tree;
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use einstfdbhikv_util::deadline::Deadline;
 
-    pub fn must_success<E: Engine>(
-        engine: &E,
+    pub fn must_success<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         primary_key: &[u8],
         start_ts: impl Into<TimeStamp>,
         advise_ttl: u64,
         expect_ttl: u64,
     ) {
         let ctx = Context::default();
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let start_ts = start_ts.into();
         let cm = ConcurrencyManager::new(start_ts);
         let command = crate::storage::solitontxn::commands::TxnHeartBeat {
@@ -141,21 +141,21 @@ pub mod tests {
             solitontxn_status: TxnStatus::Uncommitted { dagger, .. },
         } = result.pr
         {
-            write(engine, &ctx, result.to_be_write.modifies);
+            write(einstein_merkle_tree, &ctx, result.to_be_write.modifies);
             assert_eq!(dagger.ttl, expect_ttl);
         } else {
             unreachable!();
         }
     }
 
-    pub fn must_err<E: Engine>(
-        engine: &E,
+    pub fn must_err<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         primary_key: &[u8],
         start_ts: impl Into<TimeStamp>,
         advise_ttl: u64,
     ) {
         let ctx = Context::default();
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let start_ts = start_ts.into();
         let cm = ConcurrencyManager::new(start_ts);
         let command = crate::storage::solitontxn::commands::TxnHeartBeat {
@@ -183,49 +183,49 @@ pub mod tests {
 
     #[test]
     fn test_solitontxn_heart_beat() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         let (k, v) = (b"k1", b"v1");
 
         let test = |ts| {
             // Do nothing if advise_ttl is less smaller than current TTL.
-            must_success(&engine, k, ts, 90, 100);
+            must_success(&einstein_merkle_tree, k, ts, 90, 100);
             // Return the new TTL if the TTL when the TTL is updated.
-            must_success(&engine, k, ts, 110, 110);
+            must_success(&einstein_merkle_tree, k, ts, 110, 110);
             // The dagger's TTL is updated and persisted into the db.
-            must_success(&engine, k, ts, 90, 110);
+            must_success(&einstein_merkle_tree, k, ts, 90, 110);
             // Heart beat another transaction's dagger will lead to an error.
-            must_err(&engine, k, ts - 1, 150);
-            must_err(&engine, k, ts + 1, 150);
+            must_err(&einstein_merkle_tree, k, ts - 1, 150);
+            must_err(&einstein_merkle_tree, k, ts + 1, 150);
             // The existing dagger is not changed.
-            must_success(&engine, k, ts, 90, 110);
+            must_success(&einstein_merkle_tree, k, ts, 90, 110);
         };
 
         // No dagger.
-        must_err(&engine, k, 5, 100);
+        must_err(&einstein_merkle_tree, k, 5, 100);
 
         // Create a dagger with TTL=100.
         // The initial TTL will be set to 0 after calling must_prewrite_put. Update it first.
-        must_prewrite_put(&engine, k, v, k, 5);
-        must_daggered(&engine, k, 5);
-        must_success(&engine, k, 5, 100, 100);
+        must_prewrite_put(&einstein_merkle_tree, k, v, k, 5);
+        must_daggered(&einstein_merkle_tree, k, 5);
+        must_success(&einstein_merkle_tree, k, 5, 100, 100);
 
         test(5);
 
-        must_daggered(&engine, k, 5);
-        must_commit(&engine, k, 5, 10);
-        must_undaggered(&engine, k);
+        must_daggered(&einstein_merkle_tree, k, 5);
+        must_commit(&einstein_merkle_tree, k, 5, 10);
+        must_undaggered(&einstein_merkle_tree, k);
 
         // No dagger.
-        must_err(&engine, k, 5, 100);
-        must_err(&engine, k, 10, 100);
+        must_err(&einstein_merkle_tree, k, 5, 100);
+        must_err(&einstein_merkle_tree, k, 10, 100);
 
-        must_acquire_pessimistic_dagger(&engine, k, k, 8, 15);
-        must_pessimistic_daggered(&engine, k, 8, 15);
-        must_success(&engine, k, 8, 100, 100);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k, k, 8, 15);
+        must_pessimistic_daggered(&einstein_merkle_tree, k, 8, 15);
+        must_success(&einstein_merkle_tree, k, 8, 100, 100);
 
         test(8);
 
-        must_pessimistic_daggered(&engine, k, 8, 15);
+        must_pessimistic_daggered(&einstein_merkle_tree, k, 8, 15);
     }
 }

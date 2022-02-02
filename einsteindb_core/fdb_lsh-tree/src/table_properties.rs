@@ -2,7 +2,7 @@
 
 use fdb_traits::{Error, Range, Result};
 
-use crate::{FdbEngine, RangeProperties, util};
+use crate::{Fdbeinstein_merkle_tree, RangeProperties, util};
 
 #[repr(transparent)]
 pub struct UserCollectedProperties(foundationdb::UserCollectedProperties);
@@ -37,7 +37,7 @@ impl fdb_traits::TablePropertiesCollection for TablePropertiesCollection {
     }
 }
 
-impl fdb_traits::TablePropertiesExt for FdbEngine {
+impl fdb_traits::TablePropertiesExt for Fdbeinstein_merkle_tree {
     type TablePropertiesCollection = TablePropertiesCollection;
 
     fn table_properties_collection(
@@ -50,7 +50,7 @@ impl fdb_traits::TablePropertiesExt for FdbEngine {
     }
 }
 
-impl FdbEngine {
+impl Fdbeinstein_merkle_tree {
     pub(crate) fn get_properties_of_tables_in_range(
         &self,
         namespaced: &str,
@@ -62,7 +62,7 @@ impl FdbEngine {
         let raw = self
             .as_inner()
             .get_properties_of_tables_in_range(namespaced, &ranges);
-        let raw = raw.map_err(Error::Engine)?;
+        let raw = raw.map_err(Error::einstein_merkle_tree)?;
         Ok(raw)
     }
 

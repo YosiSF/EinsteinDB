@@ -1,9 +1,9 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::Result;
-use crate::{db_options::TitanDBOptions, sst_partitioner::SstPartitionerFactory};
+use crate::{db_options::TitanDBOptions, Causet_partitioner::CausetPartitionerFactory};
 
-/// Trait for engines with column family options
+/// Trait for einstein_merkle_trees with column family options
 pub trait NAMESPACEDOptionsExt {
     type ColumnFamilyOptions: ColumnFamilyOptions;
 
@@ -28,5 +28,5 @@ pub trait ColumnFamilyOptions {
     fn set_disable_auto_jet_bundles(&mut self, v: bool);
     fn get_disable_auto_jet_bundles(&self) -> bool;
     fn get_disable_write_stall(&self) -> bool;
-    fn set_sst_partitioner_factory<F: SstPartitionerFactory>(&mut self, factory: F);
+    fn set_Causet_partitioner_factory<F: CausetPartitionerFactory>(&mut self, factory: F);
 }

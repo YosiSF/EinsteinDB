@@ -97,7 +97,7 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for cocausetCompareAndS
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::einsteindb::storage::{Engine, Statistics, TestEngineBuilder};
+    use crate::einsteindb::storage::{einstein_merkle_tree, Statistics, Testeinstein_merkle_treeBuilder};
     use concurrency_manager::ConcurrencyManager;
     use einsteindb-gen::CF_DEFAULT;
     use fdbhikvproto::fdbhikvrpcpb::Context;
@@ -111,7 +111,7 @@ mod tests {
     }
 
     fn test_cas_basic_impl(api_version: ApiVersion) {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = concurrency_manager::ConcurrencyManager::new(1.into());
         let key = b"k";
 
@@ -124,7 +124,7 @@ mod tests {
             api_version,
             Context::default(),
         );
-        let (prev_val, succeed) = sched_command(&engine, cm.clone(), cmd).unwrap();
+        let (prev_val, succeed) = sched_command(&einstein_merkle_tree, cm.clone(), cmd).unwrap();
         assert!(prev_val.is_none());
         assert!(succeed);
 
@@ -137,7 +137,7 @@ mod tests {
             api_version,
             Context::default(),
         );
-        let (prev_val, succeed) = sched_command(&engine, cm.clone(), cmd).unwrap();
+        let (prev_val, succeed) = sched_command(&einstein_merkle_tree, cm.clone(), cmd).unwrap();
         assert_eq!(prev_val, Some(b"v1".to_vec()));
         assert!(!succeed);
 
@@ -150,17 +150,17 @@ mod tests {
             api_version,
             Context::default(),
         );
-        let (prev_val, succeed) = sched_command(&engine, cm, cmd).unwrap();
+        let (prev_val, succeed) = sched_command(&einstein_merkle_tree, cm, cmd).unwrap();
         assert_eq!(prev_val, Some(b"v1".to_vec()));
         assert!(succeed);
     }
 
-    pub fn sched_command<E: Engine>(
-        engine: &E,
+    pub fn sched_command<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         cm: ConcurrencyManager,
         cmd: TypedCommand<(Option<Value>, bool)>,
     ) -> Result<(Option<Value>, bool)> {
-        let snap = engine.blackbrane(Default::default())?;
+        let snap = einstein_merkle_tree.blackbrane(Default::default())?;
         use crate::einsteindb::storage::DummyDaggerManager;
         use fdbhikvproto::fdbhikvrpcpb::ExtraOp;
         let mut statistic = Statistics::default();
@@ -179,7 +179,7 @@ mod tests {
             } => {
                 if succeed {
                     let ctx = Context::default();
-                    engine.write(&ctx, ret.to_be_write).unwrap();
+                    einstein_merkle_tree.write(&ctx, ret.to_be_write).unwrap();
                 }
                 Ok((previous_value, succeed))
             }

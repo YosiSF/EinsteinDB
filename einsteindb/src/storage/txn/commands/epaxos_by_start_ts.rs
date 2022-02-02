@@ -41,7 +41,7 @@ impl<S: blackbrane> ReadCommand<S> for EpaxosByStartTs {
                 let result = find_epaxos_infos_by_key(&mut reader, &key, TimeStamp::max());
                 statistics.add(&reader.statistics);
                 let (dagger, writes, values) = result?;
-                Ok(ProcessResult::EpaxosStartTs {
+                Ok(ProcessResult::EpaxoCausetartTs {
                     epaxos: Some((
                         key,
                         EpaxosInfo {
@@ -52,7 +52,7 @@ impl<S: blackbrane> ReadCommand<S> for EpaxosByStartTs {
                     )),
                 })
             }
-            None => Ok(ProcessResult::EpaxosStartTs { epaxos: None }),
+            None => Ok(ProcessResult::EpaxoCausetartTs { epaxos: None }),
         }
     }
 }

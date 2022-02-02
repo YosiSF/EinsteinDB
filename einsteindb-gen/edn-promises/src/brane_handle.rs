@@ -21,9 +21,9 @@ pub trait BRANEHandleExt {
     fn set_options_brane(&self, brane: &Self::BRANEHandle, options: &[(&str, &str)]) -> Result<()>;
 
 
-    ///This is the setup interface, it will also contain some of the CRUD functionality. When an engine is added we can then initialize it.
+    ///This is the setup interface, it will also contain some of the CRUD functionality. When an einstein_merkle_tree is added we can then initialize it.
 
-    /// add engines! (Black Brane) - BBRANE_RESOURCE_NAME=1 (this is our default engine). This implements a regex for matching files against... and it will return true if a file matches. The file matcher will be used for validating that a file has not been added before. For now we have all files in memory so we shouldnt be storing them on disk! (we should use this later when creating new users or something like that.)
+    /// add einstein_merkle_trees! (Black Brane) - BBRANE_RESOURCE_NAME=1 (this is our default einstein_merkle_tree). This implements a regex for matching files against... and it will return true if a file matches. The file matcher will be used for validating that a file has not been added before. For now we have all files in memory so we shouldnt be storing them on disk! (we should use this later when creating new users or something like that.)
 
     pub trait BRANEHandle {}
 

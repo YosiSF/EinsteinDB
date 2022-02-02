@@ -1,12 +1,12 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePanicEngine;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use crate::write_batch::PanicWriteBatch;
-use fdb_traits::{Error, VioletaBFTEngine, VioletaBFTEngineReadOnly, VioletaBFTLogBatch, Result};
+use fdb_traits::{Error, VioletaBFTeinstein_merkle_tree, VioletaBFTeinstein_merkle_treeReadOnly, VioletaBFTLogBatch, Result};
 use ekvproto::violetabft_serverpb::VioletaBFTLocalState;
 use violetabft::evioletabftpb::Entry;
 
-impl VioletaBFTEngineReadOnly for PanicEngine {
+impl VioletaBFTeinstein_merkle_treeReadOnly for Paniceinstein_merkle_tree {
     fn get_violetabft_state(&self, violetabft_group_id: u64) -> Result<Option<VioletaBFTLocalState>> {
         panic!()
     }
@@ -31,7 +31,7 @@ impl VioletaBFTEngineReadOnly for PanicEngine {
     }
 }
 
-impl VioletaBFTEngine for PanicEngine {
+impl VioletaBFTeinstein_merkle_tree for Paniceinstein_merkle_tree {
     type LogBatch = PanicWriteBatch;
 
     fn log_batch(&self, capacity: usize) -> Self::LogBatch {
@@ -98,7 +98,7 @@ impl VioletaBFTEngine for PanicEngine {
         panic!()
     }
 
-    fn get_engine_size(&self) -> Result<u64> {
+    fn get_einstein_merkle_tree_size(&self) -> Result<u64> {
         panic!()
     }
 }

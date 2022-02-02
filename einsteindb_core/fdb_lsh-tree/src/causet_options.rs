@@ -2,14 +2,14 @@
 
 use einsteindb_util::box_err;
 use fdb_traits::{NAMESPACEDOptionsExt, Result};
-use fdb_traits::{ColumnFamilyOptions, SstPartitionerFactory};
+use fdb_traits::{ColumnFamilyOptions, CausetPartitionerFactory};
 use foundationdb::ColumnFamilyOptions as RawNAMESPACEDOptions;
 
-use crate::{db_options::FdbTitanDBOptions, sst_partitioner::FdbSstPartitionerFactory};
-use crate::fdb_lsh_treeFdbEngine;
+use crate::{db_options::FdbTitanDBOptions, Causet_partitioner::FdbCausetPartitionerFactory};
+use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 use crate::util;
 
-impl NAMESPACEDOptionsExt for FdbEngine {
+impl NAMESPACEDOptionsExt for Fdbeinstein_merkle_tree {
     type ColumnFamilyOptions = FdbColumnFamilyOptions;
 
     fn get_options_namespaced(&self, namespaced: &str) -> Result<Self::ColumnFamilyOptions> {
@@ -103,8 +103,8 @@ impl ColumnFamilyOptions for FdbColumnFamilyOptions {
         self.0.get_disable_write_stall()
     }
 
-    fn set_sst_partitioner_factory<F: SstPartitionerFactory>(&mut self, factory: F) {
+    fn set_Causet_partitioner_factory<F: CausetPartitionerFactory>(&mut self, factory: F) {
         self.0
-            .set_sst_partitioner_factory(FdbSstPartitionerFactory(factory));
+            .set_Causet_partitioner_factory(FdbCausetPartitionerFactory(factory));
     }
 }

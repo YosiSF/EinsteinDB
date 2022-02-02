@@ -4,14 +4,14 @@ use crate::db_vector::PanicDBVector;
 use crate::snapshot::PanicSnapshot;
 use crate::write_batch::PanicWriteBatch;
 use fdb_traits::{
-    IterOptions, Iterable, Iterator, KvEngine, Peekable, ReadOptions, Result, SeekKey, SyncMutable,
+    IterOptions, Iterable, Iterator, KV, Peekable, ReadOptions, Result, SeekKey, SyncMutable,
     WriteOptions,
 };
 
 #[derive(Clone, Debug)]
-pub struct PanicEngine;
+pub struct Paniceinstein_merkle_tree;
 
-impl KvEngine for PanicEngine {
+impl KV for Paniceinstein_merkle_tree {
     type Snapshot = PanicSnapshot;
 
     fn snapshot(&self) -> Self::Snapshot {
@@ -25,7 +25,7 @@ impl KvEngine for PanicEngine {
     }
 }
 
-impl Peekable for PanicEngine {
+impl Peekable for Paniceinstein_merkle_tree {
     type DBVector = PanicDBVector;
 
     fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<Self::DBVector>> {
@@ -41,7 +41,7 @@ impl Peekable for PanicEngine {
     }
 }
 
-impl SyncMutable for PanicEngine {
+impl SyncMutable for Paniceinstein_merkle_tree {
     fn put(&self, key: &[u8], value: &[u8]) -> Result<()> {
         panic!()
     }
@@ -63,8 +63,8 @@ impl SyncMutable for PanicEngine {
     }
 }
 
-impl Iterable for PanicEngine {
-    type Iterator = PanicEngineIterator;
+impl Iterable for Paniceinstein_merkle_tree {
+    type Iterator = Paniceinstein_merkle_treeIterator;
 
     fn iterator_opt(&self, opts: IterOptions) -> Result<Self::Iterator> {
         panic!()
@@ -74,9 +74,9 @@ impl Iterable for PanicEngine {
     }
 }
 
-pub struct PanicEngineIterator;
+pub struct Paniceinstein_merkle_treeIterator;
 
-impl Iterator for PanicEngineIterator {
+impl Iterator for Paniceinstein_merkle_treeIterator {
     fn seek(&mut self, key: SeekKey<'_>) -> Result<bool> {
         panic!()
     }

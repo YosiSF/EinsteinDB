@@ -4,7 +4,7 @@
 //! Scheduler which schedules the execution of `storage::Command`s.
 //!
 //! There is one scheduler for each store. It receives commands from clients, executes them against
-//! the EPAXOS layer storage engine.
+//! the EPAXOS layer storage einstein_merkle_tree.
 //!
 //! Logically, the data organization hierarchy from bottom to top is row -> region -> store ->
 //! database. But each region is replicated onto N stores for reliability, the replicas form a Raft
@@ -44,7 +44,7 @@ use solitontxn_types::TimeStamp;
 use crate::server::dagger_manager::waiter_manager;
 use crate::einsteindb::storage::config::Config;
 use crate::einsteindb::storage::fdbhikv::{
-    self, with_tls_engine, Engine, ExtCallback, Result as EngineResult, SnapContext, Statistics,
+    self, with_tls_einstein_merkle_tree, einstein_merkle_tree, ExtCallback, Result as einstein_merkle_treeResult, SnapContext, Statistics,
 };
 use crate::einsteindb::storage::dagger_manager::{self, DiagnosticContext, DaggerManager, WaitTimeout};
 use crate::einsteindb::storage::metrics::{self, *};
@@ -293,19 +293,19 @@ impl<L: DaggerManager> SchedulerInner<L> {
 
 /// Scheduler which schedules the execution of `storage::Command`s.
 #[derive(Clone)]
-pub struct Scheduler<E: Engine, L: DaggerManager> {
+pub struct Scheduler<E: einstein_merkle_tree, L: DaggerManager> {
     inner: Arc<SchedulerInner<L>>,
-    // The engine can be fetched from the thread local storage of scheduler threads.
-    // So, we don't store the engine here.
-    _engine: PhantomData<E>,
+    // The einstein_merkle_tree can be fetched from the thread local storage of scheduler threads.
+    // So, we don't store the einstein_merkle_tree here.
+    _einstein_merkle_tree: PhantomData<E>,
 }
 
-unsafe impl<E: Engine, L: DaggerManager> Send for Scheduler<E, L> {}
+unsafe impl<E: einstein_merkle_tree, L: DaggerManager> Send for Scheduler<E, L> {}
 
-impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
+impl<E: einstein_merkle_tree, L: DaggerManager> Scheduler<E, L> {
     /// Creates a scheduler.
     pub(in crate::storage) fn new<R: CausetxctxStatsReporter>(
-        engine: E,
+        einstein_merkle_tree: E,
         dagger_mgr: L,
         concurrency_manager: ConcurrencyManager,
         config: &Config,
@@ -327,13 +327,13 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
             running_write_bytes: causetxctxUsize::new(0).into(),
             sched_pending_write_threshold: config.scheduler_pending_write_threshold.0 as usize,
             worker_pool: SchedPool::new(
-                engine.clone(),
+                einstein_merkle_tree.clone(),
                 config.scheduler_worker_pool_size,
                 reporter.clone(),
                 "sched-worker-pool",
             ),
             high_priority_pool: SchedPool::new(
-                engine,
+                einstein_merkle_tree,
                 std::cmp::max(1, config.scheduler_worker_pool_size / 2),
                 reporter,
                 "sched-high-pri-pool",
@@ -354,7 +354,7 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
         );
         Scheduler {
             inner,
-            _engine: PhantomData,
+            _einstein_merkle_tree: PhantomData,
         }
     }
 
@@ -482,8 +482,8 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
                     ..Default::default()
                 };
                 // The program is currently in scheduler worker threads.
-                // Safety: `self.inner.worker_pool` should ensure that a TLS engine exists.
-                match unsafe { with_tls_engine(|engine: &E| fdbhikv::blackbrane(engine, snap_ctx)) }.await
+                // Safety: `self.inner.worker_pool` should ensure that a TLS einstein_merkle_tree exists.
+                match unsafe { with_tls_einstein_merkle_tree(|einstein_merkle_tree: &E| fdbhikv::blackbrane(einstein_merkle_tree, snap_ctx)) }.await
                 {
                     Ok(blackbrane) => {
                         SCHED_STAGE_COUNTER_VEC.get(tag).blackbrane_ok.inc();
@@ -566,7 +566,7 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
         &self,
         cid: u64,
         pr: Option<ProcessResult>,
-        result: EngineResult<()>,
+        result: einstein_merkle_treeResult<()>,
         dagger_guards: Vec<KeyHandleGuard>,
         pipelined: bool,
         async_apply_prewrite: bool,
@@ -772,7 +772,7 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
                 scheduler.finish_with_err(cid, err);
                 return;
             }
-            // Initiates an async write operation on the storage engine, there'll be a `WriteFinished`
+            // Initiates an async write operation on the storage einstein_merkle_tree, there'll be a `WriteFinished`
             // message when it finishes.
             Ok(res) => res,
         };
@@ -954,8 +954,8 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
             (!removed_pessimistic_daggers.is_empty()).then(|| RwDaggerWriteGuard::downgrade(guard))
         });
 
-        // The callback to receive async results of write prepare from the storage engine.
-        let engine_cb = Box::new(move |result: EngineResult<()>| {
+        // The callback to receive async results of write prepare from the storage einstein_merkle_tree.
+        let einstein_merkle_tree_cb = Box::new(move |result: einstein_merkle_treeResult<()>| {
             let ok = result.is_ok();
             if ok && !removed_pessimistic_daggers.is_empty() {
                 // Removing pessimistic daggers when it succeeds to apply. This should be done in the apply
@@ -1002,15 +1002,15 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
                 .unwrap()
         });
 
-        // Safety: `self.sched_pool` ensures a TLS engine exists.
+        // Safety: `self.sched_pool` ensures a TLS einstein_merkle_tree exists.
         unsafe {
-            with_tls_engine(|engine: &E| {
+            with_tls_einstein_merkle_tree(|einstein_merkle_tree: &E| {
                 if let Err(e) =
-                    engine.async_write_ext(&ctx, to_be_write, engine_cb, proposed_cb, committed_cb)
+                    einstein_merkle_tree.async_write_ext(&ctx, to_be_write, einstein_merkle_tree_cb, proposed_cb, committed_cb)
                 {
                     SCHED_STAGE_COUNTER_VEC.get(tag).async_write_err.inc();
 
-                    info!("engine async_write failed"; "cid" => cid, "err" => ?e);
+                    info!("einstein_merkle_tree async_write failed"; "cid" => cid, "err" => ?e);
                     scheduler.finish_with_err(cid, e);
                 }
             })
@@ -1096,7 +1096,7 @@ mod tests {
     };
     use crate::einsteindb::storage::{
         solitontxn::{commands, latch::*},
-        TestEngineBuilder,
+        Testeinstein_merkle_treeBuilder,
     };
     use futures_executor::bdagger_on;
     use fdbhikvproto::fdbhikvrpcpb::{BatchRollbackRequest, CheckTxnStatusRequest, Context};
@@ -1231,7 +1231,7 @@ mod tests {
 
     #[test]
     fn test_acquire_latch_deadline() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let config = Config {
             scheduler_concurrency: 1024,
             scheduler_worker_pool_size: 1,
@@ -1240,7 +1240,7 @@ mod tests {
             ..Default::default()
         };
         let scheduler = Scheduler::new(
-            engine,
+            einstein_merkle_tree,
             DummyDaggerManager,
             ConcurrencyManager::new(1.into()),
             &config,
@@ -1287,7 +1287,7 @@ mod tests {
 
     #[test]
     fn test_pool_available_deadline() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let config = Config {
             scheduler_concurrency: 1024,
             scheduler_worker_pool_size: 1,
@@ -1296,7 +1296,7 @@ mod tests {
             ..Default::default()
         };
         let scheduler = Scheduler::new(
-            engine,
+            einstein_merkle_tree,
             DummyDaggerManager,
             ConcurrencyManager::new(1.into()),
             &config,
@@ -1343,7 +1343,7 @@ mod tests {
 
     #[test]
     fn test_Causetxctx_control_trottle_deadline() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let config = Config {
             scheduler_concurrency: 1024,
             scheduler_worker_pool_size: 1,
@@ -1352,7 +1352,7 @@ mod tests {
             ..Default::default()
         };
         let scheduler = Scheduler::new(
-            engine,
+            einstein_merkle_tree,
             DummyDaggerManager,
             ConcurrencyManager::new(1.into()),
             &config,
@@ -1407,7 +1407,7 @@ mod tests {
 
     #[test]
     fn test_accumulate_many_expired_commands() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let config = Config {
             scheduler_concurrency: 1024,
             scheduler_worker_pool_size: 1,
@@ -1416,7 +1416,7 @@ mod tests {
             ..Default::default()
         };
         let scheduler = Scheduler::new(
-            engine,
+            einstein_merkle_tree,
             DummyDaggerManager,
             ConcurrencyManager::new(1.into()),
             &config,
@@ -1462,7 +1462,7 @@ mod tests {
 
     #[test]
     fn test_pessimistic_dagger_mode() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let config = Config {
             scheduler_concurrency: 1024,
             scheduler_worker_pool_size: 1,
@@ -1471,7 +1471,7 @@ mod tests {
             ..Default::default()
         };
         let scheduler = Scheduler::new(
-            engine,
+            einstein_merkle_tree,
             DummyDaggerManager,
             ConcurrencyManager::new(1.into()),
             &config,

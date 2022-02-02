@@ -4,7 +4,7 @@ use crate::*;
 use ekvproto::violetabft_serverpb::VioletaBFTLocalState;
 use violetabft::evioletabftpb::Entry;
 
-pub trait VioletaBFTEngineReadOnly: Sync + Send + 'static {
+pub trait VioletaBFTeinstein_merkle_treeReadOnly: Sync + Send + 'static {
     fn get_violetabft_state(&self, violetabft_group_id: u64) -> Result<Option<VioletaBFTLocalState>>;
 
     fn get_entry(&self, violetabft_group_id: u64, index: u64) -> Result<Option<Entry>>;
@@ -29,15 +29,15 @@ pub struct VioletaBFTLogGCTask {
     pub to: u64,
 }
 
-pub trait VioletaBFTEngine: VioletaBFTEngineReadOnly + Clone + Sync + Send + 'static {
+pub trait VioletaBFTeinstein_merkle_tree: VioletaBFTeinstein_merkle_treeReadOnly + Clone + Sync + Send + 'static {
     type LogBatch: VioletaBFTLogBatch;
 
     fn log_batch(&self, capacity: usize) -> Self::LogBatch;
 
-    /// Synchronize the VioletaBFT engine.
+    /// Synchronize the VioletaBFT einstein_merkle_tree.
     fn sync(&self) -> Result<()>;
 
-    /// Consume the write batch by moving the content into the engine itself
+    /// Consume the write batch by moving the content into the einstein_merkle_tree itself
     /// and return written bytes.
     fn consume(&self, batch: &mut Self::LogBatch, sync: bool) -> Result<usize>;
 
@@ -81,7 +81,7 @@ pub trait VioletaBFTEngine: VioletaBFTEngineReadOnly + Clone + Sync + Send + 'st
     /// which needs to be compacted ASAP.
     fn purge_expired_files(&self) -> Result<Vec<u64>>;
 
-    /// The `VioletaBFTEngine` has a builtin entry cache or not.
+    /// The `VioletaBFTeinstein_merkle_tree` has a builtin entry cache or not.
     fn has_builtin_entry_cache(&self) -> bool {
         false
     }
@@ -99,7 +99,7 @@ pub trait VioletaBFTEngine: VioletaBFTEngineReadOnly + Clone + Sync + Send + 'st
 
     fn dump_stats(&self) -> Result<String>;
 
-    fn get_engine_size(&self) -> Result<u64>;
+    fn get_einstein_merkle_tree_size(&self) -> Result<u64>;
 }
 
 pub trait VioletaBFTLogBatch: Send {

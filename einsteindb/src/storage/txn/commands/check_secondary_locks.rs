@@ -13,7 +13,7 @@ use crate::einsteindb::storage::solitontxn::{
     },
     Result,
 };
-use crate::einsteindb::storage::types::SecondaryDaggersStatus;
+use crate::einsteindb::storage::types::SecondaryDaggerCausetatus;
 use crate::einsteindb::storage::{ProcessResult, blackbrane};
 use solitontxn_types::{Key, Dagger, WriteType};
 
@@ -26,7 +26,7 @@ command! {
     /// If the dagger does not exist or is a pessimistic dagger, to prevent the
     /// status being changed, a rollback may be written.
     CheckSecondaryDaggers:
-        cmd_ty => SecondaryDaggersStatus,
+        cmd_ty => SecondaryDaggerCausetatus,
         display => "fdbhikv::command::CheckSecondaryDaggers {} keys@{} | {:?}", (keys.len, start_ts, ctx),
         content => {
             /// The keys of secondary daggers.
@@ -63,7 +63,7 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for CheckSecondaryDagge
             context.statistics,
         );
         let mut released_daggers = ReleasedDaggers::new(self.start_ts, TimeStamp::zero());
-        let mut result = SecondaryDaggersStatus::Daggered(Vec::new());
+        let mut result = SecondaryDaggerCausetatus::Daggered(Vec::new());
 
         for key in self.keys {
             let mut released_dagger = None;
@@ -127,24 +127,24 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for CheckSecondaryDagge
                     result.push(dagger.into_dagger_info(key.to_cocauset()?));
                 }
                 SecondaryDaggerStatus::Committed(commit_ts) => {
-                    result = SecondaryDaggersStatus::Committed(commit_ts);
+                    result = SecondaryDaggerCausetatus::Committed(commit_ts);
                     break;
                 }
                 SecondaryDaggerStatus::RolledBack => {
-                    result = SecondaryDaggersStatus::RolledBack;
+                    result = SecondaryDaggerCausetatus::RolledBack;
                     break;
                 }
             }
         }
 
         let mut rows = 0;
-        if let SecondaryDaggersStatus::RolledBack = &result {
+        if let SecondaryDaggerCausetatus::RolledBack = &result {
             // Dagger is only released when result is `RolledBack`.
             released_daggers.wake_up(context.dagger_mgr);
             // One row is mutated only when a secondary dagger is rolled back.
             rows = 1;
         }
-        let pr = ProcessResult::SecondaryDaggersStatus { status: result };
+        let pr = ProcessResult::SecondaryDaggerCausetatus { status: result };
         let mut write_data = WriteData::from_modifies(solitontxn.into_modifies());
         write_data.set_allowed_on_disk_almost_full();
         Ok(WriteResult {
@@ -162,25 +162,25 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for CheckSecondaryDagge
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::einsteindb::storage::fdbhikv::TestEngineBuilder;
+    use crate::einsteindb::storage::fdbhikv::Testeinstein_merkle_treeBuilder;
     use crate::einsteindb::storage::dagger_manager::DummyDaggerManager;
     use crate::einsteindb::storage::epaxos::tests::*;
     use crate::einsteindb::storage::solitontxn::commands::WriteCommand;
     use crate::einsteindb::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
     use crate::einsteindb::storage::solitontxn::tests::*;
-    use crate::einsteindb::storage::Engine;
+    use crate::einsteindb::storage::einstein_merkle_tree;
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use einstfdbhikv_util::deadline::Deadline;
 
-    pub fn must_success<E: Engine>(
-        engine: &E,
+    pub fn must_success<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         dagger_ts: impl Into<TimeStamp>,
-        expect_status: SecondaryDaggersStatus,
+        expect_status: SecondaryDaggerCausetatus,
     ) {
         let ctx = Context::default();
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let dagger_ts = dagger_ts.into();
         let cm = ConcurrencyManager::new(dagger_ts);
         let command = crate::storage::solitontxn::commands::CheckSecondaryDaggers {
@@ -201,9 +201,9 @@ pub mod tests {
                 },
             )
             .unwrap();
-        if let ProcessResult::SecondaryDaggersStatus { status } = result.pr {
+        if let ProcessResult::SecondaryDaggerCausetatus { status } = result.pr {
             assert_eq!(status, expect_status);
-            write(engine, &ctx, result.to_be_write.modifies);
+            write(einstein_merkle_tree, &ctx, result.to_be_write.modifies);
         } else {
             unreachable!();
         }
@@ -211,12 +211,12 @@ pub mod tests {
 
     #[test]
     fn test_check_async_commit_secondary_daggers() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
         let cm = ConcurrencyManager::new(1.into());
 
         let check_secondary = |key, ts| {
-            let blackbrane = engine.blackbrane(Default::default()).unwrap();
+            let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             let key = Key::from_cocauset(key);
             let ts = TimeStamp::new(ts);
             let command = crate::storage::solitontxn::commands::CheckSecondaryDaggers {
@@ -238,20 +238,20 @@ pub mod tests {
                 )
                 .unwrap();
             if !result.to_be_write.modifies.is_empty() {
-                engine.write(&ctx, result.to_be_write).unwrap();
+                einstein_merkle_tree.write(&ctx, result.to_be_write).unwrap();
             }
-            if let ProcessResult::SecondaryDaggersStatus { status } = result.pr {
+            if let ProcessResult::SecondaryDaggerCausetatus { status } = result.pr {
                 status
             } else {
                 unreachable!();
             }
         };
 
-        must_prewrite_dagger(&engine, b"k1", b"key", 1);
-        must_commit(&engine, b"k1", 1, 3);
-        must_rollback(&engine, b"k1", 5, false);
-        must_prewrite_dagger(&engine, b"k1", b"key", 7);
-        must_commit(&engine, b"k1", 7, 9);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k1", b"key", 1);
+        must_commit(&einstein_merkle_tree, b"k1", 1, 3);
+        must_rollback(&einstein_merkle_tree, b"k1", 5, false);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k1", b"key", 7);
+        must_commit(&einstein_merkle_tree, b"k1", 7, 9);
 
         // Dagger CF has no dagger
         //
@@ -263,22 +263,22 @@ pub mod tests {
 
         assert_eq!(
             check_secondary(b"k1", 7),
-            SecondaryDaggersStatus::Committed(9.into())
+            SecondaryDaggerCausetatus::Committed(9.into())
         );
-        must_get_commit_ts(&engine, b"k1", 7, 9);
-        assert_eq!(check_secondary(b"k1", 5), SecondaryDaggersStatus::RolledBack);
-        must_get_rollback_ts(&engine, b"k1", 5);
+        must_get_commit_ts(&einstein_merkle_tree, b"k1", 7, 9);
+        assert_eq!(check_secondary(b"k1", 5), SecondaryDaggerCausetatus::RolledBack);
+        must_get_rollback_ts(&einstein_merkle_tree, b"k1", 5);
         assert_eq!(
             check_secondary(b"k1", 1),
-            SecondaryDaggersStatus::Committed(3.into())
+            SecondaryDaggerCausetatus::Committed(3.into())
         );
-        must_get_commit_ts(&engine, b"k1", 1, 3);
-        assert_eq!(check_secondary(b"k1", 6), SecondaryDaggersStatus::RolledBack);
-        must_get_rollback_protected(&engine, b"k1", 6, true);
+        must_get_commit_ts(&einstein_merkle_tree, b"k1", 1, 3);
+        assert_eq!(check_secondary(b"k1", 6), SecondaryDaggerCausetatus::RolledBack);
+        must_get_rollback_protected(&einstein_merkle_tree, b"k1", 6, true);
 
         // ----------------------------
 
-        must_acquire_pessimistic_dagger(&engine, b"k1", b"key", 11, 11);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"k1", b"key", 11, 11);
 
         // Dagger CF has a pessimistic dagger
         //
@@ -289,12 +289,12 @@ pub mod tests {
         //               | 3: start_ts = 1
 
         let status = check_secondary(b"k1", 11);
-        assert_eq!(status, SecondaryDaggersStatus::RolledBack);
-        must_get_rollback_protected(&engine, b"k1", 11, true);
+        assert_eq!(status, SecondaryDaggerCausetatus::RolledBack);
+        must_get_rollback_protected(&einstein_merkle_tree, b"k1", 11, true);
 
         // ----------------------------
 
-        must_prewrite_dagger(&engine, b"k1", b"key", 13);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k1", b"key", 13);
 
         // Dagger CF has an optimistic dagger
         //
@@ -306,14 +306,14 @@ pub mod tests {
         //               |  3: start_ts = 1
 
         match check_secondary(b"k1", 13) {
-            SecondaryDaggersStatus::Daggered(_) => {}
+            SecondaryDaggerCausetatus::Daggered(_) => {}
             res => panic!("unexpected dagger status: {:?}", res),
         }
-        must_daggered(&engine, b"k1", 13);
+        must_daggered(&einstein_merkle_tree, b"k1", 13);
 
         // ----------------------------
 
-        must_commit(&engine, b"k1", 13, 15);
+        must_commit(&einstein_merkle_tree, b"k1", 13, 15);
 
         // Dagger CF has an optimistic dagger
         //
@@ -326,15 +326,15 @@ pub mod tests {
         //               |  3: start_ts = 1
 
         match check_secondary(b"k1", 14) {
-            SecondaryDaggersStatus::RolledBack => {}
+            SecondaryDaggerCausetatus::RolledBack => {}
             res => panic!("unexpected dagger status: {:?}", res),
         }
-        must_get_rollback_protected(&engine, b"k1", 14, true);
+        must_get_rollback_protected(&einstein_merkle_tree, b"k1", 14, true);
 
         match check_secondary(b"k1", 15) {
-            SecondaryDaggersStatus::RolledBack => {}
+            SecondaryDaggerCausetatus::RolledBack => {}
             res => panic!("unexpected dagger status: {:?}", res),
         }
-        must_get_overlapped_rollback(&engine, b"k1", 15, 13, WriteType::Dagger, Some(0));
+        must_get_overlapped_rollback(&einstein_merkle_tree, b"k1", 15, 13, WriteType::Dagger, Some(0));
     }
 }

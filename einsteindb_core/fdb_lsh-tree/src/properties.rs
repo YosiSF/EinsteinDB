@@ -109,7 +109,7 @@ impl DecodeProperties for UserProperties {
 }
 
 // FIXME: This is a temporary hack to implement a foreign trait on a foreign
-// type until the engine abstraction situation is straightened out.
+// type until the einstein_merkle_tree abstraction situation is straightened out.
 pub struct UserCollectedPropertiesDecoder<'a>(pub &'a UserCollectedProperties);
 
 impl<'a> DecodeProperties for UserCollectedPropertiesDecoder<'a> {
@@ -402,7 +402,7 @@ impl MvccPropertiesCollector {
 
 impl TablePropertiesCollector for MvccPropertiesCollector {
     fn add(&mut self, key: &[u8], value: &[u8], entry_type: DBEntryType, _: u64, _: u64) {
-        // TsFilter filters sst based on max_ts and min_ts during iterating.
+        // TsFilter filters Causet based on max_ts and min_ts during iterating.
         // To prevent seeing outdated (GC) records, we should consider
         // FdbDB delete entry type.
         if entry_type != DBEntryType::Put && entry_type != DBEntryType::Delete {
@@ -495,13 +495,13 @@ impl TablePropertiesCollectorFactory<MvccPropertiesCollector> for MvccProperties
 }
 
 pub fn get_range_entries_and_versions(
-    engine: &crate::FdbEngine,
+    einstein_merkle_tree: &crate::Fdbeinstein_merkle_tree,
     namespaced: &str,
     start: &[u8],
     end: &[u8],
 ) -> Option<(u64, u64)> {
     let range = Range::new(start, end);
-    let collection = match engine.get_properties_of_tables_in_range(namespaced, &[range]) {
+    let collection = match einstein_merkle_tree.get_properties_of_tables_in_range(namespaced, &[range]) {
         Ok(v) => v,
         Err(_) => return None,
     };
@@ -715,7 +715,7 @@ mod tests {
             .iter()
             .map(|namespaced| NAMESPACEDOptions::new(namespaced, namespaced_opts.clone()))
             .collect();
-        let einsteindb = Arc::new(crate::raw_util::new_engine_opt(path_str, db_opts, namespaceds_opts).unwrap());
+        let einsteindb = Arc::new(crate::raw_util::new_einstein_merkle_tree_opt(path_str, db_opts, namespaceds_opts).unwrap());
 
         let cases = ["a", "b", "c"];
         for &key in &cases {

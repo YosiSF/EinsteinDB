@@ -2,9 +2,9 @@
 
 use fdb_traits::NAMESPACEDNamesExt;
 
-use crate::fdb_lsh_treeFdbEngine;
+use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 
-impl NAMESPACEDNamesExt for FdbEngine {
+impl NAMESPACEDNamesExt for Fdbeinstein_merkle_tree {
     fn namespaced_names(&self) -> Vec<&str> {
         self.as_inner().namespaced_names()
     }

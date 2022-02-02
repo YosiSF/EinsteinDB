@@ -630,8 +630,8 @@ impl MutantSentinelSearch for FixtureStoreMutantSentinelSearch {
 mod tests {
     use super::*;
     use crate::einsteindb::storage::fdbhikv::{
-        Engine, Iterator, Result as EngineResult, RocksEngine, Rocksblackbrane, SnapContext,
-        TestEngineBuilder, WriteData,
+        einstein_merkle_tree, Iterator, Result as einstein_merkle_treeResult, Rockseinstein_merkle_tree, Rocksblackbrane, SnapContext,
+        Testeinstein_merkle_treeBuilder, WriteData,
     };
     use crate::einsteindb::storage::epaxos::{Mutation, EpaxosTxn, blackbraneReader};
     use crate::einsteindb::storage::solitontxn::{
@@ -653,22 +653,22 @@ mod tests {
         keys: Vec<String>,
         blackbrane: Arc<Rocksblackbrane>,
         ctx: Context,
-        engine: RocksEngine,
+        einstein_merkle_tree: Rockseinstein_merkle_tree,
     }
 
     impl TestStore {
         fn new(key_num: u64) -> TestStore {
-            let engine = TestEngineBuilder::new().build().unwrap();
+            let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
             let keys: Vec<String> = (START_ID..START_ID + key_num)
                 .map(|i| format!("{}{}", KEY_PREFIX, i))
                 .collect();
             let ctx = Context::default();
-            let blackbrane = engine.blackbrane(Default::default()).unwrap();
+            let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             let mut store = TestStore {
                 keys,
                 blackbrane,
                 ctx,
-                engine,
+                einstein_merkle_tree,
             };
             store.init_data();
             store
@@ -708,7 +708,7 @@ mod tests {
                     .unwrap();
                 }
                 let write_data = WriteData::from_modifies(solitontxn.into_modifies());
-                self.engine.write(&self.ctx, write_data).unwrap();
+                self.einstein_merkle_tree.write(&self.ctx, write_data).unwrap();
             }
             self.refresh_blackbrane();
             // do commit
@@ -721,7 +721,7 @@ mod tests {
                     commit(&mut solitontxn, &mut reader, Key::from_cocauset(key), COMMIT_TS).unwrap();
                 }
                 let write_data = WriteData::from_modifies(solitontxn.into_modifies());
-                self.engine.write(&self.ctx, write_data).unwrap();
+                self.einstein_merkle_tree.write(&self.ctx, write_data).unwrap();
             }
             self.refresh_blackbrane();
         }
@@ -732,7 +732,7 @@ mod tests {
                 pb_ctx: &self.ctx,
                 ..Default::default()
             };
-            self.blackbrane = self.engine.blackbrane(snap_ctx).unwrap()
+            self.blackbrane = self.einstein_merkle_tree.blackbrane(snap_ctx).unwrap()
         }
 
         fn store(&self) -> blackbraneStore<Arc<Rocksblackbrane>> {
@@ -759,28 +759,28 @@ mod tests {
     struct MockRangeblackbraneIter {}
 
     impl Iterator for MockRangeblackbraneIter {
-        fn next(&mut self) -> EngineResult<bool> {
+        fn next(&mut self) -> einstein_merkle_treeResult<bool> {
             Ok(true)
         }
-        fn prev(&mut self) -> EngineResult<bool> {
+        fn prev(&mut self) -> einstein_merkle_treeResult<bool> {
             Ok(true)
         }
-        fn seek(&mut self, _: &Key) -> EngineResult<bool> {
+        fn seek(&mut self, _: &Key) -> einstein_merkle_treeResult<bool> {
             Ok(true)
         }
-        fn seek_for_prev(&mut self, _: &Key) -> EngineResult<bool> {
+        fn seek_for_prev(&mut self, _: &Key) -> einstein_merkle_treeResult<bool> {
             Ok(true)
         }
-        fn seek_to_first(&mut self) -> EngineResult<bool> {
+        fn seek_to_first(&mut self) -> einstein_merkle_treeResult<bool> {
             Ok(true)
         }
-        fn seek_to_last(&mut self) -> EngineResult<bool> {
+        fn seek_to_last(&mut self) -> einstein_merkle_treeResult<bool> {
             Ok(true)
         }
-        fn valid(&self) -> EngineResult<bool> {
+        fn valid(&self) -> einstein_merkle_treeResult<bool> {
             Ok(true)
         }
-        fn validate_key(&self, _: &Key) -> EngineResult<()> {
+        fn validate_key(&self, _: &Key) -> einstein_merkle_treeResult<()> {
             Ok(())
         }
         fn key(&self) -> &[u8] {
@@ -801,19 +801,19 @@ mod tests {
         type Iter = MockRangeblackbraneIter;
         type Ext<'a> = DummyblackbraneExt;
 
-        fn get(&self, _: &Key) -> EngineResult<Option<Value>> {
+        fn get(&self, _: &Key) -> einstein_merkle_treeResult<Option<Value>> {
             Ok(None)
         }
-        fn get_cf(&self, _: CfName, _: &Key) -> EngineResult<Option<Value>> {
+        fn get_cf(&self, _: CfName, _: &Key) -> einstein_merkle_treeResult<Option<Value>> {
             Ok(None)
         }
-        fn get_cf_opt(&self, _: ReadOptions, _: CfName, _: &Key) -> EngineResult<Option<Value>> {
+        fn get_cf_opt(&self, _: ReadOptions, _: CfName, _: &Key) -> einstein_merkle_treeResult<Option<Value>> {
             Ok(None)
         }
-        fn iter(&self, _: IterOptions) -> EngineResult<Self::Iter> {
+        fn iter(&self, _: IterOptions) -> einstein_merkle_treeResult<Self::Iter> {
             Ok(MockRangeblackbraneIter::default())
         }
-        fn iter_cf(&self, _: CfName, _: IterOptions) -> EngineResult<Self::Iter> {
+        fn iter_cf(&self, _: CfName, _: IterOptions) -> einstein_merkle_treeResult<Self::Iter> {
             Ok(MockRangeblackbraneIter::default())
         }
         fn lower_bound(&self) -> Option<&[u8]> {

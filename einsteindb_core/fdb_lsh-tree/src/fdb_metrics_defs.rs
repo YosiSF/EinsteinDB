@@ -2,7 +2,7 @@
 
 use foundationdb::{DBStatisticsHistogramType as HistType, DBStatisticsTickerType as TickerType};
 
-pub const FDBDB_TOTAL_SST_FILES_SIZE: &str = "foundationdb.total-sst-files-size";
+pub const FDBDB_TOTAL_Causet_FILES_SIZE: &str = "foundationdb.total-Causet-files-size";
 pub const FDBDB_CAUSET_TABLE_READERS_MEM: &str = "foundationdb.estimate-table-readers-mem";
 pub const FDBDB_CUR_SIZE_ALL_MEM_CAUSET_TABLES: &str = "foundationdb.cur-size-all-mem-tables";
 pub const FDBDB_ESTIMATE_NUM_CAUSET_KEYS: &str = "foundationdb.estimate-num-keys";
@@ -54,7 +54,7 @@ pub const FDBDB_IOSTALL_TYPE: &[&str] = &[
     "memtable_count_limit_stop",
 ];
 
-pub const ENGINE_TICKER_TYPES: &[TickerType] = &[
+pub const einstein_merkle_tree_TICKER_TYPES: &[TickerType] = &[
     TickerType::BlockCacheMiss,
     TickerType::BlockCacheHit,
     TickerType::BlockCacheAdd,
@@ -115,7 +115,7 @@ pub const ENGINE_TICKER_TYPES: &[TickerType] = &[
     TickerType::ReadAmpTotalReadBytes,
 ];
 
-pub const TITAN_ENGINE_TICKER_TYPES: &[TickerType] = &[
+pub const TITAN_einstein_merkle_tree_TICKER_TYPES: &[TickerType] = &[
     TickerType::TitanNumGet,
     TickerType::TitanNumSeek,
     TickerType::TitanNumNext,
@@ -145,7 +145,7 @@ pub const TITAN_ENGINE_TICKER_TYPES: &[TickerType] = &[
     TickerType::TitanGcTriggerNext,
 ];
 
-pub const ENGINE_HIST_TYPES: &[HistType] = &[
+pub const einstein_merkle_tree_HIST_TYPES: &[HistType] = &[
     HistType::DbGet,
     HistType::DbWrite,
     HistType::CompactionTime,
@@ -161,7 +161,7 @@ pub const ENGINE_HIST_TYPES: &[HistType] = &[
     HistType::NumFilesInSingleCompaction,
     HistType::DbSeek,
     HistType::WriteStall,
-    HistType::SstReadMicros,
+    HistType::CausetReadMicros,
     HistType::NumSubjet_bundlesScheduled,
     HistType::BytesPerRead,
     HistType::BytesPerWrite,
@@ -172,7 +172,7 @@ pub const ENGINE_HIST_TYPES: &[HistType] = &[
     HistType::DbWriteWalTime,
 ];
 
-pub const TITAN_ENGINE_HIST_TYPES: &[HistType] = &[
+pub const TITAN_einstein_merkle_tree_HIST_TYPES: &[HistType] = &[
     HistType::TitanKeySize,
     HistType::TitanValueSize,
     HistType::TitanGetMicros,

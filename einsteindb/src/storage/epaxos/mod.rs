@@ -393,24 +393,24 @@ pub fn default_not_found_error(key: Vec<u8>, hint: &str) -> Error {
 
 pub mod tests {
     use super::*;
-    use crate::einsteindb::storage::fdbhikv::{Engine, Modify, SentinelSearchMode, SnapContext, blackbrane, WriteData};
+    use crate::einsteindb::storage::fdbhikv::{einstein_merkle_tree, Modify, SentinelSearchMode, SnapContext, blackbrane, WriteData};
     use einsteindb-gen::CF_WRITE;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use std::borrow::Cow;
     use solitontxn_types::Key;
 
-    pub fn write<E: Engine>(engine: &E, ctx: &Context, modifies: Vec<Modify>) {
+    pub fn write<E: einstein_merkle_tree>(einstein_merkle_tree: &E, ctx: &Context, modifies: Vec<Modify>) {
         if !modifies.is_empty() {
-            engine
+            einstein_merkle_tree
                 .write(ctx, WriteData::from_modifies(modifies))
                 .unwrap();
         }
     }
 
-    pub fn must_get<E: Engine>(engine: &E, key: &[u8], ts: impl Into<TimeStamp>, expect: &[u8]) {
+    pub fn must_get<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], ts: impl Into<TimeStamp>, expect: &[u8]) {
         let ts = ts.into();
         let ctx = SnapContext::default();
-        let blackbrane = engine.blackbrane(ctx).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(ctx).unwrap();
         let mut reader = blackbraneReader::new(ts, blackbrane, true);
         let key = &Key::from_cocauset(key);
 
@@ -418,15 +418,15 @@ pub mod tests {
         assert_eq!(reader.get(key, ts).unwrap().unwrap(), expect);
     }
 
-    pub fn must_get_no_dagger_check<E: Engine>(
-        engine: &E,
+    pub fn must_get_no_dagger_check<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         ts: impl Into<TimeStamp>,
         expect: &[u8],
     ) {
         let ts = ts.into();
         let ctx = SnapContext::default();
-        let blackbrane = engine.blackbrane(ctx).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(ctx).unwrap();
         let mut reader = blackbraneReader::new(ts, blackbrane, true);
         assert_eq!(
             reader.get(&Key::from_cocauset(key), ts).unwrap().unwrap(),
@@ -450,20 +450,20 @@ pub mod tests {
         Ok(())
     }
 
-    pub fn must_get_none<E: Engine>(engine: &E, key: &[u8], ts: impl Into<TimeStamp>) {
+    pub fn must_get_none<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], ts: impl Into<TimeStamp>) {
         let ts = ts.into();
         let ctx = SnapContext::default();
-        let blackbrane = engine.blackbrane(ctx).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(ctx).unwrap();
         let mut reader = blackbraneReader::new(ts, blackbrane, true);
         let key = &Key::from_cocauset(key);
         check_dagger(&mut reader, key, ts).unwrap();
         assert!(reader.get(key, ts).unwrap().is_none());
     }
 
-    pub fn must_get_err<E: Engine>(engine: &E, key: &[u8], ts: impl Into<TimeStamp>) {
+    pub fn must_get_err<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], ts: impl Into<TimeStamp>) {
         let ts = ts.into();
         let ctx = SnapContext::default();
-        let blackbrane = engine.blackbrane(ctx).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(ctx).unwrap();
         let mut reader = blackbraneReader::new(ts, blackbrane, true);
         let key = &Key::from_cocauset(key);
         if check_dagger(&mut reader, key, ts).is_err() {
@@ -472,8 +472,8 @@ pub mod tests {
         assert!(reader.get(key, ts).is_err());
     }
 
-    pub fn must_daggered<E: Engine>(engine: &E, key: &[u8], start_ts: impl Into<TimeStamp>) -> Dagger {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    pub fn must_daggered<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], start_ts: impl Into<TimeStamp>) -> Dagger {
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, None, true);
         let dagger = reader.load_dagger(&Key::from_cocauset(key)).unwrap().unwrap();
         assert_eq!(dagger.ts, start_ts.into());
@@ -481,13 +481,13 @@ pub mod tests {
         dagger
     }
 
-    pub fn must_daggered_with_ttl<E: Engine>(
-        engine: &E,
+    pub fn must_daggered_with_ttl<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
         ttl: u64,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, None, true);
         let dagger = reader.load_dagger(&Key::from_cocauset(key)).unwrap().unwrap();
         assert_eq!(dagger.ts, start_ts.into());
@@ -495,15 +495,15 @@ pub mod tests {
         assert_eq!(dagger.ttl, ttl);
     }
 
-    pub fn must_large_solitontxn_daggered<E: Engine>(
-        engine: &E,
+    pub fn must_large_solitontxn_daggered<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
         ttl: u64,
         min_commit_ts: impl Into<TimeStamp>,
         is_pessimistic: bool,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, None, true);
         let dagger = reader.load_dagger(&Key::from_cocauset(key)).unwrap().unwrap();
         assert_eq!(dagger.ts, start_ts.into());
@@ -516,20 +516,20 @@ pub mod tests {
         }
     }
 
-    pub fn must_undaggered<E: Engine>(engine: &E, key: &[u8]) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    pub fn must_undaggered<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8]) {
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, None, true);
         assert!(reader.load_dagger(&Key::from_cocauset(key)).unwrap().is_none());
     }
 
-    pub fn must_written<E: Engine>(
-        engine: &E,
+    pub fn must_written<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
         commit_ts: impl Into<TimeStamp>,
         tp: WriteType,
     ) -> Write {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let k = Key::from_cocauset(key).append_ts(commit_ts.into());
         let v = blackbrane.get_cf(CF_WRITE, &k).unwrap().unwrap();
         let write = WriteRef::parse(&v).unwrap();
@@ -538,27 +538,27 @@ pub mod tests {
         write.to_owned()
     }
 
-    pub fn must_have_write<E: Engine>(
-        engine: &E,
+    pub fn must_have_write<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         commit_ts: impl Into<TimeStamp>,
     ) -> Write {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let k = Key::from_cocauset(key).append_ts(commit_ts.into());
         let v = blackbrane.get_cf(CF_WRITE, &k).unwrap().unwrap();
         let write = WriteRef::parse(&v).unwrap();
         write.to_owned()
     }
 
-    pub fn must_not_have_write<E: Engine>(engine: &E, key: &[u8], commit_ts: impl Into<TimeStamp>) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    pub fn must_not_have_write<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], commit_ts: impl Into<TimeStamp>) {
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let k = Key::from_cocauset(key).append_ts(commit_ts.into());
         let v = blackbrane.get_cf(CF_WRITE, &k).unwrap();
         assert!(v.is_none());
     }
 
-    pub fn must_seek_write_none<E: Engine>(engine: &E, key: &[u8], ts: impl Into<TimeStamp>) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    pub fn must_seek_write_none<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], ts: impl Into<TimeStamp>) {
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, None, true);
         assert!(
             reader
@@ -568,15 +568,15 @@ pub mod tests {
         );
     }
 
-    pub fn must_seek_write<E: Engine>(
-        engine: &E,
+    pub fn must_seek_write<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         ts: impl Into<TimeStamp>,
         start_ts: impl Into<TimeStamp>,
         commit_ts: impl Into<TimeStamp>,
         write_type: WriteType,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, None, true);
         let (t, write) = reader
             .seek_write(&Key::from_cocauset(key), ts.into())
@@ -587,13 +587,13 @@ pub mod tests {
         assert_eq!(write.write_type, write_type);
     }
 
-    pub fn must_get_commit_ts<E: Engine>(
-        engine: &E,
+    pub fn must_get_commit_ts<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
         commit_ts: impl Into<TimeStamp>,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = blackbraneReader::new(start_ts.into(), blackbrane, true);
         let (ts, write_type) = reader
             .get_solitontxn_commit_record(&Key::from_cocauset(key))
@@ -604,12 +604,12 @@ pub mod tests {
         assert_eq!(ts, commit_ts.into());
     }
 
-    pub fn must_get_commit_ts_none<E: Engine>(
-        engine: &E,
+    pub fn must_get_commit_ts_none<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = blackbraneReader::new(start_ts.into(), blackbrane, true);
 
         let ret = reader.get_solitontxn_commit_record(&Key::from_cocauset(key));
@@ -622,9 +622,9 @@ pub mod tests {
         }
     }
 
-    pub fn must_get_rollback_ts<E: Engine>(engine: &E, key: &[u8], start_ts: impl Into<TimeStamp>) {
+    pub fn must_get_rollback_ts<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], start_ts: impl Into<TimeStamp>) {
         let start_ts = start_ts.into();
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = blackbraneReader::new(start_ts, blackbrane, true);
 
         let (ts, write_type) = reader
@@ -636,12 +636,12 @@ pub mod tests {
         assert_eq!(write_type, WriteType::Rollback);
     }
 
-    pub fn must_get_rollback_ts_none<E: Engine>(
-        engine: &E,
+    pub fn must_get_rollback_ts_none<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = blackbraneReader::new(start_ts.into(), blackbrane, true);
 
         let ret = reader
@@ -651,13 +651,13 @@ pub mod tests {
         assert_eq!(ret, None);
     }
 
-    pub fn must_get_rollback_protected<E: Engine>(
-        engine: &E,
+    pub fn must_get_rollback_protected<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
         protected: bool,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, None, true);
 
         let start_ts = start_ts.into();
@@ -670,15 +670,15 @@ pub mod tests {
         assert_eq!(write.as_ref().is_protected(), protected);
     }
 
-    pub fn must_get_overlapped_rollback<E: Engine, T: Into<TimeStamp>>(
-        engine: &E,
+    pub fn must_get_overlapped_rollback<E: einstein_merkle_tree, T: Into<TimeStamp>>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: T,
         overlapped_start_ts: T,
         overlapped_write_type: WriteType,
         gc_fence: Option<T>,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, None, true);
 
         let start_ts = start_ts.into();
@@ -694,8 +694,8 @@ pub mod tests {
         assert_eq!(write.gc_fence, gc_fence.map(|x| x.into()));
     }
 
-    pub fn must_mutant_search_keys<E: Engine>(
-        engine: &E,
+    pub fn must_mutant_search_keys<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         start: Option<&[u8]>,
         limit: usize,
         keys: Vec<&[u8]>,
@@ -705,7 +705,7 @@ pub mod tests {
             keys.into_iter().map(Key::from_cocauset).collect(),
             next_start.map(|x| Key::from_cocauset(x).append_ts(TimeStamp::zero())),
         );
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Mixed), false);
         assert_eq!(
             reader.mutant_search_keys(start.map(Key::from_cocauset), limit).unwrap(),

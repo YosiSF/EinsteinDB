@@ -3,16 +3,16 @@
 use crate::errors::Result;
 use crate::options::WriteOptions;
 
-/// Engines that can create write batches
+/// einstein_merkle_trees that can create write batches
 pub trait WriteBatchExt: Sized {
     type WriteBatch: WriteBatch<Self>;
-    /// `WriteBatchVec` is used for `multi_batch_write` of FdbEngine and other Engine could also
+    /// `WriteBatchVec` is used for `multi_batch_write` of Fdbeinstein_merkle_tree and other einstein_merkle_tree could also
     /// implement another kind of WriteBatch according to their needs.
     type WriteBatchVec: WriteBatch<Self>;
 
     /// The number of puts/deletes made to a write batch before the batch should
     /// be committed with `write`. More entries than this will cause
-    /// `should_write_to_engine` to return true.
+    /// `should_write_to_einstein_merkle_tree` to return true.
     ///
     /// In practice it seems that exceeding this number of entries is possible
     /// and does not result in an error. It isn't clear the consequence of
@@ -93,7 +93,7 @@ pub trait WriteBatch<E: WriteBatchExt + Sized>: Mutable {
 
     /// The data size of a write batch
     ///
-    /// This is necessarily engine-dependent. In FdbDB though it appears to
+    /// This is necessarily einstein_merkle_tree-dependent. In FdbDB though it appears to
     /// represent the byte length of all write commands in the batch, as
     /// serialized in memory, prior to being written to disk.
     fn data_size(&self) -> usize;
@@ -107,7 +107,7 @@ pub trait WriteBatch<E: WriteBatchExt + Sized>: Mutable {
     /// Whether the number of commands exceeds WRITE_BATCH_MAX_CAUSET_KEYS
     ///
     /// If so, the `write` method should be called.
-    fn should_write_to_engine(&self) -> bool;
+    fn should_write_to_einstein_merkle_tree(&self) -> bool;
 
     /// Clears the WriteBatch of all commands
     ///

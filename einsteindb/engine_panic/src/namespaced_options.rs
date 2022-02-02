@@ -1,11 +1,11 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::db_options::PanicTitanDBOptions;
-use crate::fdb_lsh_treePanicEngine;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{NAMESPACEDOptionsExt, Result};
-use fdb_traits::{ColumnFamilyOptions, SstPartitionerFactory};
+use fdb_traits::{ColumnFamilyOptions, CausetPartitionerFactory};
 
-impl NAMESPACEDOptionsExt for PanicEngine {
+impl NAMESPACEDOptionsExt for Paniceinstein_merkle_tree {
     type ColumnFamilyOptions = PanicColumnFamilyOptions;
 
     fn get_options_namespaced(&self, namespaced: &str) -> Result<Self::ColumnFamilyOptions> {
@@ -63,7 +63,7 @@ impl ColumnFamilyOptions for PanicColumnFamilyOptions {
     fn get_disable_write_stall(&self) -> bool {
         panic!()
     }
-    fn set_sst_partitioner_factory<F: SstPartitionerFactory>(&mut self, factory: F) {
+    fn set_Causet_partitioner_factory<F: CausetPartitionerFactory>(&mut self, factory: F) {
         panic!()
     }
 }

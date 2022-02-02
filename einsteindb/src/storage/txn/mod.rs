@@ -22,7 +22,7 @@ use solitontxn_types::{Key, TimeStamp, Value};
 
 use crate::einsteindb::storage::{
     epaxos::Error as EpaxosError,
-    types::{EpaxosInfo, PessimisticDaggerRes, PrewriteResult, SecondaryDaggersStatus, TxnStatus},
+    types::{EpaxosInfo, PessimisticDaggerRes, PrewriteResult, SecondaryDaggerCausetatus, TxnStatus},
     Error as StorageError, Result as StorageResult,
 };
 
@@ -54,7 +54,7 @@ pub enum ProcessResult {
     EpaxosKey {
         epaxos: EpaxosInfo,
     },
-    EpaxosStartTs {
+    EpaxoCausetartTs {
         epaxos: Option<(Key, EpaxosInfo)>,
     },
     Daggers {
@@ -72,8 +72,8 @@ pub enum ProcessResult {
     PessimisticDaggerRes {
         res: StorageResult<PessimisticDaggerRes>,
     },
-    SecondaryDaggersStatus {
-        status: SecondaryDaggersStatus,
+    SecondaryDaggerCausetatus {
+        status: SecondaryDaggerCausetatus,
     },
     cocausetCompareAndSwapRes {
         previous_value: Option<Value>,
@@ -95,7 +95,7 @@ impl ProcessResult {
 #[derive(Debug, Error)]
 pub enum ErrorInner {
     #[error("{0}")]
-    Engine(#[from] crate::storage::fdbhikv::Error),
+    einstein_merkle_tree(#[from] crate::storage::fdbhikv::Error),
 
     #[error("{0}")]
     Codec(#[from] einstfdbhikv_util::codec::Error),
@@ -142,7 +142,7 @@ pub enum ErrorInner {
 impl ErrorInner {
     pub fn maybe_clone(&self) -> Option<ErrorInner> {
         match *self {
-            ErrorInner::Engine(ref e) => e.maybe_clone().map(ErrorInner::Engine),
+            ErrorInner::einstein_merkle_tree(ref e) => e.maybe_clone().map(ErrorInner::einstein_merkle_tree),
             ErrorInner::Codec(ref e) => e.maybe_clone().map(ErrorInner::Codec),
             ErrorInner::Epaxos(ref e) => e.maybe_clone().map(ErrorInner::Epaxos),
             ErrorInner::InvalidTxnTso {
@@ -209,7 +209,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 impl ErrorCodeExt for Error {
     fn error_code(&self) -> ErrorCode {
         match self.0.as_ref() {
-            ErrorInner::Engine(e) => e.error_code(),
+            ErrorInner::einstein_merkle_tree(e) => e.error_code(),
             ErrorInner::Codec(e) => e.error_code(),
             ErrorInner::ProtoBuf(_) => error_code::storage::PROTOBUF,
             ErrorInner::Epaxos(e) => e.error_code(),

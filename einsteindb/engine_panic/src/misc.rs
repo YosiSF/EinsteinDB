@@ -1,9 +1,9 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePanicEngine;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{DeleteStrategy, MiscExt, Range, Result};
 
-impl MiscExt for PanicEngine {
+impl MiscExt for Paniceinstein_merkle_tree {
     fn flush(&self, sync: bool) -> Result<()> {
         panic!()
     }
@@ -29,7 +29,7 @@ impl MiscExt for PanicEngine {
         panic!()
     }
 
-    fn get_engine_used_size(&self) -> Result<u64> {
+    fn get_einstein_merkle_tree_used_size(&self) -> Result<u64> {
         panic!()
     }
 
@@ -61,7 +61,7 @@ impl MiscExt for PanicEngine {
         panic!()
     }
 
-    fn get_total_sst_files_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>> {
+    fn get_total_Causet_files_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>> {
         panic!()
     }
 

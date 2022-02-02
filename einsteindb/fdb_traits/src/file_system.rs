@@ -9,30 +9,30 @@ pub trait FileSystemInspector: Sync + Send {
     fn write(&self, len: usize) -> Result<usize, String>;
 }
 
-pub struct EngineFileSystemInspector {
+pub struct einstein_merkle_treeFileSystemInspector {
     limiter: Option<Arc<IORateLimiter>>,
 }
 
-impl EngineFileSystemInspector {
+impl einstein_merkle_treeFileSystemInspector {
     #[allow(dead_code)]
     pub fn new() -> Self {
-        EngineFileSystemInspector {
+        einstein_merkle_treeFileSystemInspector {
             limiter: get_io_rate_limiter(),
         }
     }
 
     pub fn from_limiter(limiter: Option<Arc<IORateLimiter>>) -> Self {
-        EngineFileSystemInspector { limiter }
+        einstein_merkle_treeFileSystemInspector { limiter }
     }
 }
 
-impl Default for EngineFileSystemInspector {
+impl Default for einstein_merkle_treeFileSystemInspector {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl FileSystemInspector for EngineFileSystemInspector {
+impl FileSystemInspector for einstein_merkle_treeFileSystemInspector {
     fn read(&self, len: usize) -> Result<usize, String> {
         if let Some(limiter) = &self.limiter {
             let io_type = get_io_type();

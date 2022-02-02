@@ -1,7 +1,7 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::db_vector::PanicDBVector;
-use crate::fdb_lsh_treePanicEngine;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{
     IterOptions, Iterable, Iterator, Peekable, ReadOptions, Result, SeekKey, Snapshot,
 };

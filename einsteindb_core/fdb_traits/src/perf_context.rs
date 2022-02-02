@@ -22,17 +22,17 @@ numeric_enum_serializing_mod! {perf_l_naught_serde PerfLevel {
     OutOfBounds = 6,
 }}
 
-/// Extensions for measuring engine performance.
+/// Extensions for measuring einstein_merkle_tree performance.
 ///
 /// A PerfContext is created with a specific measurement l_naught,
 /// and a 'kind' which represents wich einsteindb subsystem measurements are being
 /// collected for.
 ///
 /// In foundationdb, `PerfContext` uses global state, and does not require
-/// access through an engine. Thus perf data is not per-engine.
-/// This doesn't seem like a reasonable assumption for engines generally,
+/// access through an einstein_merkle_tree. Thus perf data is not per-einstein_merkle_tree.
+/// This doesn't seem like a reasonable assumption for einstein_merkle_trees generally,
 /// so this abstraction follows the existing pattern in this crate and
-/// requires `PerfContext` to be accessed through the engine.
+/// requires `PerfContext` to be accessed through the einstein_merkle_tree.
 pub trait PerfContextExt {
     type PerfContext: PerfContext;
 
@@ -51,7 +51,7 @@ pub enum PerfContextKind {
 
 /// Reports metrics to prometheus
 ///
-/// For alternate engines, it is reasonable to make `start_observe`
+/// For alternate einstein_merkle_trees, it is reasonable to make `start_observe`
 /// and `report_metrics` no-ops.
 pub trait PerfContext: Send {
     /// Reinitializes statistics and the perf l_naught

@@ -19,7 +19,7 @@
 //!
 //! Some important types are:
 //!
-//! * the [`Engine`](fdbhikv::Engine) trait and related promises, which abstracts over underlying storage,
+//! * the [`einstein_merkle_tree`](fdbhikv::einstein_merkle_tree) trait and related promises, which abstracts over underlying storage,
 //! * the [`EpaxosTxn`](epaxos::solitontxn::EpaxosTxn) struct, which is the primary object in the EPAXOS
 //!   implementation,
 //! * the commands in the [`commands`](solitontxn::commands) module, which are how each command is implemented,
@@ -35,7 +35,7 @@
 //! * the [`fdbhikvproto`](::fdbhikvproto) crate, which defines EinsteinDB's protobuf API and includes some
 //!   documentation of the commands implemented here,
 //! * the [`test_storage`](::test_storage) crate, integration tests for this module,
-//! * the [`engine_promises`](::engine_promises) crate, more detail of the engine abstraction.
+//! * the [`einstein_merkle_tree_promises`](::einstein_merkle_tree_promises) crate, more detail of the einstein_merkle_tree abstraction.
 
 pub mod config;
 pub mod errors;
@@ -53,14 +53,14 @@ use self::fdbhikv::SnapContext;
 pub use self::{
     errors::{get_error_kind_from_header, get_tag_from_header, Error, ErrorHeaderKind, ErrorInner},
     fdbhikv::{
-        CfStatistics, Cursor, CursorBuilder, Engine, CausetxctxStatistics, CausetxctxStatsReporter, Iterator,
-        PerfStatisticsDelta, PerfStatisticsInstant, RocksEngine, SentinelSearchMode, blackbrane,
-        StageLatencyStats, Statistics, TestEngineBuilder,
+        CfStatistics, Cursor, CursorBuilder, einstein_merkle_tree, CausetxctxStatistics, CausetxctxStatsReporter, Iterator,
+        PerfStatisticsDelta, PerfStatisticsInstant, Rockseinstein_merkle_tree, SentinelSearchMode, blackbrane,
+        StageLatencyStats, Statistics, Testeinstein_merkle_treeBuilder,
     },
     cocauset::cocausetStore,
     read_pool::{build_read_pool, build_read_pool_for_test},
     solitontxn::{Latches, Dagger as LatchDagger, ProcessResult, MutantSentinelSearch, blackbraneStore, Store},
-    types::{PessimisticDaggerRes, PrewriteResult, SecondaryDaggersStatus, StorageCallback, TxnStatus},
+    types::{PessimisticDaggerRes, PrewriteResult, SecondaryDaggerCausetatus, StorageCallback, TxnStatus},
 };
 
 use crate::read_pool::{ReadPool, ReadPoolHandle};
@@ -72,7 +72,7 @@ use crate::einsteindb::storage::solitontxn::Causetxctx_controller::CausetxctxCon
 use crate::server::dagger_manager::waiter_manager;
 use crate::einsteindb::storage::{
     config::Config,
-    fdbhikv::{with_tls_engine, Modify, WriteData},
+    fdbhikv::{with_tls_einstein_merkle_tree, Modify, WriteData},
     dagger_manager::{DummyDaggerManager, DaggerManager},
     metrics::*,
     epaxos::PointGetterBuilder,
@@ -110,9 +110,9 @@ pub type Result<T> = std::result::Result<T, Error>;
 pub type Callback<T> = Box<dyn FnOnce(Result<T>) + Send>;
 
 
-pub struct Storage<E: Engine, L: DaggerManager> {
+pub struct Storage<E: einstein_merkle_tree, L: DaggerManager> {
     // TODO: Too many Arcs, would be slow when clone.
-    engine: E,
+    einstein_merkle_tree: E,
 
     sched: TxnScheduler<E, L>,
 
@@ -134,7 +134,7 @@ pub struct Storage<E: Engine, L: DaggerManager> {
     api_version: ApiVersion,
 }
 
-impl<E: Engine, L: DaggerManager> Clone for Storage<E, L> {
+impl<E: einstein_merkle_tree, L: DaggerManager> Clone for Storage<E, L> {
     #[inline]
     fn clone(&self) -> Self {
         let refs = self.refs.fetch_add(1, causetxctx::Ordering::SeqCst);
@@ -144,7 +144,7 @@ impl<E: Engine, L: DaggerManager> Clone for Storage<E, L> {
         );
 
         Self {
-            engine: self.engine.clone(),
+            einstein_merkle_tree: self.einstein_merkle_tree.clone(),
             sched: self.sched.clone(),
             read_pool: self.read_pool.clone(),
             refs: self.refs.clone(),
@@ -156,7 +156,7 @@ impl<E: Engine, L: DaggerManager> Clone for Storage<E, L> {
     }
 }
 
-impl<E: Engine, L: DaggerManager> Drop for Storage<E, L> {
+impl<E: einstein_merkle_tree, L: DaggerManager> Drop for Storage<E, L> {
     #[inline]
     fn drop(&mut self) {
         let refs = self.refs.fetch_sub(1, causetxctx::Ordering::SeqCst);
@@ -188,10 +188,10 @@ macro_rules! check_key_size {
     };
 }
 
-impl<E: Engine, L: DaggerManager> Storage<E, L> {
-    /// Create a `Storage` from given engine.
-    pub fn from_engine<R: CausetxctxStatsReporter>(
-        engine: E,
+impl<E: einstein_merkle_tree, L: DaggerManager> Storage<E, L> {
+    /// Create a `Storage` from given einstein_merkle_tree.
+    pub fn from_einstein_merkle_tree<R: CausetxctxStatsReporter>(
+        einstein_merkle_tree: E,
         config: &Config,
         read_pool: ReadPoolHandle,
         dagger_mgr: L,
@@ -202,7 +202,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         resource_tag_factory: ResourceTagFactory,
     ) -> Result<Self> {
         let sched = TxnScheduler::new(
-            engine.clone(),
+            einstein_merkle_tree.clone(),
             dagger_mgr,
             concurrency_manager.clone(),
             config,
@@ -215,7 +215,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         info!("Storage started.");
 
         Ok(Storage {
-            engine,
+            einstein_merkle_tree,
             sched,
             read_pool,
             concurrency_manager,
@@ -226,9 +226,9 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         })
     }
 
-    /// Get the underlying `Engine` of the `Storage`.
-    pub fn get_engine(&self) -> E {
-        self.engine.clone()
+    /// Get the underlying `einstein_merkle_tree` of the `Storage`.
+    pub fn get_einstein_merkle_tree(&self) -> E {
+        self.einstein_merkle_tree.clone()
     }
 
     pub fn get_concurrency_manager(&self) -> ConcurrencyManager {
@@ -239,23 +239,23 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         self.sched.dump_wait_for_entries(cb);
     }
 
-    /// Get a blackbrane of `engine`.
+    /// Get a blackbrane of `einstein_merkle_tree`.
     fn blackbrane(
-        engine: &E,
+        einstein_merkle_tree: &E,
         ctx: SnapContext<'_>,
     ) -> impl std::future::Future<Output = Result<E::Snap>> {
-        fdbhikv::blackbrane(engine, ctx)
+        fdbhikv::blackbrane(einstein_merkle_tree, ctx)
             .map_err(solitontxn::Error::from)
             .map_err(Error::from)
     }
 
     #[cfg(test)]
     pub fn get_blackbrane(&self) -> E::Snap {
-        self.engine.blackbrane(Default::default()).unwrap()
+        self.einstein_merkle_tree.blackbrane(Default::default()).unwrap()
     }
 
     pub fn release_blackbrane(&self) {
-        self.engine.release_blackbrane();
+        self.einstein_merkle_tree.release_blackbrane();
     }
 
     pub fn get_readpool_queue_per_worker(&self) -> usize {
@@ -267,12 +267,12 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
     }
 
     #[inline]
-    fn with_tls_engine<F, R>(f: F) -> R
+    fn with_tls_einstein_merkle_tree<F, R>(f: F) -> R
     where
         F: FnOnce(&E) -> R,
     {
-        // Safety: the read pools ensure that a TLS engine exists.
-        unsafe { with_tls_engine(f) }
+        // Safety: the read pools ensure that a TLS einstein_merkle_tree exists.
+        unsafe { with_tls_einstein_merkle_tree(f) }
     }
 
     /// Check the given cocauset fdbhikv CF name. If the given cf is empty, CF_DEFAULT will be returned.
@@ -540,7 +540,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     CMD,
                 )?;
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 {
                     let begin_instant = Instant::now_coarse();
                     let stage_snap_recv_ts = begin_instant;
@@ -691,7 +691,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         }
                     };
 
-                    let snap = Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx));
+                    let snap = Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx));
                     req_snaps.push((
                         snap,
                         key,
@@ -704,7 +704,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         id,
                     ));
                 }
-                Self::with_tls_engine(|engine| engine.release_blackbrane());
+                Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| einstein_merkle_tree.release_blackbrane());
                 for req_snap in req_snaps {
                     let (
                         snap,
@@ -830,7 +830,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     CMD,
                 )?;
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 {
                     let begin_instant = Instant::now_coarse();
                     let stage_snap_recv_ts = begin_instant;
@@ -1022,7 +1022,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                 }
 
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 {
                     let begin_instant = Instant::now_coarse();
                     let perf_statistics = PerfStatisticsInstant::new();
@@ -1161,7 +1161,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                 };
 
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 {
                     let begin_instant = Instant::now_coarse();
                     let mut statistics = Statistics::default();
@@ -1299,7 +1299,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
         let mut batch = WriteData::from_modifies(modifies);
         batch.set_allowed_on_disk_almost_full();
-        self.engine.async_write(
+        self.einstein_merkle_tree.async_write(
             &ctx,
             batch,
             Box::new(|res| callback(res.map_err(Error::from))),
@@ -1345,7 +1345,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     ..Default::default()
                 };
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 let store = cocausetStore::new(blackbrane, api_version);
                 let cf = Self::cocausetfdbhikv_cf(&cf, api_version)?;
                 {
@@ -1431,10 +1431,10 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         read_id: read_id.clone(),
                         ..Default::default()
                     };
-                    let snap = Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx));
+                    let snap = Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx));
                     snaps.push((id, req, snap));
                 }
-                Self::with_tls_engine(|engine| engine.release_blackbrane());
+                Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| einstein_merkle_tree.release_blackbrane());
                 let begin_instant = Instant::now_coarse();
                 for (id, mut req, snap) in snaps {
                     let ctx = req.take_context();
@@ -1527,7 +1527,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     ..Default::default()
                 };
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 let store = cocausetStore::new(blackbrane, api_version);
                 {
                     let begin_instant = Instant::now_coarse();
@@ -1616,7 +1616,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         let mut batch = WriteData::from_modifies(vec![m]);
         batch.set_allowed_on_disk_almost_full();
 
-        self.engine.async_write(
+        self.einstein_merkle_tree.async_write(
             &ctx,
             batch,
             Box::new(|res| callback(res.map_err(Error::from))),
@@ -1683,7 +1683,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         let mut batch = WriteData::from_modifies(modifies);
         batch.set_allowed_on_disk_almost_full();
 
-        self.engine.async_write(
+        self.einstein_merkle_tree.async_write(
             &ctx,
             batch,
             Box::new(|res| callback(res.map_err(Error::from))),
@@ -1715,7 +1715,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         )]);
         batch.set_allowed_on_disk_almost_full();
 
-        self.engine.async_write(
+        self.einstein_merkle_tree.async_write(
             &ctx,
             batch,
             Box::new(|res| callback(res.map_err(Error::from))),
@@ -1749,7 +1749,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
             WriteData::from_modifies(vec![Modify::DeleteRange(cf, start_key, end_key, false)]);
         batch.set_allowed_on_disk_almost_full();
 
-        self.engine.async_write(
+        self.einstein_merkle_tree.async_write(
             &ctx,
             batch,
             Box::new(|res| callback(res.map_err(Error::from))),
@@ -1784,7 +1784,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
         let mut batch = WriteData::from_modifies(modifies);
         batch.set_allowed_on_disk_almost_full();
 
-        self.engine.async_write(
+        self.einstein_merkle_tree.async_write(
             &ctx,
             batch,
             Box::new(|res| callback(res.map_err(Error::from))),
@@ -1850,7 +1850,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     ..Default::default()
                 };
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 let cf = Self::cocausetfdbhikv_cf(&cf, api_version)?;
                 {
                     let store = cocausetStore::new(blackbrane, api_version);
@@ -1955,7 +1955,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     ..Default::default()
                 };
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 let cf = Self::cocausetfdbhikv_cf(&cf, api_version)?;
                 {
                     let store = cocausetStore::new(blackbrane, api_version);
@@ -2080,7 +2080,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     ..Default::default()
                 };
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 let store = cocausetStore::new(blackbrane, api_version);
                 let cf = Self::cocausetfdbhikv_cf(&cf, api_version)?;
                 {
@@ -2257,7 +2257,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     ..Default::default()
                 };
                 let blackbrane =
-                    Self::with_tls_engine(|engine| Self::blackbrane(engine, snap_ctx)).await?;
+                    Self::with_tls_einstein_merkle_tree(|einstein_merkle_tree| Self::blackbrane(einstein_merkle_tree, snap_ctx)).await?;
                 let store = cocausetStore::new(blackbrane, api_version);
                 let cf = Self::cocausetfdbhikv_cf("", api_version)?;
 
@@ -2371,8 +2371,8 @@ pub fn point_key_range(key: Key) -> KeyRange {
 ///
 /// Only used for test purpose.
 #[must_use]
-pub struct TestStorageBuilder<E: Engine, L: DaggerManager> {
-    engine: E,
+pub struct TestStorageBuilder<E: einstein_merkle_tree, L: DaggerManager> {
+    einstein_merkle_tree: E,
     config: Config,
     pipelined_pessimistic_dagger: Arc<causetxctxBool>,
     in_memory_pessimistic_dagger: Arc<causetxctxBool>,
@@ -2380,46 +2380,46 @@ pub struct TestStorageBuilder<E: Engine, L: DaggerManager> {
     resource_tag_factory: ResourceTagFactory,
 }
 
-impl TestStorageBuilder<RocksEngine, DummyDaggerManager> {
-    /// Build `Storage<RocksEngine>`.
+impl TestStorageBuilder<Rockseinstein_merkle_tree, DummyDaggerManager> {
+    /// Build `Storage<Rockseinstein_merkle_tree>`.
     pub fn new(dagger_mgr: DummyDaggerManager, api_version: ApiVersion) -> Self {
-        let engine = TestEngineBuilder::new()
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new()
             .api_version(api_version)
             .build()
             .unwrap();
-        Self::from_engine_and_dagger_mgr(engine, dagger_mgr, api_version)
+        Self::from_einstein_merkle_tree_and_dagger_mgr(einstein_merkle_tree, dagger_mgr, api_version)
     }
 }
 
-/// An `Engine` with `TxnExt`. It is used for test purpose.
+/// An `einstein_merkle_tree` with `TxnExt`. It is used for test purpose.
 #[derive(Clone)]
-pub struct TxnTestEngine<E: Engine> {
-    engine: E,
+pub struct TxnTesteinstein_merkle_tree<E: einstein_merkle_tree> {
+    einstein_merkle_tree: E,
     solitontxn_ext: Arc<TxnExt>,
 }
 
-impl<E: Engine> Engine for TxnTestEngine<E> {
+impl<E: einstein_merkle_tree> einstein_merkle_tree for TxnTesteinstein_merkle_tree<E> {
     type Snap = TxnTestblackbrane<E::Snap>;
     type Local = E::Local;
 
-    fn fdbhikv_engine(&self) -> Self::Local {
-        self.engine.fdbhikv_engine()
+    fn fdbhikv_einstein_merkle_tree(&self) -> Self::Local {
+        self.einstein_merkle_tree.fdbhikv_einstein_merkle_tree()
     }
 
-    fn blackbrane_on_fdbhikv_engine(
+    fn blackbrane_on_fdbhikv_einstein_merkle_tree(
         &self,
         start_key: &[u8],
         end_key: &[u8],
     ) -> einstfdbhikv_fdbhikv::Result<Self::Snap> {
-        let blackbrane = self.engine.blackbrane_on_fdbhikv_engine(start_key, end_key)?;
+        let blackbrane = self.einstein_merkle_tree.blackbrane_on_fdbhikv_einstein_merkle_tree(start_key, end_key)?;
         Ok(TxnTestblackbrane {
             blackbrane,
             solitontxn_ext: self.solitontxn_ext.clone(),
         })
     }
 
-    fn modify_on_fdbhikv_engine(&self, modifies: Vec<Modify>) -> einstfdbhikv_fdbhikv::Result<()> {
-        self.engine.modify_on_fdbhikv_engine(modifies)
+    fn modify_on_fdbhikv_einstein_merkle_tree(&self, modifies: Vec<Modify>) -> einstfdbhikv_fdbhikv::Result<()> {
+        self.einstein_merkle_tree.modify_on_fdbhikv_einstein_merkle_tree(modifies)
     }
 
     fn async_blackbrane(
@@ -2428,7 +2428,7 @@ impl<E: Engine> Engine for TxnTestEngine<E> {
         cb: einstfdbhikv_fdbhikv::Callback<Self::Snap>,
     ) -> einstfdbhikv_fdbhikv::Result<()> {
         let solitontxn_ext = self.solitontxn_ext.clone();
-        self.engine.async_blackbrane(
+        self.einstein_merkle_tree.async_blackbrane(
             ctx,
             Box::new(move |blackbrane| {
                 cb(blackbrane.map(|blackbrane| TxnTestblackbrane { blackbrane, solitontxn_ext }))
@@ -2442,7 +2442,7 @@ impl<E: Engine> Engine for TxnTestEngine<E> {
         batch: WriteData,
         write_cb: einstfdbhikv_fdbhikv::Callback<()>,
     ) -> einstfdbhikv_fdbhikv::Result<()> {
-        self.engine.async_write(ctx, batch, write_cb)
+        self.einstein_merkle_tree.async_write(ctx, batch, write_cb)
     }
 }
 
@@ -2469,21 +2469,21 @@ impl<S: blackbrane> blackbrane for TxnTestblackbrane<S> {
 
     fn get_cf_opt(
         &self,
-        opts: engine_promises::ReadOptions,
+        opts: einstein_merkle_tree_promises::ReadOptions,
         cf: CfName,
         key: &Key,
     ) -> einstfdbhikv_fdbhikv::Result<Option<Value>> {
         self.blackbrane.get_cf_opt(opts, cf, key)
     }
 
-    fn iter(&self, iter_opt: engine_promises::IterOptions) -> einstfdbhikv_fdbhikv::Result<Self::Iter> {
+    fn iter(&self, iter_opt: einstein_merkle_tree_promises::IterOptions) -> einstfdbhikv_fdbhikv::Result<Self::Iter> {
         self.blackbrane.iter(iter_opt)
     }
 
     fn iter_cf(
         &self,
         cf: CfName,
-        iter_opt: engine_promises::IterOptions,
+        iter_opt: einstein_merkle_tree_promises::IterOptions,
     ) -> einstfdbhikv_fdbhikv::Result<Self::Iter> {
         self.blackbrane.iter_cf(cf, iter_opt)
     }
@@ -2509,12 +2509,12 @@ impl CausetxctxStatsReporter for DummyReporter {
     fn report_write_stats(&self, _write_stats: WriteStats) {}
 }
 
-impl<E: Engine, L: DaggerManager> TestStorageBuilder<E, L> {
-    pub fn from_engine_and_dagger_mgr(engine: E, dagger_mgr: L, api_version: ApiVersion) -> Self {
+impl<E: einstein_merkle_tree, L: DaggerManager> TestStorageBuilder<E, L> {
+    pub fn from_einstein_merkle_tree_and_dagger_mgr(einstein_merkle_tree: E, dagger_mgr: L, api_version: ApiVersion) -> Self {
         let mut config = Config::default();
         config.set_api_version(api_version);
         Self {
-            engine,
+            einstein_merkle_tree,
             config,
             pipelined_pessimistic_dagger: Arc::new(causetxctxBool::new(false)),
             in_memory_pessimistic_dagger: Arc::new(causetxctxBool::new(false)),
@@ -2562,11 +2562,11 @@ impl<E: Engine, L: DaggerManager> TestStorageBuilder<E, L> {
     pub fn build(self) -> Result<Storage<E, L>> {
         let read_pool = build_read_pool_for_test(
             &crate::config::StorageReadPoolConfig::default_for_test(),
-            self.engine.clone(),
+            self.einstein_merkle_tree.clone(),
         );
 
-        Storage::from_engine(
-            self.engine,
+        Storage::from_einstein_merkle_tree(
+            self.einstein_merkle_tree,
             &self.config,
             ReadPool::from(read_pool).handle(),
             self.dagger_mgr,
@@ -2581,18 +2581,18 @@ impl<E: Engine, L: DaggerManager> TestStorageBuilder<E, L> {
         )
     }
 
-    pub fn build_for_solitontxn(self, solitontxn_ext: Arc<TxnExt>) -> Result<Storage<TxnTestEngine<E>, L>> {
-        let engine = TxnTestEngine {
-            engine: self.engine,
+    pub fn build_for_solitontxn(self, solitontxn_ext: Arc<TxnExt>) -> Result<Storage<TxnTesteinstein_merkle_tree<E>, L>> {
+        let einstein_merkle_tree = TxnTesteinstein_merkle_tree {
+            einstein_merkle_tree: self.einstein_merkle_tree,
             solitontxn_ext,
         };
         let read_pool = build_read_pool_for_test(
             &crate::config::StorageReadPoolConfig::default_for_test(),
-            engine.clone(),
+            einstein_merkle_tree.clone(),
         );
 
-        Storage::from_engine(
-            engine,
+        Storage::from_einstein_merkle_tree(
+            einstein_merkle_tree,
             &self.config,
             ReadPool::from(read_pool).handle(),
             self.dagger_mgr,
@@ -2697,9 +2697,9 @@ pub mod test_util {
 
     pub fn expect_secondary_daggers_status_callback(
         done: Sender<i32>,
-        secondary_daggers_status: SecondaryDaggersStatus,
-    ) -> Callback<SecondaryDaggersStatus> {
-        Box::new(move |res: Result<SecondaryDaggersStatus>| {
+        secondary_daggers_status: SecondaryDaggerCausetatus,
+    ) -> Callback<SecondaryDaggerCausetatus> {
+        Box::new(move |res: Result<SecondaryDaggerCausetatus>| {
             assert_eq!(res.unwrap(), secondary_daggers_status);
             done.send(0).unwrap();
         })
@@ -2732,7 +2732,7 @@ pub mod test_util {
         )
     }
 
-    pub fn delete_pessimistic_dagger<E: Engine, L: DaggerManager>(
+    pub fn delete_pessimistic_dagger<E: einstein_merkle_tree, L: DaggerManager>(
         storage: &Storage<E, L>,
         key: Key,
         start_ts: u64,
@@ -2822,20 +2822,20 @@ mod tests {
     };
 
     use crate::config::TitanDBConfig;
-    use crate::einsteindb::storage::fdbhikv::{ExpectedWrite, MockEngineBuilder};
+    use crate::einsteindb::storage::fdbhikv::{ExpectedWrite, Mockeinstein_merkle_treeBuilder};
     use crate::einsteindb::storage::dagger_manager::DiagnosticContext;
     use crate::einsteindb::storage::epaxos::DaggerType;
     use crate::einsteindb::storage::solitontxn::commands::{AcquirePessimisticDagger, Prewrite};
     use crate::einsteindb::storage::solitontxn::tests::must_rollback;
     use crate::einsteindb::storage::{
         config::BdaggerCacheConfig,
-        fdbhikv::{Error as HikvError, ErrorInner as EngineErrorInner},
+        fdbhikv::{Error as HikvError, ErrorInner as einstein_merkle_treeErrorInner},
         dagger_manager::{Dagger, WaitTimeout},
         epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner},
         solitontxn::{commands, Error as TxnError, ErrorInner as TxnErrorInner},
     };
     use collections::HashMap;
-    use engine_rocks::cocauset_util::CFOptions;
+    use einstein_merkle_tree_rocks::cocauset_util::CFOptions;
     use einsteindb-gen::{cocauset_ttl::ttl_current_ts, ALL_CFS, CF_LOCK, CF_RAFT, CF_WRITE};
     use error_code::ErrorCodeExt;
     use errors::extract_key_error;
@@ -2861,7 +2861,7 @@ mod tests {
             .unwrap();
 
         // We have to do the prewrite manually so that the mem daggers don't get released.
-        let blackbrane = storage.engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = storage.einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mutations = vec![Mutation::make_put(Key::from_cocauset(b"x"), b"z".to_vec())];
         let mut cmd = commands::Prewrite::with_defaults(mutations, vec![1, 2, 3], 10.into());
         if let Command::Prewrite(p) = &mut cmd.cmd {
@@ -2949,10 +2949,10 @@ mod tests {
 
     #[test]
     fn test_cf_error() {
-        // New engine lacks normal column families.
-        let engine = TestEngineBuilder::new().cfs(["foo"]).build().unwrap();
-        let storage = TestStorageBuilder::<_, DummyDaggerManager>::from_engine_and_dagger_mgr(
-            engine,
+        // New einstein_merkle_tree lacks normal column families.
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().cfs(["foo"]).build().unwrap();
+        let storage = TestStorageBuilder::<_, DummyDaggerManager>::from_einstein_merkle_tree_and_dagger_mgr(
+            einstein_merkle_tree,
             DummyDaggerManager {},
             ApiVersion::V1,
         )
@@ -2972,7 +2972,7 @@ mod tests {
                 ),
                 expect_fail_callback(tx, 0, |e| match e {
                     Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                        box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
+                        box epaxos::ErrorInner::Hikv(HikvError(box einstein_merkle_treeErrorInner::Request(..))),
                     ))))) => {}
                     e => panic!("unexpected error chain: {:?}", e),
                 }),
@@ -2982,7 +2982,7 @@ mod tests {
         expect_error(
             |e| match e {
                 Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                    box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
+                    box epaxos::ErrorInner::Hikv(HikvError(box einstein_merkle_treeErrorInner::Request(..))),
                 ))))) => (),
                 e => panic!("unexpected error chain: {:?}", e),
             },
@@ -2991,7 +2991,7 @@ mod tests {
         expect_error(
             |e| match e {
                 Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                    box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
+                    box epaxos::ErrorInner::Hikv(HikvError(box einstein_merkle_treeErrorInner::Request(..))),
                 ))))) => (),
                 e => panic!("unexpected error chain: {:?}", e),
             },
@@ -3009,7 +3009,7 @@ mod tests {
         expect_error(
             |e| match e {
                 Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                    box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
+                    box epaxos::ErrorInner::Hikv(HikvError(box einstein_merkle_treeErrorInner::Request(..))),
                 ))))) => (),
                 e => panic!("unexpected error chain: {:?}", e),
             },
@@ -3032,7 +3032,7 @@ mod tests {
             expect_error(
                 |e| match e {
                     Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(epaxos::Error(
-                        box epaxos::ErrorInner::Hikv(HikvError(box EngineErrorInner::Request(..))),
+                        box epaxos::ErrorInner::Hikv(HikvError(box einstein_merkle_treeErrorInner::Request(..))),
                     ))))) => {}
                     e => panic!("unexpected error chain: {:?}", e),
                 },
@@ -3357,7 +3357,7 @@ mod tests {
             },
             ..Default::default()
         };
-        let engine = {
+        let einstein_merkle_tree = {
             let path = "".to_owned();
             let cfs = ALL_CFS.to_vec();
             let cfg_rocksdb = db_config;
@@ -3373,7 +3373,7 @@ mod tests {
                 CFOptions::new(CF_WRITE, cfg_rocksdb.writecf.build_opt(&cache, None)),
                 CFOptions::new(CF_RAFT, cfg_rocksdb.raftcf.build_opt(&cache)),
             ];
-            RocksEngine::new(
+            Rockseinstein_merkle_tree::new(
                 &path,
                 &cfs,
                 Some(cfs_opts),
@@ -3382,8 +3382,8 @@ mod tests {
             )
         }
         .unwrap();
-        let storage = TestStorageBuilder::<_, DummyDaggerManager>::from_engine_and_dagger_mgr(
-            engine,
+        let storage = TestStorageBuilder::<_, DummyDaggerManager>::from_einstein_merkle_tree_and_dagger_mgr(
+            einstein_merkle_tree,
             DummyDaggerManager {},
             ApiVersion::V1,
         )
@@ -4938,7 +4938,7 @@ mod tests {
             (b"c".to_vec(), b"c3".to_vec()),
         ]);
         assert_eq!(
-            <Storage<RocksEngine, DummyDaggerManager>>::check_key_ranges(&ranges, false,),
+            <Storage<Rockseinstein_merkle_tree, DummyDaggerManager>>::check_key_ranges(&ranges, false,),
             true
         );
 
@@ -4948,7 +4948,7 @@ mod tests {
             (b"c".to_vec(), vec![]),
         ]);
         assert_eq!(
-            <Storage<RocksEngine, DummyDaggerManager>>::check_key_ranges(&ranges, false,),
+            <Storage<Rockseinstein_merkle_tree, DummyDaggerManager>>::check_key_ranges(&ranges, false,),
             true
         );
 
@@ -4958,7 +4958,7 @@ mod tests {
             (b"c3".to_vec(), b"c".to_vec()),
         ]);
         assert_eq!(
-            <Storage<RocksEngine, DummyDaggerManager>>::check_key_ranges(&ranges, false,),
+            <Storage<Rockseinstein_merkle_tree, DummyDaggerManager>>::check_key_ranges(&ranges, false,),
             false
         );
 
@@ -4969,7 +4969,7 @@ mod tests {
             (b"a".to_vec(), vec![]),
         ]);
         assert_eq!(
-            <Storage<RocksEngine, DummyDaggerManager>>::check_key_ranges(&ranges, false,),
+            <Storage<Rockseinstein_merkle_tree, DummyDaggerManager>>::check_key_ranges(&ranges, false,),
             false
         );
 
@@ -4979,7 +4979,7 @@ mod tests {
             (b"c3".to_vec(), b"c".to_vec()),
         ]);
         assert_eq!(
-            <Storage<RocksEngine, DummyDaggerManager>>::check_key_ranges(&ranges, true,),
+            <Storage<Rockseinstein_merkle_tree, DummyDaggerManager>>::check_key_ranges(&ranges, true,),
             true
         );
 
@@ -4989,7 +4989,7 @@ mod tests {
             (b"a3".to_vec(), vec![]),
         ]);
         assert_eq!(
-            <Storage<RocksEngine, DummyDaggerManager>>::check_key_ranges(&ranges, true,),
+            <Storage<Rockseinstein_merkle_tree, DummyDaggerManager>>::check_key_ranges(&ranges, true,),
             true
         );
 
@@ -4999,7 +4999,7 @@ mod tests {
             (b"c".to_vec(), b"c3".to_vec()),
         ]);
         assert_eq!(
-            <Storage<RocksEngine, DummyDaggerManager>>::check_key_ranges(&ranges, true,),
+            <Storage<Rockseinstein_merkle_tree, DummyDaggerManager>>::check_key_ranges(&ranges, true,),
             false
         );
 
@@ -5009,7 +5009,7 @@ mod tests {
             (b"c3".to_vec(), vec![]),
         ]);
         assert_eq!(
-            <Storage<RocksEngine, DummyDaggerManager>>::check_key_ranges(&ranges, true,),
+            <Storage<Rockseinstein_merkle_tree, DummyDaggerManager>>::check_key_ranges(&ranges, true,),
             false
         );
     }
@@ -6205,7 +6205,7 @@ mod tests {
                 ),
                 expect_secondary_daggers_status_callback(
                     tx.clone(),
-                    SecondaryDaggersStatus::Daggered(vec![dagger1, dagger2]),
+                    SecondaryDaggerCausetatus::Daggered(vec![dagger1, dagger2]),
                 ),
             )
             .unwrap();
@@ -6226,7 +6226,7 @@ mod tests {
                 commands::CheckSecondaryDaggers::new(vec![k1, k2], 10.into(), Context::default()),
                 expect_secondary_daggers_status_callback(
                     tx.clone(),
-                    SecondaryDaggersStatus::Committed(20.into()),
+                    SecondaryDaggerCausetatus::Committed(20.into()),
                 ),
             )
             .unwrap();
@@ -6262,7 +6262,7 @@ mod tests {
         storage
             .sched_solitontxn_command(
                 commands::CheckSecondaryDaggers::new(vec![k3, k4], 10.into(), Context::default()),
-                expect_secondary_daggers_status_callback(tx, SecondaryDaggersStatus::RolledBack),
+                expect_secondary_daggers_status_callback(tx, SecondaryDaggerCausetatus::RolledBack),
             )
             .unwrap();
         rx.recv().unwrap();
@@ -6570,8 +6570,8 @@ mod tests {
     #[test]
     fn validate_wait_for_dagger_msg() {
         let (msg_tx, msg_rx) = channel();
-        let storage = TestStorageBuilder::from_engine_and_dagger_mgr(
-            TestEngineBuilder::new().build().unwrap(),
+        let storage = TestStorageBuilder::from_einstein_merkle_tree_and_dagger_mgr(
+            Testeinstein_merkle_treeBuilder::new().build().unwrap(),
             ProxyDaggerMgr::new(msg_tx),
             ApiVersion::V1,
         )
@@ -6687,8 +6687,8 @@ mod tests {
         let (msg_tx, msg_rx) = channel();
         let mut dagger_mgr = ProxyDaggerMgr::new(msg_tx);
         dagger_mgr.set_has_waiter(true);
-        let storage = TestStorageBuilder::from_engine_and_dagger_mgr(
-            TestEngineBuilder::new().build().unwrap(),
+        let storage = TestStorageBuilder::from_einstein_merkle_tree_and_dagger_mgr(
+            Testeinstein_merkle_treeBuilder::new().build().unwrap(),
             dagger_mgr,
             ApiVersion::V1,
         )
@@ -7258,9 +7258,9 @@ mod tests {
     // which is an expected property.
     #[test]
     fn test_overlapped_ts_rollback_before_prewrite() {
-        let engine = TestEngineBuilder::new().build().unwrap();
-        let storage = TestStorageBuilder::<_, DummyDaggerManager>::from_engine_and_dagger_mgr(
-            engine.clone(),
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        let storage = TestStorageBuilder::<_, DummyDaggerManager>::from_einstein_merkle_tree_and_dagger_mgr(
+            einstein_merkle_tree.clone(),
             DummyDaggerManager {},
             ApiVersion::V1,
         )
@@ -7361,8 +7361,8 @@ mod tests {
             .unwrap();
         rx.recv().unwrap();
 
-        must_undaggered(&engine, k2);
-        must_written(&engine, k2, 10, 10, WriteType::Rollback);
+        must_undaggered(&einstein_merkle_tree, k2);
+        must_written(&einstein_merkle_tree, k2, 10, 10, WriteType::Rollback);
 
         // T1 prewrites, start_ts = 1, for_update_ts = 3
         storage
@@ -7396,7 +7396,7 @@ mod tests {
                 Box::new(move |res| {
                     let pr = res.unwrap();
                     match pr {
-                        SecondaryDaggersStatus::Daggered(l) => {
+                        SecondaryDaggerCausetatus::Daggered(l) => {
                             let min_commit_ts = l
                                 .iter()
                                 .map(|dagger_info| dagger_info.min_commit_ts)
@@ -7412,7 +7412,7 @@ mod tests {
         assert!(rx.recv().unwrap() > 10);
     }
     // this test shows that the scheduler take `response_policy` in `WriteResult` serious,
-    // ie. call the callback at expected stage when writing to the engine
+    // ie. call the callback at expected stage when writing to the einstein_merkle_tree
     #[test]
     fn test_scheduler_response_policy() {
         struct Case<T: 'static + StorageCallbackType + Send> {
@@ -7425,13 +7425,13 @@ mod tests {
         impl<T: 'static + StorageCallbackType + Send> Case<T> {
             fn run(self) {
                 let mut builder =
-                    MockEngineBuilder::from_rocks_engine(TestEngineBuilder::new().build().unwrap());
+                    Mockeinstein_merkle_treeBuilder::from_rocks_einstein_merkle_tree(Testeinstein_merkle_treeBuilder::new().build().unwrap());
                 for expected_write in self.expected_writes {
                     builder = builder.add_expected_write(expected_write)
                 }
-                let engine = builder.build();
-                let mut builder = TestStorageBuilder::from_engine_and_dagger_mgr(
-                    engine,
+                let einstein_merkle_tree = builder.build();
+                let mut builder = TestStorageBuilder::from_einstein_merkle_tree_and_dagger_mgr(
+                    einstein_merkle_tree,
                     DummyDaggerManager {},
                     ApiVersion::V1,
                 );
@@ -7653,7 +7653,7 @@ mod tests {
 
         // Pessimistically rollback the k2 dagger.
         // Non lite dagger resolve on k1 and k2, there should no errors as dagger on k2 is pessimistic type.
-        must_rollback(&storage.engine, b"k2", 10, false);
+        must_rollback(&storage.einstein_merkle_tree, b"k2", 10, false);
         let mut temp_map = HashMap::default();
         temp_map.insert(10.into(), 20.into());
         storage
@@ -7739,7 +7739,7 @@ mod tests {
 
         // Undagger the k6 first.
         // Non lite dagger resolve on k5 and k6, error should be reported.
-        must_rollback(&storage.engine, b"k6", 10, true);
+        must_rollback(&storage.einstein_merkle_tree, b"k6", 10, true);
         storage
             .sched_solitontxn_command(
                 commands::ResolveDagger::new(
@@ -7908,7 +7908,7 @@ mod tests {
         for (i, (storage_api_version, req_api_version, cmd, keys, err)) in
             test_data.into_iter().enumerate()
         {
-            let res = Storage::<RocksEngine, DummyDaggerManager>::check_api_version(
+            let res = Storage::<Rockseinstein_merkle_tree, DummyDaggerManager>::check_api_version(
                 storage_api_version,
                 req_api_version,
                 cmd,
@@ -7963,7 +7963,7 @@ mod tests {
                          cmd,
                          range: &[(Option<&[u8]>, Option<&[u8]>)],
                          err| {
-            let res = Storage::<RocksEngine, DummyDaggerManager>::check_api_version_ranges(
+            let res = Storage::<Rockseinstein_merkle_tree, DummyDaggerManager>::check_api_version_ranges(
                 storage_api_version,
                 req_api_version,
                 cmd,

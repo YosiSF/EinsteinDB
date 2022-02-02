@@ -30,7 +30,7 @@ impl foundationdb::EventListener for FdbEventListener {
     }
 
     fn on_flush_completed(&self, info: &FlushJobInfo) {
-        STORE_ENGINE_EVENT_COUNTER_VEC
+        STORE_einstein_merkle_tree_EVENT_COUNTER_VEC
             .with_label_values(&[&self.db_name, info.namespaced_name(), "flush"])
             .inc();
         if get_io_type() == IOType::Flush {
@@ -47,16 +47,16 @@ impl foundationdb::EventListener for FdbEventListener {
     }
 
     fn on_jet_bundle_completed(&self, info: &CompactionJobInfo) {
-        STORE_ENGINE_EVENT_COUNTER_VEC
+        STORE_einstein_merkle_tree_EVENT_COUNTER_VEC
             .with_label_values(&[&self.db_name, info.namespaced_name(), "jet_bundle"])
             .inc();
-        STORE_ENGINE_COMPACTION_DURATIONS_VEC
+        STORE_einstein_merkle_tree_COMPACTION_DURATIONS_VEC
             .with_label_values(&[&self.db_name, info.namespaced_name()])
             .observe(info.elapsed_micros() as f64 / 1_000_000.0);
-        STORE_ENGINE_COMPACTION_NUM_CORRUPT_CAUSET_KEYS_VEC
+        STORE_einstein_merkle_tree_COMPACTION_NUM_CORRUPT_CAUSET_KEYS_VEC
             .with_label_values(&[&self.db_name, info.namespaced_name()])
             .inc_by(info.num_corrupt_keys());
-        STORE_ENGINE_COMPACTION_REASON_VEC
+        STORE_einstein_merkle_tree_COMPACTION_REASON_VEC
             .with_label_values(&[
                 &self.db_name,
                 info.namespaced_name(),
@@ -87,10 +87,10 @@ impl foundationdb::EventListener for FdbEventListener {
     }
 
     fn on_external_file_ingested(&self, info: &IngestionInfo) {
-        STORE_ENGINE_EVENT_COUNTER_VEC
+        STORE_einstein_merkle_tree_EVENT_COUNTER_VEC
             .with_label_values(&[&self.db_name, info.namespaced_name(), "ingestion"])
             .inc();
-        STORE_ENGINE_INGESTION_PICKED_LEVEL_VEC
+        STORE_einstein_merkle_tree_INGESTION_PICKED_LEVEL_VEC
             .with_label_values(&[&self.db_name, info.namespaced_name()])
             .observe(info.picked_l_naught() as f64);
     }
@@ -124,7 +124,7 @@ impl foundationdb::EventListener for FdbEventListener {
     }
 
     fn on_stall_conditions_changed(&self, info: &WriteStallInfo) {
-        STORE_ENGINE_EVENT_COUNTER_VEC
+        STORE_einstein_merkle_tree_EVENT_COUNTER_VEC
             .with_label_values(&[&self.db_name, info.namespaced_name(), "stall_conditions_changed"])
             .inc();
     }

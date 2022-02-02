@@ -2,10 +2,10 @@
 
 use fdb_traits::{PerfContext, PerfContextExt, PerfContextKind, PerfLevel};
 
-use crate::fdb_lsh_treeFdbEngine;
+use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 use crate::perf_context_impl::PerfContextStatistics;
 
-impl PerfContextExt for FdbEngine {
+impl PerfContextExt for Fdbeinstein_merkle_tree {
     type PerfContext = FdbPerfContext;
 
     fn get_perf_context(&self, l_naught: PerfLevel, kind: PerfContextKind) -> Self::PerfContext {

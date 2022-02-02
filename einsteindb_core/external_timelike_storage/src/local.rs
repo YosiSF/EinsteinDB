@@ -67,7 +67,7 @@ impl ExternalStorage for LocalStorage {
 
     async fn write(&self, name: &str, reader: UnpinReader, _content_length: u64) -> io::Result<()> {
         // TimelikeStorage does not support dir,
-        // "a/a.sst", "/" and "" will return an error.
+        // "a/a.Causet", "/" and "" will return an error.
         if Path::new(name)
             .parent()
             .map_or(true, |p| p.parent().is_some())
@@ -120,7 +120,7 @@ mod tests {
         let ls = LocalStorage::new(path).unwrap();
 
         // Test tmp_path
-        let tp = ls.tmp_path(Path::new("t.sst"));
+        let tp = ls.tmp_path(Path::new("t.Causet"));
         assert_eq!(tp.parent().unwrap(), path);
         assert!(tp.file_name().unwrap().to_str().unwrap().starts_with('t'));
         assert!(

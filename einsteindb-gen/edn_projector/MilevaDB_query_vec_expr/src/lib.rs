@@ -1,9 +1,9 @@
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! This crate implements a simple BerolinaSQL query engine to work with Milevaeinsteindb pushed down executors.
+//! This crate implements a simple BerolinaSQL query einstein_merkle_tree to work with Milevaeinsteindb pushed down executors.
 //!
-//! The query engine is able to mutant_search and understand rows stored by Milevaeinsteindb, run against a
-//! series of executors and then return the execution result. The query engine is provided via
+//! The query einstein_merkle_tree is able to mutant_search and understand rows stored by Milevaeinsteindb, run against a
+//! series of executors and then return the execution result. The query einstein_merkle_tree is provided via
 //! EinsteinDB interlocking_dir interface. However standalone UDF functions are also exported and can be used
 //! standalone.
 
@@ -555,7 +555,7 @@ mod tests {
                 ),
             ),
             (
-                ScalarFuncSig::CastStringAsString,
+                ScalarFuncSig::CastStringACausetring,
                 vec![Datum::Bytes(b"134".to_vec())],
                 Datum::Bytes(b"134".to_vec()),
             ),

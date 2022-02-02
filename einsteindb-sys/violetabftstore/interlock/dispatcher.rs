@@ -1,6 +1,6 @@
 // Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use einsteindb_promises::{BRANEName, HikvEngine};
+use einsteindb_promises::{BRANEName, HiKV};
 use ehikvproto::metapb::Region;
 use ehikvproto::FIDelpb::CheckPolicy;
 use ehikvproto::violetabft_cmdpb::{violetabftCmdRequest, violetabftCmdResponse};
@@ -290,7 +290,7 @@ where
 
 impl<E> InterlockHost<E>
 where
-    E: HikvEngine,
+    E: HiKV,
 {
     pub fn new<C: CasualRouter<E::Snapshot> + Clone + Send + 'static>(ch: C) -> InterlockHost<E> {
         let mut registry = Registry::default();
@@ -393,11 +393,11 @@ where
         );
     }
 
-    pub fn pre_apply_sst_from_snapshot(&self, region: &Region, brane: BRANEName, path: &str) {
+    pub fn pre_apply_Causet_from_snapshot(&self, region: &Region, brane: BRANEName, path: &str) {
         loop_ob!(
             region,
             &self.registry.apply_snapshot_observers,
-            pre_apply_sst,
+            pre_apply_Causet,
             brane,
             path
         );
@@ -407,7 +407,7 @@ where
         &self,
         braneg: &'a Config,
         region: &Region,
-        engine: &E,
+        einstein_merkle_tree: &E,
         auto_split: bool,
         policy: CheckPolicy,
     ) -> SplitCheckerHost<'a, E> {
@@ -417,7 +417,7 @@ where
             &self.registry.split_check_observers,
             add_checker,
             &mut host,
-            engine,
+            einstein_merkle_tree,
             policy
         );
         host
@@ -513,7 +513,7 @@ mod tests {
     use std::sync::atomic::*;
     use std::sync::Arc;
 
-    use engine_foundationeinsteindb::foundationeinsteindbEngine;
+    use einstein_merkle_tree_foundationeinsteindb::foundationeinsteindbeinstein_merkle_tree;
     use ehikvproto::metapb::Region;
     use ehikvproto::violetabft_cmdpb::{
         AdminRequest, AdminResponse, violetabftCmdRequest, violetabftCmdResponse, Request, Response,
@@ -608,7 +608,7 @@ mod tests {
             ctx.bypass = self.bypass.load(Ordering::SeqCst);
         }
 
-        fn pre_apply_sst(&self, ctx: &mut ObserverContext<'_>, _: BRANEName, _: &str) {
+        fn pre_apply_Causet(&self, ctx: &mut ObserverContext<'_>, _: BRANEName, _: &str) {
             self.called.fetch_add(10, Ordering::SeqCst);
             ctx.bypass = self.bypass.load(Ordering::SeqCst);
         }
@@ -644,7 +644,7 @@ mod tests {
 
     #[test]
     fn test_trigger_right_hook() {
-        let mut host = interlockHost::<foundationeinsteindbEngine>::default();
+        let mut host = interlockHost::<foundationeinsteindbeinstein_merkle_tree>::default();
         let ob = Testinterlock::default();
         host.registry
             .register_admin_observer(1, BoxAdminObserver::new(ob.clone()));
@@ -689,7 +689,7 @@ mod tests {
 
         host.pre_apply_plain_ehikvs_from_snapshot(&region, "default", &[]);
         assert_all!(&[&ob.called], &[45]);
-        host.pre_apply_sst_from_snapshot(&region, "default", "");
+        host.pre_apply_Causet_from_snapshot(&region, "default", "");
         assert_all!(&[&ob.called], &[55]);
         let observe_id = ObserveID::new();
         host.prepare_for_apply(observe_id, 0);
@@ -706,7 +706,7 @@ mod tests {
 
     #[test]
     fn test_order() {
-        let mut host = interlockHost::<foundationeinsteindbEngine>::default();
+        let mut host = interlockHost::<foundationeinsteindbeinstein_merkle_tree>::default();
 
         let ob1 = Testinterlock::default();
         host.registry

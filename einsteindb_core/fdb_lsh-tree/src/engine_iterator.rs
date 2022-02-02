@@ -6,11 +6,11 @@ use std::sync::Arc;
 
 // FIXME: Would prefer using &DB instead of Arc<DB>.  As elsewhere in
 // this crate, it would require generic associated types.
-pub struct FdbEngineIterator(DBIterator<Arc<DB>>);
+pub struct Fdbeinstein_merkle_treeIterator(DBIterator<Arc<DB>>);
 
-impl FdbEngineIterator {
-    pub fn from_raw(iter: DBIterator<Arc<DB>>) -> FdbEngineIterator {
-        FdbEngineIterator(iter)
+impl Fdbeinstein_merkle_treeIterator {
+    pub fn from_raw(iter: DBIterator<Arc<DB>>) -> Fdbeinstein_merkle_treeIterator {
+        Fdbeinstein_merkle_treeIterator(iter)
     }
 
     pub fn sequence(&self) -> Option<u64> {
@@ -18,31 +18,31 @@ impl FdbEngineIterator {
     }
 }
 
-impl fdb_traits::Iterator for FdbEngineIterator {
+impl fdb_traits::Iterator for Fdbeinstein_merkle_treeIterator {
     fn seek(&mut self, key: fdb_traits::SeekKey<'_>) -> Result<bool> {
         let k: FdbSeekKey<'_> = key.into();
-        self.0.seek(k.into_raw()).map_err(Error::Engine)
+        self.0.seek(k.into_raw()).map_err(Error::einstein_merkle_tree)
     }
 
     fn seek_for_prev(&mut self, key: fdb_traits::SeekKey<'_>) -> Result<bool> {
         let k: FdbSeekKey<'_> = key.into();
-        self.0.seek_for_prev(k.into_raw()).map_err(Error::Engine)
+        self.0.seek_for_prev(k.into_raw()).map_err(Error::einstein_merkle_tree)
     }
 
     fn prev(&mut self) -> Result<bool> {
         #[cfg(not(feature = "nortcheck"))]
         if !self.valid()? {
-            return Err(Error::Engine("Iterator invalid".to_string()));
+            return Err(Error::einstein_merkle_tree("Iterator invalid".to_string()));
         }
-        self.0.prev().map_err(Error::Engine)
+        self.0.prev().map_err(Error::einstein_merkle_tree)
     }
 
     fn next(&mut self) -> Result<bool> {
         #[cfg(not(feature = "nortcheck"))]
         if !self.valid()? {
-            return Err(Error::Engine("Iterator invalid".to_string()));
+            return Err(Error::einstein_merkle_tree("Iterator invalid".to_string()));
         }
-        self.0.next().map_err(Error::Engine)
+        self.0.next().map_err(Error::einstein_merkle_tree)
     }
 
     fn key(&self) -> &[u8] {
@@ -58,7 +58,7 @@ impl fdb_traits::Iterator for FdbEngineIterator {
     }
 
     fn valid(&self) -> Result<bool> {
-        self.0.valid().map_err(Error::Engine)
+        self.0.valid().map_err(Error::einstein_merkle_tree)
     }
 }
 

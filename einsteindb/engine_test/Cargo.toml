@@ -1,31 +1,31 @@
 [package]
-name = "engine_test"
+name = "einstein_merkle_tree_test"
 version = "0.0.1"
-description = "A single engine that masquerades as all other engines, for testing"
+description = "A single einstein_merkle_tree that masquerades as all other einstein_merkle_trees, for testing"
 edition = "2018"
 publish = false
 
 [features]
-default = ["test-engines-foundationdb"]
+default = ["test-einstein_merkle_trees-foundationdb"]
 
-test-engine-kv-panic = []
-test-engine-kv-foundationdb = []
-test-engine-violetabft-panic = []
-test-engine-violetabft-foundationdb = []
+test-einstein_merkle_tree-kv-panic = []
+test-einstein_merkle_tree-kv-foundationdb = []
+test-einstein_merkle_tree-violetabft-panic = []
+test-einstein_merkle_tree-violetabft-foundationdb = []
 
-test-engines-foundationdb = [
-  "test-engine-kv-foundationdb",
-  "test-engine-violetabft-foundationdb",
+test-einstein_merkle_trees-foundationdb = [
+  "test-einstein_merkle_tree-kv-foundationdb",
+  "test-einstein_merkle_tree-violetabft-foundationdb",
 ]
-test-engines-panic = [
-  "test-engine-kv-panic",
-  "test-engine-violetabft-panic",
+test-einstein_merkle_trees-panic = [
+  "test-einstein_merkle_tree-kv-panic",
+  "test-einstein_merkle_tree-violetabft-panic",
 ]
 
 
 [dependencies]
-engine_panic = { path = "../engine_panic", default-features = false }
-fdb_engine = { path = "../fdb_lsh-merkle_merkle_tree", default-features = false }
+einstein_merkle_tree_panic = { path = "../einstein_merkle_tree_panic", default-features = false }
+fdb_einstein_merkle_tree = { path = "../fdb_lsh-merkle_merkle_tree", default-features = false }
 fdb_traits = { path = "../fdb_traits", default-features = false }
 tempfile = "3.0"
 einsteindb_alloc = { path = "../einsteindb_alloc" }

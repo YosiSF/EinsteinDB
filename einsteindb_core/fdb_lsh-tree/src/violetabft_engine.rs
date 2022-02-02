@@ -2,8 +2,8 @@
 
 use einsteindb_util::{box_err, box_try};
 use fdb_traits::{
-    NAMESPACED_DEFAULT, Error, Iterable, KvEngine, MiscExt, Mutable, Peekable, VioletaBFTEngine,
-    VioletaBFTEngineReadOnly, VioletaBFTLogBatch, VioletaBFTLogGCTask, Result, SyncMutable, WriteBatch, WriteBatchExt,
+    NAMESPACED_DEFAULT, Error, Iterable, KV, MiscExt, Mutable, Peekable, VioletaBFTeinstein_merkle_tree,
+    VioletaBFTeinstein_merkle_treeReadOnly, VioletaBFTLogBatch, VioletaBFTLogGCTask, Result, SyncMutable, WriteBatch, WriteBatchExt,
     WriteOptions,
 };
 use ekvproto::violetabft_serverpb::VioletaBFTLocalState;
@@ -11,11 +11,11 @@ use protobuf::Message;
 use violetabft::evioletabftpb::Entry;
 
 // #[PerformanceCriticalPath]
-use crate::{FdbEngine, FdbWriteBatch, util};
+use crate::{Fdbeinstein_merkle_tree, FdbWriteBatch, util};
 
 const VIOLETABFT_LOG_MULTI_GET_CNT: u64 = 8;
 
-impl VioletaBFTEngineReadOnly for FdbEngine {
+impl VioletaBFTeinstein_merkle_treeReadOnly for Fdbeinstein_merkle_tree {
     fn get_violetabft_state(&self, violetabft_group_id: u64) -> Result<Option<VioletaBFTLocalState>> {
         let key = keys::violetabft_state_key(violetabft_group_id);
         self.get_msg_namespaced(NAMESPACED_DEFAULT, &key)
@@ -116,7 +116,7 @@ impl VioletaBFTEngineReadOnly for FdbEngine {
     }
 }
 
-impl FdbEngine {
+impl Fdbeinstein_merkle_tree {
     fn gc_impl(
         &self,
         violetabft_group_id: u64,
@@ -149,10 +149,10 @@ impl FdbEngine {
     }
 }
 
-// FIXME: VioletaBFTEngine should probably be implemented generically
-// for all KvEngines, but is currently implemented separately for
-// every engine.
-impl VioletaBFTEngine for FdbEngine {
+// FIXME: VioletaBFTeinstein_merkle_tree should probably be implemented generically
+// for all KVs, but is currently implemented separately for
+// every einstein_merkle_tree.
+impl VioletaBFTeinstein_merkle_tree for Fdbeinstein_merkle_tree {
     type LogBatch = FdbWriteBatch;
 
     fn log_batch(&self, capacity: usize) -> Self::LogBatch {
@@ -197,7 +197,7 @@ impl VioletaBFTEngine for FdbEngine {
         if first_index == 0 {
             let seek_key = keys::violetabft_log_key(violetabft_group_id, 0);
             let prefix = keys::violetabft_log_prefix(violetabft_group_id);
-            fail::fail_point!("fdb_engine_violetabft_engine_clean_seek", |_| Ok(()));
+            fail::fail_point!("fdb_einstein_merkle_tree_violetabft_einstein_merkle_tree_clean_seek", |_| Ok(()));
             if let Some((key, _)) = self.seek(&seek_key)? {
                 if !key.starts_with(&prefix) {
                     // No violetabft logs for the violetabft group.
@@ -263,20 +263,20 @@ impl VioletaBFTEngine for FdbEngine {
     }
 
     fn flush_metrics(&self, instance: &str) {
-        KvEngine::flush_metrics(self, instance)
+        KV::flush_metrics(self, instance)
     }
 
     fn reset_statistics(&self) {
-        KvEngine::reset_statistics(self)
+        KV::reset_statistics(self)
     }
 
     fn dump_stats(&self) -> Result<String> {
         MiscExt::dump_stats(self)
     }
 
-    fn get_engine_size(&self) -> Result<u64> {
+    fn get_einstein_merkle_tree_size(&self) -> Result<u64> {
         let handle = util::get_namespaced_handle(self.as_inner(), NAMESPACED_DEFAULT)?;
-        let used_size = util::get_engine_namespaced_used_size(self.as_inner(), handle);
+        let used_size = util::get_einstein_merkle_tree_namespaced_used_size(self.as_inner(), handle);
 
         Ok(used_size)
     }
@@ -311,7 +311,7 @@ impl VioletaBFTLogBatch for FdbWriteBatch {
     }
 
     fn merge(&mut self, src: Self) {
-        WriteBatch::<FdbEngine>::merge(self, src);
+        WriteBatch::<Fdbeinstein_merkle_tree>::merge(self, src);
     }
 }
 

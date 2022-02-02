@@ -106,8 +106,8 @@ pub fn tls_flush<R: CausetxctxStatsReporter>(reporter: &R) {
             tls_flush_perf_stats!(req_tag, perf_stats, find_table_nanos);
             tls_flush_perf_stats!(req_tag, perf_stats, bloom_memtable_hit_count);
             tls_flush_perf_stats!(req_tag, perf_stats, bloom_memtable_miss_count);
-            tls_flush_perf_stats!(req_tag, perf_stats, bloom_sst_hit_count);
-            tls_flush_perf_stats!(req_tag, perf_stats, bloom_sst_miss_count);
+            tls_flush_perf_stats!(req_tag, perf_stats, bloom_Causet_hit_count);
+            tls_flush_perf_stats!(req_tag, perf_stats, bloom_Causet_miss_count);
             tls_flush_perf_stats!(req_tag, perf_stats, get_cpu_nanos);
             tls_flush_perf_stats!(req_tag, perf_stats, iter_next_cpu_nanos);
             tls_flush_perf_stats!(req_tag, perf_stats, iter_prev_cpu_nanos);
@@ -309,8 +309,8 @@ make_auto_flush_static_metric! {
         find_table_nanos,
         bloom_memtable_hit_count,
         bloom_memtable_miss_count,
-        bloom_sst_hit_count,
-        bloom_sst_miss_count,
+        bloom_Causet_hit_count,
+        bloom_Causet_miss_count,
         get_cpu_nanos,
         iter_next_cpu_nanos,
         iter_prev_cpu_nanos,

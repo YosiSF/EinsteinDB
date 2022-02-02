@@ -30,7 +30,7 @@ pub enum ErrorInner {
     Txn(#[from] solitontxn::Error),
 
     #[error("{0}")]
-    Engine(#[from] engine_promises::Error),
+    einstein_merkle_tree(#[from] einstein_merkle_tree_promises::Error),
 
     #[error("storage is closed.")]
     Closed,
@@ -143,7 +143,7 @@ impl ErrorCodeExt for Error {
         match self.0.as_ref() {
             ErrorInner::Hikv(e) => e.error_code(),
             ErrorInner::Txn(e) => e.error_code(),
-            ErrorInner::Engine(e) => e.error_code(),
+            ErrorInner::einstein_merkle_tree(e) => e.error_code(),
             ErrorInner::Closed => error_code::storage::CLOSED,
             ErrorInner::Other(_) => error_code::storage::UNKNOWN,
             ErrorInner::Io(_) => error_code::storage::IO,
@@ -239,7 +239,7 @@ pub fn extract_region_error<T>(res: &Result<T>) -> Option<errorpb::Error> {
     match *res {
         // TODO: use `Error::cause` instead.
         Err(Error(box ErrorInner::Hikv(HikvError(box HikvErrorInner::Request(ref e)))))
-        | Err(Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Engine(HikvError(
+        | Err(Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::einstein_merkle_tree(HikvError(
             box HikvErrorInner::Request(ref e),
         ))))))
         | Err(Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(EpaxosError(
@@ -299,7 +299,7 @@ pub fn extract_key_error(err: &Error) -> fdbhikvrpcpb::KeyError {
         Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Epaxos(EpaxosError(
             box EpaxosErrorInner::KeyIsDaggered(info),
         )))))
-        | Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::Engine(HikvError(
+        | Error(box ErrorInner::Txn(TxnError(box TxnErrorInner::einstein_merkle_tree(HikvError(
             box HikvErrorInner::KeyIsDaggered(info),
         )))))
         | Error(box ErrorInner::Hikv(HikvError(box HikvErrorInner::KeyIsDaggered(info)))) => {

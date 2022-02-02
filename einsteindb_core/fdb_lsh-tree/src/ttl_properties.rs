@@ -7,7 +7,7 @@ use foundationdb::{DBEntryType, TablePropertiesCollector, TablePropertiesCollect
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use crate::{FdbEngine, UserProperties};
+use crate::{Fdbeinstein_merkle_tree, UserProperties};
 use crate::decode_properties::DecodeProperties;
 
 const PROP_MAX_EXPIRE_TS: &str = "einsteindb.max_expire_ts";
@@ -32,7 +32,7 @@ impl FdbTtlProperties {
     }
 }
 
-impl TtlPropertiesExt for FdbEngine {
+impl TtlPropertiesExt for Fdbeinstein_merkle_tree {
     fn get_range_ttl_properties_namespaced(
         &self,
         namespaced: &str,

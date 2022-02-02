@@ -11,7 +11,7 @@ use std::sync::Arc;
 
 use crate::raw::Env;
 
-// Use engine::Env directly since Env is not abstracted.
+// Use einstein_merkle_tree::Env directly since Env is not abstracted.
 pub(crate) fn get_env(
     base_env: Option<Arc<Env>>,
     key_manager: Option<Arc<DataKeyManager>>,

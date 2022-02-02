@@ -6,13 +6,13 @@ use super::*;
 use crate::einsteindb::storage::fdbhikv::WriteData;
 use crate::einsteindb::storage::epaxos::tests::write;
 use crate::einsteindb::storage::epaxos::{Error, Key, Mutation, EpaxosTxn, blackbraneReader, TimeStamp};
-use crate::einsteindb::storage::{solitontxn, Engine};
+use crate::einsteindb::storage::{solitontxn, einstein_merkle_tree};
 use concurrency_manager::ConcurrencyManager;
 use fdbhikvproto::fdbhikvrpcpb::{Assertion, AssertionLevel, Context};
 use prewrite::{prewrite, CommitKind, TransactionKind, TransactionProperties};
 
-pub fn must_prewrite_put_impl<E: Engine>(
-    engine: &E,
+pub fn must_prewrite_put_impl<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
@@ -29,7 +29,7 @@ pub fn must_prewrite_put_impl<E: Engine>(
     assertion_level: AssertionLevel,
 ) {
     let ctx = Context::default();
-    let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
     let cm = ConcurrencyManager::new(ts);
     let mut solitontxn = EpaxosTxn::new(ts, cm);
     let mut reader = blackbraneReader::new(ts, blackbrane, true);
@@ -65,18 +65,18 @@ pub fn must_prewrite_put_impl<E: Engine>(
         is_pessimistic_dagger,
     )
     .unwrap();
-    write(engine, &ctx, solitontxn.into_modifies());
+    write(einstein_merkle_tree, &ctx, solitontxn.into_modifies());
 }
 
-pub fn must_prewrite_put<E: Engine>(
-    engine: &E,
+pub fn must_prewrite_put<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
     ts: impl Into<TimeStamp>,
 ) {
     must_prewrite_put_impl(
-        engine,
+        einstein_merkle_tree,
         key,
         value,
         pk,
@@ -94,8 +94,8 @@ pub fn must_prewrite_put<E: Engine>(
     );
 }
 
-pub fn must_pessimistic_prewrite_put<E: Engine>(
-    engine: &E,
+pub fn must_pessimistic_prewrite_put<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
@@ -104,7 +104,7 @@ pub fn must_pessimistic_prewrite_put<E: Engine>(
     is_pessimistic_dagger: bool,
 ) {
     must_prewrite_put_impl(
-        engine,
+        einstein_merkle_tree,
         key,
         value,
         pk,
@@ -122,8 +122,8 @@ pub fn must_pessimistic_prewrite_put<E: Engine>(
     );
 }
 
-pub fn must_pessimistic_prewrite_put_with_ttl<E: Engine>(
-    engine: &E,
+pub fn must_pessimistic_prewrite_put_with_ttl<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
@@ -133,7 +133,7 @@ pub fn must_pessimistic_prewrite_put_with_ttl<E: Engine>(
     dagger_ttl: u64,
 ) {
     must_prewrite_put_impl(
-        engine,
+        einstein_merkle_tree,
         key,
         value,
         pk,
@@ -151,8 +151,8 @@ pub fn must_pessimistic_prewrite_put_with_ttl<E: Engine>(
     );
 }
 
-pub fn must_prewrite_put_for_large_solitontxn<E: Engine>(
-    engine: &E,
+pub fn must_prewrite_put_for_large_solitontxn<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
@@ -165,7 +165,7 @@ pub fn must_prewrite_put_for_large_solitontxn<E: Engine>(
     let min_commit_ts = (ts.into_inner() + 1).into();
     let for_update_ts = for_update_ts.into();
     must_prewrite_put_impl(
-        engine,
+        einstein_merkle_tree,
         key,
         value,
         pk,
@@ -183,8 +183,8 @@ pub fn must_prewrite_put_for_large_solitontxn<E: Engine>(
     );
 }
 
-pub fn must_prewrite_put_async_commit<E: Engine>(
-    engine: &E,
+pub fn must_prewrite_put_async_commit<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
@@ -194,7 +194,7 @@ pub fn must_prewrite_put_async_commit<E: Engine>(
 ) {
     assert!(secondary_keys.is_some());
     must_prewrite_put_impl(
-        engine,
+        einstein_merkle_tree,
         key,
         value,
         pk,
@@ -212,8 +212,8 @@ pub fn must_prewrite_put_async_commit<E: Engine>(
     );
 }
 
-pub fn must_pessimistic_prewrite_put_async_commit<E: Engine>(
-    engine: &E,
+pub fn must_pessimistic_prewrite_put_async_commit<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
@@ -225,7 +225,7 @@ pub fn must_pessimistic_prewrite_put_async_commit<E: Engine>(
 ) {
     assert!(secondary_keys.is_some());
     must_prewrite_put_impl(
-        engine,
+        einstein_merkle_tree,
         key,
         value,
         pk,
@@ -267,8 +267,8 @@ fn default_solitontxn_props(
         assertion_level: AssertionLevel::Off,
     }
 }
-pub fn must_prewrite_put_err_impl<E: Engine>(
-    engine: &E,
+pub fn must_prewrite_put_err_impl<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
@@ -281,7 +281,7 @@ pub fn must_prewrite_put_err_impl<E: Engine>(
     assertion: Assertion,
     assertion_level: AssertionLevel,
 ) -> Error {
-    let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
     let for_update_ts = for_update_ts.into();
     let cm = ConcurrencyManager::new(for_update_ts);
     let ts = ts.into();
@@ -309,15 +309,15 @@ pub fn must_prewrite_put_err_impl<E: Engine>(
     .unwrap_err()
 }
 
-pub fn must_prewrite_put_err<E: Engine>(
-    engine: &E,
+pub fn must_prewrite_put_err<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
     ts: impl Into<TimeStamp>,
 ) -> Error {
     must_prewrite_put_err_impl(
-        engine,
+        einstein_merkle_tree,
         key,
         value,
         pk,
@@ -332,8 +332,8 @@ pub fn must_prewrite_put_err<E: Engine>(
     )
 }
 
-pub fn must_pessimistic_prewrite_put_err<E: Engine>(
-    engine: &E,
+pub fn must_pessimistic_prewrite_put_err<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
@@ -342,7 +342,7 @@ pub fn must_pessimistic_prewrite_put_err<E: Engine>(
     is_pessimistic_dagger: bool,
 ) -> Error {
     must_prewrite_put_err_impl(
-        engine,
+        einstein_merkle_tree,
         key,
         value,
         pk,
@@ -357,8 +357,8 @@ pub fn must_pessimistic_prewrite_put_err<E: Engine>(
     )
 }
 
-pub fn must_retry_pessimistic_prewrite_put_err<E: Engine>(
-    engine: &E,
+pub fn must_retry_pessimistic_prewrite_put_err<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     value: &[u8],
     pk: &[u8],
@@ -369,7 +369,7 @@ pub fn must_retry_pessimistic_prewrite_put_err<E: Engine>(
     max_commit_ts: impl Into<TimeStamp>,
 ) -> Error {
     must_prewrite_put_err_impl(
-        engine,
+        einstein_merkle_tree,
         key,
         value,
         pk,
@@ -384,8 +384,8 @@ pub fn must_retry_pessimistic_prewrite_put_err<E: Engine>(
     )
 }
 
-fn must_prewrite_delete_impl<E: Engine>(
-    engine: &E,
+fn must_prewrite_delete_impl<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     pk: &[u8],
     ts: impl Into<TimeStamp>,
@@ -393,7 +393,7 @@ fn must_prewrite_delete_impl<E: Engine>(
     is_pessimistic_dagger: bool,
 ) {
     let ctx = Context::default();
-    let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
     let for_update_ts = for_update_ts.into();
     let cm = ConcurrencyManager::new(for_update_ts);
     let ts = ts.into();
@@ -411,33 +411,33 @@ fn must_prewrite_delete_impl<E: Engine>(
     )
     .unwrap();
 
-    engine
+    einstein_merkle_tree
         .write(&ctx, WriteData::from_modifies(solitontxn.into_modifies()))
         .unwrap();
 }
 
-pub fn must_prewrite_delete<E: Engine>(
-    engine: &E,
+pub fn must_prewrite_delete<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     pk: &[u8],
     ts: impl Into<TimeStamp>,
 ) {
-    must_prewrite_delete_impl(engine, key, pk, ts, TimeStamp::zero(), false);
+    must_prewrite_delete_impl(einstein_merkle_tree, key, pk, ts, TimeStamp::zero(), false);
 }
 
-pub fn must_pessimistic_prewrite_delete<E: Engine>(
-    engine: &E,
+pub fn must_pessimistic_prewrite_delete<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     pk: &[u8],
     ts: impl Into<TimeStamp>,
     for_update_ts: impl Into<TimeStamp>,
     is_pessimistic_dagger: bool,
 ) {
-    must_prewrite_delete_impl(engine, key, pk, ts, for_update_ts, is_pessimistic_dagger);
+    must_prewrite_delete_impl(einstein_merkle_tree, key, pk, ts, for_update_ts, is_pessimistic_dagger);
 }
 
-fn must_prewrite_dagger_impl<E: Engine>(
-    engine: &E,
+fn must_prewrite_dagger_impl<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     pk: &[u8],
     ts: impl Into<TimeStamp>,
@@ -445,7 +445,7 @@ fn must_prewrite_dagger_impl<E: Engine>(
     is_pessimistic_dagger: bool,
 ) {
     let ctx = Context::default();
-    let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
     let for_update_ts = for_update_ts.into();
     let cm = ConcurrencyManager::new(for_update_ts);
     let ts = ts.into();
@@ -463,22 +463,22 @@ fn must_prewrite_dagger_impl<E: Engine>(
     )
     .unwrap();
 
-    engine
+    einstein_merkle_tree
         .write(&ctx, WriteData::from_modifies(solitontxn.into_modifies()))
         .unwrap();
 }
 
-pub fn must_prewrite_dagger<E: Engine>(engine: &E, key: &[u8], pk: &[u8], ts: impl Into<TimeStamp>) {
-    must_prewrite_dagger_impl(engine, key, pk, ts, TimeStamp::zero(), false);
+pub fn must_prewrite_dagger<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], pk: &[u8], ts: impl Into<TimeStamp>) {
+    must_prewrite_dagger_impl(einstein_merkle_tree, key, pk, ts, TimeStamp::zero(), false);
 }
 
-pub fn must_prewrite_dagger_err<E: Engine>(
-    engine: &E,
+pub fn must_prewrite_dagger_err<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     pk: &[u8],
     ts: impl Into<TimeStamp>,
 ) {
-    let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
     let ts = ts.into();
     let cm = ConcurrencyManager::new(ts);
     let mut solitontxn = EpaxosTxn::new(ts, cm);
@@ -497,25 +497,25 @@ pub fn must_prewrite_dagger_err<E: Engine>(
     );
 }
 
-pub fn must_pessimistic_prewrite_dagger<E: Engine>(
-    engine: &E,
+pub fn must_pessimistic_prewrite_dagger<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     pk: &[u8],
     ts: impl Into<TimeStamp>,
     for_update_ts: impl Into<TimeStamp>,
     is_pessimistic_dagger: bool,
 ) {
-    must_prewrite_dagger_impl(engine, key, pk, ts, for_update_ts, is_pessimistic_dagger);
+    must_prewrite_dagger_impl(einstein_merkle_tree, key, pk, ts, for_update_ts, is_pessimistic_dagger);
 }
 
-pub fn must_rollback<E: Engine>(
-    engine: &E,
+pub fn must_rollback<E: einstein_merkle_tree>(
+    einstein_merkle_tree: &E,
     key: &[u8],
     start_ts: impl Into<TimeStamp>,
     protect_rollback: bool,
 ) {
     let ctx = Context::default();
-    let blackbrane = engine.blackbrane(Default::default()).unwrap();
+    let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
     let start_ts = start_ts.into();
     let cm = ConcurrencyManager::new(start_ts);
     let mut solitontxn = EpaxosTxn::new(start_ts, cm);
@@ -528,11 +528,11 @@ pub fn must_rollback<E: Engine>(
         protect_rollback,
     )
     .unwrap();
-    write(engine, &ctx, solitontxn.into_modifies());
+    write(einstein_merkle_tree, &ctx, solitontxn.into_modifies());
 }
 
-pub fn must_rollback_err<E: Engine>(engine: &E, key: &[u8], start_ts: impl Into<TimeStamp>) {
-    let blackbrane = engine.blackbrane(Default::default()).unwrap();
+pub fn must_rollback_err<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], start_ts: impl Into<TimeStamp>) {
+    let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
     let start_ts = start_ts.into();
     let cm = ConcurrencyManager::new(start_ts);
     let mut solitontxn = EpaxosTxn::new(start_ts, cm);

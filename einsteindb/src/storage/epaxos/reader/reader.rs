@@ -2,7 +2,7 @@
 
 // #[PerformanceCriticalPath]
 use crate::einsteindb::storage::fdbhikv::{
-    Cursor, CursorBuilder, Error as HikvError, SentinelSearchMode, blackbrane as Engineblackbrane, Statistics,
+    Cursor, CursorBuilder, Error as HikvError, SentinelSearchMode, blackbrane as einstein_merkle_treeblackbrane, Statistics,
 };
 use crate::einsteindb::storage::epaxos::{
     default_not_found_error,
@@ -22,14 +22,14 @@ use solitontxn_types::{Key, Dagger, OldValue, TimeStamp, Value, Write, WriteRef,
 ///
 /// Confusingly, there are two meanings of the word 'blackbrane' here. In the name of the struct,
 /// 'blackbrane' means an epaxos blackbrane. In the type parameter bound (of `S`), 'blackbrane' means a view
-/// of the underlying storage engine at a given point in time. This latter blackbrane will include
+/// of the underlying storage einstein_merkle_tree at a given point in time. This latter blackbrane will include
 /// values for keys at multiple timestamps.
-pub struct blackbraneReader<S: Engineblackbrane> {
+pub struct blackbraneReader<S: einstein_merkle_treeblackbrane> {
     pub reader: EpaxosReader<S>,
     pub start_ts: TimeStamp,
 }
 
-impl<S: Engineblackbrane> blackbraneReader<S> {
+impl<S: einstein_merkle_treeblackbrane> blackbraneReader<S> {
     pub fn new(start_ts: TimeStamp, blackbrane: S, fill_cache: bool) -> Self {
         blackbraneReader {
             reader: EpaxosReader::new(blackbrane, None, fill_cache),
@@ -110,7 +110,7 @@ impl<S: Engineblackbrane> blackbraneReader<S> {
     }
 }
 
-pub struct EpaxosReader<S: Engineblackbrane> {
+pub struct EpaxosReader<S: einstein_merkle_treeblackbrane> {
     blackbrane: S,
     pub statistics: Statistics,
     // cursors are used for speeding up mutant_searchs.
@@ -134,7 +134,7 @@ pub struct EpaxosReader<S: Engineblackbrane> {
     version: u64,
 }
 
-impl<S: Engineblackbrane> EpaxosReader<S> {
+impl<S: einstein_merkle_treeblackbrane> EpaxosReader<S> {
     pub fn new(blackbrane: S, mutant_search_mode: Option<SentinelSearchMode>, fill_cache: bool) -> Self {
         Self {
             blackbrane,
@@ -619,13 +619,13 @@ pub mod tests {
         acquire_pessimistic_dagger, cleanup, commit, gc, prewrite, CommitKind, TransactionKind,
         TransactionProperties,
     };
-    use crate::einsteindb::storage::{Engine, TestEngineBuilder};
+    use crate::einsteindb::storage::{einstein_merkle_tree, Testeinstein_merkle_treeBuilder};
     use concurrency_manager::ConcurrencyManager;
-    use engine_rocks::properties::EpaxosPropertiesCollectorFactory;
-    use engine_rocks::cocauset::DB;
-    use engine_rocks::cocauset::{ColumnFamilyOptions, DBOptions};
-    use engine_rocks::cocauset_util::CFOptions;
-    use engine_rocks::{Compat, Rocksblackbrane};
+    use einstein_merkle_tree_rocks::properties::EpaxosPropertiesCollectorFactory;
+    use einstein_merkle_tree_rocks::cocauset::DB;
+    use einstein_merkle_tree_rocks::cocauset::{ColumnFamilyOptions, DBOptions};
+    use einstein_merkle_tree_rocks::cocauset_util::CFOptions;
+    use einstein_merkle_tree_rocks::{Compat, Rocksblackbrane};
     use einsteindb-gen::{IterOptions, Mutable, WriteBatch, WriteBatchExt};
     use einsteindb-gen::{ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
     use fdbhikvproto::fdbhikvrpcpb::{AssertionLevel, Context};
@@ -636,14 +636,14 @@ pub mod tests {
     use std::u64;
     use solitontxn_types::{DaggerType, Mutation};
 
-    pub struct RegionEngine {
+    pub struct Regioneinstein_merkle_tree {
         db: Arc<DB>,
         region: Region,
     }
 
-    impl RegionEngine {
-        pub fn new(db: &Arc<DB>, region: &Region) -> RegionEngine {
-            RegionEngine {
+    impl Regioneinstein_merkle_tree {
+        pub fn new(db: &Arc<DB>, region: &Region) -> Regioneinstein_merkle_tree {
+            Regioneinstein_merkle_tree {
                 db: Arc::clone(db),
                 region: region.clone(),
             }
@@ -867,14 +867,14 @@ pub mod tests {
 
         pub fn flush(&mut self) {
             for cf in ALL_CFS {
-                let cf = engine_rocks::util::get_cf_handle(&self.db, cf).unwrap();
+                let cf = einstein_merkle_tree_rocks::util::get_cf_handle(&self.db, cf).unwrap();
                 self.db.flush_cf(cf, true).unwrap();
             }
         }
 
         pub fn compact(&mut self) {
             for cf in ALL_CFS {
-                let cf = engine_rocks::util::get_cf_handle(&self.db, cf).unwrap();
+                let cf = einstein_merkle_tree_rocks::util::get_cf_handle(&self.db, cf).unwrap();
                 self.db.compact_range_cf(cf, None, None);
             }
         }
@@ -896,7 +896,7 @@ pub mod tests {
             CFOptions::new(CF_LOCK, ColumnFamilyOptions::new()),
             CFOptions::new(CF_WRITE, cf_opts),
         ];
-        Arc::new(engine_rocks::cocauset_util::new_engine_opt(path, db_opts, cfs_opts).unwrap())
+        Arc::new(einstein_merkle_tree_rocks::cocauset_util::new_einstein_merkle_tree_opt(path, db_opts, cfs_opts).unwrap())
     }
 
     pub fn make_region(id: u64, start_key: Vec<u8>, end_key: Vec<u8>) -> Region {
@@ -921,17 +921,17 @@ pub mod tests {
         let region = make_region(1, vec![0], vec![13]);
 
         let db = open_db(path, true);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
-        engine.put(&[2], 1, 2);
-        engine.put(&[4], 3, 4);
-        engine.flush();
-        engine.put(&[6], 5, 6);
-        engine.put(&[8], 7, 8);
-        engine.flush();
-        engine.put(&[10], 9, 10);
-        engine.put(&[12], 11, 12);
-        engine.flush();
+        einstein_merkle_tree.put(&[2], 1, 2);
+        einstein_merkle_tree.put(&[4], 3, 4);
+        einstein_merkle_tree.flush();
+        einstein_merkle_tree.put(&[6], 5, 6);
+        einstein_merkle_tree.put(&[8], 7, 8);
+        einstein_merkle_tree.flush();
+        einstein_merkle_tree.put(&[10], 9, 10);
+        einstein_merkle_tree.put(&[12], 11, 12);
+        einstein_merkle_tree.flush();
 
         let snap = Regionblackbrane::<Rocksblackbrane>::from_cocauset(db.c().clone(), region);
 
@@ -987,20 +987,20 @@ pub mod tests {
         let region = make_region(1, vec![0], vec![]);
 
         let db = open_db(path, true);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
         let key1 = &[1];
-        engine.put(key1, 2, 3);
-        engine.flush();
-        engine.compact();
+        einstein_merkle_tree.put(key1, 2, 3);
+        einstein_merkle_tree.flush();
+        einstein_merkle_tree.compact();
 
         // Delete key 1 commit ts@5 and GC@6
         // Put key 2 commit ts@7
         let key2 = &[2];
-        engine.put(key2, 6, 7);
-        engine.delete(key1, 4, 5);
-        engine.gc(key1, 6);
-        engine.flush();
+        einstein_merkle_tree.put(key2, 6, 7);
+        einstein_merkle_tree.delete(key1, 4, 5);
+        einstein_merkle_tree.gc(key1, 6);
+        einstein_merkle_tree.flush();
 
         // SentinelSearch fdbhikv with ts filter [1, 6].
         let mut iopt = IterOptions::default();
@@ -1031,31 +1031,31 @@ pub mod tests {
         let path = path.path().to_str().unwrap();
         let region = make_region(1, vec![], vec![]);
         let db = open_db(path, true);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
         let (k, v) = (b"k", b"v");
         let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
-        engine.prewrite(m, k, 1);
-        engine.commit(k, 1, 10);
+        einstein_merkle_tree.prewrite(m, k, 1);
+        einstein_merkle_tree.commit(k, 1, 10);
 
-        engine.rollback(k, 5);
-        engine.rollback(k, 20);
-
-        let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
-        engine.prewrite(m, k, 25);
-        engine.commit(k, 25, 30);
+        einstein_merkle_tree.rollback(k, 5);
+        einstein_merkle_tree.rollback(k, 20);
 
         let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
-        engine.prewrite(m, k, 35);
-        engine.commit(k, 35, 40);
+        einstein_merkle_tree.prewrite(m, k, 25);
+        einstein_merkle_tree.commit(k, 25, 30);
+
+        let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
+        einstein_merkle_tree.prewrite(m, k, 35);
+        einstein_merkle_tree.commit(k, 35, 40);
 
         // Overlapped rollback on the commit record at 40.
-        engine.rollback(k, 40);
+        einstein_merkle_tree.rollback(k, 40);
 
         let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
-        engine.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 45, 45);
-        engine.prewrite_pessimistic_dagger(m, k, 45);
-        engine.commit(k, 45, 50);
+        einstein_merkle_tree.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 45, 45);
+        einstein_merkle_tree.prewrite_pessimistic_dagger(m, k, 45);
+        einstein_merkle_tree.commit(k, 45, 50);
 
         let snap = Regionblackbrane::<Rocksblackbrane>::from_cocauset(db.c().clone(), region);
         let mut reader = EpaxosReader::new(snap, None, false);
@@ -1153,20 +1153,20 @@ pub mod tests {
         let path = path.path().to_str().unwrap();
         let region = make_region(1, vec![], vec![]);
         let db = open_db(path, true);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
         let (k, v) = (b"k", b"v");
         let key = Key::from_cocauset(k);
         let m = Mutation::make_put(key.clone(), v.to_vec());
 
         // solitontxn: start_ts = 2, commit_ts = 3
-        engine.acquire_pessimistic_dagger(key.clone(), k, 2, 2);
-        engine.prewrite_pessimistic_dagger(m.clone(), k, 2);
-        engine.commit(k, 2, 3);
+        einstein_merkle_tree.acquire_pessimistic_dagger(key.clone(), k, 2, 2);
+        einstein_merkle_tree.prewrite_pessimistic_dagger(m.clone(), k, 2);
+        einstein_merkle_tree.commit(k, 2, 3);
         // solitontxn: start_ts = 1, commit_ts = 4
-        engine.acquire_pessimistic_dagger(key.clone(), k, 1, 3);
-        engine.prewrite_pessimistic_dagger(m, k, 1);
-        engine.commit(k, 1, 4);
+        einstein_merkle_tree.acquire_pessimistic_dagger(key.clone(), k, 1, 3);
+        einstein_merkle_tree.prewrite_pessimistic_dagger(m, k, 1);
+        einstein_merkle_tree.commit(k, 1, 4);
 
         let snap = Regionblackbrane::<Rocksblackbrane>::from_cocauset(db.c().clone(), region);
         let mut reader = EpaxosReader::new(snap, None, false);
@@ -1195,14 +1195,14 @@ pub mod tests {
         let path = path.path().to_str().unwrap();
         let region = make_region(1, vec![], vec![]);
         let db = open_db(path, true);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
         let (k, v) = (b"k", b"v");
         let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
-        engine.prewrite(m.clone(), k, 1);
-        engine.commit(k, 1, 5);
+        einstein_merkle_tree.prewrite(m.clone(), k, 1);
+        einstein_merkle_tree.commit(k, 1, 5);
 
-        engine.write(vec![
+        einstein_merkle_tree.write(vec![
             Modify::Put(
                 CF_WRITE,
                 Key::from_cocauset(k).append_ts(TimeStamp::new(3)),
@@ -1215,16 +1215,16 @@ pub mod tests {
             ),
         ]);
 
-        engine.prewrite(m.clone(), k, 15);
-        engine.commit(k, 15, 17);
+        einstein_merkle_tree.prewrite(m.clone(), k, 15);
+        einstein_merkle_tree.commit(k, 15, 17);
 
         // Timestamp overlap with the previous transaction.
-        engine.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 10, 18);
-        engine.prewrite_pessimistic_dagger(Mutation::make_dagger(Key::from_cocauset(k)), k, 10);
-        engine.commit(k, 10, 20);
+        einstein_merkle_tree.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 10, 18);
+        einstein_merkle_tree.prewrite_pessimistic_dagger(Mutation::make_dagger(Key::from_cocauset(k)), k, 10);
+        einstein_merkle_tree.commit(k, 10, 20);
 
-        engine.prewrite(m, k, 23);
-        engine.commit(k, 23, 25);
+        einstein_merkle_tree.prewrite(m, k, 23);
+        einstein_merkle_tree.commit(k, 23, 25);
 
         // Let's assume `2_1 PUT` means a commit version with start ts is 1 and commit ts
         // is 2.
@@ -1297,8 +1297,8 @@ pub mod tests {
         // Test seek_write should not see the next key.
         let (k2, v2) = (b"k2", b"v2");
         let m2 = Mutation::make_put(Key::from_cocauset(k2), v2.to_vec());
-        engine.prewrite(m2, k2, 1);
-        engine.commit(k2, 1, 2);
+        einstein_merkle_tree.prewrite(m2, k2, 1);
+        einstein_merkle_tree.commit(k2, 1, 2);
 
         let snap = Regionblackbrane::<Rocksblackbrane>::from_cocauset(db.c().clone(), region);
         let mut reader = EpaxosReader::new(snap, None, false);
@@ -1337,40 +1337,40 @@ pub mod tests {
         let path = path.path().to_str().unwrap();
         let region = make_region(1, vec![], vec![]);
         let db = open_db(path, true);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
         let (k, v) = (b"k", b"v");
         let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
-        engine.prewrite(m, k, 1);
-        engine.commit(k, 1, 2);
+        einstein_merkle_tree.prewrite(m, k, 1);
+        einstein_merkle_tree.commit(k, 1, 2);
 
-        engine.rollback(k, 5);
+        einstein_merkle_tree.rollback(k, 5);
 
-        engine.dagger(k, 6, 7);
+        einstein_merkle_tree.dagger(k, 6, 7);
 
-        engine.delete(k, 8, 9);
+        einstein_merkle_tree.delete(k, 8, 9);
 
         let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
-        engine.prewrite(m, k, 12);
-        engine.commit(k, 12, 14);
+        einstein_merkle_tree.prewrite(m, k, 12);
+        einstein_merkle_tree.commit(k, 12, 14);
 
         let m = Mutation::make_dagger(Key::from_cocauset(k));
-        engine.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 13, 15);
-        engine.prewrite_pessimistic_dagger(m, k, 13);
-        engine.commit(k, 13, 15);
+        einstein_merkle_tree.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 13, 15);
+        einstein_merkle_tree.prewrite_pessimistic_dagger(m, k, 13);
+        einstein_merkle_tree.commit(k, 13, 15);
 
         let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
-        engine.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 18, 18);
-        engine.prewrite_pessimistic_dagger(m, k, 18);
-        engine.commit(k, 18, 20);
+        einstein_merkle_tree.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 18, 18);
+        einstein_merkle_tree.prewrite_pessimistic_dagger(m, k, 18);
+        einstein_merkle_tree.commit(k, 18, 20);
 
         let m = Mutation::make_dagger(Key::from_cocauset(k));
-        engine.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 17, 21);
-        engine.prewrite_pessimistic_dagger(m, k, 17);
-        engine.commit(k, 17, 21);
+        einstein_merkle_tree.acquire_pessimistic_dagger(Key::from_cocauset(k), k, 17, 21);
+        einstein_merkle_tree.prewrite_pessimistic_dagger(m, k, 17);
+        einstein_merkle_tree.commit(k, 17, 21);
 
         let m = Mutation::make_put(Key::from_cocauset(k), v.to_vec());
-        engine.prewrite(m, k, 24);
+        einstein_merkle_tree.prewrite(m, k, 24);
 
         let snap = Regionblackbrane::<Rocksblackbrane>::from_cocauset(db.c().clone(), region);
         let mut reader = EpaxosReader::new(snap, None, false);
@@ -1430,24 +1430,24 @@ pub mod tests {
         let path = path.path().to_str().unwrap();
         let region = make_region(1, vec![], vec![]);
         let db = open_db(path, true);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
         // Put some daggers to the db.
-        engine.prewrite(
+        einstein_merkle_tree.prewrite(
             Mutation::make_put(Key::from_cocauset(b"k1"), b"v1".to_vec()),
             b"k1",
             5,
         );
-        engine.prewrite(
+        einstein_merkle_tree.prewrite(
             Mutation::make_put(Key::from_cocauset(b"k2"), b"v2".to_vec()),
             b"k1",
             10,
         );
-        engine.prewrite(Mutation::make_delete(Key::from_cocauset(b"k3")), b"k1", 10);
-        engine.prewrite(Mutation::make_dagger(Key::from_cocauset(b"k3\x00")), b"k1", 10);
-        engine.prewrite(Mutation::make_delete(Key::from_cocauset(b"k4")), b"k1", 12);
-        engine.acquire_pessimistic_dagger(Key::from_cocauset(b"k5"), b"k1", 10, 12);
-        engine.acquire_pessimistic_dagger(Key::from_cocauset(b"k6"), b"k1", 12, 12);
+        einstein_merkle_tree.prewrite(Mutation::make_delete(Key::from_cocauset(b"k3")), b"k1", 10);
+        einstein_merkle_tree.prewrite(Mutation::make_dagger(Key::from_cocauset(b"k3\x00")), b"k1", 10);
+        einstein_merkle_tree.prewrite(Mutation::make_delete(Key::from_cocauset(b"k4")), b"k1", 12);
+        einstein_merkle_tree.acquire_pessimistic_dagger(Key::from_cocauset(b"k5"), b"k1", 10, 12);
+        einstein_merkle_tree.acquire_pessimistic_dagger(Key::from_cocauset(b"k6"), b"k1", 12, 12);
 
         // All daggers whose ts <= 10.
         let visible_daggers: Vec<_> = vec![
@@ -1592,7 +1592,7 @@ pub mod tests {
         let path = path.path().to_str().unwrap();
         let region = make_region(1, vec![], vec![]);
         let db = open_db(path, true);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
         let (k, short_value, long_value) = (
             b"k",
@@ -1603,7 +1603,7 @@ pub mod tests {
         struct Case {
             expected: Result<Value>,
 
-            // modifies to put into the engine
+            // modifies to put into the einstein_merkle_tree
             modifies: Vec<Modify>,
             // these are used to construct the epaxos reader
             mutant_search_mode: Option<SentinelSearchMode>,
@@ -1678,7 +1678,7 @@ pub mod tests {
         ];
 
         for case in cases {
-            engine.write(case.modifies);
+            einstein_merkle_tree.write(case.modifies);
             let snap = Regionblackbrane::<Rocksblackbrane>::from_cocauset(db.c().clone(), region.clone());
             let mut reader = EpaxosReader::new(snap, case.mutant_search_mode, false);
             let result = reader.load_data(&case.key, case.write);
@@ -1695,7 +1695,7 @@ pub mod tests {
         let path = path.path().to_str().unwrap();
         let region = make_region(1, vec![], vec![]);
         let db = open_db(path, true);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
         let (k, long_value) = (
             b"k",
@@ -1704,7 +1704,7 @@ pub mod tests {
 
         struct Case {
             expected: Result<Option<Value>>,
-            // modifies to put into the engine
+            // modifies to put into the einstein_merkle_tree
             modifies: Vec<Modify>,
             // arguments to do the function call
             key: Key,
@@ -1766,7 +1766,7 @@ pub mod tests {
         ];
 
         for case in cases {
-            engine.write(case.modifies);
+            einstein_merkle_tree.write(case.modifies);
             let snap = Regionblackbrane::<Rocksblackbrane>::from_cocauset(db.c().clone(), region.clone());
             let mut reader = EpaxosReader::new(snap, None, false);
             let result = reader.get(&case.key, case.ts, case.gc_fence_limit);
@@ -1780,7 +1780,7 @@ pub mod tests {
             expected: OldValue,
 
             // (write_record, put_ts)
-            // all data to write to the engine
+            // all data to write to the einstein_merkle_tree
             // current write_cursor will be on the last record in `written`
             // which also means prev_write is `Write` in the record
             written: Vec<(Write, TimeStamp)>,
@@ -1908,7 +1908,7 @@ pub mod tests {
             },
         ];
         for (i, case) in cases.into_iter().enumerate() {
-            let engine = TestEngineBuilder::new().build().unwrap();
+            let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
             let cm = ConcurrencyManager::new(42.into());
             let mut solitontxn = EpaxosTxn::new(TimeStamp::new(10), cm.clone());
             for (write_record, put_ts) in case.written.iter() {
@@ -1918,8 +1918,8 @@ pub mod tests {
                     write_record.as_ref().to_bytes(),
                 );
             }
-            write(&engine, &Context::default(), solitontxn.into_modifies());
-            let blackbrane = engine.blackbrane(Default::default()).unwrap();
+            write(&einstein_merkle_tree, &Context::default(), solitontxn.into_modifies());
+            let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             let mut reader = EpaxosReader::new(blackbrane, None, true);
             if !case.written.is_empty() {
                 let prev_write = reader
@@ -1940,8 +1940,8 @@ pub mod tests {
         }
 
         // Must return Oldvalue::None when prev_write_loaded is true and prev_write is None.
-        let engine = TestEngineBuilder::new().build().unwrap();
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = EpaxosReader::new(blackbrane, None, true);
         let prev_write_loaded = true;
         let prev_write = None;
@@ -1959,22 +1959,22 @@ pub mod tests {
     #[test]
     fn test_reader_prefix_seek() {
         let dir = tempfile::TempDir::new().unwrap();
-        let builder = TestEngineBuilder::new().path(dir.path());
-        let db = builder.build().unwrap().fdbhikv_engine().get_sync_db();
-        let cf = engine_rocks::util::get_cf_handle(&db, CF_WRITE).unwrap();
+        let builder = Testeinstein_merkle_treeBuilder::new().path(dir.path());
+        let db = builder.build().unwrap().fdbhikv_einstein_merkle_tree().get_sync_db();
+        let cf = einstein_merkle_tree_rocks::util::get_cf_handle(&db, CF_WRITE).unwrap();
 
         let region = make_region(1, vec![], vec![]);
-        let mut engine = RegionEngine::new(&db, &region);
+        let mut einstein_merkle_tree = Regioneinstein_merkle_tree::new(&db, &region);
 
         // Put some tombstones into the DB.
         for i in 1..100 {
             let commit_ts = (i * 2 + 1).into();
             let mut k = vec![b'z'];
             k.extend_from_slice(Key::from_cocauset(b"k1").append_ts(commit_ts).as_encoded());
-            use engine_rocks::cocauset::Writable;
-            engine.db.delete_cf(cf, &k).unwrap();
+            use einstein_merkle_tree_rocks::cocauset::Writable;
+            einstein_merkle_tree.db.delete_cf(cf, &k).unwrap();
         }
-        engine.flush();
+        einstein_merkle_tree.flush();
 
         #[allow(clippy::useless_vec)]
         for (k, mutant_search_mode, tombstones) in vec![
@@ -1985,7 +1985,7 @@ pub mod tests {
             (b"k2", Some(SentinelSearchMode::Forward), 0),
             (b"k2", None, 0),
         ] {
-            let mut reader = EpaxosReader::new(engine.blackbrane(), mutant_search_mode, false);
+            let mut reader = EpaxosReader::new(einstein_merkle_tree.blackbrane(), mutant_search_mode, false);
             let (k, ts) = (Key::from_cocauset(k), 199.into());
             reader.seek_write(&k, ts).unwrap();
             assert_eq!(reader.statistics.write.seek_tombstone, tombstones);

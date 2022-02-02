@@ -13,7 +13,7 @@ use raftstore::store::WriteStats;
 use einstfdbhikv_util::yatp_pool::{FuturePool, PoolTicker, YatpPoolBuilder};
 
 use crate::einsteindb::storage::fdbhikv::{
-    destroy_tls_engine, set_tls_engine, Engine, CausetxctxStatsReporter, Statistics,
+    destroy_tls_einstein_merkle_tree, set_tls_einstein_merkle_tree, einstein_merkle_tree, CausetxctxStatsReporter, Statistics,
 };
 use crate::einsteindb::storage::metrics::*;
 
@@ -54,25 +54,25 @@ impl<R: CausetxctxStatsReporter> PoolTicker for SchedTicker<R> {
 }
 
 impl SchedPool {
-    pub fn new<E: Engine, R: CausetxctxStatsReporter>(
-        engine: E,
+    pub fn new<E: einstein_merkle_tree, R: CausetxctxStatsReporter>(
+        einstein_merkle_tree: E,
         pool_size: usize,
         reporter: R,
         name_prefix: &str,
     ) -> Self {
-        let engine = Arc::new(Mutex::new(engine));
+        let einstein_merkle_tree = Arc::new(Mutex::new(einstein_merkle_tree));
         let pool = YatpPoolBuilder::new(SchedTicker {reporter:reporter.clone()})
             .thread_count(pool_size, pool_size)
             .name_prefix(name_prefix)
             // Safety: by setting `after_start` and `before_stop`, `FuturePool` ensures
-            // the tls_engine invariants.
+            // the tls_einstein_merkle_tree invariants.
             .after_start(move || {
-                set_tls_engine(engine.dagger().unwrap().clone());
+                set_tls_einstein_merkle_tree(einstein_merkle_tree.dagger().unwrap().clone());
                 set_io_type(IOType::ForegroundWrite);
             })
             .before_stop(move || unsafe {
-                // Safety: we ensure the `set_` and `destroy_` calls use the same engine type.
-                destroy_tls_engine::<E>();
+                // Safety: we ensure the `set_` and `destroy_` calls use the same einstein_merkle_tree type.
+                destroy_tls_einstein_merkle_tree::<E>();
                 tls_flush(&reporter);
             })
             .build_future_pool();

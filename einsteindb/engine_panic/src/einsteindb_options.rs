@@ -1,10 +1,10 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePanicEngine;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::Result;
 use fdb_traits::{DBOptions, DBOptionsExt, TitanDBOptions};
 
-impl DBOptionsExt for PanicEngine {
+impl DBOptionsExt for Paniceinstein_merkle_tree {
     type DBOptions = PanicDBOptions;
 
     fn get_db_options(&self) -> Self::DBOptions {

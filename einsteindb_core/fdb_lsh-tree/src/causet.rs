@@ -1,51 +1,51 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use fdb_traits::{
-    ExternalSstFileInfo, SstCompressionType, SSTMetaInfo, SstWriter, SstWriterBuilder,
+    ExternalCausetFileInfo, CausetCompressionType, CausetMetaInfo, CausetWriter, CausetWriterBuilder,
 };
-use fdb_traits::{Iterable, Result, SstExt, SstReader};
+use fdb_traits::{Iterable, Result, CausetExt, CausetReader};
 use fdb_traits::{Iterator, SeekKey};
 use fdb_traits::NAMESPACED_DEFAULT;
 use fdb_traits::Error;
 use fdb_traits::IterOptions;
 use fail::fail_point;
-use foundationdb::{ColumnFamilyOptions, SstFileReader};
-use foundationdb::{Env, EnvOptions, SequentialFile, SstFileWriter};
+use foundationdb::{ColumnFamilyOptions, CausetFileReader};
+use foundationdb::{Env, EnvOptions, SequentialFile, CausetFileWriter};
 use foundationdb::DB;
 use foundationdb::DBCompressionType;
 use foundationdb::DBIterator;
-use foundationdb::ExternalSstFileInfo as RawExternalSstFileInfo;
+use foundationdb::ExternalCausetFileInfo as RawExternalCausetFileInfo;
 use foundationdb::foundationdb::supported_compression;
-use ekvproto::import_sstpb::SstMeta;
+use ekvproto::import_Causetpb::CausetMeta;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::fdb_lsh_treeFdbEngine;
+use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 // FIXME: Move FdbSeekKey into a common module since
 // it's shared between multiple iterators
-use crate::engine_iterator::FdbSeekKey;
+use crate::einstein_merkle_tree_iterator::FdbSeekKey;
 use crate::options::FdbReadOptions;
 
-impl SstExt for FdbEngine {
-    type SstReader = FdbSstReader;
-    type SstWriter = FdbSstWriter;
-    type SstWriterBuilder = FdbSstWriterBuilder;
+impl CausetExt for Fdbeinstein_merkle_tree {
+    type CausetReader = FdbCausetReader;
+    type CausetWriter = FdbCausetWriter;
+    type CausetWriterBuilder = FdbCausetWriterBuilder;
 }
 
-// FIXME: like in FdbEngineIterator and elsewhere, here we are using
+// FIXME: like in Fdbeinstein_merkle_treeIterator and elsewhere, here we are using
 // Rc to avoid putting references in an associated type, which
 // requires generic associated types.
-pub struct FdbSstReader {
-    inner: Rc<SstFileReader>,
+pub struct FdbCausetReader {
+    inner: Rc<CausetFileReader>,
 }
 
-impl FdbSstReader {
-    pub fn sst_meta_info(&self, sst: SstMeta) -> SSTMetaInfo {
-        let mut meta = SSTMetaInfo {
+impl FdbCausetReader {
+    pub fn Causet_meta_info(&self, Causet: CausetMeta) -> CausetMetaInfo {
+        let mut meta = CausetMetaInfo {
             total_kvs: 0,
             total_bytes: 0,
-            meta: sst,
+            meta: Causet,
         };
         self.inner.read_table_properties(|p| {
             meta.total_kvs = p.num_entries();
@@ -59,10 +59,10 @@ impl FdbSstReader {
         if let Some(env) = env {
             namespaced_options.set_env(env);
         }
-        let mut reader = SstFileReader::new(namespaced_options);
+        let mut reader = CausetFileReader::new(namespaced_options);
         reader.open(path)?;
         let inner = Rc::new(reader);
-        Ok(FdbSstReader { inner })
+        Ok(FdbCausetReader { inner })
     }
 
     pub fn compression_name(&self) -> String {
@@ -74,7 +74,7 @@ impl FdbSstReader {
     }
 }
 
-impl SstReader for FdbSstReader {
+impl CausetReader for FdbCausetReader {
     fn open(path: &str) -> Result<Self> {
         Self::open_with_env(path, None)
     }
@@ -83,17 +83,17 @@ impl SstReader for FdbSstReader {
         Ok(())
     }
     fn iter(&self) -> Self::Iterator {
-        FdbSstIterator(SstFileReader::iter_rc(self.inner.clone()))
+        FdbCausetIterator(CausetFileReader::iter_rc(self.inner.clone()))
     }
 }
 
-impl Iterable for FdbSstReader {
-    type Iterator = FdbSstIterator;
+impl Iterable for FdbCausetReader {
+    type Iterator = FdbCausetIterator;
 
     fn iterator_opt(&self, opts: IterOptions) -> Result<Self::Iterator> {
         let opt: FdbReadOptions = opts.into();
         let opt = opt.into_raw();
-        Ok(FdbSstIterator(SstFileReader::iter_opt_rc(
+        Ok(FdbCausetIterator(CausetFileReader::iter_opt_rc(
             self.inner.clone(),
             opt,
         )))
@@ -104,38 +104,38 @@ impl Iterable for FdbSstReader {
     }
 }
 
-// FIXME: See comment on FdbSstReader for why this contains Rc
-pub struct FdbSstIterator(DBIterator<Rc<SstFileReader>>);
+// FIXME: See comment on FdbCausetReader for why this contains Rc
+pub struct FdbCausetIterator(DBIterator<Rc<CausetFileReader>>);
 
 // TODO(5kbpers): Temporarily force to add `Send` here, add a method for creating
-// DBIterator<Arc<SstFileReader>> in rust-foundationdb later.
-unsafe impl Send for FdbSstIterator {}
+// DBIterator<Arc<CausetFileReader>> in rust-foundationdb later.
+unsafe impl Send for FdbCausetIterator {}
 
-impl Iterator for FdbSstIterator {
+impl Iterator for FdbCausetIterator {
     fn seek(&mut self, key: SeekKey<'_>) -> Result<bool> {
         let k: FdbSeekKey<'_> = key.into();
-        self.0.seek(k.into_raw()).map_err(Error::Engine)
+        self.0.seek(k.into_raw()).map_err(Error::einstein_merkle_tree)
     }
 
     fn seek_for_prev(&mut self, key: SeekKey<'_>) -> Result<bool> {
         let k: FdbSeekKey<'_> = key.into();
-        self.0.seek_for_prev(k.into_raw()).map_err(Error::Engine)
+        self.0.seek_for_prev(k.into_raw()).map_err(Error::einstein_merkle_tree)
     }
 
     fn prev(&mut self) -> Result<bool> {
         #[cfg(not(feature = "nortcheck"))]
         if !self.valid()? {
-            return Err(Error::Engine("Iterator invalid".to_string()));
+            return Err(Error::einstein_merkle_tree("Iterator invalid".to_string()));
         }
-        self.0.prev().map_err(Error::Engine)
+        self.0.prev().map_err(Error::einstein_merkle_tree)
     }
 
     fn next(&mut self) -> Result<bool> {
         #[cfg(not(feature = "nortcheck"))]
         if !self.valid()? {
-            return Err(Error::Engine("Iterator invalid".to_string()));
+            return Err(Error::einstein_merkle_tree("Iterator invalid".to_string()));
         }
-        self.0.next().map_err(Error::Engine)
+        self.0.next().map_err(Error::einstein_merkle_tree)
     }
 
     fn key(&self) -> &[u8] {
@@ -147,11 +147,11 @@ impl Iterator for FdbSstIterator {
     }
 
     fn valid(&self) -> Result<bool> {
-        self.0.valid().map_err(Error::Engine)
+        self.0.valid().map_err(Error::einstein_merkle_tree)
     }
 }
 
-pub struct FdbSstWriterBuilder {
+pub struct FdbCausetWriterBuilder {
     namespaced: Option<String>,
     einsteindb: Option<Arc<DB>>,
     in_memory: bool,
@@ -159,9 +159,9 @@ pub struct FdbSstWriterBuilder {
     compression_l_naught: i32,
 }
 
-impl SstWriterBuilder<FdbEngine> for FdbSstWriterBuilder {
+impl CausetWriterBuilder<Fdbeinstein_merkle_tree> for FdbCausetWriterBuilder {
     fn new() -> Self {
-        FdbSstWriterBuilder {
+        FdbCausetWriterBuilder {
             namespaced: None,
             in_memory: false,
             einsteindb: None,
@@ -170,7 +170,7 @@ impl SstWriterBuilder<FdbEngine> for FdbSstWriterBuilder {
         }
     }
 
-    fn set_db(mut self, einsteindb: &FdbEngine) -> Self {
+    fn set_db(mut self, einsteindb: &Fdbeinstein_merkle_tree) -> Self {
         self.einsteindb = Some(einsteindb.as_inner().clone());
         self
     }
@@ -185,7 +185,7 @@ impl SstWriterBuilder<FdbEngine> for FdbSstWriterBuilder {
         self
     }
 
-    fn set_compression_type(mut self, compression: Option<SstCompressionType>) -> Self {
+    fn set_compression_type(mut self, compression: Option<CausetCompressionType>) -> Self {
         self.compression_type = compression.map(to_rocks_compression_type);
         self
     }
@@ -195,7 +195,7 @@ impl SstWriterBuilder<FdbEngine> for FdbSstWriterBuilder {
         self
     }
 
-    fn build(self, path: &str) -> Result<FdbSstWriter> {
+    fn build(self, path: &str) -> Result<FdbCausetWriter> {
         let mut env = None;
         let mut io_options = if let Some(einsteindb) = self.einsteindb.as_ref() {
             env = einsteindb.env();
@@ -236,26 +236,26 @@ impl SstWriterBuilder<FdbEngine> for FdbSstWriterBuilder {
             io_options.set_compression_options(-14, self.compression_l_naught, 0, 0, 0);
         }
         io_options.compression(compress_type);
-        // in foundationdb 5.5.1, SstFileWriter will try to use bottommost_compression and
+        // in foundationdb 5.5.1, CausetFileWriter will try to use bottommost_compression and
         // compression_per_l_naught first, so to make sure our specified compression type
         // being used, we must set them empty or disabled.
         io_options.compression_per_l_naught(&[]);
         io_options.bottommost_compression(DBCompressionType::Disable);
-        let mut writer = SstFileWriter::new(EnvOptions::new(), io_options);
-        fail_point!("on_open_sst_writer");
+        let mut writer = CausetFileWriter::new(EnvOptions::new(), io_options);
+        fail_point!("on_open_Causet_writer");
         writer.open(path)?;
-        Ok(FdbSstWriter { writer, env })
+        Ok(FdbCausetWriter { writer, env })
     }
 }
 
-pub struct FdbSstWriter {
-    writer: SstFileWriter,
+pub struct FdbCausetWriter {
+    writer: CausetFileWriter,
     env: Option<Arc<Env>>,
 }
 
-impl SstWriter for FdbSstWriter {
-    type ExternalSstFileInfo = FdbExternalSstFileInfo;
-    type ExternalSstFileReader = SequentialFile;
+impl CausetWriter for FdbCausetWriter {
+    type ExternalCausetFileInfo = FdbExternalCausetFileInfo;
+    type ExternalCausetFileReader = SequentialFile;
 
     fn put(&mut self, key: &[u8], val: &[u8]) -> Result<()> {
         Ok(self.writer.put(key, val)?)
@@ -269,32 +269,32 @@ impl SstWriter for FdbSstWriter {
         self.writer.file_size()
     }
 
-    fn finish(mut self) -> Result<Self::ExternalSstFileInfo> {
-        Ok(FdbExternalSstFileInfo(self.writer.finish()?))
+    fn finish(mut self) -> Result<Self::ExternalCausetFileInfo> {
+        Ok(FdbExternalCausetFileInfo(self.writer.finish()?))
     }
 
-    fn finish_read(mut self) -> Result<(Self::ExternalSstFileInfo, Self::ExternalSstFileReader)> {
+    fn finish_read(mut self) -> Result<(Self::ExternalCausetFileInfo, Self::ExternalCausetFileReader)> {
         let env = self.env.take().ok_or_else(|| {
-            Error::Engine("failed to read sequential file no env provided".to_owned())
+            Error::einstein_merkle_tree("failed to read sequential file no env provided".to_owned())
         })?;
-        let sst_info = self.writer.finish()?;
-        let p = sst_info.file_path();
+        let Causet_info = self.writer.finish()?;
+        let p = Causet_info.file_path();
         let path = p.as_os_str().to_str().ok_or_else(|| {
-            Error::Engine(format!(
+            Error::einstein_merkle_tree(format!(
                 "failed to sequential file bad path {}",
                 p.display()
             ))
         })?;
         let seq_file = env.new_sequential_file(path, EnvOptions::new())?;
-        Ok((FdbExternalSstFileInfo(sst_info), seq_file))
+        Ok((FdbExternalCausetFileInfo(Causet_info), seq_file))
     }
 }
 
-pub struct FdbExternalSstFileInfo(RawExternalSstFileInfo);
+pub struct FdbExternalCausetFileInfo(RawExternalCausetFileInfo);
 
-impl ExternalSstFileInfo for FdbExternalSstFileInfo {
+impl ExternalCausetFileInfo for FdbExternalCausetFileInfo {
     fn new() -> Self {
-        FdbExternalSstFileInfo(RawExternalSstFileInfo::new())
+        FdbExternalCausetFileInfo(RawExternalCausetFileInfo::new())
     }
 
     fn file_path(&self) -> PathBuf {
@@ -346,19 +346,19 @@ fn fmt_db_compression_type(ct: DBCompressionType) -> &'static str {
     }
 }
 
-fn to_rocks_compression_type(ct: SstCompressionType) -> DBCompressionType {
+fn to_rocks_compression_type(ct: CausetCompressionType) -> DBCompressionType {
     match ct {
-        SstCompressionType::Lz4 => DBCompressionType::Lz4,
-        SstCompressionType::Snappy => DBCompressionType::Snappy,
-        SstCompressionType::Zstd => DBCompressionType::Zstd,
+        CausetCompressionType::Lz4 => DBCompressionType::Lz4,
+        CausetCompressionType::Snappy => DBCompressionType::Snappy,
+        CausetCompressionType::Zstd => DBCompressionType::Zstd,
     }
 }
 
-pub fn from_rocks_compression_type(ct: DBCompressionType) -> Option<SstCompressionType> {
+pub fn from_rocks_compression_type(ct: DBCompressionType) -> Option<CausetCompressionType> {
     match ct {
-        DBCompressionType::Lz4 => Some(SstCompressionType::Lz4),
-        DBCompressionType::Snappy => Some(SstCompressionType::Snappy),
-        DBCompressionType::Zstd => Some(SstCompressionType::Zstd),
+        DBCompressionType::Lz4 => Some(CausetCompressionType::Lz4),
+        DBCompressionType::Snappy => Some(CausetCompressionType::Snappy),
+        DBCompressionType::Zstd => Some(CausetCompressionType::Zstd),
         _ => None,
     }
 }
@@ -368,44 +368,44 @@ mod tests {
     use std::io::Read;
     use tempfile::Builder;
 
-    use crate::util::new_default_engine;
+    use crate::util::new_default_einstein_merkle_tree;
 
     use super::*;
 
     #[test]
     fn test_smoke() {
         let path = Builder::new().temfidelir().unwrap();
-        let engine = new_default_engine(path.path().to_str().unwrap()).unwrap();
+        let einstein_merkle_tree = new_default_einstein_merkle_tree(path.path().to_str().unwrap()).unwrap();
         let (k, v) = (b"foo", b"bar");
 
-        let p = path.path().join("sst");
-        let mut writer = FdbSstWriterBuilder::new()
+        let p = path.path().join("Causet");
+        let mut writer = FdbCausetWriterBuilder::new()
             .set_namespaced(NAMESPACED_DEFAULT)
-            .set_db(&engine)
+            .set_db(&einstein_merkle_tree)
             .build(p.as_os_str().to_str().unwrap())
             .unwrap();
         writer.put(k, v).unwrap();
-        let sst_file = writer.finish().unwrap();
-        assert_eq!(sst_file.num_entries(), 1);
-        assert!(sst_file.file_size() > 0);
+        let Causet_file = writer.finish().unwrap();
+        assert_eq!(Causet_file.num_entries(), 1);
+        assert!(Causet_file.file_size() > 0);
         // There must be a file in disk.
         std::fs::metadata(p).unwrap();
 
-        // Test in-memory sst writer.
-        let p = path.path().join("inmem.sst");
-        let mut writer = FdbSstWriterBuilder::new()
+        // Test in-memory Causet writer.
+        let p = path.path().join("inmem.Causet");
+        let mut writer = FdbCausetWriterBuilder::new()
             .set_in_memory(true)
             .set_namespaced(NAMESPACED_DEFAULT)
-            .set_db(&engine)
+            .set_db(&einstein_merkle_tree)
             .build(p.as_os_str().to_str().unwrap())
             .unwrap();
         writer.put(k, v).unwrap();
         let mut buf = vec![];
-        let (sst_file, mut reader) = writer.finish_read().unwrap();
-        assert_eq!(sst_file.num_entries(), 1);
-        assert!(sst_file.file_size() > 0);
+        let (Causet_file, mut reader) = writer.finish_read().unwrap();
+        assert_eq!(Causet_file.num_entries(), 1);
+        assert!(Causet_file.file_size() > 0);
         reader.read_to_end(&mut buf).unwrap();
-        assert_eq!(buf.len() as u64, sst_file.file_size());
+        assert_eq!(buf.len() as u64, Causet_file.file_size());
         // There must not be a file in disk.
         std::fs::metadata(p).unwrap_err();
     }

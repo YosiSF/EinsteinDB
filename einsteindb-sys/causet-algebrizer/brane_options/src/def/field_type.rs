@@ -232,7 +232,7 @@ pub trait FieldTypeAccessor {
 
     /// Whether this type is a string-like type.
     ///
-    /// Please refer to `IsString` in Milevaeinsteindb.
+    /// Please refer to `ICausetring` in Milevaeinsteindb.
     #[inline]
     fn is_string_like(&self) -> bool {
         self.is_blob_like()

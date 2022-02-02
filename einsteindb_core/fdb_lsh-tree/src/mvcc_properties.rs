@@ -3,7 +3,7 @@
 use fdb_traits::{MvccProperties, MvccPropertiesExt, Result};
 use txn_types::TimeStamp;
 
-use crate::{FdbEngine, UserProperties};
+use crate::{Fdbeinstein_merkle_tree, UserProperties};
 use crate::decode_properties::DecodeProperties;
 
 pub const PROP_NUM_ERRORS: &str = "einsteindb.num_errors";
@@ -48,7 +48,7 @@ impl FdbMvccProperties {
     }
 }
 
-impl MvccPropertiesExt for FdbEngine {
+impl MvccPropertiesExt for Fdbeinstein_merkle_tree {
     fn get_mvcc_properties_namespaced(
         &self,
         namespaced: &str,

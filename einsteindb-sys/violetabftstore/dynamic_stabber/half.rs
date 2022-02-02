@@ -31,7 +31,7 @@ impl Checker {
 
 impl<E> SplitChecker<E> for Checker
 where
-    E: HikvEngine,
+    E: HiKV,
 {
     fn on_hikv(&mut self, _: &mut ObserverContext<'_>, entry: &KeyEntry) -> bool {
         if self.tori.is_empty() || self.cur_torus_size >= self.each_torus_size {
@@ -53,8 +53,8 @@ where
         }
     }
 
-    fn approximate_split_keys(&mut self, region: &Region, engine: &E) -> Result<Vec<Vec<u8>>> {
-        let ks = box_try!(get_region_approximate_middle(engine, region)
+    fn approximate_split_keys(&mut self, region: &Region, einstein_merkle_tree: &E) -> Result<Vec<Vec<u8>>> {
+        let ks = box_try!(get_region_approximate_middle(einstein_merkle_tree, region)
             .map(|keys| keys.map_or(vec![], |key| vec![key])));
 
         Ok(ks)
@@ -72,7 +72,7 @@ impl interlocking_directorate for HalfCheckObserver {}
 
 impl<E> SplitCheckObserver<E> for HalfCheckObserver
 where
-    E: HikvEngine,
+    E: HiKV,
 {
     fn add_checker(
         &self,
@@ -104,7 +104,7 @@ fn half_split_torus_size(region_max_size: u64) -> u64 {
 
 /// Get region approximate middle key based on default and write brane size.
 pub fn get_region_approximate_middle(
-    einsteindb: &impl HikvEngine,
+    einsteindb: &impl HiKV,
     region: &Region,
 ) -> Result<Option<Vec<u8>>> {
     let start_key = keys::enc_start_key(region);
@@ -118,7 +118,7 @@ pub fn get_region_approximate_middle(
 
 #[cfg(test)]
 fn get_region_approximate_middle_cf(
-    einsteindb: &impl HikvEngine,
+    einsteindb: &impl HiKV,
     cfname: &str,
     region: &Region,
 ) -> Result<Option<Vec<u8>>> {
@@ -140,7 +140,7 @@ mod tests {
 
     use foundationeinsteindb::raw::Writable;
     use foundationeinsteindb::raw::{BraneOptions, einsteindbOptions};
-    use foundationeinsteindb::raw_util::{new_engine_opt, BRANEOptions};
+    use foundationeinsteindb::raw_util::{new_einstein_merkle_tree_opt, BRANEOptions};
     use foundationeinsteindb::Compat;
     use fdb_traits::{ALL_branes, BRANE_DEFAULT, LARGE_branes};
     use ehikvproto::metapb::Peer;
@@ -173,7 +173,7 @@ mod tests {
                 BRANEOptions::new(brane, cf_opts)
             })
             .collect();
-        let engine = Arc::new(new_engine_opt(path_str, einsteindb_opts, cfs_opts).unwrap());
+        let einstein_merkle_tree = Arc::new(new_einstein_merkle_tree_opt(path_str, einsteindb_opts, cfs_opts).unwrap());
 
         let mut region = Region::default();
         region.set_id(1);
@@ -185,20 +185,20 @@ mod tests {
         let mut cfg = Config::default();
         cfg.region_max_size = ReadableSize(TORUS_NUMBER_LIMIT as u64);
         let mut runnable = SplitCheckRunner::new(
-            engine.c().clone(),
+            einstein_merkle_tree.c().clone(),
             tx.clone(),
             interlocking_directorateHost::new(tx),
             cfg,
         );
 
         // so split key will be z0005
-        let cf_handle = engine.cf_handle(BRANE_DEFAULT).unwrap();
+        let cf_handle = einstein_merkle_tree.cf_handle(BRANE_DEFAULT).unwrap();
         for i in 0..11 {
             let k = format!("{:04}", i).into_bytes();
             let k = keys::data_key(Key::from_raw(&k).as_encoded());
-            engine.put_cf(cf_handle, &k, &k).unwrap();
+            einstein_merkle_tree.put_cf(cf_handle, &k, &k).unwrap();
             // Flush for every key so that we can know the exact middle key.
-            engine.flush_cf(cf_handle, true).unwrap();
+            einstein_merkle_tree.flush_cf(cf_handle, true).unwrap();
         }
         runnable.run(SplitCheckTask::split_check(
             region.clone(),
@@ -232,23 +232,23 @@ mod tests {
             .iter()
             .map(|brane| BRANEOptions::new(brane, cf_opts.clone()))
             .collect();
-        let engine =
-            Arc::new(foundationeinsteindb::raw_util::new_engine_opt(path, einsteindb_opts, cfs_opts).unwrap());
+        let einstein_merkle_tree =
+            Arc::new(foundationeinsteindb::raw_util::new_einstein_merkle_tree_opt(path, einsteindb_opts, cfs_opts).unwrap());
 
-        let cf_handle = engine.cf_handle(BRANE_DEFAULT).unwrap();
+        let cf_handle = einstein_merkle_tree.cf_handle(BRANE_DEFAULT).unwrap();
         let mut big_value = Vec::with_capacity(256);
         big_value.extend(iter::repeat(b'v').take(256));
         for i in 0..100 {
             let k = format!("key_{:03}", i).into_bytes();
             let k = keys::data_key(Key::from_raw(&k).as_encoded());
-            engine.put_cf(cf_handle, &k, &big_value).unwrap();
+            einstein_merkle_tree.put_cf(cf_handle, &k, &big_value).unwrap();
             // Flush for every key so that we can know the exact middle key.
-            engine.flush_cf(cf_handle, true).unwrap();
+            einstein_merkle_tree.flush_cf(cf_handle, true).unwrap();
         }
 
         let mut region = Region::default();
         region.mut_peers().push(Peer::default());
-        let middle_key = get_region_approximate_middle_cf(engine.c(), BRANE_DEFAULT, &region)
+        let middle_key = get_region_approximate_middle_cf(einstein_merkle_tree.c(), BRANE_DEFAULT, &region)
             .unwrap()
             .unwrap();
 

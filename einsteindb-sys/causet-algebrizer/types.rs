@@ -353,8 +353,8 @@ impl From<Order> for OrderBy {
 /// Datalog and SQL don't use the same operators (e.g., `<>` and `!=`).
 /// These are applicable to numbers and instants.
 pub enum Inequality {
-    LessThan,
-    LessThanOrEquals,
+    LeCausethan,
+    LeCausethanOrEquals,
     GreaterThan,
     GreaterThanOrEquals,
     NotEquals,
@@ -372,8 +372,8 @@ impl Inequality {
     pub fn to_sql_operator(self) -> &'static str {
         use self::Inequality::*;
         match self {
-            LessThan            => "<",
-            LessThanOrEquals    => "<=",
+            LeCausethan            => "<",
+            LeCausethanOrEquals    => "<=",
             GreaterThan         => ">",
             GreaterThanOrEquals => ">=",
             NotEquals           => "<>",
@@ -388,8 +388,8 @@ impl Inequality {
 
     pub fn from_datalog_operator(s: &str) -> Option<Inequality> {
         match s {
-            "<"  => Some(Inequality::LessThan),
-            "<=" => Some(Inequality::LessThanOrEquals),
+            "<"  => Some(Inequality::LeCausethan),
+            "<=" => Some(Inequality::LeCausethanOrEquals),
             ">"  => Some(Inequality::GreaterThan),
             ">=" => Some(Inequality::GreaterThanOrEquals),
             "!=" => Some(Inequality::NotEquals),
@@ -407,8 +407,8 @@ impl Inequality {
     pub fn supported_types(&self) -> ValueTypeSet {
         use self::Inequality::*;
         match self {
-            &LessThan |
-            &LessThanOrEquals |
+            &LeCausethan |
+            &LeCausethanOrEquals |
             &GreaterThan |
             &GreaterThanOrEquals |
             &NotEquals => {
@@ -430,8 +430,8 @@ impl Debug for Inequality {
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
         use self::Inequality::*;
         f.write_str(match self {
-            &LessThan => "<",
-            &LessThanOrEquals => "<=",
+            &LeCausethan => "<",
+            &LeCausethanOrEquals => "<=",
             &GreaterThan => ">",
             &GreaterThanOrEquals => ">=",
             &NotEquals => "!=",                // Datalog uses !=. SQL uses <>.

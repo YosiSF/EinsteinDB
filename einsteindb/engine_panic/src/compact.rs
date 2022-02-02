@@ -1,10 +1,10 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePanicEngine;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{CompactExt, CompactedEvent, Result};
 use std::collections::BTreeMap;
 
-impl CompactExt for PanicEngine {
+impl CompactExt for Paniceinstein_merkle_tree {
     type CompactedEvent = PanicCompactedEvent;
 
     fn auto_jet_bundles_is_disabled(&self) -> Result<bool> {

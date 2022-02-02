@@ -6,10 +6,10 @@ use fdb_traits::{
 };
 use std::path::Path;
 
-use crate::fdb_lsh_treeFdbEngine;
+use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 use crate::properties::{get_range_entries_and_versions, RangeProperties};
 
-impl RangePropertiesExt for FdbEngine {
+impl RangePropertiesExt for Fdbeinstein_merkle_tree {
     fn get_range_approximate_keys(&self, range: Range<'_>, large_threshold: u64) -> Result<u64> {
         // try to get from RangeProperties first.
         match self.get_range_approximate_keys_namespaced(NAMESPACED_WRITE, range, large_threshold) {
@@ -48,7 +48,7 @@ impl RangePropertiesExt for FdbEngine {
         }
 
         if large_threshold != 0 && total_keys > large_threshold {
-            let ssts = collection
+            let Causets = collection
                 .iter()
                 .map(|(k, v)| {
                     let props = RangeProperties::decode(v.user_collected_properties()).unwrap();
@@ -70,7 +70,7 @@ impl RangePropertiesExt for FdbEngine {
                 "end" => log_wrappers::Value::key(range.end_key),
                 "total_keys" => total_keys,
                 "memtable" => mem_keys,
-                "ssts_keys" => ssts,
+                "Causets_keys" => Causets,
                 "namespaced" => namespacedname,
             )
         }
@@ -108,7 +108,7 @@ impl RangePropertiesExt for FdbEngine {
         }
 
         if large_threshold != 0 && total_size > large_threshold {
-            let ssts = collection
+            let Causets = collection
                 .iter()
                 .map(|(k, v)| {
                     let props = RangeProperties::decode(v.user_collected_properties()).unwrap();
@@ -130,7 +130,7 @@ impl RangePropertiesExt for FdbEngine {
                 "end" => log_wrappers::Value::key(range.end_key),
                 "total_size" => total_size,
                 "memtable" => mem_size,
-                "ssts_size" => ssts,
+                "Causets_size" => Causets,
                 "namespaced" => namespacedname,
             )
         }

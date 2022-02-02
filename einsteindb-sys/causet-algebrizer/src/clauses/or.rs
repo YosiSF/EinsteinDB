@@ -950,7 +950,7 @@ mod testing {
         assert_eq!(cc.wheres, ColumnIntersection(vec![
             ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Equals(d0a.clone(), age.clone())),
             ColumnConstraintOrAlternation::Constraint(ColumnConstraint::Inequality {
-                operator: Inequality::LessThan,
+                operator: Inequality::LeCausethan,
                 left: QueryValue::Column(d0v.clone()),
                 right: QueryValue::TypedValue(TypedValue::Long(30)),
             }),

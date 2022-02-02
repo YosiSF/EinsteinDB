@@ -6,8 +6,8 @@ use crate::config::BLOCK_CACHE_RATE;
 use crate::server::ttl::TTLCheckerTask;
 use crate::server::CONFIG_ROCKSDB_GAUGE;
 use crate::einsteindb::storage::solitontxn::Causetxctx_controller::CausetxctxController;
-use engine_rocks::cocauset::{Cache, LRUCacheOptions, MemoryAllocator};
-use einsteindb-gen::{ColumnFamilyOptions, HikvEngine, CF_DEFAULT};
+use einstein_merkle_tree_rocks::cocauset::{Cache, LRUCacheOptions, MemoryAllocator};
+use einsteindb-gen::{ColumnFamilyOptions, HiKV, CF_DEFAULT};
 use file_system::{get_io_rate_limiter, IOPriority, IORateLimitMode, IORateLimiter, IOType};
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use libc::c_int;
@@ -59,7 +59,7 @@ pub struct Config {
     pub api_version: u8,
     #[online_config(skip)]
     pub enable_ttl: bool,
-    /// Interval to check TTL for all SSTs,
+    /// Interval to check TTL for all Causets,
     pub ttl_check_poll_interval: ReadableDuration,
     #[online_config(submodule)]
     pub Causetxctx_control: CausetxctxControlConfig,
@@ -145,14 +145,14 @@ impl Config {
     }
 }
 
-pub struct StorageConfigManger<EK: HikvEngine> {
+pub struct StorageConfigManger<EK: HiKV> {
     fdbhikvdb: EK,
     shared_bdagger_cache: bool,
     ttl_checker_scheduler: Scheduler<TTLCheckerTask>,
     Causetxctx_controller: Arc<CausetxctxController>,
 }
 
-impl<EK: HikvEngine> StorageConfigManger<EK> {
+impl<EK: HiKV> StorageConfigManger<EK> {
     pub fn new(
         fdbhikvdb: EK,
         shared_bdagger_cache: bool,
@@ -168,7 +168,7 @@ impl<EK: HikvEngine> StorageConfigManger<EK> {
     }
 }
 
-impl<EK: HikvEngine> ConfigManager for StorageConfigManger<EK> {
+impl<EK: HiKV> ConfigManager for StorageConfigManger<EK> {
     fn dispatch(&mut self, mut change: ConfigChange) -> CfgResult<()> {
         if let Some(ConfigValue::Module(mut bdagger_cache)) = change.remove("bdagger_cache") {
             if !self.shared_bdagger_cache {

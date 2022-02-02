@@ -1,9 +1,9 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::einsteindb::storage::config::BdaggerCacheConfig;
-use crate::einsteindb::storage::fdbhikv::{Result, RocksEngine};
-use engine_rocks::cocauset::ColumnFamilyOptions;
-use engine_rocks::cocauset_util::CFOptions;
+use crate::einsteindb::storage::fdbhikv::{Result, Rockseinstein_merkle_tree};
+use einstein_merkle_tree_rocks::cocauset::ColumnFamilyOptions;
+use einstein_merkle_tree_rocks::cocauset_util::CFOptions;
 use einsteindb-gen::{CfName, ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
 use file_system::IORateLimiter;
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
@@ -11,21 +11,21 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use einstfdbhikv_util::config::ReadableSize;
 
-// Duplicated from rocksdb_engine
+// Duplicated from rocksdb_einstein_merkle_tree
 const TEMP_DIR: &str = "";
 
-/// A builder to build a temporary `RocksEngine`.
+/// A builder to build a temporary `Rockseinstein_merkle_tree`.
 ///
 /// Only used for test purpose.
 #[must_use]
-pub struct TestEngineBuilder {
+pub struct Testeinstein_merkle_treeBuilder {
     path: Option<PathBuf>,
     cfs: Option<Vec<CfName>>,
     io_rate_limiter: Option<Arc<IORateLimiter>>,
     api_version: ApiVersion,
 }
 
-impl TestEngineBuilder {
+impl Testeinstein_merkle_treeBuilder {
     pub fn new() -> Self {
         Self {
             path: None,
@@ -35,7 +35,7 @@ impl TestEngineBuilder {
         }
     }
 
-    /// Customize the data directory of the temporary engine.
+    /// Customize the data directory of the temporary einstein_merkle_tree.
     ///
     /// By default, TEMP_DIR will be used.
     pub fn path(mut self, path: impl AsRef<Path>) -> Self {
@@ -43,9 +43,9 @@ impl TestEngineBuilder {
         self
     }
 
-    /// Customize the CFs that engine will have.
+    /// Customize the CFs that einstein_merkle_tree will have.
     ///
-    /// By default, engine will have all CFs.
+    /// By default, einstein_merkle_tree will have all CFs.
     pub fn cfs(mut self, cfs: impl AsRef<[CfName]>) -> Self {
         self.cfs = Some(cfs.as_ref().to_vec());
         self
@@ -61,17 +61,17 @@ impl TestEngineBuilder {
         self
     }
 
-    /// Build a `RocksEngine`.
-    pub fn build(self) -> Result<RocksEngine> {
+    /// Build a `Rockseinstein_merkle_tree`.
+    pub fn build(self) -> Result<Rockseinstein_merkle_tree> {
         let cfg_rocksdb = crate::config::DbConfig::default();
         self.do_build(&cfg_rocksdb, true)
     }
 
-    pub fn build_with_cfg(self, cfg_rocksdb: &crate::config::DbConfig) -> Result<RocksEngine> {
+    pub fn build_with_cfg(self, cfg_rocksdb: &crate::config::DbConfig) -> Result<Rockseinstein_merkle_tree> {
         self.do_build(cfg_rocksdb, true)
     }
 
-    pub fn build_without_cache(self) -> Result<RocksEngine> {
+    pub fn build_without_cache(self) -> Result<Rockseinstein_merkle_tree> {
         let cfg_rocksdb = crate::config::DbConfig::default();
         self.do_build(&cfg_rocksdb, false)
     }
@@ -80,7 +80,7 @@ impl TestEngineBuilder {
         self,
         cfg_rocksdb: &crate::config::DbConfig,
         enable_bdagger_cache: bool,
-    ) -> Result<RocksEngine> {
+    ) -> Result<Rockseinstein_merkle_tree> {
         let path = match self.path {
             None => TEMP_DIR.to_owned(),
             Some(p) => p.to_str().unwrap().to_owned(),
@@ -105,7 +105,7 @@ impl TestEngineBuilder {
                 _ => CFOptions::new(*cf, ColumnFamilyOptions::new()),
             })
             .collect();
-        RocksEngine::new(
+        Rockseinstein_merkle_tree::new(
             &path,
             &cfs,
             Some(cfs_opts),
@@ -115,7 +115,7 @@ impl TestEngineBuilder {
     }
 }
 
-impl Default for TestEngineBuilder {
+impl Default for Testeinstein_merkle_treeBuilder {
     fn default() -> Self {
         Self::new()
     }
@@ -125,7 +125,7 @@ impl Default for TestEngineBuilder {
 mod tests {
     use super::super::CfStatistics;
     use super::super::PerfStatisticsInstant;
-    use super::super::{Engine, blackbrane};
+    use super::super::{einstein_merkle_tree, blackbrane};
     use super::*;
     use crate::einsteindb::storage::{Cursor, CursorBuilder, SentinelSearchMode};
     use einsteindb-gen::IterOptions;
@@ -136,29 +136,29 @@ mod tests {
 
     #[test]
     fn test_rocksdb() {
-        let engine = TestEngineBuilder::new()
-            .cfs(TEST_ENGINE_CFS)
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new()
+            .cfs(TEST_einstein_merkle_tree_CFS)
             .build()
             .unwrap();
-        test_base_curd_options(&engine)
+        test_base_curd_options(&einstein_merkle_tree)
     }
 
     #[test]
     fn test_rocksdb_linear() {
-        let engine = TestEngineBuilder::new()
-            .cfs(TEST_ENGINE_CFS)
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new()
+            .cfs(TEST_einstein_merkle_tree_CFS)
             .build()
             .unwrap();
-        test_linear(&engine);
+        test_linear(&einstein_merkle_tree);
     }
 
     #[test]
     fn test_rocksdb_statistic() {
-        let engine = TestEngineBuilder::new()
-            .cfs(TEST_ENGINE_CFS)
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new()
+            .cfs(TEST_einstein_merkle_tree_CFS)
             .build()
             .unwrap();
-        test_cfs_statistics(&engine);
+        test_cfs_statistics(&einstein_merkle_tree);
     }
 
     #[test]
@@ -168,42 +168,42 @@ mod tests {
             .tempdir()
             .unwrap();
         {
-            let engine = TestEngineBuilder::new()
+            let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new()
                 .path(dir.path())
-                .cfs(TEST_ENGINE_CFS)
+                .cfs(TEST_einstein_merkle_tree_CFS)
                 .build()
                 .unwrap();
-            must_put_cf(&engine, "cf", b"k", b"v1");
+            must_put_cf(&einstein_merkle_tree, "cf", b"k", b"v1");
         }
         {
-            let engine = TestEngineBuilder::new()
+            let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new()
                 .path(dir.path())
-                .cfs(TEST_ENGINE_CFS)
+                .cfs(TEST_einstein_merkle_tree_CFS)
                 .build()
                 .unwrap();
-            assert_has_cf(&engine, "cf", b"k", b"v1");
+            assert_has_cf(&einstein_merkle_tree, "cf", b"k", b"v1");
         }
     }
 
     #[test]
     fn test_rocksdb_perf_statistics() {
-        let engine = TestEngineBuilder::new()
-            .cfs(TEST_ENGINE_CFS)
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new()
+            .cfs(TEST_einstein_merkle_tree_CFS)
             .build()
             .unwrap();
-        test_perf_statistics(&engine);
+        test_perf_statistics(&einstein_merkle_tree);
     }
 
     #[test]
     fn test_max_skippable_internal_keys_error() {
-        let engine = TestEngineBuilder::new().build().unwrap();
-        must_put(&engine, b"foo", b"bar");
-        must_delete(&engine, b"foo");
-        must_put(&engine, b"foo1", b"bar1");
-        must_delete(&engine, b"foo1");
-        must_put(&engine, b"foo2", b"bar2");
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        must_put(&einstein_merkle_tree, b"foo", b"bar");
+        must_delete(&einstein_merkle_tree, b"foo");
+        must_put(&einstein_merkle_tree, b"foo1", b"bar1");
+        must_delete(&einstein_merkle_tree, b"foo1");
+        must_put(&einstein_merkle_tree, b"foo2", b"bar2");
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut iter_opt = IterOptions::default();
         iter_opt.set_max_skippable_internal_keys(1);
         let mut iter = Cursor::new(blackbrane.iter(iter_opt).unwrap(), SentinelSearchMode::Forward, false);
@@ -218,19 +218,19 @@ mod tests {
         );
     }
 
-    fn test_perf_statistics<E: Engine>(engine: &E) {
-        must_put(engine, b"foo", b"bar1");
-        must_put(engine, b"foo2", b"bar2");
-        must_put(engine, b"foo3", b"bar3"); // deleted
-        must_put(engine, b"foo4", b"bar4");
-        must_put(engine, b"foo42", b"bar42"); // deleted
-        must_put(engine, b"foo5", b"bar5"); // deleted
-        must_put(engine, b"foo6", b"bar6");
-        must_delete(engine, b"foo3");
-        must_delete(engine, b"foo42");
-        must_delete(engine, b"foo5");
+    fn test_perf_statistics<E: einstein_merkle_tree>(einstein_merkle_tree: &E) {
+        must_put(einstein_merkle_tree, b"foo", b"bar1");
+        must_put(einstein_merkle_tree, b"foo2", b"bar2");
+        must_put(einstein_merkle_tree, b"foo3", b"bar3"); // deleted
+        must_put(einstein_merkle_tree, b"foo4", b"bar4");
+        must_put(einstein_merkle_tree, b"foo42", b"bar42"); // deleted
+        must_put(einstein_merkle_tree, b"foo5", b"bar5"); // deleted
+        must_put(einstein_merkle_tree, b"foo6", b"bar6");
+        must_delete(einstein_merkle_tree, b"foo3");
+        must_delete(einstein_merkle_tree, b"foo42");
+        must_delete(einstein_merkle_tree, b"foo5");
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut iter = Cursor::new(
             blackbrane.iter(IterOptions::default()).unwrap(),
             SentinelSearchMode::Forward,
@@ -262,8 +262,8 @@ mod tests {
 
     #[test]
     fn test_prefix_seek_skip_tombstone() {
-        let engine = TestEngineBuilder::new().build().unwrap();
-        engine
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        einstein_merkle_tree
             .put_cf(
                 &Context::default(),
                 "write",
@@ -277,7 +277,7 @@ mod tests {
             b"foo2".to_vec(),
             b"foo3".to_vec(),
         ] {
-            engine
+            einstein_merkle_tree
                 .put_cf(
                     &Context::default(),
                     "write",
@@ -285,7 +285,7 @@ mod tests {
                     b"bar".to_vec(),
                 )
                 .unwrap();
-            engine
+            einstein_merkle_tree
                 .delete_cf(
                     &Context::default(),
                     "write",
@@ -294,7 +294,7 @@ mod tests {
                 .unwrap();
         }
 
-        engine
+        einstein_merkle_tree
             .put_cf(
                 &Context::default(),
                 "write",
@@ -303,7 +303,7 @@ mod tests {
             )
             .unwrap();
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut iter = CursorBuilder::new(&blackbrane, CF_WRITE)
             .prefix_seek(true)
             .mutant_search_mode(SentinelSearchMode::Forward)

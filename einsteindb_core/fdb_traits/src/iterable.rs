@@ -1,31 +1,5 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! Iteration over engines and snapshots.
-//!
-//! For the purpose of key/value iteration, EinsteinDB defines its own `Iterator`
-//! trait, and `Iterable` types that can create iterators.
-//!
-//! Both `KvEngine`s and `Snapshot`s are `Iterable`.
-//!
-//! Iteration is performed over consistent views into the database, even when
-//! iterating over the engine without creating a `Snapshot`. That is, iterating
-//! over an engine behaves implicitly as if a snapshot was created first, and
-//! the iteration is being performed on the snapshot.
-//!
-//! Iterators can be in an _invalid_ state, in which they are not positioned at
-//! a key/value pair. This can occur when attempting to move before the first
-//! pair, past the last pair, or when seeking to a key that does not exist.
-//! There may be other conditions that invalidate iterators (TODO: I don't
-//! know).
-//!
-//! An invalid iterator cannot move forward or back, but may be returned to a
-//! valid state through a successful "seek" operation.
-//!
-//! As EinsteinDB inherits its iteration semantics from FdbDB,
-//! the FdbDB documentation is the ultimate reference:
-//!
-//! - [FdbDB iterator API](https://github.com/facebook/foundationdb/blob/master/include/foundationdb/iterator.h).
-//! - [FdbDB wiki on iterators](https://github.com/facebook/foundationdb/wiki/Iterator)
 
 use einsteindb_util::keybuilder::KeyBuilder;
 
@@ -38,40 +12,9 @@ pub enum SeekKey<'a> {
     Key(&'a [u8]),
 }
 
-/// An iterator over a consistent set of keys and values.
-///
-/// Iterators are implemented for `KvEngine`s and for `Snapshot`s. They see a
-/// consistent view of the database; an iterator created by an engine behaves as
-/// if a snapshot was created first, and the iterator created from the snapshot.
-///
-/// Most methods on iterators will panic if they are not "valid",
-/// as determined by the `valid` method.
-/// An iterator is valid if it is currently "pointing" to a key/value pair.
-///
-/// Iterators begin in an invalid state; one of the `seek` methods
-/// must be called before beginning iteration.
-/// Iterators may become invalid after a failed `seek`,
-/// or after iteration has ended after calling `next` or `prev`,
-/// and they return `false`.
+
 pub trait Iterator: Send {
-    /// Move the iterator to a specific key.
-    ///
-    /// When `key` is `SeekKey::Start` or `SeekKey::End`,
-    /// `seek` and `seek_for_prev` behave identically.
-    /// The difference between the two functions is how they
-    /// behave for `SeekKey::Key`, and only when an exactly
-    /// matching keys is not found:
-    ///
-    /// When seeking with `SeekKey::Key`, and an exact match is not found,
-    /// `seek` sets the iterator to the next key greater than that
-    /// specified as `key`, if such a key exists;
-    /// `seek_for_prev` sets the iterator to the previous key less than
-    /// that specified as `key`, if such a key exists.
-    ///
-    /// # Returns
-    ///
-    /// `true` if seeking succeeded and the iterator is valid,
-    /// `false` if seeking failed and the iterator is invalid.
+
     fn seek(&mut self, key: SeekKey<'_>) -> Result<bool>;
 
     /// Move the iterator to a specific key.

@@ -1,9 +1,9 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePanicEngine;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{Range, RangePropertiesExt, Result};
 
-impl RangePropertiesExt for PanicEngine {
+impl RangePropertiesExt for Paniceinstein_merkle_tree {
     fn get_range_approximate_keys(&self, range: Range<'_>, large_threshold: u64) -> Result<u64> {
         panic!()
     }

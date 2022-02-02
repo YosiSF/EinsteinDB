@@ -37,13 +37,13 @@ mod tests {
     use super::*;
     use crate::einsteindb::storage::epaxos::tests::write;
     use crate::einsteindb::storage::epaxos::EpaxosTxn;
-    use crate::einsteindb::storage::{Engine, TestEngineBuilder};
+    use crate::einsteindb::storage::{einstein_merkle_tree, Testeinstein_merkle_treeBuilder};
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
 
     #[test]
     fn test_check_data_constraint() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(42.into());
         let mut solitontxn = EpaxosTxn::new(TimeStamp::new(2), cm);
         solitontxn.put_write(
@@ -53,8 +53,8 @@ mod tests {
                 .as_ref()
                 .to_bytes(),
         );
-        write(&engine, &Context::default(), solitontxn.into_modifies());
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        write(&einstein_merkle_tree, &Context::default(), solitontxn.into_modifies());
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut reader = blackbraneReader::new(TimeStamp::new(3), blackbrane, true);
 
         struct Case {

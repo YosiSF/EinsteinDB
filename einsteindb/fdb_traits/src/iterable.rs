@@ -1,15 +1,15 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! Iteration over engines and snapshots.
+//! Iteration over einstein_merkle_trees and snapshots.
 //!
 //! For the purpose of key/value iteration, EinsteinDB defines its own `Iterator`
 //! trait, and `Iterable` types that can create iterators.
 //!
-//! Both `KvEngine`s and `Snapshot`s are `Iterable`.
+//! Both `KV`s and `Snapshot`s are `Iterable`.
 //!
 //! Iteration is performed over consistent views into the database, even when
-//! iterating over the engine without creating a `Snapshot`. That is, iterating
-//! over an engine behaves implicitly as if a snapshot was created first, and
+//! iterating over the einstein_merkle_tree without creating a `Snapshot`. That is, iterating
+//! over an einstein_merkle_tree behaves implicitly as if a snapshot was created first, and
 //! the iteration is being performed on the snapshot.
 //!
 //! Iterators can be in an _invalid_ state, in which they are not positioned at
@@ -40,8 +40,8 @@ pub enum SeekKey<'a> {
 
 /// An iterator over a consistent set of keys and values.
 ///
-/// Iterators are implemented for `KvEngine`s and for `Snapshot`s. They see a
-/// consistent view of the database; an iterator created by an engine behaves as
+/// Iterators are implemented for `KV`s and for `Snapshot`s. They see a
+/// consistent view of the database; an iterator created by an einstein_merkle_tree behaves as
 /// if a snapshot was created first, and the iterator created from the snapshot.
 ///
 /// Most methods on iterators will panic if they are not "valid",

@@ -1,12 +1,12 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use fdb_traits::{EngineFileSystemInspector, FileSystemInspector};
+use fdb_traits::{einstein_merkle_treeFileSystemInspector, FileSystemInspector};
 use foundationdb::FileSystemInspector as DBFileSystemInspector;
 use std::sync::Arc;
 
 use crate::raw::Env;
 
-// Use engine::Env directly since Env is not abstracted.
+// Use einstein_merkle_tree::Env directly since Env is not abstracted.
 pub(crate) fn get_env(
     base_env: Option<Arc<Env>>,
     limiter: Option<Arc<file_system::IORateLimiter>>,
@@ -15,7 +15,7 @@ pub(crate) fn get_env(
     Ok(Arc::new(Env::new_file_system_inspected_env(
         base_env,
         WrappedFileSystemInspector {
-            inspector: EngineFileSystemInspector::from_limiter(limiter),
+            inspector: einstein_merkle_treeFileSystemInspector::from_limiter(limiter),
         },
     )?))
 }
@@ -47,7 +47,7 @@ mod tests {
     use crate::compat::Compat;
     use crate::event_listener::FdbEventListener;
     use crate::raw::{ColumnFamilyOptions, DBCompressionType};
-    use crate::raw_util::{NAMESPACEDOptions, new_engine_opt};
+    use crate::raw_util::{NAMESPACEDOptions, new_einstein_merkle_tree_opt};
 
     use super::*;
 
@@ -61,7 +61,7 @@ mod tests {
         namespaced_opts.set_disable_auto_jet_bundles(true);
         namespaced_opts.compression_per_l_naught(&[DBCompressionType::No; 7]);
         let einsteindb = Arc::new(
-            new_engine_opt(dir, db_opts, vec![NAMESPACEDOptions::new(NAMESPACED_DEFAULT, namespaced_opts)]).unwrap(),
+            new_einstein_merkle_tree_opt(dir, db_opts, vec![NAMESPACEDOptions::new(NAMESPACED_DEFAULT, namespaced_opts)]).unwrap(),
         );
         (einsteindb, limiter.statistics().unwrap())
     }

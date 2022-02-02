@@ -2,7 +2,7 @@
 
 //! Functions for constructing the foundationdb crate's `DB` type
 //!
-//! These are an artifact of refactoring the engine traits and will go away
+//! These are an artifact of refactoring the einstein_merkle_tree traits and will go away
 //! eventually. Prefer to use the versions in the `util` module.
 
 use einsteindb_util::warn;
@@ -25,7 +25,7 @@ impl<'a> NAMESPACEDOptions<'a> {
     }
 }
 
-pub fn new_engine(
+pub fn new_einstein_merkle_tree(
     path: &str,
     db_opts: Option<DBOptions>,
     namespaceds: &[&str],
@@ -46,7 +46,7 @@ pub fn new_engine(
             default_namespaceds_opts
         }
     };
-    new_engine_opt(path, db_opts, namespaced_opts)
+    new_einstein_merkle_tree_opt(path, db_opts, namespaced_opts)
 }
 
 /// Turns "dynamic l_naught size" off for the existing column family which was off before.
@@ -78,7 +78,7 @@ fn adjust_dynamic_l_naught_bytes(
     }
 }
 
-pub fn new_engine_opt(
+pub fn new_einstein_merkle_tree_opt(
     path: &str,
     mut db_opt: DBOptions,
     namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
@@ -263,7 +263,7 @@ mod tests {
     }
 
     #[test]
-    fn test_new_engine_opt() {
+    fn test_new_einstein_merkle_tree_opt() {
         let path = Builder::new()
             .prefix("_util_rocksdb_test_check_column_families")
             .temfidelir()
@@ -276,7 +276,7 @@ mod tests {
         opts.set_l_naught_jet_bundle_dynamic_l_naught_bytes(true);
         namespaceds_opts.push(NAMESPACEDOptions::new("namespaced_dynamic_l_naught_bytes", opts.clone()));
         {
-            let mut einsteindb = new_engine_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
+            let mut einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
             column_families_must_eq(path_str, vec![NAMESPACED_DEFAULT, "namespaced_dynamic_l_naught_bytes"]);
             check_dynamic_l_naught_bytes(&mut einsteindb);
         }
@@ -288,7 +288,7 @@ mod tests {
             NAMESPACEDOptions::new("namespaced1", opts),
         ];
         {
-            let mut einsteindb = new_engine_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
+            let mut einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
             column_families_must_eq(path_str, vec![NAMESPACED_DEFAULT, "namespaced_dynamic_l_naught_bytes", "namespaced1"]);
             check_dynamic_l_naught_bytes(&mut einsteindb);
         }
@@ -299,14 +299,14 @@ mod tests {
             NAMESPACEDOptions::new("namespaced_dynamic_l_naught_bytes", ColumnFamilyOptions::new()),
         ];
         {
-            let mut einsteindb = new_engine_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
+            let mut einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
             column_families_must_eq(path_str, vec![NAMESPACED_DEFAULT, "namespaced_dynamic_l_naught_bytes"]);
             check_dynamic_l_naught_bytes(&mut einsteindb);
         }
 
         // never drop default namespaced
         let namespaceds_opts = vec![];
-        new_engine_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
+        new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
         column_families_must_eq(path_str, vec![NAMESPACED_DEFAULT]);
     }
 

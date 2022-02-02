@@ -1,6 +1,6 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePanicEngine;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{Range, Result};
 
 pub struct UserCollectedProperties;
@@ -23,7 +23,7 @@ impl fdb_traits::TablePropertiesCollection for TablePropertiesCollection {
     }
 }
 
-impl fdb_traits::TablePropertiesExt for PanicEngine {
+impl fdb_traits::TablePropertiesExt for Paniceinstein_merkle_tree {
     type TablePropertiesCollection = TablePropertiesCollection;
     fn table_properties_collection(
         &self,

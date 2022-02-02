@@ -2,12 +2,12 @@
 
 use std::ffi::CString;
 
-pub struct FdbSstPartitionerFactory<F: fdb_traits::SstPartitionerFactory>(pub F);
+pub struct FdbCausetPartitionerFactory<F: fdb_traits::CausetPartitionerFactory>(pub F);
 
-impl<F: fdb_traits::SstPartitionerFactory> foundationdb::SstPartitionerFactory
-for FdbSstPartitionerFactory<F>
+impl<F: fdb_traits::CausetPartitionerFactory> foundationdb::CausetPartitionerFactory
+for FdbCausetPartitionerFactory<F>
 {
-    type Partitioner = FdbSstPartitioner<F::Partitioner>;
+    type Partitioner = FdbCausetPartitioner<F::Partitioner>;
 
     fn name(&self) -> &CString {
         self.0.name()
@@ -15,37 +15,37 @@ for FdbSstPartitionerFactory<F>
 
     fn create_partitioner(
         &self,
-        context: &foundationdb::SstPartitionerContext<'_>,
+        context: &foundationdb::CausetPartitionerContext<'_>,
     ) -> Option<Self::Partitioner> {
-        let ctx = fdb_traits::SstPartitionerContext {
+        let ctx = fdb_traits::CausetPartitionerContext {
             is_full_jet_bundle: context.is_full_jet_bundle,
             is_manual_jet_bundle: context.is_manual_jet_bundle,
             output_l_naught: context.output_l_naught,
             smallest_key: context.smallest_key,
             largest_key: context.largest_key,
         };
-        self.0.create_partitioner(&ctx).map(FdbSstPartitioner)
+        self.0.create_partitioner(&ctx).map(FdbCausetPartitioner)
     }
 }
 
-pub struct FdbSstPartitioner<P: fdb_traits::SstPartitioner>(P);
+pub struct FdbCausetPartitioner<P: fdb_traits::CausetPartitioner>(P);
 
-impl<P: fdb_traits::SstPartitioner> foundationdb::SstPartitioner for FdbSstPartitioner<P> {
+impl<P: fdb_traits::CausetPartitioner> foundationdb::CausetPartitioner for FdbCausetPartitioner<P> {
     fn should_partition(
         &mut self,
-        request: &foundationdb::SstPartitionerRequest<'_>,
-    ) -> foundationdb::SstPartitionerResult {
-        let req = fdb_traits::SstPartitionerRequest {
+        request: &foundationdb::CausetPartitionerRequest<'_>,
+    ) -> foundationdb::CausetPartitionerResult {
+        let req = fdb_traits::CausetPartitionerRequest {
             prev_user_key: request.prev_user_key,
             current_user_key: request.current_user_key,
             current_output_file_size: request.current_output_file_size,
         };
         match self.0.should_partition(&req) {
-            fdb_traits::SstPartitionerResult::NotRequired => {
-                foundationdb::SstPartitionerResult::NotRequired
+            fdb_traits::CausetPartitionerResult::NotRequired => {
+                foundationdb::CausetPartitionerResult::NotRequired
             }
-            fdb_traits::SstPartitionerResult::Required => {
-                foundationdb::SstPartitionerResult::Required
+            fdb_traits::CausetPartitionerResult::Required => {
+                foundationdb::CausetPartitionerResult::Required
             }
         }
     }

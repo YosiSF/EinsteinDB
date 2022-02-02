@@ -4,14 +4,14 @@ use fdb_traits::{self, Error, Mutable, Result, WriteBatchExt, WriteOptions};
 use foundationdb::{DB, Writable, WriteBatch as RawWriteBatch};
 use std::sync::Arc;
 
-use crate::fdb_lsh_treeFdbEngine;
+use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 use crate::options::FdbWriteOptions;
 use crate::util::get_namespaced_handle;
 
 const WRITE_BATCH_MAX_BATCH: usize = 16;
 const WRITE_BATCH_LIMIT: usize = 16;
 
-impl WriteBatchExt for FdbEngine {
+impl WriteBatchExt for Fdbeinstein_merkle_tree {
     type WriteBatch = FdbWriteBatch;
     type WriteBatchVec = FdbWriteBatchVec;
 
@@ -70,8 +70,8 @@ impl FdbWriteBatch {
     }
 }
 
-impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatch {
-    fn with_capacity(e: &FdbEngine, cap: usize) -> FdbWriteBatch {
+impl fdb_traits::WriteBatch<Fdbeinstein_merkle_tree> for FdbWriteBatch {
+    fn with_capacity(e: &Fdbeinstein_merkle_tree, cap: usize) -> FdbWriteBatch {
         e.write_batch_with_cap(cap)
     }
 
@@ -79,7 +79,7 @@ impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatch {
         let opt: FdbWriteOptions = opts.into();
         self.get_db()
             .write_opt(self.as_inner(), &opt.into_raw())
-            .map_err(Error::Engine)
+            .map_err(Error::einstein_merkle_tree)
     }
 
     fn data_size(&self) -> usize {
@@ -94,8 +94,8 @@ impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatch {
         self.wb.is_empty()
     }
 
-    fn should_write_to_engine(&self) -> bool {
-        self.wb.count() > FdbEngine::WRITE_BATCH_MAX_CAUSET_KEYS
+    fn should_write_to_einstein_merkle_tree(&self) -> bool {
+        self.wb.count() > Fdbeinstein_merkle_tree::WRITE_BATCH_MAX_CAUSET_KEYS
     }
 
     fn clear(&mut self) {
@@ -107,11 +107,11 @@ impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatch {
     }
 
     fn pop_save_point(&mut self) -> Result<()> {
-        self.wb.pop_save_point().map_err(Error::Engine)
+        self.wb.pop_save_point().map_err(Error::einstein_merkle_tree)
     }
 
     fn rollback_to_save_point(&mut self) -> Result<()> {
-        self.wb.rollback_to_save_point().map_err(Error::Engine)
+        self.wb.rollback_to_save_point().map_err(Error::einstein_merkle_tree)
     }
 
     fn merge(&mut self, src: Self) {
@@ -121,34 +121,34 @@ impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatch {
 
 impl Mutable for FdbWriteBatch {
     fn put(&mut self, key: &[u8], value: &[u8]) -> Result<()> {
-        self.wb.put(key, value).map_err(Error::Engine)
+        self.wb.put(key, value).map_err(Error::einstein_merkle_tree)
     }
 
     fn put_namespaced(&mut self, namespaced: &str, key: &[u8], value: &[u8]) -> Result<()> {
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
-        self.wb.put_namespaced(handle, key, value).map_err(Error::Engine)
+        self.wb.put_namespaced(handle, key, value).map_err(Error::einstein_merkle_tree)
     }
 
     fn delete(&mut self, key: &[u8]) -> Result<()> {
-        self.wb.delete(key).map_err(Error::Engine)
+        self.wb.delete(key).map_err(Error::einstein_merkle_tree)
     }
 
     fn delete_namespaced(&mut self, namespaced: &str, key: &[u8]) -> Result<()> {
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
-        self.wb.delete_namespaced(handle, key).map_err(Error::Engine)
+        self.wb.delete_namespaced(handle, key).map_err(Error::einstein_merkle_tree)
     }
 
     fn delete_range(&mut self, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
         self.wb
             .delete_range(begin_key, end_key)
-            .map_err(Error::Engine)
+            .map_err(Error::einstein_merkle_tree)
     }
 
     fn delete_range_namespaced(&mut self, namespaced: &str, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
         self.wb
             .delete_range_namespaced(handle, begin_key, end_key)
-            .map_err(Error::Engine)
+            .map_err(Error::einstein_merkle_tree)
     }
 }
 
@@ -206,8 +206,8 @@ impl FdbWriteBatchVec {
     }
 }
 
-impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatchVec {
-    fn with_capacity(e: &FdbEngine, cap: usize) -> FdbWriteBatchVec {
+impl fdb_traits::WriteBatch<Fdbeinstein_merkle_tree> for FdbWriteBatchVec {
+    fn with_capacity(e: &Fdbeinstein_merkle_tree, cap: usize) -> FdbWriteBatchVec {
         FdbWriteBatchVec::new(e.as_inner().clone(), WRITE_BATCH_LIMIT, cap)
     }
 
@@ -216,11 +216,11 @@ impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatchVec {
         if self.index > 0 {
             self.get_db()
                 .multi_batch_write(self.as_inner(), &opt.into_raw())
-                .map_err(Error::Engine)
+                .map_err(Error::einstein_merkle_tree)
         } else {
             self.get_db()
                 .write_opt(&self.wbs[0], &opt.into_raw())
-                .map_err(Error::Engine)
+                .map_err(Error::einstein_merkle_tree)
         }
     }
 
@@ -236,7 +236,7 @@ impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatchVec {
         self.wbs[0].is_empty()
     }
 
-    fn should_write_to_engine(&self) -> bool {
+    fn should_write_to_einstein_merkle_tree(&self) -> bool {
         self.index >= WRITE_BATCH_MAX_BATCH
     }
 
@@ -256,9 +256,9 @@ impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatchVec {
 
     fn pop_save_point(&mut self) -> Result<()> {
         if let Some(x) = self.save_points.pop() {
-            return self.wbs[x].pop_save_point().map_err(Error::Engine);
+            return self.wbs[x].pop_save_point().map_err(Error::einstein_merkle_tree);
         }
-        Err(Error::Engine("no save point".into()))
+        Err(Error::einstein_merkle_tree("no save point".into()))
     }
 
     fn rollback_to_save_point(&mut self) -> Result<()> {
@@ -267,9 +267,9 @@ impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatchVec {
                 self.wbs[i].clear();
             }
             self.index = x;
-            return self.wbs[x].rollback_to_save_point().map_err(Error::Engine);
+            return self.wbs[x].rollback_to_save_point().map_err(Error::einstein_merkle_tree);
         }
-        Err(Error::Engine("no save point".into()))
+        Err(Error::einstein_merkle_tree("no save point".into()))
     }
 
     fn merge(&mut self, _: Self) {
@@ -280,7 +280,7 @@ impl fdb_traits::WriteBatch<FdbEngine> for FdbWriteBatchVec {
 impl Mutable for FdbWriteBatchVec {
     fn put(&mut self, key: &[u8], value: &[u8]) -> Result<()> {
         self.check_switch_batch();
-        self.wbs[self.index].put(key, value).map_err(Error::Engine)
+        self.wbs[self.index].put(key, value).map_err(Error::einstein_merkle_tree)
     }
 
     fn put_namespaced(&mut self, namespaced: &str, key: &[u8], value: &[u8]) -> Result<()> {
@@ -288,12 +288,12 @@ impl Mutable for FdbWriteBatchVec {
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
         self.wbs[self.index]
             .put_namespaced(handle, key, value)
-            .map_err(Error::Engine)
+            .map_err(Error::einstein_merkle_tree)
     }
 
     fn delete(&mut self, key: &[u8]) -> Result<()> {
         self.check_switch_batch();
-        self.wbs[self.index].delete(key).map_err(Error::Engine)
+        self.wbs[self.index].delete(key).map_err(Error::einstein_merkle_tree)
     }
 
     fn delete_namespaced(&mut self, namespaced: &str, key: &[u8]) -> Result<()> {
@@ -301,14 +301,14 @@ impl Mutable for FdbWriteBatchVec {
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
         self.wbs[self.index]
             .delete_namespaced(handle, key)
-            .map_err(Error::Engine)
+            .map_err(Error::einstein_merkle_tree)
     }
 
     fn delete_range(&mut self, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
         self.check_switch_batch();
         self.wbs[self.index]
             .delete_range(begin_key, end_key)
-            .map_err(Error::Engine)
+            .map_err(Error::einstein_merkle_tree)
     }
 
     fn delete_range_namespaced(&mut self, namespaced: &str, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
@@ -316,7 +316,7 @@ impl Mutable for FdbWriteBatchVec {
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
         self.wbs[self.index]
             .delete_range_namespaced(handle, begin_key, end_key)
-            .map_err(Error::Engine)
+            .map_err(Error::einstein_merkle_tree)
     }
 }
 
@@ -328,40 +328,40 @@ mod tests {
 
     use super::*;
     use super::super::FdbDBOptions;
-    use super::super::util::new_engine_opt;
+    use super::super::util::new_einstein_merkle_tree_opt;
 
     #[test]
-    fn test_should_write_to_engine() {
+    fn test_should_write_to_einstein_merkle_tree() {
         let path = Builder::new()
-            .prefix("test-should-write-to-engine")
+            .prefix("test-should-write-to-einstein_merkle_tree")
             .temfidelir()
             .unwrap();
         let opt = RawDBOptions::default();
         opt.enable_multi_batch_write(true);
         opt.enable_unordered_write(false);
         opt.enable_pipelined_write(true);
-        let engine = new_engine_opt(
+        let einstein_merkle_tree = new_einstein_merkle_tree_opt(
             path.path().join("einsteindb").to_str().unwrap(),
             FdbDBOptions::from_raw(opt),
             vec![],
         )
             .unwrap();
-        assert!(engine.support_write_batch_vec());
-        let mut wb = engine.write_batch();
-        for _i in 0..FdbEngine::WRITE_BATCH_MAX_CAUSET_KEYS {
+        assert!(einstein_merkle_tree.support_write_batch_vec());
+        let mut wb = einstein_merkle_tree.write_batch();
+        for _i in 0..Fdbeinstein_merkle_tree::WRITE_BATCH_MAX_CAUSET_KEYS {
             wb.put(b"aaa", b"bbb").unwrap();
         }
-        assert!(!wb.should_write_to_engine());
+        assert!(!wb.should_write_to_einstein_merkle_tree());
         wb.put(b"aaa", b"bbb").unwrap();
-        assert!(wb.should_write_to_engine());
-        let mut wb = FdbWriteBatchVec::with_capacity(&engine, 1024);
+        assert!(wb.should_write_to_einstein_merkle_tree());
+        let mut wb = FdbWriteBatchVec::with_capacity(&einstein_merkle_tree, 1024);
         for _i in 0..WRITE_BATCH_MAX_BATCH * WRITE_BATCH_LIMIT {
             wb.put(b"aaa", b"bbb").unwrap();
         }
-        assert!(!wb.should_write_to_engine());
+        assert!(!wb.should_write_to_einstein_merkle_tree());
         wb.put(b"aaa", b"bbb").unwrap();
-        assert!(wb.should_write_to_engine());
+        assert!(wb.should_write_to_einstein_merkle_tree());
         wb.clear();
-        assert!(!wb.should_write_to_engine());
+        assert!(!wb.should_write_to_einstein_merkle_tree());
     }
 }

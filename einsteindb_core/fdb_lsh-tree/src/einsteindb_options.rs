@@ -8,9 +8,9 @@ use fdb_traits::TitanDBOptions;
 use foundationdb::DBOptions as RawDBOptions;
 use foundationdb::TitanDBOptions as RawTitanDBOptions;
 
-use crate::fdb_lsh_treeFdbEngine;
+use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 
-impl DBOptionsExt for FdbEngine {
+impl DBOptionsExt for Fdbeinstein_merkle_tree {
     type DBOptions = FdbDBOptions;
 
     fn get_db_options(&self) -> Self::DBOptions {

@@ -1,174 +1,174 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! Engines for use in the test suite, implementing both the KvEngine
-//! and VioletaBFTEngine traits.
+//! einstein_merkle_trees for use in the test suite, implementing both the KV
+//! and VioletaBFTeinstein_merkle_tree traits.
 //!
-//! These engines link to all other engines, providing concrete single timelike_storage
-//! engine type to run tests against.
+//! These einstein_merkle_trees link to all other einstein_merkle_trees, providing concrete single timelike_storage
+//! einstein_merkle_tree type to run tests against.
 //!
-//! This provides a simple way to integrate non-FdbDB engines into the
+//! This provides a simple way to integrate non-FdbDB einstein_merkle_trees into the
 //! existing test suite without too much disruption.
 //!
-//! Engines presently supported by this crate are
+//! einstein_merkle_trees presently supported by this crate are
 //!
-//! - FdbEngine from fdb_lsh-merkle_merkle_tree
-//! - PanicEngine from engine_panic
+//! - Fdbeinstein_merkle_tree from fdb_lsh-merkle_merkle_tree
+//! - Paniceinstein_merkle_tree from einstein_merkle_tree_panic
 //!
-//! EinsteinDB uses two different timelike_storage engine instances,
-//! the "violetabft" engine, for storing consensus data,
-//! and the "kv" engine, for storing user data.
+//! EinsteinDB uses two different timelike_storage einstein_merkle_tree instances,
+//! the "violetabft" einstein_merkle_tree, for storing consensus data,
+//! and the "kv" einstein_merkle_tree, for storing user data.
 //!
-//! The types and constructors for these two engines are located in the `violetabft`
+//! The types and constructors for these two einstein_merkle_trees are located in the `violetabft`
 //! and `kv` modules respectively.
 //!
-//! The engine for each module is chosen at compile time with feature flags:
+//! The einstein_merkle_tree for each module is chosen at compile time with feature flags:
 //!
-//! - `--features test-engine-kv-foundationdb`
-//! - `--features test-engine-violetabft-foundationdb`
-//! - `--features test-engine-kv-panic`
-//! - `--features test-engine-violetabft-panic`
+//! - `--features test-einstein_merkle_tree-kv-foundationdb`
+//! - `--features test-einstein_merkle_tree-violetabft-foundationdb`
+//! - `--features test-einstein_merkle_tree-kv-panic`
+//! - `--features test-einstein_merkle_tree-violetabft-panic`
 //!
-//! By default, the `einsteindb` crate turns on `test-engine-kv-foundationdb`,
-//! and `test-engine-violetabft-foundationdb`. This behavior can be disabled
+//! By default, the `einsteindb` crate turns on `test-einstein_merkle_tree-kv-foundationdb`,
+//! and `test-einstein_merkle_tree-violetabft-foundationdb`. This behavior can be disabled
 //! with `--disable-default-features`.
 //!
 //! The `einsteindb` crate additionally provides two feature flags that
-//! contral both the `kv` and `violetabft` engines at the same time:
+//! contral both the `kv` and `violetabft` einstein_merkle_trees at the same time:
 //!
-//! - `--features test-engines-foundationdb`
-//! - `--features test-engines-panic`
+//! - `--features test-einstein_merkle_trees-foundationdb`
+//! - `--features test-einstein_merkle_trees-panic`
 //!
-//! So, e.g., to run the test suite with the panic engine:
+//! So, e.g., to run the test suite with the panic einstein_merkle_tree:
 //!
 //! ```
-//! cargo test --all --disable-default-features --features=protobuf_codec,test-engines-panic
+//! cargo test --all --disable-default-features --features=protobuf_codec,test-einstein_merkle_trees-panic
 //! ```
 //!
-//! We'll probably revisit the engine-testing strategy in the future,
-//! e.g. by using engine-parameterized tests instead.
+//! We'll probably revisit the einstein_merkle_tree-testing strategy in the future,
+//! e.g. by using einstein_merkle_tree-parameterized tests instead.
 //!
 //! This create also contains a `ctor` module that contains constructor methods
-//! appropriate for constructing timelike_storage engines of any type. It is intended
+//! appropriate for constructing timelike_storage einstein_merkle_trees of any type. It is intended
 //! that this module is _the only_ module within EinsteinDB that knows about concrete
-//! timelike_storage engines, and that it be extracted into its own crate for use in
+//! timelike_storage einstein_merkle_trees, and that it be extracted into its own crate for use in
 //! EinsteinDB, once the full requirements are better understood.
 
-/// Types and constructors for the "violetabft" engine
+/// Types and constructors for the "violetabft" einstein_merkle_tree
 pub mod violetabft {
-    use crate::ctor::{NAMESPACEDOptions, DBOptions, EngineConstructorExt};
+    use crate::ctor::{NAMESPACEDOptions, DBOptions, einstein_merkle_treeConstructorExt};
     use fdb_traits::Result;
 
-    #[cfg(feature = "test-engine-violetabft-panic")]
-    pub use engine_panic::{
-        PanicEngine as VioletaBFTTestEngine, PanicEngineIterator as VioletaBFTTestEngineIterator,
+    #[cfg(feature = "test-einstein_merkle_tree-violetabft-panic")]
+    pub use einstein_merkle_tree_panic::{
+        Paniceinstein_merkle_tree as VioletaBFTTesteinstein_merkle_tree, Paniceinstein_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
         PanicSnapshot as VioletaBFTTestSnapshot, PanicWriteBatch as VioletaBFTTestWriteBatch,
     };
 
-    #[cfg(feature = "test-engine-violetabft-foundationdb")]
-    pub use fdb_engine::{
-        FdbEngine as VioletaBFTTestEngine, FdbEngineIterator as VioletaBFTTestEngineIterator,
+    #[cfg(feature = "test-einstein_merkle_tree-violetabft-foundationdb")]
+    pub use fdb_einstein_merkle_tree::{
+        Fdbeinstein_merkle_tree as VioletaBFTTesteinstein_merkle_tree, Fdbeinstein_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
         FdbSnapshot as VioletaBFTTestSnapshot, FdbWriteBatch as VioletaBFTTestWriteBatch,
     };
 
-    pub fn new_engine(
+    pub fn new_einstein_merkle_tree(
         path: &str,
         db_opt: Option<DBOptions>,
         namespaced: &str,
         opt: Option<NAMESPACEDOptions<'_>>,
-    ) -> Result<VioletaBFTTestEngine> {
+    ) -> Result<VioletaBFTTesteinstein_merkle_tree> {
         let namespaceds = &[namespaced];
         let opts = opt.map(|o| vec![o]);
-        VioletaBFTTestEngine::new_engine(path, db_opt, namespaceds, opts)
+        VioletaBFTTesteinstein_merkle_tree::new_einstein_merkle_tree(path, db_opt, namespaceds, opts)
     }
 
-    pub fn new_engine_opt(
+    pub fn new_einstein_merkle_tree_opt(
         path: &str,
         db_opt: DBOptions,
         namespaced_opt: NAMESPACEDOptions<'_>,
-    ) -> Result<VioletaBFTTestEngine> {
+    ) -> Result<VioletaBFTTesteinstein_merkle_tree> {
         let namespaceds_opts = vec![namespaced_opt];
-        VioletaBFTTestEngine::new_engine_opt(path, db_opt, namespaceds_opts)
+        VioletaBFTTesteinstein_merkle_tree::new_einstein_merkle_tree_opt(path, db_opt, namespaceds_opts)
     }
 }
 
-/// Types and constructors for the "kv" engine
+/// Types and constructors for the "kv" einstein_merkle_tree
 pub mod kv {
-    use crate::ctor::{NAMESPACEDOptions, DBOptions, EngineConstructorExt};
+    use crate::ctor::{NAMESPACEDOptions, DBOptions, einstein_merkle_treeConstructorExt};
     use fdb_traits::Result;
 
-    #[cfg(feature = "test-engine-kv-panic")]
-    pub use engine_panic::{
-        PanicEngine as KvTestEngine, PanicEngineIterator as KvTestEngineIterator,
+    #[cfg(feature = "test-einstein_merkle_tree-kv-panic")]
+    pub use einstein_merkle_tree_panic::{
+        Paniceinstein_merkle_tree as KvTesteinstein_merkle_tree, Paniceinstein_merkle_treeIterator as KvTesteinstein_merkle_treeIterator,
         PanicSnapshot as KvTestSnapshot, PanicWriteBatch as KvTestWriteBatch,
     };
 
-    #[cfg(feature = "test-engine-kv-foundationdb")]
-    pub use fdb_engine::{
-        FdbEngine as KvTestEngine, FdbEngineIterator as KvTestEngineIterator,
+    #[cfg(feature = "test-einstein_merkle_tree-kv-foundationdb")]
+    pub use fdb_einstein_merkle_tree::{
+        Fdbeinstein_merkle_tree as KvTesteinstein_merkle_tree, Fdbeinstein_merkle_treeIterator as KvTesteinstein_merkle_treeIterator,
         FdbSnapshot as KvTestSnapshot, FdbWriteBatch as KvTestWriteBatch,
     };
 
-    pub fn new_engine(
+    pub fn new_einstein_merkle_tree(
         path: &str,
         db_opt: Option<DBOptions>,
         namespaceds: &[&str],
         opts: Option<Vec<NAMESPACEDOptions<'_>>>,
-    ) -> Result<KvTestEngine> {
-        KvTestEngine::new_engine(path, db_opt, namespaceds, opts)
+    ) -> Result<KvTesteinstein_merkle_tree> {
+        KvTesteinstein_merkle_tree::new_einstein_merkle_tree(path, db_opt, namespaceds, opts)
     }
 
-    pub fn new_engine_opt(
+    pub fn new_einstein_merkle_tree_opt(
         path: &str,
         db_opt: DBOptions,
         namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
-    ) -> Result<KvTestEngine> {
-        KvTestEngine::new_engine_opt(path, db_opt, namespaceds_opts)
+    ) -> Result<KvTesteinstein_merkle_tree> {
+        KvTesteinstein_merkle_tree::new_einstein_merkle_tree_opt(path, db_opt, namespaceds_opts)
     }
 }
 
-/// Create a timelike_storage engine with a concrete type. This should ultimately be the
-/// only module within EinsteinDB that needs to know about concrete engines. Other
+/// Create a timelike_storage einstein_merkle_tree with a concrete type. This should ultimately be the
+/// only module within EinsteinDB that needs to know about concrete einstein_merkle_trees. Other
 /// code only uses the `fdb_traits` abstractions.
 ///
-/// At the moment this has a lot of open-coding of engine-specific
+/// At the moment this has a lot of open-coding of einstein_merkle_tree-specific
 /// initialization, but in the future more constructor abstractions should be
 /// pushed down into fdb_traits.
 ///
 /// This module itself is intended to be extracted from this crate into its own
-/// crate, once the requirements for engine construction are better understood.
+/// crate, once the requirements for einstein_merkle_tree construction are better understood.
 pub mod ctor {
     use fdb_traits::Result;
 
-    /// Engine construction
+    /// einstein_merkle_tree construction
     ///
-    /// For simplicity, all engine constructors are expected to configure every
-    /// engine such that all of EinsteinDB and its tests work correctly, for the
+    /// For simplicity, all einstein_merkle_tree constructors are expected to configure every
+    /// einstein_merkle_tree such that all of EinsteinDB and its tests work correctly, for the
     /// constructed column families.
     ///
     /// Specifically, this means that FdbDB constructors should set up
     /// all properties collectors, always.
-    pub trait EngineConstructorExt: Sized {
-        /// Create a new engine with either:
+    pub trait einstein_merkle_treeConstructorExt: Sized {
+        /// Create a new einstein_merkle_tree with either:
         ///
         /// - The column families specified as `namespaceds`, with default options, or
         /// - The column families specified as `opts`, with options.
         ///
         /// Note that if `opts` is not `None` then the `namespaceds` argument is completely ignored.
         ///
-        /// The engine timelike_stores its data in the `path` directory.
+        /// The einstein_merkle_tree timelike_stores its data in the `path` directory.
         /// If that directory does not exist, then it is created.
-        fn new_engine(
+        fn new_einstein_merkle_tree(
             path: &str,
             db_opt: Option<DBOptions>,
             namespaceds: &[&str],
             opts: Option<Vec<NAMESPACEDOptions<'_>>>,
         ) -> Result<Self>;
 
-        /// Create a new engine with specified column families and options
+        /// Create a new einstein_merkle_tree with specified column families and options
         ///
-        /// The engine timelike_stores its data in the `path` directory.
+        /// The einstein_merkle_tree timelike_stores its data in the `path` directory.
         /// If that directory does not exist, then it is created.
-        fn new_engine_opt(
+        fn new_einstein_merkle_tree_opt(
             path: &str,
             db_opt: DBOptions,
             namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
@@ -217,24 +217,24 @@ pub mod ctor {
 
     /// Properties for a single column family
     ///
-    /// All engines must emulate column families, but at present it is not clear
-    /// how non-FdbDB engines should deal with the wide variety of options for
+    /// All einstein_merkle_trees must emulate column families, but at present it is not clear
+    /// how non-FdbDB einstein_merkle_trees should deal with the wide variety of options for
     /// column families.
     ///
     /// At present this very closely mirrors the column family options
     /// for FdbDB, with the exception that it provides no capacity for
     /// installing table property collectors, which have little hope of being
-    /// emulated on arbitrary engines.
+    /// emulated on arbitrary einstein_merkle_trees.
     ///
     /// Instead, the FdbDB constructors need to always install the table
-    /// property collectors that EinsteinDB needs, and other engines need to
+    /// property collectors that EinsteinDB needs, and other einstein_merkle_trees need to
     /// accomplish the same high-l_naught ends those table properties are used for
     /// by their own means.
     ///
     /// At present, they should probably emulate, reinterpret, or ignore them as
     /// suitable to get einsteindb functioning.
     ///
-    /// In the future EinsteinDB will probably have engine-specific configuration
+    /// In the future EinsteinDB will probably have einstein_merkle_tree-specific configuration
     /// options.
     #[derive(Clone)]
     pub struct ColumnFamilyOptions {
@@ -242,10 +242,10 @@ pub mod ctor {
         l_naught_zero_file_num_jet_bundle_trigger: Option<i32>,
         l_naught_zero_slowdown_writes_trigger: Option<i32>,
         /// On FdbDB, turns off the range properties collector. Only used in
-        /// tests. Unclear how other engines should deal with this.
+        /// tests. Unclear how other einstein_merkle_trees should deal with this.
         no_range_properties: bool,
         /// On FdbDB, turns off the table properties collector. Only used in
-        /// tests. Unclear how other engines should deal with this.
+        /// tests. Unclear how other einstein_merkle_trees should deal with this.
         no_table_properties: bool,
     }
 
@@ -308,52 +308,52 @@ pub mod ctor {
     }
 
     mod panic {
-        use super::{NAMESPACEDOptions, DBOptions, EngineConstructorExt};
-        use engine_panic::PanicEngine;
+        use super::{NAMESPACEDOptions, DBOptions, einstein_merkle_treeConstructorExt};
+        use einstein_merkle_tree_panic::Paniceinstein_merkle_tree;
         use fdb_traits::Result;
 
-        impl EngineConstructorExt for engine_panic::PanicEngine {
-            fn new_engine(
+        impl einstein_merkle_treeConstructorExt for einstein_merkle_tree_panic::Paniceinstein_merkle_tree {
+            fn new_einstein_merkle_tree(
                 _path: &str,
                 _db_opt: Option<DBOptions>,
                 _namespaceds: &[&str],
                 _opts: Option<Vec<NAMESPACEDOptions<'_>>>,
             ) -> Result<Self> {
-                Ok(PanicEngine)
+                Ok(Paniceinstein_merkle_tree)
             }
 
-            fn new_engine_opt(
+            fn new_einstein_merkle_tree_opt(
                 _path: &str,
                 _db_opt: DBOptions,
                 _namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
             ) -> Result<Self> {
-                Ok(PanicEngine)
+                Ok(Paniceinstein_merkle_tree)
             }
         }
     }
 
     mod foundationdb {
         use super::{
-            NAMESPACEDOptions, ColumnFamilyOptions, CryptoOptions, DBOptions, EngineConstructorExt,
+            NAMESPACEDOptions, ColumnFamilyOptions, CryptoOptions, DBOptions, einstein_merkle_treeConstructorExt,
         };
 
         use fdb_traits::{ColumnFamilyOptions as ColumnFamilyOptionsTrait, Result};
 
-        use fdb_engine::properties::{
+        use fdb_einstein_merkle_tree::properties::{
             MvccPropertiesCollectorFactory, RangePropertiesCollectorFactory,
         };
-        use fdb_engine::raw::ColumnFamilyOptions as RawFdbColumnFamilyOptions;
-        use fdb_engine::raw::{DBOptions as RawFdbDBOptions, Env};
-        use fdb_engine::util::{
-            new_engine as rocks_new_engine, new_engine_opt as rocks_new_engine_opt, FdbNAMESPACEDOptions,
+        use fdb_einstein_merkle_tree::raw::ColumnFamilyOptions as RawFdbColumnFamilyOptions;
+        use fdb_einstein_merkle_tree::raw::{DBOptions as RawFdbDBOptions, Env};
+        use fdb_einstein_merkle_tree::util::{
+            new_einstein_merkle_tree as rocks_new_einstein_merkle_tree, new_einstein_merkle_tree_opt as rocks_new_einstein_merkle_tree_opt, FdbNAMESPACEDOptions,
         };
-        use fdb_engine::{FdbColumnFamilyOptions, FdbDBOptions};
+        use fdb_einstein_merkle_tree::{FdbColumnFamilyOptions, FdbDBOptions};
         use std::sync::Arc;
 
-        impl EngineConstructorExt for fdb_engine::FdbEngine {
+        impl einstein_merkle_treeConstructorExt for fdb_einstein_merkle_tree::Fdbeinstein_merkle_tree {
             // FIXME this is duplicating behavior from fdb_lsh-merkle_merkle_tree::raw_util in order to
             // call set_standard_namespaced_opts.
-            fn new_engine(
+            fn new_einstein_merkle_tree(
                 path: &str,
                 db_opt: Option<DBOptions>,
                 namespaceds: &[&str],
@@ -382,10 +382,10 @@ pub mod ctor {
                         FdbNAMESPACEDOptions::new(namespaced_opts.namespaced, rocks_namespaced_opts)
                     })
                     .collect();
-                rocks_new_engine(path, rocks_db_opts, &[], Some(rocks_namespaceds_opts))
+                rocks_new_einstein_merkle_tree(path, rocks_db_opts, &[], Some(rocks_namespaceds_opts))
             }
 
-            fn new_engine_opt(
+            fn new_einstein_merkle_tree_opt(
                 path: &str,
                 db_opt: DBOptions,
                 namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
@@ -400,7 +400,7 @@ pub mod ctor {
                         FdbNAMESPACEDOptions::new(namespaced_opts.namespaced, rocks_namespaced_opts)
                     })
                     .collect();
-                rocks_new_engine_opt(path, rocks_db_opts, rocks_namespaceds_opts)
+                rocks_new_einstein_merkle_tree_opt(path, rocks_db_opts, rocks_namespaceds_opts)
             }
         }
 
@@ -454,22 +454,22 @@ pub mod ctor {
     }
 }
 
-/// Create a new set of engines in a temporary directory
+/// Create a new set of einstein_merkle_trees in a temporary directory
 ///
 /// This is little-used and probably shouldn't exist.
-pub fn new_temp_engine(
+pub fn new_temp_einstein_merkle_tree(
     path: &tempfile::TempDir,
-) -> fdb_traits::Engines<crate::kv::KvTestEngine, crate::violetabft::VioletaBFTTestEngine> {
+) -> fdb_traits::einstein_merkle_trees<crate::kv::KvTesteinstein_merkle_tree, crate::violetabft::VioletaBFTTesteinstein_merkle_tree> {
     let violetabft_path = path.path().join(std::path::Path::new("violetabft"));
-    fdb_traits::Engines::new(
-        crate::kv::new_engine(
+    fdb_traits::einstein_merkle_trees::new(
+        crate::kv::new_einstein_merkle_tree(
             path.path().to_str().unwrap(),
             None,
             fdb_traits::ALL_NAMESPACEDS,
             None,
         )
         .unwrap(),
-        crate::violetabft::new_engine(
+        crate::violetabft::new_einstein_merkle_tree(
             violetabft_path.to_str().unwrap(),
             None,
             fdb_traits::NAMESPACED_DEFAULT,

@@ -120,7 +120,7 @@ pub mod tests {
     use super::*;
     use crate::einsteindb::storage::fdbhikv::SnapContext;
     use crate::einsteindb::storage::epaxos::tests::write;
-    use crate::einsteindb::storage::{Engine, SentinelSearchMode};
+    use crate::einsteindb::storage::{einstein_merkle_tree, SentinelSearchMode};
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
 
@@ -128,40 +128,40 @@ pub mod tests {
     use crate::einsteindb::storage::{
         epaxos::tests::{must_get, must_get_none},
         solitontxn::tests::*,
-        RocksEngine, TestEngineBuilder,
+        Rockseinstein_merkle_tree, Testeinstein_merkle_treeBuilder,
     };
     #[cfg(test)]
     use solitontxn_types::SHORT_VALUE_MAX_LEN;
 
-    pub fn must_succeed<E: Engine>(engine: &E, key: &[u8], safe_point: impl Into<TimeStamp>) {
+    pub fn must_succeed<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8], safe_point: impl Into<TimeStamp>) {
         let ctx = SnapContext::default();
-        let blackbrane = engine.blackbrane(ctx).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(ctx).unwrap();
         let cm = ConcurrencyManager::new(1.into());
         let mut solitontxn = EpaxosTxn::new(TimeStamp::zero(), cm);
         let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Forward), true);
         gc(&mut solitontxn, &mut reader, Key::from_cocauset(key), safe_point.into()).unwrap();
-        write(engine, &Context::default(), solitontxn.into_modifies());
+        write(einstein_merkle_tree, &Context::default(), solitontxn.into_modifies());
     }
 
     #[cfg(test)]
     fn test_gc_imp<F>(k: &[u8], v1: &[u8], v2: &[u8], v3: &[u8], v4: &[u8], gc: F)
     where
-        F: Fn(&RocksEngine, &[u8], u64),
+        F: Fn(&Rockseinstein_merkle_tree, &[u8], u64),
     {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
-        must_prewrite_put(&engine, k, v1, k, 5);
-        must_commit(&engine, k, 5, 10);
-        must_prewrite_put(&engine, k, v2, k, 15);
-        must_commit(&engine, k, 15, 20);
-        must_prewrite_delete(&engine, k, k, 25);
-        must_commit(&engine, k, 25, 30);
-        must_prewrite_put(&engine, k, v3, k, 35);
-        must_commit(&engine, k, 35, 40);
-        must_prewrite_dagger(&engine, k, k, 45);
-        must_commit(&engine, k, 45, 50);
-        must_prewrite_put(&engine, k, v4, k, 55);
-        must_rollback(&engine, k, 55, false);
+        must_prewrite_put(&einstein_merkle_tree, k, v1, k, 5);
+        must_commit(&einstein_merkle_tree, k, 5, 10);
+        must_prewrite_put(&einstein_merkle_tree, k, v2, k, 15);
+        must_commit(&einstein_merkle_tree, k, 15, 20);
+        must_prewrite_delete(&einstein_merkle_tree, k, k, 25);
+        must_commit(&einstein_merkle_tree, k, 25, 30);
+        must_prewrite_put(&einstein_merkle_tree, k, v3, k, 35);
+        must_commit(&einstein_merkle_tree, k, 35, 40);
+        must_prewrite_dagger(&einstein_merkle_tree, k, k, 45);
+        must_commit(&einstein_merkle_tree, k, 45, 50);
+        must_prewrite_put(&einstein_merkle_tree, k, v4, k, 55);
+        must_rollback(&einstein_merkle_tree, k, 55, false);
 
         // Transactions:
         // startTS commitTS Command
@@ -188,19 +188,19 @@ pub mod tests {
         // 10             Commit(PUT,5)
         // 5    x5
 
-        gc(&engine, k, 12);
-        must_get(&engine, k, 12, v1);
+        gc(&einstein_merkle_tree, k, 12);
+        must_get(&einstein_merkle_tree, k, 12, v1);
 
-        gc(&engine, k, 22);
-        must_get(&engine, k, 22, v2);
-        must_get_none(&engine, k, 12);
+        gc(&einstein_merkle_tree, k, 22);
+        must_get(&einstein_merkle_tree, k, 22, v2);
+        must_get_none(&einstein_merkle_tree, k, 12);
 
-        gc(&engine, k, 32);
-        must_get_none(&engine, k, 22);
-        must_get_none(&engine, k, 35);
+        gc(&einstein_merkle_tree, k, 32);
+        must_get_none(&einstein_merkle_tree, k, 22);
+        must_get_none(&einstein_merkle_tree, k, 35);
 
-        gc(&engine, k, 60);
-        must_get(&engine, k, 62, v3);
+        gc(&einstein_merkle_tree, k, 60);
+        must_get(&einstein_merkle_tree, k, 62, v3);
     }
 
     #[test]

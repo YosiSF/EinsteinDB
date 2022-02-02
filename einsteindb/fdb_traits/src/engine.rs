@@ -4,13 +4,13 @@ use std::fmt::Debug;
 
 use crate::*;
 
-// FIXME: Revisit the remaining types and methods on KvEngine. Some of these are
+// FIXME: Revisit the remaining types and methods on KV. Some of these are
 // here for lack of somewhere better to put them at the time of writing.
-// Consider moving everything into other traits and making KvEngine essentially
+// Consider moving everything into other traits and making KV essentially
 // a trait typedef.
 
 /// A EinsteinDB key-value timelike_store
-pub trait KvEngine:
+pub trait KV:
     Peekable
     + SyncMutable
     + Iterable
@@ -19,7 +19,7 @@ pub trait KvEngine:
     + NAMESPACEDNamesExt
     + NAMESPACEDOptionsExt
     + ImportExt
-    + SstExt
+    + CausetExt
     + CompactExt
     + RangePropertiesExt
     + MvccPropertiesExt
@@ -51,7 +51,7 @@ pub trait KvEngine:
     /// Reset internal statistics
     fn reset_statistics(&self) {}
 
-    /// Cast to a concrete engine type
+    /// Cast to a concrete einstein_merkle_tree type
     ///
     /// This only exists as a temporary hack during refactoring.
     /// It cannot be used forever.

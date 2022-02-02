@@ -665,7 +665,7 @@ pub mod tests {
         fdbhikv::Rocksblackbrane,
         solitontxn::{commands::prewrite::fallback_1pc_daggers, tests::*},
     };
-    use crate::einsteindb::storage::{epaxos::tests::*, Engine};
+    use crate::einsteindb::storage::{epaxos::tests::*, einstein_merkle_tree};
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     #[cfg(test)]
@@ -717,15 +717,15 @@ pub mod tests {
     }
 
     // Insert has a constraint that key should not exist
-    pub fn try_prewrite_insert<E: Engine>(
-        engine: &E,
+    pub fn try_prewrite_insert<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         value: &[u8],
         pk: &[u8],
         ts: impl Into<TimeStamp>,
     ) -> Result<()> {
         let ctx = Context::default();
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let ts = ts.into();
         let cm = ConcurrencyManager::new(ts);
         let mut solitontxn = EpaxosTxn::new(ts, cm);
@@ -748,17 +748,17 @@ pub mod tests {
             "{:?}",
             old_value
         );
-        write(engine, &ctx, solitontxn.into_modifies());
+        write(einstein_merkle_tree, &ctx, solitontxn.into_modifies());
         Ok(())
     }
 
-    pub fn try_prewrite_check_not_exists<E: Engine>(
-        engine: &E,
+    pub fn try_prewrite_check_not_exists<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         pk: &[u8],
         ts: impl Into<TimeStamp>,
     ) -> Result<()> {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let ts = ts.into();
         let cm = ConcurrencyManager::new(ts);
         let mut solitontxn = EpaxosTxn::new(ts, cm);
@@ -778,10 +778,10 @@ pub mod tests {
 
     #[test]
     fn test_async_commit_prewrite_check_max_commit_ts() {
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(42.into());
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut solitontxn = EpaxosTxn::new(10.into(), cm.clone());
         let mut reader = blackbraneReader::new(10.into(), blackbrane, true);
 
@@ -815,17 +815,17 @@ pub mod tests {
 
         let modifies = solitontxn.into_modifies();
         assert_eq!(modifies.len(), 2); // the mutation that meets CommitTsTooLarge still exists
-        write(&engine, &Default::default(), modifies);
-        assert!(must_daggered(&engine, b"k1", 10).use_async_commit);
+        write(&einstein_merkle_tree, &Default::default(), modifies);
+        assert!(must_daggered(&einstein_merkle_tree, b"k1", 10).use_async_commit);
         // The written dagger should not have use_async_commit flag.
-        assert!(!must_daggered(&engine, b"k2", 10).use_async_commit);
+        assert!(!must_daggered(&einstein_merkle_tree, b"k2", 10).use_async_commit);
     }
 
     #[test]
     fn test_async_commit_prewrite_min_commit_ts() {
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(41.into());
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         // should_not_write mutations don't write daggers or change data so that they needn't ask
         // the concurrency manager for max_ts. Its min_commit_ts may be less than or equal to max_ts.
@@ -953,10 +953,10 @@ pub mod tests {
 
     #[test]
     fn test_1pc_check_max_commit_ts() {
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(42.into());
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         let mut solitontxn = EpaxosTxn::new(10.into(), cm.clone());
         let mut reader = blackbraneReader::new(10.into(), blackbrane, false);
@@ -991,19 +991,19 @@ pub mod tests {
         fallback_1pc_daggers(&mut solitontxn);
         let modifies = solitontxn.into_modifies();
         assert_eq!(modifies.len(), 2); // the mutation that meets CommitTsTooLarge still exists
-        write(&engine, &Default::default(), modifies);
+        write(&einstein_merkle_tree, &Default::default(), modifies);
         // success 1pc prewrite needs to be transformed to daggers
-        assert!(!must_daggered(&engine, b"k1", 10).use_async_commit);
-        assert!(!must_daggered(&engine, b"k2", 10).use_async_commit);
+        assert!(!must_daggered(&einstein_merkle_tree, b"k1", 10).use_async_commit);
+        assert!(!must_daggered(&einstein_merkle_tree, b"k2", 10).use_async_commit);
     }
 
-    pub fn try_pessimistic_prewrite_check_not_exists<E: Engine>(
-        engine: &E,
+    pub fn try_pessimistic_prewrite_check_not_exists<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         pk: &[u8],
         ts: impl Into<TimeStamp>,
     ) -> Result<()> {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let ts = ts.into();
         let cm = ConcurrencyManager::new(ts);
         let mut solitontxn = EpaxosTxn::new(ts, cm);
@@ -1034,13 +1034,13 @@ pub mod tests {
 
     #[test]
     fn test_async_commit_pessimistic_prewrite_check_max_commit_ts() {
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(42.into());
 
-        must_acquire_pessimistic_dagger(&engine, b"k1", b"k1", 10, 10);
-        must_acquire_pessimistic_dagger(&engine, b"k2", b"k1", 10, 10);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"k1", b"k1", 10, 10);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"k2", b"k1", 10, 10);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         let mut solitontxn = EpaxosTxn::new(10.into(), cm.clone());
         let mut reader = blackbraneReader::new(10.into(), blackbrane, false);
@@ -1084,13 +1084,13 @@ pub mod tests {
 
     #[test]
     fn test_1pc_pessimistic_prewrite_check_max_commit_ts() {
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(42.into());
 
-        must_acquire_pessimistic_dagger(&engine, b"k1", b"k1", 10, 10);
-        must_acquire_pessimistic_dagger(&engine, b"k2", b"k1", 10, 10);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"k1", b"k1", 10, 10);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"k2", b"k1", 10, 10);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         let mut solitontxn = EpaxosTxn::new(10.into(), cm.clone());
         let mut reader = blackbraneReader::new(10.into(), blackbrane, false);
@@ -1134,72 +1134,72 @@ pub mod tests {
 
     #[test]
     fn test_prewrite_check_gc_fence() {
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(1.into());
 
         // PUT,           Read
         //  `------^
-        must_prewrite_put(&engine, b"k1", b"v1", b"k1", 10);
-        must_commit(&engine, b"k1", 10, 30);
-        must_cleanup_with_gc_fence(&engine, b"k1", 30, 0, 40, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k1", b"v1", b"k1", 10);
+        must_commit(&einstein_merkle_tree, b"k1", 10, 30);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k1", 30, 0, 40, true);
 
         // PUT,           Read
         //  * (GC fence ts = 0)
-        must_prewrite_put(&engine, b"k2", b"v2", b"k2", 11);
-        must_commit(&engine, b"k2", 11, 30);
-        must_cleanup_with_gc_fence(&engine, b"k2", 30, 0, 0, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k2", b"v2", b"k2", 11);
+        must_commit(&einstein_merkle_tree, b"k2", 11, 30);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k2", 30, 0, 0, true);
 
         // PUT, LOCK,   LOCK, Read
         //  `---------^
-        must_prewrite_put(&engine, b"k3", b"v3", b"k3", 12);
-        must_commit(&engine, b"k3", 12, 30);
-        must_prewrite_dagger(&engine, b"k3", b"k3", 37);
-        must_commit(&engine, b"k3", 37, 38);
-        must_cleanup_with_gc_fence(&engine, b"k3", 30, 0, 40, true);
-        must_prewrite_dagger(&engine, b"k3", b"k3", 42);
-        must_commit(&engine, b"k3", 42, 43);
+        must_prewrite_put(&einstein_merkle_tree, b"k3", b"v3", b"k3", 12);
+        must_commit(&einstein_merkle_tree, b"k3", 12, 30);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k3", b"k3", 37);
+        must_commit(&einstein_merkle_tree, b"k3", 37, 38);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k3", 30, 0, 40, true);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k3", b"k3", 42);
+        must_commit(&einstein_merkle_tree, b"k3", 42, 43);
 
         // PUT, LOCK,   LOCK, Read
         //  *
-        must_prewrite_put(&engine, b"k4", b"v4", b"k4", 13);
-        must_commit(&engine, b"k4", 13, 30);
-        must_prewrite_dagger(&engine, b"k4", b"k4", 37);
-        must_commit(&engine, b"k4", 37, 38);
-        must_prewrite_dagger(&engine, b"k4", b"k4", 42);
-        must_commit(&engine, b"k4", 42, 43);
-        must_cleanup_with_gc_fence(&engine, b"k4", 30, 0, 0, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k4", b"v4", b"k4", 13);
+        must_commit(&einstein_merkle_tree, b"k4", 13, 30);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k4", b"k4", 37);
+        must_commit(&einstein_merkle_tree, b"k4", 37, 38);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k4", b"k4", 42);
+        must_commit(&einstein_merkle_tree, b"k4", 42, 43);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k4", 30, 0, 0, true);
 
         // PUT,   PUT,    READ
         //  `-----^ `------^
-        must_prewrite_put(&engine, b"k5", b"v5", b"k5", 14);
-        must_commit(&engine, b"k5", 14, 20);
-        must_prewrite_put(&engine, b"k5", b"v5x", b"k5", 21);
-        must_commit(&engine, b"k5", 21, 30);
-        must_cleanup_with_gc_fence(&engine, b"k5", 20, 0, 30, false);
-        must_cleanup_with_gc_fence(&engine, b"k5", 30, 0, 40, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k5", b"v5", b"k5", 14);
+        must_commit(&einstein_merkle_tree, b"k5", 14, 20);
+        must_prewrite_put(&einstein_merkle_tree, b"k5", b"v5x", b"k5", 21);
+        must_commit(&einstein_merkle_tree, b"k5", 21, 30);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k5", 20, 0, 30, false);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k5", 30, 0, 40, true);
 
         // PUT,   PUT,    READ
         //  `-----^ *
-        must_prewrite_put(&engine, b"k6", b"v6", b"k6", 15);
-        must_commit(&engine, b"k6", 15, 20);
-        must_prewrite_put(&engine, b"k6", b"v6x", b"k6", 22);
-        must_commit(&engine, b"k6", 22, 30);
-        must_cleanup_with_gc_fence(&engine, b"k6", 20, 0, 30, false);
-        must_cleanup_with_gc_fence(&engine, b"k6", 30, 0, 0, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k6", b"v6", b"k6", 15);
+        must_commit(&einstein_merkle_tree, b"k6", 15, 20);
+        must_prewrite_put(&einstein_merkle_tree, b"k6", b"v6x", b"k6", 22);
+        must_commit(&einstein_merkle_tree, b"k6", 22, 30);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k6", 20, 0, 30, false);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k6", 30, 0, 0, true);
 
         // PUT,  LOCK,    READ
         //  `----------^
         // Note that this case is special because usually the `LOCK` is the first write already got
         // during prewrite/acquire_pessimistic_dagger and will continue searching an older version
         // from the `LOCK` record.
-        must_prewrite_put(&engine, b"k7", b"v7", b"k7", 16);
-        must_commit(&engine, b"k7", 16, 30);
-        must_prewrite_dagger(&engine, b"k7", b"k7", 37);
-        must_commit(&engine, b"k7", 37, 38);
-        must_cleanup_with_gc_fence(&engine, b"k7", 30, 0, 40, true);
+        must_prewrite_put(&einstein_merkle_tree, b"k7", b"v7", b"k7", 16);
+        must_commit(&einstein_merkle_tree, b"k7", 16, 30);
+        must_prewrite_dagger(&einstein_merkle_tree, b"k7", b"k7", 37);
+        must_commit(&einstein_merkle_tree, b"k7", 37, 38);
+        must_cleanup_with_gc_fence(&einstein_merkle_tree, b"k7", 30, 0, 40, true);
 
         // 1. Check GC fence when doing constraint check with the older version.
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         let mut solitontxn = EpaxosTxn::new(50.into(), cm.clone());
         let mut reader = blackbraneReader::new(50.into(), blackbrane.clone(), false);
@@ -1312,11 +1312,11 @@ pub mod tests {
 
     #[test]
     fn test_resend_prewrite_non_pessimistic_dagger() {
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
-        must_acquire_pessimistic_dagger(&engine, b"k1", b"k1", 10, 10);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"k1", b"k1", 10, 10);
         must_pessimistic_prewrite_put_async_commit(
-            &engine,
+            &einstein_merkle_tree,
             b"k1",
             b"v1",
             b"k1",
@@ -1327,7 +1327,7 @@ pub mod tests {
             15,
         );
         must_pessimistic_prewrite_put_async_commit(
-            &engine,
+            &einstein_merkle_tree,
             b"k2",
             b"v2",
             b"k1",
@@ -1339,14 +1339,14 @@ pub mod tests {
         );
 
         // The transaction may be committed by another reader.
-        must_commit(&engine, b"k1", 10, 20);
-        must_commit(&engine, b"k2", 10, 20);
+        must_commit(&einstein_merkle_tree, b"k1", 10, 20);
+        must_commit(&einstein_merkle_tree, b"k2", 10, 20);
 
         // This is a re-sent prewrite. It should report a WriteConflict. In production, the caller
         // will need to check if the current transaction is already committed before, in order to
         // provide the idempotency.
         let err = must_retry_pessimistic_prewrite_put_err(
-            &engine,
+            &einstein_merkle_tree,
             b"k2",
             b"v2",
             b"k1",
@@ -1358,23 +1358,23 @@ pub mod tests {
         );
         assert!(matches!(err, Error(box ErrorInner::WriteConflict { .. })));
         // Commit repeatedly, these operations should have no effect.
-        must_commit(&engine, b"k1", 10, 25);
-        must_commit(&engine, b"k2", 10, 25);
+        must_commit(&einstein_merkle_tree, b"k1", 10, 25);
+        must_commit(&einstein_merkle_tree, b"k2", 10, 25);
 
         // Seek from 30, we should read commit_ts = 20 instead of 25.
-        must_seek_write(&engine, b"k1", 30, 10, 20, WriteType::Put);
-        must_seek_write(&engine, b"k2", 30, 10, 20, WriteType::Put);
+        must_seek_write(&einstein_merkle_tree, b"k1", 30, 10, 20, WriteType::Put);
+        must_seek_write(&einstein_merkle_tree, b"k2", 30, 10, 20, WriteType::Put);
 
         // Write another version to the keys.
-        must_prewrite_put(&engine, b"k1", b"v11", b"k1", 35);
-        must_prewrite_put(&engine, b"k2", b"v22", b"k1", 35);
-        must_commit(&engine, b"k1", 35, 40);
-        must_commit(&engine, b"k2", 35, 40);
+        must_prewrite_put(&einstein_merkle_tree, b"k1", b"v11", b"k1", 35);
+        must_prewrite_put(&einstein_merkle_tree, b"k2", b"v22", b"k1", 35);
+        must_commit(&einstein_merkle_tree, b"k1", 35, 40);
+        must_commit(&einstein_merkle_tree, b"k2", 35, 40);
 
         // A retrying non-pessimistic-dagger prewrite request should not skip constraint checks.
         // It reports a WriteConflict.
         let err = must_retry_pessimistic_prewrite_put_err(
-            &engine,
+            &einstein_merkle_tree,
             b"k2",
             b"v2",
             b"k1",
@@ -1385,24 +1385,24 @@ pub mod tests {
             0,
         );
         assert!(matches!(err, Error(box ErrorInner::WriteConflict { .. })));
-        must_undaggered(&engine, b"k2");
+        must_undaggered(&einstein_merkle_tree, b"k2");
 
         let err = must_retry_pessimistic_prewrite_put_err(
-            &engine, b"k2", b"v2", b"k1", &None, 10, 10, false, 0,
+            &einstein_merkle_tree, b"k2", b"v2", b"k1", &None, 10, 10, false, 0,
         );
         assert!(matches!(err, Error(box ErrorInner::WriteConflict { .. })));
-        must_undaggered(&engine, b"k2");
+        must_undaggered(&einstein_merkle_tree, b"k2");
         // Committing still does nothing.
-        must_commit(&engine, b"k2", 10, 25);
+        must_commit(&einstein_merkle_tree, b"k2", 10, 25);
         // Try a different solitontxn start ts (which haven't been successfully committed before).
         let err = must_retry_pessimistic_prewrite_put_err(
-            &engine, b"k2", b"v2", b"k1", &None, 11, 11, false, 0,
+            &einstein_merkle_tree, b"k2", b"v2", b"k1", &None, 11, 11, false, 0,
         );
         assert!(matches!(err, Error(box ErrorInner::WriteConflict { .. })));
-        must_undaggered(&engine, b"k2");
+        must_undaggered(&einstein_merkle_tree, b"k2");
         // However conflict still won't be checked if there's a non-retry request arriving.
         must_prewrite_put_impl(
-            &engine,
+            &einstein_merkle_tree,
             b"k2",
             b"v2",
             b"k1",
@@ -1418,28 +1418,28 @@ pub mod tests {
             fdbhikvproto::fdbhikvrpcpb::Assertion::None,
             fdbhikvproto::fdbhikvrpcpb::AssertionLevel::Off,
         );
-        must_daggered(&engine, b"k2", 10);
+        must_daggered(&einstein_merkle_tree, b"k2", 10);
     }
 
     #[test]
     fn test_old_value_rollback_and_dagger() {
-        let engine_rollback = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree_rollback = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
-        must_prewrite_put(&engine_rollback, b"k1", b"v1", b"k1", 10);
-        must_commit(&engine_rollback, b"k1", 10, 30);
+        must_prewrite_put(&einstein_merkle_tree_rollback, b"k1", b"v1", b"k1", 10);
+        must_commit(&einstein_merkle_tree_rollback, b"k1", 10, 30);
 
-        must_prewrite_put(&engine_rollback, b"k1", b"v2", b"k1", 40);
-        must_rollback(&engine_rollback, b"k1", 40, false);
+        must_prewrite_put(&einstein_merkle_tree_rollback, b"k1", b"v2", b"k1", 40);
+        must_rollback(&einstein_merkle_tree_rollback, b"k1", 40, false);
 
-        let engine_dagger = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree_dagger = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
-        must_prewrite_put(&engine_dagger, b"k1", b"v1", b"k1", 10);
-        must_commit(&engine_dagger, b"k1", 10, 30);
+        must_prewrite_put(&einstein_merkle_tree_dagger, b"k1", b"v1", b"k1", 10);
+        must_commit(&einstein_merkle_tree_dagger, b"k1", 10, 30);
 
-        must_prewrite_dagger(&engine_dagger, b"k1", b"k1", 40);
-        must_commit(&engine_dagger, b"k1", 40, 45);
+        must_prewrite_dagger(&einstein_merkle_tree_dagger, b"k1", b"k1", 40);
+        must_commit(&einstein_merkle_tree_dagger, b"k1", 40, 45);
 
-        for engine in &[engine_rollback, engine_dagger] {
+        for einstein_merkle_tree in &[einstein_merkle_tree_rollback, einstein_merkle_tree_dagger] {
             let start_ts = TimeStamp::from(50);
             let solitontxn_props = TransactionProperties {
                 start_ts,
@@ -1453,7 +1453,7 @@ pub mod tests {
                 is_retry_request: false,
                 assertion_level: AssertionLevel::Off,
             };
-            let blackbrane = engine.blackbrane(Default::default()).unwrap();
+            let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             let cm = ConcurrencyManager::new(start_ts);
             let mut solitontxn = EpaxosTxn::new(start_ts, cm);
             let mut reader = blackbraneReader::new(start_ts, blackbrane, true);
@@ -1478,23 +1478,23 @@ pub mod tests {
     // Prepares a test case that put, delete and dagger a key and returns
     // a timestamp for testing the case.
     #[cfg(test)]
-    pub fn old_value_put_delete_dagger_insert<E: Engine>(engine: &E, key: &[u8]) -> TimeStamp {
-        must_prewrite_put(engine, key, b"v1", key, 10);
-        must_commit(engine, key, 10, 20);
+    pub fn old_value_put_delete_dagger_insert<E: einstein_merkle_tree>(einstein_merkle_tree: &E, key: &[u8]) -> TimeStamp {
+        must_prewrite_put(einstein_merkle_tree, key, b"v1", key, 10);
+        must_commit(einstein_merkle_tree, key, 10, 20);
 
-        must_prewrite_delete(engine, key, key, 30);
-        must_commit(engine, key, 30, 40);
+        must_prewrite_delete(einstein_merkle_tree, key, key, 30);
+        must_commit(einstein_merkle_tree, key, 30, 40);
 
-        must_prewrite_dagger(engine, key, key, 50);
-        must_commit(engine, key, 50, 60);
+        must_prewrite_dagger(einstein_merkle_tree, key, key, 50);
+        must_commit(einstein_merkle_tree, key, 50, 60);
 
         70.into()
     }
 
     #[test]
     fn test_old_value_put_delete_dagger_insert() {
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
-        let start_ts = old_value_put_delete_dagger_insert(&engine, b"k1");
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        let start_ts = old_value_put_delete_dagger_insert(&einstein_merkle_tree, b"k1");
         let solitontxn_props = TransactionProperties {
             start_ts,
             kind: TransactionKind::Optimistic(false),
@@ -1507,7 +1507,7 @@ pub mod tests {
             is_retry_request: false,
             assertion_level: AssertionLevel::Off,
         };
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let cm = ConcurrencyManager::new(start_ts);
         let mut solitontxn = EpaxosTxn::new(start_ts, cm);
         let mut reader = blackbraneReader::new(start_ts, blackbrane, true);
@@ -1547,7 +1547,7 @@ pub mod tests {
         let mut rg = rand::rngs::StdRng::seed_from_u64(seed);
 
         // Generate 1000 random cases;
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cases = 1000;
         for _ in 0..cases {
             // At most 12 ops per-case.
@@ -1571,26 +1571,26 @@ pub mod tests {
 
                 match op {
                     0 => {
-                        must_prewrite_put(&engine, key, &[i as u8], key, start_ts);
-                        must_commit(&engine, key, start_ts, commit_ts);
+                        must_prewrite_put(&einstein_merkle_tree, key, &[i as u8], key, start_ts);
+                        must_commit(&einstein_merkle_tree, key, start_ts, commit_ts);
                     }
                     1 => {
-                        must_prewrite_delete(&engine, key, key, start_ts);
-                        must_commit(&engine, key, start_ts, commit_ts);
+                        must_prewrite_delete(&einstein_merkle_tree, key, key, start_ts);
+                        must_commit(&einstein_merkle_tree, key, start_ts, commit_ts);
                     }
                     2 => {
-                        must_prewrite_dagger(&engine, key, key, start_ts);
-                        must_commit(&engine, key, start_ts, commit_ts);
+                        must_prewrite_dagger(&einstein_merkle_tree, key, key, start_ts);
+                        must_commit(&einstein_merkle_tree, key, start_ts, commit_ts);
                     }
                     3 => {
-                        must_prewrite_put(&engine, key, &[i as u8], key, start_ts);
-                        must_rollback(&engine, key, start_ts, false);
+                        must_prewrite_put(&einstein_merkle_tree, key, &[i as u8], key, start_ts);
+                        must_rollback(&einstein_merkle_tree, key, start_ts, false);
                     }
                     _ => unreachable!(),
                 }
             }
             let start_ts = TimeStamp::from(tso());
-            let blackbrane = engine.blackbrane(Default::default()).unwrap();
+            let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             let expect = {
                 let mut reader = blackbraneReader::new(start_ts, blackbrane.clone(), true);
                 if let Some(write) = reader
@@ -1699,7 +1699,7 @@ pub mod tests {
 
     #[test]
     fn test_prewrite_with_assertion() {
-        let engine = crate::storage::TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         let prewrite_put = |key: &'_ _,
                             value,
@@ -1711,7 +1711,7 @@ pub mod tests {
                             expect_success| {
             if expect_success {
                 must_prewrite_put_impl(
-                    &engine,
+                    &einstein_merkle_tree,
                     key,
                     value,
                     key,
@@ -1729,7 +1729,7 @@ pub mod tests {
                 );
             } else {
                 let err = must_prewrite_put_err_impl(
-                    &engine,
+                    &einstein_merkle_tree,
                     key,
                     value,
                     key,
@@ -1767,7 +1767,7 @@ pub mod tests {
                 assertion_level,
                 true,
             );
-            must_commit(&engine, &k1, 10, 15);
+            must_commit(&einstein_merkle_tree, &k1, 10, 15);
 
             prewrite_put(
                 &k1,
@@ -1779,7 +1779,7 @@ pub mod tests {
                 assertion_level,
                 true,
             );
-            must_commit(&engine, &k1, 20, 25);
+            must_commit(&einstein_merkle_tree, &k1, 20, 25);
 
             // Assertion passes (pessimistic).
             prewrite_put(
@@ -1792,7 +1792,7 @@ pub mod tests {
                 assertion_level,
                 true,
             );
-            must_commit(&engine, &k2, 10, 15);
+            must_commit(&einstein_merkle_tree, &k2, 10, 15);
 
             prewrite_put(
                 &k2,
@@ -1804,7 +1804,7 @@ pub mod tests {
                 assertion_level,
                 true,
             );
-            must_commit(&engine, &k2, 20, 25);
+            must_commit(&einstein_merkle_tree, &k2, 20, 25);
 
             // Optimistic transaction assertion fail on fast/strict level.
             let pass = assertion_level == AssertionLevel::Off;
@@ -1828,8 +1828,8 @@ pub mod tests {
                 assertion_level,
                 pass,
             );
-            must_rollback(&engine, &k1, 30, true);
-            must_rollback(&engine, &k3, 30, true);
+            must_rollback(&einstein_merkle_tree, &k1, 30, true);
+            must_rollback(&einstein_merkle_tree, &k3, 30, true);
 
             // Pessimistic transaction assertion fail on fast/strict level if assertion happens
             // during amending pessimistic dagger.
@@ -1854,8 +1854,8 @@ pub mod tests {
                 assertion_level,
                 pass,
             );
-            must_rollback(&engine, &k2, 30, true);
-            must_rollback(&engine, &k4, 30, true);
+            must_rollback(&einstein_merkle_tree, &k2, 30, true);
+            must_rollback(&einstein_merkle_tree, &k4, 30, true);
 
             // Pessimistic transaction fail on strict level no matter whether `is_pessimistic_dagger`.
             let pass = assertion_level != AssertionLevel::Strict;
@@ -1879,11 +1879,11 @@ pub mod tests {
                 assertion_level,
                 pass,
             );
-            must_rollback(&engine, &k1, 40, true);
-            must_rollback(&engine, &k3, 40, true);
+            must_rollback(&einstein_merkle_tree, &k1, 40, true);
+            must_rollback(&einstein_merkle_tree, &k3, 40, true);
 
-            must_acquire_pessimistic_dagger(&engine, &k2, &k2, 40, 41);
-            must_acquire_pessimistic_dagger(&engine, &k4, &k4, 40, 41);
+            must_acquire_pessimistic_dagger(&einstein_merkle_tree, &k2, &k2, 40, 41);
+            must_acquire_pessimistic_dagger(&einstein_merkle_tree, &k4, &k4, 40, 41);
             prewrite_put(
                 &k2,
                 b"v2",
@@ -1904,28 +1904,28 @@ pub mod tests {
                 assertion_level,
                 pass,
             );
-            must_rollback(&engine, &k1, 40, true);
-            must_rollback(&engine, &k3, 40, true);
+            must_rollback(&einstein_merkle_tree, &k1, 40, true);
+            must_rollback(&einstein_merkle_tree, &k3, 40, true);
         };
 
-        let prepare_rollback = |k: &'_ _| must_rollback(&engine, k, 3, true);
+        let prepare_rollback = |k: &'_ _| must_rollback(&einstein_merkle_tree, k, 3, true);
         let prepare_dagger_record = |k: &'_ _| {
-            must_prewrite_dagger(&engine, k, k, 3);
-            must_commit(&engine, k, 3, 5);
+            must_prewrite_dagger(&einstein_merkle_tree, k, k, 3);
+            must_commit(&einstein_merkle_tree, k, 3, 5);
         };
         let prepare_delete = |k: &'_ _| {
-            must_prewrite_put(&engine, k, b"deleted-value", k, 3);
-            must_commit(&engine, k, 3, 5);
-            must_prewrite_delete(&engine, k, k, 7);
-            must_commit(&engine, k, 7, 9);
+            must_prewrite_put(&einstein_merkle_tree, k, b"deleted-value", k, 3);
+            must_commit(&einstein_merkle_tree, k, 3, 5);
+            must_prewrite_delete(&einstein_merkle_tree, k, k, 7);
+            must_commit(&einstein_merkle_tree, k, 7, 9);
         };
         let prepare_gc_fence = |k: &'_ _| {
-            must_prewrite_put(&engine, k, b"deleted-value", k, 3);
-            must_commit(&engine, k, 3, 5);
-            must_cleanup_with_gc_fence(&engine, k, 5, 0, 7, true);
+            must_prewrite_put(&einstein_merkle_tree, k, b"deleted-value", k, 3);
+            must_commit(&einstein_merkle_tree, k, 3, 5);
+            must_cleanup_with_gc_fence(&einstein_merkle_tree, k, 5, 0, 7, true);
         };
 
-        // Test multiple cases without recreating the engine. So use a increasing key prefix to
+        // Test multiple cases without recreating the einstein_merkle_tree. So use a increasing key prefix to
         // avoid each case interfering each other.
         let mut key_prefix = b'a';
 

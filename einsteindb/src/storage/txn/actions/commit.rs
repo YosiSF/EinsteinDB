@@ -105,7 +105,7 @@ pub mod tests {
     use super::*;
     use crate::einsteindb::storage::epaxos::tests::*;
     use crate::einsteindb::storage::epaxos::EpaxosTxn;
-    use crate::einsteindb::storage::Engine;
+    use crate::einsteindb::storage::einstein_merkle_tree;
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use solitontxn_types::TimeStamp;
@@ -118,32 +118,32 @@ pub mod tests {
 
     #[cfg(test)]
     use crate::einsteindb::storage::{
-        epaxos::SHORT_VALUE_MAX_LEN, solitontxn::commands::check_solitontxn_status, TestEngineBuilder, TxnStatus,
+        epaxos::SHORT_VALUE_MAX_LEN, solitontxn::commands::check_solitontxn_status, Testeinstein_merkle_treeBuilder, TxnStatus,
     };
 
-    pub fn must_succeed<E: Engine>(
-        engine: &E,
+    pub fn must_succeed<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
         commit_ts: impl Into<TimeStamp>,
     ) {
         let ctx = Context::default();
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let start_ts = start_ts.into();
         let cm = ConcurrencyManager::new(start_ts);
         let mut solitontxn = EpaxosTxn::new(start_ts, cm);
         let mut reader = blackbraneReader::new(start_ts, blackbrane, true);
         commit(&mut solitontxn, &mut reader, Key::from_cocauset(key), commit_ts.into()).unwrap();
-        write(engine, &ctx, solitontxn.into_modifies());
+        write(einstein_merkle_tree, &ctx, solitontxn.into_modifies());
     }
 
-    pub fn must_err<E: Engine>(
-        engine: &E,
+    pub fn must_err<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
         commit_ts: impl Into<TimeStamp>,
     ) {
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let start_ts = start_ts.into();
         let cm = ConcurrencyManager::new(start_ts);
         let mut solitontxn = EpaxosTxn::new(start_ts, cm);
@@ -153,23 +153,23 @@ pub mod tests {
 
     #[cfg(test)]
     fn test_commit_ok_imp(k1: &[u8], v1: &[u8], k2: &[u8], k3: &[u8]) {
-        let engine = TestEngineBuilder::new().build().unwrap();
-        must_prewrite_put(&engine, k1, v1, k1, 10);
-        must_prewrite_dagger(&engine, k2, k1, 10);
-        must_prewrite_delete(&engine, k3, k1, 10);
-        must_daggered(&engine, k1, 10);
-        must_daggered(&engine, k2, 10);
-        must_daggered(&engine, k3, 10);
-        must_succeed(&engine, k1, 10, 15);
-        must_succeed(&engine, k2, 10, 15);
-        must_succeed(&engine, k3, 10, 15);
-        must_written(&engine, k1, 10, 15, WriteType::Put);
-        must_written(&engine, k2, 10, 15, WriteType::Dagger);
-        must_written(&engine, k3, 10, 15, WriteType::Delete);
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        must_prewrite_put(&einstein_merkle_tree, k1, v1, k1, 10);
+        must_prewrite_dagger(&einstein_merkle_tree, k2, k1, 10);
+        must_prewrite_delete(&einstein_merkle_tree, k3, k1, 10);
+        must_daggered(&einstein_merkle_tree, k1, 10);
+        must_daggered(&einstein_merkle_tree, k2, 10);
+        must_daggered(&einstein_merkle_tree, k3, 10);
+        must_succeed(&einstein_merkle_tree, k1, 10, 15);
+        must_succeed(&einstein_merkle_tree, k2, 10, 15);
+        must_succeed(&einstein_merkle_tree, k3, 10, 15);
+        must_written(&einstein_merkle_tree, k1, 10, 15, WriteType::Put);
+        must_written(&einstein_merkle_tree, k2, 10, 15, WriteType::Dagger);
+        must_written(&einstein_merkle_tree, k3, 10, 15, WriteType::Delete);
         // commit should be idempotent
-        must_succeed(&engine, k1, 10, 15);
-        must_succeed(&engine, k2, 10, 15);
-        must_succeed(&engine, k3, 10, 15);
+        must_succeed(&einstein_merkle_tree, k1, 10, 15);
+        must_succeed(&einstein_merkle_tree, k2, 10, 15);
+        must_succeed(&einstein_merkle_tree, k3, 10, 15);
     }
 
     #[test]
@@ -182,16 +182,16 @@ pub mod tests {
 
     #[cfg(test)]
     fn test_commit_err_imp(k: &[u8], v: &[u8]) {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         // Not prewrite yet
-        must_err(&engine, k, 1, 2);
-        must_prewrite_put(&engine, k, v, k, 5);
+        must_err(&einstein_merkle_tree, k, 1, 2);
+        must_prewrite_put(&einstein_merkle_tree, k, v, k, 5);
         // start_ts not match
-        must_err(&engine, k, 4, 5);
-        must_rollback(&engine, k, 5, false);
+        must_err(&einstein_merkle_tree, k, 4, 5);
+        must_rollback(&einstein_merkle_tree, k, 5, false);
         // commit after rollback
-        must_err(&engine, k, 5, 6);
+        must_err(&einstein_merkle_tree, k, 5, 6);
     }
 
     #[test]
@@ -204,7 +204,7 @@ pub mod tests {
 
     #[test]
     fn test_min_commit_ts() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         let (k, v) = (b"k", b"v");
 
@@ -220,9 +220,9 @@ pub mod tests {
             }
         };
 
-        must_prewrite_put_for_large_solitontxn(&engine, k, v, k, ts(10, 0), 100, 0);
+        must_prewrite_put_for_large_solitontxn(&einstein_merkle_tree, k, v, k, ts(10, 0), 100, 0);
         check_solitontxn_status::tests::must_success(
-            &engine,
+            &einstein_merkle_tree,
             k,
             ts(10, 0),
             ts(20, 0),
@@ -233,13 +233,13 @@ pub mod tests {
             uncommitted(100, ts(20, 1)),
         );
         // The min_commit_ts should be ts(20, 1)
-        must_err(&engine, k, ts(10, 0), ts(15, 0));
-        must_err(&engine, k, ts(10, 0), ts(20, 0));
-        must_succeed(&engine, k, ts(10, 0), ts(20, 1));
+        must_err(&einstein_merkle_tree, k, ts(10, 0), ts(15, 0));
+        must_err(&einstein_merkle_tree, k, ts(10, 0), ts(20, 0));
+        must_succeed(&einstein_merkle_tree, k, ts(10, 0), ts(20, 1));
 
-        must_prewrite_put_for_large_solitontxn(&engine, k, v, k, ts(30, 0), 100, 0);
+        must_prewrite_put_for_large_solitontxn(&einstein_merkle_tree, k, v, k, ts(30, 0), 100, 0);
         check_solitontxn_status::tests::must_success(
-            &engine,
+            &einstein_merkle_tree,
             k,
             ts(30, 0),
             ts(40, 0),
@@ -249,12 +249,12 @@ pub mod tests {
             false,
             uncommitted(100, ts(40, 1)),
         );
-        must_succeed(&engine, k, ts(30, 0), ts(50, 0));
+        must_succeed(&einstein_merkle_tree, k, ts(30, 0), ts(50, 0));
 
         // If the min_commit_ts of the pessimistic dagger is greater than prewrite's, use it.
-        must_acquire_pessimistic_dagger_for_large_solitontxn(&engine, k, k, ts(60, 0), ts(60, 0), 100);
+        must_acquire_pessimistic_dagger_for_large_solitontxn(&einstein_merkle_tree, k, k, ts(60, 0), ts(60, 0), 100);
         check_solitontxn_status::tests::must_success(
-            &engine,
+            &einstein_merkle_tree,
             k,
             ts(60, 0),
             ts(70, 0),
@@ -265,7 +265,7 @@ pub mod tests {
             uncommitted(100, ts(70, 1)),
         );
         must_prewrite_put_impl(
-            &engine,
+            &einstein_merkle_tree,
             k,
             v,
             k,
@@ -282,8 +282,8 @@ pub mod tests {
             fdbhikvproto::fdbhikvrpcpb::AssertionLevel::Off,
         );
         // The min_commit_ts is ts(70, 0) other than ts(60, 1) in prewrite request.
-        must_large_solitontxn_daggered(&engine, k, ts(60, 0), 100, ts(70, 1), false);
-        must_err(&engine, k, ts(60, 0), ts(65, 0));
-        must_succeed(&engine, k, ts(60, 0), ts(80, 0));
+        must_large_solitontxn_daggered(&einstein_merkle_tree, k, ts(60, 0), 100, ts(70, 1), false);
+        must_err(&einstein_merkle_tree, k, ts(60, 0), ts(65, 0));
+        must_succeed(&einstein_merkle_tree, k, ts(60, 0), ts(80, 0));
     }
 }

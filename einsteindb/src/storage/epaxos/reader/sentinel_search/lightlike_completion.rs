@@ -848,7 +848,7 @@ pub mod test_util {
         must_cleanup_with_gc_fence, must_commit, must_prewrite_delete, must_prewrite_dagger,
         must_prewrite_put,
     };
-    use crate::einsteindb::storage::Engine;
+    use crate::einsteindb::storage::einstein_merkle_tree;
 
     pub struct EntryBuilder {
         pub key: Vec<u8>,
@@ -977,85 +977,85 @@ pub mod test_util {
 
     #[allow(clippy::type_complexity)]
     pub fn prepare_test_data_for_check_gc_fence(
-        engine: &impl Engine,
+        einstein_merkle_tree: &impl einstein_merkle_tree,
     ) -> (TimeStamp, Vec<(Vec<u8>, Option<Vec<u8>>)>) {
         // Generates test data that is consistent after timestamp 40.
 
         // PUT,   Read,  PUT
         //  `-------------^
-        must_prewrite_put(engine, b"k1", b"v1", b"k1", 10);
-        must_commit(engine, b"k1", 10, 20);
+        must_prewrite_put(einstein_merkle_tree, b"k1", b"v1", b"k1", 10);
+        must_commit(einstein_merkle_tree, b"k1", 10, 20);
         // Put a record to be pointed by GC fence 50.
-        must_prewrite_put(engine, b"k1", b"v1x", b"k1", 49);
-        must_commit(engine, b"k1", 49, 50);
-        must_cleanup_with_gc_fence(engine, b"k1", 20, 0, 50, false);
+        must_prewrite_put(einstein_merkle_tree, b"k1", b"v1x", b"k1", 49);
+        must_commit(einstein_merkle_tree, b"k1", 49, 50);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k1", 20, 0, 50, false);
 
         // PUT,      Read
         //  `---------^
-        must_prewrite_put(engine, b"k2", b"v2", b"k2", 11);
-        must_commit(engine, b"k2", 11, 20);
-        must_cleanup_with_gc_fence(engine, b"k2", 20, 0, 40, true);
+        must_prewrite_put(einstein_merkle_tree, b"k2", b"v2", b"k2", 11);
+        must_commit(einstein_merkle_tree, b"k2", 11, 20);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k2", 20, 0, 40, true);
 
         // PUT,      Read
         //  `-----^
-        must_prewrite_put(engine, b"k3", b"v3", b"k3", 12);
-        must_commit(engine, b"k3", 12, 20);
-        must_cleanup_with_gc_fence(engine, b"k3", 20, 0, 30, true);
+        must_prewrite_put(einstein_merkle_tree, b"k3", b"v3", b"k3", 12);
+        must_commit(einstein_merkle_tree, b"k3", 12, 20);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k3", 20, 0, 30, true);
 
         // PUT,   PUT,       Read
         //  `-----^ `----^
-        must_prewrite_put(engine, b"k4", b"v4", b"k4", 13);
-        must_commit(engine, b"k4", 13, 14);
-        must_prewrite_put(engine, b"k4", b"v4x", b"k4", 15);
-        must_commit(engine, b"k4", 15, 20);
-        must_cleanup_with_gc_fence(engine, b"k4", 14, 0, 20, false);
-        must_cleanup_with_gc_fence(engine, b"k4", 20, 0, 30, true);
+        must_prewrite_put(einstein_merkle_tree, b"k4", b"v4", b"k4", 13);
+        must_commit(einstein_merkle_tree, b"k4", 13, 14);
+        must_prewrite_put(einstein_merkle_tree, b"k4", b"v4x", b"k4", 15);
+        must_commit(einstein_merkle_tree, b"k4", 15, 20);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k4", 14, 0, 20, false);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k4", 20, 0, 30, true);
 
         // PUT,   DEL,       Read
         //  `-----^ `----^
-        must_prewrite_put(engine, b"k5", b"v5", b"k5", 13);
-        must_commit(engine, b"k5", 13, 14);
-        must_prewrite_delete(engine, b"k5", b"v5", 15);
-        must_commit(engine, b"k5", 15, 20);
-        must_cleanup_with_gc_fence(engine, b"k5", 14, 0, 20, false);
-        must_cleanup_with_gc_fence(engine, b"k5", 20, 0, 30, true);
+        must_prewrite_put(einstein_merkle_tree, b"k5", b"v5", b"k5", 13);
+        must_commit(einstein_merkle_tree, b"k5", 13, 14);
+        must_prewrite_delete(einstein_merkle_tree, b"k5", b"v5", 15);
+        must_commit(einstein_merkle_tree, b"k5", 15, 20);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k5", 14, 0, 20, false);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k5", 20, 0, 30, true);
 
         // PUT, LOCK, LOCK,   Read,  PUT
         //  `-------------------------^
-        must_prewrite_put(engine, b"k6", b"v6", b"k6", 16);
-        must_commit(engine, b"k6", 16, 20);
-        must_prewrite_dagger(engine, b"k6", b"k6", 25);
-        must_commit(engine, b"k6", 25, 26);
-        must_prewrite_dagger(engine, b"k6", b"k6", 28);
-        must_commit(engine, b"k6", 28, 29);
+        must_prewrite_put(einstein_merkle_tree, b"k6", b"v6", b"k6", 16);
+        must_commit(einstein_merkle_tree, b"k6", 16, 20);
+        must_prewrite_dagger(einstein_merkle_tree, b"k6", b"k6", 25);
+        must_commit(einstein_merkle_tree, b"k6", 25, 26);
+        must_prewrite_dagger(einstein_merkle_tree, b"k6", b"k6", 28);
+        must_commit(einstein_merkle_tree, b"k6", 28, 29);
         // Put a record to be pointed by GC fence 50.
-        must_prewrite_put(engine, b"k6", b"v6x", b"k6", 49);
-        must_commit(engine, b"k6", 49, 50);
-        must_cleanup_with_gc_fence(engine, b"k6", 20, 0, 50, false);
+        must_prewrite_put(einstein_merkle_tree, b"k6", b"v6x", b"k6", 49);
+        must_commit(einstein_merkle_tree, b"k6", 49, 50);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k6", 20, 0, 50, false);
 
         // PUT, LOCK,   LOCK,   Read
         //  `---------^
-        must_prewrite_put(engine, b"k7", b"v7", b"k7", 16);
-        must_commit(engine, b"k7", 16, 20);
-        must_prewrite_dagger(engine, b"k7", b"k7", 25);
-        must_commit(engine, b"k7", 25, 26);
-        must_cleanup_with_gc_fence(engine, b"k7", 20, 0, 27, true);
-        must_prewrite_dagger(engine, b"k7", b"k7", 28);
-        must_commit(engine, b"k7", 28, 29);
+        must_prewrite_put(einstein_merkle_tree, b"k7", b"v7", b"k7", 16);
+        must_commit(einstein_merkle_tree, b"k7", 16, 20);
+        must_prewrite_dagger(einstein_merkle_tree, b"k7", b"k7", 25);
+        must_commit(einstein_merkle_tree, b"k7", 25, 26);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k7", 20, 0, 27, true);
+        must_prewrite_dagger(einstein_merkle_tree, b"k7", b"k7", 28);
+        must_commit(einstein_merkle_tree, b"k7", 28, 29);
 
         // PUT,  Read
         //  * (GC fence ts is 0)
-        must_prewrite_put(engine, b"k8", b"v8", b"k8", 17);
-        must_commit(engine, b"k8", 17, 30);
-        must_cleanup_with_gc_fence(engine, b"k8", 30, 0, 0, true);
+        must_prewrite_put(einstein_merkle_tree, b"k8", b"v8", b"k8", 17);
+        must_commit(einstein_merkle_tree, b"k8", 17, 30);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k8", 30, 0, 0, true);
 
         // PUT, LOCK,     Read
         // `-----------^
-        must_prewrite_put(engine, b"k9", b"v9", b"k9", 18);
-        must_commit(engine, b"k9", 18, 20);
-        must_prewrite_dagger(engine, b"k9", b"k9", 25);
-        must_commit(engine, b"k9", 25, 26);
-        must_cleanup_with_gc_fence(engine, b"k9", 20, 0, 27, true);
+        must_prewrite_put(einstein_merkle_tree, b"k9", b"v9", b"k9", 18);
+        must_commit(einstein_merkle_tree, b"k9", 18, 20);
+        must_prewrite_dagger(einstein_merkle_tree, b"k9", b"k9", 25);
+        must_commit(einstein_merkle_tree, b"k9", 25, 26);
+        must_cleanup_with_gc_fence(einstein_merkle_tree, b"k9", 20, 0, 27, true);
 
         // Returns the read ts to be checked and the expected result.
         (
@@ -1080,7 +1080,7 @@ mod latest_fdbhikv_tests {
     use super::super::MutantSentinelSearchBuilder;
     use super::test_util::prepare_test_data_for_check_gc_fence;
     use super::*;
-    use crate::einsteindb::storage::fdbhikv::{Engine, Modify, TestEngineBuilder};
+    use crate::einsteindb::storage::fdbhikv::{einstein_merkle_tree, Modify, Testeinstein_merkle_treeBuilder};
     use crate::einsteindb::storage::epaxos::tests::write;
     use crate::einsteindb::storage::solitontxn::tests::*;
     use crate::einsteindb::storage::MutantSentinelSearch;
@@ -1090,12 +1090,12 @@ mod latest_fdbhikv_tests {
     /// Check whether everything works as usual when `ForwardHikvMutantSentinelSearch::get()` goes out of bound.
     #[test]
     fn test_get_out_of_bound() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
 
         // Generate 1 put for [a].
-        must_prewrite_put(&engine, b"a", b"value", b"a", 7);
-        must_commit(&engine, b"a", 7, 7);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"value", b"a", 7);
+        must_commit(&einstein_merkle_tree, b"a", 7, 7);
 
         // Generate 5 rollback for [b].
         for ts in 0..5 {
@@ -1108,10 +1108,10 @@ mod latest_fdbhikv_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .range(None, None)
             .build()
@@ -1158,11 +1158,11 @@ mod latest_fdbhikv_tests {
     /// Case 1. next() out of bound
     #[test]
     fn test_move_next_user_key_out_of_bound_1() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
         // Generate 1 put for [a].
-        must_prewrite_put(&engine, b"a", b"a_value", b"a", SEEK_BOUND * 2);
-        must_commit(&engine, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_value", b"a", SEEK_BOUND * 2);
+        must_commit(&einstein_merkle_tree, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
 
         // Generate SEEK_BOUND / 2 rollback and 1 put for [b] .
         for ts in 0..SEEK_BOUND / 2 {
@@ -1175,12 +1175,12 @@ mod latest_fdbhikv_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
-        must_prewrite_put(&engine, b"b", b"b_value", b"a", SEEK_BOUND / 2);
-        must_commit(&engine, b"b", SEEK_BOUND / 2, SEEK_BOUND / 2);
+        must_prewrite_put(&einstein_merkle_tree, b"b", b"b_value", b"a", SEEK_BOUND / 2);
+        must_commit(&einstein_merkle_tree, b"b", SEEK_BOUND / 2, SEEK_BOUND / 2);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
             .build()
@@ -1239,12 +1239,12 @@ mod latest_fdbhikv_tests {
     /// Case 2. seek() out of bound
     #[test]
     fn test_move_next_user_key_out_of_bound_2() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
 
         // Generate 1 put for [a].
-        must_prewrite_put(&engine, b"a", b"a_value", b"a", SEEK_BOUND * 2);
-        must_commit(&engine, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_value", b"a", SEEK_BOUND * 2);
+        must_commit(&einstein_merkle_tree, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
 
         // Generate SEEK_BOUND-1 rollback and 1 put for [b] .
         for ts in 1..SEEK_BOUND {
@@ -1257,12 +1257,12 @@ mod latest_fdbhikv_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
-        must_prewrite_put(&engine, b"b", b"b_value", b"a", SEEK_BOUND);
-        must_commit(&engine, b"b", SEEK_BOUND, SEEK_BOUND);
+        must_prewrite_put(&einstein_merkle_tree, b"b", b"b_value", b"a", SEEK_BOUND);
+        must_commit(&einstein_merkle_tree, b"b", SEEK_BOUND, SEEK_BOUND);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
             .build()
@@ -1321,24 +1321,24 @@ mod latest_fdbhikv_tests {
     /// Range is left open right closed.
     #[test]
     fn test_range() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         // Generate 1 put for [1], [2] ... [6].
         for i in 1..7 {
             // ts = 1: value = []
-            must_prewrite_put(&engine, &[i], &[], &[i], 1);
-            must_commit(&engine, &[i], 1, 1);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[], &[i], 1);
+            must_commit(&einstein_merkle_tree, &[i], 1, 1);
 
             // ts = 7: value = [ts]
-            must_prewrite_put(&engine, &[i], &[i], &[i], 7);
-            must_commit(&engine, &[i], 7, 7);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[i], &[i], 7);
+            must_commit(&einstein_merkle_tree, &[i], 7, 7);
 
             // ts = 14: value = []
-            must_prewrite_put(&engine, &[i], &[], &[i], 14);
-            must_commit(&engine, &[i], 14, 14);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[], &[i], 14);
+            must_commit(&einstein_merkle_tree, &[i], 14, 14);
         }
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         // Test both bound specified.
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
@@ -1446,15 +1446,15 @@ mod latest_fdbhikv_tests {
 
     #[test]
     fn test_latest_fdbhikv_check_gc_fence() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
-        let (read_ts, expected_result) = prepare_test_data_for_check_gc_fence(&engine);
+        let (read_ts, expected_result) = prepare_test_data_for_check_gc_fence(&einstein_merkle_tree);
         let expected_result: Vec<_> = expected_result
             .into_iter()
             .filter_map(|(key, value)| value.map(|v| (key, v)))
             .collect();
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, read_ts)
             .range(None, None)
             .build()
@@ -1474,7 +1474,7 @@ mod latest_entry_tests {
     use super::super::MutantSentinelSearchBuilder;
     use super::*;
     use crate::einsteindb::storage::solitontxn::tests::{must_commit, must_prewrite_delete, must_prewrite_put};
-    use crate::einsteindb::storage::{Engine, Modify, TestEngineBuilder};
+    use crate::einsteindb::storage::{einstein_merkle_tree, Modify, Testeinstein_merkle_treeBuilder};
 
     use super::test_util::*;
     use crate::einsteindb::storage::epaxos::tests::write;
@@ -1485,12 +1485,12 @@ mod latest_entry_tests {
     /// Check whether everything works as usual when `EntryMutantSentinelSearch::get()` goes out of bound.
     #[test]
     fn test_get_out_of_bound() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
 
         // Generate 1 put for [a].
-        must_prewrite_put(&engine, b"a", b"value", b"a", 7);
-        must_commit(&engine, b"a", 7, 7);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"value", b"a", 7);
+        must_commit(&einstein_merkle_tree, b"a", 7, 7);
 
         // Generate 5 rollback for [b].
         for ts in 0..5 {
@@ -1503,10 +1503,10 @@ mod latest_entry_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .range(None, None)
             .build_entry_mutant_searchner(0.into(), false)
@@ -1556,12 +1556,12 @@ mod latest_entry_tests {
     /// Case 1. next() out of bound
     #[test]
     fn test_move_next_user_key_out_of_bound_1() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
 
         // Generate 1 put for [a].
-        must_prewrite_put(&engine, b"a", b"a_value", b"a", SEEK_BOUND * 2);
-        must_commit(&engine, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_value", b"a", SEEK_BOUND * 2);
+        must_commit(&einstein_merkle_tree, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
 
         // Generate SEEK_BOUND / 2 rollback and 1 put for [b] .
         for ts in 0..SEEK_BOUND / 2 {
@@ -1574,12 +1574,12 @@ mod latest_entry_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
-        must_prewrite_put(&engine, b"b", b"b_value", b"a", SEEK_BOUND / 2);
-        must_commit(&engine, b"b", SEEK_BOUND / 2, SEEK_BOUND / 2);
+        must_prewrite_put(&einstein_merkle_tree, b"b", b"b_value", b"a", SEEK_BOUND / 2);
+        must_commit(&einstein_merkle_tree, b"b", SEEK_BOUND / 2, SEEK_BOUND / 2);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
             .build_entry_mutant_searchner(0.into(), false)
@@ -1640,12 +1640,12 @@ mod latest_entry_tests {
     /// Case 2. seek() out of bound
     #[test]
     fn test_move_next_user_key_out_of_bound_2() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
 
         // Generate 1 put for [a].
-        must_prewrite_put(&engine, b"a", b"a_value", b"a", SEEK_BOUND * 2);
-        must_commit(&engine, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_value", b"a", SEEK_BOUND * 2);
+        must_commit(&einstein_merkle_tree, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
 
         // Generate SEEK_BOUND-1 rollback and 1 put for [b] .
         for ts in 1..SEEK_BOUND {
@@ -1658,12 +1658,12 @@ mod latest_entry_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
-        must_prewrite_put(&engine, b"b", b"b_value", b"a", SEEK_BOUND);
-        must_commit(&engine, b"b", SEEK_BOUND, SEEK_BOUND);
+        must_prewrite_put(&einstein_merkle_tree, b"b", b"b_value", b"a", SEEK_BOUND);
+        must_commit(&einstein_merkle_tree, b"b", SEEK_BOUND, SEEK_BOUND);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
             .build_entry_mutant_searchner(0.into(), false)
@@ -1724,24 +1724,24 @@ mod latest_entry_tests {
     /// Range is left open right closed.
     #[test]
     fn test_range() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         // Generate 1 put for [1], [2] ... [6].
         for i in 1..7 {
             // ts = 1: value = []
-            must_prewrite_put(&engine, &[i], &[], &[i], 1);
-            must_commit(&engine, &[i], 1, 1);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[], &[i], 1);
+            must_commit(&einstein_merkle_tree, &[i], 1, 1);
 
             // ts = 7: value = [ts]
-            must_prewrite_put(&engine, &[i], &[i], &[i], 7);
-            must_commit(&engine, &[i], 7, 7);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[i], &[i], 7);
+            must_commit(&einstein_merkle_tree, &[i], 7, 7);
 
             // ts = 14: value = []
-            must_prewrite_put(&engine, &[i], &[], &[i], 14);
-            must_commit(&engine, &[i], 14, 14);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[], &[i], 14);
+            must_commit(&einstein_merkle_tree, &[i], 14, 14);
         }
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         // Test both bound specified.
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
@@ -1796,20 +1796,20 @@ mod latest_entry_tests {
 
     #[test]
     fn test_output_delete_and_after_ts() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
 
         // Generate put for [a] at 3.
-        must_prewrite_put(&engine, b"a", b"a_3", b"a", 3);
-        must_commit(&engine, b"a", 3, 3);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_3", b"a", 3);
+        must_commit(&einstein_merkle_tree, b"a", 3, 3);
 
         // Generate put for [a] at 7.
-        must_prewrite_put(&engine, b"a", b"a_7", b"a", 7);
-        must_commit(&engine, b"a", 7, 7);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_7", b"a", 7);
+        must_commit(&einstein_merkle_tree, b"a", 7, 7);
 
         // Generate put for [b] at 1.
-        must_prewrite_put(&engine, b"b", b"b_1", b"b", 1);
-        must_commit(&engine, b"b", 1, 1);
+        must_prewrite_put(&einstein_merkle_tree, b"b", b"b_1", b"b", 1);
+        must_commit(&einstein_merkle_tree, b"b", 1, 1);
 
         // Generate rollbacks for [b] at 2, 3, 4.
         for ts in 2..5 {
@@ -1822,12 +1822,12 @@ mod latest_entry_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
 
         // Generate delete for [b] at 10.
-        must_prewrite_delete(&engine, b"b", b"b", 10);
-        must_commit(&engine, b"b", 10, 10);
+        must_prewrite_delete(&einstein_merkle_tree, b"b", b"b", 10);
+        must_commit(&einstein_merkle_tree, b"b", 10, 10);
 
         let entry_a_3 = EntryBuilder::default()
             .key(b"a")
@@ -1854,7 +1854,7 @@ mod latest_entry_tests {
             .build_commit(WriteType::Delete, true);
 
         let check = |ts: u64, after_ts: u64, output_delete, expected: Vec<&TxnEntry>| {
-            let blackbrane = engine.blackbrane(Default::default()).unwrap();
+            let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, ts.into())
                 .range(None, None)
                 .build_entry_mutant_searchner(after_ts.into(), output_delete)
@@ -1881,15 +1881,15 @@ mod latest_entry_tests {
 
     #[test]
     fn test_latest_entry_check_gc_fence() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
-        let (read_ts, expected_result) = prepare_test_data_for_check_gc_fence(&engine);
+        let (read_ts, expected_result) = prepare_test_data_for_check_gc_fence(&einstein_merkle_tree);
         let expected_result: Vec<_> = expected_result
             .into_iter()
             .filter_map(|(key, value)| value.map(|v| (key, v)))
             .collect();
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, read_ts)
             .range(None, None)
             .build_entry_mutant_searchner(0.into(), false)
@@ -1910,7 +1910,7 @@ mod delta_entry_tests {
     use super::super::MutantSentinelSearchBuilder;
     use super::*;
     use crate::einsteindb::storage::solitontxn::tests::*;
-    use crate::einsteindb::storage::{Engine, Modify, TestEngineBuilder};
+    use crate::einsteindb::storage::{einstein_merkle_tree, Modify, Testeinstein_merkle_treeBuilder};
 
     use solitontxn_types::{is_short_value, SHORT_VALUE_MAX_LEN};
 
@@ -1921,12 +1921,12 @@ mod delta_entry_tests {
     /// Check whether everything works as usual when `Delta::get()` goes out of bound.
     #[test]
     fn test_get_out_of_bound() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
 
         // Generate 1 put for [a].
-        must_prewrite_put(&engine, b"a", b"value", b"a", 7);
-        must_commit(&engine, b"a", 7, 7);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"value", b"a", 7);
+        must_commit(&einstein_merkle_tree, b"a", 7, 7);
 
         // Generate 5 rollback for [b].
         for ts in 0..5 {
@@ -1939,10 +1939,10 @@ mod delta_entry_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, 10.into())
             .range(None, None)
             .build_delta_mutant_searchner(0.into(), ExtraOp::Noop)
@@ -1992,11 +1992,11 @@ mod delta_entry_tests {
     /// Case 1. next() out of bound
     #[test]
     fn test_move_next_user_key_out_of_bound_1() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
         // Generate 1 put for [a].
-        must_prewrite_put(&engine, b"a", b"a_value", b"a", SEEK_BOUND * 2);
-        must_commit(&engine, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_value", b"a", SEEK_BOUND * 2);
+        must_commit(&einstein_merkle_tree, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
 
         // Generate SEEK_BOUND / 2 rollback and 1 put for [b] .
         for ts in 0..SEEK_BOUND / 2 {
@@ -2009,12 +2009,12 @@ mod delta_entry_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
-        must_prewrite_put(&engine, b"b", b"b_value", b"a", SEEK_BOUND / 2);
-        must_commit(&engine, b"b", SEEK_BOUND / 2, SEEK_BOUND / 2);
+        must_prewrite_put(&einstein_merkle_tree, b"b", b"b_value", b"a", SEEK_BOUND / 2);
+        must_commit(&einstein_merkle_tree, b"b", SEEK_BOUND / 2, SEEK_BOUND / 2);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
             .build_delta_mutant_searchner(0.into(), ExtraOp::Noop)
@@ -2075,12 +2075,12 @@ mod delta_entry_tests {
     /// Case 2. seek() out of bound
     #[test]
     fn test_move_next_user_key_out_of_bound_2() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
 
         // Generate 1 put for [a].
-        must_prewrite_put(&engine, b"a", b"a_value", b"a", SEEK_BOUND * 2);
-        must_commit(&engine, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_value", b"a", SEEK_BOUND * 2);
+        must_commit(&einstein_merkle_tree, b"a", SEEK_BOUND * 2, SEEK_BOUND * 2);
 
         // Generate SEEK_BOUND rollback and 1 put for [b] .
         // It differs from EntryMutantSentinelSearch that this will try to fetch multiple versions of each key.
@@ -2095,12 +2095,12 @@ mod delta_entry_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
-        must_prewrite_put(&engine, b"b", b"b_value", b"a", SEEK_BOUND + 1);
-        must_commit(&engine, b"b", SEEK_BOUND + 1, SEEK_BOUND + 1);
+        must_prewrite_put(&einstein_merkle_tree, b"b", b"b_value", b"a", SEEK_BOUND + 1);
+        must_commit(&einstein_merkle_tree, b"b", SEEK_BOUND + 1, SEEK_BOUND + 1);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, (SEEK_BOUND * 2).into())
             .range(None, None)
             .build_delta_mutant_searchner(8.into(), ExtraOp::Noop)
@@ -2161,24 +2161,24 @@ mod delta_entry_tests {
     /// Range is left open right closed.
     #[test]
     fn test_range() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         // Generate 1 put for [1], [2] ... [6].
         for i in 1..7 {
             // ts = 1: value = []
-            must_prewrite_put(&engine, &[i], &[], &[i], 1);
-            must_commit(&engine, &[i], 1, 1);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[], &[i], 1);
+            must_commit(&einstein_merkle_tree, &[i], 1, 1);
 
             // ts = 7: value = [ts]
-            must_prewrite_put(&engine, &[i], &[i], &[i], 7);
-            must_commit(&engine, &[i], 7, 7);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[i], &[i], 7);
+            must_commit(&einstein_merkle_tree, &[i], 7, 7);
 
             // ts = 14: value = []
-            must_prewrite_put(&engine, &[i], &[], &[i], 14);
-            must_commit(&engine, &[i], 14, 14);
+            must_prewrite_put(&einstein_merkle_tree, &[i], &[], &[i], 14);
+            must_commit(&einstein_merkle_tree, &[i], 14, 14);
         }
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
 
         // Test both bound specified.
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane.clone(), 10.into())
@@ -2354,16 +2354,16 @@ mod delta_entry_tests {
                 .collect::<Vec<TxnEntry>>()
         };
 
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         for (key, dagger, writes) in &test_data {
             for (start_ts, commit_ts, write_type, value) in writes {
                 let value = make_value(value);
                 if *write_type != WriteType::Rollback {
-                    must_acquire_pessimistic_dagger(&engine, key, key, start_ts, commit_ts - 1);
+                    must_acquire_pessimistic_dagger(&einstein_merkle_tree, key, key, start_ts, commit_ts - 1);
                 }
                 match write_type {
                     WriteType::Put => must_pessimistic_prewrite_put(
-                        &engine,
+                        &einstein_merkle_tree,
                         key,
                         &value,
                         key,
@@ -2372,7 +2372,7 @@ mod delta_entry_tests {
                         true,
                     ),
                     WriteType::Delete => must_pessimistic_prewrite_delete(
-                        &engine,
+                        &einstein_merkle_tree,
                         key,
                         key,
                         start_ts,
@@ -2380,17 +2380,17 @@ mod delta_entry_tests {
                         true,
                     ),
                     WriteType::Dagger => must_pessimistic_prewrite_dagger(
-                        &engine,
+                        &einstein_merkle_tree,
                         key,
                         key,
                         start_ts,
                         commit_ts - 1,
                         true,
                     ),
-                    WriteType::Rollback => must_rollback(&engine, key, start_ts, false),
+                    WriteType::Rollback => must_rollback(&einstein_merkle_tree, key, start_ts, false),
                 }
                 if *write_type != WriteType::Rollback {
-                    must_commit(&engine, key, start_ts, commit_ts);
+                    must_commit(&einstein_merkle_tree, key, start_ts, commit_ts);
                 }
             }
 
@@ -2402,10 +2402,10 @@ mod delta_entry_tests {
                     .map(|(_, commit_ts, ..)| commit_ts)
                     .unwrap_or(0);
                 let for_update_ts = std::cmp::max(*ts, max_commit_ts + 1);
-                must_acquire_pessimistic_dagger(&engine, key, key, *ts, for_update_ts);
+                must_acquire_pessimistic_dagger(&einstein_merkle_tree, key, key, *ts, for_update_ts);
                 match dagger_type {
                     DaggerType::Put => must_pessimistic_prewrite_put(
-                        &engine,
+                        &einstein_merkle_tree,
                         key,
                         &value,
                         key,
@@ -2414,10 +2414,10 @@ mod delta_entry_tests {
                         true,
                     ),
                     DaggerType::Delete => {
-                        must_pessimistic_prewrite_delete(&engine, key, key, ts, for_update_ts, true)
+                        must_pessimistic_prewrite_delete(&einstein_merkle_tree, key, key, ts, for_update_ts, true)
                     }
                     DaggerType::Dagger => {
-                        must_pessimistic_prewrite_dagger(&engine, key, key, ts, for_update_ts, true)
+                        must_pessimistic_prewrite_dagger(&einstein_merkle_tree, key, key, ts, for_update_ts, true)
                     }
                     DaggerType::Pessimistic => {}
                 }
@@ -2438,7 +2438,7 @@ mod delta_entry_tests {
                 Some(Key::from_cocauset(to_key))
             };
             let mut mutant_searchner =
-                MutantSentinelSearchBuilder::new(engine.blackbrane(Default::default()).unwrap(), to_ts.into())
+                MutantSentinelSearchBuilder::new(einstein_merkle_tree.blackbrane(Default::default()).unwrap(), to_ts.into())
                     .hint_min_ts(Some(from_ts.into()))
                     .hint_max_ts(Some(to_ts.into()))
                     .range(from_key, to_key)
@@ -2475,23 +2475,23 @@ mod delta_entry_tests {
 
     #[test]
     fn test_output_old_value() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let ctx = Context::default();
 
         // Generate put for [a] at 1.
-        must_prewrite_put(&engine, b"a", b"a_1", b"a", 1);
-        must_commit(&engine, b"a", 1, 1);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_1", b"a", 1);
+        must_commit(&einstein_merkle_tree, b"a", 1, 1);
 
         // Generate put for [a] at 3.
-        must_prewrite_put(&engine, b"a", b"a_3", b"a", 3);
-        must_commit(&engine, b"a", 3, 3);
+        must_prewrite_put(&einstein_merkle_tree, b"a", b"a_3", b"a", 3);
+        must_commit(&einstein_merkle_tree, b"a", 3, 3);
 
         // Generate delete for [a] at 5.
-        must_prewrite_delete(&engine, b"a", b"a", 5);
+        must_prewrite_delete(&einstein_merkle_tree, b"a", b"a", 5);
 
         // Generate put for [b] at 2.
-        must_prewrite_put(&engine, b"b", b"b_2", b"b", 2);
-        must_commit(&engine, b"b", 2, 2);
+        must_prewrite_put(&einstein_merkle_tree, b"b", b"b_2", b"b", 2);
+        must_commit(&einstein_merkle_tree, b"b", 2, 2);
 
         // Generate rollbacks for [b] at 6, 7, 8.
         for ts in 6..9 {
@@ -2504,22 +2504,22 @@ mod delta_entry_tests {
                 ),
                 Modify::Delete(CF_LOCK, Key::from_cocauset(b"b")),
             ];
-            write(&engine, &ctx, modifies);
+            write(&einstein_merkle_tree, &ctx, modifies);
         }
 
         // Generate delete for [b] at 10.
-        must_prewrite_delete(&engine, b"b", b"b", 10);
-        must_commit(&engine, b"b", 10, 10);
+        must_prewrite_delete(&einstein_merkle_tree, b"b", b"b", 10);
+        must_commit(&einstein_merkle_tree, b"b", 10, 10);
 
         // Generate put for [b] at 15.
-        must_acquire_pessimistic_dagger(&engine, b"b", b"b", 9, 15);
-        must_pessimistic_prewrite_put(&engine, b"b", b"b_15", b"b", 9, 15, true);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"b", b"b", 9, 15);
+        must_pessimistic_prewrite_put(&einstein_merkle_tree, b"b", b"b_15", b"b", 9, 15, true);
 
-        must_prewrite_put(&engine, b"c", b"c_4", b"c", 4);
-        must_commit(&engine, b"c", 4, 6);
-        must_acquire_pessimistic_dagger(&engine, b"c", b"c", 5, 15);
-        must_pessimistic_prewrite_put(&engine, b"c", b"c_5", b"c", 5, 15, true);
-        must_cleanup(&engine, b"c", 20, 0);
+        must_prewrite_put(&einstein_merkle_tree, b"c", b"c_4", b"c", 4);
+        must_commit(&einstein_merkle_tree, b"c", 4, 6);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"c", b"c", 5, 15);
+        must_pessimistic_prewrite_put(&einstein_merkle_tree, b"c", b"c_5", b"c", 5, 15, true);
+        must_cleanup(&einstein_merkle_tree, b"c", 20, 0);
 
         let entry_a_1 = EntryBuilder::default()
             .key(b"a")
@@ -2575,7 +2575,7 @@ mod delta_entry_tests {
             .build_prewrite(DaggerType::Put, true);
 
         let check = |after_ts: u64, expected: Vec<&TxnEntry>| {
-            let blackbrane = engine.blackbrane(Default::default()).unwrap();
+            let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
                 .range(None, None)
                 .build_delta_mutant_searchner(after_ts.into(), ExtraOp::ReadOldValue)
@@ -2609,10 +2609,10 @@ mod delta_entry_tests {
 
     #[test]
     fn test_old_value_check_gc_fence() {
-        let engine = TestEngineBuilder::new().build().unwrap();
-        prepare_test_data_for_check_gc_fence(&engine);
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        prepare_test_data_for_check_gc_fence(&einstein_merkle_tree);
 
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
             .range(None, None)
             .build_delta_mutant_searchner(40.into(), ExtraOp::ReadOldValue)
@@ -2642,9 +2642,9 @@ mod delta_entry_tests {
         for i in b'1'..=b'8' {
             let key = &[b'k', i];
             let value = &[b'v', i, b'x', b'x'];
-            must_prewrite_put(&engine, key, value, b"k1", 55);
+            must_prewrite_put(&einstein_merkle_tree, key, value, b"k1", 55);
         }
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
             .range(None, None)
             .build_delta_mutant_searchner(40.into(), ExtraOp::ReadOldValue)
@@ -2678,9 +2678,9 @@ mod delta_entry_tests {
         // Commit all the daggers and check again.
         for i in b'1'..=b'8' {
             let key = &[b'k', i];
-            must_commit(&engine, key, 55, 56);
+            must_commit(&einstein_merkle_tree, key, 55, 56);
         }
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut mutant_searchner = MutantSentinelSearchBuilder::new(blackbrane, TimeStamp::max())
             .range(None, None)
             .build_delta_mutant_searchner(40.into(), ExtraOp::ReadOldValue)

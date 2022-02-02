@@ -1,7 +1,7 @@
 [package]
-name = "engine_panic"
+name = "einstein_merkle_tree_panic"
 version = "0.0.1"
-description = "An example EinsteinDB timelike_storage engine that does nothing but panic"
+description = "An example EinsteinDB timelike_storage einstein_merkle_tree that does nothing but panic"
 edition = "2018"
 publish = false
 

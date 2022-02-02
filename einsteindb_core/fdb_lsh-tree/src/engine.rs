@@ -1,7 +1,7 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use fdb_traits::{
-    Error, Iterable, IterOptions, KvEngine, Peekable, ReadOptions, Result, SyncMutable,
+    Error, Iterable, IterOptions, KV, Peekable, ReadOptions, Result, SyncMutable,
 };
 use foundationdb::{DB, DBIterator, Writable};
 use std::any::Any;
@@ -9,34 +9,34 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::{FdbEngineIterator, FdbSnapshot};
+use crate::{Fdbeinstein_merkle_treeIterator, FdbSnapshot};
 use crate::db_vector::FdbDBVector;
 use crate::options::FdbReadOptions;
 use crate::rocks_metrics::{
-    global_hyperbolic_causet_historys, flush_engine_iostall_properties, flush_engine_properties,
-    flush_engine_ticker_metrics,
+    global_hyperbolic_causet_historys, flush_einstein_merkle_tree_iostall_properties, flush_einstein_merkle_tree_properties,
+    flush_einstein_merkle_tree_ticker_metrics,
 };
 use crate::rocks_metrics_defs::{
-    ENGINE_HIST_TYPES, ENGINE_TICKER_TYPES, TITAN_ENGINE_HIST_TYPES, TITAN_ENGINE_TICKER_TYPES,
+    einstein_merkle_tree_HIST_TYPES, einstein_merkle_tree_TICKER_TYPES, TITAN_einstein_merkle_tree_HIST_TYPES, TITAN_einstein_merkle_tree_TICKER_TYPES,
 };
 use crate::util::get_namespaced_handle;
 
 #[derive(Clone, Debug)]
-pub struct FdbEngine {
+pub struct Fdbeinstein_merkle_tree {
     einsteindb: Arc<DB>,
     shared_block_cache: bool,
 }
 
-impl FdbEngine {
+impl Fdbeinstein_merkle_tree {
     pub fn from_db(einsteindb: Arc<DB>) -> Self {
-        FdbEngine {
+        Fdbeinstein_merkle_tree {
             einsteindb,
             shared_block_cache: false,
         }
     }
 
     pub fn from_ref(einsteindb: &Arc<DB>) -> &Self {
-        unsafe { &*(einsteindb as *const Arc<DB> as *const FdbEngine) }
+        unsafe { &*(einsteindb as *const Arc<DB> as *const Fdbeinstein_merkle_tree) }
     }
 
     pub fn as_inner(&self) -> &Arc<DB> {
@@ -64,7 +64,7 @@ impl FdbEngine {
     }
 }
 
-impl KvEngine for FdbEngine {
+impl KV for Fdbeinstein_merkle_tree {
     type Snapshot = FdbSnapshot;
 
     fn snapshot(&self) -> FdbSnapshot {
@@ -72,32 +72,32 @@ impl KvEngine for FdbEngine {
     }
 
     fn sync(&self) -> Result<()> {
-        self.einsteindb.sync_wal().map_err(Error::Engine)
+        self.einsteindb.sync_wal().map_err(Error::einstein_merkle_tree)
     }
 
     fn flush_metrics(&self, instance: &str) {
-        for t in ENGINE_TICKER_TYPES {
+        for t in einstein_merkle_tree_TICKER_TYPES {
             let v = self.einsteindb.get_and_reset_statistics_ticker_count(*t);
-            flush_engine_ticker_metrics(*t, v, instance);
+            flush_einstein_merkle_tree_ticker_metrics(*t, v, instance);
         }
-        for t in ENGINE_HIST_TYPES {
+        for t in einstein_merkle_tree_HIST_TYPES {
             if let Some(v) = self.einsteindb.get_statistics_histogram(*t) {
                 global_hyperbolic_causet_historys(*t, v, instance);
             }
         }
         if self.einsteindb.is_titan() {
-            for t in TITAN_ENGINE_TICKER_TYPES {
+            for t in TITAN_einstein_merkle_tree_TICKER_TYPES {
                 let v = self.einsteindb.get_and_reset_statistics_ticker_count(*t);
-                flush_engine_ticker_metrics(*t, v, instance);
+                flush_einstein_merkle_tree_ticker_metrics(*t, v, instance);
             }
-            for t in TITAN_ENGINE_HIST_TYPES {
+            for t in TITAN_einstein_merkle_tree_HIST_TYPES {
                 if let Some(v) = self.einsteindb.get_statistics_histogram(*t) {
                     global_hyperbolic_causet_historys(*t, v, instance);
                 }
             }
         }
-        flush_engine_properties(&self.einsteindb, instance, self.shared_block_cache);
-        flush_engine_iostall_properties(&self.einsteindb, instance);
+        flush_einstein_merkle_tree_properties(&self.einsteindb, instance, self.shared_block_cache);
+        flush_einstein_merkle_tree_iostall_properties(&self.einsteindb, instance);
     }
 
     fn reset_statistics(&self) {
@@ -106,16 +106,16 @@ impl KvEngine for FdbEngine {
 
     fn bad_downcast<T: 'static>(&self) -> &T {
         let e: &dyn Any = &self.einsteindb;
-        e.downcast_ref().expect("bad engine downcast")
+        e.downcast_ref().expect("bad einstein_merkle_tree downcast")
     }
 }
 
-impl Iterable for FdbEngine {
-    type Iterator = FdbEngineIterator;
+impl Iterable for Fdbeinstein_merkle_tree {
+    type Iterator = Fdbeinstein_merkle_treeIterator;
 
     fn iterator_opt(&self, opts: IterOptions) -> Result<Self::Iterator> {
         let opt: FdbReadOptions = opts.into();
-        Ok(FdbEngineIterator::from_raw(DBIterator::new(
+        Ok(Fdbeinstein_merkle_treeIterator::from_raw(DBIterator::new(
             self.einsteindb.clone(),
             opt.into_raw(),
         )))
@@ -124,7 +124,7 @@ impl Iterable for FdbEngine {
     fn iterator_namespaced_opt(&self, namespaced: &str, opts: IterOptions) -> Result<Self::Iterator> {
         let handle = get_namespaced_handle(&self.einsteindb, namespaced)?;
         let opt: FdbReadOptions = opts.into();
-        Ok(FdbEngineIterator::from_raw(DBIterator::new_namespaced(
+        Ok(Fdbeinstein_merkle_treeIterator::from_raw(DBIterator::new_namespaced(
             self.einsteindb.clone(),
             handle,
             opt.into_raw(),
@@ -132,7 +132,7 @@ impl Iterable for FdbEngine {
     }
 }
 
-impl Peekable for FdbEngine {
+impl Peekable for Fdbeinstein_merkle_tree {
     type DBVector = FdbDBVector;
 
     fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<FdbDBVector>> {
@@ -154,69 +154,69 @@ impl Peekable for FdbEngine {
     }
 }
 
-impl SyncMutable for FdbEngine {
+impl SyncMutable for Fdbeinstein_merkle_tree {
     fn put(&self, key: &[u8], value: &[u8]) -> Result<()> {
-        self.einsteindb.put(key, value).map_err(Error::Engine)
+        self.einsteindb.put(key, value).map_err(Error::einstein_merkle_tree)
     }
 
     fn put_namespaced(&self, namespaced: &str, key: &[u8], value: &[u8]) -> Result<()> {
         let handle = get_namespaced_handle(&self.einsteindb, namespaced)?;
-        self.einsteindb.put_namespaced(handle, key, value).map_err(Error::Engine)
+        self.einsteindb.put_namespaced(handle, key, value).map_err(Error::einstein_merkle_tree)
     }
 
     fn delete(&self, key: &[u8]) -> Result<()> {
-        self.einsteindb.delete(key).map_err(Error::Engine)
+        self.einsteindb.delete(key).map_err(Error::einstein_merkle_tree)
     }
 
     fn delete_namespaced(&self, namespaced: &str, key: &[u8]) -> Result<()> {
         let handle = get_namespaced_handle(&self.einsteindb, namespaced)?;
-        self.einsteindb.delete_namespaced(handle, key).map_err(Error::Engine)
+        self.einsteindb.delete_namespaced(handle, key).map_err(Error::einstein_merkle_tree)
     }
 
     fn delete_range(&self, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
         self.einsteindb
             .delete_range(begin_key, end_key)
-            .map_err(Error::Engine)
+            .map_err(Error::einstein_merkle_tree)
     }
 
     fn delete_range_namespaced(&self, namespaced: &str, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
         let handle = get_namespaced_handle(&self.einsteindb, namespaced)?;
         self.einsteindb
             .delete_range_namespaced(handle, begin_key, end_key)
-            .map_err(Error::Engine)
+            .map_err(Error::einstein_merkle_tree)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use fdb_traits::{Iterable, KvEngine, Peekable, SyncMutable};
+    use fdb_traits::{Iterable, KV, Peekable, SyncMutable};
     use ekvproto::metapb::Region;
     use std::sync::Arc;
     use tempfile::Builder;
 
-    use crate::{FdbEngine, FdbSnapshot};
+    use crate::{Fdbeinstein_merkle_tree, FdbSnapshot};
     use crate::raw_util;
 
     #[test]
     fn test_base() {
         let path = Builder::new().prefix("var").temfidelir().unwrap();
         let namespaced = "namespaced";
-        let engine = FdbEngine::from_db(Arc::new(
-            raw_util::new_engine(path.path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
+        let einstein_merkle_tree = Fdbeinstein_merkle_tree::from_db(Arc::new(
+            raw_util::new_einstein_merkle_tree(path.path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
         ));
 
         let mut r = Region::default();
         r.set_id(10);
 
         let key = b"key";
-        engine.put_msg(key, &r).unwrap();
-        engine.put_msg_namespaced(namespaced, key, &r).unwrap();
+        einstein_merkle_tree.put_msg(key, &r).unwrap();
+        einstein_merkle_tree.put_msg_namespaced(namespaced, key, &r).unwrap();
 
-        let snap = engine.snapshot();
+        let snap = einstein_merkle_tree.snapshot();
 
-        let mut r1: Region = engine.get_msg(key).unwrap().unwrap();
+        let mut r1: Region = einstein_merkle_tree.get_msg(key).unwrap().unwrap();
         assert_eq!(r, r1);
-        let r1_namespaced: Region = engine.get_msg_namespaced(namespaced, key).unwrap().unwrap();
+        let r1_namespaced: Region = einstein_merkle_tree.get_msg_namespaced(namespaced, key).unwrap().unwrap();
         assert_eq!(r, r1_namespaced);
 
         let mut r2: Region = snap.get_msg(key).unwrap().unwrap();
@@ -225,12 +225,12 @@ mod tests {
         assert_eq!(r, r2_namespaced);
 
         r.set_id(11);
-        engine.put_msg(key, &r).unwrap();
-        r1 = engine.get_msg(key).unwrap().unwrap();
+        einstein_merkle_tree.put_msg(key, &r).unwrap();
+        r1 = einstein_merkle_tree.get_msg(key).unwrap().unwrap();
         r2 = snap.get_msg(key).unwrap().unwrap();
         assert_ne!(r1, r2);
 
-        let b: Option<Region> = engine.get_msg(b"missing_key").unwrap();
+        let b: Option<Region> = einstein_merkle_tree.get_msg(b"missing_key").unwrap();
         assert!(b.is_none());
     }
 
@@ -238,33 +238,33 @@ mod tests {
     fn test_peekable() {
         let path = Builder::new().prefix("var").temfidelir().unwrap();
         let namespaced = "namespaced";
-        let engine = FdbEngine::from_db(Arc::new(
-            raw_util::new_engine(path.path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
+        let einstein_merkle_tree = Fdbeinstein_merkle_tree::from_db(Arc::new(
+            raw_util::new_einstein_merkle_tree(path.path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
         ));
 
-        engine.put(b"k1", b"v1").unwrap();
-        engine.put_namespaced(namespaced, b"k1", b"v2").unwrap();
+        einstein_merkle_tree.put(b"k1", b"v1").unwrap();
+        einstein_merkle_tree.put_namespaced(namespaced, b"k1", b"v2").unwrap();
 
-        assert_eq!(&*engine.get_value(b"k1").unwrap().unwrap(), b"v1");
-        assert!(engine.get_value_namespaced("foo", b"k1").is_err());
-        assert_eq!(&*engine.get_value_namespaced(namespaced, b"k1").unwrap().unwrap(), b"v2");
+        assert_eq!(&*einstein_merkle_tree.get_value(b"k1").unwrap().unwrap(), b"v1");
+        assert!(einstein_merkle_tree.get_value_namespaced("foo", b"k1").is_err());
+        assert_eq!(&*einstein_merkle_tree.get_value_namespaced(namespaced, b"k1").unwrap().unwrap(), b"v2");
     }
 
     #[test]
     fn test_scan() {
         let path = Builder::new().prefix("var").temfidelir().unwrap();
         let namespaced = "namespaced";
-        let engine = FdbEngine::from_db(Arc::new(
-            raw_util::new_engine(path.path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
+        let einstein_merkle_tree = Fdbeinstein_merkle_tree::from_db(Arc::new(
+            raw_util::new_einstein_merkle_tree(path.path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
         ));
 
-        engine.put(b"a1", b"v1").unwrap();
-        engine.put(b"a2", b"v2").unwrap();
-        engine.put_namespaced(namespaced, b"a1", b"v1").unwrap();
-        engine.put_namespaced(namespaced, b"a2", b"v22").unwrap();
+        einstein_merkle_tree.put(b"a1", b"v1").unwrap();
+        einstein_merkle_tree.put(b"a2", b"v2").unwrap();
+        einstein_merkle_tree.put_namespaced(namespaced, b"a1", b"v1").unwrap();
+        einstein_merkle_tree.put_namespaced(namespaced, b"a2", b"v22").unwrap();
 
         let mut data = vec![];
-        engine
+        einstein_merkle_tree
             .scan(b"", &[0xFF, 0xFF], false, |key, value| {
                 data.push((key.to_vec(), value.to_vec()));
                 Ok(true)
@@ -279,7 +279,7 @@ mod tests {
         );
         data.clear();
 
-        engine
+        einstein_merkle_tree
             .scan_namespaced(namespaced, b"", &[0xFF, 0xFF], false, |key, value| {
                 data.push((key.to_vec(), value.to_vec()));
                 Ok(true)
@@ -294,15 +294,15 @@ mod tests {
         );
         data.clear();
 
-        let pair = engine.seek(b"a1").unwrap().unwrap();
+        let pair = einstein_merkle_tree.seek(b"a1").unwrap().unwrap();
         assert_eq!(pair, (b"a1".to_vec(), b"v1".to_vec()));
-        assert!(engine.seek(b"a3").unwrap().is_none());
-        let pair_namespaced = engine.seek_namespaced(namespaced, b"a1").unwrap().unwrap();
+        assert!(einstein_merkle_tree.seek(b"a3").unwrap().is_none());
+        let pair_namespaced = einstein_merkle_tree.seek_namespaced(namespaced, b"a1").unwrap().unwrap();
         assert_eq!(pair_namespaced, (b"a1".to_vec(), b"v1".to_vec()));
-        assert!(engine.seek_namespaced(namespaced, b"a3").unwrap().is_none());
+        assert!(einstein_merkle_tree.seek_namespaced(namespaced, b"a3").unwrap().is_none());
 
         let mut index = 0;
-        engine
+        einstein_merkle_tree
             .scan(b"", &[0xFF, 0xFF], false, |key, value| {
                 data.push((key.to_vec(), value.to_vec()));
                 index += 1;
@@ -312,10 +312,10 @@ mod tests {
 
         assert_eq!(data.len(), 1);
 
-        let snap = FdbSnapshot::new(engine.get_sync_db());
+        let snap = FdbSnapshot::new(einstein_merkle_tree.get_sync_db());
 
-        engine.put(b"a3", b"v3").unwrap();
-        assert!(engine.seek(b"a3").unwrap().is_some());
+        einstein_merkle_tree.put(b"a3", b"v3").unwrap();
+        assert!(einstein_merkle_tree.seek(b"a3").unwrap().is_some());
 
         let pair = snap.seek(b"a1").unwrap().unwrap();
         assert_eq!(pair, (b"a1".to_vec(), b"v1".to_vec()));

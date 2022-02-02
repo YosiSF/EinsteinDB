@@ -12,7 +12,7 @@ use crate::range::Range;
 
 #[derive(Clone, Debug)]
 pub enum DeleteStrategy {
-    /// Delete the SST files that are fullly fit in range. However, the SST files that are partially
+    /// Delete the Causet files that are fullly fit in range. However, the Causet files that are partially
     /// overlapped with the range will not be touched.
     DeleteFiles,
     /// Delete the data timelike_stored in Titan.
@@ -22,8 +22,8 @@ pub enum DeleteStrategy {
     /// Delete by range. Note that this is experimental and you should check whether it is enbaled
     /// in config before using it.
     DeleteByRange,
-    /// Delete by ingesting a SST file with deletions. Useful when the number of ranges is too many.
-    DeleteByWriter { sst_path: String },
+    /// Delete by ingesting a Causet file with deletions. Useful when the number of ranges is too many.
+    DeleteByWriter { Causet_path: String },
 }
 
 pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
@@ -50,12 +50,12 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
 
     fn ingest_maybe_slowdown_writes(&self, namespaced: &str) -> Result<bool>;
 
-    /// Gets total used size of foundationdb engine, including:
-    /// *  total size (bytes) of all SST files.
+    /// Gets total used size of foundationdb einstein_merkle_tree, including:
+    /// *  total size (bytes) of all Causet files.
     /// *  total size (bytes) of active and unflushed immutable memtables.
     /// *  total size (bytes) of all blob files.
     ///
-    fn get_engine_used_size(&self) -> Result<u64>;
+    fn get_einstein_merkle_tree_used_size(&self) -> Result<u64>;
 
     /// Roughly deletes files in multiple ranges.
     ///
@@ -85,7 +85,7 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
 
     fn get_oldest_snapshot_sequence_number(&self) -> Option<u64>;
 
-    fn get_total_sst_files_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>>;
+    fn get_total_Causet_files_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>>;
 
     fn get_range_entries_and_versions(
         &self,

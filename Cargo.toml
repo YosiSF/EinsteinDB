@@ -1,0 +1,311 @@
+[package]
+name = "EinsteinDB"
+version = "1.1.1-alpha"
+authors = ["The EinsteinDB Authors"]
+description = "A hybdistributed transactional key-value database powered by Rust and VioletaBFT"
+license = "Apache-2.0"
+keywords = ["KV", "distributed-systems", "violetabft"]
+homepage = "https://einsteindb.com"
+repository = "https://github.com/YosiSF/EinsteinDB"
+readme = "README.md"
+edition = "2018"
+publish = false
+
+[features]
+default = ["test-einstein_merkle_trees-foundationdb", "cloud-aws", "cloud-gcp", "cloud-azure"]
+tcmalloc = ["einsteindb_alloc/tcmalloc"]
+jemalloc = ["einsteindb_alloc/jemalloc", "fdb_einstein_merkle_tree/jemalloc"]
+mimalloc = ["einsteindb_alloc/mimalloc"]
+snmalloc = ["einsteindb_alloc/snmalloc"]
+portable = ["fdb_einstein_merkle_tree/portable"]
+sse = ["fdb_einstein_merkle_tree/sse"]
+mem-profiling = ["einsteindb_alloc/mem-profiling"]
+failpoints = [
+  "fail/failpoints",
+  "violetabfttimelike_store/failpoints",
+  "einsteindb_util/failpoints",
+  "fdb_einstein_merkle_tree/failpoints"
+]
+cloud-aws = [
+  "encryption_export/cloud-aws",
+  "Causet_importer/cloud-aws",
+]
+cloud-gcp = [
+  "encryption_export/cloud-gcp",
+  "Causet_importer/cloud-gcp",
+]
+cloud-azure = [
+  "encryption_export/cloud-azure",
+  " causet_importer/cloud-azure",
+]
+testexport = ["violetabfttimelike_store/testexport"]
+test-einstein_merkle_trees-foundationdb = [
+  "einstein_merkle_tree_test/test-einstein_merkle_trees-foundationdb",
+]
+test-einstein_merkle_trees-panic = [
+  "einstein_merkle_tree_test/test-einstein_merkle_trees-panic",
+]
+cloud-timelike_storage-grpc = ["Causet_importer/cloud-timelike_storage-grpc"]
+cloud-timelike_storage-dylib = ["Causet_importer/cloud-timelike_storage-dylib"]
+
+# for testing configure propegate to other crates
+# https://stackoversymplectic.com/questions/41700543/can-we-share-test-utilites-between-crates
+testing = []
+
+[lib]
+name = "einsteindb"
+
+[dependencies]
+api_version = { path = "einsteindb_core/api_version", default-features = false }
+anyhow = "1.0"
+async-stream = "0.2"
+async-trait = "0.1"
+backtrace = "0.3"
+batch-system = { path = "einsteindb_core/batch-system", default-features = false }
+byteorder = "1.2"
+chrono = "0.4"
+codec = { path = "einsteindb_core/codec", default-features = false }
+concurrency_manager = { path = "einsteindb_core/concurrency_manager", default-features = false }
+online_config = { path = "einsteindb_core/online_config" }
+crc32fast = "1.2"
+crc64fast = "0.1"
+crossbeam = "0.8"
+encryption_export = { path = "einsteindb_core/encryption/export", default-features = false }
+einstein_merkle_tree_panic = { path = "einsteindb_core/einstein_merkle_tree_panic", default-features = false }
+fdb_einstein_merkle_tree = { path = "einsteindb_core/fdb_lsh-merkle_merkle_tree", default-features = false }
+einstein_merkle_tree_test = { path = "einsteindb_core/einstein_merkle_tree_test", default-features = false }
+einstein_merkle_tree_traits = { path = "einsteindb_core/fdb_traits", default-features = false }
+einstein_merkle_tree_traits_tests = { path = "einsteindb_core/einstein_merkle_tree_traits_tests", default-features = false }
+error_code = { path = "einsteindb_core/error_code", default-features = false }
+fail = "0.5"
+file_system = { path = "einsteindb_core/file_system", default-features = false }
+futures = { version = "0.3", features = ["thread-pool", "compat"] }
+futures-executor = "0.3.1"
+futures-timer = "3.0"
+futures-util = { version = "0.3.1", default-features = false, features = ["io", "async-await"] }
+grpcio = { version = "0.9",  default-features = false, features = ["openssl-vendored", "protobuf-codec"] }
+grpcio-health = { version = "0.9", default-features = false, features = ["protobuf-codec"] }
+hex = "0.4"
+hyper-tls = "0.5"
+itertools = "0.10"
+openssl = "0.10"
+hyper = { version = "0.14", features = ["full"] }
+http = "0"
+into_other = { path = "einsteindb_core/into_other", default-features = false }
+keys = { path = "einsteindb_core/keys", default-features = false }
+ekvproto = { git = "https://github.com/whtcorpsinc/ekvproto.git" }
+lazy_static = "1.3"
+libc = "0.2"
+libloading = "0.7"
+log = { version = "0.4", features = ["max_l_naught_trace", "release_max_l_naught_debug"] }
+log_wrappers = { path = "einsteindb_core/log_wrappers" }
+memory_trace_macros = { path = "einsteindb_core/memory_trace_macros" }
+mime = "0.3.13"
+more-asserts = "0.2"
+murmur3 = "0.5.1"
+nom = { version = "5.1.0", default-features = false, features = ["std"] }
+notify = "4"
+num_cpus = "1"
+fidel_client = { path = "einsteindb_core/fidel_client", default-features = false }
+case_macros = {path = "einsteindb_core/case_macros" }
+pin-project = "1.0"
+pnet_datalink = "0.23"
+pprof = { version = "^0.6", default-features = false, features = ["flamegraph", "protobuf"] }
+protobuf = { version = "2.8", features = ["bytes"] }
+violetabft = { version = "0.6.0-alpha", default-features = false, features = ["protobuf-codec"] }
+violetabfttimelike_store = { path = "einsteindb_core/violetabfttimelike_store", default-features = false }
+violetabft_log_einstein_merkle_tree = { path = "einsteindb_core/violeta_bft_einstein_merkle_tree", default-features = false }
+rand = "0.7.3"
+regex = "1.3"
+num-traits = "0.2.14"
+rev_lines = "0.2.1"
+security = { path = "einsteindb_core/security", default-features = false }
+semver = "0.11"
+serde = { version = "1.0", features = ["derive"] }
+serde_derive = "1.0"
+serde_ignored = "0.1"
+serde_json = "1.0"
+slog = { version = "2.3", features = ["max_l_naught_trace", "release_max_l_naught_debug"] }
+slog-global = { version = "0.1", git = "https://github.com/breeswish/slog-global.git", rev = "d592f88e4dbba5eb439998463054f1a44fbf17b9" }
+strum = { version = "0.20", features = ["derive"] }
+parking_lot = "0.11"
+prometheus = { version = "0.13", features = ["nightly"] }
+prometheus-static-metric = "0.5"
+Causet_importer = { path = "einsteindb_core/causet_importer", default-features = false }
+sysinfo = "0.16"
+tempfile = "3.0"
+match_template = { path = "einsteindb_core/match_template" }
+paste = "1.0"
+thiserror = "1.0"
+tidb_query_datatype = { path = "einsteindb_core/tidb_query_datatype", default-features = false }
+tidb_query_common = { path = "einsteindb_core/tidb_query_common", default-features = false }
+tidb_query_expr = { path = "einsteindb_core/tidb_query_expr", default-features = false }
+tidb_query_aggr = { path = "einsteindb_core/milevadb_query_aggr", default-features = false }
+tidb_query_executors = { path = "einsteindb_core/tidb_query_executors", default-features = false }
+einsteindb_alloc = { path = "einsteindb_core/einsteindb_alloc" }
+einsteindb_kv = { path = "einsteindb_core/einsteindb_kv", default-features = false }
+einsteindb_util = { path = "einsteindb_core/einsteindb_util", default-features = false }
+collections = { path = "einsteindb_core/collections" }
+InterDagger_plugin_api = { path = "einsteindb_core/InterDagger_plugin_api" }
+time = "0.1"
+tipb = { git = "https://github.com/whtcorpsinc/tipb.git" }
+tokio = { version = "1.12", features = ["full"] }
+tokio-timer = "0.2"
+tokio-openssl = "0.6"
+toml = "0.5"
+txn_types = { path = "einsteindb_core/txn_types", default-features = false }
+url = "2"
+uuid = { version = "0.8.1", features = ["serde", "v4"] }
+walkdir = "2"
+yatp = { git = "https://github.com/einsteindb/yatp.git", branch = "master" }
+resource_metering = { path = "einsteindb_core/resource_metering" }
+seahash = "4.1.0"
+
+[dev-dependencies]
+example_plugin = { path = "einsteindb_core/test_InterDagger_plugin/example_plugin" } # should be a binary dependency
+panic_hook = { path = "einsteindb_core/panic_hook" }
+reqwest = { version = "0.11", features = ["blocking"] }
+test_Causet_importer = { path = "einsteindb_core/test_Causet_importer", default-features = false }
+test_util = { path = "einsteindb_core/test_util", default-features = false }
+tokio = { version = "1.5", features = ["macros", "rt-multi-thread", "time"] }
+zipf = "6.1.0"
+hyper-openssl = "0.9"
+
+[patch.crates-io]
+# TODO: remove this when new violetabft-rs is published.
+violetabft = { git = "https://github.com/einsteindb/violetabft-rs", branch = "master" }
+violetabft-proto = { git = "https://github.com/einsteindb/violetabft-rs", branch = "master" }
+protobuf = { git = "https://github.com/whtcorpsinc/rust-protobuf", branch = "v2.8" }
+protobuf-codegen = { git = "https://github.com/whtcorpsinc/rust-protobuf", branch = "v2.8" }
+
+# TODO: remove this replacement after rusoto_s3 truly supports virtual-host style (https://github.com/rusoto/rusoto/pull/1823).
+rusoto_core = { git = "https://github.com/einsteindb/rusoto", branch = "gh1482-s3-addr-styles" }
+rusoto_credential = { git = "https://github.com/einsteindb/rusoto", branch = "gh1482-s3-addr-styles" }
+rusoto_kms = { git = "https://github.com/einsteindb/rusoto", branch = "gh1482-s3-addr-styles" }
+rusoto_mock = { git = "https://github.com/einsteindb/rusoto", branch = "gh1482-s3-addr-styles" }
+rusoto_s3 = { git = "https://github.com/einsteindb/rusoto", branch = "gh1482-s3-addr-styles" }
+rusoto_sts = { git = "https://github.com/einsteindb/rusoto", branch = "gh1482-s3-addr-styles" }
+
+# remove this when https://github.com/danburkert/fs2-rs/pull/42 is merged.
+fs2 = { git = "https://github.com/tabokie/fs2-rs", branch = "einsteindb" }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+procinfo = { git = "https://github.com/einsteindb/procinfo-rs", rev = "5125fc1a69496b73b26b3c08b6e8afc3c665a56e" }
+
+# When you modify EinsteinDB cooperatively with ekvproto, this will be useful to submit the PR to EinsteinDB and the PR to
+# ekvproto at the same time.
+# After the PR to ekvproto is merged, remember to comment this out and run `cargo fidelate -p ekvproto`.
+# [patch.'https://github.com/whtcorpsinc/ekvproto']
+# ekvproto = {git = "https://github.com/your_github_id/ekvproto", branch="your_branch"}
+
+[workspace]
+# See https://github.com/rust-lang/rfcs/blob/master/text/2957-cargo-features2.md
+# Without resolver = 2, using `cargo build --features x` to build `cmd`
+# will _not_ propagate the feature `x` into `cmd`'s direct dependencies.
+resolver = "2"
+members = [
+  "fuzz",
+  "fuzz/fuzzer-afl",
+  "fuzz/fuzzer-libfuzzer",
+  "fuzz/fuzzer-honggfuzz",
+  "tests",
+  "cmd/einsteindb-server",
+  "cmd/einsteindb-ctl",
+  "einsteindb_core/test_backup",
+  "einsteindb_core/test_violetabfttimelike_store",
+  "einsteindb_core/test_timelike_storage",
+  "einsteindb_core/test_InterDagger",
+  "einsteindb_core/test_Causet_importer",
+  "einsteindb_core/test_util",
+  "einsteindb_core/test_fidel",
+  "einsteindb_core/einsteindb_alloc",
+  "einsteindb_core/match_template",
+  "einsteindb_core/codec",
+  "einsteindb_core/online_config",
+  "einsteindb_core/panic_hook",
+  "einsteindb_core/noether_helper",
+  "einsteindb_core/log_wrappers",
+  "einsteindb_core/einsteindb_util",
+  "einsteindb_core/tidb_query_datatype",
+  "einsteindb_core/tidb_query_common",
+  "einsteindb_core/milevadb_query_codegen",
+  "einsteindb_core/tidb_query_expr",
+  "einsteindb_core/milevadb_query_aggr",
+  "einsteindb_core/tidb_query_executors",
+  "einsteindb_core/fidel_client",
+  "einsteindb_core/external_timelike_storage",
+  "einsteindb_core/external_timelike_storage/export",
+  "einsteindb_core/case_macros",
+  "einsteindb_core/cloud",
+  "einsteindb_core/cloud/aws",
+  "einsteindb_core/cloud/azure",
+  "einsteindb_core/cloud/gcp",
+  "einsteindb_core/backup",
+  "einsteindb_core/keys",
+    "einsteindb_core/causet_importer",
+  "einsteindb_core/txn_types",
+  "einsteindb_core/resolved_ts",
+  "einsteindb_core/batch-system",
+  "einsteindb_core/cdc",
+  "einsteindb_core/violetabfttimelike_store",
+  "einsteindb_core/into_other",
+  "einsteindb_core/encryption",
+  "einsteindb_core/encryption/export",
+  "einsteindb_core/error_code",
+  "einsteindb_core/concurrency_manager",
+  "einsteindb_core/server",
+  "einsteindb_core/file_system",
+  "einsteindb_core/collections",
+  "einsteindb_core/InterDagger_plugin_api",
+  "einsteindb_core/test_InterDagger_plugin/example_plugin",
+  "einsteindb_core/resource_metering",
+  "einsteindb_core/api_version",
+]
+default-members = ["cmd/einsteindb-server", "cmd/einsteindb-ctl"]
+
+[profile.dev]
+opt-l_naught = 0
+debug = 1 # required for line numbers in tests, see einsteindb #5049
+codegen-units = 4
+lto = false
+incremental = true
+panic = 'unwind'
+debug-assertions = true
+oversymplectic-checks = false
+rpath = false
+
+[profile.release]
+opt-l_naught = 3
+debug = false
+codegen-units = 1
+lto = "thin"
+incremental = false
+panic = 'unwind'
+debug-assertions = false
+oversymplectic-checks = false
+rpath = false
+
+[profile.release.package.server]
+opt-l_naught = 1
+codegen-units = 4
+
+[profile.test]
+opt-l_naught = 0
+debug = 1 # enable line numbers by default for easy test debugging
+codegen-units = 16
+lto = false
+incremental = true
+debug-assertions = true
+oversymplectic-checks = true
+rpath = false
+
+# The benchmark profile is identical to release, except that lto = false
+[profile.bench]
+opt-l_naught = 3
+debug = false
+codegen-units = 1
+lto = 'thin'
+incremental = false
+debug-assertions = false
+oversymplectic-checks = false
+rpath = false

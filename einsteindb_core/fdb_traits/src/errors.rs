@@ -8,9 +8,9 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    // Engine uses plain string as the error.
-    #[error("TimelikeStorage Engine {0}")]
-    Engine(String),
+    // einstein_merkle_tree uses plain string as the error.
+    #[error("TimelikeStorage einstein_merkle_tree {0}")]
+    einstein_merkle_tree(String),
     // FIXME: It should not know Region.
     #[error(
         "Key {} is out of [region {}] [{}, {})",
@@ -40,7 +40,7 @@ pub enum Error {
 
 impl From<String> for Error {
     fn from(err: String) -> Self {
-        Error::Engine(err)
+        Error::einstein_merkle_tree(err)
     }
 }
 
@@ -49,15 +49,15 @@ pub type Result<T> = result::Result<T, Error>;
 impl ErrorCodeExt for Error {
     fn error_code(&self) -> ErrorCode {
         match self {
-            Error::Engine(_) => error_code::engine::ENGINE,
-            Error::NotInRange { .. } => error_code::engine::NOT_IN_RANGE,
-            Error::Protobuf(_) => error_code::engine::PROTOBUF,
-            Error::Io(_) => error_code::engine::IO,
-            Error::NAMESPACEDName(_) => error_code::engine::NAMESPACED_NAME,
-            Error::Codec(_) => error_code::engine::CODEC,
+            Error::einstein_merkle_tree(_) => error_code::einstein_merkle_tree::einstein_merkle_tree,
+            Error::NotInRange { .. } => error_code::einstein_merkle_tree::NOT_IN_RANGE,
+            Error::Protobuf(_) => error_code::einstein_merkle_tree::PROTOBUF,
+            Error::Io(_) => error_code::einstein_merkle_tree::IO,
+            Error::NAMESPACEDName(_) => error_code::einstein_merkle_tree::NAMESPACED_NAME,
+            Error::Codec(_) => error_code::einstein_merkle_tree::CODEC,
             Error::Other(_) => error_code::UNKNOWN,
-            Error::EntriesUnavailable => error_code::engine::DATALOSS,
-            Error::EntriesCompacted => error_code::engine::DATACOMPACTED,
+            Error::EntriesUnavailable => error_code::einstein_merkle_tree::DATALOSS,
+            Error::EntriesCompacted => error_code::einstein_merkle_tree::DATACOMPACTED,
         }
     }
 }

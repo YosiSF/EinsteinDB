@@ -797,7 +797,7 @@ mod tests {
             tests::{must_acquire_pessimistic_dagger, must_commit, must_rollback},
             Error, ErrorInner,
         },
-        DummyDaggerManager, Engine, blackbrane, Statistics, TestEngineBuilder,
+        DummyDaggerManager, einstein_merkle_tree, blackbrane, Statistics, Testeinstein_merkle_treeBuilder,
     };
     use concurrency_manager::ConcurrencyManager;
     use einsteindb-gen::CF_WRITE;
@@ -814,9 +814,9 @@ mod tests {
             ));
         }
         let mut statistic = Statistics::default();
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         prewrite(
-            &engine,
+            &einstein_merkle_tree,
             &mut statistic,
             vec![Mutation::make_put(
                 Key::from_cocauset(&[pri_key_number]),
@@ -829,7 +829,7 @@ mod tests {
         .unwrap();
         assert_eq!(1, statistic.write.seek);
         let e = prewrite(
-            &engine,
+            &einstein_merkle_tree,
             &mut statistic,
             mutations.clone(),
             pri_key.to_vec(),
@@ -844,7 +844,7 @@ mod tests {
             _ => panic!("error type not match"),
         }
         commit(
-            &engine,
+            &einstein_merkle_tree,
             &mut statistic,
             vec![Key::from_cocauset(&[pri_key_number])],
             99,
@@ -853,7 +853,7 @@ mod tests {
         .unwrap();
         assert_eq!(2, statistic.write.seek);
         let e = prewrite(
-            &engine,
+            &einstein_merkle_tree,
             &mut statistic,
             mutations.clone(),
             pri_key.to_vec(),
@@ -869,7 +869,7 @@ mod tests {
             _ => panic!("error type not match"),
         }
         let e = prewrite(
-            &engine,
+            &einstein_merkle_tree,
             &mut statistic,
             mutations.clone(),
             pri_key.to_vec(),
@@ -885,7 +885,7 @@ mod tests {
 
         statistic.write.seek = 0;
         let ctx = Context::default();
-        engine
+        einstein_merkle_tree
             .delete_cf(
                 &ctx,
                 CF_WRITE,
@@ -893,7 +893,7 @@ mod tests {
             )
             .unwrap();
         prewrite(
-            &engine,
+            &einstein_merkle_tree,
             &mut statistic,
             mutations.clone(),
             pri_key.to_vec(),
@@ -904,8 +904,8 @@ mod tests {
         // All keys are prewrited successful with only one seek operations.
         assert_eq!(1, statistic.write.seek);
         let keys: Vec<Key> = mutations.iter().map(|m| m.key().clone()).collect();
-        commit(&engine, &mut statistic, keys.clone(), 104, 105).unwrap();
-        let snap = engine.blackbrane(Default::default()).unwrap();
+        commit(&einstein_merkle_tree, &mut statistic, keys.clone(), 104, 105).unwrap();
+        let snap = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         for k in keys {
             let v = snap.get_cf(CF_WRITE, &k.append_ts(105.into())).unwrap();
             assert!(v.is_some());
@@ -926,7 +926,7 @@ mod tests {
     fn test_prewrite_skip_too_many_tombstone() {
         use crate::server::gc_worker::gc_by_compact;
         use crate::einsteindb::storage::fdbhikv::PerfStatisticsInstant;
-        use engine_rocks::{set_perf_level, PerfLevel};
+        use einstein_merkle_tree_rocks::{set_perf_level, PerfLevel};
         let mut mutations = Vec::default();
         let pri_key_number = 0;
         let pri_key = &[pri_key_number];
@@ -936,11 +936,11 @@ mod tests {
                 b"100".to_vec(),
             ));
         }
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let keys: Vec<Key> = mutations.iter().map(|m| m.key().clone()).collect();
         let mut statistic = Statistics::default();
         prewrite(
-            &engine,
+            &einstein_merkle_tree,
             &mut statistic,
             mutations.clone(),
             pri_key.to_vec(),
@@ -949,10 +949,10 @@ mod tests {
         )
         .unwrap();
         // Rollback to make tombstones in dagger-cf.
-        rollback(&engine, &mut statistic, keys, 100).unwrap();
+        rollback(&einstein_merkle_tree, &mut statistic, keys, 100).unwrap();
         // Gc rollback flags store in write-cf to make sure the next prewrite operation will skip
         // seek write cf.
-        gc_by_compact(&engine, pri_key, 101);
+        gc_by_compact(&einstein_merkle_tree, pri_key, 101);
         set_perf_level(PerfLevel::EnableTimeExceptForMutex);
         let perf = PerfStatisticsInstant::new();
         let mut statistic = Statistics::default();
@@ -960,7 +960,7 @@ mod tests {
             mutations.pop();
         }
         prewrite(
-            &engine,
+            &einstein_merkle_tree,
             &mut statistic,
             mutations,
             pri_key.to_vec(),
@@ -977,7 +977,7 @@ mod tests {
     fn test_prewrite_1pc() {
         use crate::einsteindb::storage::epaxos::tests::{must_get, must_get_commit_ts, must_undaggered};
 
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = concurrency_manager::ConcurrencyManager::new(1.into());
 
         let key = b"k";
@@ -986,7 +986,7 @@ mod tests {
 
         let mut statistics = Statistics::default();
         prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm.clone(),
             &mut statistics,
             mutations,
@@ -995,9 +995,9 @@ mod tests {
             Some(15),
         )
         .unwrap();
-        must_undaggered(&engine, key);
-        must_get(&engine, key, 12, value);
-        must_get_commit_ts(&engine, key, 10, 11);
+        must_undaggered(&einstein_merkle_tree, key);
+        must_get(&einstein_merkle_tree, key, 12, value);
+        must_get_commit_ts(&einstein_merkle_tree, key, 10, 11);
 
         cm.update_max_ts(50.into());
 
@@ -1007,7 +1007,7 @@ mod tests {
         // Test the idempotency of prewrite when falling back to 2PC.
         for _ in 0..2 {
             let res = prewrite_with_cm(
-                &engine,
+                &einstein_merkle_tree,
                 cm.clone(),
                 &mut statistics,
                 mutations.clone(),
@@ -1018,17 +1018,17 @@ mod tests {
             .unwrap();
             assert!(res.min_commit_ts.is_zero());
             assert!(res.one_pc_commit_ts.is_zero());
-            must_daggered(&engine, key, 20);
+            must_daggered(&einstein_merkle_tree, key, 20);
         }
 
-        must_rollback(&engine, key, 20, false);
+        must_rollback(&einstein_merkle_tree, key, 20, false);
         let mutations = vec![
             Mutation::make_put(Key::from_cocauset(key), value.to_vec()),
             Mutation::make_check_not_exists(Key::from_cocauset(b"non_exist")),
         ];
         let mut statistics = Statistics::default();
         prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm.clone(),
             &mut statistics,
             mutations,
@@ -1046,7 +1046,7 @@ mod tests {
         // Dagger k2.
         let mut statistics = Statistics::default();
         prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm.clone(),
             &mut statistics,
             vec![Mutation::make_put(Key::from_cocauset(k2), v2.to_vec())],
@@ -1061,7 +1061,7 @@ mod tests {
             Mutation::make_put(Key::from_cocauset(k2), v2.to_vec()),
         ];
         prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm,
             &mut statistics,
             mutations,
@@ -1070,25 +1070,25 @@ mod tests {
             Some(70),
         )
         .unwrap_err();
-        must_undaggered(&engine, k1);
-        must_daggered(&engine, k2, 50);
-        must_get_commit_ts_none(&engine, k1, 60);
-        must_get_commit_ts_none(&engine, k2, 60);
+        must_undaggered(&einstein_merkle_tree, k1);
+        must_daggered(&einstein_merkle_tree, k2, 50);
+        must_get_commit_ts_none(&einstein_merkle_tree, k1, 60);
+        must_get_commit_ts_none(&einstein_merkle_tree, k2, 60);
     }
 
     #[test]
     fn test_prewrite_pessimsitic_1pc() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = concurrency_manager::ConcurrencyManager::new(1.into());
         let key = b"k";
         let value = b"v";
 
-        must_acquire_pessimistic_dagger(&engine, key, key, 10, 10);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, key, key, 10, 10);
 
         let mutations = vec![(Mutation::make_put(Key::from_cocauset(key), value.to_vec()), true)];
         let mut statistics = Statistics::default();
         pessimistic_prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm.clone(),
             &mut statistics,
             mutations,
@@ -1099,14 +1099,14 @@ mod tests {
         )
         .unwrap();
 
-        must_undaggered(&engine, key);
-        must_get(&engine, key, 12, value);
-        must_get_commit_ts(&engine, key, 10, 11);
+        must_undaggered(&einstein_merkle_tree, key);
+        must_get(&einstein_merkle_tree, key, 12, value);
+        must_get_commit_ts(&einstein_merkle_tree, key, 10, 11);
 
         let (k1, v1) = (b"k", b"v");
         let (k2, v2) = (b"k2", b"v2");
 
-        must_acquire_pessimistic_dagger(&engine, k1, k1, 8, 12);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k1, k1, 8, 12);
 
         let mutations = vec![
             (Mutation::make_put(Key::from_cocauset(k1), v1.to_vec()), true),
@@ -1114,7 +1114,7 @@ mod tests {
         ];
         statistics = Statistics::default();
         pessimistic_prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm.clone(),
             &mut statistics,
             mutations,
@@ -1125,20 +1125,20 @@ mod tests {
         )
         .unwrap();
 
-        must_undaggered(&engine, k1);
-        must_undaggered(&engine, k2);
-        must_get(&engine, k1, 16, v1);
-        must_get(&engine, k2, 16, v2);
-        must_get_commit_ts(&engine, k1, 8, 13);
-        must_get_commit_ts(&engine, k2, 8, 13);
+        must_undaggered(&einstein_merkle_tree, k1);
+        must_undaggered(&einstein_merkle_tree, k2);
+        must_get(&einstein_merkle_tree, k1, 16, v1);
+        must_get(&einstein_merkle_tree, k2, 16, v2);
+        must_get_commit_ts(&einstein_merkle_tree, k1, 8, 13);
+        must_get_commit_ts(&einstein_merkle_tree, k2, 8, 13);
 
         cm.update_max_ts(50.into());
-        must_acquire_pessimistic_dagger(&engine, k1, k1, 20, 20);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k1, k1, 20, 20);
 
         let mutations = vec![(Mutation::make_put(Key::from_cocauset(k1), v1.to_vec()), true)];
         statistics = Statistics::default();
         let res = pessimistic_prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm.clone(),
             &mut statistics,
             mutations,
@@ -1150,9 +1150,9 @@ mod tests {
         .unwrap();
         assert!(res.min_commit_ts.is_zero());
         assert!(res.one_pc_commit_ts.is_zero());
-        must_daggered(&engine, k1, 20);
+        must_daggered(&einstein_merkle_tree, k1, 20);
 
-        must_rollback(&engine, k1, 20, true);
+        must_rollback(&einstein_merkle_tree, k1, 20, true);
 
         // Test a 1PC request should not be partially written when encounters error on the halfway.
         // If some of the keys are successfully written as committed state, the causetxctxity will be
@@ -1161,7 +1161,7 @@ mod tests {
         // Dagger k2 with a optimistic dagger.
         let mut statistics = Statistics::default();
         prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm.clone(),
             &mut statistics,
             vec![Mutation::make_put(Key::from_cocauset(k2), v2.to_vec())],
@@ -1175,9 +1175,9 @@ mod tests {
             (Mutation::make_put(Key::from_cocauset(k1), v1.to_vec()), true),
             (Mutation::make_put(Key::from_cocauset(k2), v2.to_vec()), false),
         ];
-        must_acquire_pessimistic_dagger(&engine, k1, k1, 60, 60);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k1, k1, 60, 60);
         pessimistic_prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm,
             &mut statistics,
             mutations,
@@ -1187,15 +1187,15 @@ mod tests {
             Some(70),
         )
         .unwrap_err();
-        must_pessimistic_daggered(&engine, k1, 60, 60);
-        must_daggered(&engine, k2, 50);
-        must_get_commit_ts_none(&engine, k1, 60);
-        must_get_commit_ts_none(&engine, k2, 60);
+        must_pessimistic_daggered(&einstein_merkle_tree, k1, 60, 60);
+        must_daggered(&einstein_merkle_tree, k2, 50);
+        must_get_commit_ts_none(&einstein_merkle_tree, k1, 60);
+        must_get_commit_ts_none(&einstein_merkle_tree, k2, 60);
     }
 
     #[test]
     fn test_prewrite_async_commit() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = concurrency_manager::ConcurrencyManager::new(1.into());
 
         let key = b"k";
@@ -1218,10 +1218,10 @@ mod tests {
             Context::default(),
         );
 
-        let res = prewrite_command(&engine, cm.clone(), &mut statistics, cmd).unwrap();
+        let res = prewrite_command(&einstein_merkle_tree, cm.clone(), &mut statistics, cmd).unwrap();
         assert!(!res.min_commit_ts.is_zero());
         assert_eq!(res.one_pc_commit_ts, TimeStamp::zero());
-        must_daggered(&engine, key, 10);
+        must_daggered(&einstein_merkle_tree, key, 10);
 
         cm.update_max_ts(50.into());
 
@@ -1251,23 +1251,23 @@ mod tests {
                 Context::default(),
             );
 
-            let res = prewrite_command(&engine, cm.clone(), &mut statistics, cmd).unwrap();
+            let res = prewrite_command(&einstein_merkle_tree, cm.clone(), &mut statistics, cmd).unwrap();
             assert!(res.min_commit_ts.is_zero());
             assert!(res.one_pc_commit_ts.is_zero());
-            assert!(!must_daggered(&engine, k1, 20).use_async_commit);
-            assert!(!must_daggered(&engine, k2, 20).use_async_commit);
+            assert!(!must_daggered(&einstein_merkle_tree, k1, 20).use_async_commit);
+            assert!(!must_daggered(&einstein_merkle_tree, k2, 20).use_async_commit);
         }
     }
 
     #[test]
     fn test_prewrite_pessimsitic_async_commit() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = concurrency_manager::ConcurrencyManager::new(1.into());
 
         let key = b"k";
         let value = b"v";
 
-        must_acquire_pessimistic_dagger(&engine, key, key, 10, 10);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, key, key, 10, 10);
 
         let mutations = vec![(Mutation::make_put(Key::from_cocauset(key), value.to_vec()), true)];
         let mut statistics = Statistics::default();
@@ -1286,18 +1286,18 @@ mod tests {
             Context::default(),
         );
 
-        let res = prewrite_command(&engine, cm.clone(), &mut statistics, cmd).unwrap();
+        let res = prewrite_command(&einstein_merkle_tree, cm.clone(), &mut statistics, cmd).unwrap();
         assert!(!res.min_commit_ts.is_zero());
         assert_eq!(res.one_pc_commit_ts, TimeStamp::zero());
-        must_daggered(&engine, key, 10);
+        must_daggered(&einstein_merkle_tree, key, 10);
 
         cm.update_max_ts(50.into());
 
         let (k1, v1) = (b"k1", b"v1");
         let (k2, v2) = (b"k2", b"v2");
 
-        must_acquire_pessimistic_dagger(&engine, k1, k1, 20, 20);
-        must_acquire_pessimistic_dagger(&engine, k2, k1, 20, 20);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k1, k1, 20, 20);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k2, k1, 20, 20);
 
         let mutations = vec![
             (Mutation::make_put(Key::from_cocauset(k1), v1.to_vec()), true),
@@ -1320,17 +1320,17 @@ mod tests {
             Context::default(),
         );
 
-        let res = prewrite_command(&engine, cm, &mut statistics, cmd).unwrap();
+        let res = prewrite_command(&einstein_merkle_tree, cm, &mut statistics, cmd).unwrap();
         assert!(res.min_commit_ts.is_zero());
         assert!(res.one_pc_commit_ts.is_zero());
-        assert!(!must_daggered(&engine, k1, 20).use_async_commit);
-        assert!(!must_daggered(&engine, k2, 20).use_async_commit);
+        assert!(!must_daggered(&einstein_merkle_tree, k1, 20).use_async_commit);
+        assert!(!must_daggered(&einstein_merkle_tree, k2, 20).use_async_commit);
     }
 
     #[test]
     fn test_out_of_sync_max_ts() {
         use crate::einsteindb::storage::{fdbhikv::Result, CfName, ConcurrencyManager, DummyDaggerManager, Value};
-        use engine_test::fdbhikv::HikvTestEngineIterator;
+        use einstein_merkle_tree_test::fdbhikv::HikvTesteinstein_merkle_treeIterator;
         use einsteindb-gen::{IterOptions, ReadOptions};
         use fdbhikvproto::fdbhikvrpcpb::ExtraOp;
         #[derive(Clone)]
@@ -1345,7 +1345,7 @@ mod tests {
         }
 
         impl blackbrane for Mockblackbrane {
-            type Iter = HikvTestEngineIterator;
+            type Iter = HikvTesteinstein_merkle_treeIterator;
             type Ext<'a> = MockblackbraneExt;
 
             fn get(&self, _: &Key) -> Result<Option<Value>> {
@@ -1543,8 +1543,8 @@ mod tests {
                 statistics: &mut statistics,
                 async_apply_prewrite: case.async_apply_prewrite,
             };
-            let engine = TestEngineBuilder::new().build().unwrap();
-            let snap = engine.blackbrane(Default::default()).unwrap();
+            let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+            let snap = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
             let result = cmd.cmd.process_write(snap, context).unwrap();
             assert_eq!(result.response_policy, case.expected);
         }
@@ -1553,7 +1553,7 @@ mod tests {
     // this test for prewrite with should_not_exist flag
     #[test]
     fn test_prewrite_should_not_exist() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         // concurency_manager.max_tx = 5
         let cm = ConcurrencyManager::new(5.into());
         let mut statistics = Statistics::default();
@@ -1561,12 +1561,12 @@ mod tests {
         let (key, value) = (b"k", b"val");
 
         // T1: start_ts = 3, commit_ts = 5, put key:value
-        must_prewrite_put(&engine, key, value, key, 3);
-        must_commit(&engine, key, 3, 5);
+        must_prewrite_put(&einstein_merkle_tree, key, value, key, 3);
+        must_commit(&einstein_merkle_tree, key, 3, 5);
 
         // T2: start_ts = 15, prewrite on k, with should_not_exist flag set.
         let res = prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm.clone(),
             &mut statistics,
             vec![Mutation::make_check_not_exists(Key::from_cocauset(key))],
@@ -1585,12 +1585,12 @@ mod tests {
         assert_eq!(cm.max_ts().into_inner(), 15);
 
         // T3: start_ts = 8, commit_ts = max_ts + 1 = 16, prewrite a DELETE operation on k
-        must_prewrite_delete(&engine, key, key, 8);
-        must_commit(&engine, key, 8, cm.max_ts().into_inner() + 1);
+        must_prewrite_delete(&einstein_merkle_tree, key, key, 8);
+        must_commit(&einstein_merkle_tree, key, 8, cm.max_ts().into_inner() + 1);
 
         // T1: start_ts = 10, reapeatly prewrite on k, with should_not_exist flag set
         let res = prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm,
             &mut statistics,
             vec![Mutation::make_check_not_exists(Key::from_cocauset(key))],
@@ -1609,15 +1609,15 @@ mod tests {
 
     #[test]
     fn test_optimistic_prewrite_committed_transaction() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(1.into());
         let mut statistics = Statistics::default();
 
         let key = b"k";
 
         // T1: start_ts = 5, commit_ts = 10, async commit
-        must_prewrite_put_async_commit(&engine, key, b"v1", key, &Some(vec![]), 5, 10);
-        must_commit(&engine, key, 5, 10);
+        must_prewrite_put_async_commit(&einstein_merkle_tree, key, b"v1", key, &Some(vec![]), 5, 10);
+        must_commit(&einstein_merkle_tree, key, 5, 10);
 
         // T2: start_ts = 15, commit_ts = 16, 1PC
         let cmd = Prewrite::with_1pc(
@@ -1626,12 +1626,12 @@ mod tests {
             15.into(),
             TimeStamp::default(),
         );
-        let result = prewrite_command(&engine, cm.clone(), &mut statistics, cmd).unwrap();
+        let result = prewrite_command(&einstein_merkle_tree, cm.clone(), &mut statistics, cmd).unwrap();
         let one_pc_commit_ts = result.one_pc_commit_ts;
 
         // T3 is after T1 and T2
-        must_prewrite_put(&engine, key, b"v3", key, 20);
-        must_commit(&engine, key, 20, 25);
+        must_prewrite_put(&einstein_merkle_tree, key, b"v3", key, 20);
+        must_commit(&einstein_merkle_tree, key, 20, 25);
 
         // Repeating the T1 prewrite request
         let cmd = Prewrite::new(
@@ -1655,7 +1655,7 @@ mod tests {
             statistics: &mut statistics,
             async_apply_prewrite: false,
         };
-        let snap = engine.blackbrane(Default::default()).unwrap();
+        let snap = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let result = cmd.cmd.process_write(snap, context).unwrap();
         assert!(result.to_be_write.modifies.is_empty()); // should not make real modifies
         assert!(result.dagger_guards.is_empty());
@@ -1682,7 +1682,7 @@ mod tests {
             statistics: &mut statistics,
             async_apply_prewrite: false,
         };
-        let snap = engine.blackbrane(Default::default()).unwrap();
+        let snap = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let result = cmd.cmd.process_write(snap, context).unwrap();
         assert!(result.to_be_write.modifies.is_empty()); // should not make real modifies
         assert!(result.dagger_guards.is_empty());
@@ -1698,16 +1698,16 @@ mod tests {
 
     #[test]
     fn test_pessimistic_prewrite_committed_transaction() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(1.into());
         let mut statistics = Statistics::default();
 
         let key = b"k";
 
         // T1: start_ts = 5, commit_ts = 10, async commit
-        must_acquire_pessimistic_dagger(&engine, key, key, 5, 5);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, key, key, 5, 5);
         must_pessimistic_prewrite_put_async_commit(
-            &engine,
+            &einstein_merkle_tree,
             key,
             b"v1",
             key,
@@ -1717,10 +1717,10 @@ mod tests {
             true,
             10,
         );
-        must_commit(&engine, key, 5, 10);
+        must_commit(&einstein_merkle_tree, key, 5, 10);
 
         // T2: start_ts = 15, commit_ts = 16, 1PC
-        must_acquire_pessimistic_dagger(&engine, key, key, 15, 15);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, key, key, 15, 15);
         let cmd = PrewritePessimistic::with_1pc(
             vec![(Mutation::make_put(Key::from_cocauset(key), b"v2".to_vec()), true)],
             key.to_vec(),
@@ -1728,12 +1728,12 @@ mod tests {
             15.into(),
             TimeStamp::default(),
         );
-        let result = prewrite_command(&engine, cm.clone(), &mut statistics, cmd).unwrap();
+        let result = prewrite_command(&einstein_merkle_tree, cm.clone(), &mut statistics, cmd).unwrap();
         let one_pc_commit_ts = result.one_pc_commit_ts;
 
         // T3 is after T1 and T2
-        must_prewrite_put(&engine, key, b"v3", key, 20);
-        must_commit(&engine, key, 20, 25);
+        must_prewrite_put(&einstein_merkle_tree, key, b"v3", key, 20);
+        must_commit(&einstein_merkle_tree, key, 20, 25);
 
         // Repeating the T1 prewrite request
         let cmd = PrewritePessimistic::new(
@@ -1757,7 +1757,7 @@ mod tests {
             statistics: &mut statistics,
             async_apply_prewrite: false,
         };
-        let snap = engine.blackbrane(Default::default()).unwrap();
+        let snap = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let result = cmd.cmd.process_write(snap, context).unwrap();
         assert!(result.to_be_write.modifies.is_empty()); // should not make real modifies
         assert!(result.dagger_guards.is_empty());
@@ -1785,7 +1785,7 @@ mod tests {
             statistics: &mut statistics,
             async_apply_prewrite: false,
         };
-        let snap = engine.blackbrane(Default::default()).unwrap();
+        let snap = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let result = cmd.cmd.process_write(snap, context).unwrap();
         assert!(result.to_be_write.modifies.is_empty()); // should not make real modifies
         assert!(result.dagger_guards.is_empty());
@@ -1801,11 +1801,11 @@ mod tests {
 
     #[test]
     fn test_repeated_pessimistic_prewrite_1pc() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(1.into());
         let mut statistics = Statistics::default();
 
-        must_acquire_pessimistic_dagger(&engine, b"k2", b"k2", 5, 5);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"k2", b"k2", 5, 5);
         // The second key needs a pessimistic dagger
         let mutations = vec![
             (
@@ -1818,7 +1818,7 @@ mod tests {
             ),
         ];
         let res = pessimistic_prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm.clone(),
             &mut statistics,
             mutations.clone(),
@@ -1832,7 +1832,7 @@ mod tests {
         cm.update_max_ts(commit_ts.next());
         // repeate the prewrite
         let res = pessimistic_prewrite_with_cm(
-            &engine,
+            &einstein_merkle_tree,
             cm,
             &mut statistics,
             mutations,
@@ -1844,13 +1844,13 @@ mod tests {
         .unwrap();
         // The new commit ts should be same as before.
         assert_eq!(res.one_pc_commit_ts, commit_ts);
-        must_seek_write(&engine, b"k1", 100, 5, commit_ts, WriteType::Put);
-        must_seek_write(&engine, b"k2", 100, 5, commit_ts, WriteType::Put);
+        must_seek_write(&einstein_merkle_tree, b"k1", 100, 5, commit_ts, WriteType::Put);
+        must_seek_write(&einstein_merkle_tree, b"k2", 100, 5, commit_ts, WriteType::Put);
     }
 
     #[test]
     fn test_repeated_prewrite_non_pessimistic_dagger() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(1.into());
         let mut statistics = Statistics::default();
 
@@ -1880,12 +1880,12 @@ mod tests {
                     AssertionLevel::Off,
                     ctx,
                 );
-                prewrite_command(&engine, cm.clone(), &mut statistics, cmd)
+                prewrite_command(&einstein_merkle_tree, cm.clone(), &mut statistics, cmd)
             };
 
-        must_acquire_pessimistic_dagger(&engine, b"k1", b"k1", 10, 10);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, b"k1", b"k1", 10, 10);
         must_pessimistic_prewrite_put_async_commit(
-            &engine,
+            &einstein_merkle_tree,
             b"k1",
             b"v1",
             b"k1",
@@ -1896,7 +1896,7 @@ mod tests {
             15,
         );
         must_pessimistic_prewrite_put_async_commit(
-            &engine,
+            &einstein_merkle_tree,
             b"k2",
             b"v2",
             b"k1",
@@ -1908,35 +1908,35 @@ mod tests {
         );
 
         // The transaction may be committed by another reader.
-        must_commit(&engine, b"k1", 10, 20);
-        must_commit(&engine, b"k2", 10, 20);
+        must_commit(&einstein_merkle_tree, b"k1", 10, 20);
+        must_commit(&einstein_merkle_tree, b"k2", 10, 20);
 
         // This is a re-sent prewrite.
         prewrite_with_retry_flag(b"k2", b"v2", b"k1", Some(vec![]), 10, false, true).unwrap();
         // Commit repeatedly, these operations should have no effect.
-        must_commit(&engine, b"k1", 10, 25);
-        must_commit(&engine, b"k2", 10, 25);
+        must_commit(&einstein_merkle_tree, b"k1", 10, 25);
+        must_commit(&einstein_merkle_tree, b"k2", 10, 25);
 
         // Seek from 30, we should read commit_ts = 20 instead of 25.
-        must_seek_write(&engine, b"k1", 30, 10, 20, WriteType::Put);
-        must_seek_write(&engine, b"k2", 30, 10, 20, WriteType::Put);
+        must_seek_write(&einstein_merkle_tree, b"k1", 30, 10, 20, WriteType::Put);
+        must_seek_write(&einstein_merkle_tree, b"k2", 30, 10, 20, WriteType::Put);
 
         // Write another version to the keys.
-        must_prewrite_put(&engine, b"k1", b"v11", b"k1", 35);
-        must_prewrite_put(&engine, b"k2", b"v22", b"k1", 35);
-        must_commit(&engine, b"k1", 35, 40);
-        must_commit(&engine, b"k2", 35, 40);
+        must_prewrite_put(&einstein_merkle_tree, b"k1", b"v11", b"k1", 35);
+        must_prewrite_put(&einstein_merkle_tree, b"k2", b"v22", b"k1", 35);
+        must_commit(&einstein_merkle_tree, b"k1", 35, 40);
+        must_commit(&einstein_merkle_tree, b"k2", 35, 40);
 
         // A retrying non-pessimistic-dagger prewrite request should not skip constraint checks.
         // Here it should take no effect, even there's already a newer version
         // after it. (No matter if it's async commit).
         prewrite_with_retry_flag(b"k2", b"v2", b"k1", Some(vec![]), 10, false, true).unwrap();
-        must_undaggered(&engine, b"k2");
+        must_undaggered(&einstein_merkle_tree, b"k2");
 
         prewrite_with_retry_flag(b"k2", b"v2", b"k1", None, 10, false, true).unwrap();
-        must_undaggered(&engine, b"k2");
+        must_undaggered(&einstein_merkle_tree, b"k2");
         // Committing still does nothing.
-        must_commit(&engine, b"k2", 10, 25);
+        must_commit(&einstein_merkle_tree, b"k2", 10, 25);
         // Try a different solitontxn start ts (which haven't been successfully committed before).
         // It should report a WriteConflict.
         let err = prewrite_with_retry_flag(b"k2", b"v2", b"k1", None, 11, false, true).unwrap_err();
@@ -1946,15 +1946,15 @@ mod tests {
                 box EpaxosErrorInner::WriteConflict { .. }
             )))
         ));
-        must_undaggered(&engine, b"k2");
+        must_undaggered(&einstein_merkle_tree, b"k2");
         // However conflict still won't be checked if there's a non-retry request arriving.
         prewrite_with_retry_flag(b"k2", b"v2", b"k1", None, 10, false, false).unwrap();
-        must_daggered(&engine, b"k2", 10);
+        must_daggered(&einstein_merkle_tree, b"k2", 10);
     }
 
     #[test]
     fn test_prewrite_rolledback_transaction() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let cm = ConcurrencyManager::new(1.into());
         let mut statistics = Statistics::default();
 
@@ -1963,10 +1963,10 @@ mod tests {
         let v2 = b"v2";
 
         // Test the write conflict path.
-        must_acquire_pessimistic_dagger(&engine, k1, v1, 1, 1);
-        must_rollback(&engine, k1, 1, true);
-        must_prewrite_put(&engine, k1, v2, k1, 5);
-        must_commit(&engine, k1, 5, 6);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k1, v1, 1, 1);
+        must_rollback(&einstein_merkle_tree, k1, 1, true);
+        must_prewrite_put(&einstein_merkle_tree, k1, v2, k1, 5);
+        must_commit(&einstein_merkle_tree, k1, 5, 6);
         let prewrite_cmd = Prewrite::new(
             vec![Mutation::make_put(Key::from_cocauset(k1), v1.to_vec())],
             k1.to_vec(),
@@ -1988,13 +1988,13 @@ mod tests {
             statistics: &mut statistics,
             async_apply_prewrite: false,
         };
-        let snap = engine.blackbrane(Default::default()).unwrap();
+        let snap = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         assert!(prewrite_cmd.cmd.process_write(snap, context).is_err());
 
         // Test the pessimistic dagger is not found path.
-        must_acquire_pessimistic_dagger(&engine, k1, v1, 10, 10);
-        must_rollback(&engine, k1, 10, true);
-        must_acquire_pessimistic_dagger(&engine, k1, v1, 15, 15);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k1, v1, 10, 10);
+        must_rollback(&einstein_merkle_tree, k1, 10, true);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k1, v1, 15, 15);
         let prewrite_cmd = PrewritePessimistic::with_defaults(
             vec![(Mutation::make_put(Key::from_cocauset(k1), v1.to_vec()), true)],
             k1.to_vec(),
@@ -2008,7 +2008,7 @@ mod tests {
             statistics: &mut statistics,
             async_apply_prewrite: false,
         };
-        let snap = engine.blackbrane(Default::default()).unwrap();
+        let snap = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         assert!(prewrite_cmd.cmd.process_write(snap, context).is_err());
     }
 }

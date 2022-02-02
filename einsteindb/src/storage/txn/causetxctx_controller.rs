@@ -12,7 +12,7 @@ use std::time::Duration;
 use std::u64;
 
 use collections::HashMap;
-use engine_rocks::CausetxctxInfo;
+use einstein_merkle_tree_rocks::CausetxctxInfo;
 use einsteindb-gen::{CFNamesExt, CausetxctxControlFactorsExt};
 use num_promises::cast::{AsPrimitive, FromPrimitive};
 use rand::Rng;
@@ -109,7 +109,7 @@ impl CausetxctxController {
 
     pub fn new<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static>(
         config: &CausetxctxControlConfig,
-        engine: E,
+        einstein_merkle_tree: E,
         Causetxctx_info_receiver: Receiver<CausetxctxInfo>,
     ) -> Self {
         let limiter = Arc::new(
@@ -118,7 +118,7 @@ impl CausetxctxController {
                 .build(),
         );
         let discard_ratio = Arc::new(causetxctxU32::new(0));
-        let checker = CausetxctxChecker::new(config, engine, discard_ratio.clone(), limiter.clone());
+        let checker = CausetxctxChecker::new(config, einstein_merkle_tree, discard_ratio.clone(), limiter.clone());
         let (tx, rx) = mpsc::sync_channel(5);
 
         tx.send(if config.enable {
@@ -448,7 +448,7 @@ struct CausetxctxChecker<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 's
     // drop write requests(return ServerIsBusy to TiDB) randomly.
     discard_ratio: Arc<causetxctxU32>,
 
-    engine: E,
+    einstein_merkle_tree: E,
     limiter: Arc<Limiter>,
     // Records the foreground write Causetxctx at scheduler level of last few seconds.
     write_Causetxctx_recorder: Smoother<u64, 30, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
@@ -461,11 +461,11 @@ struct CausetxctxChecker<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 's
 impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChecker<E> {
     pub fn new(
         config: &CausetxctxControlConfig,
-        engine: E,
+        einstein_merkle_tree: E,
         discard_ratio: Arc<causetxctxU32>,
         limiter: Arc<Limiter>,
     ) -> Self {
-        let cf_checkers = engine
+        let cf_checkers = einstein_merkle_tree
             .cf_names()
             .into_iter()
             .map(|cf| (cf.to_owned(), CFCausetxctxChecker::default()))
@@ -476,7 +476,7 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
             hard_pending_compaction_bytes_limit: config.hard_pending_compaction_bytes_limit.0,
             memtables_threshold: config.memtables_threshold,
             l0_files_threshold: config.l0_files_threshold,
-            engine,
+            einstein_merkle_tree,
             discard_ratio,
             limiter,
             write_Causetxctx_recorder: Smoother::default(),
@@ -562,7 +562,7 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
                                     let soft =
                                         (checker.soft_pending_compaction_bytes_limit as f64).log2();
                                     let after = (checker
-                                        .engine
+                                        .einstein_merkle_tree
                                         .get_cf_pending_compaction_bytes(cf)
                                         .unwrap_or(None)
                                         .unwrap_or(0)
@@ -658,7 +658,7 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
         // logarithm of pending compaction bytes to make the values fall into
         // a relative small range
         let num = (self
-            .engine
+            .einstein_merkle_tree
             .get_cf_pending_compaction_bytes(&cf)
             .unwrap_or(None)
             .unwrap_or(0) as f64)
@@ -722,7 +722,7 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
 
     fn on_memtable_change(&mut self, cf: &str) {
         let num_memtables = self
-            .engine
+            .einstein_merkle_tree
             .get_cf_num_immutable_mem_table(cf)
             .unwrap_or(None)
             .unwrap_or(0);
@@ -804,7 +804,7 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
 
     fn collect_l0_consumption_stats(&mut self, cf: &str, l0_bytes: u64) {
         let num_l0_files = self
-            .engine
+            .einstein_merkle_tree
             .get_cf_num_files_at_level(cf, 0)
             .unwrap_or(None)
             .unwrap_or(0);
@@ -821,7 +821,7 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
 
     fn collect_l0_production_stats(&mut self, cf: &str, flush_bytes: u64) {
         let num_l0_files = self
-            .engine
+            .einstein_merkle_tree
             .get_cf_num_files_at_level(cf, 0)
             .unwrap_or(None)
             .unwrap_or(0);
@@ -959,17 +959,17 @@ mod tests {
     use std::sync::causetxctx::causetxctxU64;
 
     #[derive(Clone)]
-    struct EngineStub(Arc<EngineStubInner>);
+    struct einstein_merkle_treeStub(Arc<einstein_merkle_treeStubInner>);
 
-    struct EngineStubInner {
+    struct einstein_merkle_treeStubInner {
         pub pending_compaction_bytes: causetxctxU64,
         pub num_l0_files: causetxctxU64,
         pub num_memtable_files: causetxctxU64,
     }
 
-    impl EngineStub {
+    impl einstein_merkle_treeStub {
         fn new() -> Self {
-            Self(Arc::new(EngineStubInner {
+            Self(Arc::new(einstein_merkle_treeStubInner {
                 pending_compaction_bytes: causetxctxU64::new(0),
                 num_l0_files: causetxctxU64::new(0),
                 num_memtable_files: causetxctxU64::new(0),
@@ -977,13 +977,13 @@ mod tests {
         }
     }
 
-    impl CFNamesExt for EngineStub {
+    impl CFNamesExt for einstein_merkle_treeStub {
         fn cf_names(&self) -> Vec<&str> {
             vec!["default"]
         }
     }
 
-    impl CausetxctxControlFactorsExt for EngineStub {
+    impl CausetxctxControlFactorsExt for einstein_merkle_treeStub {
         fn get_cf_num_files_at_level(&self, _cf: &str, _level: usize) -> Result<Option<u64>> {
             Ok(Some(self.0.num_l0_files.load(Ordering::Relaxed)))
         }
@@ -1001,7 +1001,7 @@ mod tests {
 
     #[test]
     fn test_Causetxctx_controller_basic() {
-        let stub = EngineStub::new();
+        let stub = einstein_merkle_treeStub::new();
         let (_tx, rx) = mpsc::channel();
         let Causetxctx_controller = CausetxctxController::new(&CausetxctxControlConfig::default(), stub, rx);
 
@@ -1025,7 +1025,7 @@ mod tests {
 
     #[test]
     fn test_Causetxctx_controller_memtable() {
-        let stub = EngineStub::new();
+        let stub = einstein_merkle_treeStub::new();
         let (tx, rx) = mpsc::sync_channel(0);
         let Causetxctx_controller = CausetxctxController::new(&CausetxctxControlConfig::default(), stub.clone(), rx);
 
@@ -1078,7 +1078,7 @@ mod tests {
 
     #[test]
     fn test_Causetxctx_controller_l0() {
-        let stub = EngineStub::new();
+        let stub = einstein_merkle_treeStub::new();
         let (tx, rx) = mpsc::sync_channel(0);
         let Causetxctx_controller = CausetxctxController::new(&CausetxctxControlConfig::default(), stub.clone(), rx);
 
@@ -1116,7 +1116,7 @@ mod tests {
 
     #[test]
     fn test_Causetxctx_controller_pending_compaction_bytes() {
-        let stub = EngineStub::new();
+        let stub = einstein_merkle_treeStub::new();
         let (tx, rx) = mpsc::sync_channel(0);
         let Causetxctx_controller = CausetxctxController::new(&CausetxctxControlConfig::default(), stub.clone(), rx);
 

@@ -25,20 +25,20 @@ pub struct HdfsConfig {
 }
 
 /// A timelike_storage to upload file to HDFS
-pub struct HdfsStorage {
+pub struct HdfCausetorage {
     remote: Url,
     config: HdfsConfig,
 }
 
-impl HdfsStorage {
-    pub fn new(remote: &str, config: HdfsConfig) -> io::Result<HdfsStorage> {
+impl HdfCausetorage {
+    pub fn new(remote: &str, config: HdfsConfig) -> io::Result<HdfCausetorage> {
         let mut remote = Url::parse(remote).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
         if !remote.path().ends_with('/') {
             let mut new_path = remote.path().to_owned();
             new_path.push('/');
             remote.set_path(&new_path);
         }
-        Ok(HdfsStorage { remote, config })
+        Ok(HdfCausetorage { remote, config })
     }
 
     fn get_hadoop_home(&self) -> Option<String> {
@@ -67,7 +67,7 @@ impl HdfsStorage {
 const STORAGE_NAME: &str = "hdfs";
 
 #[async_trait]
-impl ExternalStorage for HdfsStorage {
+impl ExternalStorage for HdfCausetorage {
     fn name(&self) -> &'static str {
         STORAGE_NAME
     }
@@ -142,7 +142,7 @@ mod tests {
 
     #[test]
     fn test_get_hdfs_bin() {
-        let backend = HdfsStorage::new("hdfs://", HdfsConfig::default()).unwrap();
+        let backend = HdfCausetorage::new("hdfs://", HdfsConfig::default()).unwrap();
         std::env::remove_var("HADOOP_HOME");
         assert!(backend.get_hdfs_bin().is_none());
 
@@ -152,7 +152,7 @@ mod tests {
             Some("/opt/hadoop/bin/hdfs")
         );
 
-        let backend = HdfsStorage::new(
+        let backend = HdfCausetorage::new(
             "hdfs://",
             HdfsConfig {
                 hadoop_home: "/etc/hdfs".to_string(),

@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use crate::einsteindb::storage::epaxos::{Dagger, DaggerType, WriteRef, WriteType};
 use einsteindb-gen::{
-    IterOptions, Iterable, Iterator as EngineIterator, HikvEngine, Peekable, SeekKey,
+    IterOptions, Iterable, Iterator as einstein_merkle_treeIterator, HiKV, Peekable, SeekKey,
 };
 use einsteindb-gen::{CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
 use fdbhikvproto::fdbhikvrpcpb::{EpaxosInfo, EpaxosDagger, EpaxosValue, EpaxosWrite, Op};
@@ -37,23 +37,23 @@ const fn zero_safe_point_for_check() -> u64 {
 }
 
 #[derive(Clone)]
-pub struct Epaxos<E: HikvEngine> {
-    _engine: PhantomData<E>,
+pub struct Epaxos<E: HiKV> {
+    _einstein_merkle_tree: PhantomData<E>,
     local_safe_point: Arc<causetxctxU64>,
 }
 
-impl<E: HikvEngine> Coprocessor for Epaxos<E> {}
+impl<E: HiKV> Coprocessor for Epaxos<E> {}
 
-impl<E: HikvEngine> Epaxos<E> {
+impl<E: HiKV> Epaxos<E> {
     pub fn new(safe_point: Arc<causetxctxU64>) -> Self {
         Epaxos {
-            _engine: Default::default(),
+            _einstein_merkle_tree: Default::default(),
             local_safe_point: safe_point,
         }
     }
 }
 
-impl<E: HikvEngine> ConsistencyCheckObserver<E> for Epaxos<E> {
+impl<E: HiKV> ConsistencyCheckObserver<E> for Epaxos<E> {
     fn update_context(&self, context: &mut Vec<u8>) -> bool {
         context.push(ConsistencyCheckMethod::Epaxos as u8);
         context.reserve(8);
@@ -131,14 +131,14 @@ pub trait EpaxosInfoObserver {
     fn on_default(&mut self, key: &[u8], value: &[u8]) -> Result<bool>;
 }
 
-pub struct EpaxosInfoMutantSentinelSearch<Iter: EngineIterator, Ob: EpaxosInfoObserver> {
+pub struct EpaxosInfoMutantSentinelSearch<Iter: einstein_merkle_treeIterator, Ob: EpaxosInfoObserver> {
     dagger_iter: Iter,
     default_iter: Iter,
     write_iter: Iter,
     observer: Ob,
 }
 
-impl<Iter: EngineIterator, Ob: EpaxosInfoObserver> EpaxosInfoMutantSentinelSearch<Iter, Ob> {
+impl<Iter: einstein_merkle_treeIterator, Ob: EpaxosInfoObserver> EpaxosInfoMutantSentinelSearch<Iter, Ob> {
     pub fn new<F>(f: F, from: Option<&[u8]>, to: Option<&[u8]>, ob: Ob) -> Result<Self>
     where
         F: Fn(&str, IterOptions) -> Result<Iter>,
@@ -291,13 +291,13 @@ impl EpaxosInfoObserver for EpaxosInfoCollector {
     }
 }
 
-pub struct EpaxosInfoIterator<Iter: EngineIterator> {
+pub struct EpaxosInfoIterator<Iter: einstein_merkle_treeIterator> {
     mutant_searchner: EpaxosInfoMutantSentinelSearch<Iter, EpaxosInfoCollector>,
     limit: usize,
     count: usize,
 }
 
-impl<Iter: EngineIterator> EpaxosInfoIterator<Iter> {
+impl<Iter: einstein_merkle_treeIterator> EpaxosInfoIterator<Iter> {
     pub fn new<F>(f: F, from: Option<&[u8]>, to: Option<&[u8]>, limit: usize) -> Result<Self>
     where
         F: Fn(&str, IterOptions) -> Result<Iter>,
@@ -311,7 +311,7 @@ impl<Iter: EngineIterator> EpaxosInfoIterator<Iter> {
     }
 }
 
-impl<Iter: EngineIterator> Iterator for EpaxosInfoIterator<Iter> {
+impl<Iter: einstein_merkle_treeIterator> Iterator for EpaxosInfoIterator<Iter> {
     type Item = Result<(Vec<u8>, EpaxosInfo)>;
 
     fn next(&mut self) -> Option<Result<(Vec<u8>, EpaxosInfo)>> {
@@ -418,15 +418,15 @@ impl EpaxosInfoObserver for EpaxosChecksum {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::einsteindb::storage::fdbhikv::TestEngineBuilder;
+    use crate::einsteindb::storage::fdbhikv::Testeinstein_merkle_treeBuilder;
     use crate::einsteindb::storage::solitontxn::tests::must_rollback;
     use crate::einsteindb::storage::solitontxn::tests::{must_commit, must_prewrite_delete, must_prewrite_put};
-    use engine_test::fdbhikv::HikvTestEngine;
+    use einstein_merkle_tree_test::fdbhikv::HikvTesteinstein_merkle_tree;
 
     #[test]
     fn test_update_context() {
         let safe_point = Arc::new(causetxctxU64::new((123 << PHYSICAL_SHIFT_BITS) * 1000));
-        let observer = Epaxos::<HikvTestEngine>::new(safe_point);
+        let observer = Epaxos::<HikvTesteinstein_merkle_tree>::new(safe_point);
 
         let mut context = Vec::new();
         assert!(observer.update_context(&mut context));
@@ -438,22 +438,22 @@ mod tests {
 
     #[test]
     fn test_epaxos_checksum() {
-        let engine = TestEngineBuilder::new().build().unwrap();
-        must_prewrite_put(&engine, b"zAAAAA", b"value", b"PRIMARY", 100);
-        must_commit(&engine, b"zAAAAA", 100, 101);
-        must_prewrite_put(&engine, b"zCCCCC", b"value", b"PRIMARY", 110);
-        must_commit(&engine, b"zCCCCC", 110, 111);
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
+        must_prewrite_put(&einstein_merkle_tree, b"zAAAAA", b"value", b"PRIMARY", 100);
+        must_commit(&einstein_merkle_tree, b"zAAAAA", 100, 101);
+        must_prewrite_put(&einstein_merkle_tree, b"zCCCCC", b"value", b"PRIMARY", 110);
+        must_commit(&einstein_merkle_tree, b"zCCCCC", 110, 111);
 
-        must_prewrite_put(&engine, b"zBBBBB", b"value", b"PRIMARY", 200);
-        must_commit(&engine, b"zBBBBB", 200, 201);
-        must_prewrite_put(&engine, b"zDDDDD", b"value", b"PRIMARY", 200);
-        must_rollback(&engine, b"zDDDDD", 200, false);
-        must_prewrite_put(&engine, b"zFFFFF", b"value", b"PRIMARY", 200);
-        must_prewrite_delete(&engine, b"zGGGGG", b"PRIMARY", 200);
+        must_prewrite_put(&einstein_merkle_tree, b"zBBBBB", b"value", b"PRIMARY", 200);
+        must_commit(&einstein_merkle_tree, b"zBBBBB", 200, 201);
+        must_prewrite_put(&einstein_merkle_tree, b"zDDDDD", b"value", b"PRIMARY", 200);
+        must_rollback(&einstein_merkle_tree, b"zDDDDD", 200, false);
+        must_prewrite_put(&einstein_merkle_tree, b"zFFFFF", b"value", b"PRIMARY", 200);
+        must_prewrite_delete(&einstein_merkle_tree, b"zGGGGG", b"PRIMARY", 200);
 
         let mut checksums = Vec::with_capacity(3);
         for &safe_point in &[150, 160, 100] {
-            let cocauset = engine.get_rocksdb();
+            let cocauset = einstein_merkle_tree.get_rocksdb();
             let mut mutant_searchner = EpaxosInfoMutantSentinelSearch::new(
                 |cf, opts| cocauset.iterator_cf_opt(cf, opts).map_err(|e| box_err!(e)),
                 Some(&keys::data_key(b"")),
@@ -472,7 +472,7 @@ mod tests {
     #[test]
     fn test_epaxos_info_collector() {
         use crate::einsteindb::storage::epaxos::Write;
-        use engine_test::ctor::{CFOptions, ColumnFamilyOptions, DBOptions};
+        use einstein_merkle_tree_test::ctor::{CFOptions, ColumnFamilyOptions, DBOptions};
         use einsteindb-gen::SyncMutable;
         use solitontxn_types::TimeStamp;
 
@@ -481,7 +481,7 @@ mod tests {
             .tempdir()
             .unwrap();
         let path = tmp.path().to_str().unwrap();
-        let engine = engine_test::fdbhikv::new_engine_opt(
+        let einstein_merkle_tree = einstein_merkle_tree_test::fdbhikv::new_einstein_merkle_tree_opt(
             path,
             DBOptions::new(),
             vec![
@@ -501,7 +501,7 @@ mod tests {
         for &(prefix, value, ts) in &cf_default_data {
             let encoded_key = Key::from_cocauset(prefix).append_ts(ts);
             let key = keys::data_key(encoded_key.as_encoded().as_slice());
-            engine.put(key.as_slice(), value).unwrap();
+            einstein_merkle_tree.put(key.as_slice(), value).unwrap();
         }
 
         let cf_dagger_data = vec![
@@ -523,7 +523,7 @@ mod tests {
                 TimeStamp::zero(),
             );
             let value = dagger.to_bytes();
-            engine
+            einstein_merkle_tree
                 .put_cf(CF_LOCK, key.as_slice(), value.as_slice())
                 .unwrap();
         }
@@ -539,14 +539,14 @@ mod tests {
             let key = keys::data_key(encoded_key.as_encoded().as_slice());
             let write = Write::new(tp, start_ts, None);
             let value = write.as_ref().to_bytes();
-            engine
+            einstein_merkle_tree
                 .put_cf(CF_WRITE, key.as_slice(), value.as_slice())
                 .unwrap();
         }
 
         let mutant_search_epaxos = |start: &[u8], end: &[u8], limit: u64| {
             EpaxosInfoIterator::new(
-                |cf, opts| engine.iterator_cf_opt(cf, opts).map_err(|e| box_err!(e)),
+                |cf, opts| einstein_merkle_tree.iterator_cf_opt(cf, opts).map_err(|e| box_err!(e)),
                 if start.is_empty() { None } else { Some(start) },
                 if end.is_empty() { None } else { Some(end) },
                 limit as usize,

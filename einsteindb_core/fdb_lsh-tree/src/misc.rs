@@ -4,18 +4,18 @@ use einsteindb_util::box_try;
 use einsteindb_util::keybuilder::KeyBuilder;
 use fdb_traits::{
     ALL_NAMESPACEDS, NAMESPACEDNamesExt, DeleteStrategy, ImportExt, Iterable, Iterator, IterOptions, MiscExt,
-    Mutable, Range, Result, SstWriter, SstWriterBuilder, WriteBatch, WriteBatchExt,
+    Mutable, Range, Result, CausetWriter, CausetWriterBuilder, WriteBatch, WriteBatchExt,
 };
 use foundationdb::Range as FdbRange;
 
-use crate::{FdbSstWriter, util};
-use crate::fdb_lsh_treeFdbEngine;
+use crate::{FdbCausetWriter, util};
+use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 use crate::rocks_metrics_defs::*;
-use crate::sst::FdbSstWriterBuilder;
+use crate::Causet::FdbCausetWriterBuilder;
 
 pub const MAX_DELETE_COUNT_BY_CAUSET_KEY: usize = 2048;
 
-impl FdbEngine {
+impl Fdbeinstein_merkle_tree {
     fn is_titan(&self) -> bool {
         self.as_inner().is_titan()
     }
@@ -25,7 +25,7 @@ impl FdbEngine {
     fn delete_all_in_range_namespaced_by_ingest(
         &self,
         namespaced: &str,
-        sst_path: String,
+        Causet_path: String,
         ranges: &[Range<'_>],
     ) -> Result<()> {
         let mut ranges = ranges.to_owned();
@@ -42,7 +42,7 @@ impl FdbEngine {
             opts.set_key_only(true);
         }
 
-        let mut writer_wrapper: Option<FdbSstWriter> = None;
+        let mut writer_wrapper: Option<FdbCausetWriter> = None;
         let mut data: Vec<Vec<u8>> = vec![];
         let mut last_end_key: Option<Vec<u8>> = None;
         for r in ranges {
@@ -68,8 +68,8 @@ impl FdbEngine {
                     data.push(it.key().to_vec());
                 }
                 if data.len() > MAX_DELETE_COUNT_BY_CAUSET_KEY {
-                    let builder = FdbSstWriterBuilder::new().set_db(self).set_namespaced(namespaced);
-                    let mut writer = builder.build(sst_path.as_str())?;
+                    let builder = FdbCausetWriterBuilder::new().set_db(self).set_namespaced(namespaced);
+                    let mut writer = builder.build(Causet_path.as_str())?;
                     for key in data.iter() {
                         writer.delete(key)?;
                     }
@@ -82,7 +82,7 @@ impl FdbEngine {
 
         if let Some(writer) = writer_wrapper {
             writer.finish()?;
-            self.ingest_external_file_namespaced(namespaced, &[sst_path.as_str()])?;
+            self.ingest_external_file_namespaced(namespaced, &[Causet_path.as_str()])?;
         } else {
             let mut wb = self.write_batch();
             for key in data.iter() {
@@ -127,7 +127,7 @@ impl FdbEngine {
     }
 }
 
-impl MiscExt for FdbEngine {
+impl MiscExt for Fdbeinstein_merkle_tree {
     fn flush(&self, sync: bool) -> Result<()> {
         Ok(self.as_inner().flush(sync)?)
     }
@@ -189,8 +189,8 @@ impl MiscExt for FdbEngine {
                     self.delete_all_in_range_namespaced_by_key(namespaced, r)?;
                 }
             }
-            DeleteStrategy::DeleteByWriter { sst_path } => {
-                self.delete_all_in_range_namespaced_by_ingest(namespaced, sst_path, ranges)?;
+            DeleteStrategy::DeleteByWriter { Causet_path } => {
+                self.delete_all_in_range_namespaced_by_ingest(namespaced, Causet_path, ranges)?;
             }
         }
         Ok(())
@@ -218,11 +218,11 @@ impl MiscExt for FdbEngine {
         Ok(false)
     }
 
-    fn get_engine_used_size(&self) -> Result<u64> {
+    fn get_einstein_merkle_tree_used_size(&self) -> Result<u64> {
         let mut used_size: u64 = 0;
         for namespaced in ALL_NAMESPACEDS {
             let handle = util::get_namespaced_handle(self.as_inner(), namespaced)?;
-            used_size += util::get_engine_namespaced_used_size(self.as_inner(), handle);
+            used_size += util::get_einstein_merkle_tree_namespaced_used_size(self.as_inner(), handle);
         }
         Ok(used_size)
     }
@@ -304,11 +304,11 @@ impl MiscExt for FdbEngine {
         }
     }
 
-    fn get_total_sst_files_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>> {
+    fn get_total_Causet_files_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>> {
         let handle = util::get_namespaced_handle(self.as_inner(), namespaced)?;
         Ok(self
             .as_inner()
-            .get_property_int_namespaced(handle, FDBDB_TOTAL_SST_FILES_SIZE))
+            .get_property_int_namespaced(handle, FDBDB_TOTAL_Causet_FILES_SIZE))
     }
 
     fn get_range_entries_and_versions(
@@ -344,14 +344,14 @@ mod tests {
     use std::sync::Arc;
     use tempfile::Builder;
 
-    use crate::fdb_lsh_treeFdbEngine;
+    use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
     use crate::raw::{ColumnFamilyOptions, DBOptions};
     use crate::raw::DB;
-    use crate::raw_util::{NAMESPACEDOptions, new_engine_opt};
+    use crate::raw_util::{NAMESPACEDOptions, new_einstein_merkle_tree_opt};
 
     use super::*;
 
-    fn check_data(einsteindb: &FdbEngine, namespaceds: &[&str], expected: &[(&[u8], &[u8])]) {
+    fn check_data(einsteindb: &Fdbeinstein_merkle_tree, namespaceds: &[&str], expected: &[(&[u8], &[u8])]) {
         for namespaced in namespaceds {
             let mut iter = einsteindb.iterator_namespaced(namespaced).unwrap();
             iter.seek(SeekKey::Start).unwrap();
@@ -370,7 +370,7 @@ mod tests {
         ranges: &[Range<'_>],
     ) {
         let path = Builder::new()
-            .prefix("engine_delete_all_in_range")
+            .prefix("einstein_merkle_tree_delete_all_in_range")
             .temfidelir()
             .unwrap();
         let path_str = path.path().to_str().unwrap();
@@ -379,9 +379,9 @@ mod tests {
             .iter()
             .map(|namespaced| NAMESPACEDOptions::new(namespaced, ColumnFamilyOptions::new()))
             .collect();
-        let einsteindb = new_engine_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
+        let einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
         let einsteindb = Arc::new(einsteindb);
-        let einsteindb = FdbEngine::from_db(einsteindb);
+        let einsteindb = Fdbeinstein_merkle_tree::from_db(einsteindb);
 
         let mut wb = einsteindb.write_batch();
         let ts: u8 = 12;
@@ -496,13 +496,13 @@ mod tests {
             .temfidelir()
             .unwrap();
         let path_str = path.path();
-        let sst_path = path_str.join("tmp_file").to_str().unwrap().to_owned();
+        let Causet_path = path_str.join("tmp_file").to_str().unwrap().to_owned();
         let mut data = vec![];
         for i in 1000..5000 {
             data.push(i.to_string().as_bytes().to_vec());
         }
         test_delete_all_in_range(
-            DeleteStrategy::DeleteByWriter { sst_path },
+            DeleteStrategy::DeleteByWriter { Causet_path },
             &data,
             &[
                 Range::new(&data[2], &data[499]),
@@ -518,7 +518,7 @@ mod tests {
     #[test]
     fn test_delete_all_files_in_range() {
         let path = Builder::new()
-            .prefix("engine_delete_all_files_in_range")
+            .prefix("einstein_merkle_tree_delete_all_files_in_range")
             .temfidelir()
             .unwrap();
         let path_str = path.path().to_str().unwrap();
@@ -531,9 +531,9 @@ mod tests {
                 NAMESPACEDOptions::new(namespaced, namespaced_opts)
             })
             .collect();
-        let einsteindb = new_engine_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
+        let einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
         let einsteindb = Arc::new(einsteindb);
-        let einsteindb = FdbEngine::from_db(einsteindb);
+        let einsteindb = Fdbeinstein_merkle_tree::from_db(einsteindb);
 
         let keys = vec![b"k1", b"k2", b"k3", b"k4"];
 
@@ -560,7 +560,7 @@ mod tests {
     #[test]
     fn test_delete_range_prefix_bloom_case() {
         let path = Builder::new()
-            .prefix("engine_delete_range_prefix_bloom")
+            .prefix("einstein_merkle_tree_delete_range_prefix_bloom")
             .temfidelir()
             .unwrap();
         let path_str = path.path().to_str().unwrap();
@@ -581,7 +581,7 @@ mod tests {
         let namespaced = "default";
         let einsteindb = DB::open_namespaced(opts, path_str, vec![(namespaced, namespaced_opts)]).unwrap();
         let einsteindb = Arc::new(einsteindb);
-        let einsteindb = FdbEngine::from_db(einsteindb);
+        let einsteindb = Fdbeinstein_merkle_tree::from_db(einsteindb);
         let mut wb = einsteindb.write_batch();
         let kvs: Vec<(&[u8], &[u8])> = vec![
             (b"kabcdefg1", b"v1"),

@@ -270,7 +270,7 @@ mod testing {
         let clauses = cc.wheres;
         assert_eq!(clauses.len(), 1);
         assert_eq!(clauses.0[0], ColumnConstraint::Inequality {
-            operator: Inequality::LessThan,
+            operator: Inequality::LeCausethan,
             left: QueryValue::Column(cc.column_bindings.get(&y).unwrap()[0].clone()),
             right: QueryValue::TypedValue(TypedValue::Long(10)),
         }.into());

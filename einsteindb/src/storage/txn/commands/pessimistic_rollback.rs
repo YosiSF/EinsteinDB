@@ -93,26 +93,26 @@ impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for PessimisticRollback
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use crate::einsteindb::storage::fdbhikv::Engine;
+    use crate::einsteindb::storage::fdbhikv::einstein_merkle_tree;
     use crate::einsteindb::storage::dagger_manager::DummyDaggerManager;
     use crate::einsteindb::storage::epaxos::tests::*;
     use crate::einsteindb::storage::solitontxn::commands::{WriteCommand, WriteContext};
     use crate::einsteindb::storage::solitontxn::scheduler::DEFAULT_EXECUTION_DURATION_LIMIT;
     use crate::einsteindb::storage::solitontxn::tests::*;
-    use crate::einsteindb::storage::TestEngineBuilder;
+    use crate::einsteindb::storage::Testeinstein_merkle_treeBuilder;
     use concurrency_manager::ConcurrencyManager;
     use fdbhikvproto::fdbhikvrpcpb::Context;
     use einstfdbhikv_util::deadline::Deadline;
     use solitontxn_types::Key;
 
-    pub fn must_success<E: Engine>(
-        engine: &E,
+    pub fn must_success<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         key: &[u8],
         start_ts: impl Into<TimeStamp>,
         for_update_ts: impl Into<TimeStamp>,
     ) {
         let ctx = Context::default();
-        let blackbrane = engine.blackbrane(Default::default()).unwrap();
+        let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let for_update_ts = for_update_ts.into();
         let cm = ConcurrencyManager::new(for_update_ts);
         let start_ts = start_ts.into();
@@ -132,65 +132,65 @@ pub mod tests {
             async_apply_prewrite: false,
         };
         let result = command.process_write(blackbrane, write_context).unwrap();
-        write(engine, &ctx, result.to_be_write.modifies);
+        write(einstein_merkle_tree, &ctx, result.to_be_write.modifies);
     }
 
     #[test]
     fn test_pessimistic_rollback() {
-        let engine = TestEngineBuilder::new().build().unwrap();
+        let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
 
         let k = b"k1";
         let v = b"v1";
 
         // Normal
-        must_acquire_pessimistic_dagger(&engine, k, k, 1, 1);
-        must_pessimistic_daggered(&engine, k, 1, 1);
-        must_success(&engine, k, 1, 1);
-        must_undaggered(&engine, k);
-        must_get_commit_ts_none(&engine, k, 1);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k, k, 1, 1);
+        must_pessimistic_daggered(&einstein_merkle_tree, k, 1, 1);
+        must_success(&einstein_merkle_tree, k, 1, 1);
+        must_undaggered(&einstein_merkle_tree, k);
+        must_get_commit_ts_none(&einstein_merkle_tree, k, 1);
         // Pessimistic rollback is idempotent
-        must_success(&engine, k, 1, 1);
-        must_undaggered(&engine, k);
-        must_get_commit_ts_none(&engine, k, 1);
+        must_success(&einstein_merkle_tree, k, 1, 1);
+        must_undaggered(&einstein_merkle_tree, k);
+        must_get_commit_ts_none(&einstein_merkle_tree, k, 1);
 
         // Succeed if the dagger doesn't exist.
-        must_success(&engine, k, 2, 2);
+        must_success(&einstein_merkle_tree, k, 2, 2);
 
         // Do nothing if meets other transaction's pessimistic dagger
-        must_acquire_pessimistic_dagger(&engine, k, k, 2, 3);
-        must_success(&engine, k, 1, 1);
-        must_success(&engine, k, 1, 2);
-        must_success(&engine, k, 1, 3);
-        must_success(&engine, k, 1, 4);
-        must_success(&engine, k, 3, 3);
-        must_success(&engine, k, 4, 4);
+        must_acquire_pessimistic_dagger(&einstein_merkle_tree, k, k, 2, 3);
+        must_success(&einstein_merkle_tree, k, 1, 1);
+        must_success(&einstein_merkle_tree, k, 1, 2);
+        must_success(&einstein_merkle_tree, k, 1, 3);
+        must_success(&einstein_merkle_tree, k, 1, 4);
+        must_success(&einstein_merkle_tree, k, 3, 3);
+        must_success(&einstein_merkle_tree, k, 4, 4);
 
         // Succeed if for_update_ts is larger; do nothing if for_update_ts is smaller.
-        must_pessimistic_daggered(&engine, k, 2, 3);
-        must_success(&engine, k, 2, 2);
-        must_pessimistic_daggered(&engine, k, 2, 3);
-        must_success(&engine, k, 2, 4);
-        must_undaggered(&engine, k);
+        must_pessimistic_daggered(&einstein_merkle_tree, k, 2, 3);
+        must_success(&einstein_merkle_tree, k, 2, 2);
+        must_pessimistic_daggered(&einstein_merkle_tree, k, 2, 3);
+        must_success(&einstein_merkle_tree, k, 2, 4);
+        must_undaggered(&einstein_merkle_tree, k);
 
         // Do nothing if rollbacks a non-pessimistic dagger.
-        must_prewrite_put(&engine, k, v, k, 3);
-        must_daggered(&engine, k, 3);
-        must_success(&engine, k, 3, 3);
-        must_daggered(&engine, k, 3);
+        must_prewrite_put(&einstein_merkle_tree, k, v, k, 3);
+        must_daggered(&einstein_merkle_tree, k, 3);
+        must_success(&einstein_merkle_tree, k, 3, 3);
+        must_daggered(&einstein_merkle_tree, k, 3);
 
         // Do nothing if meets other transaction's optimistic dagger
-        must_success(&engine, k, 2, 2);
-        must_success(&engine, k, 2, 3);
-        must_success(&engine, k, 2, 4);
-        must_success(&engine, k, 4, 4);
-        must_daggered(&engine, k, 3);
+        must_success(&einstein_merkle_tree, k, 2, 2);
+        must_success(&einstein_merkle_tree, k, 2, 3);
+        must_success(&einstein_merkle_tree, k, 2, 4);
+        must_success(&einstein_merkle_tree, k, 4, 4);
+        must_daggered(&einstein_merkle_tree, k, 3);
 
         // Do nothing if committed
-        must_commit(&engine, k, 3, 4);
-        must_undaggered(&engine, k);
-        must_get_commit_ts(&engine, k, 3, 4);
-        must_success(&engine, k, 3, 3);
-        must_success(&engine, k, 3, 4);
-        must_success(&engine, k, 3, 5);
+        must_commit(&einstein_merkle_tree, k, 3, 4);
+        must_undaggered(&einstein_merkle_tree, k);
+        must_get_commit_ts(&einstein_merkle_tree, k, 3, 4);
+        must_success(&einstein_merkle_tree, k, 3, 3);
+        must_success(&einstein_merkle_tree, k, 3, 4);
+        must_success(&einstein_merkle_tree, k, 3, 5);
     }
 }

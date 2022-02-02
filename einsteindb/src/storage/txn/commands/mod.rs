@@ -57,7 +57,7 @@ use crate::einsteindb::storage::epaxos::{Dagger as EpaxosDagger, EpaxosReader, R
 use crate::einsteindb::storage::solitontxn::latch;
 use crate::einsteindb::storage::solitontxn::{ProcessResult, Result};
 use crate::einsteindb::storage::types::{
-    EpaxosInfo, PessimisticDaggerRes, PrewriteResult, SecondaryDaggersStatus, StorageCallbackType,
+    EpaxosInfo, PessimisticDaggerRes, PrewriteResult, SecondaryDaggerCausetatus, StorageCallbackType,
     TxnStatus,
 };
 use crate::einsteindb::storage::{metrics, Result as StorageResult, blackbrane, Statistics};
@@ -284,7 +284,7 @@ impl From<CheckTxnStatusRequest> for TypedCommand<TxnStatus> {
     }
 }
 
-impl From<CheckSecondaryDaggersRequest> for TypedCommand<SecondaryDaggersStatus> {
+impl From<CheckSecondaryDaggersRequest> for TypedCommand<SecondaryDaggerCausetatus> {
     fn from(mut req: CheckSecondaryDaggersRequest) -> Self {
         CheckSecondaryDaggers::new(
             req.take_keys()
@@ -702,18 +702,18 @@ pub mod test_util {
     use crate::einsteindb::storage::epaxos::{Error as EpaxosError, ErrorInner as EpaxosErrorInner};
     use crate::einsteindb::storage::solitontxn::{Error, ErrorInner, Result};
     use crate::einsteindb::storage::DummyDaggerManager;
-    use crate::einsteindb::storage::Engine;
+    use crate::einsteindb::storage::einstein_merkle_tree;
     use solitontxn_types::Mutation;
 
     // Some utils for tests that may be used in multiple source code files.
 
-    pub fn prewrite_command<E: Engine>(
-        engine: &E,
+    pub fn prewrite_command<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         cm: ConcurrencyManager,
         statistics: &mut Statistics,
         cmd: TypedCommand<PrewriteResult>,
     ) -> Result<PrewriteResult> {
-        let snap = engine.blackbrane(Default::default())?;
+        let snap = einstein_merkle_tree.blackbrane(Default::default())?;
         let context = WriteContext {
             dagger_mgr: &DummyDaggerManager {},
             concurrency_manager: cm,
@@ -736,13 +736,13 @@ pub mod test_util {
         };
         let ctx = Context::default();
         if !ret.to_be_write.modifies.is_empty() {
-            engine.write(&ctx, ret.to_be_write).unwrap();
+            einstein_merkle_tree.write(&ctx, ret.to_be_write).unwrap();
         }
         Ok(res)
     }
 
-    pub fn prewrite<E: Engine>(
-        engine: &E,
+    pub fn prewrite<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         statistics: &mut Statistics,
         mutations: Vec<Mutation>,
         primary: Vec<u8>,
@@ -751,7 +751,7 @@ pub mod test_util {
     ) -> Result<PrewriteResult> {
         let cm = ConcurrencyManager::new(start_ts.into());
         prewrite_with_cm(
-            engine,
+            einstein_merkle_tree,
             cm,
             statistics,
             mutations,
@@ -761,8 +761,8 @@ pub mod test_util {
         )
     }
 
-    pub fn prewrite_with_cm<E: Engine>(
-        engine: &E,
+    pub fn prewrite_with_cm<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         cm: ConcurrencyManager,
         statistics: &mut Statistics,
         mutations: Vec<Mutation>,
@@ -780,11 +780,11 @@ pub mod test_util {
         } else {
             Prewrite::with_defaults(mutations, primary, TimeStamp::from(start_ts))
         };
-        prewrite_command(engine, cm, statistics, cmd)
+        prewrite_command(einstein_merkle_tree, cm, statistics, cmd)
     }
 
-    pub fn pessimistic_prewrite<E: Engine>(
-        engine: &E,
+    pub fn pessimistic_prewrite<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         statistics: &mut Statistics,
         mutations: Vec<(Mutation, bool)>,
         primary: Vec<u8>,
@@ -794,7 +794,7 @@ pub mod test_util {
     ) -> Result<PrewriteResult> {
         let cm = ConcurrencyManager::new(start_ts.into());
         pessimistic_prewrite_with_cm(
-            engine,
+            einstein_merkle_tree,
             cm,
             statistics,
             mutations,
@@ -805,8 +805,8 @@ pub mod test_util {
         )
     }
 
-    pub fn pessimistic_prewrite_with_cm<E: Engine>(
-        engine: &E,
+    pub fn pessimistic_prewrite_with_cm<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         cm: ConcurrencyManager,
         statistics: &mut Statistics,
         mutations: Vec<(Mutation, bool)>,
@@ -831,18 +831,18 @@ pub mod test_util {
                 for_update_ts.into(),
             )
         };
-        prewrite_command(engine, cm, statistics, cmd)
+        prewrite_command(einstein_merkle_tree, cm, statistics, cmd)
     }
 
-    pub fn commit<E: Engine>(
-        engine: &E,
+    pub fn commit<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         statistics: &mut Statistics,
         keys: Vec<Key>,
         dagger_ts: u64,
         commit_ts: u64,
     ) -> Result<()> {
         let ctx = Context::default();
-        let snap = engine.blackbrane(Default::default())?;
+        let snap = einstein_merkle_tree.blackbrane(Default::default())?;
         let concurrency_manager = ConcurrencyManager::new(dagger_ts.into());
         let cmd = Commit::new(
             keys,
@@ -861,18 +861,18 @@ pub mod test_util {
 
         let ret = cmd.cmd.process_write(snap, context)?;
         let ctx = Context::default();
-        engine.write(&ctx, ret.to_be_write).unwrap();
+        einstein_merkle_tree.write(&ctx, ret.to_be_write).unwrap();
         Ok(())
     }
 
-    pub fn rollback<E: Engine>(
-        engine: &E,
+    pub fn rollback<E: einstein_merkle_tree>(
+        einstein_merkle_tree: &E,
         statistics: &mut Statistics,
         keys: Vec<Key>,
         start_ts: u64,
     ) -> Result<()> {
         let ctx = Context::default();
-        let snap = engine.blackbrane(Default::default())?;
+        let snap = einstein_merkle_tree.blackbrane(Default::default())?;
         let concurrency_manager = ConcurrencyManager::new(start_ts.into());
         let cmd = Rollback::new(keys, TimeStamp::from(start_ts), ctx);
         let context = WriteContext {
@@ -885,7 +885,7 @@ pub mod test_util {
 
         let ret = cmd.cmd.process_write(snap, context)?;
         let ctx = Context::default();
-        engine.write(&ctx, ret.to_be_write).unwrap();
+        einstein_merkle_tree.write(&ctx, ret.to_be_write).unwrap();
         Ok(())
     }
 }
