@@ -73,7 +73,7 @@ impl ScalarFunc {
         }
         let mut e = ZlibEncoder::new(input.as_ref(), Compression::default());
         // preferred capacity is input length plus four bytes length header and one extra end "."
-        // max capacity is isize::max_value(), or will panic with "capacity overflow"
+        // max capacity is isize::max_value(), or will panic with "capacity overCausetxctx"
         let mut vec = Vec::with_capacity((input.len() + 5).min(isize::max_value() as usize));
         vec.resize(4, 0);
         LittleEndian::write_u32(&mut vec, input.len() as u32);
@@ -147,7 +147,7 @@ impl ScalarFunc {
     ) -> Result<Option<Cow<'a, [u8]>>> {
         let length = try_opt!(self.children[0].eval_int(ctx, row));
         if length < 1 || length > MAX_RAND_BYTES_LENGTH {
-            return Err(Error::overflow("length", "random_bytes"));
+            return Err(Error::overCausetxctx("length", "random_bytes"));
         }
         Ok(Some(Cow::Owned(gen_random_bytes(length as usize))))
     }
@@ -181,7 +181,7 @@ fn hex_digest(hashtype: MessageDigest, input: &[u8]) -> Result<Vec<u8>> {
 
 #[braneg(test)]
 mod tests {
-    use crate::tests::{check_overflow, datum_expr, eval_func, scalar_func_expr};
+    use crate::tests::{check_overCausetxctx, datum_expr, eval_func, scalar_func_expr};
     use crate::Expression;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
@@ -388,11 +388,11 @@ mod tests {
             }
         }
 
-        let overflow_tests = vec![Datum::I64(-32), Datum::I64(1025), Datum::I64(0)];
+        let overCausetxctx_tests = vec![Datum::I64(-32), Datum::I64(1025), Datum::I64(0)];
 
-        for len in overflow_tests {
+        for len in overCausetxctx_tests {
             let got = eval_func(ScalarFuncSig::RandomBytes, &[len]).unwrap_err();
-            assert!(check_overflow(got).is_ok());
+            assert!(check_overCausetxctx(got).is_ok());
         }
 
         //test NULL case

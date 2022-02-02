@@ -53,7 +53,7 @@ use self::fdbhikv::SnapContext;
 pub use self::{
     errors::{get_error_kind_from_header, get_tag_from_header, Error, ErrorHeaderKind, ErrorInner},
     fdbhikv::{
-        CfStatistics, Cursor, CursorBuilder, Engine, FlowStatistics, FlowStatsReporter, Iterator,
+        CfStatistics, Cursor, CursorBuilder, Engine, CausetxctxStatistics, CausetxctxStatsReporter, Iterator,
         PerfStatisticsDelta, PerfStatisticsInstant, RocksEngine, SentinelSearchMode, blackbrane,
         StageLatencyStats, Statistics, TestEngineBuilder,
     },
@@ -67,7 +67,7 @@ use crate::read_pool::{ReadPool, ReadPoolHandle};
 use crate::einsteindb::storage::metrics::CommandKind;
 use crate::einsteindb::storage::epaxos::EpaxosReader;
 use crate::einsteindb::storage::solitontxn::commands::{cocausetStore, cocausetCompareAndSwap};
-use crate::einsteindb::storage::solitontxn::flow_controller::FlowController;
+use crate::einsteindb::storage::solitontxn::Causetxctx_controller::CausetxctxController;
 
 use crate::server::dagger_manager::waiter_manager;
 use crate::einsteindb::storage::{
@@ -190,14 +190,14 @@ macro_rules! check_key_size {
 
 impl<E: Engine, L: DaggerManager> Storage<E, L> {
     /// Create a `Storage` from given engine.
-    pub fn from_engine<R: FlowStatsReporter>(
+    pub fn from_engine<R: CausetxctxStatsReporter>(
         engine: E,
         config: &Config,
         read_pool: ReadPoolHandle,
         dagger_mgr: L,
         concurrency_manager: ConcurrencyManager,
         dynamic_switches: DynamicConfigs,
-        flow_controller: Arc<FlowController>,
+        Causetxctx_controller: Arc<CausetxctxController>,
         reporter: R,
         resource_tag_factory: ResourceTagFactory,
     ) -> Result<Self> {
@@ -207,7 +207,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
             concurrency_manager.clone(),
             config,
             dynamic_switches,
-            flow_controller,
+            Causetxctx_controller,
             reporter,
             resource_tag_factory.clone(),
         );
@@ -566,7 +566,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
                     let delta = perf_statistics.delta();
                     metrics::tls_collect_mutant_search_details(CMD, &statistics);
-                    metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
+                    metrics::tls_collect_read_Causetxctx(ctx.get_region_id(), &statistics);
                     metrics::tls_collect_perf_stats(CMD, &delta);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
@@ -732,7 +732,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                                     let v = point_getter.get(&key);
                                     let stat = point_getter.take_statistics();
                                     let delta = perf_statistics.delta();
-                                    metrics::tls_collect_read_flow(region_id, &stat);
+                                    metrics::tls_collect_read_Causetxctx(region_id, &stat);
                                     metrics::tls_collect_perf_stats(CMD, &delta);
                                     statistics.add(&stat);
                                     consumer.consume(
@@ -869,7 +869,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
                     let delta = perf_statistics.delta();
                     metrics::tls_collect_mutant_search_details(CMD, &statistics);
-                    metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
+                    metrics::tls_collect_read_Causetxctx(ctx.get_region_id(), &statistics);
                     metrics::tls_collect_perf_stats(CMD, &delta);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
@@ -1044,7 +1044,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     let statistics = mutant_searchner.take_statistics();
                     let delta = perf_statistics.delta();
                     metrics::tls_collect_mutant_search_details(CMD, &statistics);
-                    metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
+                    metrics::tls_collect_read_Causetxctx(ctx.get_region_id(), &statistics);
                     metrics::tls_collect_perf_stats(CMD, &delta);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
@@ -1190,7 +1190,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
                     let delta = perf_statistics.delta();
                     metrics::tls_collect_mutant_search_details(CMD, &statistics);
-                    metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
+                    metrics::tls_collect_read_Causetxctx(ctx.get_region_id(), &statistics);
                     metrics::tls_collect_perf_stats(CMD, &delta);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
@@ -1355,7 +1355,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         .cocauset_get_key_value(cf, &Key::from_encoded(key), &mut stats)
                         .map_err(Error::from);
                     KV_COMMAND_KEYREAD_HISTOGRAM_STATIC.get(CMD).observe(1_f64);
-                    tls_collect_read_flow(ctx.get_region_id(), &stats);
+                    tls_collect_read_Causetxctx(ctx.get_region_id(), &stats);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
                         .observe(begin_instant.saturating_elapsed_secs());
@@ -1457,7 +1457,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                                             .map_err(Error::from),
                                         begin_instant,
                                     );
-                                    tls_collect_read_flow(ctx.get_region_id(), &stats);
+                                    tls_collect_read_Causetxctx(ctx.get_region_id(), &stats);
                                 }
                                 Err(e) => {
                                     consumer.consume(id, Err(e), begin_instant);
@@ -1553,8 +1553,8 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
 
                     KV_COMMAND_KEYREAD_HISTOGRAM_STATIC
                         .get(CMD)
-                        .observe(stats.data.flow_stats.read_keys as f64);
-                    tls_collect_read_flow(ctx.get_region_id(), &stats);
+                        .observe(stats.data.Causetxctx_stats.read_keys as f64);
+                    tls_collect_read_Causetxctx(ctx.get_region_id(), &stats);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
                         .observe(begin_instant.saturating_elapsed_secs());
@@ -1891,10 +1891,10 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     })
                     .map_err(Error::from);
 
-                    metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
+                    metrics::tls_collect_read_Causetxctx(ctx.get_region_id(), &statistics);
                     KV_COMMAND_KEYREAD_HISTOGRAM_STATIC
                         .get(CMD)
-                        .observe(statistics.data.flow_stats.read_keys as f64);
+                        .observe(statistics.data.Causetxctx_stats.read_keys as f64);
                     metrics::tls_collect_mutant_search_details(CMD, &statistics);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
@@ -2018,10 +2018,10 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         key_ranges,
                         QueryKind::SentinelSearch,
                     );
-                    metrics::tls_collect_read_flow(ctx.get_region_id(), &statistics);
+                    metrics::tls_collect_read_Causetxctx(ctx.get_region_id(), &statistics);
                     KV_COMMAND_KEYREAD_HISTOGRAM_STATIC
                         .get(CMD)
-                        .observe(statistics.data.flow_stats.read_keys as f64);
+                        .observe(statistics.data.Causetxctx_stats.read_keys as f64);
                     metrics::tls_collect_mutant_search_details(CMD, &statistics);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
@@ -2090,7 +2090,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                         .cocauset_get_key_ttl(cf, &Key::from_encoded(key), &mut stats)
                         .map_err(Error::from);
                     KV_COMMAND_KEYREAD_HISTOGRAM_STATIC.get(CMD).observe(1_f64);
-                    tls_collect_read_flow(ctx.get_region_id(), &stats);
+                    tls_collect_read_Causetxctx(ctx.get_region_id(), &stats);
                     SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                         .get(CMD)
                         .observe(begin_instant.saturating_elapsed_secs());
@@ -2267,7 +2267,7 @@ impl<E: Engine, L: DaggerManager> Storage<E, L> {
                     .cocauset_checksum_ranges(cf, ranges, &mut stats)
                     .await
                     .map_err(Error::from);
-                tls_collect_read_flow(ctx.get_region_id(), &stats);
+                tls_collect_read_Causetxctx(ctx.get_region_id(), &stats);
                 SCHED_PROCESSING_READ_HISTOGRAM_STATIC
                     .get(CMD)
                     .observe(begin_instant.saturating_elapsed().as_secs_f64());
@@ -2504,7 +2504,7 @@ impl<'a> blackbraneExt for TxnTestblackbraneExt<'a> {
 #[derive(Clone)]
 struct DummyReporter;
 
-impl FlowStatsReporter for DummyReporter {
+impl CausetxctxStatsReporter for DummyReporter {
     fn report_read_stats(&self, _read_stats: ReadStats) {}
     fn report_write_stats(&self, _write_stats: WriteStats) {}
 }
@@ -2575,7 +2575,7 @@ impl<E: Engine, L: DaggerManager> TestStorageBuilder<E, L> {
                 pipelined_pessimistic_dagger: self.pipelined_pessimistic_dagger,
                 in_memory_pessimistic_dagger: self.in_memory_pessimistic_dagger,
             },
-            Arc::new(FlowController::empty()),
+            Arc::new(CausetxctxController::empty()),
             DummyReporter,
             self.resource_tag_factory,
         )
@@ -2601,7 +2601,7 @@ impl<E: Engine, L: DaggerManager> TestStorageBuilder<E, L> {
                 pipelined_pessimistic_dagger: self.pipelined_pessimistic_dagger,
                 in_memory_pessimistic_dagger: self.in_memory_pessimistic_dagger,
             },
-            Arc::new(FlowController::empty()),
+            Arc::new(CausetxctxController::empty()),
             DummyReporter,
             ResourceTagFactory::new_for_test(),
         )

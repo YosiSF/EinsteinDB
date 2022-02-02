@@ -1,5 +1,5 @@
 [package]
-name = "einstai_einsteindb"
+name = "einsteindb"
 version = "0.0.1"
 workspace = ".."
 

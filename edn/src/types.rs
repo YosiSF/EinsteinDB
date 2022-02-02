@@ -1,4 +1,4 @@
-// Copyright 2022 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 YosiSF
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -44,7 +44,7 @@ pub enum Value {
     Vector(Vec<Value>),
     // We're using a LinkedList here instead of a Vec or VecDeque because the
     // LinkedList is faster for appending (which we do a lot of).
-    // See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/issues/231
+    // See https://github.com/YosiSF/EinsteinDB/issues/231
     List(LinkedList<Value>),
     // We're using BTree{Set, Map} rather than Hash{Set, Map} because the BTree variants
     // implement Hash. The Hash variants don't in order to preserve O(n) hashing

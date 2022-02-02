@@ -1000,8 +1000,8 @@ impl ConjoiningClauses {
                     // Which is not optimal — the left side of the join will
                     // produce lots of spurious bindings for causets00.v.
                     //
-                    // See https://github.com/Whtcorps Inc and EinstAI Inc/EinsteinDB/issues/520, and
-                    // https://github.com/Whtcorps Inc and EinstAI Inc/EinsteinDB/issues/293.
+                    // See https://github.com/YosiSF/EinsteinDB/issues/520, and
+                    // https://github.com/YosiSF/EinsteinDB/issues/293.
                     continue;
                 }
             }

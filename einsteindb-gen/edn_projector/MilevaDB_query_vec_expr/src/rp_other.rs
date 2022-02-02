@@ -19,7 +19,7 @@ impl ScalarFunc {
                 }
             }
             Err(e) => {
-                if e.is_overflow() {
+                if e.is_overCausetxctx() {
                     Ok(Some(64))
                 } else {
                     Err(e)
@@ -91,7 +91,7 @@ mod tests {
                 Datum::I64(37),
             ),
         ];
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERFLOW_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
         for (input, exp) in cases {
             let args = &[datum_expr(input)];
             let child = scalar_func_expr(ScalarFuncSig::CastStringAsInt, args);
@@ -125,7 +125,7 @@ mod tests {
                 Datum::I64(63),
             ),
         ];
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERFLOW_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
         for (input, exp) in cases {
             let args = &[datum_expr(input)];
             let child = scalar_func_expr(ScalarFuncSig::CastDecimalAsInt, args);

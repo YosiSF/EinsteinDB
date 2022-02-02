@@ -1,11 +1,11 @@
 [package]
 name = "edn"
 version = "0.1.0"
-authors = ["Joe Walker <jwalker@Whtcorps Inc and EinstAI Inc.com>"]
-workspace = ".."
+authors = ["@whtcorpsinc"]
+workspace = "einsteindb"
 
 license = "Apache-2.0"
-repository = "https://github.com/Whtcorps Inc and EinstAI Inc/einstai"
+repository = "https://github.com/YosiSF/EinsteinDB"
 description = "EML parser for Project einstai"
 build = "build.rs"
 readme = "./README.md"

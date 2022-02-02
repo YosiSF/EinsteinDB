@@ -1,4 +1,4 @@
-// Copyright 2022 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 YosiSF
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -94,21 +94,7 @@ use einsteindb_transaction::query::{
 
 /// A mutable, safe reference to the current einsteindb store.
 pub struct Conn {
-    /// `Mutex` since all reads and writes need to be exclusive.  Internally, owned data for the
-    /// volatile parts (generation and partition map), and `Arc` for the infrequently changing parts
-    /// (schema, cache) that we want to share across threads.  A consuming thread may use a shared
-    /// reference after the `Conn`'s `Metadata` has moved on.
-    ///
-    /// The motivating case is multiple query threads taking references to the current schema to
-    /// perform long-running queries while a single writer thread moves the spacetime -- partition
-    /// map and schema -- forward.
-    ///
-    /// We want the attribute cache to be isolated across transactions, updated within
-    /// `InProgress` writes, and updated in the `Conn` on commit. To achieve this we
-    /// store the cache itself in an `Arc` inside `SQLiteAttributeCache`, so that `.get_mut()`
-    /// gives us copy-on-write semantics.
-    /// We store that cached `Arc` here in a `Mutex`, so that the main copy can be carefully
-    /// replaced on commit.
+
     spacetime: Mutex<Metadata>,
 
     // TODO: maintain set of change listeners or handles to transaction report queues.
@@ -145,7 +131,7 @@ impl Conn {
         // This approach might need to change when we support interrupting query threads (#297), and
         // will definitely need to change if we support interrupting transactor threads.
         //
-        // Improving this is tracked by https://github.com/Whtcorps Inc and EinstAI Inc/einsteindb/issues/356.
+        // Improving this is tracked by https://github.com/YosiSF/einsteindb/issues/356.
         self.spacetime.lock().unwrap().schema.clone()
     }
 

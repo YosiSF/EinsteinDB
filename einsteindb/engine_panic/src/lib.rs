@@ -1,0 +1,49 @@
+// Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
+
+//! An example EinsteinDB timelike_storage engine.
+//!
+//! This project is intended to serve as a skeleton for other engine
+//! implementations. It lays out the complex system of engine modules and traits
+//! in a way that is consistent with other engines. To create a new engine
+//! simply copy the entire directory structure and replace all "Panic*" names
+//! with your engine's own name; then fill in the implementations; remove
+//! the allow(unused) attribute;
+
+#![allow(unused)]
+
+mod namespaced_names;
+pub use crate::namespaced_names::*;
+mod namespaced_options;
+pub use crate::namespaced_options::*;
+mod compact;
+pub use crate::compact::*;
+mod db_options;
+pub use crate::db_options::*;
+mod db_vector;
+pub use crate::db_vector::*;
+mod engine;
+pub use crate::fdb_lsh_tree*;
+mod import;
+pub use import::*;
+mod misc;
+pub use crate::misc::*;
+mod snapshot;
+pub use crate::snapshot::*;
+mod sst;
+pub use crate::sst::*;
+mod write_batch;
+pub use crate::write_batch::*;
+pub mod range_properties;
+pub use crate::range_properties::*;
+pub mod mvcc_properties;
+pub use crate::mvcc_properties::*;
+pub mod ttl_properties;
+pub use crate::ttl_properties::*;
+pub mod perf_context;
+pub use crate::perf_context::*;
+pub mod symplectic_control_factors;
+pub use crate::symplectic_control_factors::*;
+pub mod table_properties;
+pub use crate::table_properties::*;
+
+mod violetabft_engine;

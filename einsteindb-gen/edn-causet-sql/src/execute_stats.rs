@@ -113,7 +113,7 @@ pub struct WithSummaryCollector<C: ExecSummaryCollector, T> {
     pub inner: T,
 }
 
-/// Execution statistics to be flowed between parent and child executors at once during
+/// Execution statistics to be Causetxctxed between parent and child executors at once during
 /// `collect_exec_stats()` invocation.
 pub struct ExecuteStats {
     /// The execution summary of each executor. If execution summary is not needed, it will

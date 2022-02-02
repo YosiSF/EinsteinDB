@@ -1,4 +1,4 @@
-// Copyright 2022 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 YosiSF
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -63,7 +63,7 @@ impl AttributeValidation for Attribute {
         // TODO: consider warning if we have :einsteindb/index true for :einsteindb/valueType :einsteindb.type/string,
         // since this may be inefficient.  More generally, we should try to drive complex
         // :einsteindb/valueType (string, uri, json in the future) users to opt-in to some hash-indexing
-        // scheme, as discussed in https://github.com/Whtcorps Inc and EinstAI Inc/einstai/issues/69.
+        // scheme, as discussed in https://github.com/YosiSF/EinsteinDB/issues/69.
         Ok(())
     }
 }

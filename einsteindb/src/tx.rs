@@ -1,4 +1,4 @@
-// Copyright 2022 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 YosiSF
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -11,11 +11,11 @@
 #![allow(dead_code)]
 
 //! This module implements the transaction application algorithm described at
-//! https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting and its children pages.
+//! https://github.com/YosiSF/EinsteinDB/wiki/Transacting and its children pages.
 //!
 //! The impleeinstaiion proceeds in four main stages, labeled "Pipeline stage 1" through "Pipeline
 //! stage 4".  _Pipeline_ may be a misnomer, since the stages as written **cannot** be interleaved
-//! in parallel.  That is, a single transacted causet cannot flow through all the stages without its
+//! in parallel.  That is, a single transacted causet cannot Causetxctx through all the stages without its
 //! sibling causets.
 //!
 //! This unintuitive architectural decision was made because the second and third stages (resolving
@@ -35,11 +35,11 @@
 //! through the system.  In contrast the Clojure impleeinstaiion rewrote the fundamental causet type
 //! in place and suffered bugs where particular code paths missed cases.
 //!
-//! The type hierarchy accepts `causet` instances from the transaction parser and flows `Term`
+//! The type hierarchy accepts `causet` instances from the transaction parser and Causetxctxs `Term`
 //! instances through the term-rewriting transaction applier.  `Term` is a general `[:einsteindb/add e a v]`
 //! with restrictions on the `e` and `v` components.  The hierarchy is expressed using `Result` to
 //! model either/or, and layers of `Result` are stripped -- we might say the `Term` instances are
-//! _lowered_ as they flow through the pipeline.  This type hierarchy could have been expressed by
+//! _lowered_ as they Causetxctx through the pipeline.  This type hierarchy could have been expressed by
 //! combinatorially increasing `enum` cases, but this makes it difficult to handle the `e` and `v`
 //! components symmetrically.  Hence, layers of `Result` type aliases.  Hopefully the explanatory
 //! names -- `TermWithTempIdsAndLookupRefs`, anyone? -- and strongly typed stage functions will help
@@ -623,7 +623,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
     /// Transact the given `causets` against the store.
     ///
-    /// This approach is explained in https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting.
+    /// This approach is explained in https://github.com/YosiSF/EinsteinDB/wiki/Transacting.
     // TODO: move this to the transactor layer.
     pub fn transact_causets<I, V: TransactableValue>(&mut self, causets: I) -> Result<TxReport>
     where I: IntoIterator<Item=causet<V>> {
@@ -878,7 +878,7 @@ where W: TransactWatcher {
 /// If you want this work to occur inside a SQLite transaction, establish one on the connection
 /// prior to calling this function.
 ///
-/// This approach is explained in https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting.
+/// This approach is explained in https://github.com/YosiSF/EinsteinDB/wiki/Transacting.
 // TODO: move this to the transactor layer.
 pub fn transact<'conn, 'a, I, V, W>(conn: &'conn rusqlite::Connection,
                                  partition_map: PartitionMap,

@@ -142,7 +142,7 @@ mod tests {
     use foundationeinsteindb::raw::{BraneOptions, einsteindbOptions};
     use foundationeinsteindb::raw_util::{new_engine_opt, BRANEOptions};
     use foundationeinsteindb::Compat;
-    use engine_traits::{ALL_branes, BRANE_DEFAULT, LARGE_branes};
+    use fdb_traits::{ALL_branes, BRANE_DEFAULT, LARGE_branes};
     use ehikvproto::metapb::Peer;
     use ehikvproto::metapb::Region;
     use ehikvproto::pdpb::CheckPolicy;

@@ -1,4 +1,4 @@
-// Copyright 2022 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 YosiSF
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -11,7 +11,7 @@
 #![allow(dead_code)]
 
 //! This module implements the upsert resolution algorithm described at
-//! https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-upsert-resolution-algorithm.
+//! https://github.com/YosiSF/EinsteinDB/wiki/Transacting:-upsert-resolution-algorithm.
 
 use std::collections::{
     BTreeMap,

@@ -21,7 +21,7 @@ use crate::expr::EvalContext;
 pub enum Res<T> {
     Ok(T),
     Truncated(T),
-    Overflow(T),
+    OverCausetxctx(T),
 }
 
 impl<T> Res<T> {
@@ -29,13 +29,13 @@ impl<T> Res<T> {
         match self {
             Res::Ok(t) => Res::Ok(f(t)),
             Res::Truncated(t) => Res::Truncated(f(t)),
-            Res::Overflow(t) => Res::Overflow(f(t)),
+            Res::OverCausetxctx(t) => Res::OverCausetxctx(f(t)),
         }
     }
 
     pub fn unwrap(self) -> T {
         match self {
-            Res::Ok(t) | Res::Truncated(t) | Res::Overflow(t) => t,
+            Res::Ok(t) | Res::Truncated(t) | Res::OverCausetxctx(t) => t,
         }
     }
 
@@ -46,9 +46,9 @@ impl<T> Res<T> {
         }
     }
 
-    pub fn is_overflow(&self) -> bool {
+    pub fn is_overCausetxctx(&self) -> bool {
         match *self {
-            Res::Overflow(_) => true,
+            Res::OverCausetxctx(_) => true,
             _ => false,
         }
     }
@@ -63,12 +63,12 @@ impl<T> Res<T> {
     /// Convert `Res` into `Result` with an `EvalContext` that handling the errors
     /// If `truncated_err` is None, `ctx` will try to handle the default truncated error: `Error::truncated()`,
     /// otherwise handle the specified error inside `truncated_err`.
-    /// Same does `overflow_err` means.
+    /// Same does `overCausetxctx_err` means.
     fn into_result_impl(
         self,
         ctx: &mut EvalContext,
         truncated_err: Option<Error>,
-        overflow_err: Option<Error>,
+        overCausetxctx_err: Option<Error>,
     ) -> Result<T> {
         match self {
             Res::Ok(t) => Ok(t),
@@ -79,21 +79,21 @@ impl<T> Res<T> {
             }
             .map(|()| t),
 
-            Res::Overflow(t) => if let Some(error) = overflow_err {
-                ctx.handle_overflow_err(error)
+            Res::OverCausetxctx(t) => if let Some(error) = overCausetxctx_err {
+                ctx.handle_overCausetxctx_err(error)
             } else {
-                ctx.handle_overflow_err(Error::overflow("DECIMAL", ""))
+                ctx.handle_overCausetxctx_err(Error::overCausetxctx("DECIMAL", ""))
             }
             .map(|()| t),
         }
     }
 
-    pub fn into_result_with_overflow_err(
+    pub fn into_result_with_overCausetxctx_err(
         self,
         ctx: &mut EvalContext,
-        overflow_err: Error,
+        overCausetxctx_err: Error,
     ) -> Result<T> {
-        self.into_result_impl(ctx, None, Some(overflow_err))
+        self.into_result_impl(ctx, None, Some(overCausetxctx_err))
     }
 
     pub fn into_result(self, ctx: &mut EvalContext) -> Result<T> {
@@ -106,7 +106,7 @@ impl<T> Into<Result<T>> for Res<T> {
         match self {
             Res::Ok(t) => Ok(t),
             Res::Truncated(_) => Err(Error::truncated()),
-            Res::Overflow(_) => Err(Error::overflow("", "")),
+            Res::OverCausetxctx(_) => Err(Error::overCausetxctx("", "")),
         }
     }
 }
@@ -116,7 +116,7 @@ impl<T> Deref for Res<T> {
 
     fn deref(&self) -> &T {
         match *self {
-            Res::Ok(ref t) | Res::Overflow(ref t) | Res::Truncated(ref t) => t,
+            Res::Ok(ref t) | Res::OverCausetxctx(ref t) | Res::Truncated(ref t) => t,
         }
     }
 }
@@ -124,7 +124,7 @@ impl<T> Deref for Res<T> {
 impl<T> DerefMut for Res<T> {
     fn deref_mut(&mut self) -> &mut T {
         match *self {
-            Res::Ok(ref mut t) | Res::Overflow(ref mut t) | Res::Truncated(ref mut t) => t,
+            Res::Ok(ref mut t) | Res::OverCausetxctx(ref mut t) | Res::Truncated(ref mut t) => t,
         }
     }
 }
@@ -152,7 +152,7 @@ macro_rules! word_cnt {
     };
     ($len:expr, $t:ty) => {{
         if $len > 0 && $len as usize > (DIGITS_PER_WORD * WORD_BUF_LEN) as usize {
-            // process overflow
+            // process overCausetxctx
             (WORD_BUF_LEN + 1) as $t
         } else if $len <= 0 && ($len as $t) > 0 {
             // when $len is negative and $t is unsigned
@@ -224,7 +224,7 @@ fn add(a: u32, b: u32, carry: &mut u32, res: &mut u32) {
 fn fix_word_cnt_err(int_word_cnt: u8, frac_word_cnt: u8, word_buf_len: u8) -> Res<(u8, u8)> {
     if int_word_cnt + frac_word_cnt > word_buf_len {
         if int_word_cnt > word_buf_len {
-            return Res::Overflow((word_buf_len, 0));
+            return Res::OverCausetxctx((word_buf_len, 0));
         }
         return Res::Truncated((int_word_cnt, word_buf_len - int_word_cnt));
     }
@@ -500,8 +500,8 @@ fn do_add<'a>(mut lhs: &'a Decimal, mut rhs: &'a Decimal) -> Res<Decimal> {
         int_word_to += 1;
     }
     let res = fix_word_cnt_err(int_word_to, frac_word_to, WORD_BUF_LEN);
-    if res.is_overflow() {
-        return Res::Overflow(max_decimal(WORD_BUF_LEN * DIGITS_PER_WORD, 0));
+    if res.is_overCausetxctx() {
+        return Res::OverCausetxctx(max_decimal(WORD_BUF_LEN * DIGITS_PER_WORD, 0));
     }
     let (int_word_to, frac_word_to) = res.unwrap();
     let mut idx_to = (int_word_to + frac_word_to) as usize;
@@ -754,7 +754,7 @@ fn do_div_mod_impl(
             if int_word_to as u8 > WORD_BUF_LEN {
                 res.int_cnt = DIGITS_PER_WORD * WORD_BUF_LEN;
                 res.frac_cnt = 0;
-                return Some(Res::Overflow(res.unwrap()));
+                return Some(Res::OverCausetxctx(res.unwrap()));
             }
             l_stop = l_idx as u8 + int_word_to as u8 + frac_word_to;
             res.int_cnt = cmp::min(int_word_to as u8 * DIGITS_PER_WORD, rhs.int_cnt);
@@ -799,8 +799,8 @@ fn do_mul(lhs: &Decimal, rhs: &Decimal) -> Res<Decimal> {
     let int_cnt = int_word_to as u8 * DIGITS_PER_WORD;
     let mut dec = Decimal::new(int_cnt, frac_cnt, negative);
     dec.result_frac_cnt = cmp::min(lhs.result_frac_cnt + rhs.result_frac_cnt, MAX_FRACTION);
-    if res.is_overflow() {
-        return Res::Overflow(dec);
+    if res.is_overCausetxctx() {
+        return Res::OverCausetxctx(dec);
     }
 
     if !res.is_ok() {
@@ -849,7 +849,7 @@ fn do_mul(lhs: &Decimal, rhs: &Decimal) -> Res<Decimal> {
         }
         while carry > 0 {
             if idx_to == 0 {
-                return Res::Overflow(dec);
+                return Res::OverCausetxctx(dec);
             }
             idx_to -= 1;
             add(
@@ -1123,7 +1123,7 @@ impl Decimal {
 
         let tmp = self;
         let ret = self.round(decimal as i8, RoundMode::HalfEven).unwrap();
-        // TODO: process over_flow
+        // TODO: process over_Causetxctx
         if !ret.is_zero() && frac > decimal && ret != tmp {
             // TODO handle InInsertStmt in ctx
             ctx.handle_truncate(true)?;
@@ -1298,8 +1298,8 @@ impl Decimal {
                 for i in (0..int_word_cnt as usize + cmp::max(frac_word_to, 0) as usize).rev() {
                     if i + 1 < word_buf_len as usize {
                         dec.word_buf[i + 1] = dec.word_buf[i];
-                    } else if !dec.is_overflow() {
-                        dec = Res::Overflow(dec.unwrap());
+                    } else if !dec.is_overCausetxctx() {
+                        dec = Res::OverCausetxctx(dec.unwrap());
                     }
                 }
                 to_idx = 0;
@@ -1307,7 +1307,7 @@ impl Decimal {
                 if dec.int_cnt < DIGITS_PER_WORD * word_buf_len {
                     dec.int_cnt += 1;
                 } else {
-                    dec = Res::Overflow(dec.unwrap());
+                    dec = Res::OverCausetxctx(dec.unwrap());
                 }
             }
         } else {
@@ -1352,8 +1352,8 @@ impl Decimal {
 
         let upper = (DIGITS_PER_WORD * word_buf_len * 2) as isize;
         if shift > upper {
-            // process overflow by shift.
-            return Res::Overflow(self);
+            // process overCausetxctx by shift.
+            return Res::OverCausetxctx(self);
         } else if shift < -upper {
             // processor truncated by shift.
             return Res::Truncated(Self::zero());
@@ -1377,7 +1377,7 @@ impl Decimal {
         let mut res = if new_len > word_buf_len as isize {
             let lack = new_len - word_buf_len as isize;
             if frac_word_cnt < lack {
-                return Res::Overflow(self);
+                return Res::OverCausetxctx(self);
             }
             frac_word_cnt -= lack;
             let diff = frac_cnt - frac_word_cnt * DIGITS_PER_WORD as isize;
@@ -1489,13 +1489,13 @@ impl Decimal {
                 .wrapping_sub(i64::from(self.word_buf[word_idx]));
             if y < i64::MIN / i64::from(WORD_BASE) || x > y {
                 if self.negative {
-                    return Res::Overflow(i64::MIN);
+                    return Res::OverCausetxctx(i64::MIN);
                 }
-                return Res::Overflow(i64::MAX);
+                return Res::OverCausetxctx(i64::MAX);
             }
         }
         if !self.negative && x == i64::MIN {
-            return Res::Overflow(i64::MAX);
+            return Res::OverCausetxctx(i64::MAX);
         }
         if !self.negative {
             x = -x;
@@ -1518,15 +1518,15 @@ impl Decimal {
     /// `as_u64` returns int part of the decimal
     pub fn as_u64(&self) -> Res<u64> {
         if self.negative {
-            return Res::Overflow(0);
+            return Res::OverCausetxctx(0);
         }
         let mut x = 0u64;
         let int_cnt = word_cnt!(self.int_cnt) as usize;
         for word_idx in 0..int_cnt {
-            x = match x.overflowing_mul(u64::from(WORD_BASE)) {
-                (_, true) => return Res::Overflow(u64::MAX),
-                (x, _) => match x.overflowing_add(u64::from(self.word_buf[word_idx])) {
-                    (_, true) => return Res::Overflow(u64::MAX),
+            x = match x.overCausetxctxing_mul(u64::from(WORD_BASE)) {
+                (_, true) => return Res::OverCausetxctx(u64::MAX),
+                (x, _) => match x.overCausetxctxing_add(u64::from(self.word_buf[word_idx])) {
+                    (_, true) => return Res::OverCausetxctx(u64::MAX),
                     (x, _) => x,
                 },
             };
@@ -1601,7 +1601,7 @@ impl Decimal {
         let (int_word_cnt, frac_word_cnt) = (res.0, res.1);
         if !res.is_ok() {
             frac_cnt = (frac_word_cnt * DIGITS_PER_WORD) as usize;
-            if res.is_overflow() {
+            if res.is_overCausetxctx() {
                 int_cnt = (int_word_cnt * DIGITS_PER_WORD) as usize;
             }
         }
@@ -1613,7 +1613,7 @@ impl Decimal {
             word += u32::from(c - b'0') * TEN_POW[inner_idx];
             inner_idx += 1;
             if inner_idx == DIGITS_PER_WORD as usize {
-                //TODO overflow
+                //TODO overCausetxctx
                 word_idx -= 1;
                 d.word_buf[word_idx] = word;
                 word = 0;
@@ -1644,19 +1644,19 @@ impl Decimal {
         if end_idx < bs.len() && (bs[end_idx] == b'e' || bs[end_idx] == b'E') {
             let exp = convert::bytes_to_int_without_context(&bs[end_idx + 1..])?;
             if exp > i64::from(i32::MAX) / 2 {
-                return Ok(Res::Overflow(max_or_min_dec(
+                return Ok(Res::OverCausetxctx(max_or_min_dec(
                     d.negative,
                     WORD_BUF_LEN * DIGITS_PER_WORD,
                     0,
                 )));
             }
-            if exp < i64::from(i32::MIN) / 2 && !d.is_overflow() {
+            if exp < i64::from(i32::MIN) / 2 && !d.is_overCausetxctx() {
                 return Ok(Res::Truncated(Self::zero()));
             }
-            if !d.is_overflow() {
+            if !d.is_overCausetxctx() {
                 let is_truncated = d.is_truncated();
                 d = match d.unwrap().shift(exp as isize) {
-                    Res::Overflow(v) => Res::Overflow(max_or_min_dec(
+                    Res::OverCausetxctx(v) => Res::OverCausetxctx(max_or_min_dec(
                         v.negative,
                         WORD_BUF_LEN * DIGITS_PER_WORD,
                         0,
@@ -1739,7 +1739,7 @@ impl ConvertTo<f64> for Decimal {
 impl From<i64> for Decimal {
     fn from(i: i64) -> Decimal {
         let (neg, mut d) = if i < 0 {
-            (true, Decimal::from(i.overflowing_neg().0 as u64))
+            (true, Decimal::from(i.overCausetxctxing_neg().0 as u64))
         } else {
             (false, Decimal::from(i as u64))
         };
@@ -1804,8 +1804,8 @@ impl ConvertTo<Decimal> for &[u8] {
     #[inline]
     fn convert(&self, ctx: &mut EvalContext) -> Result<Decimal> {
         let r = Decimal::from_bytes(self).unwrap_or_else(|_| Res::Ok(Decimal::zero()));
-        let err = Error::overflow("DECIMAL", "");
-        r.into_result_with_overflow_err(ctx, err)
+        let err = Error::overCausetxctx("DECIMAL", "");
+        r.into_result_with_overCausetxctx_err(ctx, err)
     }
 }
 
@@ -1868,7 +1868,7 @@ impl FromStr for Decimal {
     fn from_str(s: &str) -> Result<Decimal> {
         match Decimal::from_bytes(s.as_bytes())? {
             Res::Ok(d) => Ok(d),
-            Res::Overflow(_) => Err(box_err!("parsing {} will overflow", s)),
+            Res::OverCausetxctx(_) => Err(box_err!("parsing {} will overCausetxctx", s)),
             Res::Truncated(_) => Err(box_err!("parsing {} will truncated", s)),
         }
     }
@@ -2014,9 +2014,9 @@ pub trait DecimalEncoder: NumberEncoder {
             }
             src_int_word_cnt = int_word_cnt;
             src_leading_digits = leading_digits;
-            res = Res::Overflow(());
+            res = Res::OverCausetxctx(());
             error!(
-                "encode decimal overflow";
+                "encode decimal overCausetxctx";
                 "from" => d.to_string(),
                 "prec" => prec,
                 "frac" => frac,
@@ -2506,15 +2506,15 @@ mod tests {
         let cases = vec![
             (
                 "18446744073709551615",
-                Res::Overflow(9223372036854775807i64),
+                Res::OverCausetxctx(9223372036854775807i64),
             ),
             ("-1", Res::Ok(-1)),
             ("1", Res::Ok(1)),
             ("-1.23", Res::Truncated(-1)),
             ("-9223372036854775807", Res::Ok(-9223372036854775807)),
             ("-9223372036854775808", Res::Ok(-9223372036854775808)),
-            ("9223372036854775808", Res::Overflow(9223372036854775807)),
-            ("-9223372036854775809", Res::Overflow(-9223372036854775808)),
+            ("9223372036854775808", Res::OverCausetxctx(9223372036854775807)),
+            ("-9223372036854775809", Res::OverCausetxctx(-9223372036854775808)),
         ];
 
         for (dec_str, exp) in cases {
@@ -2531,12 +2531,12 @@ mod tests {
             ("0", Res::Ok(0)),
             // ULLONG_MAX = 18446744073709551615ULL
             ("18446744073709551615", Res::Ok(18446744073709551615)),
-            ("18446744073709551616", Res::Overflow(18446744073709551615)),
-            ("-1", Res::Overflow(0)),
+            ("18446744073709551616", Res::OverCausetxctx(18446744073709551615)),
+            ("-1", Res::OverCausetxctx(0)),
             ("1.23", Res::Truncated(1)),
             (
                 "9999999999999999999999999.000",
-                Res::Overflow(18446744073709551615),
+                Res::OverCausetxctx(18446744073709551615),
             ),
         ];
 
@@ -2684,7 +2684,7 @@ mod tests {
             (WORD_BUF_LEN, b"000.000", 1000, Res::Ok("0")),
             (WORD_BUF_LEN, b"000.", 1000, Res::Ok("0")),
             (WORD_BUF_LEN, b".000", 1000, Res::Ok("0")),
-            (WORD_BUF_LEN, b"1", 1000, Res::Overflow("1")),
+            (WORD_BUF_LEN, b"1", 1000, Res::OverCausetxctx("1")),
             (WORD_BUF_LEN, b"123.123", -1, Res::Ok("12.3123")),
             (
                 WORD_BUF_LEN,
@@ -2793,7 +2793,7 @@ mod tests {
             (2, b".000000000123", 25, Res::Ok("1230000000000000")),
             (2, b".000000000123", 26, Res::Ok("12300000000000000")),
             (2, b".000000000123", 27, Res::Ok("123000000000000000")),
-            (2, b".000000000123", 28, Res::Overflow("0.000000000123")),
+            (2, b".000000000123", 28, Res::OverCausetxctx("0.000000000123")),
             (
                 2,
                 b"123456789.987654321",
@@ -2863,7 +2863,7 @@ mod tests {
                 2,
                 b"123456789.987654321",
                 10,
-                Res::Overflow("123456789.987654321"),
+                Res::OverCausetxctx("123456789.987654321"),
             ),
             (2, b"123456789.987654321", 0, Res::Ok("123456789.987654321")),
             (
@@ -2876,7 +2876,7 @@ mod tests {
                 WORD_BUF_LEN,
                 b"0.0000000070415291131966574",
                 9223372036854775807,
-                Res::Overflow("0.0000000070415291131966574"),
+                Res::OverCausetxctx("0.0000000070415291131966574"),
             ),
         ];
 
@@ -2977,7 +2977,7 @@ mod tests {
             (WORD_BUF_LEN, b"1234500009876.5", Res::Ok("1234500009876.5")),
             (WORD_BUF_LEN, b"123E5", Res::Ok("12300000")),
             (WORD_BUF_LEN, b"123E-2", Res::Ok("1.23")),
-            (1, b"123450000098765", Res::Overflow("98765")),
+            (1, b"123450000098765", Res::OverCausetxctx("98765")),
             (1, b"123450.000098765", Res::Truncated("123450")),
             (WORD_BUF_LEN, b"123.123", Res::Ok("123.123")),
             (WORD_BUF_LEN, b"123.1230", Res::Ok("123.1230")),
@@ -3012,11 +3012,11 @@ mod tests {
             (WORD_BUF_LEN, b"1e001", Res::Ok("10")),
             (WORD_BUF_LEN, b"1e00", Res::Ok("1")),
             (WORD_BUF_LEN, b"1e1073741823",
-             Res::Overflow("999999999999999999999999999999999999999999999999999999999999999999999999999999999")),
+             Res::OverCausetxctx("999999999999999999999999999999999999999999999999999999999999999999999999999999999")),
             (WORD_BUF_LEN, b"-1e1073741823",
-             Res::Overflow("-999999999999999999999999999999999999999999999999999999999999999999999999999999999")),
+             Res::OverCausetxctx("-999999999999999999999999999999999999999999999999999999999999999999999999999999999")),
             (WORD_BUF_LEN, b"135999696916777530000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-             Res::Overflow("0")),
+             Res::OverCausetxctx("0")),
             (WORD_BUF_LEN, b"-0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002932935661422768",
              Res::Truncated("0.000000000000000000000000000000000000000000000000000000000000000000000000")),
             // The following case return truncated in Milevaeinsteindb, need to fix it in bytes_to_int_without_context
@@ -3025,7 +3025,7 @@ mod tests {
             (WORD_BUF_LEN, b"1e 1ddd", Res::Ok("10")),
             (WORD_BUF_LEN, b"1e - 1", Res::Ok("1")),
             // with word_buf_len 1
-            (1, b"123450000098765", Res::Overflow("98765")),
+            (1, b"123450000098765", Res::OverCausetxctx("98765")),
             (1, b"123450.000098765", Res::Truncated("123450")),
         ];
 
@@ -3076,10 +3076,10 @@ mod tests {
                 Res::Truncated("-0.00000001234500009876"),
             ),
             ("1234500009876.5", 30, 5, Res::Ok("1234500009876.50000")),
-            ("111111111.11", 10, 2, Res::Overflow("11111111.11")),
+            ("111111111.11", 10, 2, Res::OverCausetxctx("11111111.11")),
             ("000000000.01", 7, 3, Res::Ok("0.010")),
             ("123.4", 10, 2, Res::Ok("123.40")),
-            ("1000", 3, 0, Res::Overflow("0")),
+            ("1000", 3, 0, Res::OverCausetxctx("0")),
             (
                 "10000000000000000000.23",
                 23,
@@ -3321,7 +3321,7 @@ mod tests {
             ("123456", "9876543210", Res::Ok("1219318518533760")),
             ("123", "0.01", Res::Ok("1.23")),
             ("123", "0", Res::Ok("0")),
-            (&a, &b, Res::Overflow("0")),
+            (&a, &b, Res::OverCausetxctx("0")),
             (
                 "0.00000000000000",
                 "0.000000000000000000000000000000000000000000000000000000000000000",
@@ -3525,7 +3525,7 @@ mod tests {
         let div_cases = vec![(
             "-43791957044243810000000000000000000000000000000000000000000000000000000000000",
             "-0.0000000000000000000000000000000000000000000000000012867433602814482",
-            Res::Overflow(
+            Res::OverCausetxctx(
                 "34033171179267041433424155279291553259014210153022524070386565694757521640",
             ),
         )];
@@ -3673,14 +3673,14 @@ mod tests {
             assert_eq!(got, expect, "from {:?}, expect: {} got: {}", s, expect, got);
         }
 
-        // OVERFLOWING
+        // OVERCausetxctxING
         let big = (0..85).map(|_| '9').collect::<String>();
         let val: Result<Decimal> = big.as_bytes().convert(&mut ctx);
         assert!(val.is_err(), "expected error, but got {:?}", val);
         assert_eq!(val.unwrap_err().code(), ERR_DATA_OUT_OF_RANGE);
 
-        // OVERFLOW_AS_WARNING
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERFLOW_AS_WARNING)));
+        // OVERCausetxctx_AS_WARNING
+        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
         let val: Decimal = big.as_bytes().convert(&mut ctx).unwrap();
         let max = max_decimal(WORD_BUF_LEN * DIGITS_PER_WORD, 0);
         assert_eq!(
@@ -3721,24 +3721,24 @@ mod tests {
             .into_result_impl(&mut ctx, Some(Error::truncated()), None)
             .is_ok());
 
-        // Overflow cases
+        // OverCausetxctx cases
         let mut ctx = EvalContext::default();
-        let overflow_res = Res::Overflow(666);
-        let error = Error::overflow("", "");
+        let overCausetxctx_res = Res::OverCausetxctx(666);
+        let error = Error::overCausetxctx("", "");
         assert_eq!(
             error.code(),
-            overflow_res
+            overCausetxctx_res
                 .into_result_impl(&mut ctx, None, Some(error))
                 .unwrap_err()
                 .code(),
         );
 
-        // OVERFLOW_AS_WARNING
+        // OVERCausetxctx_AS_WARNING
         let mut ctx = EvalContext::new(std::sync::Arc::new(EvalConfig::from_flag(
-            Flag::OVERFLOW_AS_WARNING,
+            Flag::OVERCausetxctx_AS_WARNING,
         )));
-        let error = Error::overflow("", "");
-        assert!(overflow_res
+        let error = Error::overCausetxctx("", "");
+        assert!(overCausetxctx_res
             .into_result_impl(&mut ctx, None, Some(error))
             .is_ok());
     }

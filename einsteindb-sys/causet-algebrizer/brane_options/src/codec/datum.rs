@@ -154,7 +154,7 @@ fn checked_add_i64(l: u64, r: i64) -> Option<u64> {
     if r >= 0 {
         Some(l + r as u64)
     } else {
-        l.checked_sub(r.overflowing_neg().0 as u64)
+        l.checked_sub(r.overCausetxctxing_neg().0 as u64)
     }
 }
 
@@ -629,7 +629,7 @@ impl Datum {
             (l, r) => return Err(invalid_type!("{} and {} can't be add together.", l, r)),
         };
         if let Datum::Null = res {
-            return Err(box_err!("{} + {} overflow", self, d));
+            return Err(box_err!("{} + {} overCausetxctx", self, d));
         }
         Ok(res)
     }
@@ -647,7 +647,7 @@ impl Datum {
             }
             (&Datum::U64(l), &Datum::I64(r)) => {
                 if r < 0 {
-                    l.checked_add(r.overflowing_neg().0 as u64).into()
+                    l.checked_add(r.overCausetxctxing_neg().0 as u64).into()
                 } else {
                     l.checked_sub(r as u64).into()
                 }
@@ -661,7 +661,7 @@ impl Datum {
             (l, r) => return Err(invalid_type!("{} can't minus {}", l, r)),
         };
         if let Datum::Null = res {
-            return Err(box_err!("{} - {} overflow", self, d));
+            return Err(box_err!("{} - {} overCausetxctx", self, d));
         }
         Ok(res)
     }
@@ -672,7 +672,7 @@ impl Datum {
             (&Datum::I64(l), &Datum::I64(r)) => l.checked_mul(r).into(),
             (&Datum::I64(l), &Datum::U64(r)) | (&Datum::U64(r), &Datum::I64(l)) => {
                 if l < 0 {
-                    return Err(box_err!("{} * {} overflow.", l, r));
+                    return Err(box_err!("{} * {} overCausetxctx.", l, r));
                 }
                 r.checked_mul(l as u64).into()
             }
@@ -683,7 +683,7 @@ impl Datum {
         };
 
         if let Datum::Null = res {
-            return Err(box_err!("{} * {} overflow", self, d));
+            return Err(box_err!("{} * {} overCausetxctx", self, d));
         }
         Ok(res)
     }
@@ -699,12 +699,12 @@ impl Datum {
             (Datum::I64(l), Datum::I64(r)) => Ok(Datum::I64(l % r)),
             (Datum::I64(l), Datum::U64(r)) => {
                 if l < 0 {
-                    Ok(Datum::I64(-((l.overflowing_neg().0 as u64 % r) as i64)))
+                    Ok(Datum::I64(-((l.overCausetxctxing_neg().0 as u64 % r) as i64)))
                 } else {
                     Ok(Datum::I64((l as u64 % r) as i64))
                 }
             }
-            (Datum::U64(l), Datum::I64(r)) => Ok(Datum::U64(l % r.overflowing_abs().0 as u64)),
+            (Datum::U64(l), Datum::I64(r)) => Ok(Datum::U64(l % r.overCausetxctxing_abs().0 as u64)),
             (Datum::U64(l), Datum::U64(r)) => Ok(Datum::U64(l % r)),
             (Datum::F64(l), Datum::F64(r)) => Ok(Datum::F64(l % r)),
             (Datum::Dec(l), Datum::Dec(r)) => match l % r {
@@ -726,13 +726,13 @@ impl Datum {
         }
         match (self, datum) {
             (Datum::I64(left), Datum::I64(right)) => match left.checked_div(right) {
-                None => Err(box_err!("{} intdiv {} overflow", left, right)),
+                None => Err(box_err!("{} intdiv {} overCausetxctx", left, right)),
                 Some(res) => Ok(Datum::I64(res)),
             },
             (Datum::I64(left), Datum::U64(right)) => {
                 if left < 0 {
-                    if left.overflowing_neg().0 as u64 >= right {
-                        Err(box_err!("{} intdiv {} overflow", left, right))
+                    if left.overCausetxctxing_neg().0 as u64 >= right {
+                        Err(box_err!("{} intdiv {} overCausetxctx", left, right))
                     } else {
                         Ok(Datum::U64(0))
                     }
@@ -742,8 +742,8 @@ impl Datum {
             }
             (Datum::U64(left), Datum::I64(right)) => {
                 if right < 0 {
-                    if left != 0 && right.overflowing_neg().0 as u64 <= left {
-                        Err(box_err!("{} intdiv {} overflow", left, right))
+                    if left != 0 && right.overCausetxctxing_neg().0 as u64 <= left {
+                        Err(box_err!("{} intdiv {} overCausetxctx", left, right))
                     } else {
                         Ok(Datum::U64(0))
                     }

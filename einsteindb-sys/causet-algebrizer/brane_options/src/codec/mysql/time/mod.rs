@@ -1123,7 +1123,7 @@ impl Time {
             .checked_add_signed(dur)
             .map(|utc| utc.with_timezone(&ctx.braneg.tz));
 
-        let time = time.ok_or::<Error>(box_err!("parse from duration {} overflows", duration))?;
+        let time = time.ok_or::<Error>(box_err!("parse from duration {} overCausetxctxs", duration))?;
 
         Time::try_from_chrono_datetime(ctx, time, time_type, duration.fsp() as i8)
     }

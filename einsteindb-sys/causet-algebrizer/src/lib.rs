@@ -465,7 +465,7 @@ impl ExprColumnRefVisitor {
             let offset = box_try!(expr.get_val().read_i64()) as usize;
             if offset >= self.cols_len {
                 return Err(other_err!(
-                    "offset {} overflow, should be less than {}",
+                    "offset {} overCausetxctx, should be less than {}",
                     offset,
                     self.cols_len
                 ));

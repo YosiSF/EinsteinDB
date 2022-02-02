@@ -447,7 +447,7 @@ mod tests {
             }
         }
 
-        // test overflow
+        // test overCausetxctx
         let mut ctx = EvalContext::default();
         let val: Result<bool> = f64::INFINITY
             .to_string()

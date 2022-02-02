@@ -5,7 +5,7 @@
 use crate::config::BLOCK_CACHE_RATE;
 use crate::server::ttl::TTLCheckerTask;
 use crate::server::CONFIG_ROCKSDB_GAUGE;
-use crate::einsteindb::storage::solitontxn::flow_controller::FlowController;
+use crate::einsteindb::storage::solitontxn::Causetxctx_controller::CausetxctxController;
 use engine_rocks::cocauset::{Cache, LRUCacheOptions, MemoryAllocator};
 use einsteindb-gen::{ColumnFamilyOptions, HikvEngine, CF_DEFAULT};
 use file_system::{get_io_rate_limiter, IOPriority, IORateLimitMode, IORateLimiter, IOType};
@@ -62,7 +62,7 @@ pub struct Config {
     /// Interval to check TTL for all SSTs,
     pub ttl_check_poll_interval: ReadableDuration,
     #[online_config(submodule)]
-    pub flow_control: FlowControlConfig,
+    pub Causetxctx_control: CausetxctxControlConfig,
     #[online_config(submodule)]
     pub bdagger_cache: BdaggerCacheConfig,
     #[online_config(submodule)]
@@ -84,7 +84,7 @@ impl Default for Config {
             api_version: 1,
             enable_ttl: false,
             ttl_check_poll_interval: ReadableDuration::hours(12),
-            flow_control: FlowControlConfig::default(),
+            Causetxctx_control: CausetxctxControlConfig::default(),
             bdagger_cache: BdaggerCacheConfig::default(),
             io_rate_limit: IORateLimitConfig::default(),
         }
@@ -149,7 +149,7 @@ pub struct StorageConfigManger<EK: HikvEngine> {
     fdbhikvdb: EK,
     shared_bdagger_cache: bool,
     ttl_checker_scheduler: Scheduler<TTLCheckerTask>,
-    flow_controller: Arc<FlowController>,
+    Causetxctx_controller: Arc<CausetxctxController>,
 }
 
 impl<EK: HikvEngine> StorageConfigManger<EK> {
@@ -157,13 +157,13 @@ impl<EK: HikvEngine> StorageConfigManger<EK> {
         fdbhikvdb: EK,
         shared_bdagger_cache: bool,
         ttl_checker_scheduler: Scheduler<TTLCheckerTask>,
-        flow_controller: Arc<FlowController>,
+        Causetxctx_controller: Arc<CausetxctxController>,
     ) -> Self {
         StorageConfigManger {
             fdbhikvdb,
             shared_bdagger_cache,
             ttl_checker_scheduler,
-            flow_controller,
+            Causetxctx_controller,
         }
     }
 }
@@ -194,8 +194,8 @@ impl<EK: HikvEngine> ConfigManager for StorageConfigManger<EK> {
             self.ttl_checker_scheduler
                 .schedule(TTLCheckerTask::UpdatePollInterval(interval.into()))
                 .unwrap();
-        } else if let Some(ConfigValue::Module(mut flow_control)) = change.remove("flow_control") {
-            if let Some(v) = flow_control.remove("enable") {
+        } else if let Some(ConfigValue::Module(mut Causetxctx_control)) = change.remove("Causetxctx_control") {
+            if let Some(v) = Causetxctx_control.remove("enable") {
                 let enable: bool = v.into();
                 if enable {
                     for cf in self.fdbhikvdb.cf_names() {
@@ -203,14 +203,14 @@ impl<EK: HikvEngine> ConfigManager for StorageConfigManger<EK> {
                             .set_options_cf(cf, &[("disable_write_stall", "true")])
                             .unwrap();
                     }
-                    self.flow_controller.enable(true);
+                    self.Causetxctx_controller.enable(true);
                 } else {
                     for cf in self.fdbhikvdb.cf_names() {
                         self.fdbhikvdb
                             .set_options_cf(cf, &[("disable_write_stall", "false")])
                             .unwrap();
                     }
-                    self.flow_controller.enable(false);
+                    self.Causetxctx_controller.enable(false);
                 }
             }
         }
@@ -239,7 +239,7 @@ impl<EK: HikvEngine> ConfigManager for StorageConfigManger<EK> {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, OnlineConfig)]
 #[serde(default)]
 #[serde(rename_all = "kebab-case")]
-pub struct FlowControlConfig {
+pub struct CausetxctxControlConfig {
     pub enable: bool,
     #[online_config(skip)]
     pub soft_pending_compaction_bytes_limit: ReadableSize,
@@ -251,9 +251,9 @@ pub struct FlowControlConfig {
     pub l0_files_threshold: u64,
 }
 
-impl Default for FlowControlConfig {
-    fn default() -> FlowControlConfig {
-        FlowControlConfig {
+impl Default for CausetxctxControlConfig {
+    fn default() -> CausetxctxControlConfig {
+        CausetxctxControlConfig {
             enable: true,
             soft_pending_compaction_bytes_limit: ReadableSize::gb(192),
             hard_pending_compaction_bytes_limit: ReadableSize::gb(1024),

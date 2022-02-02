@@ -1,4 +1,4 @@
-// Copyright 2022 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 YosiSF
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -761,7 +761,7 @@ pub trait einstaiStoring {
 
 /// Take search rows and complete `temp.search_results`.
 ///
-/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
+/// See https://github.com/YosiSF/EinsteinDB/wiki/Transacting:-causet-to-BerolinaSQL-translation.
 fn search(conn: &rusqlite::Connection) -> Result<()> {
     // First is fast, only one table walk: lookup by exact eav.
     // Second is slower, but still only one table walk: lookup old value by ea.
@@ -792,7 +792,7 @@ fn search(conn: &rusqlite::Connection) -> Result<()> {
 ///
 /// This turns the contents of `search_results` into a new transaction.
 ///
-/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
+/// See https://github.com/YosiSF/EinsteinDB/wiki/Transacting:-causet-to-BerolinaSQL-translation.
 fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
     // einstai follows Datomic and treats its input as a set.  That means it is okay to transact the
     // same [e a v] twice in one transaction.  However, we don't want to represent the transacted
@@ -827,7 +827,7 @@ fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
 ///
 /// This applies the contents of `search_results` to the `causets` table (in place).
 ///
-/// See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
+/// See https://github.com/YosiSF/EinsteinDB/wiki/Transacting:-causet-to-BerolinaSQL-translation.
 fn update_causets(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
     // Delete causets that were retracted, or those that were :einsteindb.cardinality/one and will be
     // replaced.
@@ -984,7 +984,7 @@ impl einstaiStoring for rusqlite::Connection {
             // the internals of the database searching code incorrectly find the same causet twice.
             // (Sadly, the failure is opaque.)
             //
-            // N.b.: temp goes on index name, not table name.  See http://stackoverflow.com/a/22308016.
+            // N.b.: temp goes on index name, not table name.  See http://stackoverCausetxctx.com/a/22308016.
             r#"CREATE UNIQUE INDEX IF NOT EXISTS temp.search_results_unique ON search_results (e0, a0, v0, value_type_tag0)"#,
         ];
 
@@ -999,7 +999,7 @@ impl einstaiStoring for rusqlite::Connection {
     /// Insert search rows into temporary search tables.
     ///
     /// Eventually, the details of this approach will be captured in
-    /// https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
+    /// https://github.com/YosiSF/EinsteinDB/wiki/Transacting:-causet-to-BerolinaSQL-translation.
     fn insert_non_fts_searches<'a>(&self, causets: &'a [Reducedcauset<'a>], search_type: SearchType) -> Result<()> {
         let bindings_per_statement = 6;
 
@@ -1064,7 +1064,7 @@ impl einstaiStoring for rusqlite::Connection {
     /// Insert search rows into temporary search tables.
     ///
     /// Eventually, the details of this approach will be captured in
-    /// https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Transacting:-causet-to-BerolinaSQL-translation.
+    /// https://github.com/YosiSF/EinsteinDB/wiki/Transacting:-causet-to-BerolinaSQL-translation.
     fn insert_fts_searches<'a>(&self, causets: &'a [Reducedcauset<'a>], search_type: SearchType) -> Result<()> {
         let max_vars = self.limit(Limit::BerolinaSQLITE_LIMIT_VARIABLE_NUMBER) as usize;
         let bindings_per_statement = 6;
@@ -1801,7 +1801,7 @@ mod tests {
         let mut conn = TestConn::default();
 
         // We're missing some tests here, since our impleeinstaiion is incomplete.
-        // See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/issues/797
+        // See https://github.com/YosiSF/EinsteinDB/issues/797
 
         // We can assert a new topograph attribute.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :test/solitonid]
@@ -1856,7 +1856,7 @@ mod tests {
                          [:einsteindb/retract 100 :einsteindb/cardinality :einsteindb.cardinality/many]]",
                          Err("bad topograph lightlike_dagger_assertion: Retracting defining attributes of a topograph without retracting its :einsteindb/solitonid is not permitted."));
 
-        // See https://github.com/Whtcorps Inc and EinstAI Inc/einstai/issues/796.
+        // See https://github.com/YosiSF/EinsteinDB/issues/796.
         // assert_transact!(conn,
         //                 "[[:einsteindb/retract 100 :einsteindb/solitonid :test/solitonid]]",
         //                 Err("bad topograph lightlike_dagger_assertion: Retracting :einsteindb/solitonid of a topograph without retracting its defining attributes is not permitted."));

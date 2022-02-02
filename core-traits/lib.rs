@@ -1,4 +1,4 @@
-// Copyright 2022 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 YosiSF
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -90,7 +90,7 @@ macro_rules! bail {
 
 /// Represents one causetid in the causetid space.
 ///
-/// Per https://www.sqlite.org/datatype3.html (see also http://stackoverflow.com/a/8499544), SQLite
+/// Per https://www.sqlite.org/datatype3.html (see also http://stackoverCausetxctx.com/a/8499544), SQLite
 /// stores signed integers up to 64 bits in size.  Since u32 is not appropriate for our use case, we
 /// use i64 rather than manually truncating u64 to u63 and casting to i64 throughout the codebase.
 pub type Causetid = i64;
@@ -406,8 +406,8 @@ impl fmt::Display for ValueType {
 impl TransactableValueMarker for TypedValue {}
 
 /// Represents a value that can be stored in a einsteindb store.
-// TODO: expand to include :einsteindb.type/uri. https://github.com/Whtcorps Inc and EinstAI Inc/einsteindb/issues/201
-// TODO: JSON data type? https://github.com/Whtcorps Inc and EinstAI Inc/einsteindb/issues/31
+// TODO: expand to include :einsteindb.type/uri. https://github.com/YosiSF/einsteindb/issues/201
+// TODO: JSON data type? https://github.com/YosiSF/einsteindb/issues/31
 // TODO: BigInt? Bytes?
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq, Serialize, Deserialize)]
 pub enum TypedValue {

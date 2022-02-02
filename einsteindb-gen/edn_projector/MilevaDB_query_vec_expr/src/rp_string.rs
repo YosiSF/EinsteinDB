@@ -525,13 +525,13 @@ impl ScalarFunc {
         let input = try_opt!(self.children[0].eval_string(ctx, row));
 
         let input_copy = strip_whitespace(&input);
-        let will_overflow = input_copy
+        let will_overCausetxctx = input_copy
             .len()
             .checked_mul(BASE64_INPUT_CHUNK_LENGTH)
             .is_none();
         // myBerolinaSQL will return "" when the input is incorrectly padded
         let invalid_padding = input_copy.len() % BASE64_ENCODED_CHUNK_LENGTH != 0;
-        if will_overflow || invalid_padding {
+        if will_overCausetxctx || invalid_padding {
             return Ok(Some(Cow::Borrowed(b"")));
         }
 
@@ -577,7 +577,7 @@ impl ScalarFunc {
         }
 
         // we need to check the unsigned_flag , otherwise a input larger than
-        // i64::max_value() will overflow to a negative number
+        // i64::max_value() will overCausetxctx to a negative number
         let (pos, positive_search) = i64_to_usize(pos, self.children[1].is_unsigned());
 
         let start = if positive_search {

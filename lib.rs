@@ -1,4 +1,4 @@
-// Copyright 2022 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 YosiSF
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -224,9 +224,9 @@ mod tests {
     #[test]
     fn test_kw() {
         assert_eq!(kw!(:foo/bar), Keyword::isoliton_namespaceable("foo", "bar"));
-        assert_eq!(kw!(:org.Whtcorps Inc and EinstAI Inc.foo/bar_baz), Keyword::isoliton_namespaceable("org.Whtcorps Inc and EinstAI Inc.foo", "bar_baz"));
+        assert_eq!(kw!(:org.YosiSF.foo/bar_baz), Keyword::isoliton_namespaceable("org.YosiSF.foo", "bar_baz"));
         assert_eq!(kw!(:_foo_/_bar_._baz_), Keyword::isoliton_namespaceable("_foo_", "_bar_._baz_"));
-        assert_eq!(kw!(:_org_._Whtcorps Inc and EinstAI Inc_._foo_/_bar_._baz_), Keyword::isoliton_namespaceable("_org_._Whtcorps Inc and EinstAI Inc_._foo_", "_bar_._baz_"));
+        assert_eq!(kw!(:_org_._YosiSF_._foo_/_bar_._baz_), Keyword::isoliton_namespaceable("_org_._YosiSF_._foo_", "_bar_._baz_"));
     }
 
     #[test]

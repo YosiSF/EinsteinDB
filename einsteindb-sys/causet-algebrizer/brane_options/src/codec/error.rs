@@ -63,7 +63,7 @@ quick_error! {
 }
 
 impl Error {
-    pub fn overflow(data: impl Display, expr: impl Display) -> Error {
+    pub fn overCausetxctx(data: impl Display, expr: impl Display) -> Error {
         let msg = format!("{} value is out of range in '{}'", data, expr);
         Error::Eval(msg, ERR_DATA_OUT_OF_RANGE)
     }
@@ -90,7 +90,7 @@ impl Error {
         Error::Eval(msg.into(), ERR_UNKNOWN)
     }
 
-    pub fn cast_as_signed_overflow() -> Error {
+    pub fn cast_as_signed_overCausetxctx() -> Error {
         let msg =
             "Cast to signed converted positive out-of-range integer to it's negative complement";
         Error::Eval(msg.into(), ERR_UNKNOWN)
@@ -121,7 +121,7 @@ impl Error {
         }
     }
 
-    pub fn is_overflow(&self) -> bool {
+    pub fn is_overCausetxctx(&self) -> bool {
         self.code() == ERR_DATA_OUT_OF_RANGE
     }
 

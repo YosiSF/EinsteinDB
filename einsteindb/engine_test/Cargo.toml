@@ -1,0 +1,33 @@
+[package]
+name = "engine_test"
+version = "0.0.1"
+description = "A single engine that masquerades as all other engines, for testing"
+edition = "2018"
+publish = false
+
+[features]
+default = ["test-engines-foundationdb"]
+
+test-engine-kv-panic = []
+test-engine-kv-foundationdb = []
+test-engine-violetabft-panic = []
+test-engine-violetabft-foundationdb = []
+
+test-engines-foundationdb = [
+  "test-engine-kv-foundationdb",
+  "test-engine-violetabft-foundationdb",
+]
+test-engines-panic = [
+  "test-engine-kv-panic",
+  "test-engine-violetabft-panic",
+]
+
+
+[dependencies]
+engine_panic = { path = "../engine_panic", default-features = false }
+fdb_engine = { path = "../fdb_lsh-merkle_merkle_tree", default-features = false }
+fdb_traits = { path = "../fdb_traits", default-features = false }
+tempfile = "3.0"
+einsteindb_alloc = { path = "../einsteindb_alloc" }
+# FIXME: Remove this dep from the fdb_traits interface
+einsteindb_util = { path = "../einsteindb_util", default-features = false }

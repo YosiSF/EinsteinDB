@@ -13,7 +13,7 @@ use raftstore::store::WriteStats;
 use einstfdbhikv_util::yatp_pool::{FuturePool, PoolTicker, YatpPoolBuilder};
 
 use crate::einsteindb::storage::fdbhikv::{
-    destroy_tls_engine, set_tls_engine, Engine, FlowStatsReporter, Statistics,
+    destroy_tls_engine, set_tls_engine, Engine, CausetxctxStatsReporter, Statistics,
 };
 use crate::einsteindb::storage::metrics::*;
 
@@ -43,18 +43,18 @@ pub struct SchedPool {
 }
 
 #[derive(Clone)]
-pub struct SchedTicker<R: FlowStatsReporter> {
+pub struct SchedTicker<R: CausetxctxStatsReporter> {
     reporter: R,
 }
 
-impl<R: FlowStatsReporter> PoolTicker for SchedTicker<R> {
+impl<R: CausetxctxStatsReporter> PoolTicker for SchedTicker<R> {
     fn on_tick(&mut self) {
         tls_flush(&self.reporter);
     }
 }
 
 impl SchedPool {
-    pub fn new<E: Engine, R: FlowStatsReporter>(
+    pub fn new<E: Engine, R: CausetxctxStatsReporter>(
         engine: E,
         pool_size: usize,
         reporter: R,
@@ -90,7 +90,7 @@ pub fn tls_collect_mutant_search_details(cmd: &'static str, stats: &Statistics) 
     });
 }
 
-pub fn tls_flush<R: FlowStatsReporter>(reporter: &R) {
+pub fn tls_flush<R: CausetxctxStatsReporter>(reporter: &R) {
     TLS_SCHED_METRICS.with(|m| {
         let mut m = m.borrow_mut();
         for (cmd, stat) in m.local_mutant_search_details.drain() {

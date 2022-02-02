@@ -39,7 +39,7 @@ const MAX_DURATION_INT_VALUE: u32 = MAX_HOUR_PART * 10000 + MAX_MINUTE_PART * 10
 fn check_hour_part(hour: u32) -> Result<u32> {
     if hour > MAX_HOUR_PART {
         Err(Error::Eval(
-            "DURATION OVERFLOW".to_string(),
+            "DURATION OVERCausetxctx".to_string(),
             ERR_DATA_OUT_OF_RANGE,
         ))
     } else {
@@ -233,8 +233,8 @@ mod parser {
             .and_then(|result| {
                 result
                     .or_else(|err| {
-                        if err.is_overflow() {
-                            ctx.handle_overflow_err(Error::truncated_wrong_val("TIME", input))?;
+                        if err.is_overCausetxctx() {
+                            ctx.handle_overCausetxctx_err(Error::truncated_wrong_val("TIME", input))?;
                             let nanos = if neg { -MAX_NANOS } else { MAX_NANOS };
                             Ok(Duration { nanos, fsp })
                         } else {
@@ -365,7 +365,7 @@ impl Duration {
         let fsp = check_fsp(fsp)?;
         let nanos = secs
             .checked_mul(NANOS_PER_SEC)
-            .ok_or_else(|| Error::Eval("DURATION OVERFLOW".to_string(), ERR_DATA_OUT_OF_RANGE))?;
+            .ok_or_else(|| Error::Eval("DURATION OVERCausetxctx".to_string(), ERR_DATA_OUT_OF_RANGE))?;
         check_nanos(nanos)?;
         Ok(Duration { nanos, fsp })
     }
@@ -374,7 +374,7 @@ impl Duration {
         let fsp = check_fsp(fsp)?;
         let nanos = millis
             .checked_mul(NANOS_PER_MILLI)
-            .ok_or_else(|| Error::Eval("DURATION OVERFLOW".to_string(), ERR_DATA_OUT_OF_RANGE))?;
+            .ok_or_else(|| Error::Eval("DURATION OVERCausetxctx".to_string(), ERR_DATA_OUT_OF_RANGE))?;
         let nanos = checked_round(nanos, fsp)?;
         Ok(Duration { nanos, fsp })
     }
@@ -383,7 +383,7 @@ impl Duration {
         let fsp = check_fsp(fsp)?;
         let nanos = micros
             .checked_mul(NANOS_PER_MICRO)
-            .ok_or_else(|| Error::Eval("DURATION OVERFLOW".to_string(), ERR_DATA_OUT_OF_RANGE))?;
+            .ok_or_else(|| Error::Eval("DURATION OVERCausetxctx".to_string(), ERR_DATA_OUT_OF_RANGE))?;
         let nanos = checked_round(nanos, fsp)?;
         Ok(Duration { nanos, fsp })
     }
@@ -441,7 +441,7 @@ impl Duration {
         Ok(Duration { nanos, fsp })
     }
 
-    /// Checked duration addition. Computes self + rhs, returning None if overflow occurred.
+    /// Checked duration addition. Computes self + rhs, returning None if overCausetxctx occurred.
     pub fn checked_add(self, rhs: Duration) -> Option<Duration> {
         let nanos = self.nanos.checked_add(rhs.nanos)?;
         check_nanos(nanos).ok()?;
@@ -451,7 +451,7 @@ impl Duration {
         })
     }
 
-    /// Checked duration subtraction. Computes self - rhs, returning None if overflow occurred.
+    /// Checked duration subtraction. Computes self - rhs, returning None if overCausetxctx occurred.
     pub fn checked_sub(self, rhs: Duration) -> Option<Duration> {
         let nanos = self.nanos.checked_sub(rhs.nanos)?;
         check_nanos(nanos).ok()?;
@@ -502,8 +502,8 @@ impl Duration {
                     return t.convert(ctx);
                 }
             }
-            ctx.handle_overflow_err(Error::overflow("Duration", n))?;
-            // Returns max duration if overflow occurred
+            ctx.handle_overCausetxctx_err(Error::overCausetxctx("Duration", n))?;
+            // Returns max duration if overCausetxctx occurred
             return Self::new_from_parts(
                 n.is_negative(),
                 MAX_HOUR_PART,
@@ -729,7 +729,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_overflow_as_warning() {
+    fn test_parse_overCausetxctx_as_warning() {
         let cases: Vec<(&'static [u8], i8, &'static str)> = vec![
             (b"-1062600704", 0, "-838:59:59"),
             (b"1062600704", 0, "838:59:59"),
@@ -739,7 +739,7 @@ mod tests {
 
         for (input, fsp, expect) in cases {
             let mut ctx =
-                EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERFLOW_AS_WARNING)));
+                EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
             let got = Duration::parse(&mut ctx, input, fsp);
             assert_eq!(expect, &format!("{}", got.unwrap()));
         }
@@ -1047,7 +1047,7 @@ mod tests {
     #[test]
     fn test_from_i64() {
         let cs: Vec<(i64, i8, Result<Duration>, bool)> = vec![
-            // (input, fsp, expect, overflow)
+            // (input, fsp, expect, overCausetxctx)
             // UNSPECIFIED_FSP
             (
                 8385959,
@@ -1103,7 +1103,7 @@ mod tests {
                 Ok(Duration::parse(&mut EvalContext::default(), b"-838:59:59", 6).unwrap()),
                 false,
             ),
-            // will overflow
+            // will overCausetxctx
             (
                 8385960,
                 0,
@@ -1183,8 +1183,8 @@ mod tests {
                 false,
             ),
         ];
-        for (input, fsp, expect, overflow) in cs {
-            let braneg = Arc::new(EvalConfig::from_flag(Flag::OVERFLOW_AS_WARNING));
+        for (input, fsp, expect, overCausetxctx) in cs {
+            let braneg = Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING));
             let mut ctx = EvalContext::new(braneg);
 
             let r = Duration::from_i64(&mut ctx, input, fsp);
@@ -1212,7 +1212,7 @@ mod tests {
                 let e2 = expect.err().unwrap();
                 assert_eq!(e.code(), e2.code(), "{}", log.as_str());
             }
-            if overflow {
+            if overCausetxctx {
                 assert_eq!(ctx.warnings.warning_cnt, 1, "{}", log.as_str());
                 assert_eq!(
                     ctx.warnings.warnings[0].get_code(),

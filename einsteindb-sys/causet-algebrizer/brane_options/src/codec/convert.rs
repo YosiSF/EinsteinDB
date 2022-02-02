@@ -188,7 +188,7 @@ pub fn truncate_binary(s: &mut Vec<u8>, flen: isize) {
 /// allowed, returns the max/min float allowed.
 pub fn truncate_f64(mut f: f64, flen: u8, decimal: u8) -> Res<f64> {
     if f.is_nan() {
-        return Res::Overflow(0f64);
+        return Res::OverCausetxctx(0f64);
     }
     let shift = 10f64.powi(i32::from(decimal));
     let max_f = 10f64.powi(i32::from(flen - decimal)) - 1.0 / shift;
@@ -201,20 +201,20 @@ pub fn truncate_f64(mut f: f64, flen: u8, decimal: u8) -> Res<f64> {
     }
 
     if f > max_f {
-        return Res::Overflow(max_f);
+        return Res::OverCausetxctx(max_f);
     }
 
     if f < -max_f {
-        return Res::Overflow(-max_f);
+        return Res::OverCausetxctx(-max_f);
     }
     Res::Ok(f)
 }
 
-/// Returns an overflowed error.
+/// Returns an overCausetxctxed error.
 #[inline]
-fn overflow(val: impl Display, bound: FieldTypeTp) -> Error {
+fn overCausetxctx(val: impl Display, bound: FieldTypeTp) -> Error {
     Error::Eval(
-        format!("constant {} overflows {}", val, bound),
+        format!("constant {} overCausetxctxs {}", val, bound),
         ERR_DATA_OUT_OF_RANGE,
     )
 }
@@ -222,14 +222,14 @@ fn overflow(val: impl Display, bound: FieldTypeTp) -> Error {
 impl ToInt for i64 {
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64> {
         let lower_bound = integer_signed_lower_bound(tp);
-        // https://dev.myBerolinaSQL.com/doc/refman/8.0/en/out-of-range-and-overflow.html
+        // https://dev.myBerolinaSQL.com/doc/refman/8.0/en/out-of-range-and-overCausetxctx.html
         if *self < lower_bound {
-            ctx.handle_overflow_err(overflow(self, tp))?;
+            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
             return Ok(lower_bound);
         }
         let upper_bound = integer_signed_upper_bound(tp);
         if *self > upper_bound {
-            ctx.handle_overflow_err(overflow(self, tp))?;
+            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
             return Ok(upper_bound);
         }
         Ok(*self)
@@ -237,13 +237,13 @@ impl ToInt for i64 {
 
     fn to_uint(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<u64> {
         if *self < 0 && ctx.should_clip_to_zero() {
-            ctx.handle_overflow_err(overflow(self, tp))?;
+            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
             return Ok(0);
         }
 
         let upper_bound = integer_unsigned_upper_bound(tp);
         if *self as u64 > upper_bound {
-            ctx.handle_overflow_err(overflow(self, tp))?;
+            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
             return Ok(upper_bound);
         }
         Ok(*self as u64)
@@ -254,7 +254,7 @@ impl ToInt for u64 {
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64> {
         let upper_bound = integer_signed_upper_bound(tp);
         if *self > upper_bound as u64 {
-            ctx.handle_overflow_err(overflow(self, tp))?;
+            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
             return Ok(upper_bound);
         }
         Ok(*self as i64)
@@ -263,7 +263,7 @@ impl ToInt for u64 {
     fn to_uint(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<u64> {
         let upper_bound = integer_unsigned_upper_bound(tp);
         if *self > upper_bound {
-            ctx.handle_overflow_err(overflow(self, tp))?;
+            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
             return Ok(upper_bound);
         }
         Ok(*self)
@@ -272,17 +272,17 @@ impl ToInt for u64 {
 
 impl ToInt for f64 {
     /// This function is ported from Milevaeinsteindb's types.ConvertFloatToInt,
-    /// which checks whether the number overflows the signed lower and upper boundaries of `tp`
+    /// which checks whether the number overCausetxctxs the signed lower and upper boundaries of `tp`
     ///
     /// # Notes
     ///
-    /// It handles overflows using `ctx` so that the caller would not handle it anymore.
+    /// It handles overCausetxctxs using `ctx` so that the caller would not handle it anymore.
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64> {
         #![allow(clippy::float_cmp)]
         let val = (*self).round();
         let lower_bound = integer_signed_lower_bound(tp);
         if val < lower_bound as f64 {
-            ctx.handle_overflow_err(overflow(val, tp))?;
+            ctx.handle_overCausetxctx_err(overCausetxctx(val, tp))?;
             return Ok(lower_bound);
         }
 
@@ -293,7 +293,7 @@ impl ToInt for f64 {
             if val == ub_f64 {
                 return Ok(upper_bound);
             } else {
-                ctx.handle_overflow_err(overflow(val, tp))?;
+                ctx.handle_overCausetxctx_err(overCausetxctx(val, tp))?;
                 return Ok(upper_bound);
             }
         }
@@ -301,16 +301,16 @@ impl ToInt for f64 {
     }
 
     /// This function is ported from Milevaeinsteindb's types.ConvertFloatToUint,
-    /// which checks whether the number overflows the unsigned upper boundaries of `tp`
+    /// which checks whether the number overCausetxctxs the unsigned upper boundaries of `tp`
     ///
     /// # Notes
     ///
-    /// It handles overflows using `ctx` so that the caller would not handle it anymore.
+    /// It handles overCausetxctxs using `ctx` so that the caller would not handle it anymore.
     #[allow(clippy::float_cmp)]
     fn to_uint(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<u64> {
         let val = (*self).round();
         if val < 0f64 {
-            ctx.handle_overflow_err(overflow(val, tp))?;
+            ctx.handle_overCausetxctx_err(overCausetxctx(val, tp))?;
             if ctx.should_clip_to_zero() {
                 return Ok(0);
             } else {
@@ -320,7 +320,7 @@ impl ToInt for f64 {
         }
         let upper_bound = integer_unsigned_upper_bound(tp);
         if val > upper_bound as f64 {
-            ctx.handle_overflow_err(overflow(val, tp))?;
+            ctx.handle_overCausetxctx_err(overCausetxctx(val, tp))?;
             Ok(upper_bound)
         } else if val == upper_bound as f64 {
             // Because u64::MAX can not be represented precisely in iee754(64bit),
@@ -356,9 +356,9 @@ impl ToInt for &[u8] {
         match val {
             Ok(val) => val.to_int(ctx, tp),
             Err(_) => {
-                ctx.handle_overflow_err(Error::overflow("BIGINT", &vs))?;
+                ctx.handle_overCausetxctx_err(Error::overCausetxctx("BIGINT", &vs))?;
                 // To make compatible with Milevaeinsteindb,
-                // return signed upper bound or lower bound when overflow.
+                // return signed upper bound or lower bound when overCausetxctx.
                 // see Milevaeinsteindb's `types.StrToInt` and [strconv.ParseInt](https://golang.org/pkg/strconv/#ParseInt)
                 let val = if vs.starts_with('-') {
                     integer_signed_lower_bound(tp)
@@ -378,16 +378,16 @@ impl ToInt for &[u8] {
         // in Milevaeinsteindb, it use strconv.ParseUint here,
         // strconv.ParseUint will return 0 and a err if the str is neg
         if s.starts_with('-') {
-            ctx.handle_overflow_err(Error::overflow("BIGINT UNSIGNED", s))?;
+            ctx.handle_overCausetxctx_err(Error::overCausetxctx("BIGINT UNSIGNED", s))?;
             return Ok(0);
         }
         let val = s.parse::<u64>();
         match val {
             Ok(val) => val.to_uint(ctx, tp),
             Err(_) => {
-                ctx.handle_overflow_err(Error::overflow("BIGINT UNSIGNED", s))?;
+                ctx.handle_overCausetxctx_err(Error::overCausetxctx("BIGINT UNSIGNED", s))?;
                 // To make compatible with Milevaeinsteindb,
-                // return `integer_unsigned_upper_bound(tp);` when overflow.
+                // return `integer_unsigned_upper_bound(tp);` when overCausetxctx.
                 // see Milevaeinsteindb's `types.StrToUint` and [strconv.ParseUint](https://golang.org/pkg/strconv/#ParseUint)
                 let val = integer_unsigned_upper_bound(tp);
                 Ok(val)
@@ -422,7 +422,7 @@ impl ToInt for Decimal {
         let dec = round_decimal_with_ctx(ctx, *self)?;
         let val = dec.as_i64();
         let err = Error::truncated_wrong_val("DECIMAL", &dec);
-        let r = val.into_result_with_overflow_err(ctx, err)?;
+        let r = val.into_result_with_overCausetxctx_err(ctx, err)?;
         r.to_int(ctx, tp)
     }
 
@@ -431,7 +431,7 @@ impl ToInt for Decimal {
         let dec = round_decimal_with_ctx(ctx, *self)?;
         let val = dec.as_u64();
         let err = Error::truncated_wrong_val("DECIMAL", &dec);
-        let r = val.into_result_with_overflow_err(ctx, err)?;
+        let r = val.into_result_with_overCausetxctx_err(ctx, err)?;
         r.to_uint(ctx, tp)
     }
 }
@@ -536,13 +536,13 @@ pub fn get_valid_utf8_prefix<'a>(ctx: &mut EvalContext, bytes: &'a [u8]) -> Resu
 
 fn round_decimal_with_ctx(ctx: &mut EvalContext, dec: Decimal) -> Result<Decimal> {
     dec.round(0, RoundMode::HalfEven)
-        .into_result_with_overflow_err(ctx, Error::overflow("DECIMAL", ""))
+        .into_result_with_overCausetxctx_err(ctx, Error::overCausetxctx("DECIMAL", ""))
 }
 
 #[inline]
 fn decimal_as_u64(ctx: &mut EvalContext, dec: Decimal, tp: FieldTypeTp) -> Result<u64> {
     dec.as_u64()
-        .into_result_with_overflow_err(ctx, Error::overflow("DECIMAL", dec))?
+        .into_result_with_overCausetxctx_err(ctx, Error::overCausetxctx("DECIMAL", dec))?
         .to_uint(ctx, tp)
 }
 
@@ -577,7 +577,7 @@ pub fn bytes_to_int_without_context(bytes: &[u8]) -> Result<i64> {
             }
         }
     }
-    r.ok_or_else(|| Error::overflow("BIGINT", ""))
+    r.ok_or_else(|| Error::overCausetxctx("BIGINT", ""))
 }
 
 /// `bytes_to_uint_without_context` converts a byte arrays to an iu64
@@ -602,7 +602,7 @@ pub fn bytes_to_uint_without_context(bytes: &[u8]) -> Result<u64> {
             }
         }
     }
-    r.ok_or_else(|| Error::overflow("BIGINT UNSIGNED", ""))
+    r.ok_or_else(|| Error::overCausetxctx("BIGINT UNSIGNED", ""))
 }
 
 pub fn produce_dec_with_specified_tp(
@@ -619,7 +619,7 @@ pub fn produce_dec_with_specified_tp(
         let (prec, frac) = (prec as isize, frac as isize);
         if !dec.is_zero() && prec - frac > flen - decimal {
             // select (cast 111 as decimal(1)) causes a warning in MyBerolinaSQL.
-            ctx.handle_overflow_err(Error::overflow(
+            ctx.handle_overCausetxctx_err(Error::overCausetxctx(
                 "Decimal",
                 &format!("({}, {})", flen, decimal),
             ))?;
@@ -628,9 +628,9 @@ pub fn produce_dec_with_specified_tp(
             let old = dec;
             let rounded = dec
                 .round(decimal as i8, RoundMode::HalfEven)
-                .into_result_with_overflow_err(
+                .into_result_with_overCausetxctx_err(
                     ctx,
-                    Error::overflow("Decimal", &format!("({}, {})", flen, decimal)),
+                    Error::overCausetxctx("Decimal", &format!("({}, {})", flen, decimal)),
                 )?;
             if !rounded.is_zero() && frac > decimal && rounded != old {
                 if ctx.braneg.flag.contains(Flag::IN_INSERT_STMT)
@@ -639,8 +639,8 @@ pub fn produce_dec_with_specified_tp(
                     ctx.warnings.append_warning(Error::truncated());
                 } else {
                     // although according to Milevaeinsteindb,
-                    // we should handler overflow after handle_truncate,
-                    // however, no overflow err will return by handle_truncate
+                    // we should handler overCausetxctx after handle_truncate,
+                    // however, no overCausetxctx err will return by handle_truncate
                     ctx.handle_truncate(true)?;
                 }
             }
@@ -669,13 +669,13 @@ pub fn produce_float_with_specified_tp(
     let res = if flen != ul && decimal != ul {
         assert!(flen < std::u8::MAX as isize && decimal < std::u8::MAX as isize);
         let r = truncate_f64(num, flen as u8, decimal as u8);
-        r.into_result_with_overflow_err(ctx, Error::overflow(num, "DOUBLE"))?
+        r.into_result_with_overCausetxctx_err(ctx, Error::overCausetxctx(num, "DOUBLE"))?
     } else {
         num
     };
 
     if tp.is_unsigned() && res < 0f64 {
-        ctx.handle_overflow_err(overflow(res, tp.as_accessor().tp()))?;
+        ctx.handle_overCausetxctx_err(overCausetxctx(res, tp.as_accessor().tp()))?;
         return Ok(0f64);
     }
 
@@ -932,11 +932,11 @@ fn round_int_str(num_next_dot: char, s: &str) -> Cow<'_, str> {
 /// parsed by `i64::from_str`, we can't parse float first then convert it to string
 /// because precision will be lost.
 ///
-/// When the float string indicating a value that is overflowing the i64,
-/// the original float string is returned and an overflow warning is attached.
+/// When the float string indicating a value that is overCausetxctxing the i64,
+/// the original float string is returned and an overCausetxctx warning is attached.
 ///
-/// This func will find serious overflow such as the len of result > 20 (without prefix `+/-`)
-/// however, it will not check whether the result overflow BIGINT.
+/// This func will find serious overCausetxctx such as the len of result > 20 (without prefix `+/-`)
+/// however, it will not check whether the result overCausetxctx BIGINT.
 fn float_str_to_int_string<'a>(
     ctx: &mut EvalContext,
     valid_float: &'a str,
@@ -991,14 +991,14 @@ fn exp_float_str_to_int_str<'a>(
         Ok(exp) => exp,
         _ => return Ok(Cow::Borrowed(valid_float)),
     };
-    let (int_cnt, is_overflow): (i64, bool) = int_cnt.overflowing_add(exp);
-    if int_cnt > 21 || is_overflow {
+    let (int_cnt, is_overCausetxctx): (i64, bool) = int_cnt.overCausetxctxing_add(exp);
+    if int_cnt > 21 || is_overCausetxctx {
         // MaxInt64 has 19 decimal digits.
         // MaxUint64 has 20 decimal digits.
         // And the intCnt may contain the len of `+/-`,
         // so here we use 21 here as the early detection.
         ctx.warnings
-            .append_warning(Error::overflow("BIGINT", &valid_float));
+            .append_warning(Error::overCausetxctx("BIGINT", &valid_float));
         return Ok(Cow::Borrowed(valid_float));
     }
     if int_cnt <= 0 {
@@ -1142,7 +1142,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overflow",
+                    "from: {}, to tp: {} should be overCausetxctx",
                     from,
                     tp
                 ),
@@ -1172,7 +1172,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overflow",
+                    "from: {}, to tp: {} should be overCausetxctx",
                     from,
                     tp
                 ),
@@ -1218,7 +1218,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overflow",
+                    "from: {}, to tp: {} should be overCausetxctx",
                     from,
                     tp
                 ),
@@ -1264,7 +1264,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {:?}, to tp: {} should be overflow",
+                    "from: {:?}, to tp: {} should be overCausetxctx",
                     from,
                     tp
                 ),
@@ -1273,7 +1273,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bytes_to_int_overflow() {
+    fn test_bytes_to_int_overCausetxctx() {
         let tests: Vec<(&[u8], _, _)> = vec![
             (
                 b"12e1234817291749271847289417294",
@@ -1287,7 +1287,7 @@ mod tests {
             ),
             (b"12e1234817291749271847289417294", FieldTypeTp::Tiny, 127),
         ];
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERFLOW_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
         for (from, tp, to) in tests {
             let r = from.to_int(&mut ctx, tp).unwrap();
             assert_eq!(to, r);
@@ -1295,8 +1295,8 @@ mod tests {
     }
 
     #[test]
-    fn test_datatype_to_int_overflow() {
-        fn test_overflow<T: Debug + Clone + ToInt>(raw: T, dst: i64, tp: FieldTypeTp) {
+    fn test_datatype_to_int_overCausetxctx() {
+        fn test_overCausetxctx<T: Debug + Clone + ToInt>(raw: T, dst: i64, tp: FieldTypeTp) {
             let mut ctx = EvalContext::default();
             let val = raw.to_int(&mut ctx, tp);
             match val {
@@ -1307,12 +1307,12 @@ mod tests {
                     ERR_DATA_OUT_OF_RANGE,
                     e.code()
                 ),
-                res => panic!("expect convert {:?} to overflow, but got {:?}", raw, res),
+                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", raw, res),
             };
 
-            // OVERFLOW_AS_WARNING
+            // OVERCausetxctx_AS_WARNING
             let mut ctx =
-                EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERFLOW_AS_WARNING)));
+                EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
             let val = raw.to_int(&mut ctx, tp);
             assert_eq!(val.unwrap(), dst);
             assert_eq!(ctx.warnings.warning_cnt, 1);
@@ -1330,7 +1330,7 @@ mod tests {
             (i64::MIN, -2147483648, FieldTypeTp::Long),
         ];
         for (raw, dst, tp) in cases {
-            test_overflow(raw, dst, tp);
+            test_overCausetxctx(raw, dst, tp);
         }
 
         // uint_to_int
@@ -1341,7 +1341,7 @@ mod tests {
             (u64::MAX, 2147483647, FieldTypeTp::Long),
         ];
         for (raw, dst, tp) in cases {
-            test_overflow(raw, dst, tp);
+            test_overCausetxctx(raw, dst, tp);
         }
 
         // float_to_int
@@ -1363,7 +1363,7 @@ mod tests {
             (f64::MIN, i64::MIN, FieldTypeTp::LongLong),
         ];
         for (raw, dst, tp) in cases {
-            test_overflow(raw, dst, tp);
+            test_overCausetxctx(raw, dst, tp);
         }
 
         // bytes_to_int
@@ -1388,7 +1388,7 @@ mod tests {
             ),
         ];
         for (raw, dst, tp) in cases {
-            test_overflow(raw, dst, tp);
+            test_overCausetxctx(raw, dst, tp);
         }
     }
 
@@ -1468,8 +1468,8 @@ mod tests {
             vec![b"9223372036854775809", b"-9223372036854775810"];
         for bs in invalid_cases {
             match super::bytes_to_int_without_context(bs) {
-                Err(e) => assert!(e.is_overflow()),
-                res => panic!("expect convert {:?} to overflow, but got {:?}", bs, res),
+                Err(e) => assert!(e.is_overCausetxctx()),
+                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", bs, res),
             };
         }
     }
@@ -1520,7 +1520,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overflow",
+                    "from: {}, to tp: {} should be overCausetxctx",
                     from,
                     tp
                 ),
@@ -1532,9 +1532,9 @@ mod tests {
         let r = (-12345 as i64).to_uint(&mut ctx, FieldTypeTp::LongLong);
         assert!(r.is_err());
 
-        // SHOULD_CLIP_TO_ZERO | OVERFLOW_AS_WARNING
+        // SHOULD_CLIP_TO_ZERO | OVERCausetxctx_AS_WARNING
         let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(
-            Flag::IN_INSERT_STMT | Flag::OVERFLOW_AS_WARNING,
+            Flag::IN_INSERT_STMT | Flag::OVERCausetxctx_AS_WARNING,
         )));
         let r = (-12345 as i64)
             .to_uint(&mut ctx, FieldTypeTp::LongLong)
@@ -1564,7 +1564,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overflow",
+                    "from: {}, to tp: {} should be overCausetxctx",
                     from,
                     tp
                 ),
@@ -1602,7 +1602,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overflow",
+                    "from: {}, to tp: {} should be overCausetxctx",
                     from,
                     tp
                 ),
@@ -1638,7 +1638,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {:?}, to tp: {} should be overflow",
+                    "from: {:?}, to tp: {} should be overCausetxctx",
                     from,
                     tp
                 ),
@@ -1673,15 +1673,15 @@ mod tests {
         let invalid_cases: Vec<&'static [u8]> = vec![b"18446744073709551616"];
         for bs in invalid_cases {
             match super::bytes_to_uint_without_context(bs) {
-                Err(e) => assert!(e.is_overflow()),
-                res => panic!("expect convert {:?} to overflow, but got {:?}", bs, res),
+                Err(e) => assert!(e.is_overCausetxctx()),
+                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", bs, res),
             };
         }
     }
 
     #[test]
-    fn test_datatype_to_uint_overflow() {
-        fn test_overflow<T: Debug + Clone + ToInt>(raw: T, dst: u64, tp: FieldTypeTp) {
+    fn test_datatype_to_uint_overCausetxctx() {
+        fn test_overCausetxctx<T: Debug + Clone + ToInt>(raw: T, dst: u64, tp: FieldTypeTp) {
             let mut ctx = EvalContext::default();
             let val = raw.to_uint(&mut ctx, tp);
             match val {
@@ -1692,12 +1692,12 @@ mod tests {
                     ERR_DATA_OUT_OF_RANGE,
                     e.code()
                 ),
-                res => panic!("expect convert {:?} to overflow, but got {:?}", raw, res),
+                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", raw, res),
             };
 
-            // OVERFLOW_AS_WARNING
+            // OVERCausetxctx_AS_WARNING
             let mut ctx =
-                EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERFLOW_AS_WARNING)));
+                EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
             let val = raw.to_uint(&mut ctx, tp);
             assert_eq!(val.unwrap(), dst, "{:?} => {}", raw, dst);
             assert_eq!(ctx.warnings.warning_cnt, 1);
@@ -1714,7 +1714,7 @@ mod tests {
             (i64::MIN, u64::from(u32::MAX), FieldTypeTp::Long),
         ];
         for (raw, dst, tp) in cases {
-            test_overflow(raw, dst, tp);
+            test_overCausetxctx(raw, dst, tp);
         }
 
         // uint_to_uint
@@ -1725,7 +1725,7 @@ mod tests {
             (u64::MAX, 4294967295, FieldTypeTp::Long),
         ];
         for (raw, dst, tp) in cases {
-            test_overflow(raw, dst, tp);
+            test_overCausetxctx(raw, dst, tp);
         }
 
         // float_to_uint
@@ -1741,7 +1741,7 @@ mod tests {
             (f64::MAX, u64::MAX, FieldTypeTp::LongLong),
         ];
         for (raw, dst, tp) in cases {
-            test_overflow(raw, dst, tp);
+            test_overCausetxctx(raw, dst, tp);
         }
 
         // bytes_to_uint
@@ -1756,7 +1756,7 @@ mod tests {
             (b"314748364221339834234239", u64::MAX, FieldTypeTp::LongLong),
         ];
         for (raw, dst, tp) in cases {
-            test_overflow(raw, dst, tp);
+            test_overCausetxctx(raw, dst, tp);
         }
     }
 
@@ -1843,7 +1843,7 @@ mod tests {
             }
         }
 
-        // test overflow
+        // test overCausetxctx
         let mut ctx = EvalContext::default();
         let val: Result<f64> = f64::INFINITY.to_string().as_bytes().convert(&mut ctx);
         assert!(val.is_err());
@@ -2015,7 +2015,7 @@ mod tests {
         assert_eq!(ctx.take_warnings().warnings.len(), 0);
 
         let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(
-            Flag::IN_SELECT_STMT | Flag::IGNORE_TRUNCATE | Flag::OVERFLOW_AS_WARNING,
+            Flag::IN_SELECT_STMT | Flag::IGNORE_TRUNCATE | Flag::OVERCausetxctx_AS_WARNING,
         )));
         let cases = vec![
             ("+0.0", "+0"),
@@ -2056,9 +2056,9 @@ mod tests {
             (100.114, 10, 2, Res::Ok(100.11)),
             (100.115, 10, 2, Res::Ok(100.12)),
             (100.1156, 10, 3, Res::Ok(100.116)),
-            (100.1156, 3, 1, Res::Overflow(99.9)),
+            (100.1156, 3, 1, Res::OverCausetxctx(99.9)),
             (1.36, 10, 2, Res::Ok(1.36)),
-            (f64::NAN, 10, 1, Res::Overflow(0f64)),
+            (f64::NAN, 10, 1, Res::OverCausetxctx(0f64)),
         ];
 
         for (f, flen, decimal, exp) in cases {
@@ -2174,7 +2174,7 @@ mod tests {
             ),
         ];
 
-        let braneg = EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING | Flag::OVERFLOW_AS_WARNING);
+        let braneg = EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING | Flag::OVERCausetxctx_AS_WARNING);
         let mut ctx = EvalContext::new(Arc::new(braneg));
         let mut ft = FieldType::default();
 
@@ -2196,7 +2196,7 @@ mod tests {
             // origin,
             // (origin_flen, origin_decimal), (res_flen, res_decimal), is_unsigned,
             // expect, warning_err_code,
-            // ((InInsertStmt || InUFIDelateStmt || InDeleteStmt), overflow_as_warning, truncate_as_warning)
+            // ((InInsertStmt || InUFIDelateStmt || InDeleteStmt), overCausetxctx_as_warning, truncate_as_warning)
             // )
             //
             // The origin_flen, origin_decimal field is to
@@ -2529,7 +2529,7 @@ mod tests {
             is_unsigned,
             expect,
             warning_err_code,
-            (in_dml, overflow_as_warning, truncate_as_warning),
+            (in_dml, overCausetxctx_as_warning, truncate_as_warning),
         ) in cs
         {
             // check origin_flen and origin_decimal
@@ -2546,8 +2546,8 @@ mod tests {
             for in_dml_flag in ctx_in_dml_flag {
                 // make ctx
                 let mut flag: Flag = Flag::empty();
-                if overflow_as_warning {
-                    flag |= Flag::OVERFLOW_AS_WARNING;
+                if overCausetxctx_as_warning {
+                    flag |= Flag::OVERCausetxctx_AS_WARNING;
                 }
                 if truncate_as_warning {
                     flag |= Flag::TRUNCATE_AS_WARNING;

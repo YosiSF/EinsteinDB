@@ -165,8 +165,8 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
         // no mutant_search_count for this kind of op.
         let key_len = key.as_encoded().len();
         self.blackbrane.get_cf(cf, key).map(|value| {
-            stats.data.flow_stats.read_keys = 1;
-            stats.data.flow_stats.read_bytes =
+            stats.data.Causetxctx_stats.read_keys = 1;
+            stats.data.Causetxctx_stats.read_bytes =
                 key_len + value.as_ref().map(|v| v.len()).unwrap_or(0);
             value
         })

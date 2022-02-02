@@ -12,13 +12,13 @@ use std::time::Duration;
 use std::u64;
 
 use collections::HashMap;
-use engine_rocks::FlowInfo;
-use einsteindb-gen::{CFNamesExt, FlowControlFactorsExt};
+use engine_rocks::CausetxctxInfo;
+use einsteindb-gen::{CFNamesExt, CausetxctxControlFactorsExt};
 use num_promises::cast::{AsPrimitive, FromPrimitive};
 use rand::Rng;
 use einstfdbhikv_util::time::{Instant, Limiter};
 
-use crate::einsteindb::storage::config::FlowControlConfig;
+use crate::einsteindb::storage::config::CausetxctxControlConfig;
 use crate::einsteindb::storage::metrics::*;
 
 const TICK_DURATION: Duration = Duration::from_millis(1000);
@@ -38,7 +38,7 @@ enum Trend {
     NoTrend,
 }
 
-/// Flow controller is used to throttle the write rate at scheduler level, aiming
+/// Causetxctx controller is used to throttle the write rate at scheduler level, aiming
 /// to substitute the write stall mechanism of RocksDB. It features in two points:
 ///   * throttle at scheduler, so raftstore and apply won't be bdaggered anymore
 ///   * better control on the throttle rate to avoid QPS drop under heavy write
@@ -52,7 +52,7 @@ enum Trend {
 /// a very low rate from time to time, causing QPS drop eventually.
 ///
 
-/// For compaction pending bytes, we use discardable ratio to do flow control
+/// For compaction pending bytes, we use discardable ratio to do Causetxctx control
 /// which is separated mechanism from throttle speed. Compaction pending bytes is
 /// a approximate value, usually, changes up and down dramatically, so it's unwise
 /// to map compaction pending bytes to a specified throttle speed. Instead,
@@ -61,9 +61,9 @@ enum Trend {
 /// background compaction pending bytes consuming rate so that compaction pending
 /// bytes is kept around a steady level.
 ///
-/// Here is a brief flow showing where the mechanism works:
+/// Here is a brief Causetxctx showing where the mechanism works:
 /// grpc -> check should drop(discardable ratio) -> limiter -> async write to raftstore
-pub struct FlowController {
+pub struct CausetxctxController {
     discard_ratio: Arc<causetxctxU32>,
     limiter: Arc<Limiter>,
     enabled: Arc<causetxctxBool>,
@@ -77,7 +77,7 @@ enum Msg {
     Disable,
 }
 
-impl Drop for FlowController {
+impl Drop for CausetxctxController {
     fn drop(&mut self) {
         let h = self.handle.take();
         if h.is_none() {
@@ -85,17 +85,17 @@ impl Drop for FlowController {
         }
 
         if let Some(Err(e)) = self.tx.as_ref().map(|tx| tx.send(Msg::Close)) {
-            error!("send quit message for flow controller failed"; "err" => ?e);
+            error!("send quit message for Causetxctx controller failed"; "err" => ?e);
             return;
         }
 
         if let Err(e) = h.unwrap().join() {
-            error!("join flow controller failed"; "err" => ?e);
+            error!("join Causetxctx controller failed"; "err" => ?e);
         }
     }
 }
 
-impl FlowController {
+impl CausetxctxController {
     // only for test
     pub fn empty() -> Self {
         Self {
@@ -107,10 +107,10 @@ impl FlowController {
         }
     }
 
-    pub fn new<E: CFNamesExt + FlowControlFactorsExt + Send + 'static>(
-        config: &FlowControlConfig,
+    pub fn new<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static>(
+        config: &CausetxctxControlConfig,
         engine: E,
-        flow_info_receiver: Receiver<FlowInfo>,
+        Causetxctx_info_receiver: Receiver<CausetxctxInfo>,
     ) -> Self {
         let limiter = Arc::new(
             <Limiter>::builder(f64::INFINITY)
@@ -118,7 +118,7 @@ impl FlowController {
                 .build(),
         );
         let discard_ratio = Arc::new(causetxctxU32::new(0));
-        let checker = FlowChecker::new(config, engine, discard_ratio.clone(), limiter.clone());
+        let checker = CausetxctxChecker::new(config, engine, discard_ratio.clone(), limiter.clone());
         let (tx, rx) = mpsc::sync_channel(5);
 
         tx.send(if config.enable {
@@ -133,7 +133,7 @@ impl FlowController {
             limiter,
             enabled: Arc::new(causetxctxBool::new(config.enable)),
             tx: Some(tx),
-            handle: Some(checker.start(rx, flow_info_receiver)),
+            handle: Some(checker.start(rx, Causetxctx_info_receiver)),
         }
     }
 
@@ -189,7 +189,7 @@ impl FlowController {
 const SMOOTHER_STALE_RECORD_THRESHOLD: u64 = 300; // 5min
 const SMOOTHER_TIME_RANGE_THRESHOLD: u64 = 60; // 1min
 
-// Smoother is a sliding window used to provide steadier flow statistics.
+// Smoother is a sliding window used to provide steadier Causetxctx statistics.
 struct Smoother<T, const CAP: usize, const STALE_DUR: u64, const MIN_TIME_SPAN: u64>
 where
     T: Default
@@ -359,15 +359,15 @@ where
     }
 }
 
-// CFFlowChecker records some statistics and states related to one CF.
+// CFCausetxctxChecker records some statistics and states related to one CF.
 // These statistics fall into five categories:
 //   * memtable
 //   * L0 files
-//   * L0 production flow (flush flow)
-//   * L0 consumption flow (compaction read flow of L0)
+//   * L0 production Causetxctx (flush Causetxctx)
+//   * L0 consumption Causetxctx (compaction read Causetxctx of L0)
 //   * pending compaction bytes
 // And all of them are collected from the hook of RocksDB's event listener.
-struct CFFlowChecker {
+struct CFCausetxctxChecker {
     // Memtable related
     last_num_memtables: Smoother<u64, 20, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
     memtable_debt: f64,
@@ -382,18 +382,18 @@ struct CFFlowChecker {
     // of L0 files right after L0 compactions.
     long_term_num_l0_files: Smoother<u64, 20, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
 
-    // L0 production flow related
+    // L0 production Causetxctx related
     last_flush_bytes: u64,
     last_flush_bytes_time: Instant,
-    short_term_l0_production_flow: Smoother<u64, 10, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
+    short_term_l0_production_Causetxctx: Smoother<u64, 10, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
 
-    // L0 consumption flow related
+    // L0 consumption Causetxctx related
     last_l0_bytes: u64,
     last_l0_bytes_time: Instant,
-    short_term_l0_consumption_flow: Smoother<u64, 3, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
+    short_term_l0_consumption_Causetxctx: Smoother<u64, 3, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
 
     // Pending compaction bytes related
-    // When the write flow is about 100MB/s, we observed that the compaction ops
+    // When the write Causetxctx is about 100MB/s, we observed that the compaction ops
     // is about 2.5, it means there are 750 compaction events in 5 minutes.
     long_term_pending_bytes:
         Smoother<f64, 1024, SMOOTHER_STALE_RECORD_THRESHOLD, SMOOTHER_TIME_RANGE_THRESHOLD>,
@@ -402,7 +402,7 @@ struct CFFlowChecker {
     // On start related markers. Because after restart, the memtable, l0 files
     // and compaction pending bytes may be high on start. If throttle on start
     // at once, it may get a low throttle speed as initialization cause it may
-    // has no write flow after restart. So use the markers to make sure only
+    // has no write Causetxctx after restart. So use the markers to make sure only
     // throttled after the the memtable, l0 files and compaction pending bytes
     // go beyond the threshold again.
     on_start_memtable: bool,
@@ -410,7 +410,7 @@ struct CFFlowChecker {
     on_start_pending_bytes: bool,
 }
 
-impl Default for CFFlowChecker {
+impl Default for CFCausetxctxChecker {
     fn default() -> Self {
         Self {
             last_num_memtables: Smoother::default(),
@@ -419,10 +419,10 @@ impl Default for CFFlowChecker {
             long_term_num_l0_files: Smoother::default(),
             last_flush_bytes: 0,
             last_flush_bytes_time: Instant::now_coarse(),
-            short_term_l0_production_flow: Smoother::default(),
+            short_term_l0_production_Causetxctx: Smoother::default(),
             last_l0_bytes: 0,
             last_l0_bytes_time: Instant::now_coarse(),
-            short_term_l0_consumption_flow: Smoother::default(),
+            short_term_l0_consumption_Causetxctx: Smoother::default(),
             long_term_pending_bytes: Smoother::default(),
             pending_bytes_before_unsafe_destroy_range: None,
             on_start_memtable: true,
@@ -432,14 +432,14 @@ impl Default for CFFlowChecker {
     }
 }
 
-struct FlowChecker<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> {
+struct CausetxctxChecker<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> {
     soft_pending_compaction_bytes_limit: u64,
     hard_pending_compaction_bytes_limit: u64,
     memtables_threshold: u64,
     l0_files_threshold: u64,
 
-    // CFFlowChecker for each CF.
-    cf_checkers: HashMap<String, CFFlowChecker>,
+    // CFCausetxctxChecker for each CF.
+    cf_checkers: HashMap<String, CFCausetxctxChecker>,
     // Record which CF is taking control of throttling, the throttle speed is
     // decided based on the statistics of the throttle CF. If the multiple CFs
     // exceed the threshold, choose the larger one.
@@ -450,17 +450,17 @@ struct FlowChecker<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> {
 
     engine: E,
     limiter: Arc<Limiter>,
-    // Records the foreground write flow at scheduler level of last few seconds.
-    write_flow_recorder: Smoother<u64, 30, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
+    // Records the foreground write Causetxctx at scheduler level of last few seconds.
+    write_Causetxctx_recorder: Smoother<u64, 30, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
 
     last_record_time: Instant,
     last_speed: f64,
     wait_for_destroy_range_finish: bool,
 }
 
-impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
+impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChecker<E> {
     pub fn new(
-        config: &FlowControlConfig,
+        config: &CausetxctxControlConfig,
         engine: E,
         discard_ratio: Arc<causetxctxU32>,
         limiter: Arc<Limiter>,
@@ -468,7 +468,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
         let cf_checkers = engine
             .cf_names()
             .into_iter()
-            .map(|cf| (cf.to_owned(), CFFlowChecker::default()))
+            .map(|cf| (cf.to_owned(), CFCausetxctxChecker::default()))
             .collect();
 
         Self {
@@ -479,7 +479,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
             engine,
             discard_ratio,
             limiter,
-            write_flow_recorder: Smoother::default(),
+            write_Causetxctx_recorder: Smoother::default(),
             cf_checkers,
             throttle_cf: None,
             last_record_time: Instant::now_coarse(),
@@ -488,9 +488,9 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
         }
     }
 
-    fn start(self, rx: Receiver<Msg>, flow_info_receiver: Receiver<FlowInfo>) -> JoinHandle<()> {
+    fn start(self, rx: Receiver<Msg>, Causetxctx_info_receiver: Receiver<CausetxctxInfo>) -> JoinHandle<()> {
         Builder::new()
-            .name(thd_name!("flow-checker"))
+            .name(thd_name!("Causetxctx-checker"))
             .spawn(move || {
                 einstfdbhikv_alloc::add_thread_memory_accessor();
                 let mut checker = self;
@@ -509,14 +509,14 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
                         Err(_) => {}
                     }
 
-                    match flow_info_receiver.recv_deadline(deadline) {
-                        Ok(FlowInfo::L0(cf, l0_bytes)) => {
+                    match Causetxctx_info_receiver.recv_deadline(deadline) {
+                        Ok(CausetxctxInfo::L0(cf, l0_bytes)) => {
                             checker.collect_l0_consumption_stats(&cf, l0_bytes);
                             if enabled {
                                 checker.on_l0_change(cf)
                             }
                         }
-                        Ok(FlowInfo::L0Intra(cf, diff_bytes)) => {
+                        Ok(CausetxctxInfo::L0Intra(cf, diff_bytes)) => {
                             if diff_bytes > 0 {
                                 // Intra L0 merges some deletion records, so regard it as a L0 compaction.
                                 checker.collect_l0_consumption_stats(&cf, diff_bytes);
@@ -525,19 +525,19 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
                                 }
                             }
                         }
-                        Ok(FlowInfo::Flush(cf, flush_bytes)) => {
+                        Ok(CausetxctxInfo::Flush(cf, flush_bytes)) => {
                             checker.collect_l0_production_stats(&cf, flush_bytes);
                             if enabled {
                                 checker.on_memtable_change(&cf);
                                 checker.on_l0_change(cf)
                             }
                         }
-                        Ok(FlowInfo::Compaction(cf)) => {
+                        Ok(CausetxctxInfo::Compaction(cf)) => {
                             if enabled {
                                 checker.on_pending_compaction_bytes_change(cf);
                             }
                         }
-                        Ok(FlowInfo::BeforeUnsafeDestroyRange) => {
+                        Ok(CausetxctxInfo::BeforeUnsafeDestroyRange) => {
                             if !enabled {
                                 continue;
                             }
@@ -550,7 +550,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
                                 }
                             }
                         }
-                        Ok(FlowInfo::AfterUnsafeDestroyRange) => {
+                        Ok(CausetxctxInfo::AfterUnsafeDestroyRange) => {
                             if !enabled {
                                 continue;
                             }
@@ -596,7 +596,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
     }
 
     fn reset_statistics(&mut self) {
-        SCHED_L0_TARGET_FLOW_GAUGE.set(0);
+        SCHED_L0_TARGET_Causetxctx_GAUGE.set(0);
         for cf in self.cf_checkers.keys() {
             SCHED_THROTTLE_CF_GAUGE.with_label_values(&[cf]).set(0);
             SCHED_PENDING_COMPACTION_BYTES_GAUGE
@@ -605,11 +605,11 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
             SCHED_MEMTABLE_GAUGE.with_label_values(&[cf]).set(0);
             SCHED_L0_GAUGE.with_label_values(&[cf]).set(0);
             SCHED_L0_AVG_GAUGE.with_label_values(&[cf]).set(0);
-            SCHED_L0_FLOW_GAUGE.with_label_values(&[cf]).set(0);
-            SCHED_FLUSH_FLOW_GAUGE.with_label_values(&[cf]).set(0);
+            SCHED_L0_Causetxctx_GAUGE.with_label_values(&[cf]).set(0);
+            SCHED_FLUSH_Causetxctx_GAUGE.with_label_values(&[cf]).set(0);
         }
-        SCHED_WRITE_FLOW_GAUGE.set(0);
-        SCHED_THROTTLE_FLOW_GAUGE.set(0);
+        SCHED_WRITE_Causetxctx_GAUGE.set(0);
+        SCHED_THROTTLE_Causetxctx_GAUGE.set(0);
         self.limiter.set_speed_limit(f64::INFINITY);
         SCHED_DISCARD_RATIO_GAUGE.set(0);
         self.discard_ratio.store(0, Ordering::Relaxed);
@@ -631,7 +631,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
             }
         }
 
-        // calculate foreground write flow
+        // calculate foreground write Causetxctx
         let dur = self.last_record_time.saturating_elapsed_secs();
         if dur < f64::EPSILON {
             return;
@@ -642,9 +642,9 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
         // then in the next second, the write rate would be 0. But it doesn't
         // reflect the real write rate, so just ignore it.
         if self.limiter.total_bytes_consumed() != 0 {
-            self.write_flow_recorder.observe(rate as u64);
+            self.write_Causetxctx_recorder.observe(rate as u64);
         }
-        SCHED_WRITE_FLOW_GAUGE.set(rate as i64);
+        SCHED_WRITE_Causetxctx_GAUGE.set(rate as i64);
         self.last_record_time = Instant::now_coarse();
 
         self.limiter.reset_statistics();
@@ -760,7 +760,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
             SCHED_THROTTLE_ACTION_COUNTER
                 .with_label_values(&[cf, "memtable_init"])
                 .inc();
-            let x = self.write_flow_recorder.get_percentile_90();
+            let x = self.write_Causetxctx_recorder.get_percentile_90();
             if x == 0 {
                 f64::INFINITY
             } else {
@@ -837,27 +837,27 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
             .set(checker.long_term_num_l0_files.get_avg() as i64);
 
         if checker.last_flush_bytes_time.saturating_elapsed_secs() > 5.0 {
-            // update flush flow
-            let flush_flow = checker.last_flush_bytes as f64
+            // update flush Causetxctx
+            let flush_Causetxctx = checker.last_flush_bytes as f64
                 / checker.last_flush_bytes_time.saturating_elapsed_secs();
             checker
-                .short_term_l0_production_flow
-                .observe(flush_flow as u64);
-            SCHED_FLUSH_FLOW_GAUGE
+                .short_term_l0_production_Causetxctx
+                .observe(flush_Causetxctx as u64);
+            SCHED_FLUSH_Causetxctx_GAUGE
                 .with_label_values(&[cf])
-                .set(checker.short_term_l0_production_flow.get_avg() as i64);
+                .set(checker.short_term_l0_production_Causetxctx.get_avg() as i64);
 
-            // update l0 flow
+            // update l0 Causetxctx
             if checker.last_l0_bytes != 0 {
-                let l0_flow = checker.last_l0_bytes as f64
+                let l0_Causetxctx = checker.last_l0_bytes as f64
                     / checker.last_l0_bytes_time.saturating_elapsed_secs();
                 checker.last_l0_bytes_time = Instant::now_coarse();
                 checker
-                    .short_term_l0_consumption_flow
-                    .observe(l0_flow as u64);
-                SCHED_L0_FLOW_GAUGE
+                    .short_term_l0_consumption_Causetxctx
+                    .observe(l0_Causetxctx as u64);
+                SCHED_L0_Causetxctx_GAUGE
                     .with_label_values(&[cf])
-                    .set(checker.short_term_l0_consumption_flow.get_avg() as i64);
+                    .set(checker.short_term_l0_consumption_Causetxctx.get_avg() as i64);
             }
 
             checker.last_flush_bytes_time = Instant::now_coarse();
@@ -866,7 +866,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
         }
     }
 
-    // Check the number of l0 files to decide whether need to adjust target flow
+    // Check the number of l0 files to decide whether need to adjust target Causetxctx
     fn on_l0_change(&mut self, cf: String) {
         let checker = self.cf_checkers.get_mut(&cf).unwrap();
         let num_l0_files = checker.long_term_num_l0_files.get_recent();
@@ -918,7 +918,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
                 .inc();
             self.throttle_cf = Some(cf.clone());
             let x = if self.last_speed < f64::EPSILON {
-                self.write_flow_recorder.get_percentile_90() as f64
+                self.write_Causetxctx_recorder.get_percentile_90() as f64
             } else {
                 self.last_speed
             };
@@ -943,7 +943,7 @@ impl<E: CFNamesExt + FlowControlFactorsExt + Send + 'static> FlowChecker<E> {
             self.throttle_cf = None;
             throttle = f64::INFINITY;
         }
-        SCHED_THROTTLE_FLOW_GAUGE.set(if throttle == f64::INFINITY {
+        SCHED_THROTTLE_Causetxctx_GAUGE.set(if throttle == f64::INFINITY {
             0
         } else {
             throttle as i64
@@ -983,7 +983,7 @@ mod tests {
         }
     }
 
-    impl FlowControlFactorsExt for EngineStub {
+    impl CausetxctxControlFactorsExt for EngineStub {
         fn get_cf_num_files_at_level(&self, _cf: &str, _level: usize) -> Result<Option<u64>> {
             Ok(Some(self.0.num_l0_files.load(Ordering::Relaxed)))
         }
@@ -1000,38 +1000,38 @@ mod tests {
     }
 
     #[test]
-    fn test_flow_controller_basic() {
+    fn test_Causetxctx_controller_basic() {
         let stub = EngineStub::new();
         let (_tx, rx) = mpsc::channel();
-        let flow_controller = FlowController::new(&FlowControlConfig::default(), stub, rx);
+        let Causetxctx_controller = CausetxctxController::new(&CausetxctxControlConfig::default(), stub, rx);
 
-        // enable flow controller
-        assert_eq!(flow_controller.enabled(), true);
-        assert_eq!(flow_controller.should_drop(), false);
-        assert_eq!(flow_controller.is_unlimited(), true);
-        assert_eq!(flow_controller.consume(0), Duration::ZERO);
-        assert_eq!(flow_controller.consume(1000), Duration::ZERO);
+        // enable Causetxctx controller
+        assert_eq!(Causetxctx_controller.enabled(), true);
+        assert_eq!(Causetxctx_controller.should_drop(), false);
+        assert_eq!(Causetxctx_controller.is_unlimited(), true);
+        assert_eq!(Causetxctx_controller.consume(0), Duration::ZERO);
+        assert_eq!(Causetxctx_controller.consume(1000), Duration::ZERO);
 
-        // disable flow controller
-        flow_controller.enable(false);
-        assert_eq!(flow_controller.enabled(), false);
-        // re-enable flow controller
-        flow_controller.enable(true);
-        assert_eq!(flow_controller.enabled(), true);
-        assert_eq!(flow_controller.should_drop(), false);
-        assert_eq!(flow_controller.is_unlimited(), true);
-        assert_eq!(flow_controller.consume(1), Duration::ZERO);
+        // disable Causetxctx controller
+        Causetxctx_controller.enable(false);
+        assert_eq!(Causetxctx_controller.enabled(), false);
+        // re-enable Causetxctx controller
+        Causetxctx_controller.enable(true);
+        assert_eq!(Causetxctx_controller.enabled(), true);
+        assert_eq!(Causetxctx_controller.should_drop(), false);
+        assert_eq!(Causetxctx_controller.is_unlimited(), true);
+        assert_eq!(Causetxctx_controller.consume(1), Duration::ZERO);
     }
 
     #[test]
-    fn test_flow_controller_memtable() {
+    fn test_Causetxctx_controller_memtable() {
         let stub = EngineStub::new();
         let (tx, rx) = mpsc::sync_channel(0);
-        let flow_controller = FlowController::new(&FlowControlConfig::default(), stub.clone(), rx);
+        let Causetxctx_controller = CausetxctxController::new(&CausetxctxControlConfig::default(), stub.clone(), rx);
 
-        assert_eq!(flow_controller.consume(2000), Duration::ZERO);
+        assert_eq!(Causetxctx_controller.consume(2000), Duration::ZERO);
         loop {
-            if flow_controller.total_bytes_consumed() == 0 {
+            if Causetxctx_controller.total_bytes_consumed() == 0 {
                 break;
             }
             std::thread::sleep(TICK_DURATION);
@@ -1039,52 +1039,52 @@ mod tests {
 
         // exceeds the threshold on start
         stub.0.num_memtable_files.store(8, Ordering::Relaxed);
-        tx.send(FlowInfo::Flush("default".to_string(), 0)).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert_eq!(flow_controller.should_drop(), false);
-        // on start check forbids flow control
-        assert_eq!(flow_controller.is_unlimited(), true);
+        assert_eq!(Causetxctx_controller.should_drop(), false);
+        // on start check forbids Causetxctx control
+        assert_eq!(Causetxctx_controller.is_unlimited(), true);
         // once falls below the threshold, pass the on start check
         stub.0.num_memtable_files.store(1, Ordering::Relaxed);
-        tx.send(FlowInfo::Flush("default".to_string(), 0)).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
         // not throttle when the average of the sliding window doesn't exceeds the threshold
         stub.0.num_memtable_files.store(6, Ordering::Relaxed);
-        tx.send(FlowInfo::Flush("default".to_string(), 0)).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert_eq!(flow_controller.should_drop(), false);
-        assert_eq!(flow_controller.is_unlimited(), true);
+        assert_eq!(Causetxctx_controller.should_drop(), false);
+        assert_eq!(Causetxctx_controller.is_unlimited(), true);
 
         // the average of sliding window exceeds the threshold
         stub.0.num_memtable_files.store(6, Ordering::Relaxed);
-        tx.send(FlowInfo::Flush("default".to_string(), 0)).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert_eq!(flow_controller.should_drop(), false);
-        assert_eq!(flow_controller.is_unlimited(), false);
-        assert_ne!(flow_controller.consume(2000), Duration::ZERO);
+        assert_eq!(Causetxctx_controller.should_drop(), false);
+        assert_eq!(Causetxctx_controller.is_unlimited(), false);
+        assert_ne!(Causetxctx_controller.consume(2000), Duration::ZERO);
 
         // not throttle once the number of memtables falls below the threshold
         stub.0.num_memtable_files.store(1, Ordering::Relaxed);
-        tx.send(FlowInfo::Flush("default".to_string(), 0)).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert_eq!(flow_controller.should_drop(), false);
-        assert_eq!(flow_controller.is_unlimited(), true);
+        assert_eq!(Causetxctx_controller.should_drop(), false);
+        assert_eq!(Causetxctx_controller.is_unlimited(), true);
     }
 
     #[test]
-    fn test_flow_controller_l0() {
+    fn test_Causetxctx_controller_l0() {
         let stub = EngineStub::new();
         let (tx, rx) = mpsc::sync_channel(0);
-        let flow_controller = FlowController::new(&FlowControlConfig::default(), stub.clone(), rx);
+        let Causetxctx_controller = CausetxctxController::new(&CausetxctxControlConfig::default(), stub.clone(), rx);
 
-        assert_eq!(flow_controller.consume(2000), Duration::ZERO);
+        assert_eq!(Causetxctx_controller.consume(2000), Duration::ZERO);
         loop {
-            if flow_controller.total_bytes_consumed() == 0 {
+            if Causetxctx_controller.total_bytes_consumed() == 0 {
                 break;
             }
             std::thread::sleep(TICK_DURATION);
@@ -1092,115 +1092,115 @@ mod tests {
 
         // exceeds the threshold
         stub.0.num_l0_files.store(30, Ordering::Relaxed);
-        tx.send(FlowInfo::L0("default".to_string(), 0)).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0("default".to_string(), 0)).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert_eq!(flow_controller.should_drop(), false);
-        // on start check forbids flow control
-        assert_eq!(flow_controller.is_unlimited(), true);
+        assert_eq!(Causetxctx_controller.should_drop(), false);
+        // on start check forbids Causetxctx control
+        assert_eq!(Causetxctx_controller.is_unlimited(), true);
         // once fall below the threshold, pass the on start check
         stub.0.num_l0_files.store(10, Ordering::Relaxed);
-        tx.send(FlowInfo::L0("default".to_string(), 0)).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0("default".to_string(), 0)).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
 
         // exceeds the threshold, throttle now
         stub.0.num_l0_files.store(30, Ordering::Relaxed);
-        tx.send(FlowInfo::L0("default".to_string(), 0)).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0("default".to_string(), 0)).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert_eq!(flow_controller.should_drop(), false);
-        assert_eq!(flow_controller.is_unlimited(), false);
-        assert_ne!(flow_controller.consume(2000), Duration::ZERO);
+        assert_eq!(Causetxctx_controller.should_drop(), false);
+        assert_eq!(Causetxctx_controller.is_unlimited(), false);
+        assert_ne!(Causetxctx_controller.consume(2000), Duration::ZERO);
     }
 
     #[test]
-    fn test_flow_controller_pending_compaction_bytes() {
+    fn test_Causetxctx_controller_pending_compaction_bytes() {
         let stub = EngineStub::new();
         let (tx, rx) = mpsc::sync_channel(0);
-        let flow_controller = FlowController::new(&FlowControlConfig::default(), stub.clone(), rx);
+        let Causetxctx_controller = CausetxctxController::new(&CausetxctxControlConfig::default(), stub.clone(), rx);
 
         // exceeds the threshold
         stub.0
             .pending_compaction_bytes
             .store(1000 * 1024 * 1024 * 1024, Ordering::Relaxed);
-        tx.send(FlowInfo::Compaction("default".to_string()))
+        tx.send(CausetxctxInfo::Compaction("default".to_string()))
             .unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        // on start check forbids flow control
-        assert!(flow_controller.discard_ratio() < f64::EPSILON);
+        // on start check forbids Causetxctx control
+        assert!(Causetxctx_controller.discard_ratio() < f64::EPSILON);
         // once fall below the threshold, pass the on start check
         stub.0
             .pending_compaction_bytes
             .store(100 * 1024 * 1024 * 1024, Ordering::Relaxed);
-        tx.send(FlowInfo::Compaction("default".to_string()))
+        tx.send(CausetxctxInfo::Compaction("default".to_string()))
             .unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
 
         stub.0
             .pending_compaction_bytes
             .store(1000 * 1024 * 1024 * 1024, Ordering::Relaxed);
-        tx.send(FlowInfo::Compaction("default".to_string()))
+        tx.send(CausetxctxInfo::Compaction("default".to_string()))
             .unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert!(flow_controller.discard_ratio() > f64::EPSILON);
+        assert!(Causetxctx_controller.discard_ratio() > f64::EPSILON);
 
         stub.0
             .pending_compaction_bytes
             .store(1024 * 1024 * 1024, Ordering::Relaxed);
-        tx.send(FlowInfo::Compaction("default".to_string()))
+        tx.send(CausetxctxInfo::Compaction("default".to_string()))
             .unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert!(flow_controller.discard_ratio() < f64::EPSILON);
+        assert!(Causetxctx_controller.discard_ratio() < f64::EPSILON);
 
         // pending compaction bytes jump after unsafe destroy range
-        tx.send(FlowInfo::BeforeUnsafeDestroyRange).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::BeforeUnsafeDestroyRange).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert!(flow_controller.discard_ratio() < f64::EPSILON);
+        assert!(Causetxctx_controller.discard_ratio() < f64::EPSILON);
 
         // during unsafe destroy range, pending compaction bytes may change
         stub.0
             .pending_compaction_bytes
             .store(1024 * 1024 * 1024, Ordering::Relaxed);
-        tx.send(FlowInfo::Compaction("default".to_string()))
+        tx.send(CausetxctxInfo::Compaction("default".to_string()))
             .unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert!(flow_controller.discard_ratio() < f64::EPSILON);
+        assert!(Causetxctx_controller.discard_ratio() < f64::EPSILON);
 
         stub.0
             .pending_compaction_bytes
             .store(10000000 * 1024 * 1024 * 1024, Ordering::Relaxed);
-        tx.send(FlowInfo::Compaction("default".to_string()))
+        tx.send(CausetxctxInfo::Compaction("default".to_string()))
             .unwrap();
-        tx.send(FlowInfo::AfterUnsafeDestroyRange).unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::AfterUnsafeDestroyRange).unwrap();
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert!(flow_controller.discard_ratio() < f64::EPSILON);
+        assert!(Causetxctx_controller.discard_ratio() < f64::EPSILON);
 
         // unfreeze the control
         stub.0
             .pending_compaction_bytes
             .store(1024 * 1024, Ordering::Relaxed);
-        tx.send(FlowInfo::Compaction("default".to_string()))
+        tx.send(CausetxctxInfo::Compaction("default".to_string()))
             .unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert!(flow_controller.discard_ratio() < f64::EPSILON);
+        assert!(Causetxctx_controller.discard_ratio() < f64::EPSILON);
 
         stub.0
             .pending_compaction_bytes
             .store(1000000000 * 1024 * 1024 * 1024, Ordering::Relaxed);
-        tx.send(FlowInfo::Compaction("default".to_string()))
+        tx.send(CausetxctxInfo::Compaction("default".to_string()))
             .unwrap();
-        tx.send(FlowInfo::L0Intra("default".to_string(), 0))
+        tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
-        assert!(flow_controller.discard_ratio() > f64::EPSILON);
+        assert!(Causetxctx_controller.discard_ratio() > f64::EPSILON);
     }
 
     #[test]

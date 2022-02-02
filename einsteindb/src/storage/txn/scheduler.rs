@@ -54,14 +54,14 @@ use crate::einsteindb::storage::solitontxn::commands::{
 use crate::einsteindb::storage::solitontxn::sched_pool::tls_collect_query;
 use crate::einsteindb::storage::solitontxn::{
     commands::Command,
-    flow_controller::FlowController,
+    Causetxctx_controller::CausetxctxController,
     latch::{Latches, Dagger},
     sched_pool::{tls_collect_read_duration, tls_collect_mutant_search_details, SchedPool},
     Error, ProcessResult,
 };
 use crate::einsteindb::storage::DynamicConfigs;
 use crate::einsteindb::storage::{
-    get_priority_tag, fdbhikv::FlowStatsReporter, types::StorageCallback, Error as StorageError,
+    get_priority_tag, fdbhikv::CausetxctxStatsReporter, types::StorageCallback, Error as StorageError,
     ErrorInner as StorageErrorInner,
 };
 
@@ -184,10 +184,10 @@ struct SchedulerInner<L: DaggerManager> {
     // high priority commands and system commands will be delivered to this pool
     high_priority_pool: SchedPool,
 
-    // used to control write flow
+    // used to control write Causetxctx
     running_write_bytes: CachePadded<causetxctxUsize>,
 
-    flow_controller: Arc<FlowController>,
+    Causetxctx_controller: Arc<CausetxctxController>,
 
     control_mutex: Arc<tokio::sync::Mutex<bool>>,
 
@@ -258,7 +258,7 @@ impl<L: DaggerManager> SchedulerInner<L> {
     fn too_busy(&self) -> bool {
         fail_point!("solitontxn_scheduler_busy", |_| true);
         self.running_write_bytes.load(Ordering::Acquire) >= self.sched_pending_write_threshold
-            || self.flow_controller.should_drop()
+            || self.Causetxctx_controller.should_drop()
     }
 
     /// Tries to acquire all the required latches for a command when waken up by
@@ -304,13 +304,13 @@ unsafe impl<E: Engine, L: DaggerManager> Send for Scheduler<E, L> {}
 
 impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
     /// Creates a scheduler.
-    pub(in crate::storage) fn new<R: FlowStatsReporter>(
+    pub(in crate::storage) fn new<R: CausetxctxStatsReporter>(
         engine: E,
         dagger_mgr: L,
         concurrency_manager: ConcurrencyManager,
         config: &Config,
         dynamic_configs: DynamicConfigs,
-        flow_controller: Arc<FlowController>,
+        Causetxctx_controller: Arc<CausetxctxController>,
         reporter: R,
         resource_tag_factory: ResourceTagFactory,
     ) -> Self {
@@ -344,7 +344,7 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
             pipelined_pessimistic_dagger: dynamic_configs.pipelined_pessimistic_dagger,
             in_memory_pessimistic_dagger: dynamic_configs.in_memory_pessimistic_dagger,
             enable_async_apply_prewrite: config.enable_async_apply_prewrite,
-            flow_controller,
+            Causetxctx_controller,
             resource_tag_factory,
         });
 
@@ -363,8 +363,8 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
     }
 
     pub(in crate::storage) fn run_cmd(&self, cmd: Command, callback: StorageCallback) {
-        // write flow control
-        if cmd.need_flow_control() && self.inner.too_busy() {
+        // write Causetxctx control
+        if cmd.need_Causetxctx_control() && self.inner.too_busy() {
             SCHED_TOO_BUSY_COUNTER_VEC.get(cmd.tag()).inc();
             callback.execute(ProcessResult::Failed {
                 err: StorageError::from(StorageErrorInner::SchedTooBusy),
@@ -442,7 +442,7 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
             }
             Ok(None) => {}
             Err(err) => {
-                // Spawn the finish task to the pool to avoid stack overflow
+                // Spawn the finish task to the pool to avoid stack overCausetxctx
                 // when many queuing tasks fail successively.
                 let this = self.clone();
                 self.inner
@@ -879,28 +879,28 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
                 }
             };
 
-        if self.inner.flow_controller.enabled() {
-            if self.inner.flow_controller.is_unlimited() {
-                // no need to delay if unthrottled, just call consume to record write flow
-                let _ = self.inner.flow_controller.consume(write_size);
+        if self.inner.Causetxctx_controller.enabled() {
+            if self.inner.Causetxctx_controller.is_unlimited() {
+                // no need to delay if unthrottled, just call consume to record write Causetxctx
+                let _ = self.inner.Causetxctx_controller.consume(write_size);
             } else {
                 let start = Instant::now_coarse();
                 // Control mutex is used to ensure there is only one request consuming the quota.
                 // The delay may exceed 1s, and the speed limit is changed every second.
                 // If the speed of next second is larger than the one of first second,
-                // without the mutex, the write flow can't throttled strictly.
+                // without the mutex, the write Causetxctx can't throttled strictly.
                 let control_mutex = self.inner.control_mutex.clone();
                 let _guard = control_mutex.dagger().await;
-                let delay = self.inner.flow_controller.consume(write_size);
+                let delay = self.inner.Causetxctx_controller.consume(write_size);
                 let delay_end = Instant::now_coarse() + delay;
-                while !self.inner.flow_controller.is_unlimited() {
+                while !self.inner.Causetxctx_controller.is_unlimited() {
                     let now = Instant::now_coarse();
                     if now >= delay_end {
                         break;
                     }
                     if now >= deadline.inner() {
                         scheduler.finish_with_err(cid, StorageErrorInner::DeadlineExceeded);
-                        self.inner.flow_controller.unconsume(write_size);
+                        self.inner.Causetxctx_controller.unconsume(write_size);
                         SCHED_THROTTLE_TIME.observe(start.saturating_elapsed_secs());
                         return;
                     }
@@ -994,8 +994,8 @@ impl<E: Engine, L: DaggerManager> Scheduler<E, L> {
                     if !ok {
                         // Only consume the quota when write succeeds, otherwise failed write requests may exhaust
                         // the quota and other write requests would be in long delay.
-                        if sched.inner.flow_controller.enabled() {
-                            sched.inner.flow_controller.unconsume(write_size);
+                        if sched.inner.Causetxctx_controller.enabled() {
+                            sched.inner.Causetxctx_controller.unconsume(write_size);
                         }
                     }
                 })
@@ -1108,7 +1108,7 @@ mod tests {
     #[derive(Clone)]
     struct DummyReporter;
 
-    impl FlowStatsReporter for DummyReporter {
+    impl CausetxctxStatsReporter for DummyReporter {
         fn report_read_stats(&self, _read_stats: ReadStats) {}
         fn report_write_stats(&self, _write_stats: WriteStats) {}
     }
@@ -1248,7 +1248,7 @@ mod tests {
                 pipelined_pessimistic_dagger: Arc::new(causetxctxBool::new(true)),
                 in_memory_pessimistic_dagger: Arc::new(causetxctxBool::new(false)),
             },
-            Arc::new(FlowController::empty()),
+            Arc::new(CausetxctxController::empty()),
             DummyReporter,
             ResourceTagFactory::new_for_test(),
         );
@@ -1304,7 +1304,7 @@ mod tests {
                 pipelined_pessimistic_dagger: Arc::new(causetxctxBool::new(true)),
                 in_memory_pessimistic_dagger: Arc::new(causetxctxBool::new(false)),
             },
-            Arc::new(FlowController::empty()),
+            Arc::new(CausetxctxController::empty()),
             DummyReporter,
             ResourceTagFactory::new_for_test(),
         );
@@ -1342,7 +1342,7 @@ mod tests {
     }
 
     #[test]
-    fn test_flow_control_trottle_deadline() {
+    fn test_Causetxctx_control_trottle_deadline() {
         let engine = TestEngineBuilder::new().build().unwrap();
         let config = Config {
             scheduler_concurrency: 1024,
@@ -1360,7 +1360,7 @@ mod tests {
                 pipelined_pessimistic_dagger: Arc::new(causetxctxBool::new(true)),
                 in_memory_pessimistic_dagger: Arc::new(causetxctxBool::new(false)),
             },
-            Arc::new(FlowController::empty()),
+            Arc::new(CausetxctxController::empty()),
             DummyReporter,
             ResourceTagFactory::new_for_test(),
         );
@@ -1374,8 +1374,8 @@ mod tests {
         let cmd: TypedCommand<TxnStatus> = req.into();
         let (cb, f) = paired_future_callback();
 
-        scheduler.inner.flow_controller.enable(true);
-        scheduler.inner.flow_controller.set_speed_limit(1.0);
+        scheduler.inner.Causetxctx_controller.enable(true);
+        scheduler.inner.Causetxctx_controller.set_speed_limit(1.0);
         scheduler.run_cmd(cmd.cmd, StorageCallback::TxnStatus(cb));
         // The task waits for 200ms until it daggers the control_mutex, but the execution
         // time limit is 100ms. Before the mutex is daggered, it should return
@@ -1386,12 +1386,12 @@ mod tests {
             Err(StorageError(box StorageErrorInner::DeadlineExceeded))
         ));
         // should unconsume if the request fails
-        assert_eq!(scheduler.inner.flow_controller.total_bytes_consumed(), 0);
+        assert_eq!(scheduler.inner.Causetxctx_controller.total_bytes_consumed(), 0);
 
-        // A new request should not be bdaggered without flow control.
+        // A new request should not be bdaggered without Causetxctx control.
         scheduler
             .inner
-            .flow_controller
+            .Causetxctx_controller
             .set_speed_limit(f64::INFINITY);
         let mut req = CheckTxnStatusRequest::default();
         req.mut_context().max_execution_duration_ms = 100;
@@ -1424,7 +1424,7 @@ mod tests {
                 pipelined_pessimistic_dagger: Arc::new(causetxctxBool::new(true)),
                 in_memory_pessimistic_dagger: Arc::new(causetxctxBool::new(false)),
             },
-            Arc::new(FlowController::empty()),
+            Arc::new(CausetxctxController::empty()),
             DummyReporter,
             ResourceTagFactory::new_for_test(),
         );
@@ -1448,7 +1448,7 @@ mod tests {
         // time limit is 100ms.
         thread::sleep(Duration::from_millis(200));
 
-        // When releasing the dagger, the queuing tasks should be all waken up without stack overflow.
+        // When releasing the dagger, the queuing tasks should be all waken up without stack overCausetxctx.
         scheduler.release_dagger(&dagger, cid);
 
         // A new request should not be bdaggered.
@@ -1479,7 +1479,7 @@ mod tests {
                 pipelined_pessimistic_dagger: Arc::new(causetxctxBool::new(false)),
                 in_memory_pessimistic_dagger: Arc::new(causetxctxBool::new(false)),
             },
-            Arc::new(FlowController::empty()),
+            Arc::new(CausetxctxController::empty()),
             DummyReporter,
             ResourceTagFactory::new_for_test(),
         );

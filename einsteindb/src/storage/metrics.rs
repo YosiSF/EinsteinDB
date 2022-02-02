@@ -9,7 +9,7 @@ use std::cell::RefCell;
 use std::mem;
 
 use crate::server::metrics::{GcKeysCF as ServerGcKeysCF, GcKeysDetail as ServerGcKeysDetail};
-use crate::einsteindb::storage::fdbhikv::{FlowStatsReporter, PerfStatisticsDelta, Statistics};
+use crate::einsteindb::storage::fdbhikv::{CausetxctxStatsReporter, PerfStatisticsDelta, Statistics};
 use collections::HashMap;
 use fdbhikvproto::fdbhikvrpcpb::KeyRange;
 use fdbhikvproto::metapb;
@@ -42,7 +42,7 @@ macro_rules! tls_flush_perf_stats {
     };
 }
 
-pub fn tls_flush<R: FlowStatsReporter>(reporter: &R) {
+pub fn tls_flush<R: CausetxctxStatsReporter>(reporter: &R) {
     TLS_STORAGE_METRICS.with(|m| {
         let mut m = m.borrow_mut();
 
@@ -128,13 +128,13 @@ pub fn tls_collect_mutant_search_details(cmd: CommandKind, stats: &Statistics) {
     });
 }
 
-pub fn tls_collect_read_flow(region_id: u64, statistics: &Statistics) {
+pub fn tls_collect_read_Causetxctx(region_id: u64, statistics: &Statistics) {
     TLS_STORAGE_METRICS.with(|m| {
         let mut m = m.borrow_mut();
-        m.local_read_stats.add_flow(
+        m.local_read_stats.add_Causetxctx(
             region_id,
-            &statistics.write.flow_stats,
-            &statistics.data.flow_stats,
+            &statistics.write.Causetxctx_stats,
+            &statistics.data.Causetxctx_stats,
         );
     });
 }
@@ -431,19 +431,19 @@ lazy_static! {
         "Total number of pending commands."
     )
     .unwrap();
-    pub static ref SCHED_WRITE_FLOW_GAUGE: IntGauge = register_int_gauge!(
-        "einstfdbhikv_scheduler_write_flow",
-        "The write flow passed through at scheduler level."
+    pub static ref SCHED_WRITE_Causetxctx_GAUGE: IntGauge = register_int_gauge!(
+        "einstfdbhikv_scheduler_write_Causetxctx",
+        "The write Causetxctx passed through at scheduler level."
     )
     .unwrap();
-    pub static ref SCHED_THROTTLE_FLOW_GAUGE: IntGauge = register_int_gauge!(
-        "einstfdbhikv_scheduler_throttle_flow",
-        "The throttled write flow at scheduler level."
+    pub static ref SCHED_THROTTLE_Causetxctx_GAUGE: IntGauge = register_int_gauge!(
+        "einstfdbhikv_scheduler_throttle_Causetxctx",
+        "The throttled write Causetxctx at scheduler level."
     )
     .unwrap();
-       pub static ref SCHED_L0_TARGET_FLOW_GAUGE: IntGauge = register_int_gauge!(
-        "einstfdbhikv_scheduler_l0_target_flow",
-        "The target flow of L0."
+       pub static ref SCHED_L0_TARGET_Causetxctx_GAUGE: IntGauge = register_int_gauge!(
+        "einstfdbhikv_scheduler_l0_target_Causetxctx",
+        "The target Causetxctx of L0."
     )
     .unwrap();
 
@@ -465,29 +465,29 @@ lazy_static! {
         &["cf"]
     )
     .unwrap();
-    pub static ref SCHED_FLUSH_FLOW_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "einstfdbhikv_scheduler_flush_flow",
-        "The speed of flush flow.",
+    pub static ref SCHED_FLUSH_Causetxctx_GAUGE: IntGaugeVec = register_int_gauge_vec!(
+        "einstfdbhikv_scheduler_flush_Causetxctx",
+        "The speed of flush Causetxctx.",
         &["cf"]
     )
     .unwrap();
-    pub static ref SCHED_L0_FLOW_GAUGE: IntGaugeVec = register_int_gauge_vec!(
-        "einstfdbhikv_scheduler_l0_flow",
-        "The speed of l0 compaction flow.",
+    pub static ref SCHED_L0_Causetxctx_GAUGE: IntGaugeVec = register_int_gauge_vec!(
+        "einstfdbhikv_scheduler_l0_Causetxctx",
+        "The speed of l0 compaction Causetxctx.",
         &["cf"]
     )
     .unwrap();
     pub static ref SCHED_THROTTLE_ACTION_COUNTER: IntCounterVec = {
         register_int_counter_vec!(
             "einstfdbhikv_scheduler_throttle_action_total",
-            "Total number of actions for flow control.",
+            "Total number of actions for Causetxctx control.",
             &["cf", "type"]
         )
         .unwrap()
     };
     pub static ref SCHED_DISCARD_RATIO_GAUGE: IntGauge = register_int_gauge!(
         "einstfdbhikv_scheduler_discard_ratio",
-        "The discard ratio for flow control."
+        "The discard ratio for Causetxctx control."
     )
     .unwrap();
     pub static ref SCHED_THROTTLE_CF_GAUGE: IntGaugeVec = register_int_gauge_vec!(

@@ -355,7 +355,7 @@ mod tests {
     }
 
     #[inline]
-    pub fn check_overflow(e: Error) -> Result<(), ()> {
+    pub fn check_overCausetxctx(e: Error) -> Result<(), ()> {
         if e.code() == ERR_DATA_OUT_OF_RANGE {
             Ok(())
         } else {

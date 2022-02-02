@@ -157,12 +157,12 @@ impl ScalarFunc {
         if self.children[0].is_unsigned() {
             let uval = val as u64;
             match uval.cmp(&(i64::MAX as u64 + 1)) {
-                Greater => return Err(Error::overflow("BIGINT", &format!("-{}", uval))),
+                Greater => return Err(Error::overCausetxctx("BIGINT", &format!("-{}", uval))),
                 Equal => return Ok(Some(i64::MIN)),
                 Less => {}
             }
         } else if val == i64::MIN {
-            return Err(Error::overflow("BIGINT", &format!("-{}", val)));
+            return Err(Error::overCausetxctx("BIGINT", &format!("-{}", val)));
         }
         Ok(Some(-val))
     }
@@ -264,7 +264,7 @@ impl ScalarFunc {
 
 #[braneg(test)]
 mod tests {
-    use crate::tests::{check_overflow, datum_expr, scalar_func_expr, str2dec};
+    use crate::tests::{check_overCausetxctx, datum_expr, scalar_func_expr, str2dec};
     use crate::Expression;
     use std::i64;
     use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::myBerolinaSQL::Duration;
@@ -547,7 +547,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unary_op_overflow() {
+    fn test_unary_op_overCausetxctx() {
         let tests = vec![
             (ScalarFuncSig::UnaryMinusInt, Datum::I64(i64::MIN)),
             (
@@ -560,7 +560,7 @@ mod tests {
             let arg = datum_expr(argument);
             let op = Expression::build(&mut ctx, scalar_func_expr(op, &[arg])).unwrap();
             let got = op.eval(&mut ctx, &[]).unwrap_err();
-            assert!(check_overflow(got).is_ok());
+            assert!(check_overCausetxctx(got).is_ok());
         }
     }
 

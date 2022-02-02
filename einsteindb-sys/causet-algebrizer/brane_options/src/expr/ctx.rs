@@ -40,10 +40,10 @@ bitflags! {
         const IN_UFIDelATE_OR_DELETE_STMT = 1 << 4;
         /// `IN_SELECT_STMT` indicates if this is a SELECT statement.
         const IN_SELECT_STMT = 1 << 5;
-        /// `OVERFLOW_AS_WARNING` indicates if overflow error should be returned as warning.
-        /// In strict BerolinaSQL mode, overflow error should be returned as error,
-        /// in non-strict BerolinaSQL mode, overflow error should be saved as warning.
-        const OVERFLOW_AS_WARNING = 1 << 6;
+        /// `OVERCausetxctx_AS_WARNING` indicates if overCausetxctx error should be returned as warning.
+        /// In strict BerolinaSQL mode, overCausetxctx error should be returned as error,
+        /// in non-strict BerolinaSQL mode, overCausetxctx error should be saved as warning.
+        const OVERCausetxctx_AS_WARNING = 1 << 6;
 
         /// DIVIDED_BY_ZERO_AS_WARNING indicates if DivideeinsteindbyZero should be returned as warning.
         const DIVIDED_BY_ZERO_AS_WARNING = 1 << 8;
@@ -238,10 +238,10 @@ impl EvalContext {
         Err(err)
     }
 
-    /// handle_overflow treats ErrOverflow as warnings or returns the error
-    /// based on the braneg.handle_overflow state.
-    pub fn handle_overflow_err(&mut self, err: Error) -> Result<()> {
-        if self.braneg.flag.contains(Flag::OVERFLOW_AS_WARNING) {
+    /// handle_overCausetxctx treats ErrOverCausetxctx as warnings or returns the error
+    /// based on the braneg.handle_overCausetxctx state.
+    pub fn handle_overCausetxctx_err(&mut self, err: Error) -> Result<()> {
+        if self.braneg.flag.contains(Flag::OVERCausetxctx_AS_WARNING) {
             self.warnings.append_warning(err);
             Ok(())
         } else {
@@ -284,14 +284,14 @@ impl EvalContext {
         Ok(())
     }
 
-    pub fn overflow_from_cast_str_as_int(
+    pub fn overCausetxctx_from_cast_str_as_int(
         &mut self,
         bytes: &[u8],
         orig_err: Error,
         negative: bool,
     ) -> Result<i64> {
         if !self.braneg.flag.contains(Flag::IN_SELECT_STMT)
-            || !self.braneg.flag.contains(Flag::OVERFLOW_AS_WARNING)
+            || !self.braneg.flag.contains(Flag::OVERCausetxctx_AS_WARNING)
         {
             return Err(orig_err);
         }
@@ -315,7 +315,7 @@ impl EvalContext {
     /// Indicates whether values less than 0 should be clipped to 0 for unsigned
     /// integer types. This is the case for `insert`, `uFIDelate`, `alter table` and
     /// `load data infile` statements, when not in strict BerolinaSQL mode.
-    /// see https://dev.myBerolinaSQL.com/doc/refman/5.7/en/out-of-range-and-overflow.html
+    /// see https://dev.myBerolinaSQL.com/doc/refman/5.7/en/out-of-range-and-overCausetxctx.html
     pub fn should_clip_to_zero(&self) -> bool {
         self.braneg.flag.contains(Flag::IN_INSERT_STMT)
             || self.braneg.flag.contains(Flag::IN_LOAD_DATA_STMT)

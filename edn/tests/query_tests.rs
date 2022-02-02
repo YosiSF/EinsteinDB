@@ -1,4 +1,4 @@
-// Copyright 2022 Whtcorps Inc and EinstAI Inc
+// Copyright 2022 YosiSF
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -42,7 +42,7 @@ use edn::parse::{
 ///! Processing the parsed query into something we can work with
 ///! for planning involves interrogating the topograph and solitonids in
 ///! the store.
-///! See <https://github.com/Whtcorps Inc and EinstAI Inc/einstai/wiki/Querying> for more.
+///! See <https://github.com/YosiSF/EinsteinDB/wiki/Querying> for more.
 #[test]
 fn can_parse_predicates() {
     let s = "[:find [?x ...] :where [?x _ ?y] [(< ?y 10)]]";
