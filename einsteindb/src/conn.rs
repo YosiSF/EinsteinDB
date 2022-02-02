@@ -1,4 +1,4 @@
-// Copyright 2022 YosiSF
+// Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -68,7 +68,7 @@ use einsteindb_query_pull::{
 use einsteindb_transaction::{
     CacheAction,
     CacheDirection,
-    Metadata,
+    Spacetime,
     InProgress,
     InProgressRead,
 };
@@ -95,7 +95,7 @@ use einsteindb_transaction::query::{
 /// A mutable, safe reference to the current einsteindb store.
 pub struct Conn {
 
-    spacetime: Mutex<Metadata>,
+    spacetime: Mutex<Spacetime>,
 
     // TODO: maintain set of change listeners or handles to transaction report queues.
 
@@ -108,7 +108,7 @@ impl Conn {
     // Intentionally not public.
     fn new(partition_map: PartitionMap, schema: Schema) -> Conn {
         Conn {
-            spacetime: Mutex::new(Metadata::new(0, partition_map, Arc::new(schema), Default::default())),
+            spacetime: Mutex::new(Spacetime::new(0, partition_map, Arc::new(schema), Default::default())),
             tx_observer_service: Mutex::new(TxObservationService::new()),
         }
     }
@@ -252,7 +252,7 @@ impl Conn {
         let (current_generation, current_partition_map, current_schema, cache_cow) =
         {
             // The mutex is taken during this block.
-            let ref current: Metadata = *self.spacetime.lock().unwrap();
+            let ref current: Spacetime = *self.spacetime.lock().unwrap();
             (current.generation,
              // Expensive, but the partition map is updated after every committed transaction.
              current.partition_map.clone(),

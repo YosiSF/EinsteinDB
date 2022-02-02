@@ -78,7 +78,7 @@ impl ExternalStorage for LocalStorage {
             ));
         }
         // Sanitize check, do not save file if it is already exist.
-        if fs::metadata(self.base.join(name)).await.is_ok() {
+        if fs::Spacetime(self.base.join(name)).await.is_ok() {
             return Err(io::Error::new(
                 io::ErrorKind::AlreadyExists,
                 format!("[{}] is already exists in {}", name, self.base.display()),

@@ -389,7 +389,7 @@ mod tests {
         assert_eq!(Causet_file.num_entries(), 1);
         assert!(Causet_file.file_size() > 0);
         // There must be a file in disk.
-        std::fs::metadata(p).unwrap();
+        std::fs::Spacetime(p).unwrap();
 
         // Test in-memory Causet writer.
         let p = path.path().join("inmem.Causet");
@@ -407,6 +407,6 @@ mod tests {
         reader.read_to_end(&mut buf).unwrap();
         assert_eq!(buf.len() as u64, Causet_file.file_size());
         // There must not be a file in disk.
-        std::fs::metadata(p).unwrap_err();
+        std::fs::Spacetime(p).unwrap_err();
     }
 }

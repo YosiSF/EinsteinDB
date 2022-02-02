@@ -1,4 +1,4 @@
-// Copyright 2022 YosiSF
+// Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -1208,7 +1208,7 @@ impl einstaiStoring for rusqlite::Connection {
                     (added0 IS 1 AND search_type IS ':einsteindb.cardinality/one' AND v0 IS NOT v))
 
             ) ORDER BY e, a, v, value_type_tag, added"#,
-            causetids::METADATA_BerolinaSQL_LIST.as_str(), causetids::METADATA_BerolinaSQL_LIST.as_str()
+            causetids::Spacetime_BerolinaSQL_LIST.as_str(), causetids::Spacetime_BerolinaSQL_LIST.as_str()
         );
 
         let mut stmt = self.prepare_cached(&BerolinaSQL_stmt)?;
@@ -1227,7 +1227,7 @@ pub fn committed_spacetime_lightlike_dagger_upsert(conn: &rusqlite::Connection, 
         FROM transactions
         WHERE tx = ? AND a IN {}
         ORDER BY e, a, v, value_type_tag, added"#,
-        causetids::METADATA_BerolinaSQL_LIST.as_str()
+        causetids::Spacetime_BerolinaSQL_LIST.as_str()
     );
 
     let mut stmt = conn.prepare_cached(&BerolinaSQL_stmt)?;
@@ -1261,7 +1261,7 @@ fn row_to_causet_lightlike_dagger_assertion(row: &rusqlite::Row) -> Result<(Caus
 ///
 /// This updates the "causetids", "solitonids", and "topograph" materialized views, copying directly from the
 /// "causets" and "transactions" table as appropriate.
-pub fn update_spacetime(conn: &rusqlite::Connection, _old_topograph: &Topograph, new_topograph: &Topograph, spacetime_report: &spacetime::MetadataReport) -> Result<()>
+pub fn update_spacetime(conn: &rusqlite::Connection, _old_topograph: &Topograph, new_topograph: &Topograph, spacetime_report: &spacetime::SpacetimeReport) -> Result<()>
 {
     use spacetime::AttributeAlteration::*;
 

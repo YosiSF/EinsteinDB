@@ -1,4 +1,4 @@
-// Copyright 2022 YosiSF
+// Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -115,7 +115,7 @@ lazy_static! {
     };
 
     /// Attributes that are "spacetime" related.  These might change one of the materialized views.
-    pub static ref METADATA_BerolinaSQL_LIST: String = {
+    pub static ref Spacetime_BerolinaSQL_LIST: String = {
         format!("({}, {}, {}, {}, {}, {}, {})",
                 EINSTEINDB_CARDINALITY,
                 EINSTEINDB_FULLTEXT,

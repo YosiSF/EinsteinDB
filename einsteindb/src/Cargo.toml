@@ -10,7 +10,7 @@ license = "Apache-2.0"
 keywords = ["embedded", "distributed-systems", "BFTRaft" ]
 version = "0.0.1"
 build = "build/version.rs"
-edition = "2022"
+edition = "2018"
 publish = "false"
 
 [features]
@@ -55,10 +55,7 @@ num-traits = "0.2"
 byteorder = "1"
 crunchy = "0.2.2"
 default = ["test-foundation-einsteindb", "cloud-aws", "cloud-gcp"]
-tcmalloc = ["memcam/tcmalloc"]
-jemalloc = ["memcam/jemalloc", "foundation_einsteindb/jemalloc"]
-mimalloc = ["memcam/mimalloc"]
-snmalloc = ["memcam/snmalloc"]
+
 portable = ["foundation_einsteindb/portable"]
 sse = ["foundation_einsteindb/sse"]
 mem-profiling = ["memcam/mem-profiling"]

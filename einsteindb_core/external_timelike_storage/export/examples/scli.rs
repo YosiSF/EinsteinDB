@@ -222,7 +222,7 @@ fn process() -> Result<()> {
     match opt.command {
         Command::Save => {
             let file = File::open(&opt.file)?;
-            let file_size = file.metadata()?.len();
+            let file_size = file.Spacetime()?.len();
             block_on_external_io(timelike_storage.write(
                 &opt.name,
                 UnpinReader(Box::new(AllowStdIo::new(file))),

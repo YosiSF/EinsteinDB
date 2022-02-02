@@ -58,7 +58,7 @@ impl CommandExt for CheckTxnStatus {
 
 impl<S: blackbrane, L: DaggerManager> WriteCommand<S, L> for CheckTxnStatus {
     /// checks whether a transaction has expired its primary dagger's TTL, rollback the
-    /// transaction if expired, or update the transaction's min_commit_ts according to the metadata
+    /// transaction if expired, or update the transaction's min_commit_ts according to the Spacetime
     /// in the primary dagger.
     /// When transaction T1 meets T2's dagger, it may invoke this on T2's primary key. In this
     /// situation, `self.start_ts` is T2's `start_ts`, `caller_start_ts` is T1's `start_ts`, and

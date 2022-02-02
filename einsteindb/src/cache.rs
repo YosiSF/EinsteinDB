@@ -1,4 +1,4 @@
-// Copyright 2022 YosiSF
+// Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file except in compliance with the License. You may obtain a copy of the
@@ -8,44 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-///! An impleeinstaiion of attribute caching.
-///! Attribute caching means storing the causets and values for a given attribute, in the current
-///! state of the world, in one or both directions (forward or reverse).
-///!
-///! One might use a reverse cache to implement fast in-memory lookup of unique idcausets. One
-///! might use a forward cache to implement fast in-memory lookup of common properties.
-///!
-///! These caches are specialized wrappers around maps. We have four: single/multi forward, and
-///! unique/non-unique reverse. There are traits to provide access.
-///!
-///! A little tower of functions allows for multiple caches to be updated when provided with a
-///! single SQLite cursor over `(a, e, v)`s, sorted appropriately.
-///!
-///! Much of the complexity in this module is to support copy-on-write.
-///!
-///! When a transaction begins, we expect:
-///!
-///! - Existing references to the `Conn`'s attribute cache to still be valid.
-///! - Isolation to be preserved: that cache will return the same answers until the transaction
-///!   commits and a fresh reference to the cache is obtained.
-///! - Assertions and spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions within the transaction to be reflected in the cache.
-///!   - Retractions apply first, then lightlike_dagger_upsert.
-///! - No writes = limited memory allocation for the cache.
-///! - New attributes can be cached, and existing attributes uncached, during the transaction.
-///!   These changes are isolated, too.
-///!
-///! All of this means that we need a decent copy-on-write layer that can represent spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions.
-///!
-///! This is `InProgressSQLiteAttributeCache`. It listens for committed transactions, and handles
-///! changes to the cached attribute set, maintaining a reference back to the stable cache. When
-///! necessary it copies and modifies. Retractions are modeled via a `None` option.
-///!
-///! When we're done, we take each of the four caches, and each cached attribute that changed, and
-///! absorbe them back into the stable cache. This uses `Arc::make_mut`, so if nobody is looking at
-///! the old cache, we modify it in place.
-///!
-///! Most of the tests for this module are actually in `conn.rs`, where we can set up transactions
-///! and test the external API.
+
 
 use std::collections::{
     BTreeMap,
