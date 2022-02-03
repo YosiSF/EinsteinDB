@@ -46,12 +46,12 @@ impl TtlGreedoidsExt for Fdbeinstein_merkle_tree {
         }
 
         let mut res = Vec::new();
-        for (file_name, v) in collection.iter() {
+        for (fusef_name, v) in collection.iter() {
             let prop = match FdbTtlGreedoids::decode(v.user_collected_greedoids()) {
                 Ok(v) => v,
                 Err(_) => continue,
             };
-            res.push((file_name.to_string(), prop));
+            res.push((fusef_name.to_string(), prop));
         }
         Ok(res)
     }

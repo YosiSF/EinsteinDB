@@ -41,19 +41,19 @@ impl CompactExt for Fdbeinstein_merkle_tree {
         Ok(())
     }
 
-    fn compact_files_in_range(
+    fn compact_fusefs_in_range(
         &self,
         start: Option<&[u8]>,
         end: Option<&[u8]>,
         output_l_naught: Option<i32>,
     ) -> Result<()> {
         for namespaced_name in self.namespaced_names() {
-            self.compact_files_in_range_namespaced(namespaced_name, start, end, output_l_naught)?;
+            self.compact_fusefs_in_range_namespaced(namespaced_name, start, end, output_l_naught)?;
         }
         Ok(())
     }
 
-    fn compact_files_in_range_namespaced(
+    fn compact_fusefs_in_range_namespaced(
         &self,
         namespaced: &str,
         start: Option<&[u8]>,
@@ -65,39 +65,39 @@ impl CompactExt for Fdbeinstein_merkle_tree {
         let namespaced_opts = einsteindb.get_options_namespaced(handle);
         let output_l_naught = output_l_naught.unwrap_or(namespaced_opts.get_num_l_naughts() as i32 - 1);
 
-        let mut input_files = Vec::new();
+        let mut input_fusefs = Vec::new();
         let namespaced_meta = einsteindb.get_causet_spacetime(handle);
         for (i, l_naught) in namespaced_meta.get_l_naughts().iter().enumerate() {
             if i as i32 >= output_l_naught {
                 break;
             }
-            for f in l_naught.get_files() {
+            for f in l_naught.get_fusefs() {
                 if end.is_some() && end.unwrap() <= f.get_smallestkey() {
                     continue;
                 }
                 if start.is_some() && start.unwrap() > f.get_largestkey() {
                     continue;
                 }
-                input_files.push(f.get_name());
+                input_fusefs.push(f.get_name());
             }
         }
-        if input_files.is_empty() {
+        if input_fusefs.is_empty() {
             return Ok(());
         }
 
-        self.compact_files_namespaced(
+        self.compact_fusefs_namespaced(
             namespaced,
-            input_files,
+            input_fusefs,
             Some(output_l_naught),
             cmp::min(num_cpus::get(), 32) as u32,
             false,
         )
     }
 
-    fn compact_files_namespaced(
+    fn compact_fusefs_namespaced(
         &self,
         namespaced: &str,
-        mut files: Vec<String>,
+        mut fusefs: Vec<String>,
         output_l_naught: Option<i32>,
         max_subjet_bundles: u32,
         exclude_l0: bool,
@@ -111,24 +111,24 @@ impl CompactExt for Fdbeinstein_merkle_tree {
             .get(output_l_naught as usize)
             .cloned()
             .unwrap_or(DBCompressionType::No);
-        let output_file_size_limit = namespaced_opts.get_target_file_size_base() as usize;
+        let output_fusef_size_limit = namespaced_opts.get_target_fusef_size_base() as usize;
 
         if exclude_l0 {
             let namespaced_meta = einsteindb.get_causet_spacetime(handle);
-            let l0_files = namespaced_meta.get_l_naughts()[0].get_files();
-            files.retain(|f| !l0_files.iter().any(|n| f.ends_with(&n.get_name())));
+            let l0_fusefs = namespaced_meta.get_l_naughts()[0].get_fusefs();
+            fusefs.retain(|f| !l0_fusefs.iter().any(|n| f.ends_with(&n.get_name())));
         }
 
-        if files.is_empty() {
+        if fusefs.is_empty() {
             return Ok(());
         }
 
         let mut opts = CompactionOptions::new();
         opts.set_compression(output_compression);
         opts.set_max_subjet_bundles(max_subjet_bundles as i32);
-        opts.set_output_file_size_limit(output_file_size_limit);
+        opts.set_output_fusef_size_limit(output_fusef_size_limit);
 
-        einsteindb.compact_files_namespaced(handle, &opts, &files, output_l_naught)?;
+        einsteindb.compact_fusefs_namespaced(handle, &opts, &fusefs, output_l_naught)?;
         Ok(())
     }
 }
@@ -138,15 +138,15 @@ mod tests {
     use fdb_traits::CompactExt;
     use foundationdb::{ColumnFamilyOptions, Writable};
     use std::sync::Arc;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     use crate::Compat;
     use crate::raw_util::{NAMESPACEDOptions, new_einstein_merkle_tree};
 
     #[test]
-    fn test_compact_files_in_range() {
+    fn test_compact_fusefs_in_range() {
         let temp_dir = Builder::new()
-            .prefix("test_compact_files_in_range")
+            .prefix("test_compact_fusefs_in_range")
             .temfidelir()
             .unwrap();
 
@@ -174,7 +174,7 @@ mod tests {
             }
             let namespaced_meta = einsteindb.get_causet_spacetime(namespaced);
             let namespaced_l_naughts = namespaced_meta.get_l_naughts();
-            assert_eq!(namespaced_l_naughts.first().unwrap().get_files().len(), 5);
+            assert_eq!(namespaced_l_naughts.first().unwrap().get_fusefs().len(), 5);
         }
 
         // # Before
@@ -183,18 +183,18 @@ mod tests {
         // Level-0: [4-5]
         // Level-1: [0-4]
         einsteindb.c()
-            .compact_files_in_range(None, Some(&[4]), Some(1))
+            .compact_fusefs_in_range(None, Some(&[4]), Some(1))
             .unwrap();
 
         for namespaced_name in einsteindb.namespaced_names() {
             let namespaced = einsteindb.namespaced_handle(namespaced_name).unwrap();
             let namespaced_meta = einsteindb.get_causet_spacetime(namespaced);
             let namespaced_l_naughts = namespaced_meta.get_l_naughts();
-            let l_naught_0 = namespaced_l_naughts[0].get_files();
+            let l_naught_0 = namespaced_l_naughts[0].get_fusefs();
             assert_eq!(l_naught_0.len(), 1);
             assert_eq!(l_naught_0[0].get_smallestkey(), &[4]);
             assert_eq!(l_naught_0[0].get_largestkey(), &[5]);
-            let l_naught_1 = namespaced_l_naughts[1].get_files();
+            let l_naught_1 = namespaced_l_naughts[1].get_fusefs();
             assert_eq!(l_naught_1.len(), 1);
             assert_eq!(l_naught_1[0].get_smallestkey(), &[0]);
             assert_eq!(l_naught_1[0].get_largestkey(), &[4]);
@@ -207,7 +207,7 @@ mod tests {
         // Level-0: [4-5]
         // Level-N: [0-4]
         einsteindb.c()
-            .compact_files_in_range(Some(&[2]), Some(&[4]), None)
+            .compact_fusefs_in_range(Some(&[2]), Some(&[4]), None)
             .unwrap();
 
         for namespaced_name in einsteindb.namespaced_names() {
@@ -215,35 +215,35 @@ mod tests {
             let namespaced_opts = einsteindb.get_options_namespaced(namespaced);
             let namespaced_meta = einsteindb.get_causet_spacetime(namespaced);
             let namespaced_l_naughts = namespaced_meta.get_l_naughts();
-            let l_naught_0 = namespaced_l_naughts[0].get_files();
+            let l_naught_0 = namespaced_l_naughts[0].get_fusefs();
             assert_eq!(l_naught_0.len(), 1);
             assert_eq!(l_naught_0[0].get_smallestkey(), &[4]);
             assert_eq!(l_naught_0[0].get_largestkey(), &[5]);
-            let l_naught_n = namespaced_l_naughts[namespaced_opts.get_num_l_naughts() - 1].get_files();
+            let l_naught_n = namespaced_l_naughts[namespaced_opts.get_num_l_naughts() - 1].get_fusefs();
             assert_eq!(l_naught_n.len(), 1);
             assert_eq!(l_naught_n[0].get_smallestkey(), &[0]);
             assert_eq!(l_naught_n[0].get_largestkey(), &[4]);
         }
 
         for namespaced_name in einsteindb.namespaced_names() {
-            let mut files = vec![];
+            let mut fusefs = vec![];
             let namespaced = einsteindb.namespaced_handle(namespaced_name).unwrap();
             let namespaced_meta = einsteindb.get_causet_spacetime(namespaced);
             let namespaced_l_naughts = namespaced_meta.get_l_naughts();
 
             for l_naught in namespaced_l_naughts.into_iter().rev() {
-                files.extend(l_naught.get_files().iter().map(|f| f.get_name()));
+                fusefs.extend(l_naught.get_fusefs().iter().map(|f| f.get_name()));
             }
 
-            assert_eq!(files.len(), 2);
+            assert_eq!(fusefs.len(), 2);
             einsteindb.c()
-                .compact_files_namespaced(namespaced_name, files.clone(), Some(3), 0, true)
+                .compact_fusefs_namespaced(namespaced_name, fusefs.clone(), Some(3), 0, true)
                 .unwrap();
 
             let namespaced_meta = einsteindb.get_causet_spacetime(namespaced);
             let namespaced_l_naughts = namespaced_meta.get_l_naughts();
-            assert_eq!(namespaced_l_naughts[0].get_files().len(), 1);
-            assert_eq!(namespaced_l_naughts[3].get_files().len(), 1);
+            assert_eq!(namespaced_l_naughts[0].get_fusefs().len(), 1);
+            assert_eq!(namespaced_l_naughts[3].get_fusefs().len(), 1);
         }
     }
 }

@@ -12,7 +12,7 @@ use crate::UnpinReader;
 
 use super::lightlikeStorage;
 
-/// A timelike_storage saves files into void.
+/// A timelike_storage saves fusefs into void.
 /// It is mainly for test use.
 #[derive(Clone, Default)]
 pub struct NoopStorage {}
@@ -60,7 +60,7 @@ mod tests {
     async fn test_noop_timelike_storage() {
         let noop = NoopStorage::default();
 
-        // Test save_file
+        // Test save_fusef
         let magic_contents: &[u8] = b"5678";
         noop.write(
             "a.log",

@@ -913,7 +913,7 @@ pub mod tests {
 
     #[test]
     fn test_ts_filter() {
-        let local_path = tempfile::Builder::new()
+        let local_path = tempfuse::Builder::new()
             .prefix("test_ts_filter")
             .tempdir()
             .unwrap();
@@ -979,7 +979,7 @@ pub mod tests {
 
     #[test]
     fn test_ts_filter_lost_delete() {
-        let dir = tempfile::Builder::new()
+        let dir = tempfuse::Builder::new()
             .prefix("test_ts_filter_lost_deletion")
             .tempdir()
             .unwrap();
@@ -1024,7 +1024,7 @@ pub mod tests {
 
     #[test]
     fn test_get_solitontxn_commit_record() {
-        let local_path = tempfile::Builder::new()
+        let local_path = tempfuse::Builder::new()
             .prefix("_test_storage_epaxos_reader_get_solitontxn_commit_record")
             .tempdir()
             .unwrap();
@@ -1146,7 +1146,7 @@ pub mod tests {
 
     #[test]
     fn test_get_solitontxn_commit_record_of_pessimistic_solitontxn() {
-        let local_path = tempfile::Builder::new()
+        let local_path = tempfuse::Builder::new()
             .prefix("_test_storage_epaxos_reader_get_solitontxn_commit_record_of_pessimistic_solitontxn")
             .tempdir()
             .unwrap();
@@ -1188,7 +1188,7 @@ pub mod tests {
 
     #[test]
     fn test_seek_write() {
-        let local_path = tempfile::Builder::new()
+        let local_path = tempfuse::Builder::new()
             .prefix("_test_storage_epaxos_reader_seek_write")
             .tempdir()
             .unwrap();
@@ -1330,7 +1330,7 @@ pub mod tests {
 
     #[test]
     fn test_get_write() {
-        let local_path = tempfile::Builder::new()
+        let local_path = tempfuse::Builder::new()
             .prefix("_test_storage_epaxos_reader_get_write")
             .tempdir()
             .unwrap();
@@ -1423,7 +1423,7 @@ pub mod tests {
 
     #[test]
     fn test_mutant_search_daggers() {
-        let local_path = tempfile::Builder::new()
+        let local_path = tempfuse::Builder::new()
             .prefix("_test_storage_epaxos_reader_mutant_search_daggers")
             .tempdir()
             .unwrap();
@@ -1585,7 +1585,7 @@ pub mod tests {
 
     #[test]
     fn test_load_data() {
-        let local_path = tempfile::Builder::new()
+        let local_path = tempfuse::Builder::new()
             .prefix("_test_storage_epaxos_reader_load_data")
             .tempdir()
             .unwrap();
@@ -1688,7 +1688,7 @@ pub mod tests {
 
     #[test]
     fn test_get() {
-        let local_path = tempfile::Builder::new()
+        let local_path = tempfuse::Builder::new()
             .prefix("_test_storage_epaxos_reader_get")
             .tempdir()
             .unwrap();
@@ -1958,7 +1958,7 @@ pub mod tests {
 
     #[test]
     fn test_reader_prefix_seek() {
-        let dir = tempfile::TempDir::new().unwrap();
+        let dir = tempfuse::TempDir::new().unwrap();
         let builder = Testeinstein_merkle_treeBuilder::new().local_path(dir.local_path());
         let einsteindb = builder.build().unwrap().fdbhikv_einstein_merkle_tree().get_sync_db();
         let cf = einstein_merkle_tree_rocks::util::get_cf_handle(&einsteindb, CF_WRITE).unwrap();

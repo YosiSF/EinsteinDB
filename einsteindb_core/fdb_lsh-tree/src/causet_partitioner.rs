@@ -38,7 +38,7 @@ impl<P: fdb_traits::CausetPartitioner> foundationdb::CausetPartitioner for FdbCa
         let req = fdb_traits::CausetPartitionerRequest {
             prev_user_key: request.prev_user_key,
             current_user_key: request.current_user_key,
-            current_output_file_size: request.current_output_file_size,
+            current_output_fusef_size: request.current_output_fusef_size,
         };
         match self.0.should_partition(&req) {
             fdb_traits::CausetPartitionerResult::NotRequired => {

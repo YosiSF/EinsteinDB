@@ -147,9 +147,9 @@ pub trait Iterable {
     where
         F: FnMut(&[u8], &[u8]) -> Result<bool>,
     {
-        let start = KeyBuilder::from_slice(start_key, DATA_CAUSET_KEY_PREFIX_LEN, 0);
+        let start = KeyBuilder::from_slice(start_key, FUSE_CAUSET_PREFIX_LEN_FLUSH, 0);
         let end =
-            (!end_key.is_empty()).then(|| KeyBuilder::from_slice(end_key, DATA_CAUSET_KEY_PREFIX_LEN, 0));
+            (!end_key.is_empty()).then(|| KeyBuilder::from_slice(end_key, FUSE_CAUSET_PREFIX_LEN_FLUSH, 0));
         let iter_opt = IterOptions::new(Some(start), end, fill_cache);
         scan_impl(self.iterator_opt(iter_opt)?, start_key, f)
     }
@@ -166,9 +166,9 @@ pub trait Iterable {
     where
         F: FnMut(&[u8], &[u8]) -> Result<bool>,
     {
-        let start = KeyBuilder::from_slice(start_key, DATA_CAUSET_KEY_PREFIX_LEN, 0);
+        let start = KeyBuilder::from_slice(start_key, FUSE_CAUSET_PREFIX_LEN_FLUSH, 0);
         let end =
-            (!end_key.is_empty()).then(|| KeyBuilder::from_slice(end_key, DATA_CAUSET_KEY_PREFIX_LEN, 0));
+            (!end_key.is_empty()).then(|| KeyBuilder::from_slice(end_key, FUSE_CAUSET_PREFIX_LEN_FLUSH, 0));
         let iter_opt = IterOptions::new(Some(start), end, fill_cache);
         scan_impl(self.iterator_namespaced_opt(namespaced, iter_opt)?, start_key, f)
     }

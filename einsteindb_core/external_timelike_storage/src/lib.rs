@@ -16,7 +16,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use encryption::{encryption_method_from_db_encryption_method, DecrypterReader, Iv};
 use fdb_traits::FileEncryptionInfo;
-use fuse::File;
+use fuse::Fuse;
 use futures_io::AsyncRead;
 use futures_util::AsyncReadExt;
 use einsteindb_util::stream::{block_on_lightlike_io, READ_BUF_SIZE};
@@ -78,18 +78,18 @@ pub trait lightlikeStorage: 'static + Send + Sync {
         retimelike_store_name: std::local_path::local_pathBuf,
         expected_length: u64,
         speed_limiter: &Limiter,
-        file_crypter: Option<FileEncryptionInfo>,
+        fusef_crypter: Option<FileEncryptionInfo>,
     ) -> io::Result<()> {
         let reader = self.read(timelike_storage_name);
-        let output: &mut dyn Write = &mut File::create(retimelike_store_name)?;
+        let output: &mut dyn Write = &mut Fuse::create(retimelike_store_name)?;
         // the minimum speed of reading data, in bytes/second.
         // if reading speed is slower than this rate, we will stop with
         // a "TimedOut" error.
         // (at 8 KB/s for a 2 MB buffer, this means we timeout after 4m16s.)
         let min_read_speed: usize = 8192;
-        let mut input = encrypt_wrap_reader(file_crypter, reader)?;
+        let mut input = encrypt_wrap_reader(fusef_crypter, reader)?;
 
-        block_on_lightlike_io(read_lightlike_timelike_storage_into_file(
+        block_on_lightlike_io(read_lightlike_timelike_storage_into_fusef(
             &mut input,
             output,
             speed_limiter,
@@ -137,13 +137,13 @@ impl lightlikeStorage for Box<dyn lightlikeStorage> {
     }
 }
 
-// Wrap the reader with file_crypter
-// Return the reader directly if file_crypter is None
+// Wrap the reader with fusef_crypter
+// Return the reader directly if fusef_crypter is None
 pub fn encrypt_wrap_reader<'a>(
-    file_crypter: Option<FileEncryptionInfo>,
+    fusef_crypter: Option<FileEncryptionInfo>,
     reader: Box<dyn AsyncRead + Unpin + 'a>,
 ) -> io::Result<Box<dyn AsyncRead + Unpin + 'a>> {
-    let input = match file_crypter {
+    let input = match fusef_crypter {
         Some(x) => Box::new(DecrypterReader::new(
             reader,
             encryption_method_from_db_encryption_method(x.method),
@@ -156,7 +156,7 @@ pub fn encrypt_wrap_reader<'a>(
     Ok(input)
 }
 
-pub async fn read_lightlike_timelike_storage_into_file(
+pub async fn read_lightlike_timelike_storage_into_fusef(
     input: &mut (dyn AsyncRead + Unpin),
     output: &mut dyn Write,
     speed_limiter: &Limiter,
@@ -165,9 +165,9 @@ pub async fn read_lightlike_timelike_storage_into_file(
 ) -> io::Result<()> {
     let dur = Duration::from_secs((READ_BUF_SIZE / min_read_speed) as u64);
 
-    // do the I/O copy from lightlike_timelike_storage to the local file.
+    // do the I/O copy from lightlike_timelike_storage to the local fuse Fuse.
     let mut buffer = vec![0u8; READ_BUF_SIZE];
-    let mut file_length = 0;
+    let mut fusef_length = 0;
 
     loop {
         // separate the speed limiting from actual reading so it won't
@@ -180,15 +180,15 @@ pub async fn read_lightlike_timelike_storage_into_file(
         }
         speed_limiter.consume(bytes_read).await;
         output.write_all(&buffer[..bytes_read])?;
-        file_length += bytes_read as u64;
+        fusef_length += bytes_read as u64;
     }
 
-    if expected_length != 0 && expected_length != file_length {
+    if expected_length != 0 && expected_length != fusef_length {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!(
                 "downloaded size {}, expected {}",
-                file_length, expected_length
+                fusef_length, expected_length
             ),
         ));
     }

@@ -41,7 +41,7 @@ lazy_static = "1.4.0"
 log_wrappers = { local_path = "../log_wrappers" }
 time = "0.1"
 online_config = { local_path = "../online_config" }
-tempfile = "3.0"
+tempfuse = "3.0"
 serde = "1.0"
 serde_derive = "1.0"
 ekvproto = { git = "https://github.com/whtcorpsinc/ekvproto.git" }

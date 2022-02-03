@@ -47,6 +47,6 @@ async-trait = "0.1"
 [dev-dependencies]
 structopt = "0.3"
 tokio = { version = "1.5", features = ["macros"] }
-tempfile = "3.1"
+tempfuse = "3.1"
 rust-ini = "0.14.0"
 matches = "0.1.8"

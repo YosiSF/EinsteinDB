@@ -338,4 +338,4 @@ pub mod util;
 pub use jet_bundle_job::*;
 
 // FIXME: This should live somewhere else
-pub const DATA_CAUSET_KEY_PREFIX_LEN: usize = 1;
+pub const FUSE_CAUSET_PREFIX_LEN_FLUSH: usize = 1;

@@ -48,8 +48,8 @@ make_auto_flush_static_metric! {
         jet_bundle_key_drop_obsolete,
         jet_bundle_key_drop_range_del,
         flush_write_bytes,
-        gc_input_files_count,
-        gc_output_files_count,
+        gc_input_fusefs_count,
+        gc_output_fusefs_count,
         get_hit_l0,
         get_hit_l1,
         get_hit_l2_and_up,
@@ -61,9 +61,9 @@ make_auto_flush_static_metric! {
         keys_written,
         memtable_hit,
         memtable_miss,
-        no_file_closes,
-        no_file_errors,
-        no_file_opens,
+        no_fusef_closes,
+        no_fusef_errors,
+        no_fusef_opens,
         number_blob_get,
         number_blob_next,
         number_blob_prev,
@@ -78,7 +78,7 @@ make_auto_flush_static_metric! {
         range_del_drop_obsolete,
         read_amp_estimate_useful_bytes,
         read_amp_total_read_bytes,
-        wal_file_bytes,
+        wal_fusef_bytes,
         write_done_by_other,
         write_done_by_self,
         write_timeout,
@@ -89,7 +89,7 @@ make_auto_flush_static_metric! {
         remain,
         discardable,
         sample,
-        small_file,
+        small_fusef,
         failure,
         success,
         trigger_next,
@@ -359,19 +359,19 @@ pub fn flush_einstein_merkle_tree_ticker_metrics(t: TickerType, value: u64, name
         TickerType::NoFileCloses => {
             STORE_einstein_merkle_tree_FILE_STATUS
                 .get(name_enum)
-                .no_file_closes
+                .no_fusef_closes
                 .inc_by(value);
         }
         TickerType::NoFileOpens => {
             STORE_einstein_merkle_tree_FILE_STATUS
                 .get(name_enum)
-                .no_file_opens
+                .no_fusef_opens
                 .inc_by(value);
         }
         TickerType::NoFileErrors => {
             STORE_einstein_merkle_tree_FILE_STATUS
                 .get(name_enum)
-                .no_file_errors
+                .no_fusef_errors
                 .inc_by(value);
         }
         TickerType::StallMicros => {
@@ -395,7 +395,7 @@ pub fn flush_einstein_merkle_tree_ticker_metrics(t: TickerType, value: u64, name
         TickerType::WalFileBytes => {
             STORE_einstein_merkle_tree_Causetxctx
                 .get(name_enum)
-                .wal_file_bytes
+                .wal_fusef_bytes
                 .inc_by(value);
         }
         TickerType::WriteDoneBySelf => {
@@ -506,13 +506,13 @@ pub fn flush_einstein_merkle_tree_ticker_metrics(t: TickerType, value: u64, name
         TickerType::TitanGcNumFiles => {
             STORE_einstein_merkle_tree_BLOB_GC_FILE
                 .get(name_enum)
-                .gc_input_files_count
+                .gc_input_fusefs_count
                 .inc_by(value);
         }
         TickerType::TitanGcNumNewFiles => {
             STORE_einstein_merkle_tree_BLOB_GC_FILE
                 .get(name_enum)
-                .gc_output_files_count
+                .gc_output_fusefs_count
                 .inc_by(value);
         }
         TickerType::TitanGcNumKeysOverwritten => {
@@ -590,7 +590,7 @@ pub fn flush_einstein_merkle_tree_ticker_metrics(t: TickerType, value: u64, name
         TickerType::TitanGcSmallFile => {
             STORE_einstein_merkle_tree_BLOB_GC_ACTION
                 .get(name_enum)
-                .small_file
+                .small_fusef
                 .inc_by(value);
         }
         TickerType::TitanGcFailure => {
@@ -657,10 +657,10 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::TableSyncMicros => {
             einstein_merkle_tree_histogram_metrics!(STORE_einstein_merkle_tree_CAUSET_TABLE_SYNC_VEC, "table_sync", name, value);
         }
-        HistType::CompactionOutfileSyncMicros => {
+        HistType::CompactionOutfusefSyncMicros => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_COMPACTION_OUTFILE_SYNC_VEC,
-                "jet_bundle_outfile_sync",
+                "jet_bundle_outfusef_sync",
                 name,
                 value
             );
@@ -668,7 +668,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::WalFileSyncMicros => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_WAL_FILE_SYNC_MICROS_VEC,
-                "wal_file_sync",
+                "wal_fusef_sync",
                 name,
                 value
             );
@@ -676,7 +676,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::ManifestFileSyncMicros => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_MANIFEST_FILE_SYNC_VEC,
-                "manifest_file_sync",
+                "manifest_fusef_sync",
                 name,
                 value
             );
@@ -700,7 +700,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::StallL0NumFilesCount => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_STALL_L0_NUM_FILES_COUNT_VEC,
-                "stall_l0_num_files_count",
+                "stall_l0_num_fusefs_count",
                 name,
                 value
             );
@@ -724,7 +724,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::NumFilesInSingleCompaction => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_NUM_FILES_IN_SINGLE_COMPACTION_VEC,
-                "num_files_in_single_jet_bundle",
+                "num_fusefs_in_single_jet_bundle",
                 name,
                 value
             );
@@ -853,7 +853,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::TitanBlobFileWriteMicros => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_BLOB_FILE_WRITE_MICROS_VEC,
-                "blob_file_write_micros",
+                "blob_fusef_write_micros",
                 name,
                 value
             );
@@ -861,7 +861,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::TitanBlobFileReadMicros => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_BLOB_FILE_READ_MICROS_VEC,
-                "blob_file_read_micros",
+                "blob_fusef_read_micros",
                 name,
                 value
             );
@@ -869,7 +869,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::TitanBlobFileSyncMicros => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_BLOB_FILE_SYNC_MICROS_VEC,
-                "blob_file_sync_micros",
+                "blob_fusef_sync_micros",
                 name,
                 value
             );
@@ -885,7 +885,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::TitanGcInputFileSize => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_GC_INPUT_BLOB_FILE_SIZE_VEC,
-                "blob_gc_input_file",
+                "blob_gc_input_fusef",
                 name,
                 value
             );
@@ -893,7 +893,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::TitanGcOutputFileSize => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_GC_OUTPUT_BLOB_FILE_SIZE_VEC,
-                "blob_gc_output_file",
+                "blob_gc_output_fusef",
                 name,
                 value
             );
@@ -901,7 +901,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
         HistType::TitanIterTouchBlobFileCount => {
             einstein_merkle_tree_histogram_metrics!(
                 STORE_einstein_merkle_tree_ITER_TOUCH_BLOB_FILE_COUNT_VEC,
-                "blob_iter_touch_blob_file_count",
+                "blob_iter_touch_blob_fusef_count",
                 name,
                 value
             );
@@ -998,15 +998,15 @@ pub fn flush_einstein_merkle_tree_greedoids(einstein_merkle_tree: &EINSTEINDB, n
                     .set(v);
             }
 
-            // Num files at l_naughts
-            if let Some(v) = crate::util::get_namespaced_num_files_at_l_naught(einstein_merkle_tree, handle, l_naught) {
+            // Num fusefs at l_naughts
+            if let Some(v) = crate::util::get_namespaced_num_fusefs_at_l_naught(einstein_merkle_tree, handle, l_naught) {
                 STORE_einstein_merkle_tree_NUM_FILES_AT_LEVEL_VEC
                     .with_label_values(&[name, namespaced, &l_naught.to_string()])
                     .set(v as i64);
             }
 
-            // Titan Num blob files at l_naughts
-            if let Some(v) = crate::util::get_namespaced_num_blob_files_at_l_naught(einstein_merkle_tree, handle, l_naught) {
+            // Titan Num blob fusefs at l_naughts
+            if let Some(v) = crate::util::get_namespaced_num_blob_fusefs_at_l_naught(einstein_merkle_tree, handle, l_naught) {
                 STORE_einstein_merkle_tree_TITANDB_NUM_BLOB_FILES_AT_LEVEL_VEC
                     .with_label_values(&[name, namespaced, &l_naught.to_string()])
                     .set(v as i64);
@@ -1027,14 +1027,14 @@ pub fn flush_einstein_merkle_tree_greedoids(einstein_merkle_tree: &EINSTEINDB, n
                 .set(v as i64);
         }
 
-        // Titan num live blob file
+        // Titan num live blob fuse Fuse
         if let Some(v) = einstein_merkle_tree.get_property_int_namespaced(handle, FDBDB_TITANDB_NUM_LIVE_BLOB_FILE) {
             STORE_einstein_merkle_tree_TITANDB_NUM_LIVE_BLOB_FILE_VEC
                 .with_label_values(&[name, namespaced])
                 .set(v as i64);
         }
 
-        // Titan num obsolete blob file
+        // Titan num obsolete blob fuse Fuse
         if let Some(v) = einstein_merkle_tree.get_property_int_namespaced(handle, FDBDB_TITANDB_NUM_OBSOLETE_BLOB_FILE)
         {
             STORE_einstein_merkle_tree_TITANDB_NUM_OBSOLETE_BLOB_FILE_VEC
@@ -1042,14 +1042,14 @@ pub fn flush_einstein_merkle_tree_greedoids(einstein_merkle_tree: &EINSTEINDB, n
                 .set(v as i64);
         }
 
-        // Titan live blob file size
+        // Titan live blob fuse Fuse size
         if let Some(v) = einstein_merkle_tree.get_property_int_namespaced(handle, FDBDB_TITANDB_LIVE_BLOB_FILE_SIZE) {
             STORE_einstein_merkle_tree_TITANDB_LIVE_BLOB_FILE_SIZE_VEC
                 .with_label_values(&[name, namespaced])
                 .set(v as i64);
         }
 
-        // Titan obsolete blob file size
+        // Titan obsolete blob fuse Fuse size
         if let Some(v) = einstein_merkle_tree.get_property_int_namespaced(handle, FDBDB_TITANDB_OBSOLETE_BLOB_FILE_SIZE)
         {
             STORE_einstein_merkle_tree_TITANDB_OBSOLETE_BLOB_FILE_SIZE_VEC
@@ -1057,7 +1057,7 @@ pub fn flush_einstein_merkle_tree_greedoids(einstein_merkle_tree: &EINSTEINDB, n
                 .set(v as i64);
         }
 
-        // Titan blob file discardable ratio
+        // Titan blob fuse Fuse discardable ratio
         if let Some(v) =
         einstein_merkle_tree.get_property_int_namespaced(handle, FDBDB_TITANDB_DISCARDABLE_RATIO_LE0_FILE)
         {
@@ -1160,8 +1160,8 @@ lazy_static! {
         &["einsteindb", "namespaced", "l_naught"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_NUM_FILES_AT_LEVEL_VEC: IntGaugeVec = register_int_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_num_files_at_l_naught",
-        "Number of files at each l_naught",
+        "einsteindb_einstein_merkle_tree_num_fusefs_at_l_naught",
+        "Number of fusefs at each l_naught",
         &["einsteindb", "namespaced", "l_naught"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_NUM_LIGHTLIKE_PERSISTENCES_GAUGE_VEC: IntGaugeVec = register_int_gauge_vec!(
@@ -1180,8 +1180,8 @@ lazy_static! {
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_TITANDB_NUM_BLOB_FILES_AT_LEVEL_VEC: IntGaugeVec = register_int_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_titandb_num_blob_files_at_l_naught",
-        "Number of blob files at each l_naught",
+        "einsteindb_einstein_merkle_tree_titandb_num_blob_fusefs_at_l_naught",
+        "Number of blob fusefs at each l_naught",
         &["einsteindb", "namespaced", "l_naught"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_TITANDB_LIVE_BLOB_SIZE_VEC: IntGaugeVec = register_int_gauge_vec!(
@@ -1190,28 +1190,28 @@ lazy_static! {
         &["einsteindb", "namespaced"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_TITANDB_NUM_LIVE_BLOB_FILE_VEC: IntGaugeVec = register_int_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_titandb_num_live_blob_file",
-        "Number of live blob file",
+        "einsteindb_einstein_merkle_tree_titandb_num_live_blob_fusef",
+        "Number of live blob fuse Fuse",
         &["einsteindb", "namespaced"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_TITANDB_NUM_OBSOLETE_BLOB_FILE_VEC: IntGaugeVec = register_int_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_titandb_num_obsolete_blob_file",
-        "Number of obsolete blob file",
+        "einsteindb_einstein_merkle_tree_titandb_num_obsolete_blob_fusef",
+        "Number of obsolete blob fuse Fuse",
         &["einsteindb", "namespaced"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_TITANDB_LIVE_BLOB_FILE_SIZE_VEC: IntGaugeVec = register_int_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_titandb_live_blob_file_size",
-        "Size of live blob file",
+        "einsteindb_einstein_merkle_tree_titandb_live_blob_fusef_size",
+        "Size of live blob fuse Fuse",
         &["einsteindb", "namespaced"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_TITANDB_OBSOLETE_BLOB_FILE_SIZE_VEC: IntGaugeVec = register_int_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_titandb_obsolete_blob_file_size",
-        "Size of obsolete blob file",
+        "einsteindb_einstein_merkle_tree_titandb_obsolete_blob_fusef_size",
+        "Size of obsolete blob fuse Fuse",
         &["einsteindb", "namespaced"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_TITANDB_BLOB_FILE_DISCARDABLE_RATIO_VEC: IntGaugeVec = register_int_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_titandb_blob_file_discardable_ratio",
-        "Size of obsolete blob file",
+        "einsteindb_einstein_merkle_tree_titandb_blob_fusef_discardable_ratio",
+        "Size of obsolete blob fuse Fuse",
         &["einsteindb", "namespaced", "ratio"]
     ).unwrap();
 }
@@ -1322,8 +1322,8 @@ lazy_static! {
         auto_flush_from!(STORE_einstein_merkle_tree_LOCATE_VEC, einstein_merkle_treeTickerMetrics);
 
     pub static ref STORE_einstein_merkle_tree_FILE_STATUS_VEC: IntCounterVec = register_int_counter_vec!(
-        "einsteindb_einstein_merkle_tree_file_status",
-        "Number of different status of files",
+        "einsteindb_einstein_merkle_tree_fusef_status",
+        "Number of different status of fusefs",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_FILE_STATUS: einstein_merkle_treeTickerMetrics =
@@ -1343,7 +1343,7 @@ lazy_static! {
         &["einsteindb"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_WAL_FILE_SYNCED_VEC: IntCounterVec = register_int_counter_vec!(
-        "einsteindb_einstein_merkle_tree_wal_file_synced",
+        "einsteindb_einstein_merkle_tree_wal_fusef_synced",
         "Number of times WAL sync is done",
         &["einsteindb"]
     ).unwrap();
@@ -1385,8 +1385,8 @@ lazy_static! {
         auto_flush_from!(STORE_einstein_merkle_tree_BLOB_GC_Causetxctx_VEC, einstein_merkle_treeTickerMetrics);
 
     pub static ref STORE_einstein_merkle_tree_BLOB_GC_FILE_VEC: IntCounterVec = register_int_counter_vec!(
-        "einsteindb_einstein_merkle_tree_blob_gc_file_count",
-        "Number of blob file involved in titan blob gc",
+        "einsteindb_einstein_merkle_tree_blob_gc_fusef_count",
+        "Number of blob fuse Fuse involved in titan blob gc",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_BLOB_GC_FILE: einstein_merkle_treeTickerMetrics =
@@ -1401,8 +1401,8 @@ lazy_static! {
         auto_flush_from!(STORE_einstein_merkle_tree_BLOB_GC_ACTION_VEC, einstein_merkle_treeTickerMetrics);
 
     pub static ref STORE_einstein_merkle_tree_BLOB_FILE_SYNCED_VEC: IntCounterVec = register_int_counter_vec!(
-        "einsteindb_einstein_merkle_tree_blob_file_synced",
-        "Number of times titan blob file sync is done",
+        "einsteindb_einstein_merkle_tree_blob_fusef_synced",
+        "Number of times titan blob fuse Fuse sync is done",
         &["einsteindb"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_BLOB_FILE_SYNCED: Simpleeinstein_merkle_treeTickerMetrics = 
@@ -1441,18 +1441,18 @@ lazy_static! {
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_COMPACTION_OUTFILE_SYNC_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_jet_bundle_outfile_sync_micro_seconds",
-        "Histogram of jet_bundle outfile sync micros",
+        "einsteindb_einstein_merkle_tree_jet_bundle_outfusef_sync_micro_seconds",
+        "Histogram of jet_bundle outfusef sync micros",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_MANIFEST_FILE_SYNC_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_manifest_file_sync_micro_seconds",
-        "Histogram of manifest file sync micros",
+        "einsteindb_einstein_merkle_tree_manifest_fusef_sync_micro_seconds",
+        "Histogram of manifest fuse Fuse sync micros",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_WAL_FILE_SYNC_MICROS_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_wal_file_sync_micro_seconds",
-        "Histogram of WAL file sync micros",
+        "einsteindb_einstein_merkle_tree_wal_fusef_sync_micro_seconds",
+        "Histogram of WAL fuse Fuse sync micros",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_STALL_L0_SLOWDOWN_COUNT_VEC: GaugeVec = register_gauge_vec!(
@@ -1466,8 +1466,8 @@ lazy_static! {
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_STALL_L0_NUM_FILES_COUNT_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_stall_l0_num_files_count",
-        "Histogram of stall l0 num files count",
+        "einsteindb_einstein_merkle_tree_stall_l0_num_fusefs_count",
+        "Histogram of stall l0 num fusefs count",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_HARD_RATE_LIMIT_DELAY_VEC: GaugeVec = register_gauge_vec!(
@@ -1481,8 +1481,8 @@ lazy_static! {
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_NUM_FILES_IN_SINGLE_COMPACTION_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_num_files_in_single_jet_bundle",
-        "Histogram of number of files in single jet_bundle",
+        "einsteindb_einstein_merkle_tree_num_fusefs_in_single_jet_bundle",
+        "Histogram of number of fusefs in single jet_bundle",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_SEEK_MICROS_VEC: GaugeVec = register_gauge_vec!(
@@ -1571,18 +1571,18 @@ lazy_static! {
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_BLOB_FILE_WRITE_MICROS_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_blob_file_write_micros_seconds",
-        "Histogram of titan blob file write micros",
+        "einsteindb_einstein_merkle_tree_blob_fusef_write_micros_seconds",
+        "Histogram of titan blob fuse Fuse write micros",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_BLOB_FILE_READ_MICROS_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_blob_file_read_micros_seconds",
-        "Histogram of titan blob file read micros",
+        "einsteindb_einstein_merkle_tree_blob_fusef_read_micros_seconds",
+        "Histogram of titan blob fuse Fuse read micros",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_BLOB_FILE_SYNC_MICROS_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_blob_file_sync_micros_seconds",
-        "Histogram of titan blob file sync micros",
+        "einsteindb_einstein_merkle_tree_blob_fusef_sync_micros_seconds",
+        "Histogram of titan blob fuse Fuse sync micros",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_BLOB_GC_MICROS_VEC: GaugeVec = register_gauge_vec!(
@@ -1591,18 +1591,18 @@ lazy_static! {
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_GC_INPUT_BLOB_FILE_SIZE_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_blob_gc_input_file",
-        "Histogram of titan blob gc input file size",
+        "einsteindb_einstein_merkle_tree_blob_gc_input_fusef",
+        "Histogram of titan blob gc input fuse Fuse size",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_GC_OUTPUT_BLOB_FILE_SIZE_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_blob_gc_output_file",
-        "Histogram of titan blob gc output file size",
+        "einsteindb_einstein_merkle_tree_blob_gc_output_fusef",
+        "Histogram of titan blob gc output fuse Fuse size",
         &["einsteindb", "type"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_ITER_TOUCH_BLOB_FILE_COUNT_VEC: GaugeVec = register_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_blob_iter_touch_blob_file_count",
-        "Histogram of titan iter touched blob file count",
+        "einsteindb_einstein_merkle_tree_blob_iter_touch_blob_fusef_count",
+        "Histogram of titan iter touched blob fuse Fuse count",
         &["einsteindb", "type"]
     ).unwrap();
 }
@@ -1611,7 +1611,7 @@ lazy_static! {
 mod tests {
     use fdb_traits::ALL_NAMESPACEDS;
     use foundationdb::HistogramData;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     use super::*;
 

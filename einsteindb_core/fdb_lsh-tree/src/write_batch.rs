@@ -324,7 +324,7 @@ impl Mutable for FdbWriteBatchVec {
 mod tests {
     use fdb_traits::WriteBatch;
     use foundationdb::DBOptions as RawDBOptions;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     use super::*;
     use super::super::FdbDBOptions;

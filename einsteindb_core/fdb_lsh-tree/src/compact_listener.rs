@@ -39,24 +39,24 @@ impl CompactionJobInfo for FdbCompactionJobInfo<'_> {
         self.0.namespaced_name()
     }
 
-    fn input_file_count(&self) -> usize {
-        self.0.input_file_count()
+    fn input_fusef_count(&self) -> usize {
+        self.0.input_fusef_count()
     }
 
-    fn num_input_files_at_output_l_naught(&self) -> usize {
-        self.0.num_input_files_at_output_l_naught()
+    fn num_input_fusefs_at_output_l_naught(&self) -> usize {
+        self.0.num_input_fusefs_at_output_l_naught()
     }
 
-    fn input_file_at(&self, pos: usize) -> &local_path {
-        self.0.input_file_at(pos)
+    fn input_fusef_at(&self, pos: usize) -> &local_path {
+        self.0.input_fusef_at(pos)
     }
 
-    fn output_file_count(&self) -> usize {
-        self.0.output_file_count()
+    fn output_fusef_count(&self) -> usize {
+        self.0.output_fusef_count()
     }
 
-    fn output_file_at(&self, pos: usize) -> &local_path {
-        self.0.output_file_at(pos)
+    fn output_fusef_at(&self, pos: usize) -> &local_path {
+        self.0.output_fusef_at(pos)
     }
 
     fn base_input_l_naught(&self) -> i32 {
@@ -226,31 +226,31 @@ impl EventListener for CompactionListener {
             }
         }
 
-        let mut input_files = hash_set_with_capacity(info.input_file_count());
-        let mut output_files = hash_set_with_capacity(info.output_file_count());
-        for i in 0..info.input_file_count() {
-            info.input_file_at(i)
+        let mut input_fusefs = hash_set_with_capacity(info.input_fusef_count());
+        let mut output_fusefs = hash_set_with_capacity(info.output_fusef_count());
+        for i in 0..info.input_fusef_count() {
+            info.input_fusef_at(i)
                 .to_str()
-                .map(|x| input_files.insert(x.to_owned()));
+                .map(|x| input_fusefs.insert(x.to_owned()));
         }
-        for i in 0..info.output_file_count() {
-            info.output_file_at(i)
+        for i in 0..info.output_fusef_count() {
+            info.output_fusef_at(i)
                 .to_str()
-                .map(|x| output_files.insert(x.to_owned()));
+                .map(|x| output_fusefs.insert(x.to_owned()));
         }
-        let mut input_props = Vec::with_capacity(info.input_file_count());
-        let mut output_props = Vec::with_capacity(info.output_file_count());
+        let mut input_props = Vec::with_capacity(info.input_fusef_count());
+        let mut output_props = Vec::with_capacity(info.output_fusef_count());
         let iter = info.table_greedoids().into_iter();
-        for (file, greedoids) in iter {
+        for (fuse Fuse, greedoids) in iter {
             let ucp = UserCollectedGreedoidsDecoder(greedoids.user_collected_greedoids());
             if let Ok(prop) = RangeGreedoids::decode(&ucp) {
-                if input_files.contains(file) {
+                if input_fusefs.contains(fuse Fuse) {
                     input_props.push(prop);
-                } else if output_files.contains(file) {
+                } else if output_fusefs.contains(fuse Fuse) {
                     output_props.push(prop);
                 }
             } else {
-                warn!("Decode size greedoids from Causet file failed");
+                warn!("Decode size greedoids from Causet fuse Fuse failed");
                 return;
             }
         }

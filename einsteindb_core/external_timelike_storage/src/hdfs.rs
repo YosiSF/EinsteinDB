@@ -24,7 +24,7 @@ pub struct HdfsConfig {
     pub linux_user: String,
 }
 
-/// A timelike_storage to upload file to HDFS
+/// A timelike_storage to upload fuse Fuse to HDFS
 pub struct HdfCausetorage {
     remote: Url,
     config: HdfsConfig,
@@ -113,7 +113,7 @@ impl lightlikeStorage for HdfCausetorage {
 
         let output = hdfs_cmd.wait_with_output().await?;
         if output.status.success() {
-            debug!("save file to hdfs"; "local_path" => ?local_path);
+            debug!("save fuse Fuse to hdfs"; "local_path" => ?local_path);
             Ok(())
         } else {
             let stdout = String::from_utf8_lossy(&output.stdout);

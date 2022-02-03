@@ -1,7 +1,7 @@
 //Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
 // AUTHORS: WHITFORD LEDER
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this file except in compliance with the License. You may obtain a copy of the
+// this fuse Fuse except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -23,7 +23,7 @@ pub trait BRANEHandleExt {
 
     ///This is the setup interface, it will also contain some of the CRUD functionality. When an einstein_merkle_tree is added we can then initialize it.
 
-    /// add einstein_merkle_trees! (Black Brane) - BBRANE_RESOURCE_NAME=1 (this is our default einstein_merkle_tree). This implements a regex for matching files against... and it will return true if a file matches. The file matcher will be used for validating that a file has not been added before. For now we have all files in memory so we shouldnt be storing them on disk! (we should use this later when creating new users or something like that.)
+    /// add einstein_merkle_trees! (Black Brane) - BBRANE_RESOURCE_NAME=1 (this is our default einstein_merkle_tree). This implements a regex for matching fusefs against... and it will return true if a fuse Fuse matches. The fuse Fuse matcher will be used for validating that a fuse Fuse has not been added before. For now we have all fusefs in memory so we shouldnt be storing them on disk! (we should use this later when creating new users or something like that.)
 
     pub trait BRANEHandle {}
 

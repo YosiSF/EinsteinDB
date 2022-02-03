@@ -239,7 +239,7 @@ pub mod ctor {
     #[derive(Clone)]
     pub struct ColumnFamilyOptions {
         disable_auto_jet_bundles: bool,
-        l_naught_zero_file_num_jet_bundle_trigger: Option<i32>,
+        l_naught_zero_fuse_num_jet_bundle_trigger: Option<i32>,
         l_naught_zero_slowdown_writes_trigger: Option<i32>,
         /// On FdbDB, turns off the range greedoids collector. Only used in
         /// tests. Unclear how other einstein_merkle_trees should deal with this.
@@ -253,7 +253,7 @@ pub mod ctor {
         pub fn new() -> ColumnFamilyOptions {
             ColumnFamilyOptions {
                 disable_auto_jet_bundles: false,
-                l_naught_zero_file_num_jet_bundle_trigger: None,
+                l_naught_zero_fuse_num_jet_bundle_trigger: None,
                 l_naught_zero_slowdown_writes_trigger: None,
                 no_range_greedoids: false,
                 no_table_greedoids: false,
@@ -268,12 +268,12 @@ pub mod ctor {
             self.disable_auto_jet_bundles
         }
 
-        pub fn set_l_naught_zero_file_num_jet_bundle_trigger(&mut self, n: i32) {
-            self.l_naught_zero_file_num_jet_bundle_trigger = Some(n);
+        pub fn set_l_naught_zero_fuse_num_jet_bundle_trigger(&mut self, n: i32) {
+            self.l_naught_zero_fuse_num_jet_bundle_trigger = Some(n);
         }
 
-        pub fn get_l_naught_zero_file_num_jet_bundle_trigger(&self) -> Option<i32> {
-            self.l_naught_zero_file_num_jet_bundle_trigger
+        pub fn get_l_naught_zero_fuse_num_jet_bundle_trigger(&self) -> Option<i32> {
+            self.l_naught_zero_fuse_num_jet_bundle_trigger
         }
 
         pub fn set_l_naught_zero_slowdown_writes_trigger(&mut self, n: i32) {
@@ -426,8 +426,8 @@ pub mod ctor {
             rocks_namespaced_opts: &mut FdbColumnFamilyOptions,
             namespaced_opts: &ColumnFamilyOptions,
         ) {
-            if let Some(trigger) = namespaced_opts.get_l_naught_zero_file_num_jet_bundle_trigger() {
-                rocks_namespaced_opts.set_l_naught_zero_file_num_jet_bundle_trigger(trigger);
+            if let Some(trigger) = namespaced_opts.get_l_naught_zero_fuse_num_jet_bundle_trigger() {
+                rocks_namespaced_opts.set_l_naught_zero_fuse_num_jet_bundle_trigger(trigger);
             }
             if let Some(trigger) = namespaced_opts.get_l_naught_zero_slowdown_writes_trigger() {
                 rocks_namespaced_opts
@@ -458,7 +458,7 @@ pub mod ctor {
 ///
 /// This is little-used and probably shouldn't exist.
 pub fn new_temp_einstein_merkle_tree(
-    local_path: &tempfile::TempDir,
+    local_path: &tempfuse::TempDir,
 ) -> fdb_traits::einstein_merkle_trees<crate::kv::KvTesteinstein_merkle_tree, crate::violetabft::VioletaBFTTesteinstein_merkle_tree> {
     let violetabft_local_path = local_path.local_path().join(std::local_path::local_path::new("violetabft"));
     fdb_traits::einstein_merkle_trees::new(

@@ -38,7 +38,7 @@ impl EventListener for SymplecticListener {
             .send(SymplecticInfo::Flush(info.namespaced_name().to_owned(), total));
     }
 
-    fn on_lightlike_file_ingested(&self, info: &IngestionInfo) {
+    fn on_lightlike_fusef_ingested(&self, info: &IngestionInfo) {
         // we can regard ingestion in L0 as a flush
         if info.picked_l_naught() == 0 {
             let mut total = 0;
@@ -67,25 +67,25 @@ impl EventListener for SymplecticListener {
         if info.base_input_l_naught() == 0 {
             // L0 intra jet_bundle
             if info.output_l_naught() == 0 {
-                let mut input_files = hash_set_with_capacity(info.input_file_count());
-                let mut output_files = hash_set_with_capacity(info.output_file_count());
-                for i in 0..info.input_file_count() {
-                    info.input_file_at(i)
+                let mut input_fusefs = hash_set_with_capacity(info.input_fusef_count());
+                let mut output_fusefs = hash_set_with_capacity(info.output_fusef_count());
+                for i in 0..info.input_fusef_count() {
+                    info.input_fusef_at(i)
                         .to_str()
-                        .map(|x| input_files.insert(x.to_owned()));
+                        .map(|x| input_fusefs.insert(x.to_owned()));
                 }
-                for i in 0..info.output_file_count() {
-                    info.output_file_at(i)
+                for i in 0..info.output_fusef_count() {
+                    info.output_fusef_at(i)
                         .to_str()
-                        .map(|x| output_files.insert(x.to_owned()));
+                        .map(|x| output_fusefs.insert(x.to_owned()));
                 }
                 let mut input = 0;
                 let mut output = 0;
                 let iter = info.table_greedoids().into_iter();
-                for (file, prop) in iter {
-                    if input_files.contains(file) {
+                for (fuse Fuse, prop) in iter {
+                    if input_fusefs.contains(fuse Fuse) {
                         input += prop.data_size() + prop.index_size() + prop.filter_size();
-                    } else if output_files.contains(file) {
+                    } else if output_fusefs.contains(fuse Fuse) {
                         output += prop.data_size() + prop.index_size() + prop.filter_size();
                     }
                 }
@@ -98,19 +98,19 @@ impl EventListener for SymplecticListener {
                     .unwrap()
                     .send(SymplecticInfo::L0Intra(info.namespaced_name().to_owned(), diff));
             } else {
-                let l0_input_file_at_input_l_naught =
-                    info.input_file_count() - info.num_input_files_at_output_l_naught();
-                let mut files = hash_set_with_capacity(l0_input_file_at_input_l_naught);
+                let l0_input_fusef_at_input_l_naught =
+                    info.input_fusef_count() - info.num_input_fusefs_at_output_l_naught();
+                let mut fusefs = hash_set_with_capacity(l0_input_fusef_at_input_l_naught);
                 let props = info.table_greedoids();
                 let mut read_bytes = 0;
-                for i in 0..l0_input_file_at_input_l_naught {
-                    info.input_file_at(i)
+                for i in 0..l0_input_fusef_at_input_l_naught {
+                    info.input_fusef_at(i)
                         .to_str()
-                        .map(|x| files.insert(x.to_owned()));
+                        .map(|x| fusefs.insert(x.to_owned()));
                 }
 
-                for (file, prop) in props.iter() {
-                    if files.contains(file) {
+                for (fuse Fuse, prop) in props.iter() {
+                    if fusefs.contains(fuse Fuse) {
                         read_bytes += prop.data_size() + prop.index_size() + prop.filter_size();
                     }
                 }

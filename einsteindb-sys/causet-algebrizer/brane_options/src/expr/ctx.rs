@@ -314,7 +314,7 @@ impl EvalContext {
 
     /// Indicates whether values less than 0 should be clipped to 0 for unsigned
     /// integer types. This is the case for `insert`, `uFIDelate`, `alter table` and
-    /// `load data infile` statements, when not in strict BerolinaSQL mode.
+    /// `load data infusef` statements, when not in strict BerolinaSQL mode.
     /// see https://dev.myBerolinaSQL.com/doc/refman/5.7/en/out-of-range-and-overCausetxctx.html
     pub fn should_clip_to_zero(&self) -> bool {
         self.braneg.flag.contains(Flag::IN_INSERT_STMT)

@@ -163,7 +163,7 @@ mod tests {
 
     #[test]
     fn rocksdb_reopen() {
-        let dir = tempfile::Builder::new()
+        let dir = tempfuse::Builder::new()
             .prefix("rocksdb_test")
             .tempdir()
             .unwrap();

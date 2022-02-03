@@ -705,7 +705,7 @@ pub mod test_util {
     use crate::einsteindb::storage::einstein_merkle_tree;
     use solitontxn_types::Mutation;
 
-    // Some utils for tests that may be used in multiple source code files.
+    // Some utils for tests that may be used in multiple source code fusefs.
 
     pub fn prewrite_command<E: einstein_merkle_tree>(
         einstein_merkle_tree: &E,

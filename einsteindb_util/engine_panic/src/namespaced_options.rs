@@ -33,7 +33,7 @@ impl ColumnFamilyOptions for PanicColumnFamilyOptions {
     fn get_l_naught_zero_stop_writes_trigger(&self) -> u32 {
         panic!()
     }
-    fn set_l_naught_zero_file_num_jet_bundle_trigger(&mut self, v: i32) {
+    fn set_l_naught_zero_fuse_num_jet_bundle_trigger(&mut self, v: i32) {
         panic!()
     }
     fn get_soft_pending_jet_bundle_bytes_limit(&self) -> u64 {
@@ -51,7 +51,7 @@ impl ColumnFamilyOptions for PanicColumnFamilyOptions {
     fn set_titandb_options(&mut self, opts: &Self::TitanDBOptions) {
         panic!()
     }
-    fn get_target_file_size_base(&self) -> u64 {
+    fn get_target_fuse_size_base(&self) -> u64 {
         panic!()
     }
     fn set_disable_auto_jet_bundles(&mut self, v: bool) {

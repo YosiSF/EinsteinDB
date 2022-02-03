@@ -248,7 +248,7 @@ pub struct CausetxctxControlConfig {
     #[online_config(skip)]
     pub memtables_threshold: u64,
     #[online_config(skip)]
-    pub l0_files_threshold: u64,
+    pub l0_fusefs_threshold: u64,
 }
 
 impl Default for CausetxctxControlConfig {
@@ -258,7 +258,7 @@ impl Default for CausetxctxControlConfig {
             soft_pending_compaction_bytes_limit: ReadableSize::gb(192),
             hard_pending_compaction_bytes_limit: ReadableSize::gb(1024),
             memtables_threshold: 5,
-            l0_files_threshold: 20,
+            l0_fusefs_threshold: 20,
         }
     }
 }

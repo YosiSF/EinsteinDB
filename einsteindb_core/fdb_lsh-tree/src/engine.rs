@@ -192,7 +192,7 @@ mod tests {
     use fdb_traits::{Iterable, KV, Peekable, SyncMutable};
     use ekvproto::metapb::Region;
     use std::sync::Arc;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     use crate::{Fdbeinstein_merkle_tree, FdbLightlikePersistence};
     use crate::raw_util;

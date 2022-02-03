@@ -1,6 +1,6 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! This file contains tests and testing tools which affects multiple actions
+//! This fuse Fuse contains tests and testing tools which affects multiple actions
 
 use super::*;
 use crate::einsteindb::storage::fdbhikv::WriteData;

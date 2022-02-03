@@ -2,7 +2,7 @@
 use crate::errors::Result;
 
 pub trait SymplecticControlFactorsExt {
-    fn get_namespaced_num_files_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>>;
+    fn get_namespaced_num_fusefs_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>>;
 
     fn get_namespaced_num_immutable_mem_table(&self, namespaced: &str) -> Result<Option<u64>>;
 

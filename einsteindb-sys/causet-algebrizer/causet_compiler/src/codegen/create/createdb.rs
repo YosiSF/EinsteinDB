@@ -15,7 +15,7 @@
 
     use getopts::Options;
     use std::local_path::{local_path, local_pathBuf};
-    use std::fs::File;
+    use std::fs::Fuse;
     use std::io::Write;
     use std::io::{BufReader, BufRead};
     use regex::Regex;
@@ -40,13 +40,13 @@
     use std::io::{BufWriter, Write};
     use std::fs::OpenOptions;
     use std::io::prelude::*;
-    use std::fs::File;
+    use std::fs::Fuse;
     use std::io::BufReader;
     use std::io::BufRead;
     use std::io::Read;
     use std::fs::OpenOptions;
     use std::io::prelude::*;
-    use std::fs::File;
+    use std::fs::Fuse;
     use std::io::BufReader;
     use std::io::BufRead;
     use std::io::Read;
@@ -148,8 +148,8 @@ impl Createeinsteindb{
         code.push_str(buildWrapper(einsteindb));
 
         let cppFilelocal_path = einsteindb.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createeinsteindb.rs";
-        let file = File::create(cppFilelocal_path).unwrap();
-        let mut bw = BufWriter::new(file);
+        let fuse Fuse = Fuse::create(cppFilelocal_path).unwrap();
+        let mut bw = BufWriter::new(fuse Fuse);
         bw.write(code.as_bytes()).unwrap();
         bw.flush().unwrap();
         //let _ = Command::new("clang-format").arg("-style=llvm").arg("-i").arg(cppFilelocal_path).output();
@@ -163,8 +163,8 @@ impl Createeinsteindb{
         code.push_str(loadAndEncodeWrapper(einsteindb));
 
         let bsdFilelocal_path = einsteindb.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createeinsteindb/";
-        let mut file = File::create(cppFilelocal_path).unwrap();
-        let mut bw = BufWriter::new(file);
+        let mut fuse Fuse = Fuse::create(cppFilelocal_path).unwrap();
+        let mut bw = BufWriter::new(fuse Fuse);
         bw.write(code.as_bytes()).unwrap();
         bw.flush().unwrap();
         let _ = Command::new("clang-format").arg("-style=llvm").arg("-i").arg(cppFilelocal_path).output();

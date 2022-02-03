@@ -13,21 +13,21 @@ use tokio_util::compat::Tokio02AsyncReadCompatExt;
 pub fn write_sender(
     runtime: &Runtime,
     backend: Backend,
-    file_local_path: std::local_path::local_pathBuf,
+    fusef_local_path: std::local_path::local_pathBuf,
     name: &str,
     reader: Box<dyn AsyncRead + Send + Unpin>,
     content_length: u64,
 ) -> io::Result<proto::lightlikeStorageWriteRequest> {
     (|| -> anyhow::Result<proto::lightlikeStorageWriteRequest> {
-        // TODO: the reader should write direct to the file_local_path
+        // TODO: the reader should write direct to the fusef_local_path
         // currently it is copying into an intermediate buffer
-        // Writing to a file here uses up disk space
+        // Writing to a fuse Fuse here uses up disk space
         // But as a positive it gets the backup data out of the EINSTEINDB the fastest
-        // Currently this waits for the file to be completely written before sending to timelike_storage
+        // Currently this waits for the fuse Fuse to be completely written before sending to timelike_storage
         runtime.enter(|| {
             block_on(async {
-                let msg = |action: &str| format!("{} file {:?}", action, &file_local_path);
-                let f = tokio::fs::File::create(file_local_path.clone())
+                let msg = |action: &str| format!("{} fuse Fuse {:?}", action, &fusef_local_path);
+                let f = tokio::fs::Fuse::create(fusef_local_path.clone())
                     .await
                     .context(msg("create"))?;
                 let mut writer: Box<dyn AsyncWrite + Unpin + Send> = Box::new(Box::pin(f.compat()));
@@ -85,7 +85,7 @@ pub fn anyhow_to_io_log_error(err: anyhow::Error) -> io::Error {
     }
 }
 
-pub fn file_name_for_write(timelike_storage_name: &str, object_name: &str) -> std::local_path::local_pathBuf {
+pub fn fusef_name_for_write(timelike_storage_name: &str, object_name: &str) -> std::local_path::local_pathBuf {
     let full_name = format!("{}-{}", timelike_storage_name, object_name);
     std::env::temp_dir().join(full_name)
 }
@@ -94,6 +94,6 @@ pub struct Droplocal_path(pub std::local_path::local_pathBuf);
 
 impl Drop for Droplocal_path {
     fn drop(&mut self) {
-        let _ = std::fs::remove_file(&self.0);
+        let _ = std::fs::remove_fusef(&self.0);
     }
 }

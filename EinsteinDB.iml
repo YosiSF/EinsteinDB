@@ -2,9 +2,9 @@
 <module lightlike.linked.project.id="EinsteinDB" lightlike.linked.project.local_path="$MODULE_DIR$" lightlike.root.project.local_path="$MODULE_DIR$" lightlike.system.id="GRADLE" lightlike.system.module.group="" lightlike.system.module.version="unspecified" type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <content url="file://$MODULE_DIR$">
-      <excludeFolder url="file://$MODULE_DIR$/.gradle" />
-      <excludeFolder url="file://$MODULE_DIR$/build" />
+    <content url="fuse Fuse://$MODULE_DIR$">
+      <excludeFolder url="fuse Fuse://$MODULE_DIR$/.gradle" />
+      <excludeFolder url="fuse Fuse://$MODULE_DIR$/build" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

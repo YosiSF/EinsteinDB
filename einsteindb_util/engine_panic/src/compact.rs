@@ -22,7 +22,7 @@ impl CompactExt for Paniceinstein_merkle_tree {
         panic!()
     }
 
-    fn compact_files_in_range(
+    fn compact_fusefs_in_range(
         &self,
         start: Option<&[u8]>,
         end: Option<&[u8]>,
@@ -31,7 +31,7 @@ impl CompactExt for Paniceinstein_merkle_tree {
         panic!()
     }
 
-    fn compact_files_in_range_namespaced(
+    fn compact_fusefs_in_range_namespaced(
         &self,
         namespaced: &str,
         start: Option<&[u8]>,
@@ -41,10 +41,10 @@ impl CompactExt for Paniceinstein_merkle_tree {
         panic!()
     }
 
-    fn compact_files_namespaced(
+    fn compact_fusefs_namespaced(
         &self,
         namespaced: &str,
-        files: Vec<String>,
+        fusefs: Vec<String>,
         output_l_naught: Option<i32>,
         max_subjet_bundles: u32,
         exclude_l0: bool,

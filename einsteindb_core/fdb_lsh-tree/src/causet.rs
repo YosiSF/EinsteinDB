@@ -265,8 +265,8 @@ impl CausetWriter for FdbCausetWriter {
         Ok(self.writer.delete(key)?)
     }
 
-    fn file_size(&mut self) -> u64 {
-        self.writer.file_size()
+    fn fusef_size(&mut self) -> u64 {
+        self.writer.fusef_size()
     }
 
     fn finish(mut self) -> Result<Self::lightlikeCausetFileInfo> {
@@ -275,18 +275,18 @@ impl CausetWriter for FdbCausetWriter {
 
     fn finish_read(mut self) -> Result<(Self::lightlikeCausetFileInfo, Self::lightlikeCausetFileReader)> {
         let env = self.env.take().ok_or_else(|| {
-            Error::einstein_merkle_tree("failed to read sequential file no env provided".to_owned())
+            Error::einstein_merkle_tree("failed to read sequential fuse Fuse no env provided".to_owned())
         })?;
         let Causet_info = self.writer.finish()?;
-        let p = Causet_info.file_local_path();
+        let p = Causet_info.fusef_local_path();
         let local_path = p.as_os_str().to_str().ok_or_else(|| {
             Error::einstein_merkle_tree(format!(
-                "failed to sequential file bad local_path {}",
+                "failed to sequential fuse Fuse bad local_path {}",
                 p.display()
             ))
         })?;
-        let seq_file = env.new_sequential_file(local_path, EnvOptions::new())?;
-        Ok((FdblightlikeCausetFileInfo(Causet_info), seq_file))
+        let seq_fusef = env.new_sequential_fusef(local_path, EnvOptions::new())?;
+        Ok((FdblightlikeCausetFileInfo(Causet_info), seq_fusef))
     }
 }
 
@@ -297,8 +297,8 @@ impl lightlikeCausetFileInfo for FdblightlikeCausetFileInfo {
         FdblightlikeCausetFileInfo(RawlightlikeCausetFileInfo::new())
     }
 
-    fn file_local_path(&self) -> local_pathBuf {
-        self.0.file_local_path()
+    fn fusef_local_path(&self) -> local_pathBuf {
+        self.0.fusef_local_path()
     }
 
     fn smallest_key(&self) -> &[u8] {
@@ -313,8 +313,8 @@ impl lightlikeCausetFileInfo for FdblightlikeCausetFileInfo {
         self.0.sequence_number()
     }
 
-    fn file_size(&self) -> u64 {
-        self.0.file_size()
+    fn fusef_size(&self) -> u64 {
+        self.0.fusef_size()
     }
 
     fn num_entries(&self) -> u64 {
@@ -366,7 +366,7 @@ pub fn from_rocks_compression_type(ct: DBCompressionType) -> Option<CausetCompre
 #[cfg(test)]
 mod tests {
     use std::io::Read;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     use crate::util::new_default_einstein_merkle_tree;
 
@@ -385,10 +385,10 @@ mod tests {
             .build(p.as_os_str().to_str().unwrap())
             .unwrap();
         writer.put(k, v).unwrap();
-        let Causet_file = writer.finish().unwrap();
-        assert_eq!(Causet_file.num_entries(), 1);
-        assert!(Causet_file.file_size() > 0);
-        // There must be a file in disk.
+        let Causet_fusef = writer.finish().unwrap();
+        assert_eq!(Causet_fusef.num_entries(), 1);
+        assert!(Causet_fusef.fusef_size() > 0);
+        // There must be a fuse Fuse in disk.
         std::fs::Spacetime(p).unwrap();
 
         // Test in-memory Causet writer.
@@ -401,12 +401,12 @@ mod tests {
             .unwrap();
         writer.put(k, v).unwrap();
         let mut buf = vec![];
-        let (Causet_file, mut reader) = writer.finish_read().unwrap();
-        assert_eq!(Causet_file.num_entries(), 1);
-        assert!(Causet_file.file_size() > 0);
+        let (Causet_fusef, mut reader) = writer.finish_read().unwrap();
+        assert_eq!(Causet_fusef.num_entries(), 1);
+        assert!(Causet_fusef.fusef_size() > 0);
         reader.read_to_end(&mut buf).unwrap();
-        assert_eq!(buf.len() as u64, Causet_file.file_size());
-        // There must not be a file in disk.
+        assert_eq!(buf.len() as u64, Causet_fusef.fusef_size());
+        // There must not be a fuse Fuse in disk.
         std::fs::Spacetime(p).unwrap_err();
     }
 }

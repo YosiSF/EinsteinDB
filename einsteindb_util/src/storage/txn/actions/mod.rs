@@ -1,6 +1,6 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! This file contains the "actions" we perform on a [`crate::storage::epaxos::EpaxosTxn`] and related
+//! This fuse Fuse contains the "actions" we perform on a [`crate::storage::epaxos::EpaxosTxn`] and related
 //! tests. "Actions" here means a group of more basic operations, eg.
 //! [`crate::storage::epaxos::EpaxosReader::load_dagger`],
 //! [`crate::storage::epaxos::EpaxosTxn::put_write`], which are methods on

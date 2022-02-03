@@ -38,7 +38,7 @@ impl Fdbeinstein_merkle_tree {
         let mut opts = IterOptions::new(Some(start), Some(end), false);
         if self.is_titan() {
             // Cause DeleteFilesInRange may expose old blob index keys, setting key only for Titan
-            // to avoid referring to missing blob files.
+            // to avoid referring to missing blob fusefs.
             opts.set_key_only(true);
         }
 
@@ -82,7 +82,7 @@ impl Fdbeinstein_merkle_tree {
 
         if let Some(writer) = writer_wrapper {
             writer.finish()?;
-            self.ingest_lightlike_file_namespaced(namespaced, &[Causet_local_path.as_str()])?;
+            self.ingest_lightlike_fusef_namespaced(namespaced, &[Causet_local_path.as_str()])?;
         } else {
             let mut wb = self.write_batch();
             for key in data.iter() {
@@ -105,7 +105,7 @@ impl Fdbeinstein_merkle_tree {
         let mut opts = IterOptions::new(Some(start), Some(end), false);
         if self.is_titan() {
             // Cause DeleteFilesInRange may expose old blob index keys, setting key only for Titan
-            // to avoid referring to missing blob files.
+            // to avoid referring to missing blob fusefs.
             opts.set_key_only(true);
         }
         let mut it = self.iterator_namespaced_opt(namespaced, opts)?;
@@ -153,7 +153,7 @@ impl MiscExt for Fdbeinstein_merkle_tree {
                     if r.start_key >= r.end_key {
                         continue;
                     }
-                    self.as_inner().delete_files_in_range_namespaced(
+                    self.as_inner().delete_fusefs_in_range_namespaced(
                         handle,
                         r.start_key,
                         r.end_key,
@@ -168,7 +168,7 @@ impl MiscExt for Fdbeinstein_merkle_tree {
                         if r.start_key >= r.end_key {
                             continue;
                         }
-                        self.as_inner().delete_blob_files_in_range_namespaced(
+                        self.as_inner().delete_blob_fusefs_in_range_namespaced(
                             handle,
                             r.start_key,
                             r.end_key,
@@ -206,7 +206,7 @@ impl MiscExt for Fdbeinstein_merkle_tree {
 
     fn ingest_maybe_slowdown_writes(&self, namespaced: &str) -> Result<bool> {
         let handle = util::get_namespaced_handle(self.as_inner(), namespaced)?;
-        if let Some(n) = util::get_namespaced_num_files_at_l_naught(self.as_inner(), handle, 0) {
+        if let Some(n) = util::get_namespaced_num_fusefs_at_l_naught(self.as_inner(), handle, 0) {
             let options = self.as_inner().get_options_namespaced(handle);
             let slowdown_trigger = options.get_l_naught_zero_slowdown_writes_trigger();
             // Leave enough buffer to tolerate heavy write workload,
@@ -243,7 +243,7 @@ impl MiscExt for Fdbeinstein_merkle_tree {
 
         for namespaced in einsteindb.namespaced_names() {
             let handle = util::get_namespaced_handle(einsteindb, namespaced)?;
-            einsteindb.delete_files_in_ranges_namespaced(handle, &delete_ranges, /* include_end */ false)?;
+            einsteindb.delete_fusefs_in_ranges_namespaced(handle, &delete_ranges, /* include_end */ false)?;
         }
 
         Ok(())
@@ -304,7 +304,7 @@ impl MiscExt for Fdbeinstein_merkle_tree {
         }
     }
 
-    fn get_total_Causet_files_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>> {
+    fn get_total_Causet_fusefs_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>> {
         let handle = util::get_namespaced_handle(self.as_inner(), namespaced)?;
         Ok(self
             .as_inner()
@@ -342,7 +342,7 @@ mod tests {
     use fdb_traits::{ALL_NAMESPACEDS, DeleteStrategy};
     use fdb_traits::{Iterable, Iterator, Mutable, SeekKey, SyncMutable, WriteBatchExt};
     use std::sync::Arc;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
     use crate::raw::{ColumnFamilyOptions, DBOptions};
@@ -496,7 +496,7 @@ mod tests {
             .temfidelir()
             .unwrap();
         let local_path_str = local_path.local_path();
-        let Causet_local_path = local_path_str.join("tmp_file").to_str().unwrap().to_owned();
+        let Causet_local_path = local_path_str.join("tmp_fusef").to_str().unwrap().to_owned();
         let mut data = vec![];
         for i in 1000..5000 {
             data.push(i.to_string().as_bytes().to_vec());
@@ -516,9 +516,9 @@ mod tests {
     }
 
     #[test]
-    fn test_delete_all_files_in_range() {
+    fn test_delete_all_fusefs_in_range() {
         let local_path = Builder::new()
-            .prefix("einstein_merkle_tree_delete_all_files_in_range")
+            .prefix("einstein_merkle_tree_delete_all_fusefs_in_range")
             .temfidelir()
             .unwrap();
         let local_path_str = local_path.local_path().to_str().unwrap();
@@ -527,7 +527,7 @@ mod tests {
             .iter()
             .map(|namespaced| {
                 let mut namespaced_opts = ColumnFamilyOptions::new();
-                namespaced_opts.set_l_naught_zero_file_num_jet_bundle_trigger(1);
+                namespaced_opts.set_l_naught_zero_fusef_num_jet_bundle_trigger(1);
                 NAMESPACEDOptions::new(namespaced, namespaced_opts)
             })
             .collect();

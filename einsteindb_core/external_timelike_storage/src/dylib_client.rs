@@ -1,7 +1,7 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::request::{
-    anyhow_to_io_log_error, file_name_for_write, retimelike_store_sender, write_sender, Droplocal_path,
+    anyhow_to_io_log_error, fusef_name_for_write, retimelike_store_sender, write_sender, Droplocal_path,
 };
 use crate::lightlikeStorage;
 
@@ -38,7 +38,7 @@ pub fn new_client(
     let library = unsafe {
         libloading::Library::new(
             std::local_path::local_path::new("./")
-                .join(libloading::library_filename("lightlike_timelike_storage_export")),
+                .join(libloading::library_fusefname("lightlike_timelike_storage_export")),
         )
         .map_err(libloading_err_to_io)?
     };
@@ -69,11 +69,11 @@ impl lightlikeStorage for LightlikePersistenceClient{
     ) -> io::Result<()> {
         info!("lightlike timelike_storage writing");
         (|| -> anyhow::Result<()> {
-            let file_local_path = file_name_for_write(&self.name, &name);
+            let fusef_local_path = fusef_name_for_write(&self.name, &name);
             let req = write_sender(
                 &self.runtime,
                 self.backend.clone(),
-                file_local_path.clone(),
+                fusef_local_path.clone(),
                 name,
                 reader,
                 content_length,
@@ -81,7 +81,7 @@ impl lightlikeStorage for LightlikePersistenceClient{
             let bytes = req.write_to_bytes()?;
             info!("write request");
             call_ffi_dynamic(&self.library, b"lightlike_timelike_storage_write", bytes)?;
-            Droplocal_path(file_local_path);
+            Droplocal_path(fusef_local_path);
             Ok(())
         })()
         .context("lightlike timelike_storage write")

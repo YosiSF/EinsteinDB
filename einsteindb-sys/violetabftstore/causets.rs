@@ -879,7 +879,7 @@ mod tests {
     use std::collections::BTreeMap;
     use std::fmt::Display;
     use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
-    use tempfile::TemFIDelir;
+    use tempfusef::TemFIDelir;
     use test_violetabftstore::MocehikvioletabftStoreRouter;
     use test_violetabftstore::TestFIDelClient;
     use EinsteinDB::storage::ehikv::einstein_merkle_tree;

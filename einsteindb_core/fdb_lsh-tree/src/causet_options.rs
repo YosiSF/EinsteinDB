@@ -63,8 +63,8 @@ impl ColumnFamilyOptions for FdbColumnFamilyOptions {
         self.0.get_l_naught_zero_stop_writes_trigger()
     }
 
-    fn set_l_naught_zero_file_num_jet_bundle_trigger(&mut self, v: i32) {
-        self.0.set_l_naught_zero_file_num_jet_bundle_trigger(v)
+    fn set_l_naught_zero_fusef_num_jet_bundle_trigger(&mut self, v: i32) {
+        self.0.set_l_naught_zero_fusef_num_jet_bundle_trigger(v)
     }
 
     fn get_soft_pending_jet_bundle_bytes_limit(&self) -> u64 {
@@ -87,8 +87,8 @@ impl ColumnFamilyOptions for FdbColumnFamilyOptions {
         self.0.set_titandb_options(opts.as_raw())
     }
 
-    fn get_target_file_size_base(&self) -> u64 {
-        self.0.get_target_file_size_base()
+    fn get_target_fusef_size_base(&self) -> u64 {
+        self.0.get_target_fusef_size_base()
     }
 
     fn set_disable_auto_jet_bundles(&mut self, v: bool) {

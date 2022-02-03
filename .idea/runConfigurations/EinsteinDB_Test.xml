@@ -8,7 +8,7 @@
     <option name="isPlayRun" value="true" />
     <option name="backtraceMode" value="FULL" />
     <envs />
-    <option name="workingDirectory" value="file://$APPLICATION_CONFIG_DIR$/scratches" />
+    <option name="workingDirectory" value="fuse Fuse://$APPLICATION_CONFIG_DIR$/scratches" />
     <option name="withSudo" value="true" />
     <method v="2" />
   </configuration>

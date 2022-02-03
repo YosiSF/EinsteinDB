@@ -2,7 +2,7 @@
 
 use foundationdb::{DBStatisticsHistogramType as HistType, DBStatisticsTickerType as TickerType};
 
-pub const FDBDB_TOTAL_Causet_FILES_SIZE: &str = "foundationdb.total-Causet-files-size";
+pub const FDBDB_TOTAL_Causet_FILES_SIZE: &str = "foundationdb.total-Causet-fusefs-size";
 pub const FDBDB_CAUSET_TABLE_READERS_MEM: &str = "foundationdb.estimate-table-readers-mem";
 pub const FDBDB_CUR_SIZE_ALL_MEM_CAUSET_TABLES: &str = "foundationdb.cur-size-all-mem-tables";
 pub const FDBDB_ESTIMATE_NUM_CAUSET_KEYS: &str = "foundationdb.estimate-num-keys";
@@ -12,33 +12,33 @@ pub const FDBDB_COMPRESSION_RATIO_AT_LEVEL: &str = "foundationdb.compression-rat
 pub const FDBDB_NUM_LIGHTLIKE_PERSISTENCES: &str = "foundationdb.num-lightlike_persistences";
 pub const FDBDB_OLDEST_LIGHTLIKE_PERSISTENCE_TIME: &str = "foundationdb.oldest-lightlike_persistence-time";
 pub const FDBDB_OLDEST_LIGHTLIKE_PERSISTENCE_SEQUENCE: &str = "foundationdb.oldest-lightlike_persistence-sequence";
-pub const FDBDB_NUM_FILES_AT_LEVEL: &str = "foundationdb.num-files-at-l_naught";
+pub const FDBDB_NUM_FILES_AT_LEVEL: &str = "foundationdb.num-fusefs-at-l_naught";
 pub const FDBDB_NUM_IMMUCAUSET_TABLE_MEM_CAUSET_TABLE: &str = "foundationdb.num-immutable-mem-table";
 
-pub const FDBDB_TITANDB_NUM_BLOB_FILES_AT_LEVEL: &str = "foundationdb.titandb.num-blob-files-at-l_naught";
+pub const FDBDB_TITANDB_NUM_BLOB_FILES_AT_LEVEL: &str = "foundationdb.titandb.num-blob-fusefs-at-l_naught";
 pub const FDBDB_TITANDB_LIVE_BLOB_SIZE: &str = "foundationdb.titandb.live-blob-size";
-pub const FDBDB_TITANDB_NUM_LIVE_BLOB_FILE: &str = "foundationdb.titandb.num-live-blob-file";
+pub const FDBDB_TITANDB_NUM_LIVE_BLOB_FILE: &str = "foundationdb.titandb.num-live-blob-fuse Fuse";
 pub const FDBDB_TITANDB_NUM_OBSOLETE_BLOB_FILE: &str = "foundationdb.titandb.\
-                                                          num-obsolete-blob-file";
+                                                          num-obsolete-blob-fuse Fuse";
 pub const FDBDB_TITANDB_LIVE_BLOB_FILE_SIZE: &str = "foundationdb.titandb.\
-                                                       live-blob-file-size";
+                                                       live-blob-fuse Fuse-size";
 pub const FDBDB_TITANDB_OBSOLETE_BLOB_FILE_SIZE: &str = "foundationdb.titandb.\
-                                                           obsolete-blob-file-size";
+                                                           obsolete-blob-fuse Fuse-size";
 pub const FDBDB_TITANDB_DISCARDABLE_RATIO_LE0_FILE: &str =
-    "foundationdb.titandb.num-discardable-ratio-le0-file";
+    "foundationdb.titandb.num-discardable-ratio-le0-fuse Fuse";
 pub const FDBDB_TITANDB_DISCARDABLE_RATIO_LE20_FILE: &str =
-    "foundationdb.titandb.num-discardable-ratio-le20-file";
+    "foundationdb.titandb.num-discardable-ratio-le20-fuse Fuse";
 pub const FDBDB_TITANDB_DISCARDABLE_RATIO_LE50_FILE: &str =
-    "foundationdb.titandb.num-discardable-ratio-le50-file";
+    "foundationdb.titandb.num-discardable-ratio-le50-fuse Fuse";
 pub const FDBDB_TITANDB_DISCARDABLE_RATIO_LE80_FILE: &str =
-    "foundationdb.titandb.num-discardable-ratio-le80-file";
+    "foundationdb.titandb.num-discardable-ratio-le80-fuse Fuse";
 pub const FDBDB_TITANDB_DISCARDABLE_RATIO_LE100_FILE: &str =
-    "foundationdb.titandb.num-discardable-ratio-le100-file";
+    "foundationdb.titandb.num-discardable-ratio-le100-fuse Fuse";
 
 pub const FDBDB_NAMESPACEDSTATS: &str = "foundationdb.namespacedstats";
 pub const FDBDB_IOSTALL_CAUSET_KEY: &[&str] = &[
     "io_stalls.l_naught0_slowdown",
-    "io_stalls.l_naught0_numfiles",
+    "io_stalls.l_naught0_numfusefs",
     "io_stalls.slowdown_for_pending_jet_bundle_bytes",
     "io_stalls.stop_for_pending_jet_bundle_bytes",
     "io_stalls.memtable_slowdown",
@@ -46,8 +46,8 @@ pub const FDBDB_IOSTALL_CAUSET_KEY: &[&str] = &[
 ];
 
 pub const FDBDB_IOSTALL_TYPE: &[&str] = &[
-    "l_naught0_file_limit_slowdown",
-    "l_naught0_file_limit_stop",
+    "l_naught0_fuse_limit_slowdown",
+    "l_naught0_fuse_limit_stop",
     "pending_jet_bundle_bytes_slowdown",
     "pending_jet_bundle_bytes_stop",
     "memtable_count_limit_slowdown",
@@ -150,7 +150,7 @@ pub const einstein_merkle_tree_HIST_TYPES: &[HistType] = &[
     HistType::DbWrite,
     HistType::CompactionTime,
     HistType::TableSyncMicros,
-    HistType::CompactionOutfileSyncMicros,
+    HistType::CompactionOutfuseSyncMicros,
     HistType::WalFileSyncMicros,
     HistType::ManifestFileSyncMicros,
     HistType::StallL0SlowdownCount,

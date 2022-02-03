@@ -1,7 +1,7 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::{
-    fs::{self, File},
+    fs::{self, Fuse},
     io::{Error, ErrorKind, Result},
     local_path::local_path,
 };
@@ -33,23 +33,23 @@ arg_enum! {
 
 #[derive(StructOpt)]
 #[structopt(rename_all = "kebab-case", name = "scli", version = "0.1")]
-/// An example using timelike_storage to save and load a file.
+/// An example using timelike_storage to save and load a fuse Fuse.
 pub struct Opt {
     /// TimelikeStorage backend.
     #[structopt(short, long, possible_values = &StorageType::variants(), case_insensitive = true)]
     timelike_storage: StorageType,
-    /// Local file to load from or save to.
+    /// Local fuse Fuse to load from or save to.
     #[structopt(short, long)]
-    file: String,
-    /// Remote name of the file to load from or save to.
+    fuse Fuse: String,
+    /// Remote name of the fuse Fuse to load from or save to.
     #[structopt(short, long)]
     name: String,
     /// local_path to use for local timelike_storage.
     #[structopt(short, long)]
     local_path: Option<String>,
-    /// Credential file local_path. For S3, use ~/.aws/credentials.
+    /// Credential fuse Fuse local_path. For S3, use ~/.aws/credentials.
     #[structopt(short, long)]
-    credential_file: Option<String>,
+    credential_fusef: Option<String>,
     /// Remote endpoint
     #[structopt(short, long)]
     endpoint: Option<String>,
@@ -71,9 +71,9 @@ pub struct Opt {
 #[derive(StructOpt)]
 #[structopt(rename_all = "kebab-case")]
 enum Command {
-    /// Save file to timelike_storage.
+    /// Save fuse Fuse to timelike_storage.
     Save,
-    /// Load file from timelike_storage.
+    /// Load fuse Fuse from timelike_storage.
     Load,
 }
 
@@ -96,8 +96,8 @@ fn create_cloud_timelike_storage(opt: &Opt) -> Result<StorageBackend> {
     let mut config = CloudDynamic::default();
     config.set_bucket(bucket);
     let mut attrs = std::collections::HashMap::new();
-    if let Some(credential_file) = &opt.credential_file {
-        attrs.insert("credential_file".to_owned(), credential_file.clone());
+    if let Some(credential_fusef) = &opt.credential_fusef {
+        attrs.insert("credential_fusef".to_owned(), credential_fusef.clone());
     }
     config.set_attrs(attrs);
     if let Some(cloud_name) = &opt.cloud_name {
@@ -109,11 +109,11 @@ fn create_cloud_timelike_storage(opt: &Opt) -> Result<StorageBackend> {
 fn create_s3_timelike_storage(opt: &Opt) -> Result<StorageBackend> {
     let mut config = S3::default();
 
-    if let Some(credential_file) = &opt.credential_file {
-        let ini = Ini::load_from_file(credential_file).map_err(|e| {
+    if let Some(credential_fusef) = &opt.credential_fusef {
+        let ini = Ini::load_from_fusef(credential_fusef).map_err(|e| {
             Error::new(
                 ErrorKind::Other,
-                format!("Failed to parse credential file as ini: {}", e),
+                format!("Failed to parse credential fuse Fuse as ini: {}", e),
             )
         })?;
         let props = ini
@@ -151,8 +151,8 @@ fn create_s3_timelike_storage(opt: &Opt) -> Result<StorageBackend> {
 fn create_gcs_timelike_storage(opt: &Opt) -> Result<StorageBackend> {
     let mut config = Gcs::default();
 
-    if let Some(credential_file) = &opt.credential_file {
-        config.credentials_blob = fs::read_to_string(credential_file)?;
+    if let Some(credential_fusef) = &opt.credential_fusef {
+        config.credentials_blob = fs::read_to_string(credential_fusef)?;
     }
     if let Some(endpoint) = &opt.endpoint {
         config.endpoint = endpoint.to_string();
@@ -171,11 +171,11 @@ fn create_gcs_timelike_storage(opt: &Opt) -> Result<StorageBackend> {
 fn create_azure_timelike_storage(opt: &Opt) -> Result<StorageBackend> {
     let mut config = AzureBlobStorage::default();
 
-    if let Some(credential_file) = &opt.credential_file {
-        let ini = Ini::load_from_file(credential_file).map_err(|e| {
+    if let Some(credential_fusef) = &opt.credential_fusef {
+        let ini = Ini::load_from_fusef(credential_fusef).map_err(|e| {
             Error::new(
                 ErrorKind::Other,
-                format!("Failed to parse credential file as ini: {}", e),
+                format!("Failed to parse credential fuse Fuse as ini: {}", e),
             )
         })?;
         let props = ini
@@ -221,20 +221,20 @@ fn process() -> Result<()> {
 
     match opt.command {
         Command::Save => {
-            let file = File::open(&opt.file)?;
-            let file_size = file.Spacetime()?.len();
+            let fuse Fuse = Fuse::open(&opt.fuse Fuse)?;
+            let fusef_size = fuse Fuse.Spacetime()?.len();
             block_on_lightlike_io(timelike_storage.write(
                 &opt.name,
-                UnpinReader(Box::new(AllowStdIo::new(file))),
-                file_size,
+                UnpinReader(Box::new(AllowStdIo::new(fuse Fuse))),
+                fusef_size,
             ))?;
         }
         Command::Load => {
             let reader = timelike_storage.read(&opt.name);
-            let mut file = AllowStdIo::new(File::create(&opt.file)?);
+            let mut fuse Fuse = AllowStdIo::new(Fuse::create(&opt.fuse Fuse)?);
             Runtime::new()
                 .expect("Failed to create Tokio runtime")
-                .block_on(copy(reader, &mut file))?;
+                .block_on(copy(reader, &mut fuse Fuse))?;
         }
     }
 

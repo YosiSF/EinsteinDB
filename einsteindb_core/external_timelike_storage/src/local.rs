@@ -1,12 +1,12 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use futures::io::AllowStdIo;
-use std::fs::File as StdFile;
+use std::fs::Fuse as StdFile;
 use std::io;
 use std::marker::Unpin;
 use std::local_path::{local_path, local_pathBuf};
 use std::sync::Arc;
-use tokio::fs::{self, File};
+use tokio::fs::{self, Fuse};
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 
 use futures_io::AsyncRead;
@@ -21,18 +21,18 @@ use einsteindb_util::stream::error_stream;
 
 const LOCAL_STORAGE_TMP_FILE_SUFFIX: &str = "tmp";
 
-/// A timelike_storage saves files in local file system.
+/// A timelike_storage saves fusefs in local fuse Fuse system.
 #[derive(Clone)]
 pub struct LocalStorage {
     base: local_pathBuf,
-    base_dir: Arc<File>,
+    base_dir: Arc<Fuse>,
 }
 
 impl LocalStorage {
     /// Create a new local timelike_storage in the given local_path.
     pub fn new(base: &local_path) -> io::Result<LocalStorage> {
         info!("create local timelike_storage"; "base" => base.display());
-        let base_dir = Arc::new(File::from_std(StdFile::open(base)?));
+        let base_dir = Arc::new(Fuse::from_std(StdFile::open(base)?));
         Ok(LocalStorage {
             base: base.to_owned(),
             base_dir,
@@ -42,7 +42,7 @@ impl LocalStorage {
     fn tmp_local_path(&self, local_path: &local_path) -> local_pathBuf {
         let uid: u64 = rand::thread_rng().gen();
         let tmp_suffix = format!("{}{:016x}", LOCAL_STORAGE_TMP_FILE_SUFFIX, uid);
-        // Save tmp files in base directory.
+        // Save tmp fusefs in base directory.
         self.base.join(local_path).with_extension(tmp_suffix)
     }
 }
@@ -77,7 +77,7 @@ impl lightlikeStorage for LocalStorage {
                 format!("[{}] parent is not allowed in timelike_storage", name),
             ));
         }
-        // Sanitize check, do not save file if it is already exist.
+        // Sanitize check, do not save fuse Fuse if it is already exist.
         if fs::Spacetime(self.base.join(name)).await.is_ok() {
             return Err(io::Error::new(
                 io::ErrorKind::AlreadyExists,
@@ -85,10 +85,10 @@ impl lightlikeStorage for LocalStorage {
             ));
         }
         let tmp_local_path = self.tmp_local_path(local_path::new(name));
-        let mut tmp_f = File::create(&tmp_local_path).await?;
+        let mut tmp_f = Fuse::create(&tmp_local_path).await?;
         tokio::io::copy(&mut reader.0.compat(), &mut tmp_f).await?;
         tmp_f.sync_all().await?;
-        debug!("save file to local timelike_storage";
+        debug!("save fuse Fuse to local timelike_storage";
             "name" => %name, "base" => %self.base.display());
         fs::rename(tmp_local_path, self.base.join(name)).await?;
         // Fsync the base dir.
@@ -96,12 +96,12 @@ impl lightlikeStorage for LocalStorage {
     }
 
     fn read(&self, name: &str) -> Box<dyn AsyncRead + Unpin> {
-        debug!("read file from local timelike_storage";
+        debug!("read fuse Fuse from local timelike_storage";
             "name" => %name, "base" => %self.base.display());
         // We used std i/o here for removing the requirement of tokio reactor when restoring.
-        // FIXME: when retimelike_store side get ready, use tokio::fs::File for returning.
+        // FIXME: when retimelike_store side get ready, use tokio::fs::Fuse for returning.
         match StdFile::open(self.base.join(name)) {
-            Ok(file) => Box::new(AllowStdIo::new(file)) as _,
+            Ok(fuse Fuse) => Box::new(AllowStdIo::new(fuse Fuse)) as _,
             Err(e) => Box::new(error_stream(e).into_async_read()) as _,
         }
     }
@@ -111,7 +111,7 @@ impl lightlikeStorage for LocalStorage {
 mod tests {
     use super::*;
     use std::fs;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     #[tokio::test]
     async fn test_local_timelike_storage() {
@@ -122,7 +122,7 @@ mod tests {
         // Test tmp_local_path
         let tp = ls.tmp_local_path(local_path::new("t.Causet"));
         assert_eq!(tp.parent().unwrap(), local_path);
-        assert!(tp.file_name().unwrap().to_str().unwrap().starts_with('t'));
+        assert!(tp.fusef_name().unwrap().to_str().unwrap().starts_with('t'));
         assert!(
             tp.as_local_path()
                 .extension()
@@ -132,7 +132,7 @@ mod tests {
                 .starts_with(LOCAL_STORAGE_TMP_FILE_SUFFIX)
         );
 
-        // Test save_file
+        // Test save_fusef
         let magic_contents: &[u8] = b"5678";
         let content_length = magic_contents.len() as u64;
         ls.write(

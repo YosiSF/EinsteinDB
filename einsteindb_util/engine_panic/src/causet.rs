@@ -79,7 +79,7 @@ impl CausetWriter for PanicCausetWriter {
     fn delete(&mut self, key: &[u8]) -> Result<()> {
         panic!()
     }
-    fn file_size(&mut self) -> u64 {
+    fn fuse_size(&mut self) -> u64 {
         panic!()
     }
     fn finish(self) -> Result<Self::lightlikeCausetFileInfo> {
@@ -123,7 +123,7 @@ impl lightlikeCausetFileInfo for PaniclightlikeCausetFileInfo {
     fn new() -> Self {
         panic!()
     }
-    fn file_local_path(&self) -> local_pathBuf {
+    fn fuse_local_path(&self) -> local_pathBuf {
         panic!()
     }
     fn smallest_key(&self) -> &[u8] {
@@ -135,7 +135,7 @@ impl lightlikeCausetFileInfo for PaniclightlikeCausetFileInfo {
     fn sequence_number(&self) -> u64 {
         panic!()
     }
-    fn file_size(&self) -> u64 {
+    fn fuse_size(&self) -> u64 {
         panic!()
     }
     fn num_entries(&self) -> u64 {

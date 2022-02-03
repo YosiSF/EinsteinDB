@@ -56,7 +56,7 @@ impl RangeGreedoidsExt for Fdbeinstein_merkle_tree {
                     format!(
                         "{}:{}",
                         local_path::new(&*k)
-                            .file_name()
+                            .fusef_name()
                             .map(|f| f.to_str().unwrap())
                             .unwrap_or(&*k),
                         keys
@@ -116,7 +116,7 @@ impl RangeGreedoidsExt for Fdbeinstein_merkle_tree {
                     format!(
                         "{}:{}",
                         local_path::new(&*k)
-                            .file_name()
+                            .fusef_name()
                             .map(|f| f.to_str().unwrap())
                             .unwrap_or(&*k),
                         size

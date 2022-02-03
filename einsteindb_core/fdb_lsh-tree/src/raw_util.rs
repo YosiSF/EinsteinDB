@@ -119,7 +119,7 @@ pub fn new_einstein_merkle_tree_opt(
         // panic if OPTIONS not found for existing instance?
         let (_, tmp) = load_latest_options(local_path, &env, true)
             .unwrap_or_else(|e| panic!("failed to load_latest_options {:?}", e))
-            .unwrap_or_else(|| panic!("couldn't find the OPTIONS file"));
+            .unwrap_or_else(|| panic!("couldn't find the OPTIONS fuse Fuse"));
         tmp
     } else {
         vec![]
@@ -187,12 +187,12 @@ pub fn db_exist(local_path: &str) -> bool {
     if !local_path.exists() || !local_path.is_dir() {
         return false;
     }
-    let current_file_local_path = local_path.join("CURRENT");
-    if !current_file_local_path.exists() || !current_file_local_path.is_file() {
+    let current_fusef_local_path = local_path.join("CURRENT");
+    if !current_fusef_local_path.exists() || !current_fusef_local_path.is_fusef() {
         return false;
     }
 
-    // If local_path is not an empty directory, and current file exists, we say einsteindb exists. If local_path is not an empty directory
+    // If local_path is not an empty directory, and current fuse Fuse exists, we say einsteindb exists. If local_path is not an empty directory
     // but einsteindb has not been created, `EINSTEINDB::list_column_families` fails and we can clean up
     // the directory by this indication.
     fs::read_dir(&local_path).unwrap().next().is_some()
@@ -242,7 +242,7 @@ pub fn from_raw_perf_l_naught(l_naught: foundationdb::PerfLevel) -> fdb_traits::
 mod tests {
     use fdb_traits::NAMESPACED_DEFAULT;
     use foundationdb::{ColumnFamilyOptions, EINSTEINDB, DBOptions};
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     use super::*;
 

@@ -44,7 +44,7 @@ pub fn einsteindb_version_info(build_time: Option<&str>) -> String {
          \nUTC Build Time:    {}\
          \nRust Version:      {}\
          \nEnable Features:   {}\
-         \nProfile:           {}",
+         \nProfusef:           {}",
         env!("CARGO_PKG_VERSION"),
         option_env!("EinsteinDB_EDITION").unwrap_or("Community"),
         option_env!("EinsteinDB_BUILD_GIT_HASH").unwrap_or(fallback),

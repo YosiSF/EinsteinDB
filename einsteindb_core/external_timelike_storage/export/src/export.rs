@@ -33,7 +33,7 @@ use lightlike_timelike_storage::dylib_client;
 use lightlike_timelike_storage::grpc_client;
 use lightlike_timelike_storage::{encrypt_wrap_reader, record_timelike_storage_create, BackendConfig, HdfCausetorage};
 pub use lightlike_timelike_storage::{
-    read_lightlike_timelike_storage_into_file, lightlikeStorage, LocalStorage, NoopStorage, UnpinReader,
+    read_lightlike_timelike_storage_into_fusef, lightlikeStorage, LocalStorage, NoopStorage, UnpinReader,
 };
 use futures_io::AsyncRead;
 use ekvproto::brpb::{Noop, StorageBackend};
@@ -261,7 +261,7 @@ pub fn make_cloud_backend(config: CloudDynamic) -> StorageBackend {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     #[test]
     fn test_create_timelike_storage() {
@@ -326,17 +326,17 @@ impl lightlikeStorage for EncryptedlightlikeStorage {
         retimelike_store_name: std::local_path::local_pathBuf,
         expected_length: u64,
         speed_limiter: &Limiter,
-        file_crypter: Option<FileEncryptionInfo>,
+        fusef_crypter: Option<FileEncryptionInfo>,
     ) -> io::Result<()> {
         let reader = self.read(timelike_storage_name);
-        let file_writer: &mut dyn Write =
-            &mut self.key_manager.create_file_for_write(&retimelike_store_name)?;
+        let fusef_writer: &mut dyn Write =
+            &mut self.key_manager.create_fusef_for_write(&retimelike_store_name)?;
         let min_read_speed: usize = 8192;
-        let mut input = encrypt_wrap_reader(file_crypter, reader)?;
+        let mut input = encrypt_wrap_reader(fusef_crypter, reader)?;
 
-        block_on_lightlike_io(read_lightlike_timelike_storage_into_file(
+        block_on_lightlike_io(read_lightlike_timelike_storage_into_fusef(
             &mut input,
-            file_writer,
+            fusef_writer,
             speed_limiter,
             expected_length,
             min_read_speed,

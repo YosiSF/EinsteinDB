@@ -12,7 +12,7 @@ use crate::range::Range;
 
 #[derive(Clone, Debug)]
 pub enum DeleteStrategy {
-    /// Delete the Causet files that are fullly fit in range. However, the Causet files that are partially
+    /// Delete the Causet fusefs that are fullly fit in range. However, the Causet fusefs that are partially
     /// overlapped with the range will not be touched.
     DeleteFiles,
     /// Delete the data timelike_stored in Titan.
@@ -22,7 +22,7 @@ pub enum DeleteStrategy {
     /// Delete by range. Note that this is experimental and you should check whether it is enbaled
     /// in config before using it.
     DeleteByRange,
-    /// Delete by ingesting a Causet file with deletions. Useful when the number of ranges is too many.
+    /// Delete by ingesting a Causet fuse Fuse with deletions. Useful when the number of ranges is too many.
     DeleteByWriter { Causet_local_path: String },
 }
 
@@ -51,13 +51,13 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
     fn ingest_maybe_slowdown_writes(&self, namespaced: &str) -> Result<bool>;
 
     /// Gets total used size of foundationdb einstein_merkle_tree, including:
-    /// *  total size (bytes) of all Causet files.
+    /// *  total size (bytes) of all Causet fusefs.
     /// *  total size (bytes) of active and unflushed immutable memtables.
-    /// *  total size (bytes) of all blob files.
+    /// *  total size (bytes) of all blob fusefs.
     ///
     fn get_einstein_merkle_tree_used_size(&self) -> Result<u64>;
 
-    /// Roughly deletes files in multiple ranges.
+    /// Roughly deletes fusefs in multiple ranges.
     ///
     /// Note:
     ///    - After this operation, some keys in the range might still exist in the database.
@@ -68,7 +68,7 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
     /// Ref: <https://github.com/facebook/foundationdb/wiki/Delete-A-Range-Of-Keys>
     fn roughly_cleanup_ranges(&self, ranges: &[(Vec<u8>, Vec<u8>)]) -> Result<()>;
 
-    /// The local_path to the directory on the filesystem where the database is timelike_stored
+    /// The local_path to the directory on the fusefsystem where the database is timelike_stored
     fn local_path(&self) -> &str;
 
     fn sync_wal(&self) -> Result<()>;
@@ -85,7 +85,7 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
 
     fn get_oldest_lightlike_persistence_sequence_number(&self) -> Option<u64>;
 
-    fn get_total_Causet_files_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>>;
+    fn get_total_Causet_fusefs_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>>;
 
     fn get_range_entries_and_versions(
         &self,

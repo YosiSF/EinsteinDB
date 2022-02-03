@@ -32,25 +32,25 @@ pub struct WrappedEncryptionKeyManager<T: EncryptionKeyManager> {
 }
 
 impl<T: EncryptionKeyManager> DBEncryptionKeyManager for WrappedEncryptionKeyManager<T> {
-    fn get_file(&self, fname: &str) -> Result<DBFileEncryptionInfo> {
+    fn get_fusef(&self, fname: &str) -> Result<DBFileEncryptionInfo> {
         self.manager
-            .get_file(fname)
-            .map(convert_file_encryption_info)
+            .get_fusef(fname)
+            .map(convert_fusef_encryption_info)
     }
-    fn new_file(&self, fname: &str) -> Result<DBFileEncryptionInfo> {
+    fn new_fusef(&self, fname: &str) -> Result<DBFileEncryptionInfo> {
         self.manager
-            .new_file(fname)
-            .map(convert_file_encryption_info)
+            .new_fusef(fname)
+            .map(convert_fusef_encryption_info)
     }
-    fn delete_file(&self, fname: &str) -> Result<()> {
-        self.manager.delete_file(fname)
+    fn delete_fusef(&self, fname: &str) -> Result<()> {
+        self.manager.delete_fusef(fname)
     }
-    fn link_file(&self, src_fname: &str, dst_fname: &str) -> Result<()> {
-        self.manager.link_file(src_fname, dst_fname)
+    fn link_fusef(&self, src_fname: &str, dst_fname: &str) -> Result<()> {
+        self.manager.link_fusef(src_fname, dst_fname)
     }
 }
 
-fn convert_file_encryption_info(input: FileEncryptionInfo) -> DBFileEncryptionInfo {
+fn convert_fusef_encryption_info(input: FileEncryptionInfo) -> DBFileEncryptionInfo {
     DBFileEncryptionInfo {
         method: convert_encryption_method(input.method),
         key: input.key,

@@ -110,7 +110,7 @@ pub mod staticlib {
     use lightlike_timelike_storage::{
         dylib_client::extern_to_io_err,
         request::{
-            anyhow_to_io_log_error, file_name_for_write, retimelike_store_sender, write_sender, Droplocal_path,
+            anyhow_to_io_log_error, fusef_name_for_write, retimelike_store_sender, write_sender, Droplocal_path,
         },
         lightlikeStorage,
     };
@@ -164,11 +164,11 @@ pub mod staticlib {
         ) -> io::Result<()> {
             info!("lightlike timelike_storage writing");
             (|| -> anyhow::Result<()> {
-                let file_local_path = file_name_for_write(&self.name, &name);
+                let fusef_local_path = fusef_name_for_write(&self.name, &name);
                 let req = write_sender(
                     &self.runtime,
                     self.backend.clone(),
-                    file_local_path.clone(),
+                    fusef_local_path.clone(),
                     name,
                     reader,
                     content_length,
@@ -176,7 +176,7 @@ pub mod staticlib {
                 let bytes = req.write_to_bytes()?;
                 info!("write request");
                 lightlike_timelike_storage_write_ffi(bytes)?;
-                Droplocal_path(file_local_path);
+                Droplocal_path(fusef_local_path);
                 Ok(())
             })()
             .context("lightlike timelike_storage write")

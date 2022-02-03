@@ -77,9 +77,9 @@ pub trait VioletaBFTeinstein_merkle_tree: VioletaBFTeinstein_merkle_treeReadOnly
         Ok(total)
     }
 
-    /// Purge expired logs files and return a set of VioletaBFT group ids
+    /// Purge expired logs fusefs and return a set of VioletaBFT group ids
     /// which needs to be compacted ASAP.
-    fn purge_expired_files(&self) -> Result<Vec<u64>>;
+    fn purge_expired_fusefs(&self) -> Result<Vec<u64>>;
 
     /// The `VioletaBFTeinstein_merkle_tree` has a builtin entry cache or not.
     fn has_builtin_entry_cache(&self) -> bool {

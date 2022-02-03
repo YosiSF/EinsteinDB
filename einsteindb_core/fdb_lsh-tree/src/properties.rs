@@ -530,7 +530,7 @@ mod tests {
     use fdb_traits::{NAMESPACED_WRITE, LARGE_NAMESPACEDS};
     use rand::Rng;
     use std::sync::Arc;
-    use tempfile::Builder;
+    use tempfusef::Builder;
     use test::Bencher;
     use txn_types::{Key, Write, WriteType};
 
@@ -706,7 +706,7 @@ mod tests {
         let local_path_str = local_path.local_path().to_str().unwrap();
         let db_opts = DBOptions::new();
         let mut namespaced_opts = ColumnFamilyOptions::new();
-        namespaced_opts.set_l_naught_zero_file_num_jet_bundle_trigger(10);
+        namespaced_opts.set_l_naught_zero_fusef_num_jet_bundle_trigger(10);
         namespaced_opts.add_table_greedoids_collector_factory(
             "einsteindb.causet_model-greedoids-collector",
             MvccGreedoidsCollectorFactory::default(),

@@ -18,7 +18,7 @@ pub trait CausetExt: Sized {
     type CausetWriterBuilder: CausetWriterBuilder<Self>;
 }
 
-/// CausetReader is used to read an Causet file.
+/// CausetReader is used to read an Causet fuse Fuse.
 pub trait CausetReader: Iterable + Sized {
     fn open(local_path: &str) -> Result<Self>;
     fn verify_checksum(&self) -> Result<()>;
@@ -26,30 +26,30 @@ pub trait CausetReader: Iterable + Sized {
     fn iter(&self) -> Self::Iterator;
 }
 
-/// CausetWriter is used to create Causet files that can be added to database later.
+/// CausetWriter is used to create Causet fusefs that can be added to database later.
 pub trait CausetWriter: Send {
     type lightlikeCausetFileInfo: lightlikeCausetFileInfo;
     type lightlikeCausetFileReader: std::io::Read;
 
-    /// Add key, value to currently opened file
+    /// Add key, value to currently opened fuse Fuse
     /// REQUIRES: key is after any previously added key according to comparator.
     fn put(&mut self, key: &[u8], val: &[u8]) -> Result<()>;
 
-    /// Add a deletion key to currently opened file
+    /// Add a deletion key to currently opened fuse Fuse
     /// REQUIRES: key is after any previously added key according to comparator.
     fn delete(&mut self, key: &[u8]) -> Result<()>;
 
-    /// Return the current file size.
-    fn file_size(&mut self) -> u64;
+    /// Return the current fuse Fuse size.
+    fn fuse_size(&mut self) -> u64;
 
-    /// Finalize writing to Causet file and close file.
+    /// Finalize writing to Causet fuse Fuse and close fuse Fuse.
     fn finish(self) -> Result<Self::lightlikeCausetFileInfo>;
 
-    /// Finalize writing to Causet file and read the contents into the buffer.
+    /// Finalize writing to Causet fuse Fuse and read the contents into the buffer.
     fn finish_read(self) -> Result<(Self::lightlikeCausetFileInfo, Self::lightlikeCausetFileReader)>;
 }
 
-// compression type used for write Causet file
+// compression type used for write Causet fuse Fuse
 #[derive(Copy, Clone)]
 pub enum CausetCompressionType {
     Lz4,
@@ -90,10 +90,10 @@ where
 
 pub trait lightlikeCausetFileInfo {
     fn new() -> Self;
-    fn file_local_path(&self) -> local_pathBuf;
+    fn fuse_local_path(&self) -> local_pathBuf;
     fn smallest_key(&self) -> &[u8];
     fn largest_key(&self) -> &[u8];
     fn sequence_number(&self) -> u64;
-    fn file_size(&self) -> u64;
+    fn fuse_size(&self) -> u64;
     fn num_entries(&self) -> u64;
 }

@@ -18,7 +18,7 @@ use crate::raw_util::new_einstein_merkle_tree as new_einstein_merkle_tree_raw;
 use crate::raw_util::new_einstein_merkle_tree_opt as new_einstein_merkle_tree_opt_raw;
 use crate::rocks_metrics_defs::*;
 
-pub fn new_temp_einstein_merkle_tree(local_path: &tempfile::TempDir) -> einstein_merkle_trees<Fdbeinstein_merkle_tree, Fdbeinstein_merkle_tree> {
+pub fn new_temp_einstein_merkle_tree(local_path: &tempfusef::TempDir) -> einstein_merkle_trees<Fdbeinstein_merkle_tree, Fdbeinstein_merkle_tree> {
     let violetabft_local_path = local_path.local_path().join(std::local_path::local_path::new("violetabft"));
     einstein_merkle_trees::new(
         new_einstein_merkle_tree(
@@ -103,12 +103,12 @@ pub fn range_to_rocks_range<'a>(range: &Range<'a>) -> FdbRange<'a> {
 pub fn get_einstein_merkle_tree_namespaced_used_size(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle) -> u64 {
     let mut namespaced_used_size = einstein_merkle_tree
         .get_property_int_namespaced(handle, FDBDB_TOTAL_Causet_FILES_SIZE)
-        .expect("foundationdb is too old, missing total-Causet-files-size property");
+        .expect("foundationdb is too old, missing total-Causet-fusefs-size property");
     // For memtable
     if let Some(mem_table) = einstein_merkle_tree.get_property_int_namespaced(handle, FDBDB_CUR_SIZE_ALL_MEM_CAUSET_TABLES) {
         namespaced_used_size += mem_table;
     }
-    // For blob files
+    // For blob fusefs
     if let Some(live_blob) = einstein_merkle_tree.get_property_int_namespaced(handle, FDBDB_TITANDB_LIVE_BLOB_FILE_SIZE)
     {
         namespaced_used_size += live_blob;
@@ -140,14 +140,14 @@ pub fn get_einstein_merkle_tree_compression_ratio_at_l_naught(
     None
 }
 
-/// Gets the number of files at given l_naught of given column family.
-pub fn get_namespaced_num_files_at_l_naught(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle, l_naught: usize) -> Option<u64> {
+/// Gets the number of fusefs at given l_naught of given column family.
+pub fn get_namespaced_num_fusefs_at_l_naught(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle, l_naught: usize) -> Option<u64> {
     let prop = format!("{}{}", FDBDB_NUM_FILES_AT_LEVEL, l_naught);
     einstein_merkle_tree.get_property_int_namespaced(handle, &prop)
 }
 
-/// Gets the number of blob files at given l_naught of given column family.
-pub fn get_namespaced_num_blob_files_at_l_naught(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle, l_naught: usize) -> Option<u64> {
+/// Gets the number of blob fusefs at given l_naught of given column family.
+pub fn get_namespaced_num_blob_fusefs_at_l_naught(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle, l_naught: usize) -> Option<u64> {
     let prop = format!("{}{}", FDBDB_TITANDB_NUM_BLOB_FILES_AT_LEVEL, l_naught);
     einstein_merkle_tree.get_property_int_namespaced(handle, &prop)
 }

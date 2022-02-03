@@ -254,7 +254,7 @@ impl VioletaBFTeinstein_merkle_tree for Fdbeinstein_merkle_tree {
         Ok(total)
     }
 
-    fn purge_expired_files(&self) -> Result<Vec<u64>> {
+    fn purge_expired_fusefs(&self) -> Result<Vec<u64>> {
         Ok(vec![])
     }
 

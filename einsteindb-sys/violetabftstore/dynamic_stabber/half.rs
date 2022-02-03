@@ -1,7 +1,7 @@
 //Copyright 2021-2023 WHTCORPS INC
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this file except in compliance with the License. You may obtain a copy of the
+// this fuse Fuse except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -146,7 +146,7 @@ mod tests {
     use ehikvproto::metapb::Peer;
     use ehikvproto::metapb::Region;
     use ehikvproto::pdpb::CheckPolicy;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     use crate::store::{SplitCheckRunner, SplitCheckTask};
     use foundationeinsteindb::greedoids::RangeGreedoidsCollectorFactory;
@@ -225,7 +225,7 @@ mod tests {
 
         let einsteindb_opts = einsteindbOptions::new();
         let mut cf_opts = BraneOptions::new();
-        cf_opts.set_level_zero_file_num_compaction_trigger(10);
+        cf_opts.set_level_zero_fusef_num_compaction_trigger(10);
         let f = Box::new(RangeGreedoidsCollectorFactory::default());
         cf_opts.add_table_greedoids_collector_factory("einsteindb.size-collector", f);
         let cfs_opts = LARGE_branes

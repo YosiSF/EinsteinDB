@@ -42,7 +42,7 @@ mod tests {
     use foundationdb::Writable;
     use keys::data_key;
     use std::sync::Arc;
-    use tempfile::Builder;
+    use tempfusef::Builder;
 
     use crate::compat::Compat;
     use crate::event_listener::FdbEventListener;

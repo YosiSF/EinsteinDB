@@ -7,7 +7,7 @@ use std::local_path::local_path;
 impl ImportExt for Paniceinstein_merkle_tree {
     type IngestlightlikeFileOptions = PanicIngestlightlikeFileOptions;
 
-    fn ingest_lightlike_file_namespaced(&self, namespaced: &str, files: &[&str]) -> Result<()> {
+    fn ingest_lightlike_fuse_namespaced(&self, namespaced: &str, fusefs: &[&str]) -> Result<()> {
         panic!()
     }
 }
@@ -19,7 +19,7 @@ impl IngestlightlikeFileOptions for PanicIngestlightlikeFileOptions {
         panic!()
     }
 
-    fn move_files(&mut self, f: bool) {
+    fn move_fusefs(&mut self, f: bool) {
         panic!()
     }
 
