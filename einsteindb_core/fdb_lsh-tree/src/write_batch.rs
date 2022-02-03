@@ -1,7 +1,7 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use fdb_traits::{self, Error, Mutable, Result, WriteBatchExt, WriteOptions};
-use foundationdb::{DB, Writable, WriteBatch as RawWriteBatch};
+use foundationdb::{EINSTEINDB, Writable, WriteBatch as RawWriteBatch};
 use std::sync::Arc;
 
 use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
@@ -32,12 +32,12 @@ impl WriteBatchExt for Fdbeinstein_merkle_tree {
 }
 
 pub struct FdbWriteBatch {
-    einsteindb: Arc<DB>,
+    einsteindb: Arc<EINSTEINDB>,
     wb: RawWriteBatch,
 }
 
 impl FdbWriteBatch {
-    pub fn new(einsteindb: Arc<DB>) -> FdbWriteBatch {
+    pub fn new(einsteindb: Arc<EINSTEINDB>) -> FdbWriteBatch {
         FdbWriteBatch {
             einsteindb,
             wb: RawWriteBatch::default(),
@@ -48,7 +48,7 @@ impl FdbWriteBatch {
         &self.wb
     }
 
-    pub fn with_capacity(einsteindb: Arc<DB>, cap: usize) -> FdbWriteBatch {
+    pub fn with_capacity(einsteindb: Arc<EINSTEINDB>, cap: usize) -> FdbWriteBatch {
         let wb = if cap == 0 {
             RawWriteBatch::default()
         } else {
@@ -57,11 +57,11 @@ impl FdbWriteBatch {
         FdbWriteBatch { einsteindb, wb }
     }
 
-    pub fn from_raw(einsteindb: Arc<DB>, wb: RawWriteBatch) -> FdbWriteBatch {
+    pub fn from_raw(einsteindb: Arc<EINSTEINDB>, wb: RawWriteBatch) -> FdbWriteBatch {
         FdbWriteBatch { einsteindb, wb }
     }
 
-    pub fn get_db(&self) -> &DB {
+    pub fn get_db(&self) -> &EINSTEINDB {
         self.einsteindb.as_ref()
     }
 
@@ -159,7 +159,7 @@ impl Mutable for FdbWriteBatch {
 /// will remove this feature when `unordered_write` of FdbDB becomes more stable and becomes compatible
 /// with Titan.
 pub struct FdbWriteBatchVec {
-    einsteindb: Arc<DB>,
+    einsteindb: Arc<EINSTEINDB>,
     wbs: Vec<RawWriteBatch>,
     save_points: Vec<usize>,
     index: usize,
@@ -168,7 +168,7 @@ pub struct FdbWriteBatchVec {
 }
 
 impl FdbWriteBatchVec {
-    pub fn new(einsteindb: Arc<DB>, batch_size_limit: usize, cap: usize) -> FdbWriteBatchVec {
+    pub fn new(einsteindb: Arc<EINSTEINDB>, batch_size_limit: usize, cap: usize) -> FdbWriteBatchVec {
         let wb = RawWriteBatch::with_capacity(cap);
         FdbWriteBatchVec {
             einsteindb,
@@ -188,7 +188,7 @@ impl FdbWriteBatchVec {
         &self.wbs[0]
     }
 
-    pub fn get_db(&self) -> &DB {
+    pub fn get_db(&self) -> &EINSTEINDB {
         self.einsteindb.as_ref()
     }
 
@@ -332,7 +332,7 @@ mod tests {
 
     #[test]
     fn test_should_write_to_einstein_merkle_tree() {
-        let path = Builder::new()
+        let local_path = Builder::new()
             .prefix("test-should-write-to-einstein_merkle_tree")
             .temfidelir()
             .unwrap();
@@ -341,7 +341,7 @@ mod tests {
         opt.enable_unordered_write(false);
         opt.enable_pipelined_write(true);
         let einstein_merkle_tree = new_einstein_merkle_tree_opt(
-            path.path().join("einsteindb").to_str().unwrap(),
+            local_path.local_path().join("einsteindb").to_str().unwrap(),
             FdbDBOptions::from_raw(opt),
             vec![],
         )

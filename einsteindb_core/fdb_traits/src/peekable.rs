@@ -4,11 +4,11 @@ use crate::*;
 
 
 pub trait Peekable {
-    /// The byte-vector type through which the database returns read values.
-    type DBVector: DBVector;
+    /// The byte-vector type causet representation
+    type Causet: Causet;
 
    
-    fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<Self::DBVector>>;
+    fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<Self::Causet>>;
 
    
     fn get_value_namespaced_opt(
@@ -16,13 +16,13 @@ pub trait Peekable {
         opts: &ReadOptions,
         namespaced: &str,
         key: &[u8],
-    ) -> Result<Option<Self::DBVector>>;
+    ) -> Result<Option<Self::Causet>>;
 
-    fn get_value(&self, key: &[u8]) -> Result<Option<Self::DBVector>> {
+    fn get_value(&self, key: &[u8]) -> Result<Option<Self::Causet>> {
         self.get_value_opt(&ReadOptions::default(), key)
     }
 
-    fn get_value_namespaced(&self, namespaced: &str, key: &[u8]) -> Result<Option<Self::DBVector>> {
+    fn get_value_namespaced(&self, namespaced: &str, key: &[u8]) -> Result<Option<Self::Causet>> {
         self.get_value_namespaced_opt(&ReadOptions::default(), namespaced, key)
     }
 

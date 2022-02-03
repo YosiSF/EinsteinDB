@@ -10,8 +10,8 @@ use EinsteinDB_util::codec::BytesSlice;
 use EinsteinDB_util::escape;
 
 use super::myBerolinaSQL::{
-    self, parse_json_path_expr, Decimal, DecimalDecoder, DecimalEncoder, Duration, Json,
-    JsonDecoder, JsonEncoder, PathExpression, Time, DEFAULT_FSP, MAX_FSP,
+    self, parse_json_local_path_expr, Decimal, DecimalDecoder, DecimalEncoder, Duration, Json,
+    JsonDecoder, JsonEncoder, local_pathExpression, Time, DEFAULT_FSP, MAX_FSP,
 };
 use super::Result;
 use crate::codec::convert::{ConvertTo, ToInt};
@@ -527,13 +527,13 @@ impl Datum {
         }
     }
 
-    /// `to_json_path_expr` parses Datum::Bytes(b) to a JSON PathExpression.
-    pub fn to_json_path_expr(&self) -> Result<PathExpression> {
+    /// `to_json_local_path_expr` parses Datum::Bytes(b) to a JSON local_pathExpression.
+    pub fn to_json_local_path_expr(&self) -> Result<local_pathExpression> {
         let v = match *self {
             Datum::Bytes(ref bs) => str::from_utf8(bs)?,
             _ => "",
         };
-        parse_json_path_expr(v)
+        parse_json_local_path_expr(v)
     }
 
     /// Try its best effort to convert into a decimal datum.

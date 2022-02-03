@@ -1,18 +1,18 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use std::{io, path, process::Stdio};
+use std::{io, local_path, process::Stdio};
 
 use async_trait::async_trait;
 use tokio::{io as async_io, process::Command};
 use tokio_util::compat::FuturesAsyncReadCompatExt;
 use url::Url;
 
-use crate::{ExternalStorage, UnpinReader};
+use crate::{lightlikeStorage, UnpinReader};
 
-/// Convert `hdfs:///path` to `/path`
-fn try_convert_to_path(url: &Url) -> &str {
+/// Convert `hdfs:///local_path` to `/local_path`
+fn try_convert_to_local_path(url: &Url) -> &str {
     if url.host().is_none() {
-        url.path()
+        url.local_path()
     } else {
         url.as_str()
     }
@@ -33,10 +33,10 @@ pub struct HdfCausetorage {
 impl HdfCausetorage {
     pub fn new(remote: &str, config: HdfsConfig) -> io::Result<HdfCausetorage> {
         let mut remote = Url::parse(remote).map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
-        if !remote.path().ends_with('/') {
-            let mut new_path = remote.path().to_owned();
-            new_path.push('/');
-            remote.set_path(&new_path);
+        if !remote.local_path().ends_with('/') {
+            let mut new_local_path = remote.local_path().to_owned();
+            new_local_path.push('/');
+            remote.set_local_path(&new_local_path);
         }
         Ok(HdfCausetorage { remote, config })
     }
@@ -67,7 +67,7 @@ impl HdfCausetorage {
 const STORAGE_NAME: &str = "hdfs";
 
 #[async_trait]
-impl ExternalStorage for HdfCausetorage {
+impl lightlikeStorage for HdfCausetorage {
     fn name(&self) -> &'static str {
         STORAGE_NAME
     }
@@ -77,21 +77,21 @@ impl ExternalStorage for HdfCausetorage {
     }
 
     async fn write(&self, name: &str, reader: UnpinReader, _content_length: u64) -> io::Result<()> {
-        if name.contains(path::MAIN_SEPARATOR) {
+        if name.contains(local_path::MAIN_SEPARATOR) {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
                 format!("[{}] parent is not allowed in timelike_storage", name),
             ));
         }
 
-        let cmd_path = self.get_hdfs_bin().ok_or_else(|| {
+        let cmd_local_path = self.get_hdfs_bin().ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::Other,
                 "Cannot found hdfs command, please specify HADOOP_HOME",
             )
         })?;
         let remote_url = self.remote.clone().join(name).unwrap();
-        let path = try_convert_to_path(&remote_url);
+        let local_path = try_convert_to_local_path(&remote_url);
 
         let mut cmd_with_args = vec![];
         let user = self.get_linux_user();
@@ -99,7 +99,7 @@ impl ExternalStorage for HdfCausetorage {
         if let Some(user) = &user {
             cmd_with_args.extend(["sudo", "-u", user]);
         }
-        cmd_with_args.extend([&cmd_path, "dfs", "-put", "-", path]);
+        cmd_with_args.extend([&cmd_local_path, "dfs", "-put", "-", local_path]);
         info!("calling hdfs"; "cmd" => ?cmd_with_args);
         let mut hdfs_cmd = Command::new(&cmd_with_args[0])
             .stdin(Stdio::piped())
@@ -113,7 +113,7 @@ impl ExternalStorage for HdfCausetorage {
 
         let output = hdfs_cmd.wait_with_output().await?;
         if output.status.success() {
-            debug!("save file to hdfs"; "path" => ?path);
+            debug!("save file to hdfs"; "local_path" => ?local_path);
             Ok(())
         } else {
             let stdout = String::from_utf8_lossy(&output.stdout);
@@ -167,10 +167,10 @@ mod tests {
     }
 
     #[test]
-    fn test_try_convert_to_path() {
-        let url = Url::parse("hdfs:///some/path").unwrap();
-        assert_eq!(try_convert_to_path(&url), "/some/path");
-        let url = Url::parse("hdfs://1.1.1.1/some/path").unwrap();
-        assert_eq!(try_convert_to_path(&url), "hdfs://1.1.1.1/some/path");
+    fn test_try_convert_to_local_path() {
+        let url = Url::parse("hdfs:///some/local_path").unwrap();
+        assert_eq!(try_convert_to_local_path(&url), "/some/local_path");
+        let url = Url::parse("hdfs://1.1.1.1/some/local_path").unwrap();
+        assert_eq!(try_convert_to_local_path(&url), "hdfs://1.1.1.1/some/local_path");
     }
 }

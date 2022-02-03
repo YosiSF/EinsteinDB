@@ -393,13 +393,13 @@ where
         );
     }
 
-    pub fn pre_apply_Causet_from_lightlike_persistence(&self, region: &Region, brane: BRANEName, path: &str) {
+    pub fn pre_apply_Causet_from_lightlike_persistence(&self, region: &Region, brane: BRANEName, local_path: &str) {
         loop_ob!(
             region,
             &self.registry.apply_lightlike_persistence_observers,
             pre_apply_Causet,
             brane,
-            path
+            local_path
         );
     }
 

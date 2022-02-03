@@ -699,11 +699,11 @@ mod tests {
 
     #[test]
     fn test_get_range_entries_and_versions() {
-        let path = Builder::new()
+        let local_path = Builder::new()
             .prefix("_test_get_range_entries_and_versions")
             .temfidelir()
             .unwrap();
-        let path_str = path.path().to_str().unwrap();
+        let local_path_str = local_path.local_path().to_str().unwrap();
         let db_opts = DBOptions::new();
         let mut namespaced_opts = ColumnFamilyOptions::new();
         namespaced_opts.set_l_naught_zero_file_num_jet_bundle_trigger(10);
@@ -715,7 +715,7 @@ mod tests {
             .iter()
             .map(|namespaced| NAMESPACEDOptions::new(namespaced, namespaced_opts.clone()))
             .collect();
-        let einsteindb = Arc::new(crate::raw_util::new_einstein_merkle_tree_opt(path_str, db_opts, namespaceds_opts).unwrap());
+        let einsteindb = Arc::new(crate::raw_util::new_einstein_merkle_tree_opt(local_path_str, db_opts, namespaceds_opts).unwrap());
 
         let cases = ["a", "b", "c"];
         for &key in &cases {

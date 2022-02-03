@@ -38,7 +38,7 @@ impl<T: FuseInspector> DBFuseInspector for WrappedFuseInspector<T> {
 mod tests {
     use fdb_traits::{NAMESPACED_DEFAULT, CompactExt};
     use fuse::{IOOp, IORateLimiter, IORateLimiterStatistics, IOType};
-    use foundationdb::{DB, DBOptions};
+    use foundationdb::{EINSTEINDB, DBOptions};
     use foundationdb::Writable;
     use keys::data_key;
     use std::sync::Arc;
@@ -51,7 +51,7 @@ mod tests {
 
     use super::*;
 
-    fn new_test_db(dir: &str) -> (Arc<DB>, Arc<IORateLimiterStatistics>) {
+    fn new_test_db(dir: &str) -> (Arc<EINSTEINDB>, Arc<IORateLimiterStatistics>) {
         let limiter = Arc::new(IORateLimiter::new_for_test());
         let mut db_opts = DBOptions::new();
         db_opts.add_event_listener(FdbEventListener::new("test_db"));
@@ -74,7 +74,7 @@ mod tests {
             .temfidelir()
             .unwrap();
 
-        let (einsteindb, stats) = new_test_db(temp_dir.path().to_str().unwrap());
+        let (einsteindb, stats) = new_test_db(temp_dir.local_path().to_str().unwrap());
         let value = vec![b'v'; value_size];
 
         einsteindb.put(&data_key(b"a1"), &value).unwrap();

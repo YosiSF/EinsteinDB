@@ -1,7 +1,7 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use fdb_traits::{
-    ExternalCausetFileInfo, CausetCompressionType, CausetMetaInfo, CausetWriter, CausetWriterBuilder,
+    lightlikeCausetFileInfo, CausetCompressionType, CausetMetaInfo, CausetWriter, CausetWriterBuilder,
 };
 use fdb_traits::{Iterable, Result, CausetExt, CausetReader};
 use fdb_traits::{Iterator, SeekKey};
@@ -11,13 +11,13 @@ use fdb_traits::IterOptions;
 use fail::fail_point;
 use foundationdb::{ColumnFamilyOptions, CausetFileReader};
 use foundationdb::{Env, EnvOptions, SequentialFile, CausetFileWriter};
-use foundationdb::DB;
+use foundationdb::EINSTEINDB;
 use foundationdb::DBCompressionType;
 use foundationdb::DBIterator;
-use foundationdb::ExternalCausetFileInfo as RawExternalCausetFileInfo;
+use foundationdb::lightlikeCausetFileInfo as RawlightlikeCausetFileInfo;
 use foundationdb::foundationdb::supported_compression;
 use ekvproto::import_Causetpb::CausetMeta;
-use std::path::PathBuf;
+use std::local_path::local_pathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -54,13 +54,13 @@ impl FdbCausetReader {
         meta
     }
 
-    pub fn open_with_env(path: &str, env: Option<Arc<Env>>) -> Result<Self> {
+    pub fn open_with_env(local_path: &str, env: Option<Arc<Env>>) -> Result<Self> {
         let mut namespaced_options = ColumnFamilyOptions::new();
         if let Some(env) = env {
             namespaced_options.set_env(env);
         }
         let mut reader = CausetFileReader::new(namespaced_options);
-        reader.open(path)?;
+        reader.open(local_path)?;
         let inner = Rc::new(reader);
         Ok(FdbCausetReader { inner })
     }
@@ -75,8 +75,8 @@ impl FdbCausetReader {
 }
 
 impl CausetReader for FdbCausetReader {
-    fn open(path: &str) -> Result<Self> {
-        Self::open_with_env(path, None)
+    fn open(local_path: &str) -> Result<Self> {
+        Self::open_with_env(local_path, None)
     }
     fn verify_checksum(&self) -> Result<()> {
         self.inner.verify_checksum()?;
@@ -153,7 +153,7 @@ impl Iterator for FdbCausetIterator {
 
 pub struct FdbCausetWriterBuilder {
     namespaced: Option<String>,
-    einsteindb: Option<Arc<DB>>,
+    einsteindb: Option<Arc<EINSTEINDB>>,
     in_memory: bool,
     compression_type: Option<DBCompressionType>,
     compression_l_naught: i32,
@@ -195,7 +195,7 @@ impl CausetWriterBuilder<Fdbeinstein_merkle_tree> for FdbCausetWriterBuilder {
         self
     }
 
-    fn build(self, path: &str) -> Result<FdbCausetWriter> {
+    fn build(self, local_path: &str) -> Result<FdbCausetWriter> {
         let mut env = None;
         let mut io_options = if let Some(einsteindb) = self.einsteindb.as_ref() {
             env = einsteindb.env();
@@ -243,7 +243,7 @@ impl CausetWriterBuilder<Fdbeinstein_merkle_tree> for FdbCausetWriterBuilder {
         io_options.bottommost_compression(DBCompressionType::Disable);
         let mut writer = CausetFileWriter::new(EnvOptions::new(), io_options);
         fail_point!("on_open_Causet_writer");
-        writer.open(path)?;
+        writer.open(local_path)?;
         Ok(FdbCausetWriter { writer, env })
     }
 }
@@ -254,8 +254,8 @@ pub struct FdbCausetWriter {
 }
 
 impl CausetWriter for FdbCausetWriter {
-    type ExternalCausetFileInfo = FdbExternalCausetFileInfo;
-    type ExternalCausetFileReader = SequentialFile;
+    type lightlikeCausetFileInfo = FdblightlikeCausetFileInfo;
+    type lightlikeCausetFileReader = SequentialFile;
 
     fn put(&mut self, key: &[u8], val: &[u8]) -> Result<()> {
         Ok(self.writer.put(key, val)?)
@@ -269,36 +269,36 @@ impl CausetWriter for FdbCausetWriter {
         self.writer.file_size()
     }
 
-    fn finish(mut self) -> Result<Self::ExternalCausetFileInfo> {
-        Ok(FdbExternalCausetFileInfo(self.writer.finish()?))
+    fn finish(mut self) -> Result<Self::lightlikeCausetFileInfo> {
+        Ok(FdblightlikeCausetFileInfo(self.writer.finish()?))
     }
 
-    fn finish_read(mut self) -> Result<(Self::ExternalCausetFileInfo, Self::ExternalCausetFileReader)> {
+    fn finish_read(mut self) -> Result<(Self::lightlikeCausetFileInfo, Self::lightlikeCausetFileReader)> {
         let env = self.env.take().ok_or_else(|| {
             Error::einstein_merkle_tree("failed to read sequential file no env provided".to_owned())
         })?;
         let Causet_info = self.writer.finish()?;
-        let p = Causet_info.file_path();
-        let path = p.as_os_str().to_str().ok_or_else(|| {
+        let p = Causet_info.file_local_path();
+        let local_path = p.as_os_str().to_str().ok_or_else(|| {
             Error::einstein_merkle_tree(format!(
-                "failed to sequential file bad path {}",
+                "failed to sequential file bad local_path {}",
                 p.display()
             ))
         })?;
-        let seq_file = env.new_sequential_file(path, EnvOptions::new())?;
-        Ok((FdbExternalCausetFileInfo(Causet_info), seq_file))
+        let seq_file = env.new_sequential_file(local_path, EnvOptions::new())?;
+        Ok((FdblightlikeCausetFileInfo(Causet_info), seq_file))
     }
 }
 
-pub struct FdbExternalCausetFileInfo(RawExternalCausetFileInfo);
+pub struct FdblightlikeCausetFileInfo(RawlightlikeCausetFileInfo);
 
-impl ExternalCausetFileInfo for FdbExternalCausetFileInfo {
+impl lightlikeCausetFileInfo for FdblightlikeCausetFileInfo {
     fn new() -> Self {
-        FdbExternalCausetFileInfo(RawExternalCausetFileInfo::new())
+        FdblightlikeCausetFileInfo(RawlightlikeCausetFileInfo::new())
     }
 
-    fn file_path(&self) -> PathBuf {
-        self.0.file_path()
+    fn file_local_path(&self) -> local_pathBuf {
+        self.0.file_local_path()
     }
 
     fn smallest_key(&self) -> &[u8] {
@@ -374,11 +374,11 @@ mod tests {
 
     #[test]
     fn test_smoke() {
-        let path = Builder::new().temfidelir().unwrap();
-        let einstein_merkle_tree = new_default_einstein_merkle_tree(path.path().to_str().unwrap()).unwrap();
+        let local_path = Builder::new().temfidelir().unwrap();
+        let einstein_merkle_tree = new_default_einstein_merkle_tree(local_path.local_path().to_str().unwrap()).unwrap();
         let (k, v) = (b"foo", b"bar");
 
-        let p = path.path().join("Causet");
+        let p = local_path.local_path().join("Causet");
         let mut writer = FdbCausetWriterBuilder::new()
             .set_namespaced(NAMESPACED_DEFAULT)
             .set_db(&einstein_merkle_tree)
@@ -392,7 +392,7 @@ mod tests {
         std::fs::Spacetime(p).unwrap();
 
         // Test in-memory Causet writer.
-        let p = path.path().join("inmem.Causet");
+        let p = local_path.local_path().join("inmem.Causet");
         let mut writer = FdbCausetWriterBuilder::new()
             .set_in_memory(true)
             .set_namespaced(NAMESPACED_DEFAULT)

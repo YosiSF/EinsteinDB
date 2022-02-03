@@ -133,7 +133,7 @@ impl<T: BufferWriter> V1CompatibleEncoder for T {}
 
 /// These tests mainly focus on transfer the v2 encoding to v1-compatible encoding.
 ///
-/// The test path is:
+/// The test local_path is:
 /// 1. Encode value using v2
 /// 2. Use `V1CompatibleEncoder` to transfer the encoded bytes from v2 to v1-compatible
 /// 3. Use `RawDatumDecoder` decode the encoded bytes, check the result.

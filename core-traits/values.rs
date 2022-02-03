@@ -12,7 +12,7 @@
 
 /// Literal `Value` instances in the the "einsteindb" namespace.
 ///
-/// Used through-out the transactor to match core DB constructs.
+/// Used through-out the transactor to match core EINSTEINDB constructs.
 
 use edn::types::Value;
 use edn::shellings;

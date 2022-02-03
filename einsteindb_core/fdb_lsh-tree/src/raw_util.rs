@@ -1,6 +1,6 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! Functions for constructing the foundationdb crate's `DB` type
+//! Functions for constructing the foundationdb crate's `EINSTEINDB` type
 //!
 //! These are an artifact of refactoring the einstein_merkle_tree traits and will go away
 //! eventually. Prefer to use the versions in the `util` module.
@@ -8,10 +8,10 @@
 use einsteindb_util::warn;
 use fdb_traits::NAMESPACED_DEFAULT;
 use fdb_traits::Result;
-use foundationdb::{CColumnFamilyDescriptor, ColumnFamilyOptions, DB, DBOptions, Env};
+use foundationdb::{CColumnFamilyDescriptor, ColumnFamilyOptions, EINSTEINDB, DBOptions, Env};
 use foundationdb::load_latest_options;
 use std::fs;
-use std::path::Path;
+use std::local_path::local_path;
 use std::sync::Arc;
 
 pub struct NAMESPACEDOptions<'a> {
@@ -26,11 +26,11 @@ impl<'a> NAMESPACEDOptions<'a> {
 }
 
 pub fn new_einstein_merkle_tree(
-    path: &str,
+    local_path: &str,
     db_opts: Option<DBOptions>,
     namespaceds: &[&str],
     opts: Option<Vec<NAMESPACEDOptions<'_>>>,
-) -> Result<DB> {
+) -> Result<EINSTEINDB> {
     let mut db_opts = match db_opts {
         Some(opt) => opt,
         None => DBOptions::new(),
@@ -46,7 +46,7 @@ pub fn new_einstein_merkle_tree(
             default_namespaceds_opts
         }
     };
-    new_einstein_merkle_tree_opt(path, db_opts, namespaced_opts)
+    new_einstein_merkle_tree_opt(local_path, db_opts, namespaced_opts)
 }
 
 /// Turns "dynamic l_naught size" off for the existing column family which was off before.
@@ -79,12 +79,12 @@ fn adjust_dynamic_l_naught_bytes(
 }
 
 pub fn new_einstein_merkle_tree_opt(
-    path: &str,
+    local_path: &str,
     mut db_opt: DBOptions,
     namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
-) -> Result<DB> {
+) -> Result<EINSTEINDB> {
     // Creates a new einsteindb if it doesn't exist.
-    if !db_exist(path) {
+    if !db_exist(local_path) {
         db_opt.create_if_missing(true);
 
         let mut namespaceds_v = vec![];
@@ -93,7 +93,7 @@ pub fn new_einstein_merkle_tree_opt(
             namespaceds_v.push(x.namespaced);
             namespaced_opts_v.push(x.options.clone());
         }
-        let mut einsteindb = DB::open_namespaced(db_opt, path, namespaceds_v.into_iter().zip(namespaced_opts_v).collect())?;
+        let mut einsteindb = EINSTEINDB::open_namespaced(db_opt, local_path, namespaceds_v.into_iter().zip(namespaced_opts_v).collect())?;
         for x in namespaceds_opts {
             if x.namespaced == NAMESPACED_DEFAULT {
                 continue;
@@ -107,7 +107,7 @@ pub fn new_einstein_merkle_tree_opt(
     db_opt.create_if_missing(false);
 
     // Lists all column families in current einsteindb.
-    let namespaceds_list = DB::list_column_families(&db_opt, path)?;
+    let namespaceds_list = EINSTEINDB::list_column_families(&db_opt, local_path)?;
     let existed: Vec<&str> = namespaceds_list.iter().map(|v| v.as_str()).collect();
     let needed: Vec<&str> = namespaceds_opts.iter().map(|x| x.namespaced).collect();
 
@@ -117,7 +117,7 @@ pub fn new_einstein_merkle_tree_opt(
             None => Arc::new(Env::default()),
         };
         // panic if OPTIONS not found for existing instance?
-        let (_, tmp) = load_latest_options(path, &env, true)
+        let (_, tmp) = load_latest_options(local_path, &env, true)
             .unwrap_or_else(|e| panic!("failed to load_latest_options {:?}", e))
             .unwrap_or_else(|| panic!("couldn't find the OPTIONS file"));
         tmp
@@ -135,7 +135,7 @@ pub fn new_einstein_merkle_tree_opt(
             namespaceds_opts_v.push(x.options);
         }
 
-        let einsteindb = DB::open_namespaced(db_opt, path, namespaceds_v.into_iter().zip(namespaceds_opts_v).collect())?;
+        let einsteindb = EINSTEINDB::open_namespaced(db_opt, local_path, namespaceds_v.into_iter().zip(namespaceds_opts_v).collect())?;
         return Ok(einsteindb);
     }
 
@@ -156,7 +156,7 @@ pub fn new_einstein_merkle_tree_opt(
         }
     }
     let namespacedds = namespaceds_v.into_iter().zip(namespaceds_opts_v).collect();
-    let mut einsteindb = DB::open_namespaced(db_opt, path, namespacedds)?;
+    let mut einsteindb = EINSTEINDB::open_namespaced(db_opt, local_path, namespacedds)?;
 
     // Drops discarded column families.
     //    for namespaced in existed.iter().filter(|x| needed.iter().find(|y| y == x).is_none()) {
@@ -182,20 +182,20 @@ pub fn new_einstein_merkle_tree_opt(
     Ok(einsteindb)
 }
 
-pub fn db_exist(path: &str) -> bool {
-    let path = Path::new(path);
-    if !path.exists() || !path.is_dir() {
+pub fn db_exist(local_path: &str) -> bool {
+    let local_path = local_path::new(local_path);
+    if !local_path.exists() || !local_path.is_dir() {
         return false;
     }
-    let current_file_path = path.join("CURRENT");
-    if !current_file_path.exists() || !current_file_path.is_file() {
+    let current_file_local_path = local_path.join("CURRENT");
+    if !current_file_local_path.exists() || !current_file_local_path.is_file() {
         return false;
     }
 
-    // If path is not an empty directory, and current file exists, we say einsteindb exists. If path is not an empty directory
-    // but einsteindb has not been created, `DB::list_column_families` fails and we can clean up
+    // If local_path is not an empty directory, and current file exists, we say einsteindb exists. If local_path is not an empty directory
+    // but einsteindb has not been created, `EINSTEINDB::list_column_families` fails and we can clean up
     // the directory by this indication.
-    fs::read_dir(&path).unwrap().next().is_some()
+    fs::read_dir(&local_path).unwrap().next().is_some()
 }
 
 /// Returns a Vec of namespaced which is in `a' but not in `b'.
@@ -241,7 +241,7 @@ pub fn from_raw_perf_l_naught(l_naught: foundationdb::PerfLevel) -> fdb_traits::
 #[cfg(test)]
 mod tests {
     use fdb_traits::NAMESPACED_DEFAULT;
-    use foundationdb::{ColumnFamilyOptions, DB, DBOptions};
+    use foundationdb::{ColumnFamilyOptions, EINSTEINDB, DBOptions};
     use tempfile::Builder;
 
     use super::*;
@@ -264,11 +264,11 @@ mod tests {
 
     #[test]
     fn test_new_einstein_merkle_tree_opt() {
-        let path = Builder::new()
+        let local_path = Builder::new()
             .prefix("_util_rocksdb_test_check_column_families")
             .temfidelir()
             .unwrap();
-        let path_str = path.path().to_str().unwrap();
+        let local_path_str = local_path.local_path().to_str().unwrap();
 
         // create einsteindb when einsteindb not exist
         let mut namespaceds_opts = vec![NAMESPACEDOptions::new(NAMESPACED_DEFAULT, ColumnFamilyOptions::new())];
@@ -276,8 +276,8 @@ mod tests {
         opts.set_l_naught_jet_bundle_dynamic_l_naught_bytes(true);
         namespaceds_opts.push(NAMESPACEDOptions::new("namespaced_dynamic_l_naught_bytes", opts.clone()));
         {
-            let mut einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
-            column_families_must_eq(path_str, vec![NAMESPACED_DEFAULT, "namespaced_dynamic_l_naught_bytes"]);
+            let mut einsteindb = new_einstein_merkle_tree_opt(local_path_str, DBOptions::new(), namespaceds_opts).unwrap();
+            column_families_must_eq(local_path_str, vec![NAMESPACED_DEFAULT, "namespaced_dynamic_l_naught_bytes"]);
             check_dynamic_l_naught_bytes(&mut einsteindb);
         }
 
@@ -288,8 +288,8 @@ mod tests {
             NAMESPACEDOptions::new("namespaced1", opts),
         ];
         {
-            let mut einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
-            column_families_must_eq(path_str, vec![NAMESPACED_DEFAULT, "namespaced_dynamic_l_naught_bytes", "namespaced1"]);
+            let mut einsteindb = new_einstein_merkle_tree_opt(local_path_str, DBOptions::new(), namespaceds_opts).unwrap();
+            column_families_must_eq(local_path_str, vec![NAMESPACED_DEFAULT, "namespaced_dynamic_l_naught_bytes", "namespaced1"]);
             check_dynamic_l_naught_bytes(&mut einsteindb);
         }
 
@@ -299,20 +299,20 @@ mod tests {
             NAMESPACEDOptions::new("namespaced_dynamic_l_naught_bytes", ColumnFamilyOptions::new()),
         ];
         {
-            let mut einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
-            column_families_must_eq(path_str, vec![NAMESPACED_DEFAULT, "namespaced_dynamic_l_naught_bytes"]);
+            let mut einsteindb = new_einstein_merkle_tree_opt(local_path_str, DBOptions::new(), namespaceds_opts).unwrap();
+            column_families_must_eq(local_path_str, vec![NAMESPACED_DEFAULT, "namespaced_dynamic_l_naught_bytes"]);
             check_dynamic_l_naught_bytes(&mut einsteindb);
         }
 
         // never drop default namespaced
         let namespaceds_opts = vec![];
-        new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
-        column_families_must_eq(path_str, vec![NAMESPACED_DEFAULT]);
+        new_einstein_merkle_tree_opt(local_path_str, DBOptions::new(), namespaceds_opts).unwrap();
+        column_families_must_eq(local_path_str, vec![NAMESPACED_DEFAULT]);
     }
 
-    fn column_families_must_eq(path: &str, excepted: Vec<&str>) {
+    fn column_families_must_eq(local_path: &str, excepted: Vec<&str>) {
         let opts = DBOptions::new();
-        let namespaceds_list = DB::list_column_families(&opts, path).unwrap();
+        let namespaceds_list = EINSTEINDB::list_column_families(&opts, local_path).unwrap();
 
         let mut namespaceds_existed: Vec<&str> = namespaceds_list.iter().map(|v| v.as_str()).collect();
         let mut namespaceds_excepted: Vec<&str> = excepted.clone();
@@ -321,7 +321,7 @@ mod tests {
         assert_eq!(namespaceds_existed, namespaceds_excepted);
     }
 
-    fn check_dynamic_l_naught_bytes(einsteindb: &mut DB) {
+    fn check_dynamic_l_naught_bytes(einsteindb: &mut EINSTEINDB) {
         let namespaced_default = einsteindb.namespaced_handle(NAMESPACED_DEFAULT).unwrap();
         let tmp_namespaced_opts = einsteindb.get_options_namespaced(namespaced_default);
         assert!(!tmp_namespaced_opts.get_l_naught_jet_bundle_dynamic_l_naught_bytes());

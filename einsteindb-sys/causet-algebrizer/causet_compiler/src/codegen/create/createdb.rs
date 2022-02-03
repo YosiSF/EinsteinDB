@@ -14,7 +14,7 @@
 
 
     use getopts::Options;
-    use std::path::{Path, PathBuf};
+    use std::local_path::{local_path, local_pathBuf};
     use std::fs::File;
     use std::io::Write;
     use std::io::{BufReader, BufRead};
@@ -36,7 +36,7 @@
     use std::iter::FromIterator;
     use std::error::Error;
     use std::fs;
-    use std::path;
+    use std::local_path;
     use std::io::{BufWriter, Write};
     use std::fs::OpenOptions;
     use std::io::prelude::*;
@@ -147,12 +147,12 @@ impl Createeinsteindb{
 
         code.push_str(buildWrapper(einsteindb));
 
-        let cppFilepath = einsteindb.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createeinsteindb.rs";
-        let file = File::create(cppFilepath).unwrap();
+        let cppFilelocal_path = einsteindb.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createeinsteindb.rs";
+        let file = File::create(cppFilelocal_path).unwrap();
         let mut bw = BufWriter::new(file);
         bw.write(code.as_bytes()).unwrap();
         bw.flush().unwrap();
-        //let _ = Command::new("clang-format").arg("-style=llvm").arg("-i").arg(cppFilepath).output();
+        //let _ = Command::new("clang-format").arg("-style=llvm").arg("-i").arg(cppFilelocal_path).output();
 
         code
     }
@@ -162,12 +162,12 @@ impl Createeinsteindb{
 
         code.push_str(loadAndEncodeWrapper(einsteindb));
 
-        let bsdFilepath = einsteindb.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createeinsteindb/";
-        let mut file = File::create(cppFilepath).unwrap();
+        let bsdFilelocal_path = einsteindb.folder.to_string() + "/causet-algebrizer/causet_compiler/create/createeinsteindb/";
+        let mut file = File::create(cppFilelocal_path).unwrap();
         let mut bw = BufWriter::new(file);
         bw.write(code.as_bytes()).unwrap();
         bw.flush().unwrap();
-        let _ = Command::new("clang-format").arg("-style=llvm").arg("-i").arg(cppFilepath).output();
+        let _ = Command::new("clang-format").arg("-style=llvm").arg("-i").arg(cppFilelocal_path).output();
 
         code
     }

@@ -10,7 +10,7 @@ use ekvproto::violetabft_serverpb::VioletaBFTLocalState;
 use protobuf::Message;
 use violetabft::evioletabftpb::Entry;
 
-// #[PerformanceCriticalPath]
+// #[PerformanceCriticallocal_path]
 use crate::{Fdbeinstein_merkle_tree, FdbWriteBatch, util};
 
 const VIOLETABFT_LOG_MULTI_GET_CNT: u64 = 8;

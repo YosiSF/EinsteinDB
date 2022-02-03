@@ -1,15 +1,15 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use fdb_traits::{self, Error, Result};
-use foundationdb::{DB, DBIterator, SeekKey as RawSeekKey};
+use foundationdb::{EINSTEINDB, DBIterator, SeekKey as RawSeekKey};
 use std::sync::Arc;
 
-// FIXME: Would prefer using &DB instead of Arc<DB>.  As elsewhere in
+// FIXME: Would prefer using &EINSTEINDB instead of Arc<EINSTEINDB>.  As elsewhere in
 // this crate, it would require generic associated types.
-pub struct Fdbeinstein_merkle_treeIterator(DBIterator<Arc<DB>>);
+pub struct Fdbeinstein_merkle_treeIterator(DBIterator<Arc<EINSTEINDB>>);
 
 impl Fdbeinstein_merkle_treeIterator {
-    pub fn from_raw(iter: DBIterator<Arc<DB>>) -> Fdbeinstein_merkle_treeIterator {
+    pub fn from_raw(iter: DBIterator<Arc<EINSTEINDB>>) -> Fdbeinstein_merkle_treeIterator {
         Fdbeinstein_merkle_treeIterator(iter)
     }
 

@@ -12,8 +12,8 @@ ordered-float = { version = "2.10.0", features = ["serde"] }
 uuid = { version = "0.8.2", features = ["v4", "serde"] }
 
 [dependencies.core_traits]
-path = "../core-traits"
+local_path = "../core-traits"
 
 [dependencies.edn]
-path = "../edn"
+local_path = "../edn"
 features = ["serde_support"]

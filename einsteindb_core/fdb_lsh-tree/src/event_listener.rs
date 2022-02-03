@@ -86,7 +86,7 @@ impl foundationdb::EventListener for FdbEventListener {
         }
     }
 
-    fn on_external_file_ingested(&self, info: &IngestionInfo) {
+    fn on_lightlike_file_ingested(&self, info: &IngestionInfo) {
         STORE_einstein_merkle_tree_EVENT_COUNTER_VEC
             .with_label_values(&[&self.db_name, info.namespaced_name(), "ingestion"])
             .inc();

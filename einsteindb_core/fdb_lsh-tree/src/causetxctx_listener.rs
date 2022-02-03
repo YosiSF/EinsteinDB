@@ -38,7 +38,7 @@ impl EventListener for SymplecticListener {
             .send(SymplecticInfo::Flush(info.namespaced_name().to_owned(), total));
     }
 
-    fn on_external_file_ingested(&self, info: &IngestionInfo) {
+    fn on_lightlike_file_ingested(&self, info: &IngestionInfo) {
         // we can regard ingestion in L0 as a flush
         if info.picked_l_naught() == 0 {
             let mut total = 0;

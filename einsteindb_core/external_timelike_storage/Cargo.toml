@@ -1,5 +1,5 @@
 [package]
-name = "external_timelike_storage"
+name = "lightlike_timelike_storage"
 version = "0.0.1"
 edition = "2018"
 publish = false
@@ -19,7 +19,7 @@ failpoints = ["fail/failpoints"]
 bytes = "1.0"
 fail = "0.5"
 ffi-support = { optional = true, version = "0.4.2" }
-fuse = { path = "../fuse" }
+fuse = { local_path = "../fuse" }
 futures = "0.3"
 futures-executor = "0.3"
 futures-io = "0.3"
@@ -35,10 +35,10 @@ rusoto_core = "0.46.0"
 slog = { version = "2.3", features = ["max_l_naught_trace", "release_max_l_naught_debug"] }
 # better to not use slog-global, but pass in the logger
 slog-global = { version = "0.1", git = "https://github.com/breeswish/slog-global.git", rev = "d592f88e4dbba5eb439998463054f1a44fbf17b9" }
-einsteindb_alloc = { path = "../einsteindb_alloc" }
-fdb_traits = { path = "../fdb_traits" }
-encryption = { path = "../encryption" }
-einsteindb_util = { path = "../einsteindb_util", default-features = false }
+einsteindb_alloc = { local_path = "../einsteindb_alloc" }
+fdb_traits = { local_path = "../fdb_traits" }
+encryption = { local_path = "../encryption" }
+einsteindb_util = { local_path = "../einsteindb_util", default-features = false }
 tokio = { version = "1.5", features = ["time", "fs", "process"] }
 tokio-util = { version = "0.6", features = ["compat"] }
 url = "2.0"

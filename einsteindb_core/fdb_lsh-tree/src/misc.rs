@@ -25,7 +25,7 @@ impl Fdbeinstein_merkle_tree {
     fn delete_all_in_range_namespaced_by_ingest(
         &self,
         namespaced: &str,
-        Causet_path: String,
+        Causet_local_path: String,
         ranges: &[Range<'_>],
     ) -> Result<()> {
         let mut ranges = ranges.to_owned();
@@ -69,7 +69,7 @@ impl Fdbeinstein_merkle_tree {
                 }
                 if data.len() > MAX_DELETE_COUNT_BY_CAUSET_KEY {
                     let builder = FdbCausetWriterBuilder::new().set_db(self).set_namespaced(namespaced);
-                    let mut writer = builder.build(Causet_path.as_str())?;
+                    let mut writer = builder.build(Causet_local_path.as_str())?;
                     for key in data.iter() {
                         writer.delete(key)?;
                     }
@@ -82,7 +82,7 @@ impl Fdbeinstein_merkle_tree {
 
         if let Some(writer) = writer_wrapper {
             writer.finish()?;
-            self.ingest_external_file_namespaced(namespaced, &[Causet_path.as_str()])?;
+            self.ingest_lightlike_file_namespaced(namespaced, &[Causet_local_path.as_str()])?;
         } else {
             let mut wb = self.write_batch();
             for key in data.iter() {
@@ -189,8 +189,8 @@ impl MiscExt for Fdbeinstein_merkle_tree {
                     self.delete_all_in_range_namespaced_by_key(namespaced, r)?;
                 }
             }
-            DeleteStrategy::DeleteByWriter { Causet_path } => {
-                self.delete_all_in_range_namespaced_by_ingest(namespaced, Causet_path, ranges)?;
+            DeleteStrategy::DeleteByWriter { Causet_local_path } => {
+                self.delete_all_in_range_namespaced_by_ingest(namespaced, Causet_local_path, ranges)?;
             }
         }
         Ok(())
@@ -249,16 +249,16 @@ impl MiscExt for Fdbeinstein_merkle_tree {
         Ok(())
     }
 
-    fn path(&self) -> &str {
-        self.as_inner().path()
+    fn local_path(&self) -> &str {
+        self.as_inner().local_path()
     }
 
     fn sync_wal(&self) -> Result<()> {
         Ok(self.as_inner().sync_wal()?)
     }
 
-    fn exists(path: &str) -> bool {
-        crate::raw_util::db_exist(path)
+    fn exists(local_path: &str) -> bool {
+        crate::raw_util::db_exist(local_path)
     }
 
     fn dump_stats(&self) -> Result<String> {
@@ -346,7 +346,7 @@ mod tests {
 
     use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
     use crate::raw::{ColumnFamilyOptions, DBOptions};
-    use crate::raw::DB;
+    use crate::raw::EINSTEINDB;
     use crate::raw_util::{NAMESPACEDOptions, new_einstein_merkle_tree_opt};
 
     use super::*;
@@ -369,17 +369,17 @@ mod tests {
         origin_keys: &[Vec<u8>],
         ranges: &[Range<'_>],
     ) {
-        let path = Builder::new()
+        let local_path = Builder::new()
             .prefix("einstein_merkle_tree_delete_all_in_range")
             .temfidelir()
             .unwrap();
-        let path_str = path.path().to_str().unwrap();
+        let local_path_str = local_path.local_path().to_str().unwrap();
 
         let namespaceds_opts = ALL_NAMESPACEDS
             .iter()
             .map(|namespaced| NAMESPACEDOptions::new(namespaced, ColumnFamilyOptions::new()))
             .collect();
-        let einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
+        let einsteindb = new_einstein_merkle_tree_opt(local_path_str, DBOptions::new(), namespaceds_opts).unwrap();
         let einsteindb = Arc::new(einsteindb);
         let einsteindb = Fdbeinstein_merkle_tree::from_db(einsteindb);
 
@@ -491,18 +491,18 @@ mod tests {
 
     #[test]
     fn test_delete_all_in_range_by_writer() {
-        let path = Builder::new()
+        let local_path = Builder::new()
             .prefix("test_delete_all_in_range_by_writer")
             .temfidelir()
             .unwrap();
-        let path_str = path.path();
-        let Causet_path = path_str.join("tmp_file").to_str().unwrap().to_owned();
+        let local_path_str = local_path.local_path();
+        let Causet_local_path = local_path_str.join("tmp_file").to_str().unwrap().to_owned();
         let mut data = vec![];
         for i in 1000..5000 {
             data.push(i.to_string().as_bytes().to_vec());
         }
         test_delete_all_in_range(
-            DeleteStrategy::DeleteByWriter { Causet_path },
+            DeleteStrategy::DeleteByWriter { Causet_local_path },
             &data,
             &[
                 Range::new(&data[2], &data[499]),
@@ -517,11 +517,11 @@ mod tests {
 
     #[test]
     fn test_delete_all_files_in_range() {
-        let path = Builder::new()
+        let local_path = Builder::new()
             .prefix("einstein_merkle_tree_delete_all_files_in_range")
             .temfidelir()
             .unwrap();
-        let path_str = path.path().to_str().unwrap();
+        let local_path_str = local_path.local_path().to_str().unwrap();
 
         let namespaceds_opts = ALL_NAMESPACEDS
             .iter()
@@ -531,7 +531,7 @@ mod tests {
                 NAMESPACEDOptions::new(namespaced, namespaced_opts)
             })
             .collect();
-        let einsteindb = new_einstein_merkle_tree_opt(path_str, DBOptions::new(), namespaceds_opts).unwrap();
+        let einsteindb = new_einstein_merkle_tree_opt(local_path_str, DBOptions::new(), namespaceds_opts).unwrap();
         let einsteindb = Arc::new(einsteindb);
         let einsteindb = Fdbeinstein_merkle_tree::from_db(einsteindb);
 
@@ -559,11 +559,11 @@ mod tests {
 
     #[test]
     fn test_delete_range_prefix_bloom_case() {
-        let path = Builder::new()
+        let local_path = Builder::new()
             .prefix("einstein_merkle_tree_delete_range_prefix_bloom")
             .temfidelir()
             .unwrap();
-        let path_str = path.path().to_str().unwrap();
+        let local_path_str = local_path.local_path().to_str().unwrap();
 
         let mut opts = DBOptions::new();
         opts.create_if_missing(true);
@@ -579,7 +579,7 @@ mod tests {
         // Create prefix bloom filter for memtable.
         namespaced_opts.set_memtable_prefix_bloom_size_ratio(0.1_f64);
         let namespaced = "default";
-        let einsteindb = DB::open_namespaced(opts, path_str, vec![(namespaced, namespaced_opts)]).unwrap();
+        let einsteindb = EINSTEINDB::open_namespaced(opts, local_path_str, vec![(namespaced, namespaced_opts)]).unwrap();
         let einsteindb = Arc::new(einsteindb);
         let einsteindb = Fdbeinstein_merkle_tree::from_db(einsteindb);
         let mut wb = einsteindb.write_batch();

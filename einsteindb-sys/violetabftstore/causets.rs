@@ -940,7 +940,7 @@ mod tests {
 
         let temp = TemFIDelir::new().unwrap();
         let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new()
-            .path(temp.path())
+            .local_path(temp.local_path())
             .branes(DATA_branes)
             .build()
             .unwrap();

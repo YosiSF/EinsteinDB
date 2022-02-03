@@ -2,7 +2,7 @@
 
 use fdb_traits::NAMESPACED_DEFAULT;
 use foundationdb::{
-    DB, DBStatisticsHistogramType as HistType, DBStatisticsTickerType as TickerType, HistogramData,
+    EINSTEINDB, DBStatisticsHistogramType as HistType, DBStatisticsTickerType as TickerType, HistogramData,
 };
 use lazy_static::lazy_static;
 use prometheus::*;
@@ -616,24 +616,24 @@ pub fn flush_einstein_merkle_tree_ticker_metrics(t: TickerType, value: u64, name
 }
 
 macro_rules! einstein_merkle_tree_histogram_metrics {
-    ($metric:ident, $prefix:expr, $db:expr, $value:expr) => {
+    ($metric:ident, $prefix:expr, $einsteindb:expr, $value:expr) => {
         $metric
-            .with_label_values(&[$db, concat!($prefix, "_median")])
+            .with_label_values(&[$einsteindb, concat!($prefix, "_median")])
             .set($value.median);
         $metric
-            .with_label_values(&[$db, concat!($prefix, "_percentile95")])
+            .with_label_values(&[$einsteindb, concat!($prefix, "_percentile95")])
             .set($value.percentile95);
         $metric
-            .with_label_values(&[$db, concat!($prefix, "_percentile99")])
+            .with_label_values(&[$einsteindb, concat!($prefix, "_percentile99")])
             .set($value.percentile99);
         $metric
-            .with_label_values(&[$db, concat!($prefix, "_average")])
+            .with_label_values(&[$einsteindb, concat!($prefix, "_average")])
             .set($value.average);
         $metric
-            .with_label_values(&[$db, concat!($prefix, "_standard_deviation")])
+            .with_label_values(&[$einsteindb, concat!($prefix, "_standard_deviation")])
             .set($value.standard_deviation);
         $metric
-            .with_label_values(&[$db, concat!($prefix, "_max")])
+            .with_label_values(&[$einsteindb, concat!($prefix, "_max")])
             .set($value.max);
     };
 }
@@ -910,7 +910,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
     }
 }
 
-pub fn flush_einstein_merkle_tree_iostall_properties(einstein_merkle_tree: &DB, name: &str) {
+pub fn flush_einstein_merkle_tree_iostall_properties(einstein_merkle_tree: &EINSTEINDB, name: &str) {
     let stall_num = FDBDB_IOSTALL_CAUSET_KEY.len();
     let mut counter = vec![0; stall_num];
     for namespaced in einstein_merkle_tree.namespaced_names() {
@@ -931,7 +931,7 @@ pub fn flush_einstein_merkle_tree_iostall_properties(einstein_merkle_tree: &DB, 
     }
 }
 
-pub fn flush_einstein_merkle_tree_properties(einstein_merkle_tree: &DB, name: &str, shared_block_cache: bool) {
+pub fn flush_einstein_merkle_tree_properties(einstein_merkle_tree: &EINSTEINDB, name: &str, shared_block_cache: bool) {
     for namespaced in einstein_merkle_tree.namespaced_names() {
         let handle = crate::util::get_namespaced_handle(einstein_merkle_tree, namespaced).unwrap();
         // It is important to monitor each namespaced's size, especially the "violetabft" and "lock" column
@@ -1619,7 +1619,7 @@ mod tests {
     fn test_flush() {
         let dir = Builder::new().prefix("test-flush").temfidelir().unwrap();
         let einstein_merkle_tree =
-            crate::util::new_einstein_merkle_tree(dir.path().to_str().unwrap(), None, ALL_NAMESPACEDS, None).unwrap();
+            crate::util::new_einstein_merkle_tree(dir.local_path().to_str().unwrap(), None, ALL_NAMESPACEDS, None).unwrap();
         for tp in einstein_merkle_tree_TICKER_TYPES {
             flush_einstein_merkle_tree_ticker_metrics(*tp, 2, "kv");
         }

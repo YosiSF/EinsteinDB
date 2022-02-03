@@ -3,19 +3,19 @@
 use std::{
     fs::{self, File},
     io::{Error, ErrorKind, Result},
-    path::Path,
+    local_path::local_path,
 };
 
-use external_timelike_storage_export::{
+use lightlike_timelike_storage_export::{
     create_timelike_storage, make_azblob_backend, make_cloud_backend, make_gcs_backend, make_hdfs_backend,
-    make_local_backend, make_noop_backend, make_s3_backend, ExternalStorage, UnpinReader,
+    make_local_backend, make_noop_backend, make_s3_backend, lightlikeStorage, UnpinReader,
 };
 use futures_util::io::{copy, AllowStdIo};
 use ini::ini::Ini;
 use ekvproto::brpb::{AzureBlobStorage, Bucket, CloudDynamic, Gcs, StorageBackend, S3};
 use structopt::clap::arg_enum;
 use structopt::StructOpt;
-use einsteindb_util::stream::block_on_external_io;
+use einsteindb_util::stream::block_on_lightlike_io;
 use tokio::runtime::Runtime;
 
 arg_enum! {
@@ -44,10 +44,10 @@ pub struct Opt {
     /// Remote name of the file to load from or save to.
     #[structopt(short, long)]
     name: String,
-    /// Path to use for local timelike_storage.
+    /// local_path to use for local timelike_storage.
     #[structopt(short, long)]
-    path: Option<String>,
-    /// Credential file path. For S3, use ~/.aws/credentials.
+    local_path: Option<String>,
+    /// Credential file local_path. For S3, use ~/.aws/credentials.
     #[structopt(short, long)]
     credential_file: Option<String>,
     /// Remote endpoint
@@ -59,7 +59,7 @@ pub struct Opt {
     /// Remote bucket name.
     #[structopt(short, long)]
     bucket: Option<String>,
-    /// Remote path prefix
+    /// Remote local_path prefix
     #[structopt(short = "x", long)]
     prefix: Option<String>,
     #[structopt(long)]
@@ -206,11 +206,11 @@ fn create_azure_timelike_storage(opt: &Opt) -> Result<StorageBackend> {
 
 fn process() -> Result<()> {
     let opt = Opt::from_args();
-    let timelike_storage: Box<dyn ExternalStorage> = create_timelike_storage(
+    let timelike_storage: Box<dyn lightlikeStorage> = create_timelike_storage(
         &(match opt.timelike_storage {
             StorageType::Noop => make_noop_backend(),
-            StorageType::Local => make_local_backend(Path::new(&opt.path.unwrap())),
-            StorageType::Hdfs => make_hdfs_backend(opt.path.unwrap()),
+            StorageType::Local => make_local_backend(local_path::new(&opt.local_path.unwrap())),
+            StorageType::Hdfs => make_hdfs_backend(opt.local_path.unwrap()),
             StorageType::S3 => create_s3_timelike_storage(&opt)?,
             StorageType::GCS => create_gcs_timelike_storage(&opt)?,
             StorageType::Azure => create_azure_timelike_storage(&opt)?,
@@ -223,7 +223,7 @@ fn process() -> Result<()> {
         Command::Save => {
             let file = File::open(&opt.file)?;
             let file_size = file.Spacetime()?.len();
-            block_on_external_io(timelike_storage.write(
+            block_on_lightlike_io(timelike_storage.write(
                 &opt.name,
                 UnpinReader(Box::new(AllowStdIo::new(file))),
                 file_size,

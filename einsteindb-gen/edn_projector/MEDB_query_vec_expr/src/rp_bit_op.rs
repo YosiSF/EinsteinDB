@@ -30,7 +30,7 @@ pub trait BitOp: Clone + std::fmt::Debug + Send + Sync + 'static {
 }
 
 macro_rules! bit_op {
-    ($name:solitonid, $tp:path, $init:tt, $op:tt) => {
+    ($name:solitonid, $tp:local_path, $init:tt, $op:tt) => {
         #[derive(Debug, Clone, Copy)]
         pub struct $name;
         impl BitOp for $name {

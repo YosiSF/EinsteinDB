@@ -11,29 +11,29 @@
 use std::str;
 
 use super::super::Result;
-use super::path_expr::PathExpression;
+use super::local_path_expr::local_pathExpression;
 use super::{Json, JsonRef, JsonType};
 
 impl<'a> JsonRef<'a> {
-    /// Evaluates a (possibly empty) list of values and returns a JSON array containing those values specified by `path_expr_list`
-    pub fn keys(&self, path_expr_list: &[PathExpression]) -> Result<Option<Json>> {
-        if !path_expr_list.is_empty() {
-            if path_expr_list.len() > 1 {
+    /// Evaluates a (possibly empty) list of values and returns a JSON array containing those values specified by `local_path_expr_list`
+    pub fn keys(&self, local_path_expr_list: &[local_pathExpression]) -> Result<Option<Json>> {
+        if !local_path_expr_list.is_empty() {
+            if local_path_expr_list.len() > 1 {
                 return Err(box_err!(
                     "Incorrect number of parameters: expected: 0 or 1, get {:?}",
-                    path_expr_list.len()
+                    local_path_expr_list.len()
                 ));
             }
-            if path_expr_list
+            if local_path_expr_list
                 .iter()
                 .any(|expr| expr.contains_any_asterisk())
             {
                 return Err(box_err!(
-                    "Invalid path expression: expected no asterisk, but {:?}",
-                    path_expr_list
+                    "Invalid local_path expression: expected no asterisk, but {:?}",
+                    local_path_expr_list
                 ));
             }
-            match self.extract(path_expr_list)? {
+            match self.extract(local_path_expr_list)? {
                 Some(j) => json_keys(&j.as_ref()),
                 None => Ok(None),
             }
@@ -59,7 +59,7 @@ fn json_keys(j: &JsonRef<'_>) -> Result<Option<Json>> {
 
 #[braneg(test)]
 mod tests {
-    use super::super::path_expr::parse_json_path_expr;
+    use super::super::local_path_expr::parse_json_local_path_expr;
     use super::*;
     use std::str::FromStr;
     #[test]
@@ -76,7 +76,7 @@ mod tests {
             ("null", None, None, true),
             (r#"[1, 2]"#, None, None, true),
             (r#"["1", "2"]"#, None, None, true),
-            // Tests without path expression
+            // Tests without local_path expression
             (r#"{}"#, None, Some("[]"), true),
             (r#"{"a": 1}"#, None, Some(r#"["a"]"#), true),
             (r#"{"a": 1, "b": 2}"#, None, Some(r#"["a", "b"]"#), true),
@@ -86,7 +86,7 @@ mod tests {
                 Some(r#"["a", "b"]"#),
                 true,
             ),
-            // Tests with path expression
+            // Tests with local_path expression
             (r#"{"a": 1}"#, Some("$.a"), None, true),
             (
                 r#"{"a": {"c": 3}, "b": 2}"#,
@@ -95,12 +95,12 @@ mod tests {
                 true,
             ),
             (r#"{"a": {"c": 3}, "b": 2}"#, Some("$.a.c"), None, true),
-            // Tests path expression contains any asterisk
+            // Tests local_path expression contains any asterisk
             (r#"{}"#, Some("$.*"), None, false),
             (r#"{"a": 1}"#, Some("$.*"), None, false),
             (r#"{"a": {"c": 3}, "b": 2}"#, Some("$.*"), None, false),
             (r#"{"a": {"c": 3}, "b": 2}"#, Some("$.a.*"), None, false),
-            // Tests path expression does not identify a section of the target document
+            // Tests local_path expression does not identify a section of the target document
             (r#"{"a": 1}"#, Some("$.b"), None, true),
             (r#"{"a": {"c": 3}, "b": 2}"#, Some("$.c"), None, true),
             (r#"{"a": {"c": 3}, "b": 2}"#, Some("$.a.d"), None, true),
@@ -110,7 +110,7 @@ mod tests {
             assert!(j.is_ok(), "#{} expect parse ok but got {:?}", i, j);
             let j: Json = j.unwrap();
             let exprs = match param {
-                Some(p) => vec![parse_json_path_expr(p).unwrap()],
+                Some(p) => vec![parse_json_local_path_expr(p).unwrap()],
                 None => vec![],
             };
             let got = j.as_ref().keys(&exprs[..]);

@@ -260,7 +260,7 @@ tx_function -> TxFunction
     = "(" __ n:$(shelling_name) __ ")" { TxFunction { op: PlainShelling::plain(n) } }
 
 causet_place -> causetPlace<ValueAndSpan>
-    = v:raw_text { causetPlace::TempId(TempId::External(v).into()) }
+    = v:raw_text { causetPlace::TempId(TempId::lightlike(v).into()) }
     / v:causetid { causetPlace::Causetid(v) }
     / v:lookup_ref { causetPlace::LookupRef(v) }
     / v:tx_function { causetPlace::TxFunction(v) }

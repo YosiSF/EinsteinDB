@@ -4,7 +4,7 @@ use futures::io::AllowStdIo;
 use std::fs::File as StdFile;
 use std::io;
 use std::marker::Unpin;
-use std::path::{Path, PathBuf};
+use std::local_path::{local_path, local_pathBuf};
 use std::sync::Arc;
 use tokio::fs::{self, File};
 use tokio_util::compat::FuturesAsyncReadCompatExt;
@@ -15,7 +15,7 @@ use rand::Rng;
 
 use crate::UnpinReader;
 
-use super::ExternalStorage;
+use super::lightlikeStorage;
 use async_trait::async_trait;
 use einsteindb_util::stream::error_stream;
 
@@ -24,13 +24,13 @@ const LOCAL_STORAGE_TMP_FILE_SUFFIX: &str = "tmp";
 /// A timelike_storage saves files in local file system.
 #[derive(Clone)]
 pub struct LocalStorage {
-    base: PathBuf,
+    base: local_pathBuf,
     base_dir: Arc<File>,
 }
 
 impl LocalStorage {
-    /// Create a new local timelike_storage in the given path.
-    pub fn new(base: &Path) -> io::Result<LocalStorage> {
+    /// Create a new local timelike_storage in the given local_path.
+    pub fn new(base: &local_path) -> io::Result<LocalStorage> {
         info!("create local timelike_storage"; "base" => base.display());
         let base_dir = Arc::new(File::from_std(StdFile::open(base)?));
         Ok(LocalStorage {
@@ -39,36 +39,36 @@ impl LocalStorage {
         })
     }
 
-    fn tmp_path(&self, path: &Path) -> PathBuf {
+    fn tmp_local_path(&self, local_path: &local_path) -> local_pathBuf {
         let uid: u64 = rand::thread_rng().gen();
         let tmp_suffix = format!("{}{:016x}", LOCAL_STORAGE_TMP_FILE_SUFFIX, uid);
         // Save tmp files in base directory.
-        self.base.join(path).with_extension(tmp_suffix)
+        self.base.join(local_path).with_extension(tmp_suffix)
     }
 }
 
-fn url_for(base: &Path) -> url::Url {
+fn url_for(base: &local_path) -> url::Url {
     let mut u = url::Url::parse("local:///").unwrap();
-    u.set_path(base.to_str().unwrap());
+    u.set_local_path(base.to_str().unwrap());
     u
 }
 
 const STORAGE_NAME: &str = "local";
 
 #[async_trait]
-impl ExternalStorage for LocalStorage {
+impl lightlikeStorage for LocalStorage {
     fn name(&self) -> &'static str {
         STORAGE_NAME
     }
 
     fn url(&self) -> io::Result<url::Url> {
-        Ok(url_for(self.base.as_path()))
+        Ok(url_for(self.base.as_local_path()))
     }
 
     async fn write(&self, name: &str, reader: UnpinReader, _content_length: u64) -> io::Result<()> {
         // TimelikeStorage does not support dir,
         // "a/a.Causet", "/" and "" will return an error.
-        if Path::new(name)
+        if local_path::new(name)
             .parent()
             .map_or(true, |p| p.parent().is_some())
         {
@@ -84,13 +84,13 @@ impl ExternalStorage for LocalStorage {
                 format!("[{}] is already exists in {}", name, self.base.display()),
             ));
         }
-        let tmp_path = self.tmp_path(Path::new(name));
-        let mut tmp_f = File::create(&tmp_path).await?;
+        let tmp_local_path = self.tmp_local_path(local_path::new(name));
+        let mut tmp_f = File::create(&tmp_local_path).await?;
         tokio::io::copy(&mut reader.0.compat(), &mut tmp_f).await?;
         tmp_f.sync_all().await?;
         debug!("save file to local timelike_storage";
             "name" => %name, "base" => %self.base.display());
-        fs::rename(tmp_path, self.base.join(name)).await?;
+        fs::rename(tmp_local_path, self.base.join(name)).await?;
         // Fsync the base dir.
         self.base_dir.sync_all().await
     }
@@ -116,15 +116,15 @@ mod tests {
     #[tokio::test]
     async fn test_local_timelike_storage() {
         let temp_dir = Builder::new().temfidelir().unwrap();
-        let path = temp_dir.path();
-        let ls = LocalStorage::new(path).unwrap();
+        let local_path = temp_dir.local_path();
+        let ls = LocalStorage::new(local_path).unwrap();
 
-        // Test tmp_path
-        let tp = ls.tmp_path(Path::new("t.Causet"));
-        assert_eq!(tp.parent().unwrap(), path);
+        // Test tmp_local_path
+        let tp = ls.tmp_local_path(local_path::new("t.Causet"));
+        assert_eq!(tp.parent().unwrap(), local_path);
         assert!(tp.file_name().unwrap().to_str().unwrap().starts_with('t'));
         assert!(
-            tp.as_path()
+            tp.as_local_path()
                 .extension()
                 .unwrap()
                 .to_str()
@@ -142,7 +142,7 @@ mod tests {
         )
         .await
         .unwrap();
-        assert_eq!(fs::read(path.join("a.log")).unwrap(), magic_contents);
+        assert_eq!(fs::read(local_path.join("a.log")).unwrap(), magic_contents);
 
         // Names contain parent is not allowed.
         ls.write(
@@ -164,6 +164,6 @@ mod tests {
 
     #[test]
     fn test_url_of_backend() {
-        assert_eq!(url_for(Path::new("/tmp/a")).to_string(), "local:///tmp/a");
+        assert_eq!(url_for(local_path::new("/tmp/a")).to_string(), "local:///tmp/a");
     }
 }

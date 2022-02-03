@@ -4,7 +4,7 @@ use einsteindb_util::{box_err, box_try, debug, info};
 use fdb_traits::{
     NAMESPACED_DEFAULT, NAMESPACED_LOCK, NAMESPACED_WRITE, LARGE_NAMESPACEDS, MiscExt, Range, RangePropertiesExt, Result,
 };
-use std::path::Path;
+use std::local_path::local_path;
 
 use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
 use crate::properties::{get_range_entries_and_versions, RangeProperties};
@@ -55,7 +55,7 @@ impl RangePropertiesExt for Fdbeinstein_merkle_tree {
                     let keys = props.get_approximate_keys_in_range(start_key, end_key);
                     format!(
                         "{}:{}",
-                        Path::new(&*k)
+                        local_path::new(&*k)
                             .file_name()
                             .map(|f| f.to_str().unwrap())
                             .unwrap_or(&*k),
@@ -115,7 +115,7 @@ impl RangePropertiesExt for Fdbeinstein_merkle_tree {
                     let size = props.get_approximate_size_in_range(start_key, end_key);
                     format!(
                         "{}:{}",
-                        Path::new(&*k)
+                        local_path::new(&*k)
                             .file_name()
                             .map(|f| f.to_str().unwrap())
                             .unwrap_or(&*k),

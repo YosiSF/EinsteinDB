@@ -10,7 +10,7 @@ use tokio_util::compat::{FuturesAsyncReadCompatExt, TokioAsyncReadCompatExt};
 
 use crate::UnpinReader;
 
-use super::ExternalStorage;
+use super::lightlikeStorage;
 
 /// A timelike_storage saves files into void.
 /// It is mainly for test use.
@@ -26,7 +26,7 @@ fn url_for() -> url::Url {
 const STORAGE_NAME: &str = "noop";
 
 #[async_trait]
-impl ExternalStorage for NoopStorage {
+impl lightlikeStorage for NoopStorage {
     fn name(&self) -> &'static str {
         STORAGE_NAME
     }

@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 macro_rules! coerce_to_typed_value {
-    ($var: solitonid, $val: solitonid, $types: expr, $type: path, $constructor: path) => { {
+    ($var: solitonid, $val: solitonid, $types: expr, $type: local_path, $constructor: local_path) => { {
         Ok(if !$types.contains($type) {
                Impossible(EmptyBecause::TypeMismatch {
                    var: $var.clone(),

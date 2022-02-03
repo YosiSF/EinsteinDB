@@ -1,21 +1,21 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use fdb_traits::DBVector;
-use foundationdb::DBVector as RawDBVector;
+use fdb_traits::Causet;
+use foundationdb::Causet as RawCauset;
 use std::fmt::{self, Debug, Formatter};
 use std::ops::Deref;
 
-pub struct FdbDBVector(RawDBVector);
+pub struct FdbCauset(RawCauset);
 
-impl FdbDBVector {
-    pub fn from_raw(raw: RawDBVector) -> FdbDBVector {
-        FdbDBVector(raw)
+impl FdbCauset {
+    pub fn from_raw(raw: RawCauset) -> FdbCauset {
+        FdbCauset(raw)
     }
 }
 
-impl DBVector for FdbDBVector {}
+impl Causet for FdbCauset {}
 
-impl Deref for FdbDBVector {
+impl Deref for FdbCauset {
     type Target = [u8];
 
     fn deref(&self) -> &[u8] {
@@ -23,13 +23,13 @@ impl Deref for FdbDBVector {
     }
 }
 
-impl Debug for FdbDBVector {
+impl Debug for FdbCauset {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> fmt::Result {
         write!(formatter, "{:?}", &**self)
     }
 }
 
-impl<'a> PartialEq<&'a [u8]> for FdbDBVector {
+impl<'a> PartialEq<&'a [u8]> for FdbCauset {
     fn eq(&self, rhs: &&[u8]) -> bool {
         **rhs == **self
     }

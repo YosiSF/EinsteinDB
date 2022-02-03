@@ -12,7 +12,7 @@ use crate::Expression;
 use crate::ScalarFunc;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
-use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::json::{parse_json_path_expr, ModifyType, PathExpression};
+use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::json::{parse_json_local_path_expr, ModifyType, local_pathExpression};
 use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::Json;
 use causet_algebrizer::MEDB_query_datatype::codec::Datum;
 use causet_algebrizer::MEDB_query_datatype::expr::{Error, EvalContext, Result};
@@ -26,8 +26,8 @@ impl ScalarFunc {
     ) -> Result<Option<Cow<'a, Json>>> {
         let j = try_opt!(self.children[0].eval_json(ctx, row));
         let parser = JsonFuncArgsParser::new(row);
-        if let Some(path_exprs) = parser.get_path_exprs(ctx, &self.children[1..])? {
-            return Ok(j.as_ref().as_ref().keys(&path_exprs)?.map(Cow::Owned));
+        if let Some(local_path_exprs) = parser.get_local_path_exprs(ctx, &self.children[1..])? {
+            return Ok(j.as_ref().as_ref().keys(&local_path_exprs)?.map(Cow::Owned));
         }
         Ok(None)
     }
@@ -100,11 +100,11 @@ impl ScalarFunc {
         ctx: &mut EvalContext,
         row: &'a [Datum],
     ) -> Result<Option<Cow<'a, Json>>> {
-        // TODO: We can cache the PathExpressions if children are Constant.
+        // TODO: We can cache the local_pathExpressions if children are Constant.
         let j = try_opt!(self.children[0].eval_json(ctx, row));
         let parser = JsonFuncArgsParser::new(row);
-        let path_exprs: Vec<_> = try_opt!(parser.get_path_exprs(ctx, &self.children[1..]));
-        Ok(j.as_ref().as_ref().extract(&path_exprs)?.map(Cow::Owned))
+        let local_path_exprs: Vec<_> = try_opt!(parser.get_local_path_exprs(ctx, &self.children[1..]));
+        Ok(j.as_ref().as_ref().extract(&local_path_exprs)?.map(Cow::Owned))
     }
 
     pub fn json_length<'a, 'b: 'a>(
@@ -114,11 +114,11 @@ impl ScalarFunc {
     ) -> Result<Option<i64>> {
         let j = try_opt!(self.children[0].eval_json(ctx, row));
         let parser = JsonFuncArgsParser::new(row);
-        let path_exprs: Vec<_> = match parser.get_path_exprs(ctx, &self.children[1..])? {
+        let local_path_exprs: Vec<_> = match parser.get_local_path_exprs(ctx, &self.children[1..])? {
             Some(list) => list,
             None => return Ok(None),
         };
-        j.as_ref().as_ref().json_length(&path_exprs)
+        j.as_ref().as_ref().json_length(&local_path_exprs)
     }
 
     #[inline]
@@ -155,9 +155,9 @@ impl ScalarFunc {
     ) -> Result<Option<Cow<'a, Json>>> {
         let j = try_opt!(self.children[0].eval_json(ctx, row)).into_owned();
         let parser = JsonFuncArgsParser::new(row);
-        let path_exprs: Vec<_> = try_opt!(parser.get_path_exprs(ctx, &self.children[1..]));
+        let local_path_exprs: Vec<_> = try_opt!(parser.get_local_path_exprs(ctx, &self.children[1..]));
         j.as_ref()
-            .remove(&path_exprs)
+            .remove(&local_path_exprs)
             .map(|j| Some(Cow::Owned(j)))
             .map_err(Error::from)
     }
@@ -187,14 +187,14 @@ impl ScalarFunc {
     ) -> Result<Option<Cow<'a, Json>>> {
         let j = try_opt!(self.children[0].eval_json(ctx, row)).into_owned();
         let parser = JsonFuncArgsParser::new(row);
-        let mut path_exprs = Vec::with_capacity(self.children.len() / 2);
+        let mut local_path_exprs = Vec::with_capacity(self.children.len() / 2);
         let mut values = Vec::with_capacity(self.children.len() / 2);
         for chunk in self.children[1..].chunks(2) {
-            path_exprs.push(try_opt!(parser.get_path_expr(ctx, &chunk[0])));
+            local_path_exprs.push(try_opt!(parser.get_local_path_expr(ctx, &chunk[0])));
             values.push(try_opt!(parser.get_json(ctx, &chunk[1])));
         }
         j.as_ref()
-            .modify(&path_exprs, values, mt)
+            .modify(&local_path_exprs, values, mt)
             .map(|j| Some(Cow::Owned(j)))
             .map_err(Error::from)
     }
@@ -210,22 +210,22 @@ impl<'a> JsonFuncArgsParser<'a> {
         JsonFuncArgsParser { row }
     }
 
-    fn get_path_expr(
+    fn get_local_path_expr(
         &self,
         ctx: &mut EvalContext,
         e: &Expression,
-    ) -> Result<Option<PathExpression>> {
+    ) -> Result<Option<local_pathExpression>> {
         let s = try_opt!(e.eval_string_and_decode(ctx, self.row));
-        let expr = parse_json_path_expr(&s)?;
+        let expr = parse_json_local_path_expr(&s)?;
         Ok(Some(expr))
     }
 
-    fn get_path_exprs(
+    fn get_local_path_exprs(
         &self,
         ctx: &mut EvalContext,
         es: &[Expression],
-    ) -> Result<Option<Vec<PathExpression>>> {
-        es.iter().map(|e| self.get_path_expr(ctx, e)).collect()
+    ) -> Result<Option<Vec<local_pathExpression>>> {
+        es.iter().map(|e| self.get_local_path_expr(ctx, e)).collect()
     }
 
     fn get_json(&self, ctx: &mut EvalContext, e: &Expression) -> Result<Option<Json>> {
@@ -265,7 +265,7 @@ mod tests {
             (Some("null"), None, None, true),
             (Some(r#"[1, 2]"#), None, None, true),
             (Some(r#"["1", "2"]"#), None, None, true),
-            // Tests without path expression
+            // Tests without local_path expression
             (Some("{}"), None, Some("[]"), true),
             (Some(r#"{"a": 1}"#), None, Some(r#"["a"]"#), true),
             (
@@ -280,7 +280,7 @@ mod tests {
                 Some(r#"["a", "b"]"#),
                 true,
             ),
-            // Tests with path expression
+            // Tests with local_path expression
             (
                 Some(r#"{"a": 1}"#),
                 Some(Datum::Bytes(b"$.a".to_vec())),
@@ -305,7 +305,7 @@ mod tests {
                 None,
                 true,
             ),
-            // Tests path expression contains any asterisk
+            // Tests local_path expression contains any asterisk
             (
                 Some(r#"{}"#),
                 Some(Datum::Bytes(b"$.*".to_vec())),
@@ -330,7 +330,7 @@ mod tests {
                 None,
                 false,
             ),
-            // Tests path expression does not identify a section of the target document
+            // Tests local_path expression does not identify a section of the target document
             (
                 Some(r#"{"a": 1}"#),
                 Some(Datum::Bytes(b"$.b".to_vec())),
@@ -394,7 +394,7 @@ mod tests {
                 Some(Datum::Bytes(b"$".to_vec())),
                 Some(2),
             ),
-            // Tests with path expression
+            // Tests with local_path expression
             (
                 Some(r#"[1,2,[1,[5,[3]]]]"#),
                 Some(Datum::Bytes(b"$[2]".to_vec())),
@@ -430,7 +430,7 @@ mod tests {
                 Some(Datum::Bytes(b"$.a[2].aa".to_vec())),
                 Some(1),
             ),
-            // Tests without path expression
+            // Tests without local_path expression
             (Some(r#"{}"#), None, Some(0)),
             (Some(r#"{"a":1}"#), None, Some(1)),
             (Some(r#"{"a":[1]}"#), None, Some(1)),
@@ -443,7 +443,7 @@ mod tests {
             (Some(r#"[{"a":1}]"#), None, Some(1)),
             (Some(r#"[{"a":1,"b":2}]"#), None, Some(1)),
             (Some(r#"[{"a":{"a":1},"b":2}]"#), None, Some(1)),
-            // Tests path expression contains any asterisk
+            // Tests local_path expression contains any asterisk
             (
                 Some(r#"{"a": [1, 2, {"aa": "xx"}]}"#),
                 Some(Datum::Bytes(b"$.*".to_vec())),
@@ -459,7 +459,7 @@ mod tests {
                 Some(Datum::Bytes(b"$**.a".to_vec())),
                 None,
             ),
-            // Tests path expression does not identify a section of the target document
+            // Tests local_path expression does not identify a section of the target document
             (
                 Some(r#"{"a": [1, 2, {"aa": "xx"}]}"#),
                 Some(Datum::Bytes(b"$.c".to_vec())),

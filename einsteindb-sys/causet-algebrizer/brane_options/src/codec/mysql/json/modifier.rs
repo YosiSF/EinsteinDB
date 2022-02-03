@@ -3,7 +3,7 @@
 use super::super::Result;
 use super::constants::*;
 use super::json_extract::extract_json;
-use super::path_expr::{PathExpression, PathLeg};
+use super::local_path_expr::{local_pathExpression, local_pathLeg};
 use super::{Json, JsonRef, JsonType};
 use codec::number::NumberCodec;
 use std::ptr;
@@ -36,21 +36,21 @@ impl<'a> BinaryModifier<'a> {
     }
 
     /// Replaces the existing value JSON and adds nonexisting value
-    /// specified by the expression path with `new`
-    pub fn set(mut self, path: &PathExpression, new: Json) -> Result<Json> {
-        let result = extract_json(self.old, path.legs.as_slice())?;
+    /// specified by the expression local_path with `new`
+    pub fn set(mut self, local_path: &local_pathExpression, new: Json) -> Result<Json> {
+        let result = extract_json(self.old, local_path.legs.as_slice())?;
         if !result.is_empty() {
             self.to_be_modified_ptr = result[0].as_ptr();
             self.new_value = Some(new);
         } else {
-            self.do_insert(&path.legs, new)?;
+            self.do_insert(&local_path.legs, new)?;
         }
         self.rebuild()
     }
 
-    /// Replaces the existing value JSON specified by the expression path with `new`
-    pub fn replace(mut self, path: &PathExpression, new: Json) -> Result<Json> {
-        let result = extract_json(self.old, path.legs.as_slice())?;
+    /// Replaces the existing value JSON specified by the expression local_path with `new`
+    pub fn replace(mut self, local_path: &local_pathExpression, new: Json) -> Result<Json> {
+        let result = extract_json(self.old, local_path.legs.as_slice())?;
         if result.is_empty() {
             return Ok(self.old.to_owned());
         }
@@ -59,31 +59,31 @@ impl<'a> BinaryModifier<'a> {
         self.rebuild()
     }
 
-    /// Inserts a `new` into `old` JSON document by given expression path without replacing
+    /// Inserts a `new` into `old` JSON document by given expression local_path without replacing
     /// existing values
-    pub fn insert(mut self, path: &PathExpression, new: Json) -> Result<Json> {
-        let result = extract_json(self.old, path.legs.as_slice())?;
+    pub fn insert(mut self, local_path: &local_pathExpression, new: Json) -> Result<Json> {
+        let result = extract_json(self.old, local_path.legs.as_slice())?;
         if !result.is_empty() {
-            // The path-value is existing. The insertion is ignored with no overwrite.
+            // The local_path-value is existing. The insertion is ignored with no overwrite.
             return Ok(self.old.to_owned());
         }
-        self.do_insert(path.legs.as_slice(), new)?;
+        self.do_insert(local_path.legs.as_slice(), new)?;
         self.rebuild()
     }
 
-    fn do_insert(&mut self, path_legs: &[PathLeg], new: Json) -> Result<()> {
-        if path_legs.is_empty() {
+    fn do_insert(&mut self, local_path_legs: &[local_pathLeg], new: Json) -> Result<()> {
+        if local_path_legs.is_empty() {
             return Ok(());
         }
-        let legs_len = path_legs.len();
-        let (parent_legs, last_leg) = (&path_legs[..legs_len - 1], &path_legs[legs_len - 1]);
+        let legs_len = local_path_legs.len();
+        let (parent_legs, last_leg) = (&local_path_legs[..legs_len - 1], &local_path_legs[legs_len - 1]);
         let result = extract_json(self.old, parent_legs)?;
         if result.is_empty() {
             return Ok(());
         }
         let parent_node = &result[0];
         match &*last_leg {
-            PathLeg::Index(_) => {
+            local_pathLeg::Index(_) => {
                 // Record the parent node value offset, as it's actually relative to `old`
                 self.to_be_modified_ptr = parent_node.as_ptr();
                 match parent_node.get_type() {
@@ -93,7 +93,7 @@ impl<'a> BinaryModifier<'a> {
                         for i in 0..elem_count {
                             elems.push(parent_node.array_get_elem(i)?);
                         }
-                        // We can ignore the idx in the PathLeg here since we have checked the path-value existence
+                        // We can ignore the idx in the local_pathLeg here since we have checked the local_path-value existence
                         elems.push(new.as_ref());
                         self.new_value = Some(Json::from_ref_array(elems)?);
                     }
@@ -103,7 +103,7 @@ impl<'a> BinaryModifier<'a> {
                     }
                 }
             }
-            PathLeg::Key(insert_key) => {
+            local_pathLeg::Key(insert_key) => {
                 // Ignore constant
                 if parent_node.get_type() != JsonType::Object {
                     return Ok(());
@@ -140,21 +140,21 @@ impl<'a> BinaryModifier<'a> {
         Ok(())
     }
 
-    pub fn remove(mut self, path_legs: &[PathLeg]) -> Result<Json> {
-        let result = extract_json(self.old, path_legs)?;
+    pub fn remove(mut self, local_path_legs: &[local_pathLeg]) -> Result<Json> {
+        let result = extract_json(self.old, local_path_legs)?;
         if result.is_empty() {
             return Ok(self.old.to_owned());
         }
-        self.do_remove(path_legs)?;
+        self.do_remove(local_path_legs)?;
         self.rebuild()
     }
 
-    fn do_remove(&mut self, path_legs: &[PathLeg]) -> Result<()> {
-        if path_legs.is_empty() {
+    fn do_remove(&mut self, local_path_legs: &[local_pathLeg]) -> Result<()> {
+        if local_path_legs.is_empty() {
             return Ok(());
         }
-        let legs_len = path_legs.len();
-        let (parent_legs, last_leg) = (&path_legs[..legs_len - 1], &path_legs[legs_len - 1]);
+        let legs_len = local_path_legs.len();
+        let (parent_legs, last_leg) = (&local_path_legs[..legs_len - 1], &local_path_legs[legs_len - 1]);
         let result = extract_json(self.old, parent_legs)?;
         if result.is_empty() {
             // No parent found, just return
@@ -162,7 +162,7 @@ impl<'a> BinaryModifier<'a> {
         }
         let parent_node = &result[0];
         match &*last_leg {
-            PathLeg::Index(remove_idx) => {
+            local_pathLeg::Index(remove_idx) => {
                 if parent_node.get_type() == JsonType::Array {
                     self.to_be_modified_ptr = parent_node.as_ptr();
                     let elems_count = parent_node.get_elem_count();
@@ -176,7 +176,7 @@ impl<'a> BinaryModifier<'a> {
                     self.new_value = Some(Json::from_ref_array(elems)?);
                 }
             }
-            PathLeg::Key(remove_key) => {
+            local_pathLeg::Key(remove_key) => {
                 // Ignore constant
                 if parent_node.get_type() == JsonType::Object {
                     self.to_be_modified_ptr = parent_node.as_ptr();

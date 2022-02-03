@@ -10,7 +10,7 @@ use foundationdb::{
 use std::cmp;
 use std::collections::Bound::{Excluded, Included, Unbounded};
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::local_path::local_path;
 
 use crate::properties::{RangeProperties, UserCollectedPropertiesDecoder};
 use crate::raw::EventListener;
@@ -47,7 +47,7 @@ impl CompactionJobInfo for FdbCompactionJobInfo<'_> {
         self.0.num_input_files_at_output_l_naught()
     }
 
-    fn input_file_at(&self, pos: usize) -> &Path {
+    fn input_file_at(&self, pos: usize) -> &local_path {
         self.0.input_file_at(pos)
     }
 
@@ -55,7 +55,7 @@ impl CompactionJobInfo for FdbCompactionJobInfo<'_> {
         self.0.output_file_count()
     }
 
-    fn output_file_at(&self, pos: usize) -> &Path {
+    fn output_file_at(&self, pos: usize) -> &local_path {
         self.0.output_file_at(pos)
     }
 

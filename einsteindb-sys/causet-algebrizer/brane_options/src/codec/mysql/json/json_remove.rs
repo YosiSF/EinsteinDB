@@ -10,23 +10,23 @@
 
 use super::super::Result;
 use super::modifier::BinaryModifier;
-use super::path_expr::PathExpression;
+use super::local_path_expr::local_pathExpression;
 use super::{Json, JsonRef};
 
 impl<'a> JsonRef<'a> {
     /// Removes elements from Json,
-    /// All path expressions cannot contain * or ** wildcard.
+    /// All local_path expressions cannot contain * or ** wildcard.
     /// If any error occurs, the input won't be changed.
-    pub fn remove(&self, path_expr_list: &[PathExpression]) -> Result<Json> {
-        if path_expr_list
+    pub fn remove(&self, local_path_expr_list: &[local_pathExpression]) -> Result<Json> {
+        if local_path_expr_list
             .iter()
             .any(|expr| expr.legs.is_empty() || expr.contains_any_asterisk())
         {
-            return Err(box_err!("Invalid path expression"));
+            return Err(box_err!("Invalid local_path expression"));
         }
 
         let mut res = self.to_owned();
-        for expr in path_expr_list {
+        for expr in local_path_expr_list {
             let modifier = BinaryModifier::new(res.as_ref());
             res = modifier.remove(&expr.legs)?;
         }
@@ -36,7 +36,7 @@ impl<'a> JsonRef<'a> {
 
 #[braneg(test)]
 mod tests {
-    use super::super::path_expr::parse_json_path_expr;
+    use super::super::local_path_expr::parse_json_local_path_expr;
     use super::*;
 
     #[test]
@@ -50,22 +50,22 @@ mod tests {
                 r#"{"a": [3, 4],"b":1, "c":{}}"#,
                 true,
             ),
-            // Nothing changed because the path without last leg doesn't exist.
+            // Nothing changed because the local_path without last leg doesn't exist.
             (r#"{"a": [3, 4]}"#, "$.b[1]", r#"{"a": [3, 4]}"#, true),
-            // Nothing changed because the path without last leg doesn't exist.
+            // Nothing changed because the local_path without last leg doesn't exist.
             (r#"{"a": [3, 4]}"#, "$.a[0].b", r#"{"a": [3, 4]}"#, true),
-            // Bad path expression.
+            // Bad local_path expression.
             (r#"null"#, "$.*", r#"null"#, false),
             (r#"null"#, "$[*]", r#"null"#, false),
             (r#"null"#, "$**.a", r#"null"#, false),
             (r#"null"#, "$**[3]", r#"null"#, false),
         ];
 
-        for (i, (json, path, expected, success)) in test_cases.into_iter().enumerate() {
+        for (i, (json, local_path, expected, success)) in test_cases.into_iter().enumerate() {
             let j: Result<Json> = json.parse();
             assert!(j.is_ok(), "#{} expect json parse ok but got {:?}", i, j);
-            let p = parse_json_path_expr(path);
-            assert!(p.is_ok(), "#{} expect path parse ok but got {:?}", i, p);
+            let p = parse_json_local_path_expr(local_path);
+            assert!(p.is_ok(), "#{} expect local_path parse ok but got {:?}", i, p);
             let e: Result<Json> = expected.parse();
             assert!(
                 e.is_ok(),

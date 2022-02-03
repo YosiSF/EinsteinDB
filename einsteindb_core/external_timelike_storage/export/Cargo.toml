@@ -1,16 +1,16 @@
 [package]
-name = "external_timelike_storage_export"
+name = "lightlike_timelike_storage_export"
 version = "0.0.1"
 edition = "2018"
 publish = false
 
 [[bin]]
 name = "einsteindb-cloud-timelike_storage"
-path = "src/bin/einsteindb-cloud-timelike_storage.rs"
+local_path = "src/bin/einsteindb-cloud-timelike_storage.rs"
 required-features = ["cloud-timelike_storage-grpc"]
 
 [lib]
-name = "external_timelike_storage_export"
+name = "lightlike_timelike_storage_export"
 # Experimental feature to load the cloud timelike_storage code dynamically
 # crate-type = ["lib", "cdylib"]
 
@@ -20,7 +20,7 @@ cloud-aws = ["aws"]
 cloud-gcp = ["gcp"]
 cloud-azure = ["azure"]
 cloud-timelike_storage-dylib = [
-  "external_timelike_storage/cloud-timelike_storage-dylib",
+  "lightlike_timelike_storage/cloud-timelike_storage-dylib",
   "ffi-support",
   "fuse",
   "futures",
@@ -34,7 +34,7 @@ cloud-timelike_storage-dylib = [
   "tokio-util",
 ]
 cloud-timelike_storage-grpc = [
-  "external_timelike_storage/cloud-timelike_storage-grpc",
+  "lightlike_timelike_storage/cloud-timelike_storage-grpc",
   "grpcio",
   "fuse",
   "futures",
@@ -50,17 +50,17 @@ cloud-timelike_storage-grpc = [
 ]
 
 [dependencies]
-aws = { optional = true, path = "../../cloud/aws", default-features = false }
-azure = { optional = true, path = "../../cloud/azure", default-features = false }
-cloud = { path = "../../cloud", default_features = false }
+aws = { optional = true, local_path = "../../cloud/aws", default-features = false }
+azure = { optional = true, local_path = "../../cloud/azure", default-features = false }
+cloud = { local_path = "../../cloud", default_features = false }
 lazy_static = { optional = true, version = "1.3" }
-gcp = { optional = true, path = "../../cloud/gcp", default-features = false }
+gcp = { optional = true, local_path = "../../cloud/gcp", default-features = false }
 grpcio = { optional = true, version = "0.9",  default-features = false, features = ["openssl-vendored"] }
-encryption = { path = "../../encryption", default-features = false }
-external_timelike_storage = { path = "../", default-features = false }
-fdb_traits = { path = "../../fdb_traits", default-features = false }
+encryption = { local_path = "../../encryption", default-features = false }
+lightlike_timelike_storage = { local_path = "../", default-features = false }
+fdb_traits = { local_path = "../../fdb_traits", default-features = false }
 ffi-support = { optional = true, version = "0.4.2" }
-fuse = { optional = true, path = "../../fuse" }
+fuse = { optional = true, local_path = "../../fuse" }
 futures = { optional = true, version = "0.3" }
 futures-executor = { optional = true, version = "0.3" }
 futures-io = { version = "0.3" }
@@ -70,7 +70,7 @@ libloading = { optional = true, version = "0.7.0" }
 once_cell = { optional = true, version = "1.3.1" }
 protobuf = { optional = true, version = "2" }
 slog-global = { optional = true, version = "0.1", git = "https://github.com/breeswish/slog-global.git", rev = "d592f88e4dbba5eb439998463054f1a44fbf17b9" }
-einsteindb_util = { path = "../../einsteindb_util" }
+einsteindb_util = { local_path = "../../einsteindb_util" }
 tokio = { version = "1.5", features = ["time", "rt", "net"], optional = true }
 tokio-util = { version = "0.6", features = ["compat"], optional = true }
 url = "2.0"
@@ -86,7 +86,7 @@ tokio = { version = "1.5", features = ["time"] }
 
 [[example]]
 name = "scli"
-path = "examples/scli.rs"
+local_path = "examples/scli.rs"
 
 [target.'cfg(unix)'.dependencies]
 nix = { optional = true, version = "0.11" }

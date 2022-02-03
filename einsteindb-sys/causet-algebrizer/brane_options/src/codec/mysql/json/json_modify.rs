@@ -10,7 +10,7 @@
 
 use super::super::Result;
 use super::modifier::BinaryModifier;
-use super::path_expr::PathExpression;
+use super::local_path_expr::local_pathExpression;
 use super::{Json, JsonRef};
 
 /// `ModifyType` is for modify a JSON.
@@ -26,33 +26,33 @@ pub enum ModifyType {
 
 impl<'a> JsonRef<'a> {
     /// Modifies a Json object by insert, replace or set.
-    /// All path expressions cannot contain * or ** wildcard.
+    /// All local_path expressions cannot contain * or ** wildcard.
     /// If any error occurs, the input won't be changed.
     ///
     /// See `Modify()` in MEDB `json/binary_function.go`
     pub fn modify(
         &self,
-        path_expr_list: &[PathExpression],
+        local_path_expr_list: &[local_pathExpression],
         values: Vec<Json>,
         mt: ModifyType,
     ) -> Result<Json> {
-        if path_expr_list.len() != values.len() {
+        if local_path_expr_list.len() != values.len() {
             return Err(box_err!(
                 "Incorrect number of parameters: expected: {:?}, found {:?}",
                 values.len(),
-                path_expr_list.len()
+                local_path_expr_list.len()
             ));
         }
-        for expr in path_expr_list {
+        for expr in local_path_expr_list {
             if expr.contains_any_asterisk() {
                 return Err(box_err!(
-                    "Invalid path expression: expected no asterisk, found {:?}",
+                    "Invalid local_path expression: expected no asterisk, found {:?}",
                     expr
                 ));
             }
         }
         let mut res = self.to_owned();
-        for (expr, value) in path_expr_list.iter().zip(values.into_iter()) {
+        for (expr, value) in local_path_expr_list.iter().zip(values.into_iter()) {
             let modifier = BinaryModifier::new(res.as_ref());
             res = match mt {
                 ModifyType::Insert => modifier.insert(&expr, value)?,
@@ -66,7 +66,7 @@ impl<'a> JsonRef<'a> {
 
 #[braneg(test)]
 mod tests {
-    use super::super::path_expr::parse_json_path_expr;
+    use super::super::local_path_expr::parse_json_local_path_expr;
     use super::*;
 
     #[test]
@@ -114,9 +114,9 @@ mod tests {
                 r#"[{"a": [3]}, 4]"#,
                 true,
             ),
-            // Nothing changed because the path is empty and we want to insert.
+            // Nothing changed because the local_path is empty and we want to insert.
             (r#"{}"#, "$", r#"1"#, ModifyType::Insert, r#"{}"#, true),
-            // Nothing changed because the path without last leg doesn't exist.
+            // Nothing changed because the local_path without last leg doesn't exist.
             (
                 r#"{"a": [3, 4]}"#,
                 "$.b[1]",
@@ -125,7 +125,7 @@ mod tests {
                 r#"{"a": [3, 4]}"#,
                 true,
             ),
-            // Nothing changed because the path without last leg doesn't exist.
+            // Nothing changed because the local_path without last leg doesn't exist.
             (
                 r#"{"a": [3, 4]}"#,
                 "$.a[2].b",
@@ -134,7 +134,7 @@ mod tests {
                 r#"{"a": [3, 4]}"#,
                 true,
             ),
-            // Nothing changed because we want to insert but the full path exists.
+            // Nothing changed because we want to insert but the full local_path exists.
             (
                 r#"{"a": [3, 4]}"#,
                 "$.a[0]",
@@ -143,7 +143,7 @@ mod tests {
                 r#"{"a": [3, 4]}"#,
                 true,
             ),
-            // Nothing changed because we want to replace but the full path doesn't exist.
+            // Nothing changed because we want to replace but the full local_path doesn't exist.
             (
                 r#"{"a": [3, 4]}"#,
                 "$.a[2]",
@@ -152,7 +152,7 @@ mod tests {
                 r#"{"a": [3, 4]}"#,
                 true,
             ),
-            // Bad path expression.
+            // Bad local_path expression.
             (r#"null"#, "$.*", r#"{}"#, ModifyType::Set, r#"null"#, false),
             (
                 r#"null"#,
@@ -179,7 +179,7 @@ mod tests {
                 false,
             ),
         ];
-        for (i, (json, path, value, mt, expected, success)) in test_cases.drain(..).enumerate() {
+        for (i, (json, local_path, value, mt, expected, success)) in test_cases.drain(..).enumerate() {
             let json: Result<Json> = json.parse();
             assert!(
                 json.is_ok(),
@@ -187,12 +187,12 @@ mod tests {
                 i,
                 json
             );
-            let path = parse_json_path_expr(path);
+            let local_path = parse_json_local_path_expr(local_path);
             assert!(
-                path.is_ok(),
-                "#{} expect path parse ok but got {:?}",
+                local_path.is_ok(),
+                "#{} expect local_path parse ok but got {:?}",
                 i,
-                path
+                local_path
             );
             let value = value.parse();
             assert!(
@@ -208,13 +208,13 @@ mod tests {
                 i,
                 expected
             );
-            let (json, path, value, expected) = (
+            let (json, local_path, value, expected) = (
                 json.unwrap(),
-                path.unwrap(),
+                local_path.unwrap(),
                 value.unwrap(),
                 expected.unwrap(),
             );
-            let result = json.as_ref().modify(vec![path].as_slice(), vec![value], mt);
+            let result = json.as_ref().modify(vec![local_path].as_slice(), vec![value], mt);
             if success {
                 assert!(
                     result.is_ok(),

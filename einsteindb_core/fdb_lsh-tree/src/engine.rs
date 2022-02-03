@@ -3,14 +3,14 @@
 use fdb_traits::{
     Error, Iterable, IterOptions, KV, Peekable, ReadOptions, Result, SyncMutable,
 };
-use foundationdb::{DB, DBIterator, Writable};
+use foundationdb::{EINSTEINDB, DBIterator, Writable};
 use std::any::Any;
 use std::fs;
-use std::path::Path;
+use std::local_path::local_path;
 use std::sync::Arc;
 
 use crate::{Fdbeinstein_merkle_treeIterator, FdbLightlikePersistence};
-use crate::db_vector::FdbDBVector;
+use crate::db_vector::FdbCauset;
 use crate::options::FdbReadOptions;
 use crate::rocks_metrics::{
     global_hyperbolic_causet_historys, flush_einstein_merkle_tree_iostall_properties, flush_einstein_merkle_tree_properties,
@@ -23,40 +23,40 @@ use crate::util::get_namespaced_handle;
 
 #[derive(Clone, Debug)]
 pub struct Fdbeinstein_merkle_tree {
-    einsteindb: Arc<DB>,
+    einsteindb: Arc<EINSTEINDB>,
     shared_block_cache: bool,
 }
 
 impl Fdbeinstein_merkle_tree {
-    pub fn from_db(einsteindb: Arc<DB>) -> Self {
+    pub fn from_db(einsteindb: Arc<EINSTEINDB>) -> Self {
         Fdbeinstein_merkle_tree {
             einsteindb,
             shared_block_cache: false,
         }
     }
 
-    pub fn from_ref(einsteindb: &Arc<DB>) -> &Self {
-        unsafe { &*(einsteindb as *const Arc<DB> as *const Fdbeinstein_merkle_tree) }
+    pub fn from_ref(einsteindb: &Arc<EINSTEINDB>) -> &Self {
+        unsafe { &*(einsteindb as *const Arc<EINSTEINDB> as *const Fdbeinstein_merkle_tree) }
     }
 
-    pub fn as_inner(&self) -> &Arc<DB> {
+    pub fn as_inner(&self) -> &Arc<EINSTEINDB> {
         &self.einsteindb
     }
 
-    pub fn get_sync_db(&self) -> Arc<DB> {
+    pub fn get_sync_db(&self) -> Arc<EINSTEINDB> {
         self.einsteindb.clone()
     }
 
-    pub fn exists(path: &str) -> bool {
-        let path = Path::new(path);
-        if !path.exists() || !path.is_dir() {
+    pub fn exists(local_path: &str) -> bool {
+        let local_path = local_path::new(local_path);
+        if !local_path.exists() || !local_path.is_dir() {
             return false;
         }
 
-        // If path is not an empty directory, we say einsteindb exists. If path is not an empty directory
-        // but einsteindb has not been created, `DB::list_column_families` fails and we can clean up
+        // If local_path is not an empty directory, we say einsteindb exists. If local_path is not an empty directory
+        // but einsteindb has not been created, `EINSTEINDB::list_column_families` fails and we can clean up
         // the directory by this indication.
-        fs::read_dir(&path).unwrap().next().is_some()
+        fs::read_dir(&local_path).unwrap().next().is_some()
     }
 
     pub fn set_shared_block_cache(&mut self, enable: bool) {
@@ -133,12 +133,12 @@ impl Iterable for Fdbeinstein_merkle_tree {
 }
 
 impl Peekable for Fdbeinstein_merkle_tree {
-    type DBVector = FdbDBVector;
+    type Causet = FdbCauset;
 
-    fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<FdbDBVector>> {
+    fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<FdbCauset>> {
         let opt: FdbReadOptions = opts.into();
         let v = self.einsteindb.get_opt(key, &opt.into_raw())?;
-        Ok(v.map(FdbDBVector::from_raw))
+        Ok(v.map(FdbCauset::from_raw))
     }
 
     fn get_value_namespaced_opt(
@@ -146,11 +146,11 @@ impl Peekable for Fdbeinstein_merkle_tree {
         opts: &ReadOptions,
         namespaced: &str,
         key: &[u8],
-    ) -> Result<Option<FdbDBVector>> {
+    ) -> Result<Option<FdbCauset>> {
         let opt: FdbReadOptions = opts.into();
         let handle = get_namespaced_handle(&self.einsteindb, namespaced)?;
         let v = self.einsteindb.get_namespaced_opt(handle, key, &opt.into_raw())?;
-        Ok(v.map(FdbDBVector::from_raw))
+        Ok(v.map(FdbCauset::from_raw))
     }
 }
 
@@ -199,10 +199,10 @@ mod tests {
 
     #[test]
     fn test_base() {
-        let path = Builder::new().prefix("var").temfidelir().unwrap();
+        let local_path = Builder::new().prefix("var").temfidelir().unwrap();
         let namespaced = "namespaced";
         let einstein_merkle_tree = Fdbeinstein_merkle_tree::from_db(Arc::new(
-            raw_util::new_einstein_merkle_tree(path.path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
+            raw_util::new_einstein_merkle_tree(local_path.local_path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
         ));
 
         let mut r = Region::default();
@@ -236,10 +236,10 @@ mod tests {
 
     #[test]
     fn test_peekable() {
-        let path = Builder::new().prefix("var").temfidelir().unwrap();
+        let local_path = Builder::new().prefix("var").temfidelir().unwrap();
         let namespaced = "namespaced";
         let einstein_merkle_tree = Fdbeinstein_merkle_tree::from_db(Arc::new(
-            raw_util::new_einstein_merkle_tree(path.path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
+            raw_util::new_einstein_merkle_tree(local_path.local_path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
         ));
 
         einstein_merkle_tree.put(b"k1", b"v1").unwrap();
@@ -252,10 +252,10 @@ mod tests {
 
     #[test]
     fn test_scan() {
-        let path = Builder::new().prefix("var").temfidelir().unwrap();
+        let local_path = Builder::new().prefix("var").temfidelir().unwrap();
         let namespaced = "namespaced";
         let einstein_merkle_tree = Fdbeinstein_merkle_tree::from_db(Arc::new(
-            raw_util::new_einstein_merkle_tree(path.path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
+            raw_util::new_einstein_merkle_tree(local_path.local_path().to_str().unwrap(), None, &[namespaced], None).unwrap(),
         ));
 
         einstein_merkle_tree.put(b"a1", b"v1").unwrap();

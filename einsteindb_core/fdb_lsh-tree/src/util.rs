@@ -5,7 +5,7 @@ use fdb_traits::{Error, Result};
 use fdb_traits::NAMESPACED_DEFAULT;
 use fdb_traits::einstein_merkle_trees;
 use fdb_traits::Range;
-use foundationdb::{NAMESPACEDHandle, DB, SliceTransform};
+use foundationdb::{NAMESPACEDHandle, EINSTEINDB, SliceTransform};
 use foundationdb::Range as FdbRange;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -18,18 +18,18 @@ use crate::raw_util::new_einstein_merkle_tree as new_einstein_merkle_tree_raw;
 use crate::raw_util::new_einstein_merkle_tree_opt as new_einstein_merkle_tree_opt_raw;
 use crate::rocks_metrics_defs::*;
 
-pub fn new_temp_einstein_merkle_tree(path: &tempfile::TempDir) -> einstein_merkle_trees<Fdbeinstein_merkle_tree, Fdbeinstein_merkle_tree> {
-    let violetabft_path = path.path().join(std::path::Path::new("violetabft"));
+pub fn new_temp_einstein_merkle_tree(local_path: &tempfile::TempDir) -> einstein_merkle_trees<Fdbeinstein_merkle_tree, Fdbeinstein_merkle_tree> {
+    let violetabft_local_path = local_path.local_path().join(std::local_path::local_path::new("violetabft"));
     einstein_merkle_trees::new(
         new_einstein_merkle_tree(
-            path.path().to_str().unwrap(),
+            local_path.local_path().to_str().unwrap(),
             None,
             fdb_traits::ALL_NAMESPACEDS,
             None,
         )
             .unwrap(),
         new_einstein_merkle_tree(
-            violetabft_path.to_str().unwrap(),
+            violetabft_local_path.to_str().unwrap(),
             None,
             &[fdb_traits::NAMESPACED_DEFAULT],
             None,
@@ -38,9 +38,9 @@ pub fn new_temp_einstein_merkle_tree(path: &tempfile::TempDir) -> einstein_merkl
     )
 }
 
-pub fn new_default_einstein_merkle_tree(path: &str) -> Result<Fdbeinstein_merkle_tree> {
+pub fn new_default_einstein_merkle_tree(local_path: &str) -> Result<Fdbeinstein_merkle_tree> {
     let einstein_merkle_tree =
-        new_einstein_merkle_tree_raw(path, None, &[NAMESPACED_DEFAULT], None).map_err(|e| Error::Other(box_err!(e)))?;
+        new_einstein_merkle_tree_raw(local_path, None, &[NAMESPACED_DEFAULT], None).map_err(|e| Error::Other(box_err!(e)))?;
     let einstein_merkle_tree = Arc::new(einstein_merkle_tree);
     let einstein_merkle_tree = Fdbeinstein_merkle_tree::from_db(einstein_merkle_tree);
     Ok(einstein_merkle_tree)
@@ -62,34 +62,34 @@ impl<'a> FdbNAMESPACEDOptions<'a> {
 }
 
 pub fn new_einstein_merkle_tree(
-    path: &str,
+    local_path: &str,
     db_opts: Option<FdbDBOptions>,
     namespaceds: &[&str],
     opts: Option<Vec<FdbNAMESPACEDOptions<'_>>>,
 ) -> Result<Fdbeinstein_merkle_tree> {
     let db_opts = db_opts.map(FdbDBOptions::into_raw);
     let opts = opts.map(|o| o.into_iter().map(FdbNAMESPACEDOptions::into_raw).collect());
-    let einstein_merkle_tree = new_einstein_merkle_tree_raw(path, db_opts, namespaceds, opts).map_err(|e| Error::Other(box_err!(e)))?;
+    let einstein_merkle_tree = new_einstein_merkle_tree_raw(local_path, db_opts, namespaceds, opts).map_err(|e| Error::Other(box_err!(e)))?;
     let einstein_merkle_tree = Arc::new(einstein_merkle_tree);
     let einstein_merkle_tree = Fdbeinstein_merkle_tree::from_db(einstein_merkle_tree);
     Ok(einstein_merkle_tree)
 }
 
 pub fn new_einstein_merkle_tree_opt(
-    path: &str,
+    local_path: &str,
     db_opt: FdbDBOptions,
     namespaceds_opts: Vec<FdbNAMESPACEDOptions<'_>>,
 ) -> Result<Fdbeinstein_merkle_tree> {
     let db_opt = db_opt.into_raw();
     let namespaceds_opts = namespaceds_opts.into_iter().map(FdbNAMESPACEDOptions::into_raw).collect();
     let einstein_merkle_tree =
-        new_einstein_merkle_tree_opt_raw(path, db_opt, namespaceds_opts).map_err(|e| Error::Other(box_err!(e)))?;
+        new_einstein_merkle_tree_opt_raw(local_path, db_opt, namespaceds_opts).map_err(|e| Error::Other(box_err!(e)))?;
     let einstein_merkle_tree = Arc::new(einstein_merkle_tree);
     let einstein_merkle_tree = Fdbeinstein_merkle_tree::from_db(einstein_merkle_tree);
     Ok(einstein_merkle_tree)
 }
 
-pub fn get_namespaced_handle<'a>(einsteindb: &'a DB, namespaced: &str) -> Result<&'a NAMESPACEDHandle> {
+pub fn get_namespaced_handle<'a>(einsteindb: &'a EINSTEINDB, namespaced: &str) -> Result<&'a NAMESPACEDHandle> {
     let handle = einsteindb
         .namespaced_handle(namespaced)
         .ok_or_else(|| Error::einstein_merkle_tree(format!("namespaced {} not found", namespaced)))?;
@@ -100,7 +100,7 @@ pub fn range_to_rocks_range<'a>(range: &Range<'a>) -> FdbRange<'a> {
     FdbRange::new(range.start_key, range.end_key)
 }
 
-pub fn get_einstein_merkle_tree_namespaced_used_size(einstein_merkle_tree: &DB, handle: &NAMESPACEDHandle) -> u64 {
+pub fn get_einstein_merkle_tree_namespaced_used_size(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle) -> u64 {
     let mut namespaced_used_size = einstein_merkle_tree
         .get_property_int_namespaced(handle, FDBDB_TOTAL_Causet_FILES_SIZE)
         .expect("foundationdb is too old, missing total-Causet-files-size property");
@@ -124,7 +124,7 @@ pub fn get_einstein_merkle_tree_namespaced_used_size(einstein_merkle_tree: &DB, 
 
 /// Gets einstein_merkle_tree's compression ratio at given l_naught.
 pub fn get_einstein_merkle_tree_compression_ratio_at_l_naught(
-    einstein_merkle_tree: &DB,
+    einstein_merkle_tree: &EINSTEINDB,
     handle: &NAMESPACEDHandle,
     l_naught: usize,
 ) -> Option<f64> {
@@ -141,24 +141,24 @@ pub fn get_einstein_merkle_tree_compression_ratio_at_l_naught(
 }
 
 /// Gets the number of files at given l_naught of given column family.
-pub fn get_namespaced_num_files_at_l_naught(einstein_merkle_tree: &DB, handle: &NAMESPACEDHandle, l_naught: usize) -> Option<u64> {
+pub fn get_namespaced_num_files_at_l_naught(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle, l_naught: usize) -> Option<u64> {
     let prop = format!("{}{}", FDBDB_NUM_FILES_AT_LEVEL, l_naught);
     einstein_merkle_tree.get_property_int_namespaced(handle, &prop)
 }
 
 /// Gets the number of blob files at given l_naught of given column family.
-pub fn get_namespaced_num_blob_files_at_l_naught(einstein_merkle_tree: &DB, handle: &NAMESPACEDHandle, l_naught: usize) -> Option<u64> {
+pub fn get_namespaced_num_blob_files_at_l_naught(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle, l_naught: usize) -> Option<u64> {
     let prop = format!("{}{}", FDBDB_TITANDB_NUM_BLOB_FILES_AT_LEVEL, l_naught);
     einstein_merkle_tree.get_property_int_namespaced(handle, &prop)
 }
 
 /// Gets the number of immutable mem-table of given column family.
-pub fn get_namespaced_num_immutable_mem_table(einstein_merkle_tree: &DB, handle: &NAMESPACEDHandle) -> Option<u64> {
+pub fn get_namespaced_num_immutable_mem_table(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle) -> Option<u64> {
     einstein_merkle_tree.get_property_int_namespaced(handle, FDBDB_NUM_IMMUCAUSET_TABLE_MEM_CAUSET_TABLE)
 }
 
 /// Gets the amount of pending jet_bundle bytes of given column family.
-pub fn get_namespaced_pending_jet_bundle_bytes(einstein_merkle_tree: &DB, handle: &NAMESPACEDHandle) -> Option<u64> {
+pub fn get_namespaced_pending_jet_bundle_bytes(einstein_merkle_tree: &EINSTEINDB, handle: &NAMESPACEDHandle) -> Option<u64> {
     einstein_merkle_tree.get_property_int_namespaced(handle, FDBDB_PENDING_COMPACTION_BYTES)
 }
 

@@ -71,7 +71,7 @@ mod comparison;
 mod constants;
 mod jcodec;
 mod modifier;
-mod path_expr;
+mod local_path_expr;
 mod serde;
 // json functions
 mod json_depth;
@@ -86,7 +86,7 @@ mod json_unquote;
 
 pub use self::jcodec::{JsonDatumPayloadChunkEncoder, JsonDecoder, JsonEncoder};
 pub use self::json_modify::ModifyType;
-pub use self::path_expr::{parse_json_path_expr, PathExpression};
+pub use self::local_path_expr::{parse_json_local_path_expr, local_pathExpression};
 
 use std::collections::BTreeMap;
 use std::convert::TryFrom;

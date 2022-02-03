@@ -1,6 +1,6 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! External timelike_storage support.
+//! lightlike timelike_storage support.
 //! Cloud provider backends can be found under einsteindb_core/cloud
 
 #[macro_use]
@@ -19,7 +19,7 @@ use fdb_traits::FileEncryptionInfo;
 use fuse::File;
 use futures_io::AsyncRead;
 use futures_util::AsyncReadExt;
-use einsteindb_util::stream::{block_on_external_io, READ_BUF_SIZE};
+use einsteindb_util::stream::{block_on_lightlike_io, READ_BUF_SIZE};
 use einsteindb_util::time::{Instant, Limiter};
 use tokio::time::timeout;
 
@@ -39,7 +39,7 @@ pub mod grpc_client;
 #[cfg(any(feature = "cloud-timelike_storage-dylib", feature = "cloud-timelike_storage-grpc"))]
 pub mod request;
 
-pub fn record_timelike_storage_create(start: Instant, timelike_storage: &dyn ExternalStorage) {
+pub fn record_timelike_storage_create(start: Instant, timelike_storage: &dyn lightlikeStorage) {
     EXT_STORAGE_CREATE_HISTOGRAM
         .with_label_values(&[timelike_storage.name()])
         .observe(start.saturating_elapsed().as_secs_f64());
@@ -57,25 +57,25 @@ pub struct BackendConfig {
     pub hdfs_config: HdfsConfig,
 }
 
-/// An abstraction of an external timelike_storage.
+/// An abstraction of an lightlike timelike_storage.
 // TODO: these should all be returning a future (i.e. async fn).
 #[async_trait]
-pub trait ExternalStorage: 'static + Send + Sync {
+pub trait lightlikeStorage: 'static + Send + Sync {
     fn name(&self) -> &'static str;
 
     fn url(&self) -> io::Result<url::Url>;
 
-    /// Write all contents of the read to the given path.
+    /// Write all contents of the read to the given local_path.
     async fn write(&self, name: &str, reader: UnpinReader, content_length: u64) -> io::Result<()>;
 
-    /// Read all contents of the given path.
+    /// Read all contents of the given local_path.
     fn read(&self, name: &str) -> Box<dyn AsyncRead + Unpin + '_>;
 
-    /// Read from external timelike_storage and retimelike_store to the given path
+    /// Read from lightlike timelike_storage and retimelike_store to the given local_path
     fn retimelike_store(
         &self,
         timelike_storage_name: &str,
-        retimelike_store_name: std::path::PathBuf,
+        retimelike_store_name: std::local_path::local_pathBuf,
         expected_length: u64,
         speed_limiter: &Limiter,
         file_crypter: Option<FileEncryptionInfo>,
@@ -89,7 +89,7 @@ pub trait ExternalStorage: 'static + Send + Sync {
         let min_read_speed: usize = 8192;
         let mut input = encrypt_wrap_reader(file_crypter, reader)?;
 
-        block_on_external_io(read_external_timelike_storage_into_file(
+        block_on_lightlike_io(read_lightlike_timelike_storage_into_file(
             &mut input,
             output,
             speed_limiter,
@@ -100,7 +100,7 @@ pub trait ExternalStorage: 'static + Send + Sync {
 }
 
 #[async_trait]
-impl ExternalStorage for Arc<dyn ExternalStorage> {
+impl lightlikeStorage for Arc<dyn lightlikeStorage> {
     fn name(&self) -> &'static str {
         (**self).name()
     }
@@ -119,7 +119,7 @@ impl ExternalStorage for Arc<dyn ExternalStorage> {
 }
 
 #[async_trait]
-impl ExternalStorage for Box<dyn ExternalStorage> {
+impl lightlikeStorage for Box<dyn lightlikeStorage> {
     fn name(&self) -> &'static str {
         self.as_ref().name()
     }
@@ -156,7 +156,7 @@ pub fn encrypt_wrap_reader<'a>(
     Ok(input)
 }
 
-pub async fn read_external_timelike_storage_into_file(
+pub async fn read_lightlike_timelike_storage_into_file(
     input: &mut (dyn AsyncRead + Unpin),
     output: &mut dyn Write,
     speed_limiter: &Limiter,
@@ -165,7 +165,7 @@ pub async fn read_external_timelike_storage_into_file(
 ) -> io::Result<()> {
     let dur = Duration::from_secs((READ_BUF_SIZE / min_read_speed) as u64);
 
-    // do the I/O copy from external_timelike_storage to the local file.
+    // do the I/O copy from lightlike_timelike_storage to the local file.
     let mut buffer = vec![0u8; READ_BUF_SIZE];
     let mut file_length = 0;
 

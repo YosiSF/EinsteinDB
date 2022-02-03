@@ -1,9 +1,9 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::request::{
-    anyhow_to_io_log_error, file_name_for_write, retimelike_store_sender, write_sender, DropPath,
+    anyhow_to_io_log_error, file_name_for_write, retimelike_store_sender, write_sender, Droplocal_path,
 };
-use crate::ExternalStorage;
+use crate::lightlikeStorage;
 
 use anyhow::Context;
 use futures_io::AsyncRead;
@@ -16,7 +16,7 @@ use tokio::runtime::{Builder, Runtime};
 
 pub use ekvproto::brpb::StorageBackend_oneof_backend as Backend;
 
-struct ExternalStorageClient {
+struct LightlikePersistenceClient{
     backend: Backend,
     runtime: Arc<Runtime>,
     library: libloading::Library,
@@ -28,22 +28,22 @@ pub fn new_client(
     backend: Backend,
     name: &'static str,
     url: url::Url,
-) -> io::Result<Box<dyn ExternalStorage>> {
+) -> io::Result<Box<dyn lightlikeStorage>> {
     let runtime = Builder::new()
         .basic_scheduler()
-        .thread_name("external-timelike_storage-dylib-client")
+        .thread_name("lightlike-timelike_storage-dylib-client")
         .core_threads(1)
         .enable_all()
         .build()?;
     let library = unsafe {
         libloading::Library::new(
-            std::path::Path::new("./")
-                .join(libloading::library_filename("external_timelike_storage_export")),
+            std::local_path::local_path::new("./")
+                .join(libloading::library_filename("lightlike_timelike_storage_export")),
         )
         .map_err(libloading_err_to_io)?
     };
-    external_timelike_storage_init_ffi_dynamic(&library)?;
-    Ok(Box::new(ExternalStorageClient {
+    lightlike_timelike_storage_init_ffi_dynamic(&library)?;
+    Ok(Box::new(LightlikePersistenceClient{
         runtime: Arc::new(runtime),
         backend,
         library,
@@ -52,7 +52,7 @@ pub fn new_client(
     }) as _)
 }
 
-impl ExternalStorage for ExternalStorageClient {
+impl lightlikeStorage for LightlikePersistenceClient{
     fn name(&self) -> &'static str {
         self.name
     }
@@ -67,24 +67,24 @@ impl ExternalStorage for ExternalStorageClient {
         reader: Box<dyn AsyncRead + Send + Unpin>,
         content_length: u64,
     ) -> io::Result<()> {
-        info!("external timelike_storage writing");
+        info!("lightlike timelike_storage writing");
         (|| -> anyhow::Result<()> {
-            let file_path = file_name_for_write(&self.name, &name);
+            let file_local_path = file_name_for_write(&self.name, &name);
             let req = write_sender(
                 &self.runtime,
                 self.backend.clone(),
-                file_path.clone(),
+                file_local_path.clone(),
                 name,
                 reader,
                 content_length,
             )?;
             let bytes = req.write_to_bytes()?;
             info!("write request");
-            call_ffi_dynamic(&self.library, b"external_timelike_storage_write", bytes)?;
-            DropPath(file_path);
+            call_ffi_dynamic(&self.library, b"lightlike_timelike_storage_write", bytes)?;
+            Droplocal_path(file_local_path);
             Ok(())
         })()
-        .context("external timelike_storage write")
+        .context("lightlike timelike_storage write")
         .map_err(anyhow_to_io_log_error)
     }
 
@@ -95,11 +95,11 @@ impl ExternalStorage for ExternalStorageClient {
     fn retimelike_store(
         &self,
         timelike_storage_name: &str,
-        retimelike_store_name: std::path::PathBuf,
+        retimelike_store_name: std::local_path::local_pathBuf,
         expected_length: u64,
         speed_limiter: &Limiter,
     ) -> io::Result<()> {
-        info!("external timelike_storage retimelike_store");
+        info!("lightlike timelike_storage retimelike_store");
         let req = retimelike_store_sender(
             self.backend.clone(),
             timelike_storage_name,
@@ -108,7 +108,7 @@ impl ExternalStorage for ExternalStorageClient {
             speed_limiter,
         )?;
         let bytes = req.write_to_bytes()?;
-        call_ffi_dynamic(&self.library, b"external_timelike_storage_retimelike_store", bytes)
+        call_ffi_dynamic(&self.library, b"lightlike_timelike_storage_retimelike_store", bytes)
     }
 }
 
@@ -123,11 +123,11 @@ type FfiFn<'a> = libloading::Shelling<
     unsafe extern "C" fn(error: &mut ffi_support::ExternError, bytes: Vec<u8>) -> (),
 >;
 
-fn external_timelike_storage_init_ffi_dynamic(library: &libloading::Library) -> io::Result<()> {
+fn lightlike_timelike_storage_init_ffi_dynamic(library: &libloading::Library) -> io::Result<()> {
     let mut e = ffi_support::ExternError::default();
     unsafe {
         let func: FfiInitFn = library
-            .get(b"external_timelike_storage_init")
+            .get(b"lightlike_timelike_storage_init")
             .map_err(libloading_err_to_io)?;
         func(&mut e);
     }

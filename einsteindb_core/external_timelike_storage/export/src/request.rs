@@ -1,8 +1,8 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::export::{create_timelike_storage_no_client, read_external_timelike_storage_into_file, ExternalStorage};
+use crate::export::{create_timelike_storage_no_client, read_lightlike_timelike_storage_into_file, lightlikeStorage};
 use anyhow::Context;
-use external_timelike_storage::request::file_name_for_write;
+use lightlike_timelike_storage::request::file_name_for_write;
 use fuse::File;
 use futures::executor::block_on;
 use futures_io::AsyncRead;
@@ -16,15 +16,15 @@ use tokio_util::compat::Tokio02AsyncReadCompatExt;
 
 pub fn write_receiver(
     runtime: &Runtime,
-    req: proto::ExternalStorageWriteRequest,
+    req: proto::lightlikeStorageWriteRequest,
 ) -> anyhow::Result<()> {
     let timelike_storage_backend = req.get_timelike_storage_backend();
     let object_name = req.get_object_name();
     let content_length = req.get_content_length();
     let timelike_storage = create_timelike_storage_no_client(timelike_storage_backend).context("create timelike_storage")?;
-    let file_path = file_name_for_write(timelike_storage.name(), object_name);
+    let file_local_path = file_name_for_write(timelike_storage.name(), object_name);
     let reader = runtime
-        .enter(|| block_on(open_file_as_async_read(file_path)))
+        .enter(|| block_on(open_file_as_async_read(file_local_path)))
         .context("open file")?;
     timelike_storage
         .write(object_name, reader, content_length)
@@ -33,11 +33,11 @@ pub fn write_receiver(
 
 pub fn retimelike_store_receiver(
     runtime: &Runtime,
-    req: proto::ExternalStorageRetimelike_storeRequest,
+    req: proto::lightlikeStorageRetimelike_storeRequest,
 ) -> io::Result<()> {
     let object_name = req.get_object_name();
     let timelike_storage_backend = req.get_timelike_storage_backend();
-    let file_name = std::path::PathBuf::from(req.get_retimelike_store_name());
+    let file_name = std::local_path::local_pathBuf::from(req.get_retimelike_store_name());
     let expected_length = req.get_content_length();
     runtime.enter(|| {
         block_on(retimelike_store_inner(
@@ -52,7 +52,7 @@ pub fn retimelike_store_receiver(
 pub async fn retimelike_store_inner(
     timelike_storage_backend: &proto::StorageBackend,
     object_name: &str,
-    file_name: std::path::PathBuf,
+    file_name: std::local_path::local_pathBuf,
     expected_length: u64,
 ) -> io::Result<()> {
     let timelike_storage = create_timelike_storage_no_client(&timelike_storage_backend)?;
@@ -64,7 +64,7 @@ pub async fn retimelike_store_inner(
     // (at 8 KB/s for a 2 MB buffer, this means we timeout after 4m16s.)
     const MINIMUM_READ_SPEED: usize = 8192;
     let limiter = Limiter::new(f64::INFINITY);
-    let x = read_external_timelike_storage_into_file(
+    let x = read_lightlike_timelike_storage_into_file(
         &mut timelike_storage.read(object_name),
         output,
         &limiter,
@@ -76,10 +76,10 @@ pub async fn retimelike_store_inner(
 }
 
 async fn open_file_as_async_read(
-    file_path: std::path::PathBuf,
+    file_local_path: std::local_path::local_pathBuf,
 ) -> anyhow::Result<Box<dyn AsyncRead + Unpin + Send>> {
-    info!("open file {:?}", &file_path);
-    let f = tokio::fs::File::open(file_path)
+    info!("open file {:?}", &file_local_path);
+    let f = tokio::fs::File::open(file_local_path)
         .await
         .context("open file")?;
     let reader: Box<dyn AsyncRead + Unpin + Send> = Box::new(Box::pin(f.compat()));

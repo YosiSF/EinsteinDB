@@ -1,9 +1,9 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::request::{
-    anyhow_to_io_log_error, file_name_for_write, retimelike_store_sender, write_sender, DropPath,
+    anyhow_to_io_log_error, file_name_for_write, retimelike_store_sender, write_sender, Droplocal_path,
 };
-use crate::ExternalStorage;
+use crate::lightlikeStorage;
 
 use anyhow::Context;
 use futures_io::AsyncRead;
@@ -15,10 +15,10 @@ use std::sync::Arc;
 use einsteindb_util::time::Limiter;
 use tokio::runtime::{Builder, Runtime};
 
-struct ExternalStorageClient {
+struct LightlikePersistenceClient{
     backend: Backend,
     runtime: Arc<Runtime>,
-    rpc: proto::ExternalStorageClient,
+    rpc: proto::lightlikeStorageClient,
     name: &'static str,
     url: url::Url,
 }
@@ -27,14 +27,14 @@ pub fn new_client(
     backend: Backend,
     name: &'static str,
     url: url::Url,
-) -> io::Result<Box<dyn ExternalStorage>> {
+) -> io::Result<Box<dyn lightlikeStorage>> {
     let runtime = Builder::new()
         .basic_scheduler()
-        .thread_name("external-timelike_storage-grpc-client")
+        .thread_name("lightlike-timelike_storage-grpc-client")
         .core_threads(1)
         .enable_all()
         .build()?;
-    Ok(Box::new(ExternalStorageClient {
+    Ok(Box::new(LightlikePersistenceClient{
         backend,
         runtime: Arc::new(runtime),
         rpc: new_rpc_client()?,
@@ -43,15 +43,15 @@ pub fn new_client(
     }))
 }
 
-fn new_rpc_client() -> io::Result<proto::ExternalStorageClient> {
+fn new_rpc_client() -> io::Result<proto::lightlikeStorageClient> {
     let env = Arc::new(grpcio::EnvBuilder::new().build());
-    let grpc_socket_path = "/tmp/grpc-external-timelike_storage.sock";
-    let socket_addr = format!("unix:{}", grpc_socket_path);
+    let grpc_socket_local_path = "/tmp/grpc-lightlike-timelike_storage.sock";
+    let socket_addr = format!("unix:{}", grpc_socket_local_path);
     let channel = grpcio::ChannelBuilder::new(env).connect(&socket_addr);
-    Ok(proto::ExternalStorageClient::new(channel))
+    Ok(proto::lightlikeStorageClient::new(channel))
 }
 
-impl ExternalStorage for ExternalStorageClient {
+impl lightlikeStorage for LightlikePersistenceClient{
     fn name(&self) -> &'static str {
         self.name
     }
@@ -66,13 +66,13 @@ impl ExternalStorage for ExternalStorageClient {
         reader: Box<dyn AsyncRead + Send + Unpin>,
         content_length: u64,
     ) -> io::Result<()> {
-        info!("external timelike_storage writing");
+        info!("lightlike timelike_storage writing");
         (|| -> anyhow::Result<()> {
-            let file_path = file_name_for_write(&self.name, &name);
+            let file_local_path = file_name_for_write(&self.name, &name);
             let req = write_sender(
                 &self.runtime,
                 self.backend.clone(),
-                file_path.clone(),
+                file_local_path.clone(),
                 name,
                 reader,
                 content_length,
@@ -83,10 +83,10 @@ impl ExternalStorage for ExternalStorageClient {
                 .map_err(rpc_error_to_io)
                 .context("rpc write")?;
             info!("grpc write request finished");
-            DropPath(file_path);
+            Droplocal_path(file_local_path);
             Ok(())
         })()
-        .context("external timelike_storage write")
+        .context("lightlike timelike_storage write")
         .map_err(anyhow_to_io_log_error)
     }
 
@@ -97,11 +97,11 @@ impl ExternalStorage for ExternalStorageClient {
     fn retimelike_store(
         &self,
         timelike_storage_name: &str,
-        retimelike_store_name: std::path::PathBuf,
+        retimelike_store_name: std::local_path::local_pathBuf,
         expected_length: u64,
         speed_limiter: &Limiter,
     ) -> io::Result<()> {
-        info!("external timelike_storage retimelike_store");
+        info!("lightlike timelike_storage retimelike_store");
         let req = retimelike_store_sender(
             self.backend.clone(),
             timelike_storage_name,

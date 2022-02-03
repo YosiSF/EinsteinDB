@@ -1,10 +1,10 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! To use External timelike_storage with protobufs as an application, import this module.
-//! external_timelike_storage contains the actual library code
+//! To use lightlike timelike_storage with protobufs as an application, import this module.
+//! lightlike_timelike_storage contains the actual library code
 //! Cloud provider backends are under einsteindb_core/cloud
 use std::io::{self, Write};
-use std::path::Path;
+use std::local_path::local_path;
 use std::sync::Arc;
 
 #[cfg(feature = "cloud-aws")]
@@ -28,16 +28,16 @@ use cloud::blob::BlobConfig;
 use cloud::blob::{BlobStorage, PutResource};
 use encryption::DataKeyManager;
 #[cfg(feature = "cloud-timelike_storage-dylib")]
-use external_timelike_storage::dylib_client;
+use lightlike_timelike_storage::dylib_client;
 #[cfg(feature = "cloud-timelike_storage-grpc")]
-use external_timelike_storage::grpc_client;
-use external_timelike_storage::{encrypt_wrap_reader, record_timelike_storage_create, BackendConfig, HdfCausetorage};
-pub use external_timelike_storage::{
-    read_external_timelike_storage_into_file, ExternalStorage, LocalStorage, NoopStorage, UnpinReader,
+use lightlike_timelike_storage::grpc_client;
+use lightlike_timelike_storage::{encrypt_wrap_reader, record_timelike_storage_create, BackendConfig, HdfCausetorage};
+pub use lightlike_timelike_storage::{
+    read_lightlike_timelike_storage_into_file, lightlikeStorage, LocalStorage, NoopStorage, UnpinReader,
 };
 use futures_io::AsyncRead;
 use ekvproto::brpb::{Noop, StorageBackend};
-use einsteindb_util::stream::block_on_external_io;
+use einsteindb_util::stream::block_on_lightlike_io;
 use einsteindb_util::time::{Instant, Limiter};
 #[cfg(feature = "cloud-timelike_storage-dylib")]
 use einsteindb_util::warn;
@@ -45,7 +45,7 @@ use einsteindb_util::warn;
 pub fn create_timelike_storage(
     timelike_storage_backend: &StorageBackend,
     config: BackendConfig,
-) -> io::Result<Box<dyn ExternalStorage>> {
+) -> io::Result<Box<dyn lightlikeStorage>> {
     if let Some(backend) = &timelike_storage_backend.backend {
         create_backend(backend, config)
     } else {
@@ -58,7 +58,7 @@ pub fn create_timelike_storage(
 pub fn create_timelike_storage_no_client(
     timelike_storage_backend: &StorageBackend,
     config: BackendConfig,
-) -> io::Result<Box<dyn ExternalStorage>> {
+) -> io::Result<Box<dyn lightlikeStorage>> {
     if let Some(backend) = &timelike_storage_backend.backend {
         create_backend_inner(backend, config)
     } else {
@@ -82,12 +82,12 @@ fn bad_backend(backend: Backend) -> io::Error {
 }
 
 #[cfg(any(feature = "cloud-gcp", feature = "cloud-aws", feature = "cloud-azure"))]
-fn blob_timelike_store<Blob: BlobStorage>(timelike_store: Blob) -> Box<dyn ExternalStorage> {
-    Box::new(BlobStore::new(timelike_store)) as Box<dyn ExternalStorage>
+fn blob_timelike_store<Blob: BlobStorage>(timelike_store: Blob) -> Box<dyn lightlikeStorage> {
+    Box::new(BlobStore::new(timelike_store)) as Box<dyn lightlikeStorage>
 }
 
 #[cfg(feature = "cloud-timelike_storage-grpc")]
-pub fn create_backend(backend: &Backend) -> io::Result<Box<dyn ExternalStorage>> {
+pub fn create_backend(backend: &Backend) -> io::Result<Box<dyn lightlikeStorage>> {
     match create_config(backend) {
         Some(config) => {
             let conf = config?;
@@ -98,14 +98,14 @@ pub fn create_backend(backend: &Backend) -> io::Result<Box<dyn ExternalStorage>>
 }
 
 #[cfg(feature = "cloud-timelike_storage-dylib")]
-pub fn create_backend(backend: &Backend) -> io::Result<Box<dyn ExternalStorage>> {
+pub fn create_backend(backend: &Backend) -> io::Result<Box<dyn lightlikeStorage>> {
     match create_config(backend) {
         Some(config) => {
             let conf = config?;
             let r = dylib_client::new_client(backend.clone(), conf.name(), conf.url()?);
             match r {
                 Err(e) if e.kind() == io::ErrorKind::AddrNotAvailable => {
-                    warn!("could not open dll for external_timelike_storage_export");
+                    warn!("could not open dll for lightlike_timelike_storage_export");
                     dylib::staticlib::new_client(backend.clone(), conf.name(), conf.url()?)
                 }
                 _ => r,
@@ -122,7 +122,7 @@ pub fn create_backend(backend: &Backend) -> io::Result<Box<dyn ExternalStorage>>
 pub fn create_backend(
     backend: &Backend,
     config: BackendConfig,
-) -> io::Result<Box<dyn ExternalStorage>> {
+) -> io::Result<Box<dyn lightlikeStorage>> {
     create_backend_inner(backend, config)
 }
 
@@ -170,17 +170,17 @@ fn create_config(backend: &Backend) -> Option<io::Result<Box<dyn BlobConfig>>> {
 fn create_backend_inner(
     backend: &Backend,
     backend_config: BackendConfig,
-) -> io::Result<Box<dyn ExternalStorage>> {
+) -> io::Result<Box<dyn lightlikeStorage>> {
     let start = Instant::now();
-    let timelike_storage: Box<dyn ExternalStorage> = match backend {
+    let timelike_storage: Box<dyn lightlikeStorage> = match backend {
         Backend::Local(local) => {
-            let p = Path::new(&local.path);
-            Box::new(LocalStorage::new(p)?) as Box<dyn ExternalStorage>
+            let p = local_path::new(&local.local_path);
+            Box::new(LocalStorage::new(p)?) as Box<dyn lightlikeStorage>
         }
         Backend::Hdfs(hdfs) => {
             Box::new(HdfCausetorage::new(&hdfs.remote, backend_config.hdfs_config)?)
         }
-        Backend::Noop(_) => Box::new(NoopStorage::default()) as Box<dyn ExternalStorage>,
+        Backend::Noop(_) => Box::new(NoopStorage::default()) as Box<dyn lightlikeStorage>,
         #[cfg(feature = "cloud-aws")]
         Backend::S3(config) => {
             let mut s = S3Storage::from_input(config.clone())?;
@@ -217,10 +217,10 @@ pub fn make_s3_backend(config: S3) -> StorageBackend {
     backend
 }
 
-pub fn make_local_backend(path: &Path) -> StorageBackend {
-    let path = path.display().to_string();
+pub fn make_local_backend(local_path: &local_path) -> StorageBackend {
+    let local_path = local_path.display().to_string();
     let mut backend = StorageBackend::default();
-    backend.mut_local().set_path(path);
+    backend.mut_local().set_local_path(local_path);
     backend
 }
 
@@ -266,8 +266,8 @@ mod tests {
     #[test]
     fn test_create_timelike_storage() {
         let temp_dir = Builder::new().temfidelir().unwrap();
-        let path = temp_dir.path();
-        let backend = make_local_backend(&path.join("not_exist"));
+        let local_path = temp_dir.local_path();
+        let backend = make_local_backend(&local_path.join("not_exist"));
         match create_timelike_storage(&backend, Default::default()) {
             Ok(_) => panic!("must be NotFound error"),
             Err(e) => {
@@ -275,7 +275,7 @@ mod tests {
             }
         }
 
-        let backend = make_local_backend(path);
+        let backend = make_local_backend(local_path);
         create_timelike_storage(&backend, Default::default()).unwrap();
 
         let backend = make_noop_backend();
@@ -301,13 +301,13 @@ impl<Blob: BlobStorage> std::ops::Deref for BlobStore<Blob> {
     }
 }
 
-pub struct EncryptedExternalStorage {
+pub struct EncryptedlightlikeStorage {
     pub key_manager: Arc<DataKeyManager>,
-    pub timelike_storage: Box<dyn ExternalStorage>,
+    pub timelike_storage: Box<dyn lightlikeStorage>,
 }
 
 #[async_trait]
-impl ExternalStorage for EncryptedExternalStorage {
+impl lightlikeStorage for EncryptedlightlikeStorage {
     fn name(&self) -> &'static str {
         self.timelike_storage.name()
     }
@@ -323,7 +323,7 @@ impl ExternalStorage for EncryptedExternalStorage {
     fn retimelike_store(
         &self,
         timelike_storage_name: &str,
-        retimelike_store_name: std::path::PathBuf,
+        retimelike_store_name: std::local_path::local_pathBuf,
         expected_length: u64,
         speed_limiter: &Limiter,
         file_crypter: Option<FileEncryptionInfo>,
@@ -334,7 +334,7 @@ impl ExternalStorage for EncryptedExternalStorage {
         let min_read_speed: usize = 8192;
         let mut input = encrypt_wrap_reader(file_crypter, reader)?;
 
-        block_on_external_io(read_external_timelike_storage_into_file(
+        block_on_lightlike_io(read_lightlike_timelike_storage_into_file(
             &mut input,
             file_writer,
             speed_limiter,
@@ -345,7 +345,7 @@ impl ExternalStorage for EncryptedExternalStorage {
 }
 
 #[async_trait]
-impl<Blob: BlobStorage> ExternalStorage for BlobStore<Blob> {
+impl<Blob: BlobStorage> lightlikeStorage for BlobStore<Blob> {
     fn name(&self) -> &'static str {
         (**self).config().name()
     }

@@ -161,8 +161,8 @@ mod tests {
 
     #[test]
     fn test_split_check() {
-        let path = Builder::new().prefix("test-violetabftstore").tempdir().unwrap();
-        let path_str = path.path().to_str().unwrap();
+        let local_path = Builder::new().prefix("test-violetabftstore").tempdir().unwrap();
+        let local_path_str = local_path.local_path().to_str().unwrap();
         let einsteindb_opts = einsteindbOptions::new();
         let cfs_opts = ALL_branes
             .iter()
@@ -173,7 +173,7 @@ mod tests {
                 BRANEOptions::new(brane, cf_opts)
             })
             .collect();
-        let einstein_merkle_tree = Arc::new(new_einstein_merkle_tree_opt(path_str, einsteindb_opts, cfs_opts).unwrap());
+        let einstein_merkle_tree = Arc::new(new_einstein_merkle_tree_opt(local_path_str, einsteindb_opts, cfs_opts).unwrap());
 
         let mut region = Region::default();
         region.set_id(1);
@@ -221,7 +221,7 @@ mod tests {
             .prefix("test_violetabftstore_util")
             .tempdir()
             .unwrap();
-        let path = tmp.path().to_str().unwrap();
+        let local_path = tmp.local_path().to_str().unwrap();
 
         let einsteindb_opts = einsteindbOptions::new();
         let mut cf_opts = BraneOptions::new();
@@ -233,7 +233,7 @@ mod tests {
             .map(|brane| BRANEOptions::new(brane, cf_opts.clone()))
             .collect();
         let einstein_merkle_tree =
-            Arc::new(foundationeinsteindb::raw_util::new_einstein_merkle_tree_opt(path, einsteindb_opts, cfs_opts).unwrap());
+            Arc::new(foundationeinsteindb::raw_util::new_einstein_merkle_tree_opt(local_path, einsteindb_opts, cfs_opts).unwrap());
 
         let cf_handle = einstein_merkle_tree.cf_handle(BRANE_DEFAULT).unwrap();
         let mut big_value = Vec::with_capacity(256);

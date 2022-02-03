@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::request::{retimelike_store_receiver, write_receiver};
 use anyhow::Context;
-use external_timelike_storage::request::anyhow_to_io_log_error;
+use lightlike_timelike_storage::request::anyhow_to_io_log_error;
 use grpcio::{self};
 use ekvproto::brpb as proto;
 use slog_global::{error, info};
@@ -22,12 +22,12 @@ pub fn new_service() -> io::Result<SocketService> {
         let env = Arc::new(grpcio::EnvBuilder::new().build());
         let timelike_storage_service = Service::new().context("new timelike_storage service")?;
         let builder = grpcio::ServerBuilder::new(env)
-            .register_service(proto::create_external_timelike_storage(timelike_storage_service));
-        let grpc_socket_path = "/tmp/grpc-external-timelike_storage.sock";
-        let socket_addr = format!("unix:{}", grpc_socket_path);
-        let socket_path = std::path::PathBuf::from(grpc_socket_path);
+            .register_service(proto::create_lightlike_timelike_storage(timelike_storage_service));
+        let grpc_socket_local_path = "/tmp/grpc-lightlike-timelike_storage.sock";
+        let socket_addr = format!("unix:{}", grpc_socket_local_path);
+        let socket_local_path = std::local_path::local_pathBuf::from(grpc_socket_local_path);
         // Keep the listener in scope: otherwise the socket is destroyed
-        let listener = bind_socket(&socket_path).context("GRPC new service create socket")?;
+        let listener = bind_socket(&socket_local_path).context("GRPC new service create socket")?;
         let mut server = builder
             .bind(socket_addr, 0)
             .build()
@@ -40,7 +40,7 @@ pub fn new_service() -> io::Result<SocketService> {
     .map_err(anyhow_to_io_log_error)
 }
 
-/// Service handles the RPC messages for the `ExternalStorage` service.
+/// Service handles the RPC messages for the `lightlikeStorage` service.
 #[derive(Clone)]
 pub struct Service {
     runtime: Arc<Runtime>,
@@ -52,7 +52,7 @@ impl Service {
         let runtime = Arc::new(
             Builder::new()
                 .basic_scheduler()
-                .thread_name("external-timelike_storage-grpc-service")
+                .thread_name("lightlike-timelike_storage-grpc-service")
                 .core_threads(1)
                 .enable_all()
                 .build()?,
@@ -61,18 +61,18 @@ impl Service {
     }
 }
 
-impl proto::ExternalStorage for Service {
+impl proto::lightlikeStorage for Service {
     fn save(
         &mut self,
         _ctx: grpcio::RpcContext,
-        req: proto::ExternalStorageWriteRequest,
-        sink: grpcio::UnarySink<proto::ExternalStorageWriteResponse>,
+        req: proto::lightlikeStorageWriteRequest,
+        sink: grpcio::UnarySink<proto::lightlikeStorageWriteResponse>,
     ) {
         info!("write request {:?}", req.get_object_name());
         let result = write_receiver(&self.runtime, req);
         match result {
             Ok(_) => {
-                let rsp = proto::ExternalStorageWriteResponse::default();
+                let rsp = proto::lightlikeStorageWriteResponse::default();
                 info!("success write");
                 sink.success(rsp);
             }
@@ -86,8 +86,8 @@ impl proto::ExternalStorage for Service {
     fn retimelike_store(
         &mut self,
         _ctx: grpcio::RpcContext,
-        req: proto::ExternalStorageRetimelike_storeRequest,
-        sink: grpcio::UnarySink<proto::ExternalStorageRetimelike_storeResponse>,
+        req: proto::lightlikeStorageRetimelike_storeRequest,
+        sink: grpcio::UnarySink<proto::lightlikeStorageRetimelike_storeResponse>,
     ) {
         info!(
             "retimelike_store request {:?} {:?}",
@@ -97,7 +97,7 @@ impl proto::ExternalStorage for Service {
         let result = retimelike_store_receiver(&self.runtime, req);
         match result {
             Ok(_) => {
-                let rsp = proto::ExternalStorageRetimelike_storeResponse::default();
+                let rsp = proto::lightlikeStorageRetimelike_storeResponse::default();
                 info!("success retimelike_store");
                 sink.success(rsp);
             }
@@ -121,8 +121,8 @@ pub fn make_rpc_error(err: io::Error) -> grpcio::RpcStatus {
     )
 }
 
-fn bind_socket(socket_path: &std::path::Path) -> anyhow::Result<std::os::unix::net::UnixListener> {
-    let msg = format!("bind socket {:?}", &socket_path);
+fn bind_socket(socket_local_path: &std::local_path::local_path) -> anyhow::Result<std::os::unix::net::UnixListener> {
+    let msg = format!("bind socket {:?}", &socket_local_path);
     info!("{}", msg);
-    std::os::unix::net::UnixListener::bind(&socket_path).context(msg)
+    std::os::unix::net::UnixListener::bind(&socket_local_path).context(msg)
 }

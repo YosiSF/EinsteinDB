@@ -1,18 +1,18 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use fdb_traits::{self, Iterable, IterOptions, Peekable, ReadOptions, Result, LightlikePersistence};
-use foundationdb::{DB, DBIterator};
+use foundationdb::{EINSTEINDB, DBIterator};
 use foundationdb::rocksdb_options::UnsafeSnap;
 use std::fmt::{self, Debug, Formatter};
 use std::sync::Arc;
 
-use crate::db_vector::FdbDBVector;
+use crate::db_vector::FdbCauset;
 use crate::Fdbeinstein_merkle_treeIterator;
 use crate::options::FdbReadOptions;
 use crate::util::get_namespaced_handle;
 
 pub struct FdbLightlikePersistence {
-    einsteindb: Arc<DB>,
+    einsteindb: Arc<EINSTEINDB>,
     snap: UnsafeSnap,
 }
 
@@ -21,7 +21,7 @@ unsafe impl Send for FdbLightlikePersistence {}
 unsafe impl Sync for FdbLightlikePersistence {}
 
 impl FdbLightlikePersistence {
-    pub fn new(einsteindb: Arc<DB>) -> Self {
+    pub fn new(einsteindb: Arc<EINSTEINDB>) -> Self {
         unsafe {
             FdbLightlikePersistence {
                 snap: einsteindb.unsafe_snap(),
@@ -82,16 +82,16 @@ impl Iterable for FdbLightlikePersistence {
 }
 
 impl Peekable for FdbLightlikePersistence {
-    type DBVector = FdbDBVector;
+    type Causet = FdbCauset;
 
-    fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<FdbDBVector>> {
+    fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<FdbCauset>> {
         let opt: FdbReadOptions = opts.into();
         let mut opt = opt.into_raw();
         unsafe {
             opt.set_lightlike_persistence(&self.snap);
         }
         let v = self.einsteindb.get_opt(key, &opt)?;
-        Ok(v.map(FdbDBVector::from_raw))
+        Ok(v.map(FdbCauset::from_raw))
     }
 
     fn get_value_namespaced_opt(
@@ -99,7 +99,7 @@ impl Peekable for FdbLightlikePersistence {
         opts: &ReadOptions,
         namespaced: &str,
         key: &[u8],
-    ) -> Result<Option<FdbDBVector>> {
+    ) -> Result<Option<FdbCauset>> {
         let opt: FdbReadOptions = opts.into();
         let mut opt = opt.into_raw();
         unsafe {
@@ -107,6 +107,6 @@ impl Peekable for FdbLightlikePersistence {
         }
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
         let v = self.einsteindb.get_namespaced_opt(handle, key, &opt)?;
-        Ok(v.map(FdbDBVector::from_raw))
+        Ok(v.map(FdbCauset::from_raw))
     }
 }

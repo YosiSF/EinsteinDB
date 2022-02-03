@@ -22,7 +22,7 @@ enum FsmTypes<N, C> {
 
 
 macro_rules! impl_sched {
-    ($name:solitonid, $ty:path, Fsm = $fsm:tt) => {
+    ($name:solitonid, $ty:local_path, Fsm = $fsm:tt) => {
         pub struct $name<N, C> {
             sender: channel::Sender<FsmTypes<N, C>>,
         }

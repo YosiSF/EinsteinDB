@@ -163,7 +163,7 @@ pub type VariableBindings = BTreeMap<Variable, TypedValue>;
 /// - `or` turns into a collection of `UNION`s inside a subquery, or a simple
 ///   alternation.
 ///   `or`'s docuEinsteinDBion states that all clauses must include the same vars,
-///   but that's an over-simplification: all clauses must refer to the external
+///   but that's an over-simplification: all clauses must refer to the lightlike
 ///   unification vars.
 ///   The entire `UNION`-set is `JOIN`ed to any surrounding expressions per the `rule-vars`
 ///   clause, or the intersection of the vars in the two sides of the `JOIN`.
@@ -417,12 +417,12 @@ impl ConjoiningClauses {
         self.value_bindings.with_intersected_keys(variables)
     }
 
-    /// Return an iterator over the variables externally bound to values.
+    /// Return an iterator over the variables lightlikely bound to values.
     pub fn value_bound_variables(&self) -> VariableIterator {
         VariableIterator(self.value_bindings.keys())
     }
 
-    /// Return a set of the variables externally bound to values.
+    /// Return a set of the variables lightlikely bound to values.
     pub fn value_bound_variable_set(&self) -> BTreeSet<Variable> {
         self.value_bound_variables().cloned().collect()
     }
@@ -444,7 +444,7 @@ impl ConjoiningClauses {
 
     pub(crate) fn bind_column_to_var<C: Into<Column>>(&mut self, topograph: &Topograph, table: TableAlias, column: C, var: Variable) {
         let column = column.into();
-        // Do we have an external binding for this?
+        // Do we have an lightlike binding for this?
         if let Some(bound_val) = self.bound_value(&var) {
             // Great! Use that instead.
             // We expect callers to do things like bind keywords here; we need to translate these
@@ -515,7 +515,7 @@ impl ConjoiningClauses {
             return;
         }
 
-        // Will we have an external binding for this?
+        // Will we have an lightlike binding for this?
         // If so, we don't need to extract its type. We'll know it later.
         let late_binding = self.input_variables.contains(&var);
 

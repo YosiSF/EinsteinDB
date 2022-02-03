@@ -157,7 +157,7 @@ mod tests {
             NAMESPACEDOptions::new("test", namespaced_opts),
         ];
         let einsteindb = new_einstein_merkle_tree(
-            temp_dir.path().to_str().unwrap(),
+            temp_dir.local_path().to_str().unwrap(),
             None,
             &["default", "test"],
             Some(namespaceds_opts),

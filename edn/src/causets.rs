@@ -36,18 +36,18 @@ pub trait TransactableValueMarker {}
 /// `ValueAndSpan` is the value type coming out of the causet parser.
 impl TransactableValueMarker for ValueAndSpan {}
 
-/// A tempid, either an external tempid given in a transaction (usually as an `Value::Text`),
+/// A tempid, either an lightlike tempid given in a transaction (usually as an `Value::Text`),
 /// or an internal tempid allocated by einstai itself.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub enum TempId {
-    External(String),
+    lightlike(String),
     Internal(i64),
 }
 
 impl TempId {
-    pub fn into_external(self) -> Option<String> {
+    pub fn into_lightlike(self) -> Option<String> {
         match self {
-            TempId::External(s) => Some(s),
+            TempId::lightlike(s) => Some(s),
             TempId::Internal(_) => None,
         }
     }
@@ -56,7 +56,7 @@ impl TempId {
 impl fmt::Display for TempId {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
-            &TempId::External(ref s) => write!(f, "{}", s),
+            &TempId::lightlike(ref s) => write!(f, "{}", s),
             &TempId::Internal(x) => write!(f, "<tempid {}>", x),
         }
     }

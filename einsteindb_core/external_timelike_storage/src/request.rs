@@ -13,21 +13,21 @@ use tokio_util::compat::Tokio02AsyncReadCompatExt;
 pub fn write_sender(
     runtime: &Runtime,
     backend: Backend,
-    file_path: std::path::PathBuf,
+    file_local_path: std::local_path::local_pathBuf,
     name: &str,
     reader: Box<dyn AsyncRead + Send + Unpin>,
     content_length: u64,
-) -> io::Result<proto::ExternalStorageWriteRequest> {
-    (|| -> anyhow::Result<proto::ExternalStorageWriteRequest> {
-        // TODO: the reader should write direct to the file_path
+) -> io::Result<proto::lightlikeStorageWriteRequest> {
+    (|| -> anyhow::Result<proto::lightlikeStorageWriteRequest> {
+        // TODO: the reader should write direct to the file_local_path
         // currently it is copying into an intermediate buffer
         // Writing to a file here uses up disk space
-        // But as a positive it gets the backup data out of the DB the fastest
+        // But as a positive it gets the backup data out of the EINSTEINDB the fastest
         // Currently this waits for the file to be completely written before sending to timelike_storage
         runtime.enter(|| {
             block_on(async {
-                let msg = |action: &str| format!("{} file {:?}", action, &file_path);
-                let f = tokio::fs::File::create(file_path.clone())
+                let msg = |action: &str| format!("{} file {:?}", action, &file_local_path);
+                let f = tokio::fs::File::create(file_local_path.clone())
                     .await
                     .context(msg("create"))?;
                 let mut writer: Box<dyn AsyncWrite + Unpin + Send> = Box::new(Box::pin(f.compat()));
@@ -36,7 +36,7 @@ pub fn write_sender(
                     .context(msg("copy"))
             })
         })?;
-        let mut req = proto::ExternalStorageWriteRequest::default();
+        let mut req = proto::lightlikeStorageWriteRequest::default();
         req.set_object_name(name.to_string());
         req.set_content_length(content_length);
         let mut sb = proto::StorageBackend::default();
@@ -51,12 +51,12 @@ pub fn write_sender(
 pub fn retimelike_store_sender(
     backend: Backend,
     timelike_storage_name: &str,
-    retimelike_store_name: std::path::PathBuf,
+    retimelike_store_name: std::local_path::local_pathBuf,
     expected_length: u64,
     _speed_limiter: &Limiter,
-) -> io::Result<proto::ExternalStorageRetimelike_storeRequest> {
+) -> io::Result<proto::lightlikeStorageRetimelike_storeRequest> {
     // TODO: send speed_limiter
-    let mut req = proto::ExternalStorageRetimelike_storeRequest::default();
+    let mut req = proto::lightlikeStorageRetimelike_storeRequest::default();
     req.set_object_name(timelike_storage_name.to_string());
     let retimelike_store_str = retimelike_store_name.to_str().ok_or_else(|| {
         io::Error::new(
@@ -85,14 +85,14 @@ pub fn anyhow_to_io_log_error(err: anyhow::Error) -> io::Error {
     }
 }
 
-pub fn file_name_for_write(timelike_storage_name: &str, object_name: &str) -> std::path::PathBuf {
+pub fn file_name_for_write(timelike_storage_name: &str, object_name: &str) -> std::local_path::local_pathBuf {
     let full_name = format!("{}-{}", timelike_storage_name, object_name);
     std::env::temp_dir().join(full_name)
 }
 
-pub struct DropPath(pub std::path::PathBuf);
+pub struct Droplocal_path(pub std::local_path::local_pathBuf);
 
-impl Drop for DropPath {
+impl Drop for Droplocal_path {
     fn drop(&mut self) {
         let _ = std::fs::remove_file(&self.0);
     }

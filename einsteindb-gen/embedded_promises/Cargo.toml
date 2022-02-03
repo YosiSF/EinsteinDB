@@ -5,7 +5,7 @@ workspace = "../../src/causet"
 
 [lib]
 name = "embedded_promises"
-path = "lib.rs"
+local_path = "lib.rs"
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
@@ -18,5 +18,5 @@ serde = { version = "1.0", features = ["rc"] }
 serde_derive = "1.0"
 
 [dependencies.edn]
-path = "../edn"
+local_path = "../edn"
 features = ["serde_support"]

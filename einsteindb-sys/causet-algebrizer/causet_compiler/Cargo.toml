@@ -6,7 +6,7 @@ publish = false
 description = "SIMD Vector Quantization of an algebrized query with optimal joins  "
 
 [dependencies]
-match_template = { path = "../match_template" }
-milevaeinsteindb_query_codegen = { path = "../../causet_algebrizer" }
-milevaeinsteindb_query_datatype = { path = "../../milevaeinsteindb_query_datatype", default-features = false }
+match_template = { local_path = "../match_template" }
+milevaeinsteindb_query_codegen = { local_path = "../../causet_algebrizer" }
+milevaeinsteindb_query_datatype = { local_path = "../../milevaeinsteindb_query_datatype", default-features = false }
 

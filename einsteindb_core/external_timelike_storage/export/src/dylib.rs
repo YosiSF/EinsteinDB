@@ -20,7 +20,7 @@ lazy_static! {
 /// # Safety
 /// Deref data pointer, thus unsafe
 #[no_mangle]
-pub extern "C" fn external_timelike_storage_init(error: &mut ffi_support::ExternError) {
+pub extern "C" fn lightlike_timelike_storage_init(error: &mut ffi_support::ExternError) {
     ffi_support::call_with_result(error, || {
         (|| -> anyhow::Result<()> {
             let guarded = RUNTIME_INIT.lock().unwrap();
@@ -29,7 +29,7 @@ pub extern "C" fn external_timelike_storage_init(error: &mut ffi_support::Extern
             }
             let runtime = Builder::new()
                 .basic_scheduler()
-                .thread_name("external-timelike_storage-dylib")
+                .thread_name("lightlike-timelike_storage-dylib")
                 .core_threads(1)
                 .enable_all()
                 .build()
@@ -40,7 +40,7 @@ pub extern "C" fn external_timelike_storage_init(error: &mut ffi_support::Extern
             #[allow(clippy::unit_arg)]
             Ok(*guarded)
         })()
-        .context("external_timelike_storage_init")
+        .context("lightlike_timelike_storage_init")
         .map_err(anyhow_to_extern_err)
     })
 }
@@ -48,7 +48,7 @@ pub extern "C" fn external_timelike_storage_init(error: &mut ffi_support::Extern
 /// # Safety
 /// Deref data pointer, thus unsafe
 #[no_mangle]
-pub unsafe extern "C" fn external_timelike_storage_write(
+pub unsafe extern "C" fn lightlike_timelike_storage_write(
     data: *const u8,
     len: i32,
     error: &mut ffi_support::ExternError,
@@ -57,20 +57,20 @@ pub unsafe extern "C" fn external_timelike_storage_write(
         (|| -> anyhow::Result<()> {
             let runtime = RUNTIME
                 .get()
-                .context("must first call external_timelike_storage_init")?;
+                .context("must first call lightlike_timelike_storage_init")?;
             let buffer = get_buffer(data, len);
-            let req: proto::ExternalStorageWriteRequest = protobuf::parse_from_bytes(buffer)?;
+            let req: proto::lightlikeStorageWriteRequest = protobuf::parse_from_bytes(buffer)?;
             info!("write request {:?}", req.get_object_name());
             write_receiver(&runtime, req)
         })()
-        .context("external_timelike_storage_write")
+        .context("lightlike_timelike_storage_write")
         .map_err(anyhow_to_extern_err)
     })
 }
 
 /// # Safety
 /// Deref data pointer, thus unsafe
-pub unsafe extern "C" fn external_timelike_storage_retimelike_store(
+pub unsafe extern "C" fn lightlike_timelike_storage_retimelike_store(
     data: *const u8,
     len: i32,
     error: &mut ffi_support::ExternError,
@@ -79,13 +79,13 @@ pub unsafe extern "C" fn external_timelike_storage_retimelike_store(
         (|| -> anyhow::Result<()> {
             let runtime = RUNTIME
                 .get()
-                .context("must first call external_timelike_storage_init")?;
+                .context("must first call lightlike_timelike_storage_init")?;
             let buffer = get_buffer(data, len);
-            let req: proto::ExternalStorageRetimelike_storeRequest = protobuf::parse_from_bytes(buffer)?;
+            let req: proto::lightlikeStorageRetimelike_storeRequest = protobuf::parse_from_bytes(buffer)?;
             info!("retimelike_store request {:?}", req.get_object_name());
             Ok(retimelike_store_receiver(runtime, req)?)
         })()
-        .context("external_timelike_storage_retimelike_store")
+        .context("lightlike_timelike_storage_retimelike_store")
         .map_err(anyhow_to_extern_err)
     })
 }
@@ -107,12 +107,12 @@ fn anyhow_to_extern_err(e: anyhow::Error) -> ffi_support::ExternError {
 
 pub mod staticlib {
     use super::*;
-    use external_timelike_storage::{
+    use lightlike_timelike_storage::{
         dylib_client::extern_to_io_err,
         request::{
-            anyhow_to_io_log_error, file_name_for_write, retimelike_store_sender, write_sender, DropPath,
+            anyhow_to_io_log_error, file_name_for_write, retimelike_store_sender, write_sender, Droplocal_path,
         },
-        ExternalStorage,
+        lightlikeStorage,
     };
     use futures_io::AsyncRead;
     use protobuf::Message;
@@ -120,7 +120,7 @@ pub mod staticlib {
     use std::sync::Arc;
     use einsteindb_util::time::Limiter;
 
-    struct ExternalStorageClient {
+    struct LightlikePersistenceClient{
         backend: Backend,
         runtime: Arc<Runtime>,
         name: &'static str,
@@ -131,15 +131,15 @@ pub mod staticlib {
         backend: Backend,
         name: &'static str,
         url: url::Url,
-    ) -> io::Result<Box<dyn ExternalStorage>> {
+    ) -> io::Result<Box<dyn lightlikeStorage>> {
         let runtime = Builder::new()
             .basic_scheduler()
-            .thread_name("external-timelike_storage-dylib-client")
+            .thread_name("lightlike-timelike_storage-dylib-client")
             .core_threads(1)
             .enable_all()
             .build()?;
-        external_timelike_storage_init_ffi()?;
-        Ok(Box::new(ExternalStorageClient {
+        lightlike_timelike_storage_init_ffi()?;
+        Ok(Box::new(LightlikePersistenceClient{
             runtime: Arc::new(runtime),
             backend,
             name,
@@ -147,7 +147,7 @@ pub mod staticlib {
         }) as _)
     }
 
-    impl ExternalStorage for ExternalStorageClient {
+    impl lightlikeStorage for LightlikePersistenceClient{
         fn name(&self) -> &'static str {
             self.name
         }
@@ -162,24 +162,24 @@ pub mod staticlib {
             reader: Box<dyn AsyncRead + Send + Unpin>,
             content_length: u64,
         ) -> io::Result<()> {
-            info!("external timelike_storage writing");
+            info!("lightlike timelike_storage writing");
             (|| -> anyhow::Result<()> {
-                let file_path = file_name_for_write(&self.name, &name);
+                let file_local_path = file_name_for_write(&self.name, &name);
                 let req = write_sender(
                     &self.runtime,
                     self.backend.clone(),
-                    file_path.clone(),
+                    file_local_path.clone(),
                     name,
                     reader,
                     content_length,
                 )?;
                 let bytes = req.write_to_bytes()?;
                 info!("write request");
-                external_timelike_storage_write_ffi(bytes)?;
-                DropPath(file_path);
+                lightlike_timelike_storage_write_ffi(bytes)?;
+                Droplocal_path(file_local_path);
                 Ok(())
             })()
-            .context("external timelike_storage write")
+            .context("lightlike timelike_storage write")
             .map_err(anyhow_to_io_log_error)
         }
 
@@ -190,11 +190,11 @@ pub mod staticlib {
         fn retimelike_store(
             &self,
             timelike_storage_name: &str,
-            retimelike_store_name: std::path::PathBuf,
+            retimelike_store_name: std::local_path::local_pathBuf,
             expected_length: u64,
             speed_limiter: &Limiter,
         ) -> io::Result<()> {
-            info!("external timelike_storage retimelike_store");
+            info!("lightlike timelike_storage retimelike_store");
             let req = retimelike_store_sender(
                 self.backend.clone(),
                 timelike_storage_name,
@@ -203,14 +203,14 @@ pub mod staticlib {
                 speed_limiter,
             )?;
             let bytes = req.write_to_bytes()?;
-            external_timelike_storage_retimelike_store_ffi(bytes)
+            lightlike_timelike_storage_retimelike_store_ffi(bytes)
         }
     }
 
-    fn external_timelike_storage_write_ffi(bytes: Vec<u8>) -> io::Result<()> {
+    fn lightlike_timelike_storage_write_ffi(bytes: Vec<u8>) -> io::Result<()> {
         let mut e = ffi_support::ExternError::default();
         unsafe {
-            external_timelike_storage_write(bytes.as_ptr(), bytes.len() as i32, &mut e);
+            lightlike_timelike_storage_write(bytes.as_ptr(), bytes.len() as i32, &mut e);
         }
         if e.get_code() != ffi_support::ErrorCode::SUCCESS {
             Err(extern_to_io_err(e))
@@ -219,10 +219,10 @@ pub mod staticlib {
         }
     }
 
-    fn external_timelike_storage_retimelike_store_ffi(bytes: Vec<u8>) -> io::Result<()> {
+    fn lightlike_timelike_storage_retimelike_store_ffi(bytes: Vec<u8>) -> io::Result<()> {
         let mut e = ffi_support::ExternError::default();
         unsafe {
-            external_timelike_storage_retimelike_store(bytes.as_ptr(), bytes.len() as i32, &mut e);
+            lightlike_timelike_storage_retimelike_store(bytes.as_ptr(), bytes.len() as i32, &mut e);
         }
         if e.get_code() != ffi_support::ErrorCode::SUCCESS {
             Err(extern_to_io_err(e))
@@ -231,9 +231,9 @@ pub mod staticlib {
         }
     }
 
-    fn external_timelike_storage_init_ffi() -> io::Result<()> {
+    fn lightlike_timelike_storage_init_ffi() -> io::Result<()> {
         let mut e = ffi_support::ExternError::default();
-        external_timelike_storage_init(&mut e);
+        lightlike_timelike_storage_init(&mut e);
         if e.get_code() != ffi_support::ErrorCode::SUCCESS {
             return Err(extern_to_io_err(e));
         }
