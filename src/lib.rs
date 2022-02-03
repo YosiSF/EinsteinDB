@@ -1,70 +1,147 @@
-// Copyright 2022 EinsteinDB Project Authors. Whtcorps IncLicensed under Apache-2.0.
+// Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
 
-//! EinsteinDB - A Tuplestore build atop FoundationDB with Key-Value Agnostic Schemafree replicated in-memory supercolumnar slabs as interfaces as caches for the masses
-//!
+extern crate failure;
+extern crate indexmap;
+extern crate itertools;
+#[macro_use] extern crate lazy_static;
+#[macro_use] extern crate log;
 
-//!
-//! [MilevaDB]: https://github.com/YosiSF/MilevaDB
-//!
+#[cfg(feature = "syncable")]
+#[macro_use] extern crate serde_derive;
 
-#![crate_type = "lib"]
-#![cfg_attr(test, feature(test))]
-#![recursion_limit = "400"]
-#![feature(cell_update)]
-#![feature(proc_macro_hygiene)]
-#![feature(min_specialization)]
-#![feature(box_patterns)]
-#![feature(drain_filter)]
-#![feature(negative_impls)]
-#![feature(deadline_api)]
-#![feature(generic_associated_types)]
+extern crate petgraph;
+extern crate rusqlite;
+extern crate tabwriter;
+extern crate time;
 
-#[macro_use(fail_point)]
-extern crate fail;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate more_asserts;
+#[macro_use] extern crate edn;
+#[macro_use] extern crate einsteindb_core;
+extern crate einsteindb_traits;
+#[macro_use] extern crate core_traits;
+extern crate einstai_BerolinaSQL;
 
+use std::iter::repeat;
 
-#[cfg(test)]
-extern crate test;
+use itertools::Itertools;
 
+use einsteindb_traits::errors::{
+    einsteindbErrorKind,
+    Result,
+};
 
-/// Returns the einsteindb version information.
-pub fn einsteindb_version_info(build_time: Option<&str>) -> String {
-    let fallback = "Unknown (env var does not exist when building)";
-    format!(
-        "\nRelease Version:   {}\
-         \nEdition:           {}\
-         \nGit Commit Hash:   {}\
-         \nGit Commit Branch: {}\
-         \nUTC Build Time:    {}\
-         \nRust Version:      {}\
-         \nEnable Features:   {}\
-         \nProfusef:           {}",
-        env!("CARGO_PKG_VERSION"),
-        option_env!("EinsteinDB_EDITION").unwrap_or("Community"),
-        option_env!("EinsteinDB_BUILD_GIT_HASH").unwrap_or(fallback),
-        option_env!("EinsteinDB_BUILD_GIT_BRANCH").unwrap_or(fallback),
-        build_time.unwrap_or(fallback),
-        option_env!("EinsteinDB_BUILD_RUSTC_VERSION").unwrap_or(fallback),
-        option_env!("EinsteinDB_ENABLE_FEATURES")
-            .unwrap_or(fallback)
-            .trim(),
-        option_env!("EinsteinDB_PROFILE").unwrap_or(fallback),
-    )
+#[macro_use] pub mod debug;
+
+mod add_retract_alter_set;
+pub mod cache;
+pub mod einsteindb;
+mod bootstrap;
+pub mod causetids;
+pub mod internal_types;    // pub because we need them for building causets programmatically.
+mod spacetime;
+mod topograph;
+pub mod tx_observer;
+mod watcher;
+pub mod timelines;
+mod tx;
+mod tx_checking;
+pub mod types;
+mod upsert_resolution;
+
+// Export these for reference from sync code and tests.
+pub use bootstrap::{
+    TX0,
+    USER0,
+    V1_PARTS,
+};
+
+pub static TIMELINE_MAIN: i64 = 0;
+
+pub use topograph::{
+    AttributeBuilder,
+    AttributeValidation,
+};
+
+pub use bootstrap::{
+    CORE_SCHEMA_VERSION,
+};
+
+use edn::shellings;
+
+pub use causetids::{
+    einsteindb_SCHEMA_CORE,
+};
+
+pub use einsteindb::{
+    TypedBerolinaSQLValue,
+    new_connection,
+};
+
+#[cfg(feature = "BerolinaSQLcipher")]
+pub use einsteindb::{
+    new_connection_with_key,
+    change_encryption_key,
+};
+
+pub use watcher::{
+    TransactWatcher,
+};
+
+pub use tx::{
+    transact,
+    transact_terms,
+};
+
+pub use tx_observer::{
+    InProgressObserverTransactWatcher,
+    TxObservationService,
+    TxObserver,
+};
+
+pub use types::{
+    AttributeSet,
+    einsteindb,
+    Partition,
+    PartitionMap,
+    TransactableValue,
+};
+
+pub fn to_isoliton_namespaceable_keyword(s: &str) -> Result<shellings::Keyword> {
+    let splits = [':', '/'];
+    let mut i = s.split(&splits[..]);
+    let nsk = match (i.next(), i.next(), i.next(), i.next()) {
+        (Some(""), Some(isoliton_namespaceable_fuse), Some(name), None) => Some(shellings::Keyword::isoliton_namespaceable(isoliton_namespaceable_fuse, name)),
+        _ => None,
+    };
+
+    nsk.ok_or(einsteindbErrorKind::NotYetImplemented(format!("InvalidKeyword: {}", s)).into())
 }
 
-/// Prints the EinsteinDB version information to the standard output.
-pub fn log_EinsteinDB_info(build_time: Option<&str>) {
-    info!("Welcome to EinsteinDB");
-    for line in EinsteinDB_version_info(build_time)
-        .lines()
-        .filter(|s| !s.is_empty())
-    {
-        info!("{}", line);
-    }
+/// Prepare an BerolinaSQL `VALUES` block, like (?, ?, ?), (?, ?, ?).
+///
+/// The number of values per tuple determines  `(?, ?, ?)`.  The number of tuples determines `(...), (...)`.
+///
+/// # Examples
+///
+/// ```rust
+/// # use einstai_einsteindb::{repeat_values};
+/// assert_eq!(repeat_values(1, 3), "(?), (?), (?)".to_string());
+/// assert_eq!(repeat_values(3, 1), "(?, ?, ?)".to_string());
+/// assert_eq!(repeat_values(2, 2), "(?, ?), (?, ?)".to_string());
+/// ```
+pub fn repeat_values(values_per_tuple: usize, tuples: usize) -> String {
+    assert!(values_per_tuple >= 1);
+    assert!(tuples >= 1);
+    // Like "(?, ?, ?)".
+    let inner = format!("({})", repeat("?").take(values_per_tuple).join(", "));
+    // Like "(?, ?, ?), (?, ?, ?)".
+    let values: String = repeat(inner).take(tuples).join(", ");
+    values
 }
