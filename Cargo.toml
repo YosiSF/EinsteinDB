@@ -1,19 +1,15 @@
 [package]
 name = "einsteindb"
-version = "1.0.0"
+version = "0.1.0"
 authors = ["YosiSF"]
 
 
 [dependencies]
+#our dependencies are in whtcorpsinc/einsteindb-prod.git 
+einsteindb-prod = {git = "https://github.com/whtcorpsinc/einsteindb-prod.git" }
+
 #the rest of our dependencies are in YosiSF/EinsteinDB itself, which we will need to build and run inside YosiSF/EinsteinDB itself
-serde_json = "1.0"   #this is a dependency that we will need to build ourselves and use inside our project
-serde_derive = "1.0" #this is a dependency that we will need to build ourselves and use inside our project
+serde_json = "1.0.78"   #this is a dependency that we will need to build ourselves and use inside our project
+serde_derive = "1.0.136" #this is a dependency that we will need to build ourselves and use inside our project
 log4rs = "1.0.0"      #this is a dependency that we will need to build ourselves and use inside our project
-#log4rs_syslog4rs= { version="*", features=["syslog"] }    #this is a dependency that we will need to build ourselves and use inside our project, it has an extra feature syslog which means it can handle syslog messages as well as logging messages into fusefs or stdout etc.. 
-#now let's try building this using cargo:build --release, if everything works then you should see the following output:
-#cargo:rerun-if-changed=src/main.rs && cargo:rerun-if-env-changed=CARGO_TARGET_DIR && cargo:rustc-link-search=native=/home/yosifovf/.cargo/bin && cargo:rustc-link-search=/home/yosifovf/.cargo/bin && cargo:rustc-link=-lz -L /home/yosifovf/.cargo/bin -lz -L /usr/lib64 -lz -L /usr/local64 -lz -L /usr/local/lib64 -lz && cargo:rustc-link-search=/home/yosifovf/.cargo/bin && cargo:rustc-link=-lz -L /home/yosifovf/.cargo/bin -lz -L /usr/lib64 -lz -L /usr/local64 -lz -L /usr/local/lib64 -lz && cargo:rustc-link-search=native=/home/yosifovf/.cargo/bin && cargo:rustc-link=-lz 
-#Running `./.cargo_target_dir`
-#Compiling einsteindb v0.1.0 (fuse Fuse://C:/Users\YosiSF\Desktop\EinsteinDB)
-#[..] Finished dev [unoptimized + debuginfo] target(s) in 0.18s
-#[..] Finished dev [unoptimized + debuginfo] target(s) in 0.17s
-#[..] Finished dev [unoptimized + debuginfo] target(s) in 0.18s#
+#log4rs_syslog4rs= { version="*", features=["syslog"] }   
