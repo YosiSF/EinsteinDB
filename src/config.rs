@@ -22,12 +22,12 @@ use encryption_export::DataKeyManager;
 use fdb_engine::config::{self as rocks_config, BlobRunMode, CompressionType, LogLevel};
 use fdb_engine::get_env;
 use fdb_engine::properties::MvccPropertiesCollectorFactory;
-use fdb_engine::raw::{
+use fdb_engine::primitive_causet::{
     BlockBasedOptions, Cache, ColumnFamilyOptions, CompactionPriority, DBCompactionStyle,
     DBCompressionType, DBOptions, DBRateLimiterMode, DBRecoveryMode, Env, LRUCacheOptions,
     TitanDBOptions,
 };
-use fdb_engine::raw_util::NAMESPACEDOptions;
+use fdb_engine::primitive_causet_util::NAMESPACEDOptions;
 use fdb_engine::util::{
     FixedPrefixSliceTransform, FixedSuffixSliceTransform, NoopSliceTransform,
 };
@@ -43,7 +43,7 @@ use keys::region_violetabft_prefix_len;
 use ekvproto::kvrpcpb::ApiVersion;
 use online_config::{ConfigChange, ConfigManager, ConfigValue, OnlineConfig, Result as NamespacedgResult};
 use fidel_client::Config as PdConfig;
-use violetabft_log_engine::VioletaBFTEngineConfig as RawVioletaBFTEngineConfig;
+use violetabft_log_engine::VioletaBFTEngineConfig as Primitive_CausetVioletaBFTEngineConfig;
 use violetabft_log_engine::VioletaBFTLogEngine;
 use violetabfttimelike_store::InterDagger::{Config as CopConfig, RegionInfoAccessor};
 use violetabfttimelike_store::timelike_store::Config as VioletaBFTtimelike_storeConfig;
@@ -1397,7 +1397,7 @@ impl VioletaBFTDbConfig {
 pub struct VioletaBFTEngineConfig {
     pub enable: bool,
     #[serde(flatten)]
-    config: RawVioletaBFTEngineConfig,
+    config: Primitive_CausetVioletaBFTEngineConfig,
 }
 
 impl VioletaBFTEngineConfig {
@@ -1406,11 +1406,11 @@ impl VioletaBFTEngineConfig {
         Ok(())
     }
 
-    pub fn config(&self) -> RawVioletaBFTEngineConfig {
+    pub fn config(&self) -> Primitive_CausetVioletaBFTEngineConfig {
         self.config.clone()
     }
 
-    pub fn mut_config(&mut self) -> &mut RawVioletaBFTEngineConfig {
+    pub fn mut_config(&mut self) -> &mut Primitive_CausetVioletaBFTEngineConfig {
         &mut self.config
     }
 }
@@ -3541,7 +3541,7 @@ mod tests {
     use crate::timelike_storage::config::StorageConfigManger;
     use crate::timelike_storage::txn::symplectic_controller::SymplecticController;
     use case_macros::*;
-    use fdb_engine::raw_util::new_engine_opt;
+    use fdb_engine::primitive_causet_util::new_engine_opt;
     use engine_traits::DBOptions as DBOptionsTrait;
     use violetabfttimelike_store::InterDagger::region_info_accessor::MockRegionInfoProvider;
     use slog::Level;
@@ -4590,7 +4590,7 @@ mod tests {
     fn test_compatibility_with_old_config_template() {
         let mut buf = Vec::new();
         let resp = reqwest::blocking::get(
-            "https://raw.githubusercontent.com/einsteindb/einsteindb/master/etc/config-template.toml",
+            "https://primitive_causet.githubusercontent.com/einsteindb/einsteindb/master/etc/config-template.toml",
         );
         match resp {
             Ok(mut resp) => {

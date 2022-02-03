@@ -362,7 +362,7 @@ where
 // CFCausetxctxChecker records some statistics and states related to one CF.
 // These statistics fall into five categories:
 //   * memtable
-//   * L0 fusefs
+//   * L0 filefs
 //   * L0 production Causetxctx (flush Causetxctx)
 //   * L0 consumption Causetxctx (compaction read Causetxctx of L0)
 //   * pending compaction bytes
@@ -373,14 +373,14 @@ struct CFCausetxctxChecker {
     memtable_debt: f64,
     memtable_init_speed: bool,
 
-    // L0 fusefs related
-    // a few records of number of L0 fusefs right after flush or L0 compaction
-    // As we know, after flush the number of L0 fusefs must increase by 1,
-    // whereas, after L0 compaction the number of L0 fusefs must decrease a lot
-    // considering L0 compactions nearly includes all L0 fusefs in a round.
-    // So to evaluate the accumulation of L0 fusefs, here only records the number
-    // of L0 fusefs right after L0 compactions.
-    long_term_num_l0_fusefs: Smoother<u64, 20, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
+    // L0 filefs related
+    // a few records of number of L0 filefs right after flush or L0 compaction
+    // As we know, after flush the number of L0 filefs must increase by 1,
+    // whereas, after L0 compaction the number of L0 filefs must decrease a lot
+    // considering L0 compactions nearly includes all L0 filefs in a round.
+    // So to evaluate the accumulation of L0 filefs, here only records the number
+    // of L0 filefs right after L0 compactions.
+    long_term_num_l0_filefs: Smoother<u64, 20, SMOOTHER_STALE_RECORD_THRESHOLD, 0>,
 
     // L0 production Causetxctx related
     last_flush_bytes: u64,
@@ -399,14 +399,14 @@ struct CFCausetxctxChecker {
         Smoother<f64, 1024, SMOOTHER_STALE_RECORD_THRESHOLD, SMOOTHER_TIME_RANGE_THRESHOLD>,
     pending_bytes_before_unsafe_destroy_range: Option<f64>,
 
-    // On start related markers. Because after restart, the memtable, l0 fusefs
+    // On start related markers. Because after restart, the memtable, l0 filefs
     // and compaction pending bytes may be high on start. If throttle on start
     // at once, it may get a low throttle speed as initialization cause it may
     // has no write Causetxctx after restart. So use the markers to make sure only
-    // throttled after the the memtable, l0 fusefs and compaction pending bytes
+    // throttled after the the memtable, l0 filefs and compaction pending bytes
     // go beyond the threshold again.
     on_start_memtable: bool,
-    on_start_l0_fusefs: bool,
+    on_start_l0_filefs: bool,
     on_start_pending_bytes: bool,
 }
 
@@ -416,7 +416,7 @@ impl Default for CFCausetxctxChecker {
             last_num_memtables: Smoother::default(),
             memtable_debt: 0.0,
             memtable_init_speed: false,
-            long_term_num_l0_fusefs: Smoother::default(),
+            long_term_num_l0_filefs: Smoother::default(),
             last_flush_bytes: 0,
             last_flush_bytes_time: Instant::now_coarse(),
             short_term_l0_production_Causetxctx: Smoother::default(),
@@ -426,7 +426,7 @@ impl Default for CFCausetxctxChecker {
             long_term_pending_bytes: Smoother::default(),
             pending_bytes_before_unsafe_destroy_range: None,
             on_start_memtable: true,
-            on_start_l0_fusefs: true,
+            on_start_l0_filefs: true,
             on_start_pending_bytes: true,
         }
     }
@@ -436,7 +436,7 @@ struct CausetxctxChecker<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 's
     soft_pending_compaction_bytes_limit: u64,
     hard_pending_compaction_bytes_limit: u64,
     memtables_threshold: u64,
-    l0_fusefs_threshold: u64,
+    l0_filefs_threshold: u64,
 
     // CFCausetxctxChecker for each CF.
     cf_checkers: HashMap<String, CFCausetxctxChecker>,
@@ -475,7 +475,7 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
             soft_pending_compaction_bytes_limit: config.soft_pending_compaction_bytes_limit.0,
             hard_pending_compaction_bytes_limit: config.hard_pending_compaction_bytes_limit.0,
             memtables_threshold: config.memtables_threshold,
-            l0_fusefs_threshold: config.l0_fusefs_threshold,
+            l0_filefs_threshold: config.l0_filefs_threshold,
             einstein_merkle_tree,
             discard_ratio,
             limiter,
@@ -803,38 +803,38 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
     }
 
     fn collect_l0_consumption_stats(&mut self, cf: &str, l0_bytes: u64) {
-        let num_l0_fusefs = self
+        let num_l0_filefs = self
             .einstein_merkle_tree
-            .get_cf_num_fusefs_at_level(cf, 0)
+            .get_cf_num_filefs_at_level(cf, 0)
             .unwrap_or(None)
             .unwrap_or(0);
         let checker = self.cf_checkers.get_mut(cf).unwrap();
         checker.last_l0_bytes += l0_bytes;
-        checker.long_term_num_l0_fusefs.observe(num_l0_fusefs);
+        checker.long_term_num_l0_filefs.observe(num_l0_filefs);
         SCHED_L0_GAUGE
             .with_label_values(&[cf])
-            .set(num_l0_fusefs as i64);
+            .set(num_l0_filefs as i64);
         SCHED_L0_AVG_GAUGE
             .with_label_values(&[cf])
-            .set(checker.long_term_num_l0_fusefs.get_avg() as i64);
+            .set(checker.long_term_num_l0_filefs.get_avg() as i64);
     }
 
     fn collect_l0_production_stats(&mut self, cf: &str, flush_bytes: u64) {
-        let num_l0_fusefs = self
+        let num_l0_filefs = self
             .einstein_merkle_tree
-            .get_cf_num_fusefs_at_level(cf, 0)
+            .get_cf_num_filefs_at_level(cf, 0)
             .unwrap_or(None)
             .unwrap_or(0);
 
         let checker = self.cf_checkers.get_mut(cf).unwrap();
         checker.last_flush_bytes += flush_bytes;
-        checker.long_term_num_l0_fusefs.observe(num_l0_fusefs);
+        checker.long_term_num_l0_filefs.observe(num_l0_filefs);
         SCHED_L0_GAUGE
             .with_label_values(&[cf])
-            .set(num_l0_fusefs as i64);
+            .set(num_l0_filefs as i64);
         SCHED_L0_AVG_GAUGE
             .with_label_values(&[cf])
-            .set(checker.long_term_num_l0_fusefs.get_avg() as i64);
+            .set(checker.long_term_num_l0_filefs.get_avg() as i64);
 
         if checker.last_flush_bytes_time.saturating_elapsed_secs() > 5.0 {
             // update flush Causetxctx
@@ -866,18 +866,18 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
         }
     }
 
-    // Check the number of l0 fusefs to decide whether need to adjust target Causetxctx
+    // Check the number of l0 filefs to decide whether need to adjust target Causetxctx
     fn on_l0_change(&mut self, cf: String) {
         let checker = self.cf_checkers.get_mut(&cf).unwrap();
-        let num_l0_fusefs = checker.long_term_num_l0_fusefs.get_recent();
+        let num_l0_filefs = checker.long_term_num_l0_filefs.get_recent();
 
         // do special check on start, see the comment of the variable definition for detail.
-        if checker.on_start_l0_fusefs {
-            if num_l0_fusefs < self.l0_fusefs_threshold
-                || checker.long_term_num_l0_fusefs.trend() == Trend::Increasing
+        if checker.on_start_l0_filefs {
+            if num_l0_filefs < self.l0_filefs_threshold
+                || checker.long_term_num_l0_filefs.trend() == Trend::Increasing
             {
                 // the write is accumulating, still need to throttle
-                checker.on_start_l0_fusefs = false;
+                checker.on_start_l0_filefs = false;
             } else {
                 // still on start, should not throttle now
                 return;
@@ -888,9 +888,9 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
             if &cf != throttle_cf {
                 // to avoid throttle cf changes back and forth, only change it
                 // when the other is much higher.
-                if num_l0_fusefs
+                if num_l0_filefs
                     > self.cf_checkers[throttle_cf]
-                        .long_term_num_l0_fusefs
+                        .long_term_num_l0_filefs
                         .get_max()
                         + 4
                 {
@@ -910,7 +910,7 @@ impl<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 'static> CausetxctxChe
         }
 
         let is_throttled = self.limiter.speed_limit() != f64::INFINITY;
-        let should_throttle = checker.long_term_num_l0_fusefs.get_recent() > self.l0_fusefs_threshold;
+        let should_throttle = checker.long_term_num_l0_filefs.get_recent() > self.l0_filefs_threshold;
 
         let throttle = if !is_throttled && should_throttle {
             SCHED_THROTTLE_ACTION_COUNTER
@@ -963,16 +963,16 @@ mod tests {
 
     struct einstein_merkle_treeStubInner {
         pub pending_compaction_bytes: causetxctxU64,
-        pub num_l0_fusefs: causetxctxU64,
-        pub num_memtable_fusefs: causetxctxU64,
+        pub num_l0_filefs: causetxctxU64,
+        pub num_memtable_filefs: causetxctxU64,
     }
 
     impl einstein_merkle_treeStub {
         fn new() -> Self {
             Self(Arc::new(einstein_merkle_treeStubInner {
                 pending_compaction_bytes: causetxctxU64::new(0),
-                num_l0_fusefs: causetxctxU64::new(0),
-                num_memtable_fusefs: causetxctxU64::new(0),
+                num_l0_filefs: causetxctxU64::new(0),
+                num_memtable_filefs: causetxctxU64::new(0),
             }))
         }
     }
@@ -984,12 +984,12 @@ mod tests {
     }
 
     impl CausetxctxControlFactorsExt for einstein_merkle_treeStub {
-        fn get_cf_num_fusefs_at_level(&self, _cf: &str, _level: usize) -> Result<Option<u64>> {
-            Ok(Some(self.0.num_l0_fusefs.load(Ordering::Relaxed)))
+        fn get_cf_num_filefs_at_level(&self, _cf: &str, _level: usize) -> Result<Option<u64>> {
+            Ok(Some(self.0.num_l0_filefs.load(Ordering::Relaxed)))
         }
 
         fn get_cf_num_immutable_mem_table(&self, _cf: &str) -> Result<Option<u64>> {
-            Ok(Some(self.0.num_memtable_fusefs.load(Ordering::Relaxed)))
+            Ok(Some(self.0.num_memtable_filefs.load(Ordering::Relaxed)))
         }
 
         fn get_cf_pending_compaction_bytes(&self, _cf: &str) -> Result<Option<u64>> {
@@ -1038,7 +1038,7 @@ mod tests {
         }
 
         // exceeds the threshold on start
-        stub.0.num_memtable_fusefs.store(8, Ordering::Relaxed);
+        stub.0.num_memtable_filefs.store(8, Ordering::Relaxed);
         tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
         tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
@@ -1046,12 +1046,12 @@ mod tests {
         // on start check forbids Causetxctx control
         assert_eq!(Causetxctx_controller.is_unlimited(), true);
         // once falls below the threshold, pass the on start check
-        stub.0.num_memtable_fusefs.store(1, Ordering::Relaxed);
+        stub.0.num_memtable_filefs.store(1, Ordering::Relaxed);
         tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
         tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
         // not throttle when the average of the sliding window doesn't exceeds the threshold
-        stub.0.num_memtable_fusefs.store(6, Ordering::Relaxed);
+        stub.0.num_memtable_filefs.store(6, Ordering::Relaxed);
         tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
         tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
@@ -1059,7 +1059,7 @@ mod tests {
         assert_eq!(Causetxctx_controller.is_unlimited(), true);
 
         // the average of sliding window exceeds the threshold
-        stub.0.num_memtable_fusefs.store(6, Ordering::Relaxed);
+        stub.0.num_memtable_filefs.store(6, Ordering::Relaxed);
         tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
         tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
@@ -1068,7 +1068,7 @@ mod tests {
         assert_ne!(Causetxctx_controller.consume(2000), Duration::ZERO);
 
         // not throttle once the number of memtables falls below the threshold
-        stub.0.num_memtable_fusefs.store(1, Ordering::Relaxed);
+        stub.0.num_memtable_filefs.store(1, Ordering::Relaxed);
         tx.send(CausetxctxInfo::Flush("default".to_string(), 0)).unwrap();
         tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
@@ -1091,7 +1091,7 @@ mod tests {
         }
 
         // exceeds the threshold
-        stub.0.num_l0_fusefs.store(30, Ordering::Relaxed);
+        stub.0.num_l0_filefs.store(30, Ordering::Relaxed);
         tx.send(CausetxctxInfo::L0("default".to_string(), 0)).unwrap();
         tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
@@ -1099,13 +1099,13 @@ mod tests {
         // on start check forbids Causetxctx control
         assert_eq!(Causetxctx_controller.is_unlimited(), true);
         // once fall below the threshold, pass the on start check
-        stub.0.num_l0_fusefs.store(10, Ordering::Relaxed);
+        stub.0.num_l0_filefs.store(10, Ordering::Relaxed);
         tx.send(CausetxctxInfo::L0("default".to_string(), 0)).unwrap();
         tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();
 
         // exceeds the threshold, throttle now
-        stub.0.num_l0_fusefs.store(30, Ordering::Relaxed);
+        stub.0.num_l0_filefs.store(30, Ordering::Relaxed);
         tx.send(CausetxctxInfo::L0("default".to_string(), 0)).unwrap();
         tx.send(CausetxctxInfo::L0Intra("default".to_string(), 0))
             .unwrap();

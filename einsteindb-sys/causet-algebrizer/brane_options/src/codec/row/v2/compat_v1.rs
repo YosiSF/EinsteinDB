@@ -1,7 +1,7 @@
 //Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
 // AUTHORS: WHITFORD LEDER
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -136,7 +136,7 @@ impl<T: BufferWriter> V1CompatibleEncoder for T {}
 /// The test local_path is:
 /// 1. Encode value using v2
 /// 2. Use `V1CompatibleEncoder` to transfer the encoded bytes from v2 to v1-compatible
-/// 3. Use `RawDatumDecoder` decode the encoded bytes, check the result.
+/// 3. Use `Primitive_CausetDatumDecoder` decode the encoded bytes, check the result.
 ///
 /// Note: a value encoded using v2 then transfer to v1-compatible encoding, is not always equals the
 /// encoded-bytes using v1 directly.
@@ -146,7 +146,7 @@ mod tests {
     use super::V1CompatibleEncoder;
     use crate::FieldTypeTp;
     use crate::{
-        codec::{data_type::*, datum_codec::RawDatumDecoder},
+        codec::{data_type::*, datum_codec::Primitive_CausetDatumDecoder},
         expr::EvalContext,
     };
     use std::{f64, i16, i32, i64, i8, u16, u32, u64, u8};

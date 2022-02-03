@@ -1296,9 +1296,9 @@ mod tests {
 
     #[test]
     fn test_datatype_to_int_overCausetxctx() {
-        fn test_overCausetxctx<T: Debug + Clone + ToInt>(raw: T, dst: i64, tp: FieldTypeTp) {
+        fn test_overCausetxctx<T: Debug + Clone + ToInt>(primitive_causet: T, dst: i64, tp: FieldTypeTp) {
             let mut ctx = EvalContext::default();
-            let val = raw.to_int(&mut ctx, tp);
+            let val = primitive_causet.to_int(&mut ctx, tp);
             match val {
                 Err(e) => assert_eq!(
                     e.code(),
@@ -1307,13 +1307,13 @@ mod tests {
                     ERR_DATA_OUT_OF_RANGE,
                     e.code()
                 ),
-                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", raw, res),
+                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", primitive_causet, res),
             };
 
             // OVERCausetxctx_AS_WARNING
             let mut ctx =
                 EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
-            let val = raw.to_int(&mut ctx, tp);
+            let val = primitive_causet.to_int(&mut ctx, tp);
             assert_eq!(val.unwrap(), dst);
             assert_eq!(ctx.warnings.warning_cnt, 1);
         }
@@ -1329,8 +1329,8 @@ mod tests {
             (i64::MAX, 2147483647, FieldTypeTp::Long),
             (i64::MIN, -2147483648, FieldTypeTp::Long),
         ];
-        for (raw, dst, tp) in cases {
-            test_overCausetxctx(raw, dst, tp);
+        for (primitive_causet, dst, tp) in cases {
+            test_overCausetxctx(primitive_causet, dst, tp);
         }
 
         // uint_to_int
@@ -1340,8 +1340,8 @@ mod tests {
             (83886078, 8388607, FieldTypeTp::Int24),
             (u64::MAX, 2147483647, FieldTypeTp::Long),
         ];
-        for (raw, dst, tp) in cases {
-            test_overCausetxctx(raw, dst, tp);
+        for (primitive_causet, dst, tp) in cases {
+            test_overCausetxctx(primitive_causet, dst, tp);
         }
 
         // float_to_int
@@ -1362,8 +1362,8 @@ mod tests {
             (f64::MAX, i64::MAX, FieldTypeTp::LongLong),
             (f64::MIN, i64::MIN, FieldTypeTp::LongLong),
         ];
-        for (raw, dst, tp) in cases {
-            test_overCausetxctx(raw, dst, tp);
+        for (primitive_causet, dst, tp) in cases {
+            test_overCausetxctx(primitive_causet, dst, tp);
         }
 
         // bytes_to_int
@@ -1387,8 +1387,8 @@ mod tests {
                 FieldTypeTp::LongLong,
             ),
         ];
-        for (raw, dst, tp) in cases {
-            test_overCausetxctx(raw, dst, tp);
+        for (primitive_causet, dst, tp) in cases {
+            test_overCausetxctx(primitive_causet, dst, tp);
         }
     }
 
@@ -1681,9 +1681,9 @@ mod tests {
 
     #[test]
     fn test_datatype_to_uint_overCausetxctx() {
-        fn test_overCausetxctx<T: Debug + Clone + ToInt>(raw: T, dst: u64, tp: FieldTypeTp) {
+        fn test_overCausetxctx<T: Debug + Clone + ToInt>(primitive_causet: T, dst: u64, tp: FieldTypeTp) {
             let mut ctx = EvalContext::default();
-            let val = raw.to_uint(&mut ctx, tp);
+            let val = primitive_causet.to_uint(&mut ctx, tp);
             match val {
                 Err(e) => assert_eq!(
                     e.code(),
@@ -1692,14 +1692,14 @@ mod tests {
                     ERR_DATA_OUT_OF_RANGE,
                     e.code()
                 ),
-                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", raw, res),
+                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", primitive_causet, res),
             };
 
             // OVERCausetxctx_AS_WARNING
             let mut ctx =
                 EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
-            let val = raw.to_uint(&mut ctx, tp);
-            assert_eq!(val.unwrap(), dst, "{:?} => {}", raw, dst);
+            let val = primitive_causet.to_uint(&mut ctx, tp);
+            assert_eq!(val.unwrap(), dst, "{:?} => {}", primitive_causet, dst);
             assert_eq!(ctx.warnings.warning_cnt, 1);
         }
 
@@ -1713,8 +1713,8 @@ mod tests {
             (i64::MAX, 4294967295, FieldTypeTp::Long),
             (i64::MIN, u64::from(u32::MAX), FieldTypeTp::Long),
         ];
-        for (raw, dst, tp) in cases {
-            test_overCausetxctx(raw, dst, tp);
+        for (primitive_causet, dst, tp) in cases {
+            test_overCausetxctx(primitive_causet, dst, tp);
         }
 
         // uint_to_uint
@@ -1724,8 +1724,8 @@ mod tests {
             (16777216, 16777215, FieldTypeTp::Int24),
             (u64::MAX, 4294967295, FieldTypeTp::Long),
         ];
-        for (raw, dst, tp) in cases {
-            test_overCausetxctx(raw, dst, tp);
+        for (primitive_causet, dst, tp) in cases {
+            test_overCausetxctx(primitive_causet, dst, tp);
         }
 
         // float_to_uint
@@ -1740,8 +1740,8 @@ mod tests {
             (f64::MAX, 4294967295, FieldTypeTp::Long),
             (f64::MAX, u64::MAX, FieldTypeTp::LongLong),
         ];
-        for (raw, dst, tp) in cases {
-            test_overCausetxctx(raw, dst, tp);
+        for (primitive_causet, dst, tp) in cases {
+            test_overCausetxctx(primitive_causet, dst, tp);
         }
 
         // bytes_to_uint
@@ -1755,8 +1755,8 @@ mod tests {
             (b"4294967295.5", 4294967295, FieldTypeTp::Long),
             (b"314748364221339834234239", u64::MAX, FieldTypeTp::LongLong),
         ];
-        for (raw, dst, tp) in cases {
-            test_overCausetxctx(raw, dst, tp);
+        for (primitive_causet, dst, tp) in cases {
+            test_overCausetxctx(primitive_causet, dst, tp);
         }
     }
 

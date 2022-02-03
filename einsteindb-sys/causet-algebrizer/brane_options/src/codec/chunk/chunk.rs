@@ -239,24 +239,24 @@ mod tests {
             Datum::Bytes(b"xxx".to_vec()),
         ];
 
-        let raw_vec_data = datum_data
+        let primitive_causet_vec_data = datum_data
             .iter()
             .map(|datum| {
-                let mut col = QuiesceBatchColumn::raw_with_capacity(1);
+                let mut col = QuiesceBatchColumn::primitive_causet_with_capacity(1);
                 let mut ctx = EvalContext::default();
-                let mut datum_raw = Vec::new();
-                datum_raw
+                let mut datum_primitive_causet = Vec::new();
+                datum_primitive_causet
                     .write_datum(&mut ctx, &[datum.clone()], false)
                     .unwrap();
-                col.mut_raw().push(&datum_raw);
+                col.mut_primitive_causet().push(&datum_primitive_causet);
                 col
             })
             .collect::<Vec<_>>();
 
         let mut columns = Vec::new();
-        for (col_id, raw_col) in raw_vec_data.iter().enumerate() {
+        for (col_id, primitive_causet_col) in primitive_causet_vec_data.iter().enumerate() {
             let column =
-                Column::from_raw_datums(&fields[col_id], raw_col.raw(), &[0], &mut ctx).unwrap();
+                Column::from_primitive_causet_datums(&fields[col_id], primitive_causet_col.primitive_causet(), &[0], &mut ctx).unwrap();
             columns.push(column);
         }
         let chunk = Chunk::from_columns(columns);
@@ -271,16 +271,16 @@ mod tests {
         }
     }
 
-    fn bench_encode_from_raw_datum_impl(b: &mut Bencher, datum: Datum, tp: FieldTypeTp) {
+    fn bench_encode_from_primitive_causet_datum_impl(b: &mut Bencher, datum: Datum, tp: FieldTypeTp) {
         let mut ctx = EvalContext::default();
-        let mut raw_col = QuiesceBatchColumn::raw_with_capacity(1024);
+        let mut primitive_causet_col = QuiesceBatchColumn::primitive_causet_with_capacity(1024);
         let mut logical_rows = Vec::new();
         for i in 0..1024 {
-            let mut raw_datum = Vec::new();
-            raw_datum
+            let mut primitive_causet_datum = Vec::new();
+            primitive_causet_datum
                 .write_datum(&mut ctx, &[datum.clone()], false)
                 .unwrap();
-            raw_col.mut_raw().push(&raw_datum);
+            primitive_causet_col.mut_primitive_causet().push(&primitive_causet_datum);
             logical_rows.push(i);
         }
         let field_type: FieldType = tp.into();
@@ -288,9 +288,9 @@ mod tests {
         b.iter(|| {
             let mut ctx = EvalContext::default();
             let mut v = Vec::new();
-            let column = Column::from_raw_datums(
+            let column = Column::from_primitive_causet_datums(
                 black_box(&field_type),
-                black_box(raw_col.raw()),
+                black_box(primitive_causet_col.primitive_causet()),
                 black_box(&logical_rows),
                 &mut ctx,
             )
@@ -301,28 +301,28 @@ mod tests {
     }
 
     #[bench]
-    fn bench_encode_from_raw_int_datum(b: &mut Bencher) {
-        bench_encode_from_raw_datum_impl(b, Datum::I64(32), FieldTypeTp::LongLong);
+    fn bench_encode_from_primitive_causet_int_datum(b: &mut Bencher) {
+        bench_encode_from_primitive_causet_datum_impl(b, Datum::I64(32), FieldTypeTp::LongLong);
     }
 
     #[bench]
-    fn bench_encode_from_raw_decimal_datum(b: &mut Bencher) {
+    fn bench_encode_from_primitive_causet_decimal_datum(b: &mut Bencher) {
         let dec: Decimal = "1234.00".parse().unwrap();
         let datum = Datum::Dec(dec);
-        bench_encode_from_raw_datum_impl(b, datum, FieldTypeTp::NewDecimal);
+        bench_encode_from_primitive_causet_datum_impl(b, datum, FieldTypeTp::NewDecimal);
     }
 
     #[bench]
-    fn bench_encode_from_raw_bytes_datum(b: &mut Bencher) {
+    fn bench_encode_from_primitive_causet_bytes_datum(b: &mut Bencher) {
         let datum = Datum::Bytes("v".repeat(100).into_bytes());
-        bench_encode_from_raw_datum_impl(b, datum, FieldTypeTp::String);
+        bench_encode_from_primitive_causet_datum_impl(b, datum, FieldTypeTp::String);
     }
 
     #[bench]
-    fn bench_encode_from_raw_json_datum(b: &mut Bencher) {
+    fn bench_encode_from_primitive_causet_json_datum(b: &mut Bencher) {
         let json: Json = r#"{"k1":"v1"}"#.parse().unwrap();
         let datum = Datum::Json(json);
-        bench_encode_from_raw_datum_impl(b, datum, FieldTypeTp::JSON);
+        bench_encode_from_primitive_causet_datum_impl(b, datum, FieldTypeTp::JSON);
     }
 
     #[test]

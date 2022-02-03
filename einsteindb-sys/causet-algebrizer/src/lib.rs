@@ -914,10 +914,10 @@ pub mod tests {
     pub fn gen_table_mutant_search_executor(
         tid: i64,
         cis: Vec<ColumnInfo>,
-        raw_data: &[Vec<Datum>],
+        primitive_causet_data: &[Vec<Datum>],
         key_ranges: Option<Vec<KeyRange>>,
     ) -> Box<dyn Executor<StorageStats = ()> + Send> {
-        let table_data = gen_table_data(tid, &cis, raw_data);
+        let table_data = gen_table_data(tid, &cis, primitive_causet_data);
         let storage = FixtureStorage::from(table_data);
 
         let mut table_mutant_search = TableScan::default();

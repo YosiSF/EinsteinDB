@@ -2,9 +2,9 @@
 
 use std::sync::Arc;
 
-use fuse::{get_io_rate_limiter, get_io_type, IOOp, IORateLimiter};
+use file::{get_io_rate_limiter, get_io_type, IOOp, IORateLimiter};
 
-pub trait FuseInspector: Sync + Send {
+pub trait FileInspector: Sync + Send {
     fn read(&self, len: usize) -> Result<usize, String>;
     fn write(&self, len: usize) -> Result<usize, String>;
 }
@@ -32,7 +32,7 @@ impl Default for einstein_merkle_Fusion {
     }
 }
 
-impl FuseInspector for einstein_merkle_Fusion {
+impl FileInspector for einstein_merkle_Fusion {
     fn read(&self, len: usize) -> Result<usize, String> {
         if let Some(limiter) = &self.limiter {
             let io_type = get_io_type();

@@ -3,7 +3,7 @@
 use einsteindb_util::box_err;
 use fdb_traits::{NAMESPACEDOptionsExt, Result};
 use fdb_traits::{ColumnFamilyOptions, CausetPartitionerFactory};
-use foundationdb::ColumnFamilyOptions as RawNAMESPACEDOptions;
+use foundationdb::ColumnFamilyOptions as Primitive_CausetNAMESPACEDOptions;
 
 use crate::{db_options::FdbTitanDBOptions, Causet_partitioner::FdbCausetPartitionerFactory};
 use crate::fdb_lsh_tree;
@@ -14,7 +14,7 @@ impl NAMESPACEDOptionsExt for Fdbeinstein_merkle_tree {
 
     fn get_options_namespaced(&self, namespaced: &str) -> Result<Self::ColumnFamilyOptions> {
         let handle = util::get_namespaced_handle(self.as_inner(), namespaced)?;
-        Ok(FdbColumnFamilyOptions::from_raw(
+        Ok(FdbColumnFamilyOptions::from_primitive_causet(
             self.as_inner().get_options_namespaced(handle),
         ))
     }
@@ -28,18 +28,18 @@ impl NAMESPACEDOptionsExt for Fdbeinstein_merkle_tree {
 }
 
 #[derive(Clone)]
-pub struct FdbColumnFamilyOptions(RawNAMESPACEDOptions);
+pub struct FdbColumnFamilyOptions(Primitive_CausetNAMESPACEDOptions);
 
 impl FdbColumnFamilyOptions {
-    pub fn from_raw(raw: RawNAMESPACEDOptions) -> FdbColumnFamilyOptions {
-        FdbColumnFamilyOptions(raw)
+    pub fn from_primitive_causet(primitive_causet: Primitive_CausetNAMESPACEDOptions) -> FdbColumnFamilyOptions {
+        FdbColumnFamilyOptions(primitive_causet)
     }
 
-    pub fn into_raw(self) -> RawNAMESPACEDOptions {
+    pub fn into_primitive_causet(self) -> Primitive_CausetNAMESPACEDOptions {
         self.0
     }
 
-    pub fn as_raw_mut(&mut self) -> &mut RawNAMESPACEDOptions {
+    pub fn as_primitive_causet_mut(&mut self) -> &mut Primitive_CausetNAMESPACEDOptions {
         &mut self.0
     }
 }
@@ -48,7 +48,7 @@ impl ColumnFamilyOptions for FdbColumnFamilyOptions {
     type TitanDBOptions = FdbTitanDBOptions;
 
     fn new() -> Self {
-        FdbColumnFamilyOptions::from_raw(RawNAMESPACEDOptions::new())
+        FdbColumnFamilyOptions::from_primitive_causet(Primitive_CausetNAMESPACEDOptions::new())
     }
 
     fn get_max_write_buffer_number(&self) -> u32 {
@@ -63,8 +63,8 @@ impl ColumnFamilyOptions for FdbColumnFamilyOptions {
         self.0.get_l_naught_zero_stop_writes_trigger()
     }
 
-    fn set_l_naught_zero_fusef_num_jet_bundle_trigger(&mut self, v: i32) {
-        self.0.set_l_naught_zero_fusef_num_jet_bundle_trigger(v)
+    fn set_l_naught_zero_filef_num_jet_bundle_trigger(&mut self, v: i32) {
+        self.0.set_l_naught_zero_filef_num_jet_bundle_trigger(v)
     }
 
     fn get_soft_pending_jet_bundle_bytes_limit(&self) -> u64 {
@@ -84,11 +84,11 @@ impl ColumnFamilyOptions for FdbColumnFamilyOptions {
     }
 
     fn set_titandb_options(&mut self, opts: &Self::TitanDBOptions) {
-        self.0.set_titandb_options(opts.as_raw())
+        self.0.set_titandb_options(opts.as_primitive_causet())
     }
 
-    fn get_target_fusef_size_base(&self) -> u64 {
-        self.0.get_target_fusef_size_base()
+    fn get_target_filef_size_base(&self) -> u64 {
+        self.0.get_target_filef_size_base()
     }
 
     fn set_disable_auto_jet_bundles(&mut self, v: bool) {

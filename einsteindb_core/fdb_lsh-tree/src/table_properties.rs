@@ -59,11 +59,11 @@ impl Fdbeinstein_merkle_tree {
         let namespaced = util::get_namespaced_handle(self.as_inner(), namespaced)?;
         // FIXME: extra allocation
         let ranges: Vec<_> = ranges.iter().map(util::range_to_rocks_range).collect();
-        let raw = self
+        let primitive_causet = self
             .as_inner()
             .get_greedoids_of_tables_in_range(namespaced, &ranges);
-        let raw = raw.map_err(Error::einstein_merkle_tree)?;
-        Ok(raw)
+        let primitive_causet = primitive_causet.map_err(Error::einstein_merkle_tree)?;
+        Ok(primitive_causet)
     }
 
     pub fn get_range_greedoids_namespaced(

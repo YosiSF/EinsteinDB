@@ -1,7 +1,7 @@
 //Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
 // AUTHORS: WHITFORD LEDER
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -330,20 +330,20 @@ impl<T: BufferWriter> ColumnIdDatumEncoder for T {}
 
 // TODO: Refactor the code below to be a EvaluableDatumDecoder.
 
-pub fn decode_int_datum(mut raw_datum: &[u8]) -> Result<Option<Int>> {
-    if raw_datum.is_empty() {
+pub fn decode_int_datum(mut primitive_causet_datum: &[u8]) -> Result<Option<Int>> {
+    if primitive_causet_datum.is_empty() {
         return Err(Error::InvalidDataType(
             "Failed to decode datum flag".to_owned(),
         ));
     }
-    let flag = raw_datum[0];
-    raw_datum = &raw_datum[1..];
+    let flag = primitive_causet_datum[0];
+    primitive_causet_datum = &primitive_causet_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
-        datum::INT_FLAG => Ok(Some(raw_datum.read_datum_payload_i64()?)),
-        datum::UINT_FLAG => Ok(Some(raw_datum.read_datum_payload_u64()? as i64)),
-        datum::VAR_INT_FLAG => Ok(Some(raw_datum.read_datum_payload_var_i64()?)),
-        datum::VAR_UINT_FLAG => Ok(Some(raw_datum.read_datum_payload_var_u64()? as i64)),
+        datum::INT_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_i64()?)),
+        datum::UINT_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_u64()? as i64)),
+        datum::VAR_INT_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_var_i64()?)),
+        datum::VAR_UINT_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_var_u64()? as i64)),
         _ => Err(Error::InvalidDataType(format!(
             "Unsupported datum flag {} for Int vector",
             flag
@@ -352,19 +352,19 @@ pub fn decode_int_datum(mut raw_datum: &[u8]) -> Result<Option<Int>> {
 }
 
 #[allow(clippy::cast_lossless)]
-pub fn decode_real_datum(mut raw_datum: &[u8], field_type: &FieldType) -> Result<Option<Real>> {
-    if raw_datum.is_empty() {
+pub fn decode_real_datum(mut primitive_causet_datum: &[u8], field_type: &FieldType) -> Result<Option<Real>> {
+    if primitive_causet_datum.is_empty() {
         return Err(Error::InvalidDataType(
             "Failed to decode datum flag".to_owned(),
         ));
     }
-    let flag = raw_datum[0];
-    raw_datum = &raw_datum[1..];
+    let flag = primitive_causet_datum[0];
+    primitive_causet_datum = &primitive_causet_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
         // In both index and record, it's flag is `FLOAT`. See MEDB's `encode()`.
         datum::FLOAT_FLAG => {
-            let mut v = raw_datum.read_datum_payload_f64()?;
+            let mut v = primitive_causet_datum.read_datum_payload_f64()?;
             if field_type.as_accessor().tp() == FieldTypeTp::Float {
                 v = (v as f32) as f64;
             }
@@ -377,18 +377,18 @@ pub fn decode_real_datum(mut raw_datum: &[u8], field_type: &FieldType) -> Result
     }
 }
 
-pub fn decode_decimal_datum(mut raw_datum: &[u8]) -> Result<Option<Decimal>> {
-    if raw_datum.is_empty() {
+pub fn decode_decimal_datum(mut primitive_causet_datum: &[u8]) -> Result<Option<Decimal>> {
+    if primitive_causet_datum.is_empty() {
         return Err(Error::InvalidDataType(
             "Failed to decode datum flag".to_owned(),
         ));
     }
-    let flag = raw_datum[0];
-    raw_datum = &raw_datum[1..];
+    let flag = primitive_causet_datum[0];
+    primitive_causet_datum = &primitive_causet_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
         // In both index and record, it's flag is `DECIMAL`. See MEDB's `encode()`.
-        datum::DECIMAL_FLAG => Ok(Some(raw_datum.read_datum_payload_decimal()?)),
+        datum::DECIMAL_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_decimal()?)),
         _ => Err(Error::InvalidDataType(format!(
             "Unsupported datum flag {} for Decimal vector",
             flag
@@ -396,20 +396,20 @@ pub fn decode_decimal_datum(mut raw_datum: &[u8]) -> Result<Option<Decimal>> {
     }
 }
 
-pub fn decode_bytes_datum(mut raw_datum: &[u8]) -> Result<Option<Bytes>> {
-    if raw_datum.is_empty() {
+pub fn decode_bytes_datum(mut primitive_causet_datum: &[u8]) -> Result<Option<Bytes>> {
+    if primitive_causet_datum.is_empty() {
         return Err(Error::InvalidDataType(
             "Failed to decode datum flag".to_owned(),
         ));
     }
-    let flag = raw_datum[0];
-    raw_datum = &raw_datum[1..];
+    let flag = primitive_causet_datum[0];
+    primitive_causet_datum = &primitive_causet_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
         // In index, it's flag is `BYTES`. See MEDB's `encode()`.
-        datum::BYTES_FLAG => Ok(Some(raw_datum.read_datum_payload_bytes()?)),
+        datum::BYTES_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_bytes()?)),
         // In record, it's flag is `COMPACT_BYTES`. See MEDB's `encode()`.
-        datum::COMPACT_BYTES_FLAG => Ok(Some(raw_datum.read_datum_payload_compact_bytes()?)),
+        datum::COMPACT_BYTES_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_compact_bytes()?)),
         _ => Err(Error::InvalidDataType(format!(
             "Unsupported datum flag {} for Bytes vector",
             flag
@@ -418,26 +418,26 @@ pub fn decode_bytes_datum(mut raw_datum: &[u8]) -> Result<Option<Bytes>> {
 }
 
 pub fn decode_date_time_datum(
-    mut raw_datum: &[u8],
+    mut primitive_causet_datum: &[u8],
     field_type: &FieldType,
     ctx: &mut EvalContext,
 ) -> Result<Option<DateTime>> {
-    if raw_datum.is_empty() {
+    if primitive_causet_datum.is_empty() {
         return Err(Error::InvalidDataType(
             "Failed to decode datum flag".to_owned(),
         ));
     }
-    let flag = raw_datum[0];
-    raw_datum = &raw_datum[1..];
+    let flag = primitive_causet_datum[0];
+    primitive_causet_datum = &primitive_causet_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
         // In index, it's flag is `UINT`. See MEDB's `encode()`.
         datum::UINT_FLAG => Ok(Some(
-            raw_datum.read_datum_payload_datetime_int(ctx, field_type)?,
+            primitive_causet_datum.read_datum_payload_datetime_int(ctx, field_type)?,
         )),
         // In record, it's flag is `VAR_UINT`. See MEDB's `flatten()` and `encode()`.
         datum::VAR_UINT_FLAG => Ok(Some(
-            raw_datum.read_datum_payload_datetime_varint(ctx, field_type)?,
+            primitive_causet_datum.read_datum_payload_datetime_varint(ctx, field_type)?,
         )),
         _ => Err(Error::InvalidDataType(format!(
             "Unsupported datum flag {} for DateTime vector",
@@ -447,23 +447,23 @@ pub fn decode_date_time_datum(
 }
 
 pub fn decode_duration_datum(
-    mut raw_datum: &[u8],
+    mut primitive_causet_datum: &[u8],
     field_type: &FieldType,
 ) -> Result<Option<Duration>> {
-    if raw_datum.is_empty() {
+    if primitive_causet_datum.is_empty() {
         return Err(Error::InvalidDataType(
             "Failed to decode datum flag".to_owned(),
         ));
     }
-    let flag = raw_datum[0];
-    raw_datum = &raw_datum[1..];
+    let flag = primitive_causet_datum[0];
+    primitive_causet_datum = &primitive_causet_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
         // In index, it's flag is `DURATION`. See MEDB's `encode()`.
-        datum::DURATION_FLAG => Ok(Some(raw_datum.read_datum_payload_duration_int(field_type)?)),
+        datum::DURATION_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_duration_int(field_type)?)),
         // In record, it's flag is `VAR_INT`. See MEDB's `flatten()` and `encode()`.
         datum::VAR_INT_FLAG => Ok(Some(
-            raw_datum.read_datum_payload_duration_varint(field_type)?,
+            primitive_causet_datum.read_datum_payload_duration_varint(field_type)?,
         )),
         _ => Err(Error::InvalidDataType(format!(
             "Unsupported datum flag {} for Duration vector",
@@ -472,18 +472,18 @@ pub fn decode_duration_datum(
     }
 }
 
-pub fn decode_json_datum(mut raw_datum: &[u8]) -> Result<Option<Json>> {
-    if raw_datum.is_empty() {
+pub fn decode_json_datum(mut primitive_causet_datum: &[u8]) -> Result<Option<Json>> {
+    if primitive_causet_datum.is_empty() {
         return Err(Error::InvalidDataType(
             "Failed to decode datum flag".to_owned(),
         ));
     }
-    let flag = raw_datum[0];
-    raw_datum = &raw_datum[1..];
+    let flag = primitive_causet_datum[0];
+    primitive_causet_datum = &primitive_causet_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
         // In both index and record, it's flag is `JSON`. See MEDB's `encode()`.
-        datum::JSON_FLAG => Ok(Some(raw_datum.read_datum_payload_json()?)),
+        datum::JSON_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_json()?)),
         _ => Err(Error::InvalidDataType(format!(
             "Unsupported datum flag {} for Json vector",
             flag
@@ -491,47 +491,47 @@ pub fn decode_json_datum(mut raw_datum: &[u8]) -> Result<Option<Json>> {
     }
 }
 
-pub trait RawDatumDecoder<T> {
+pub trait Primitive_CausetDatumDecoder<T> {
     fn decode(self, field_type: &FieldType, ctx: &mut EvalContext) -> Result<Option<T>>;
 }
 
-impl<'a> RawDatumDecoder<Int> for &'a [u8] {
+impl<'a> Primitive_CausetDatumDecoder<Int> for &'a [u8] {
     fn decode(self, _field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Int>> {
         decode_int_datum(self)
     }
 }
 
-impl<'a> RawDatumDecoder<Real> for &'a [u8] {
+impl<'a> Primitive_CausetDatumDecoder<Real> for &'a [u8] {
     fn decode(self, field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Real>> {
         decode_real_datum(self, field_type)
     }
 }
 
-impl<'a> RawDatumDecoder<Decimal> for &'a [u8] {
+impl<'a> Primitive_CausetDatumDecoder<Decimal> for &'a [u8] {
     fn decode(self, _field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Decimal>> {
         decode_decimal_datum(self)
     }
 }
 
-impl<'a> RawDatumDecoder<Bytes> for &'a [u8] {
+impl<'a> Primitive_CausetDatumDecoder<Bytes> for &'a [u8] {
     fn decode(self, _field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Bytes>> {
         decode_bytes_datum(self)
     }
 }
 
-impl<'a> RawDatumDecoder<DateTime> for &'a [u8] {
+impl<'a> Primitive_CausetDatumDecoder<DateTime> for &'a [u8] {
     fn decode(self, field_type: &FieldType, ctx: &mut EvalContext) -> Result<Option<DateTime>> {
         decode_date_time_datum(self, field_type, ctx)
     }
 }
 
-impl<'a> RawDatumDecoder<Duration> for &'a [u8] {
+impl<'a> Primitive_CausetDatumDecoder<Duration> for &'a [u8] {
     fn decode(self, field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Duration>> {
         decode_duration_datum(self, field_type)
     }
 }
 
-impl<'a> RawDatumDecoder<Json> for &'a [u8] {
+impl<'a> Primitive_CausetDatumDecoder<Json> for &'a [u8] {
     fn decode(self, _field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Json>> {
         decode_json_datum(self)
     }

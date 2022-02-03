@@ -26,7 +26,7 @@ nortcheck = []
 api_version = { local_path = "../api_version", default-features = false }
 encryption = { local_path = "../encryption", default-features = false }
 fdb_traits = { local_path = "../fdb_traits", default-features = false }
-fuse = { local_path = "../fuse", default-features = false }
+file = { local_path = "../file", default-features = false }
 keys = { local_path = "../keys", default-features = false }
 num_cpus = "1"
 prometheus = { version = "0.13", features = ["nightly"] }
@@ -41,7 +41,7 @@ lazy_static = "1.4.0"
 log_wrappers = { local_path = "../log_wrappers" }
 time = "0.1"
 online_config = { local_path = "../online_config" }
-tempfuse = "3.0"
+tempfile = "3.0"
 serde = "1.0"
 serde_derive = "1.0"
 ekvproto = { git = "https://github.com/whtcorpsinc/ekvproto.git" }

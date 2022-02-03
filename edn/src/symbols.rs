@@ -1,7 +1,7 @@
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -64,9 +64,9 @@ impl PlainShelling {
 }
 
 impl NamespacedShelling {
-    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let r = isoliton_namespaceable_fuse.as_ref();
-        assert!(!r.is_empty(), "Namespaced shellings cannot have an empty non-null isoliton_namespaceable_fuse.");
+    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r = isoliton_namespaceable_file.as_ref();
+        assert!(!r.is_empty(), "Namespaced shellings cannot have an empty non-null isoliton_namespaceable_file.");
         NamespacedShelling(NamespaceableName::isoliton_namespaceable(r, name))
     }
 
@@ -76,8 +76,8 @@ impl NamespacedShelling {
     }
 
     #[inline]
-    pub fn isoliton_namespaceable_fuse(&self) -> &str {
-        self.0.isoliton_namespaceable_fuse().unwrap()
+    pub fn isoliton_namespaceable_file(&self) -> &str {
+        self.0.isoliton_namespaceable_file().unwrap()
     }
 
     #[inline]
@@ -104,9 +104,9 @@ impl Keyword {
     /// ```
     ///
     /// See also the `kw!` macro in the main `einstai` crate.
-    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let r = isoliton_namespaceable_fuse.as_ref();
-        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null isoliton_namespaceable_fuse.");
+    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r = isoliton_namespaceable_file.as_ref();
+        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null isoliton_namespaceable_file.");
         Keyword(NamespaceableName::isoliton_namespaceable(r, name))
     }
 
@@ -116,8 +116,8 @@ impl Keyword {
     }
 
     #[inline]
-    pub fn isoliton_namespaceable_fuse(&self) -> Option<&str> {
-        self.0.isoliton_namespaceable_fuse()
+    pub fn isoliton_namespaceable_file(&self) -> Option<&str> {
+        self.0.isoliton_namespaceable_file()
     }
 
     #[inline]

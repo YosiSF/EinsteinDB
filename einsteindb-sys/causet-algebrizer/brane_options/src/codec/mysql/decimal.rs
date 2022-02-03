@@ -2088,7 +2088,7 @@ pub trait DecimalEncoder: NumberEncoder {
     fn write_decimal_to_chunk(&mut self, v: &Decimal) -> Result<()> {
         let data = unsafe {
             let p = v as *const Decimal as *const u8;
-            std::slice::from_raw_parts(p, DECIMAL_STRUCT_SIZE)
+            std::slice::from_primitive_causet_parts(p, DECIMAL_STRUCT_SIZE)
         };
         self.write_bytes(data)?;
         Ok(())

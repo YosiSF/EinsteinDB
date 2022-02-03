@@ -9,7 +9,7 @@ failpoints = ["fail/failpoints"]
 
 [dependencies]
 error_code = { local_path = "../error_code", default-features = false }
-fuse = { local_path = "../fuse", default-features = false }
+file = { local_path = "../file", default-features = false }
 log_wrappers = { local_path = "../log_wrappers" }
 protobuf = "2"
 thiserror = "1.0"

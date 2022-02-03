@@ -1,7 +1,7 @@
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -116,7 +116,7 @@ pub fn to_isoliton_namespaceable_keyword(s: &str) -> Result<shellings::Keyword> 
     let splits = [':', '/'];
     let mut i = s.split(&splits[..]);
     let nsk = match (i.next(), i.next(), i.next(), i.next()) {
-        (Some(""), Some(isoliton_namespaceable_fuse), Some(name), None) => Some(shellings::Keyword::isoliton_namespaceable(isoliton_namespaceable_fuse, name)),
+        (Some(""), Some(isoliton_namespaceable_file), Some(name), None) => Some(shellings::Keyword::isoliton_namespaceable(isoliton_namespaceable_file, name)),
         _ => None,
     };
 

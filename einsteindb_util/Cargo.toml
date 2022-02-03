@@ -20,8 +20,6 @@ petgraph = "0.6.0"
 serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
 serde_derive = { version = "1.0", optional = true }
-einsteindb_traits = { local_path = "../einsteindb-traits" }
-
 [dependencies.rusqlite]
 version = "0.26.3"
 features = ["limits"]
@@ -29,14 +27,6 @@ features = ["limits"]
 [dependencies.edn]
 local_path = "../edn"
 
-[dependencies.einsteindb_core]
-local_path = "../core"
-
-[dependencies.core_traits]
-local_path = "../core-traits"
-
-[dependencies.einstai_BerolinaSQL]
-local_path = "../BerolinaSQL"
 
 # Should be dev-dependencies.
 [dependencies.tabwriter]

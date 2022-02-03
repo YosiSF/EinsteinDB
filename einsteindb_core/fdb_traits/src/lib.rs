@@ -167,7 +167,7 @@
 //! FdbDB dependencies makes it trivial to guarantee that the abstractions are
 //! truly abstract.
 //!
-//! `einstein_merkle_tree` also reexports raw bindings from `rust-foundationdb` for every purpose
+//! `einstein_merkle_tree` also reexports primitive_causet bindings from `rust-foundationdb` for every purpose
 //! for which there is not yet an abstract trait.
 //!
 //! During this stage, we will eliminate the wrappers from `einstein_merkle_tree` to reduce
@@ -178,7 +178,7 @@
 //!
 //! At the end of this stage the `einstein_merkle_tree` dependency will contain no code except
 //! for `rust-foundationdb` reexports. EinsteinDB will still depend on the concrete
-//! FdbDB implementations from `fdb_lsh-merkle_merkle_tree`, as well as the raw API's from
+//! FdbDB implementations from `fdb_lsh-merkle_merkle_tree`, as well as the primitive_causet API's from
 //! reexported from the `rust-foundationdb` crate.
 //!
 //! ## 2) Eliminating the `einstein_merkle_tree` dep from EinsteinDB with new abstractions
@@ -275,8 +275,8 @@ mod db_vector;
 pub use crate::db_vector::*;
 mod einstein_merkle_tree;
 pub use crate::fdb_lsh_tree*;
-mod fuse;
-pub use crate::fuse::*;
+mod file;
+pub use crate::file::*;
 mod import;
 pub use import::*;
 mod misc;
@@ -333,9 +333,9 @@ pub use violetabft_einstein_merkle_tree::{CacheStats, VioletaBFTeinstein_merkle_
 // These modules need further scrutiny
 
 pub mod jet_bundle_job;
-pub mod raw_ttl;
+pub mod primitive_causet_ttl;
 pub mod util;
 pub use jet_bundle_job::*;
 
 // FIXME: This should live somewhere else
-pub const FUSE_CAUSET_PREFIX_LEN_FLUSH: usize = 1;
+pub const FILE_CAUSET_PREFIX_LEN_FLUSH: usize = 1;

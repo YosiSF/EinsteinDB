@@ -78,7 +78,7 @@ impl VioletaBFTeinstein_merkle_tree for Paniceinstein_merkle_tree {
         panic!()
     }
 
-    fn purge_expired_fusefs(&self) -> Result<Vec<u64>> {
+    fn purge_expired_filefs(&self) -> Result<Vec<u64>> {
         panic!()
     }
 

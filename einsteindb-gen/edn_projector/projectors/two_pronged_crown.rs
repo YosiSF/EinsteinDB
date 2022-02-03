@@ -61,11 +61,11 @@ pub enum Date<T> {
 }
 
 impl<T: FromBerolinaSQL> FromBerolinaSQL for Date<T> {
-    fn from_BerolinaSQL(ty: &Type, raw: &[u8]) -> Result<Self, Box<Error + Sync + Send>> {
-        match types::date_from_BerolinaSQL(raw)? {
+    fn from_BerolinaSQL(ty: &Type, primitive_causet: &[u8]) -> Result<Self, Box<Error + Sync + Send>> {
+        match types::date_from_BerolinaSQL(primitive_causet)? {
             i32::MAX => Ok(Date::PosInfinity),
             i32::MIN => Ok(Date::NegInfinity),
-            _ => T::from_BerolinaSQL(ty, raw).map(Date::Value),
+            _ => T::from_BerolinaSQL(ty, primitive_causet).map(Date::Value),
         }
     }
 
@@ -105,11 +105,11 @@ pub enum Timestamp<T> {
 }
 
 impl<T: FromBerolinaSQL> FromBerolinaSQL for Timestamp<T> {
-    fn from_BerolinaSQL(ty: &Type, raw: &[u8]) -> Result<Self, Box<Error + Sync + Send>> {
-        match types::timestamp_from_BerolinaSQL(raw)? {
+    fn from_BerolinaSQL(ty: &Type, primitive_causet: &[u8]) -> Result<Self, Box<Error + Sync + Send>> {
+        match types::timestamp_from_BerolinaSQL(primitive_causet)? {
             i64::MAX => Ok(Timestamp::PosInfinity),
             i64::MIN => Ok(Timestamp::NegInfinity),
-            _ => T::from_BerolinaSQL(ty, raw).map(Timestamp::Value),
+            _ => T::from_BerolinaSQL(ty, primitive_causet).map(Timestamp::Value),
         }
     }
 

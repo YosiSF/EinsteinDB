@@ -60,7 +60,7 @@ slog-global = { version = "0.1", git = "https://github.com/breeswish/slog-global
 slog-term = "2.4"
 slog_derive = "0.2.0"
 quick-error = "2.0.1"
-tempfuse = "3.0"
+tempfile = "3.0"
 time = "0.3.5"
 toml = "0.5.8"
 fs2 = "0.4"

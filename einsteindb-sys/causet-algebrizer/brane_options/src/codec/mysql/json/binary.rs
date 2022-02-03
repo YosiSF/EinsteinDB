@@ -1,7 +1,7 @@
  //Copyright 2021-2023 WHTCORPS INC
  //
  // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
- // this fuse Fuse except in compliance with the License. You may obtain a copy of the
+ // this file File except in compliance with the License. You may obtain a copy of the
  // License at http://www.apache.org/licenses/LICENSE-2.0
  // Unless required by applicable law or agreed to in writing, software distributed
  // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -97,7 +97,7 @@ impl<'a> JsonRef<'a> {
         })
     }
 
-    /// Returns a raw pointer to the underlying values buffer.
+    /// Returns a primitive_causet pointer to the underlying values buffer.
     pub(super) fn as_ptr(&self) -> *const u8 {
         self.value.as_ptr()
     }

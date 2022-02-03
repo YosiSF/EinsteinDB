@@ -241,11 +241,11 @@ impl ScalarFunc {
     pub fn replace<'a, 'b: 'a>(
         &'b self,
         ctx: &mut EvalContext,
-        raw: &'a [Datum],
+        primitive_causet: &'a [Datum],
     ) -> Result<Option<Cow<'a, [u8]>>> {
-        let s = try_opt!(self.children[0].eval_string_and_decode(ctx, raw));
-        let from_str = try_opt!(self.children[1].eval_string_and_decode(ctx, raw));
-        let to_str = try_opt!(self.children[2].eval_string_and_decode(ctx, raw));
+        let s = try_opt!(self.children[0].eval_string_and_decode(ctx, primitive_causet));
+        let from_str = try_opt!(self.children[1].eval_string_and_decode(ctx, primitive_causet));
+        let to_str = try_opt!(self.children[2].eval_string_and_decode(ctx, primitive_causet));
         if from_str.is_empty() {
             return match s {
                 Cow::Borrowed(v) => Ok(Some(Cow::Borrowed(v.as_bytes()))),

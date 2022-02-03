@@ -61,7 +61,7 @@ impl MiscExt for Paniceinstein_merkle_tree {
         panic!()
     }
 
-    fn get_total_Causet_fusefs_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>> {
+    fn get_total_Causet_filefs_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>> {
         panic!()
     }
 

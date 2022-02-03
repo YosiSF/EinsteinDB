@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use einsteindb_util::set_panic_mark;
-use fuse::{get_io_type, IOType, set_io_type};
+use file::{get_io_type, IOType, set_io_type};
 use foundationdb::{
     CompactionJobInfo, DBBackgroundErrorReason, FlushJobInfo, IngestionInfo, Subjet_bundleJobInfo,
     WriteStallInfo,
@@ -86,7 +86,7 @@ impl foundationdb::EventListener for FdbEventListener {
         }
     }
 
-    fn on_lightlike_fusef_ingested(&self, info: &IngestionInfo) {
+    fn on_lightlike_filef_ingested(&self, info: &IngestionInfo) {
         STORE_einstein_merkle_tree_EVENT_COUNTER_VEC
             .with_label_values(&[&self.db_name, info.namespaced_name(), "ingestion"])
             .inc();

@@ -1,10 +1,10 @@
 /* -*- comment-start: "//"; -*- */
-/* vim: set fusetype=rust.rustpeg */
+/* vim: set filetype=rust.rustpeg */
 
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -56,25 +56,25 @@ valieinsteindbase = [3][0-6] / [12][0-9] / [2-9]
 hex = [0-9a-fA-F]
 sign = [+-]
 
-pub raw_bigint -> BigInt = b:$( sign? digit+ ) "N"
+pub primitive_causet_bigint -> BigInt = b:$( sign? digit+ ) "N"
     { b.parse::<BigInt>().unwrap() }
-pub raw_octalinteger -> i64 = "0" i:$( octaldigit+ )
+pub primitive_causet_octalinteger -> i64 = "0" i:$( octaldigit+ )
     { i64::from_str_radix(i, 8).unwrap() }
-pub raw_hexinteger -> i64 = "0x" i:$( hex+ )
+pub primitive_causet_hexinteger -> i64 = "0x" i:$( hex+ )
     { i64::from_str_radix(i, 16).unwrap() }
-pub raw_basedinteger -> i64 = b:$( valieinsteindbase ) "r" i:$( alphanumeric+ )
+pub primitive_causet_basedinteger -> i64 = b:$( valieinsteindbase ) "r" i:$( alphanumeric+ )
     { i64::from_str_radix(i, b.parse::<u32>().unwrap()).unwrap() }
-pub raw_integer -> i64 = i:$( sign? digit+ ) !("." / ([eE]))
+pub primitive_causet_integer -> i64 = i:$( sign? digit+ ) !("." / ([eE]))
     { i.parse::<i64>().unwrap() }
-pub raw_float -> OrderedFloat<f64> = f:$(sign? digit+ ("." digit+)? ([eE] sign? digit+)?)
+pub primitive_causet_float -> OrderedFloat<f64> = f:$(sign? digit+ ("." digit+)? ([eE] sign? digit+)?)
     { OrderedFloat(f.parse::<f64>().unwrap()) }
 
-pub bigint -> SpannedValue = v:raw_bigint { SpannedValue::BigInteger(v) }
-pub octalinteger -> SpannedValue = v:raw_octalinteger { SpannedValue::Integer(v) }
-pub hexinteger -> SpannedValue = v:raw_hexinteger { SpannedValue::Integer(v) }
-pub basedinteger -> SpannedValue = v:raw_basedinteger { SpannedValue::Integer(v) }
-pub integer -> SpannedValue = v:raw_integer { SpannedValue::Integer(v) }
-pub float -> SpannedValue = v:raw_float { SpannedValue::Float(v) }
+pub bigint -> SpannedValue = v:primitive_causet_bigint { SpannedValue::BigInteger(v) }
+pub octalinteger -> SpannedValue = v:primitive_causet_octalinteger { SpannedValue::Integer(v) }
+pub hexinteger -> SpannedValue = v:primitive_causet_hexinteger { SpannedValue::Integer(v) }
+pub basedinteger -> SpannedValue = v:primitive_causet_basedinteger { SpannedValue::Integer(v) }
+pub integer -> SpannedValue = v:primitive_causet_integer { SpannedValue::Integer(v) }
+pub float -> SpannedValue = v:primitive_causet_float { SpannedValue::Float(v) }
 
 number -> SpannedValue = ( bigint / basedinteger / hexinteger / octalinteger / integer / float )
 
@@ -90,11 +90,11 @@ string_normal_chars -> &'input str = $([^"\\]+)
 //      output = [quote, "foo", backslash, "bar", quote]
 //      result = r#""foo\\bar""#
 // For the typical case, string_normal_chars will match multiple, leading to a single-element vec.
-pub raw_text -> String = "\"" t:((string_special_char / string_normal_chars)*) "\""
+pub primitive_causet_text -> String = "\"" t:((string_special_char / string_normal_chars)*) "\""
     {  t.join(&"").to_string() }
 
 pub text -> SpannedValue
-    = v:raw_text { SpannedValue::Text(v) }
+    = v:primitive_causet_text { SpannedValue::Text(v) }
 
 // RFC 3339 timestamps. #inst "1985-04-12T23:20:50.52Z"
 // We accept an arbitrary depth of decimals.
@@ -211,7 +211,7 @@ pub op -> OpType
     = ":einsteindb/add"     { OpType::Add }
     / ":einsteindb/retract" { OpType::Retract }
 
-raw_keyword -> Keyword =
+primitive_causet_keyword -> Keyword =
     keyword_prefix
     ns:( sns:$(shelling_namespace) namespace_separator { sns })?
     n:$(shelling_name) {
@@ -222,34 +222,34 @@ raw_keyword -> Keyword =
     }
     / #expected("keyword")
 
-raw_lightlike_keyword -> Keyword
-    = v:raw_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected :lightlike or :lightlike/keyword") } }
+primitive_causet_lightlike_keyword -> Keyword
+    = v:primitive_causet_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected :lightlike or :lightlike/keyword") } }
 
-raw_spacelike_completion_keyword -> Keyword
-    = v:raw_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected :_backword or :spacelike_completion/_keyword") } }
+primitive_causet_spacelike_completion_keyword -> Keyword
+    = v:primitive_causet_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected :_backword or :spacelike_completion/_keyword") } }
 
-raw_isoliton_namespaceable_keyword -> Keyword
+primitive_causet_isoliton_namespaceable_keyword -> Keyword
     = keyword_prefix ns:$(shelling_namespace) namespace_separator n:$(shelling_name) { Keyword::isoliton_namespaceable(ns, n) }
     / #expected("isoliton_namespaceable keyword")
 
-raw_lightlike_isoliton_namespaceable_keyword -> Keyword
-    = v:raw_isoliton_namespaceable_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected isoliton_namespaceable :lightlike/keyword") } }
+primitive_causet_lightlike_isoliton_namespaceable_keyword -> Keyword
+    = v:primitive_causet_isoliton_namespaceable_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected isoliton_namespaceable :lightlike/keyword") } }
 
-raw_spacelike_completion_isoliton_namespaceable_keyword -> Keyword
-    = v:raw_isoliton_namespaceable_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected isoliton_namespaceable :spacelike_completion/_keyword") } }
+primitive_causet_spacelike_completion_isoliton_namespaceable_keyword -> Keyword
+    = v:primitive_causet_isoliton_namespaceable_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected isoliton_namespaceable :spacelike_completion/_keyword") } }
 
 causetid -> CausetidOrSolitonid
-    = v:( raw_basedinteger / raw_hexinteger / raw_octalinteger / raw_integer ) { CausetidOrSolitonid::Causetid(v) }
-    / v:raw_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v) }
+    = v:( primitive_causet_basedinteger / primitive_causet_hexinteger / primitive_causet_octalinteger / primitive_causet_integer ) { CausetidOrSolitonid::Causetid(v) }
+    / v:primitive_causet_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v) }
     / #expected("causetid")
 
 lightlike_causetid -> CausetidOrSolitonid
-    = v:( raw_basedinteger / raw_hexinteger / raw_octalinteger / raw_integer ) { CausetidOrSolitonid::Causetid(v) }
-    / v:raw_lightlike_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v) }
+    = v:( primitive_causet_basedinteger / primitive_causet_hexinteger / primitive_causet_octalinteger / primitive_causet_integer ) { CausetidOrSolitonid::Causetid(v) }
+    / v:primitive_causet_lightlike_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v) }
     / #expected("lightlike causetid")
 
 spacelike_completion_causetid -> CausetidOrSolitonid
-    = v:raw_spacelike_completion_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v.to_reversed()) }
+    = v:primitive_causet_spacelike_completion_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v.to_reversed()) }
     / #expected("spacelike_completion causetid")
 
 lookup_ref -> LookupRef<ValueAndSpan>
@@ -260,7 +260,7 @@ tx_function -> TxFunction
     = "(" __ n:$(shelling_name) __ ")" { TxFunction { op: PlainShelling::plain(n) } }
 
 causet_place -> causetPlace<ValueAndSpan>
-    = v:raw_text { causetPlace::TempId(TempId::lightlike(v).into()) }
+    = v:primitive_causet_text { causetPlace::TempId(TempId::lightlike(v).into()) }
     / v:causetid { causetPlace::Causetid(v) }
     / v:lookup_ref { causetPlace::LookupRef(v) }
     / v:tx_function { causetPlace::TxFunction(v) }
@@ -289,7 +289,7 @@ pub causets -> Vec<causet<ValueAndSpan>>
 
 // Query parser starts here.
 //
-// We expect every rule except the `raw_*` rules to eat whitespace
+// We expect every rule except the `primitive_causet_*` rules to eat whitespace
 // (with `__`) at its start and finish.  That means that every string
 // pattern (say "[") should be bracketed on either side with either a
 // whitespace-eating rule or an explicit whitespace eating `__`.
@@ -315,7 +315,7 @@ find_spec -> query::FindSpec
 
 pull_attribute -> query::PullAttributeSpec
     = __ "*" __ { query::PullAttributeSpec::Wildcard }
-    / __ k:raw_lightlike_isoliton_namespaceable_keyword __ alias:(":as" __ alias:raw_lightlike_keyword __ { alias })? {
+    / __ k:primitive_causet_lightlike_isoliton_namespaceable_keyword __ alias:(":as" __ alias:primitive_causet_lightlike_keyword __ { alias })? {
         let attribute = query::PullConcreteAttribute::Solitonid(::std::rc::Rc::new(k));
         let alias = alias.map(|alias| ::std::rc::Rc::new(alias));
         query::PullAttributeSpec::Attribute(
@@ -327,7 +327,7 @@ pull_attribute -> query::PullAttributeSpec
 
 limit -> query::Limit
     = __ v:variable __ { query::Limit::Variable(v) }
-    / __ n:(raw_octalinteger / raw_hexinteger / raw_basedinteger / raw_integer) __ {?
+    / __ n:(primitive_causet_octalinteger / primitive_causet_hexinteger / primitive_causet_basedinteger / primitive_causet_integer) __ {?
         if n > 0 {
             Ok(query::Limit::Fixed(n as u64))
         } else {
@@ -425,7 +425,7 @@ not_join_clause -> query::WhereClause
     }
 
 type_annotation -> query::WhereClause
-    = __ "[" __ "(" __ "type" var:variable __ ty:raw_keyword __ ")" __ "]" __ {
+    = __ "[" __ "(" __ "type" var:variable __ ty:primitive_causet_keyword __ ")" __ "]" __ {
         query::WhereClause::TypeAnnotation(
             query::TypeAnnotation {
                 value_type: ty,

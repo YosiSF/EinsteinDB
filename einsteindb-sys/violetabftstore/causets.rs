@@ -761,7 +761,7 @@ impl Initializer {
             for entry in &entries {
                 if let Some(TxnEntry::Prewrite { lock, .. }) = entry {
                     let (encoded_key, value) = lock;
-                    let key = Key::from_encoded_slice(encoded_key).into_raw().unwrap();
+                    let key = Key::from_encoded_slice(encoded_key).into_primitive_causet().unwrap();
                     let lock = Lock::parse(value)?;
                     match lock.lock_type {
                         LockType::Put | LockType::Delete => resolver.track_lock(lock.ts, key),
@@ -879,7 +879,7 @@ mod tests {
     use std::collections::BTreeMap;
     use std::fmt::Display;
     use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
-    use tempfusef::TemFIDelir;
+    use tempfilef::TemFIDelir;
     use test_violetabftstore::MocehikvioletabftStoreRouter;
     use test_violetabftstore::TestFIDelClient;
     use EinsteinDB::storage::ehikv::einstein_merkle_tree;

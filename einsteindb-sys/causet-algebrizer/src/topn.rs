@@ -1,7 +1,7 @@
  //Copyright 2021-2023 WHTCORPS INC
  //
  // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
- // this fuse Fuse except in compliance with the License. You may obtain a copy of the
+ // this file File except in compliance with the License. You may obtain a copy of the
  // License at http://www.apache.org/licenses/LICENSE-2.0
  // Unless required by applicable law or agreed to in writing, software distributed
  // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -355,7 +355,7 @@ pub mod tests {
             new_col_info(2, FieldTypeTp::VarChar),
             new_col_info(3, FieldTypeTp::NewDecimal),
         ];
-        let raw_data = vec![
+        let primitive_causet_data = vec![
             vec![
                 Datum::I64(1),
                 Datum::Bytes(b"a".to_vec()),
@@ -396,7 +396,7 @@ pub mod tests {
         let range1 = get_range(tid, 0, 4);
         let range2 = get_range(tid, 5, 10);
         let key_ranges = vec![range1, range2];
-        let ts_ect = gen_table_mutant_search_executor(tid, cis, &raw_data, Some(key_ranges));
+        let ts_ect = gen_table_mutant_search_executor(tid, cis, &primitive_causet_data, Some(key_ranges));
 
         // init TopN meta
         let mut ob_vec = Vec::with_capacity(2);
@@ -433,7 +433,7 @@ pub mod tests {
             new_col_info(2, FieldTypeTp::VarChar),
             new_col_info(3, FieldTypeTp::NewDecimal),
         ];
-        let raw_data = vec![vec![
+        let primitive_causet_data = vec![vec![
             Datum::I64(1),
             Datum::Bytes(b"a".to_vec()),
             Datum::Dec(7.into()),
@@ -442,7 +442,7 @@ pub mod tests {
         let range1 = get_range(tid, 0, 4);
         let range2 = get_range(tid, 5, 10);
         let key_ranges = vec![range1, range2];
-        let ts_ect = gen_table_mutant_search_executor(tid, cis, &raw_data, Some(key_ranges));
+        let ts_ect = gen_table_mutant_search_executor(tid, cis, &primitive_causet_data, Some(key_ranges));
 
         // init TopN meta
         let mut ob_vec = Vec::with_capacity(2);

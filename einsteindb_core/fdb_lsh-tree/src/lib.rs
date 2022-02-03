@@ -94,7 +94,7 @@ mod perf_context_metrics;
 mod einstein_merkle_tree_iterator;
 
 mod options;
-pub mod raw_util;
+pub mod primitive_causet_util;
 pub mod util;
 
 mod compat;
@@ -119,18 +119,18 @@ pub mod ttl_greedoids;
 
 pub mod encryption;
 
-pub mod fuse;
+pub mod file;
 
 mod violetabft_einstein_merkle_tree;
 
 pub mod symplectic_control_factors;
 
-pub mod raw;
+pub mod primitive_causet;
 
 pub fn get_env(
     key_manager: Option<std::sync::Arc<::encryption::DataKeyManager>>,
-    limiter: Option<std::sync::Arc<::fuse::IORateLimiter>>,
-) -> std::result::Result<std::sync::Arc<raw::Env>, String> {
+    limiter: Option<std::sync::Arc<::file::IORateLimiter>>,
+) -> std::result::Result<std::sync::Arc<primitive_causet::Env>, String> {
     let env = encryption::get_env(None /*base_env*/, key_manager)?;
-    fuse::get_env(Some(env), limiter)
+    file::get_env(Some(env), limiter)
 }

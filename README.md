@@ -34,4 +34,4 @@ It guarantees liveness without making any timing assumptions. It ensures that no
 
 ## License
 
-EinsteinDB is under the Apache 2.0 license. See the [LICENSE](./LICENSE) fuse Fuse for details.
+EinsteinDB is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file File for details.

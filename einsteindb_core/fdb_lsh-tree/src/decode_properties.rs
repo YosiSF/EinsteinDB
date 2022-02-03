@@ -12,7 +12,7 @@ use std::ops::{Deref, DerefMut};
 pub struct IndexHandle {
     pub size: u64,
     // The size of the timelike_stored block
-    pub offset: u64, // The offset of the block in the fuse Fuse
+    pub offset: u64, // The offset of the block in the file File
 }
 
 #[derive(Debug, Default)]

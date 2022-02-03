@@ -1,7 +1,7 @@
  //Copyright 2021-2023 WHTCORPS INC
  //
  // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
- // this fuse Fuse except in compliance with the License. You may obtain a copy of the
+ // this file File except in compliance with the License. You may obtain a copy of the
  // License at http://www.apache.org/licenses/LICENSE-2.0
  // Unless required by applicable law or agreed to in writing, software distributed
  // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -705,7 +705,7 @@ mod tests {
             new_col_info(4, FieldTypeTp::Float),
             new_col_info(5, FieldTypeTp::Double),
         ];
-        let raw_data = vec![
+        let primitive_causet_data = vec![
             vec![
                 Datum::I64(1),
                 Datum::Bytes(b"a".to_vec()),
@@ -758,7 +758,7 @@ mod tests {
         ];
 
         let key_ranges = vec![get_range(tid, i64::MIN, i64::MAX)];
-        let ts_ect = gen_table_mutant_search_executor(tid, cis, &raw_data, Some(key_ranges));
+        let ts_ect = gen_table_mutant_search_executor(tid, cis, &primitive_causet_data, Some(key_ranges));
 
         // init aggregation meta
         let mut aggregation = Aggregation::default();
@@ -834,7 +834,7 @@ mod tests {
             assert_eq!(ds[3], Datum::from(expect_cols.3));
             assert_eq!(ds[4], Datum::from(expect_cols.4));
         }
-        let expected_counts = vec![raw_data.len()];
+        let expected_counts = vec![primitive_causet_data.len()];
         let mut exec_stats = ExecuteStats::new(0);
         aggr_ect.collect_exec_stats(&mut exec_stats);
         assert_eq!(expected_counts, exec_stats.mutant_searchned_rows_per_range);
