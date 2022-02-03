@@ -39,7 +39,7 @@ command! {
             for_update_ts: TimeStamp,
             /// Time to wait for dagger released in milliseconds when encountering daggers.
             wait_timeout: Option<WaitTimeout>,
-            /// If it is true, EinsteinDB will return values of the keys if no error, so TiDB can cache the values for
+            /// If it is true, EinsteinDB will return values of the keys if no error, so MilevaDB can cache the values for
             /// later read in the same transaction.
             return_values: bool,
             min_commit_ts: TimeStamp,

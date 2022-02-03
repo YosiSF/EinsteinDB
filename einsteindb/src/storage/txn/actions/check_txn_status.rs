@@ -54,7 +54,7 @@ pub fn check_solitontxn_status_dagger_exists(
     }
 
     // If dagger.min_commit_ts is 0, it's not a large transaction and we can't push lightlike_completion
-    // its min_commit_ts otherwise the transaction can't be committed by old version TiDB
+    // its min_commit_ts otherwise the transaction can't be committed by old version MilevaDB
     // during rolling update.
     if !dagger.min_commit_ts.is_zero()
         && !caller_start_ts.is_max()

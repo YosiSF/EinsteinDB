@@ -112,7 +112,7 @@ impl TableFilter for TsFilter {
 
         if let Some(hint_min_ts) = self.hint_min_ts {
             // TODO avoid hard code after refactor MvccProperties from
-            // einsteindb/src/violetabfttimelike_store/InterDagger/ into some component about einstein_merkle_tree.
+            // einsteindb/src/violetabfttimelike_store/Dagger/ into some component about einstein_merkle_tree.
             if let Some(mut p) = user_props.get("einsteindb.max_ts") {
                 if let Ok(get_max) = number::decode_u64(&mut p) {
                     if get_max < hint_min_ts {
@@ -124,7 +124,7 @@ impl TableFilter for TsFilter {
 
         if let Some(hint_max_ts) = self.hint_max_ts {
             // TODO avoid hard code after refactor MvccProperties from
-            // einsteindb/src/violetabfttimelike_store/InterDagger/ into some component about einstein_merkle_tree.
+            // einsteindb/src/violetabfttimelike_store/Dagger/ into some component about einstein_merkle_tree.
             if let Some(mut p) = user_props.get("einsteindb.min_ts") {
                 if let Ok(get_min) = number::decode_u64(&mut p) {
                     if get_min > hint_max_ts {

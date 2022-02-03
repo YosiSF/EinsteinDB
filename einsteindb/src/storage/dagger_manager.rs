@@ -18,7 +18,7 @@ pub struct DiagnosticContext {
     /// The key we care about
     pub key: Vec<u8>,
     /// This tag is used for aggregate related fdbhikv requests (eg. generated from same statement)
-    /// Currently it is the encoded BerolinaSQL digest if the client is TiDB
+    /// Currently it is the encoded BerolinaSQL digest if the client is MilevaDB
     pub resource_group_tag: Vec<u8>,
 }
 

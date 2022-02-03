@@ -49,7 +49,7 @@ codec = { path = "einsteindb_core/codec", default-features = false }
 concurrency_manager = { path = "einsteindb_core/concurrency_manager", default-features = false }
 online_config = { path = "einsteindb_core/online_config" }
 crc32fast = "1.2"
-crc64fast = "0.1"
+crc64fast = "1.0.0"
 crossbeam = "0.8"
 encryption_export = { path = "einsteindb_core/encryption/export", default-features = false }
 einstein_merkle_tree_panic = { path = "einsteindb_core/einstein_merkle_tree_panic", default-features = false }
@@ -118,18 +118,18 @@ tempfile = "3.0"
 match_template = { path = "einsteindb_core/match_template" }
 paste = "1.0"
 thiserror = "1.0"
-tidb_query_datatype = { path = "einsteindb_core/tidb_query_datatype", default-features = false }
-tidb_query_common = { path = "einsteindb_core/tidb_query_common", default-features = false }
-tidb_query_expr = { path = "einsteindb_core/tidb_query_expr", default-features = false }
-tidb_query_aggr = { path = "einsteindb_core/milevadb_query_aggr", default-features = false }
-tidb_query_executors = { path = "einsteindb_core/tidb_query_executors", default-features = false }
+milevadb_query_datatype = { path = "einsteindb_core/milevadb_query_datatype", default-features = false }
+milevadb_query_common = { path = "einsteindb_core/milevadb_query_common", default-features = false }
+milevadb_query_expr = { path = "einsteindb_core/milevadb_query_expr", default-features = false }
+milevadb_query_aggr = { path = "einsteindb_core/milevadb_query_aggr", default-features = false }
+milevadb_query_executors = { path = "einsteindb_core/milevadb_query_executors", default-features = false }
 einsteindb_alloc = { path = "einsteindb_core/einsteindb_alloc" }
 einsteindb_kv = { path = "einsteindb_core/einsteindb_kv", default-features = false }
 einsteindb_util = { path = "einsteindb_core/einsteindb_util", default-features = false }
 collections = { path = "einsteindb_core/collections" }
-InterDagger_plugin_api = { path = "einsteindb_core/InterDagger_plugin_api" }
+dagger_plugin_api = { path = "einsteindb_core/Dagger_plugin_api" }
 time = "0.1"
-tipb = { git = "https://github.com/whtcorpsinc/tipb.git" }
+noetherpb = { git = "https://github.com/whtcorpsinc/tipb.git" }
 tokio = { version = "1.12", features = ["full"] }
 tokio-timer = "0.2"
 tokio-openssl = "0.6"
@@ -143,7 +143,7 @@ resource_metering = { path = "einsteindb_core/resource_metering" }
 seahash = "4.1.0"
 
 [dev-dependencies]
-example_plugin = { path = "einsteindb_core/test_InterDagger_plugin/example_plugin" } # should be a binary dependency
+example_plugin = { path = "einsteindb_core/test_Dagger_plugin/example_plugin" } # should be a binary dependency
 panic_hook = { path = "einsteindb_core/panic_hook" }
 reqwest = { version = "0.11", features = ["blocking"] }
 test_Causet_importer = { path = "einsteindb_core/test_Causet_importer", default-features = false }
@@ -195,7 +195,7 @@ members = [
   "einsteindb_core/test_backup",
   "einsteindb_core/test_violetabfttimelike_store",
   "einsteindb_core/test_timelike_storage",
-  "einsteindb_core/test_InterDagger",
+  "einsteindb_core/test_Dagger",
   "einsteindb_core/test_Causet_importer",
   "einsteindb_core/test_util",
   "einsteindb_core/test_fidel",
@@ -207,12 +207,12 @@ members = [
   "einsteindb_core/noether_helper",
   "einsteindb_core/log_wrappers",
   "einsteindb_core/einsteindb_util",
-  "einsteindb_core/tidb_query_datatype",
-  "einsteindb_core/tidb_query_common",
+  "einsteindb_core/milevadb_query_datatype",
+  "einsteindb_core/milevadb_query_common",
   "einsteindb_core/milevadb_query_codegen",
-  "einsteindb_core/tidb_query_expr",
+  "einsteindb_core/milevadb_query_expr",
   "einsteindb_core/milevadb_query_aggr",
-  "einsteindb_core/tidb_query_executors",
+  "einsteindb_core/milevadb_query_executors",
   "einsteindb_core/fidel_client",
   "einsteindb_core/external_timelike_storage",
   "einsteindb_core/external_timelike_storage/export",
@@ -237,8 +237,8 @@ members = [
   "einsteindb_core/server",
   "einsteindb_core/file_system",
   "einsteindb_core/collections",
-  "einsteindb_core/InterDagger_plugin_api",
-  "einsteindb_core/test_InterDagger_plugin/example_plugin",
+  "einsteindb_core/Dagger_plugin_api",
+  "einsteindb_core/test_Dagger_plugin/example_plugin",
   "einsteindb_core/resource_metering",
   "einsteindb_core/api_version",
 ]

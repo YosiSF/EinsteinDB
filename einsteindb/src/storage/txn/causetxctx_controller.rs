@@ -445,7 +445,7 @@ struct CausetxctxChecker<E: CFNamesExt + CausetxctxControlFactorsExt + Send + 's
     // exceed the threshold, choose the larger one.
     throttle_cf: Option<String>,
     // Discard ratio is decided by pending compaction bytes, it's the ratio to
-    // drop write requests(return ServerIsBusy to TiDB) randomly.
+    // drop write requests(return ServerIsBusy to MilevaDB) randomly.
     discard_ratio: Arc<causetxctxU32>,
 
     einstein_merkle_tree: E,

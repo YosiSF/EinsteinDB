@@ -353,7 +353,7 @@ impl<E: einstein_merkle_tree, L: DaggerManager> Storage<E, L> {
     ///
     /// When config.api_version = V1: accept request of V1 only.
     /// When config.api_version = V2: accept the following:
-    ///   * Request of V1 from TiDB, for compatibility.
+    ///   * Request of V1 from MilevaDB, for compatibility.
     ///   * Request of V2 with legal prefix.
     /// See the following for detail:
     ///   * rfc: https://github.com/einstfdbhikv/rfcs/blob/master/text/0069-api-v2.md.
@@ -370,9 +370,9 @@ impl<E: einstein_merkle_tree, L: DaggerManager> Storage<E, L> {
                 // storage api_version = V1ttl, allow cocausetKV request only.
             }
             (ApiVersion::V2, ApiVersion::V1) if Self::is_solitontxn_command(cmd) => {
-                // For compatibility, accept TiDB request only.
+                // For compatibility, accept MilevaDB request only.
                 for key in keys {
-                    if APIV2::parse_key_mode(key.as_ref()) != KeyMode::TiDB {
+                    if APIV2::parse_key_mode(key.as_ref()) != KeyMode::MilevaDB {
                         return Err(ErrorInner::invalid_key_mode(
                             cmd,
                             storage_api_version,
@@ -429,13 +429,13 @@ impl<E: einstein_merkle_tree, L: DaggerManager> Storage<E, L> {
                 // storage api_version = V1ttl, allow cocausetKV request only.
             }
             (ApiVersion::V2, ApiVersion::V1) if Self::is_solitontxn_command(cmd) => {
-                // For compatibility, accept TiDB request only.
+                // For compatibility, accept MilevaDB request only.
                 for range in ranges {
                     let range = (
                         range.0.as_ref().map(AsRef::as_ref),
                         range.1.as_ref().map(AsRef::as_ref),
                     );
-                    if APIV2::parse_range_mode(range) != KeyMode::TiDB {
+                    if APIV2::parse_range_mode(range) != KeyMode::MilevaDB {
                         return Err(ErrorInner::invalid_key_range_mode(
                             cmd,
                             storage_api_version,
@@ -7838,7 +7838,7 @@ mod tests {
                 Some(API_VERSION_NOT_MATCHED),
             ),
             // storage api_version = V2.
-            // timelike_curvature compatible for TiDB request, and TiDB request only.
+            // timelike_curvature compatible for MilevaDB request, and MilevaDB request only.
             (
                 ApiVersion::V2,
                 ApiVersion::V1,
@@ -8030,7 +8030,7 @@ mod tests {
             Some(API_VERSION_NOT_MATCHED),
         );
         // storage api_version = V2.
-        // timelike_curvature compatible for TiDB request, and TiDB request only.
+        // timelike_curvature compatible for MilevaDB request, and MilevaDB request only.
         test_case(
             ApiVersion::V2,
             ApiVersion::V1,

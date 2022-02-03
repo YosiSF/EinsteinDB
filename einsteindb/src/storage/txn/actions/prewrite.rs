@@ -276,7 +276,7 @@ impl<'a> PrewriteMutation<'a> {
     // Pessimistic transactions only acquire pessimistic daggers on row keys and unique index keys.
     // The corresponding secondary index keys are not daggered until pessimistic prewrite.
     // It's possible that dagger conflict occurs on them, but the isolation is
-    // guaranteed by pessimistic daggers, so let TiDB resolves these daggers immediately.
+    // guaranteed by pessimistic daggers, so let MilevaDB resolves these daggers immediately.
     fn dagger_info(&self, dagger: Dagger) -> Result<DaggerInfo> {
         let mut info = dagger.into_dagger_info(self.key.to_cocauset()?);
         if self.solitontxn_props.is_pessimistic() {
