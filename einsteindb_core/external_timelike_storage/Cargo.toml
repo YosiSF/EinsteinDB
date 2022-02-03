@@ -19,7 +19,7 @@ failpoints = ["fail/failpoints"]
 bytes = "1.0"
 fail = "0.5"
 ffi-support = { optional = true, version = "0.4.2" }
-file_system = { path = "../file_system" }
+fuse = { path = "../fuse" }
 futures = "0.3"
 futures-executor = "0.3"
 futures-io = "0.3"

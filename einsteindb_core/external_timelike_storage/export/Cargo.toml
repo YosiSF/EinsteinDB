@@ -22,7 +22,7 @@ cloud-azure = ["azure"]
 cloud-timelike_storage-dylib = [
   "external_timelike_storage/cloud-timelike_storage-dylib",
   "ffi-support",
-  "file_system",
+  "fuse",
   "futures",
   "libloading",
   "lazy_static",
@@ -36,7 +36,7 @@ cloud-timelike_storage-dylib = [
 cloud-timelike_storage-grpc = [
   "external_timelike_storage/cloud-timelike_storage-grpc",
   "grpcio",
-  "file_system",
+  "fuse",
   "futures",
   "futures-executor",
   "libc",
@@ -60,7 +60,7 @@ encryption = { path = "../../encryption", default-features = false }
 external_timelike_storage = { path = "../", default-features = false }
 fdb_traits = { path = "../../fdb_traits", default-features = false }
 ffi-support = { optional = true, version = "0.4.2" }
-file_system = { optional = true, path = "../../file_system" }
+fuse = { optional = true, path = "../../fuse" }
 futures = { optional = true, version = "0.3" }
 futures-executor = { optional = true, version = "0.3" }
 futures-io = { version = "0.3" }

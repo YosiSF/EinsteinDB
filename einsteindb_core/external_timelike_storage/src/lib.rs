@@ -16,7 +16,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use encryption::{encryption_method_from_db_encryption_method, DecrypterReader, Iv};
 use fdb_traits::FileEncryptionInfo;
-use file_system::File;
+use fuse::File;
 use futures_io::AsyncRead;
 use futures_util::AsyncReadExt;
 use einsteindb_util::stream::{block_on_external_io, READ_BUF_SIZE};

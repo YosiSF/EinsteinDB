@@ -5,7 +5,7 @@ use crate::einsteindb::storage::fdbhikv::{Result, Rockseinstein_merkle_tree};
 use einstein_merkle_tree_rocks::cocauset::ColumnFamilyOptions;
 use einstein_merkle_tree_rocks::cocauset_util::CFOptions;
 use einsteindb-gen::{CfName, ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
-use file_system::IORateLimiter;
+use fuse::IORateLimiter;
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;

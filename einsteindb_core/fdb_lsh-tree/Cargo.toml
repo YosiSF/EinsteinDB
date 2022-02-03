@@ -26,7 +26,7 @@ nortcheck = []
 api_version = { path = "../api_version", default-features = false }
 encryption = { path = "../encryption", default-features = false }
 fdb_traits = { path = "../fdb_traits", default-features = false }
-file_system = { path = "../file_system", default-features = false }
+fuse = { path = "../fuse", default-features = false }
 keys = { path = "../keys", default-features = false }
 num_cpus = "1"
 prometheus = { version = "0.13", features = ["nightly"] }

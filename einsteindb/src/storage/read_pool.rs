@@ -5,7 +5,7 @@
 use crate::config::StorageReadPoolConfig;
 use crate::einsteindb::storage::fdbhikv::{destroy_tls_einstein_merkle_tree, set_tls_einstein_merkle_tree, einstein_merkle_tree, CausetxctxStatsReporter};
 use crate::einsteindb::storage::metrics;
-use file_system::{set_io_type, IOType};
+use fuse::{set_io_type, IOType};
 use std::sync::{Arc, Mutex};
 use einstfdbhikv_util::yatp_pool::{Config, DefaultTicker, FuturePool, PoolTicker, YatpPoolBuilder};
 

@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use einstfdbhikv_util::time::Duration;
 
 use collections::HashMap;
-use file_system::{set_io_type, IOType};
+use fuse::{set_io_type, IOType};
 use fdbhikvproto::pdpb::QueryKind;
 use prometheus::local::*;
 use raftstore::store::WriteStats;

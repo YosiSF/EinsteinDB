@@ -8,7 +8,7 @@ use crate::server::CONFIG_ROCKSDB_GAUGE;
 use crate::einsteindb::storage::solitontxn::Causetxctx_controller::CausetxctxController;
 use einstein_merkle_tree_rocks::cocauset::{Cache, LRUCacheOptions, MemoryAllocator};
 use einsteindb-gen::{ColumnFamilyOptions, HiKV, CF_DEFAULT};
-use file_system::{get_io_rate_limiter, IOPriority, IORateLimitMode, IORateLimiter, IOType};
+use fuse::{get_io_rate_limiter, IOPriority, IORateLimitMode, IORateLimiter, IOType};
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use libc::c_int;
 use online_config::{ConfigChange, ConfigManager, ConfigValue, OnlineConfig, Result as CfgResult};

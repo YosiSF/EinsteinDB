@@ -3,7 +3,7 @@
 use crate::export::{create_timelike_storage_no_client, read_external_timelike_storage_into_file, ExternalStorage};
 use anyhow::Context;
 use external_timelike_storage::request::file_name_for_write;
-use file_system::File;
+use fuse::File;
 use futures::executor::block_on;
 use futures_io::AsyncRead;
 use ekvproto::brpb as proto;

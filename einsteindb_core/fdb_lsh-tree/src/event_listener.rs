@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use einsteindb_util::set_panic_mark;
-use file_system::{get_io_type, IOType, set_io_type};
+use fuse::{get_io_type, IOType, set_io_type};
 use foundationdb::{
     CompactionJobInfo, DBBackgroundErrorReason, FlushJobInfo, IngestionInfo, Subjet_bundleJobInfo,
     WriteStallInfo,

@@ -119,7 +119,7 @@ pub mod ttl_properties;
 
 pub mod encryption;
 
-pub mod file_system;
+pub mod fuse;
 
 mod violetabft_einstein_merkle_tree;
 
@@ -129,8 +129,8 @@ pub mod raw;
 
 pub fn get_env(
     key_manager: Option<std::sync::Arc<::encryption::DataKeyManager>>,
-    limiter: Option<std::sync::Arc<::file_system::IORateLimiter>>,
+    limiter: Option<std::sync::Arc<::fuse::IORateLimiter>>,
 ) -> std::result::Result<std::sync::Arc<raw::Env>, String> {
     let env = encryption::get_env(None /*base_env*/, key_manager)?;
-    file_system::get_env(Some(env), limiter)
+    fuse::get_env(Some(env), limiter)
 }

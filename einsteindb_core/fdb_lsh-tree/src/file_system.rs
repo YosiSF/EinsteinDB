@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use fdb_traits::{einstein_merkle_treeFileSystemInspector, FileSystemInspector};
-use foundationdb::FileSystemInspector as DBFileSystemInspector;
+use fdb_traits::{einstein_merkle_Fusion, FuseInspector};
+use foundationdb::FuseInspector as DBFuseInspector;
 use std::sync::Arc;
 
 use crate::raw::Env;
@@ -9,22 +9,22 @@ use crate::raw::Env;
 // Use einstein_merkle_tree::Env directly since Env is not abstracted.
 pub(crate) fn get_env(
     base_env: Option<Arc<Env>>,
-    limiter: Option<Arc<file_system::IORateLimiter>>,
+    limiter: Option<Arc<fuse::IORateLimiter>>,
 ) -> Result<Arc<Env>, String> {
     let base_env = base_env.unwrap_or_else(|| Arc::new(Env::default()));
-    Ok(Arc::new(Env::new_file_system_inspected_env(
+    Ok(Arc::new(Env::new_fuse_inspected_env(
         base_env,
-        WrappedFileSystemInspector {
-            inspector: einstein_merkle_treeFileSystemInspector::from_limiter(limiter),
+        WrappedFuseInspector {
+            inspector: einstein_merkle_Fusion::from_limiter(limiter),
         },
     )?))
 }
 
-pub struct WrappedFileSystemInspector<T: FileSystemInspector> {
+pub struct WrappedFuseInspector<T: FuseInspector> {
     inspector: T,
 }
 
-impl<T: FileSystemInspector> DBFileSystemInspector for WrappedFileSystemInspector<T> {
+impl<T: FuseInspector> DBFuseInspector for WrappedFuseInspector<T> {
     fn read(&self, len: usize) -> Result<usize, String> {
         self.inspector.read(len)
     }
@@ -37,7 +37,7 @@ impl<T: FileSystemInspector> DBFileSystemInspector for WrappedFileSystemInspecto
 #[cfg(test)]
 mod tests {
     use fdb_traits::{NAMESPACED_DEFAULT, CompactExt};
-    use file_system::{IOOp, IORateLimiter, IORateLimiterStatistics, IOType};
+    use fuse::{IOOp, IORateLimiter, IORateLimiterStatistics, IOType};
     use foundationdb::{DB, DBOptions};
     use foundationdb::Writable;
     use keys::data_key;
