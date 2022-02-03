@@ -27,8 +27,7 @@ extern crate lazy_static;
 extern crate serde_derive;
 #[macro_use]
 extern crate more_asserts;
-#[macro_use]
-extern crate EinsteinDB_util;
+
 
 #[cfg(test)]
 extern crate test;
