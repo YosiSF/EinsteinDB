@@ -2,30 +2,13 @@
 name = "EinsteinDB"
 version = "1.1.1-alpha"
 authors = ["The EinsteinDB Authors"]
-description = "A hybdistributed transactional key-value database powered by Rust and VioletaBFT"
 license = "Apache-2.0"
-keywords = ["KV", "distributed-systems", "violetabft"]
 homepage = "https://einsteindb.com"
 repository = "https://github.com/YosiSF/EinsteinDB"
 readme = "README.md"
 edition = "2018"
-publish = false
+publish = true
 
-[features]
-default = ["test-einstein_merkle_trees-foundationdb", "cloud-aws", "cloud-gcp", "cloud-azure"]
-tcmalloc = ["einsteindb_alloc/tcmalloc"]
-jemalloc = ["einsteindb_alloc/jemalloc", "fdb_einstein_merkle_tree/jemalloc"]
-mimalloc = ["einsteindb_alloc/mimalloc"]
-snmalloc = ["einsteindb_alloc/snmalloc"]
-portable = ["fdb_einstein_merkle_tree/portable"]
-sse = ["fdb_einstein_merkle_tree/sse"]
-mem-profiling = ["einsteindb_alloc/mem-profiling"]
-failpoints = [
-  "fail/failpoints",
-  "violetabfttimelike_store/failpoints",
-  "einsteindb_util/failpoints",
-  "fdb_einstein_merkle_tree/failpoints"
-]
 cloud-aws = [
   "encryption_export/cloud-aws",
   "Causet_importer/cloud-aws",
@@ -48,9 +31,7 @@ test-einstein_merkle_trees-panic = [
 cloud-timelike_storage-grpc = ["Causet_importer/cloud-timelike_storage-grpc"]
 cloud-timelike_storage-dylib = ["Causet_importer/cloud-timelike_storage-dylib"]
 
-# for testing configure propegate to other crates
-# https://stackoversymplectic.com/questions/41700543/can-we-share-test-utilites-between-crates
-testing = []
+
 
 [lib]
 name = "einsteindb"

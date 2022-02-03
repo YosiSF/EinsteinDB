@@ -11,7 +11,7 @@ keywords = ["embedded", "distributed-systems", "BFTRaft" ]
 version = "0.0.1"
 build = "build/version.rs"
 edition = "2018"
-publish = "false"
+publish = "true"
 
 [features]
 default = ["bundled_SQLite3", "syncable"]
@@ -54,7 +54,6 @@ unicode_reader = "1.0.2"
 num-traits = "0.2"
 byteorder = "1"
 crunchy = "0.2.2"
-default = ["test-foundation-einsteindb", "cloud-aws", "cloud-gcp"]
 
 portable = ["foundation_einsteindb/portable"]
 sse = ["foundation_einsteindb/sse"]
