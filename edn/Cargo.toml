@@ -1,14 +1,9 @@
 [package]
 name = "edn"
 version = "0.1.0"
-authors = ["@whtcorpsinc"]
-workspace = "einsteindb"
-
 license = "Apache-2.0"
 repository = "https://github.com/YosiSF/EinsteinDB/edn"
 description = "EML parser for Project einsteindb"
-build = "build.rs"
-readme = "./README.md"
 
 [dependencies]
 chrono = "0.4"
