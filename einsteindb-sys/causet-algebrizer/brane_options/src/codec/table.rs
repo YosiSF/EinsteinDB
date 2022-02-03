@@ -225,7 +225,7 @@ pub fn decode_index_key(
     Ok(res)
 }
 
-/// `unflatten` converts a raw datum to a column datum.
+/// `unflatten` converts a primitive_causet datum to a column datum.
 fn unflatten(
     ctx: &mut EvalContext,
     datum: Datum,

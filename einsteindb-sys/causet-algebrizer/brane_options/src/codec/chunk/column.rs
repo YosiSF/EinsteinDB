@@ -59,9 +59,9 @@ impl Column {
         }
     }
 
-    pub fn from_raw_datums(
+    pub fn from_primitive_causet_datums(
         field_type: &FieldType,
-        raw_datums: &BufferVec,
+        primitive_causet_datums: &BufferVec,
         logical_rows: &[usize],
         ctx: &mut EvalContext,
     ) -> Result<Self> {
@@ -72,48 +72,48 @@ impl Column {
             EvalType::Int => {
                 if field_type.is_unsigned() {
                     for &row_index in logical_rows {
-                        col.append_u64_datum(&raw_datums[row_index])?
+                        col.append_u64_datum(&primitive_causet_datums[row_index])?
                     }
                 } else {
                     for &row_index in logical_rows {
-                        col.append_i64_datum(&raw_datums[row_index])?
+                        col.append_i64_datum(&primitive_causet_datums[row_index])?
                     }
                 }
             }
             EvalType::Real => {
                 if field_type.as_accessor().tp() == FieldTypeTp::Float {
                     for &row_index in logical_rows {
-                        col.append_f32_datum(&raw_datums[row_index])?
+                        col.append_f32_datum(&primitive_causet_datums[row_index])?
                     }
                 } else {
                     for &row_index in logical_rows {
-                        col.append_f64_datum(&raw_datums[row_index])?
+                        col.append_f64_datum(&primitive_causet_datums[row_index])?
                     }
                 }
             }
             EvalType::Decimal => {
                 for &row_index in logical_rows {
-                    col.append_decimal_datum(&raw_datums[row_index])?
+                    col.append_decimal_datum(&primitive_causet_datums[row_index])?
                 }
             }
             EvalType::Bytes => {
                 for &row_index in logical_rows {
-                    col.append_bytes_datum(&raw_datums[row_index])?
+                    col.append_bytes_datum(&primitive_causet_datums[row_index])?
                 }
             }
             EvalType::DateTime => {
                 for &row_index in logical_rows {
-                    col.append_time_datum(&raw_datums[row_index], ctx, field_type)?
+                    col.append_time_datum(&primitive_causet_datums[row_index], ctx, field_type)?
                 }
             }
             EvalType::Duration => {
                 for &row_index in logical_rows {
-                    col.append_duration_datum(&raw_datums[row_index])?
+                    col.append_duration_datum(&primitive_causet_datums[row_index])?
                 }
             }
             EvalType::Json => {
                 for &row_index in logical_rows {
-                    col.append_json_datum(&raw_datums[row_index])?
+                    col.append_json_datum(&primitive_causet_datums[row_index])?
                 }
             }
         }
@@ -431,14 +431,14 @@ impl Column {
             ));
         }
         let flag = src_datum[0];
-        let mut raw_datum = &src_datum[1..];
+        let mut primitive_causet_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            datum::INT_FLAG => self.append_i64(raw_datum.read_datum_payload_i64()?)?,
-            datum::UINT_FLAG => self.append_i64(raw_datum.read_datum_payload_u64()? as i64)?,
-            datum::VAR_INT_FLAG => self.append_i64(raw_datum.read_datum_payload_var_i64()?)?,
+            datum::INT_FLAG => self.append_i64(primitive_causet_datum.read_datum_payload_i64()?)?,
+            datum::UINT_FLAG => self.append_i64(primitive_causet_datum.read_datum_payload_u64()? as i64)?,
+            datum::VAR_INT_FLAG => self.append_i64(primitive_causet_datum.read_datum_payload_var_i64()?)?,
             datum::VAR_UINT_FLAG => {
-                self.append_i64(raw_datum.read_datum_payload_var_u64()? as i64)?
+                self.append_i64(primitive_causet_datum.read_datum_payload_var_u64()? as i64)?
             }
             _ => {
                 return Err(Error::InvalidDataType(format!(
@@ -474,15 +474,15 @@ impl Column {
             ));
         }
         let flag = src_datum[0];
-        let mut raw_datum = &src_datum[1..];
+        let mut primitive_causet_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            datum::INT_FLAG => self.append_u64(raw_datum.read_datum_payload_i64()? as u64)?,
-            datum::UINT_FLAG => self.append_u64(raw_datum.read_datum_payload_u64()?)?,
+            datum::INT_FLAG => self.append_u64(primitive_causet_datum.read_datum_payload_i64()? as u64)?,
+            datum::UINT_FLAG => self.append_u64(primitive_causet_datum.read_datum_payload_u64()?)?,
             datum::VAR_INT_FLAG => {
-                self.append_u64(raw_datum.read_datum_payload_var_i64()? as u64)?
+                self.append_u64(primitive_causet_datum.read_datum_payload_var_i64()? as u64)?
             }
-            datum::VAR_UINT_FLAG => self.append_u64(raw_datum.read_datum_payload_var_u64()?)?,
+            datum::VAR_UINT_FLAG => self.append_u64(primitive_causet_datum.read_datum_payload_var_u64()?)?,
             _ => {
                 return Err(Error::InvalidDataType(format!(
                     "Unsupported datum flag {} for Int vector",
@@ -518,12 +518,12 @@ impl Column {
             ));
         }
         let flag = src_datum[0];
-        let mut raw_datum = &src_datum[1..];
+        let mut primitive_causet_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
             // In both index and record, it's flag is `FLOAT`. See MEDB's `encode()`.
             datum::FLOAT_FLAG => {
-                let v = raw_datum.read_datum_payload_f64()?;
+                let v = primitive_causet_datum.read_datum_payload_f64()?;
                 self.append_f64(v)?;
             }
             _ => {
@@ -551,12 +551,12 @@ impl Column {
             ));
         }
         let flag = src_datum[0];
-        let mut raw_datum = &src_datum[1..];
+        let mut primitive_causet_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
             // In both index and record, it's flag is `FLOAT`. See MEDB's `encode()`.
             datum::FLOAT_FLAG => {
-                let v = raw_datum.read_datum_payload_f64()?;
+                let v = primitive_causet_datum.read_datum_payload_f64()?;
                 self.append_f32(v as f32)?;
             }
             _ => {
@@ -602,16 +602,16 @@ impl Column {
             ));
         }
         let flag = src_datum[0];
-        let mut raw_datum = &src_datum[1..];
+        let mut primitive_causet_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
             // In index, it's flag is `BYTES`. See MEDB's `encode()`.
             // TODO: this method's performance can be further improved
-            datum::BYTES_FLAG => self.append_bytes(&raw_datum.read_datum_payload_bytes()?)?,
+            datum::BYTES_FLAG => self.append_bytes(&primitive_causet_datum.read_datum_payload_bytes()?)?,
             // In record, it's flag is `COMPACT_BYTES`. See MEDB's `encode()`.
             datum::COMPACT_BYTES_FLAG => {
-                let vn = raw_datum.read_var_i64()? as usize;
-                let data = raw_datum.read_bytes(vn)?;
+                let vn = primitive_causet_datum.read_var_i64()? as usize;
+                let data = primitive_causet_datum.read_bytes(vn)?;
                 self.append_bytes(&data[0..vn])?;
             }
             _ => {
@@ -652,20 +652,20 @@ impl Column {
             ));
         }
         let flag = src_datum[0];
-        let raw_datum = &src_datum[1..];
+        let primitive_causet_datum = &src_datum[1..];
 
         match flag {
             datum::NIL_FLAG => self.append_null(),
             // In index, it's flag is `UINT`. See MEDB's `encode()`.
             datum::UINT_FLAG => {
                 self.data
-                    .write_time_to_chunk_by_datum_payload_int(raw_datum, ctx, field_type)?;
+                    .write_time_to_chunk_by_datum_payload_int(primitive_causet_datum, ctx, field_type)?;
                 self.finish_append_fixed();
             }
             // In record, it's flag is `VAR_UINT`. See MEDB's `flatten()` and `encode()`.
             datum::VAR_UINT_FLAG => {
                 self.data
-                    .write_time_to_chunk_by_datum_payload_varint(raw_datum, ctx, field_type)?;
+                    .write_time_to_chunk_by_datum_payload_varint(primitive_causet_datum, ctx, field_type)?;
                 self.finish_append_fixed();
             }
             _ => {
@@ -702,19 +702,19 @@ impl Column {
             ));
         }
         let flag = src_datum[0];
-        let raw_datum = &src_datum[1..];
+        let primitive_causet_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
             // In index, it's flag is `DURATION`. See MEDB's `encode()`.
             datum::DURATION_FLAG => {
                 self.data
-                    .write_duration_to_chunk_by_datum_payload_int(raw_datum)?;
+                    .write_duration_to_chunk_by_datum_payload_int(primitive_causet_datum)?;
                 self.finish_append_fixed();
             }
             // In record, it's flag is `VAR_INT`. See MEDB's `flatten()` and `encode()`.
             datum::VAR_INT_FLAG => {
                 self.data
-                    .write_duration_to_chunk_by_datum_payload_varint(raw_datum)?;
+                    .write_duration_to_chunk_by_datum_payload_varint(primitive_causet_datum)?;
                 self.finish_append_fixed();
             }
             _ => {
@@ -751,13 +751,13 @@ impl Column {
             ));
         }
         let flag = src_datum[0];
-        let raw_datum = &src_datum[1..];
+        let primitive_causet_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
             // In both index and record, it's flag is `DECIMAL`. See MEDB's `encode()`.
             datum::DECIMAL_FLAG => {
                 self.data
-                    .write_decimal_to_chunk_by_datum_payload(raw_datum)?;
+                    .write_decimal_to_chunk_by_datum_payload(primitive_causet_datum)?;
                 self.finish_append_fixed();
             }
             _ => {
@@ -787,7 +787,7 @@ impl Column {
         Ok(())
     }
 
-    /// Append a json datum in raw bytes to the column.
+    /// Append a json datum in primitive_causet bytes to the column.
     pub fn append_json_datum(&mut self, src_datum: &[u8]) -> Result<()> {
         if src_datum.is_empty() {
             return Err(Error::InvalidDataType(
@@ -795,12 +795,12 @@ impl Column {
             ));
         }
         let flag = src_datum[0];
-        let raw_datum = &src_datum[1..];
+        let primitive_causet_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
             // In both index and record, it's flag is `JSON`. See MEDB's `encode()`.
             datum::JSON_FLAG => {
-                self.data.write_json_to_chunk_by_datum_payload(raw_datum)?;
+                self.data.write_json_to_chunk_by_datum_payload(primitive_causet_datum)?;
                 self.finished_append_var();
             }
             _ => {

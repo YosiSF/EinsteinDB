@@ -1,7 +1,7 @@
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -174,7 +174,7 @@ impl Topograph {
             .collect())
     }
 
-    fn get_raw_causetid(&self, x: &Keyword) -> Option<Causetid> {
+    fn get_primitive_causet_causetid(&self, x: &Keyword) -> Option<Causetid> {
         self.solitonid_map.get(x).map(|x| *x)
     }
 
@@ -281,7 +281,7 @@ impl HasTopograph for Topograph {
     }
 
     fn get_causetid(&self, x: &Keyword) -> Option<KnownCausetid> {
-        self.get_raw_causetid(x).map(KnownCausetid)
+        self.get_primitive_causet_causetid(x).map(KnownCausetid)
     }
 
     fn attribute_for_causetid<T>(&self, x: T) -> Option<&Attribute> where T: Into<Causetid> {
@@ -289,7 +289,7 @@ impl HasTopograph for Topograph {
     }
 
     fn attribute_for_solitonid(&self, solitonid: &Keyword) -> Option<(&Attribute, KnownCausetid)> {
-        self.get_raw_causetid(&solitonid)
+        self.get_primitive_causet_causetid(&solitonid)
             .and_then(|causetid| {
                 self.attribute_for_causetid(causetid).map(|a| (a, KnownCausetid(causetid)))
             })
@@ -302,7 +302,7 @@ impl HasTopograph for Topograph {
 
     /// Return true if the provided solitonid solitonidifies an attribute in this topograph.
     fn solitonidifies_attribute(&self, x: &Keyword) -> bool {
-        self.get_raw_causetid(x).map(|e| self.is_attribute(e)).unwrap_or(false)
+        self.get_primitive_causet_causetid(x).map(|e| self.is_attribute(e)).unwrap_or(false)
     }
 
     fn component_attributes(&self) -> &[Causetid] {

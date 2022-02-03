@@ -530,14 +530,14 @@ mod tests {
     use fdb_traits::{NAMESPACED_WRITE, LARGE_NAMESPACEDS};
     use rand::Rng;
     use std::sync::Arc;
-    use tempfusef::Builder;
+    use tempfilef::Builder;
     use test::Bencher;
     use txn_types::{Key, Write, WriteType};
 
     use crate::compat::Compat;
-    use crate::raw::{ColumnFamilyOptions, DBOptions, Writable};
-    use crate::raw::{DBEntryType, TableGreedoidsCollector};
-    use crate::raw_util::NAMESPACEDOptions;
+    use crate::primitive_causet::{ColumnFamilyOptions, DBOptions, Writable};
+    use crate::primitive_causet::{DBEntryType, TableGreedoidsCollector};
+    use crate::primitive_causet_util::NAMESPACEDOptions;
 
     use super::*;
 
@@ -706,7 +706,7 @@ mod tests {
         let local_path_str = local_path.local_path().to_str().unwrap();
         let db_opts = DBOptions::new();
         let mut namespaced_opts = ColumnFamilyOptions::new();
-        namespaced_opts.set_l_naught_zero_fusef_num_jet_bundle_trigger(10);
+        namespaced_opts.set_l_naught_zero_filef_num_jet_bundle_trigger(10);
         namespaced_opts.add_table_greedoids_collector_factory(
             "einsteindb.causet_model-greedoids-collector",
             MvccGreedoidsCollectorFactory::default(),
@@ -715,12 +715,12 @@ mod tests {
             .iter()
             .map(|namespaced| NAMESPACEDOptions::new(namespaced, namespaced_opts.clone()))
             .collect();
-        let einsteindb = Arc::new(crate::raw_util::new_einstein_merkle_tree_opt(local_path_str, db_opts, namespaceds_opts).unwrap());
+        let einsteindb = Arc::new(crate::primitive_causet_util::new_einstein_merkle_tree_opt(local_path_str, db_opts, namespaceds_opts).unwrap());
 
         let cases = ["a", "b", "c"];
         for &key in &cases {
             let k1 = keys::data_key(
-                Key::from_raw(key.as_bytes())
+                Key::from_primitive_causet(key.as_bytes())
                     .append_ts(2.into())
                     .as_encoded(),
             );
@@ -728,7 +728,7 @@ mod tests {
             einsteindb.put_namespaced(write_namespaced, &k1, b"v1").unwrap();
             einsteindb.delete_namespaced(write_namespaced, &k1).unwrap();
             let key = keys::data_key(
-                Key::from_raw(key.as_bytes())
+                Key::from_primitive_causet(key.as_bytes())
                     .append_ts(3.into())
                     .as_encoded(),
             );
@@ -760,7 +760,7 @@ mod tests {
         let mut collector = MvccGreedoidsCollector::new();
         for &(key, ts, write_type, entry_type) in &cases {
             let ts = ts.into();
-            let k = Key::from_raw(key.as_bytes()).append_ts(ts);
+            let k = Key::from_primitive_causet(key.as_bytes()).append_ts(ts);
             let k = keys::data_key(k.as_encoded());
             let v = Write::new(write_type, ts, None).as_ref().to_bytes();
             collector.add(&k, &v, entry_type, 0, 0);
@@ -783,7 +783,7 @@ mod tests {
         let mut entries = Vec::new();
         for i in 0..num_entries {
             let s = format!("{:032}", i);
-            let k = Key::from_raw(s.as_bytes()).append_ts(ts);
+            let k = Key::from_primitive_causet(s.as_bytes()).append_ts(ts);
             let k = keys::data_key(k.as_encoded());
             let w = Write::new(WriteType::Put, ts, Some(s.as_bytes().to_owned()));
             entries.push((k, w.as_ref().to_bytes()));

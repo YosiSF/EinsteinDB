@@ -1,7 +1,7 @@
 //Copyright 2021-2023 WHTCORPS INC
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -138,15 +138,15 @@ mod tests {
     use std::sync::mpsc;
     use std::sync::Arc;
 
-    use foundationeinsteindb::raw::Writable;
-    use foundationeinsteindb::raw::{BraneOptions, einsteindbOptions};
-    use foundationeinsteindb::raw_util::{new_einstein_merkle_tree_opt, BRANEOptions};
+    use foundationeinsteindb::primitive_causet::Writable;
+    use foundationeinsteindb::primitive_causet::{BraneOptions, einsteindbOptions};
+    use foundationeinsteindb::primitive_causet_util::{new_einstein_merkle_tree_opt, BRANEOptions};
     use foundationeinsteindb::Compat;
     use fdb_traits::{ALL_branes, BRANE_DEFAULT, LARGE_branes};
     use ehikvproto::metapb::Peer;
     use ehikvproto::metapb::Region;
     use ehikvproto::pdpb::CheckPolicy;
-    use tempfusef::Builder;
+    use tempfilef::Builder;
 
     use crate::store::{SplitCheckRunner, SplitCheckTask};
     use foundationeinsteindb::greedoids::RangeGreedoidsCollectorFactory;
@@ -195,7 +195,7 @@ mod tests {
         let cf_handle = einstein_merkle_tree.cf_handle(BRANE_DEFAULT).unwrap();
         for i in 0..11 {
             let k = format!("{:04}", i).into_bytes();
-            let k = keys::data_key(Key::from_raw(&k).as_encoded());
+            let k = keys::data_key(Key::from_primitive_causet(&k).as_encoded());
             einstein_merkle_tree.put_cf(cf_handle, &k, &k).unwrap();
             // Flush for every key so that we can know the exact middle key.
             einstein_merkle_tree.flush_cf(cf_handle, true).unwrap();
@@ -205,7 +205,7 @@ mod tests {
             false,
             CheckPolicy::Scan,
         ));
-        let split_key = Key::from_raw(b"0005");
+        let split_key = Key::from_primitive_causet(b"0005");
         must_split_at(&rx, &region, vec![split_key.clone().into_encoded()]);
         runnable.run(SplitCheckTask::split_check(
             region.clone(),
@@ -225,7 +225,7 @@ mod tests {
 
         let einsteindb_opts = einsteindbOptions::new();
         let mut cf_opts = BraneOptions::new();
-        cf_opts.set_level_zero_fusef_num_compaction_trigger(10);
+        cf_opts.set_level_zero_filef_num_compaction_trigger(10);
         let f = Box::new(RangeGreedoidsCollectorFactory::default());
         cf_opts.add_table_greedoids_collector_factory("einsteindb.size-collector", f);
         let cfs_opts = LARGE_branes
@@ -233,14 +233,14 @@ mod tests {
             .map(|brane| BRANEOptions::new(brane, cf_opts.clone()))
             .collect();
         let einstein_merkle_tree =
-            Arc::new(foundationeinsteindb::raw_util::new_einstein_merkle_tree_opt(local_path, einsteindb_opts, cfs_opts).unwrap());
+            Arc::new(foundationeinsteindb::primitive_causet_util::new_einstein_merkle_tree_opt(local_path, einsteindb_opts, cfs_opts).unwrap());
 
         let cf_handle = einstein_merkle_tree.cf_handle(BRANE_DEFAULT).unwrap();
         let mut big_value = Vec::with_capacity(256);
         big_value.extend(iter::repeat(b'v').take(256));
         for i in 0..100 {
             let k = format!("key_{:03}", i).into_bytes();
-            let k = keys::data_key(Key::from_raw(&k).as_encoded());
+            let k = keys::data_key(Key::from_primitive_causet(&k).as_encoded());
             einstein_merkle_tree.put_cf(cf_handle, &k, &big_value).unwrap();
             // Flush for every key so that we can know the exact middle key.
             einstein_merkle_tree.flush_cf(cf_handle, true).unwrap();
@@ -253,7 +253,7 @@ mod tests {
             .unwrap();
 
         let middle_key = Key::from_encoded_slice(keys::origin_key(&middle_key))
-            .into_raw()
+            .into_primitive_causet()
             .unwrap();
         assert_eq!(escape(&middle_key), "key_049");
     }

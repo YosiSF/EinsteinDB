@@ -6,7 +6,7 @@ use std::ffi::CString;
 pub struct CausetPartitionerRequest<'a> {
     pub prev_user_key: &'a [u8],
     pub current_user_key: &'a [u8],
-    pub current_output_fuse_size: u64,
+    pub current_output_file_size: u64,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

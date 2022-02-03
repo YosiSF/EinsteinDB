@@ -1,7 +1,7 @@
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -237,7 +237,7 @@ macro_rules! def_into {
 }
 
 /// Converts `name` into a plain or isoliton_namespaceable value shelling, depending on
-/// whether or not `isoliton_namespaceable_fuse` is given.
+/// whether or not `isoliton_namespaceable_file` is given.
 ///
 /// # Examples
 ///
@@ -258,15 +258,15 @@ macro_rules! def_into {
 /// assert_eq!(value.into(), to_shelling!(None, "baz", Value));
 /// ```
 macro_rules! to_shelling {
-    ( $isoliton_namespaceable_fuse:expr, $name:expr, $t:tt ) => {
-        $isoliton_namespaceable_fuse.into().map_or_else(
+    ( $isoliton_namespaceable_file:expr, $name:expr, $t:tt ) => {
+        $isoliton_namespaceable_file.into().map_or_else(
             || $t::PlainShelling(shellings::PlainShelling::plain($name)),
             |ns| $t::NamespacedShelling(shellings::NamespacedShelling::isoliton_namespaceable(ns, $name)))
     }
 }
 
 /// Converts `name` into a plain or isoliton_namespaceable value keyword, depending on
-/// whether or not `isoliton_namespaceable_fuse` is given.
+/// whether or not `isoliton_namespaceable_file` is given.
 ///
 /// # Examples
 ///
@@ -287,8 +287,8 @@ macro_rules! to_shelling {
 /// assert_eq!(value.into(), to_keyword!(None, "baz", Value));
 /// ```
 macro_rules! to_keyword {
-    ( $isoliton_namespaceable_fuse:expr, $name:expr, $t:tt ) => {
-        $isoliton_namespaceable_fuse.into().map_or_else(
+    ( $isoliton_namespaceable_file:expr, $name:expr, $t:tt ) => {
+        $isoliton_namespaceable_file.into().map_or_else(
             || $t::Keyword(shellings::Keyword::plain($name)),
             |ns| $t::Keyword(shellings::Keyword::isoliton_namespaceable(ns, $name)))
     }
@@ -425,12 +425,12 @@ macro_rules! def_common_value_methods {
         def_from!(from_float, $t, $t::Float, f64, |src: f64| OrderedFloat::from(src));
         def_from!(from_ordered_float, $t, $t::Float, OrderedFloat<f64>,);
 
-        pub fn from_shelling<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_fuse: T, name: &str) -> $t {
-            to_shelling!(isoliton_namespaceable_fuse, name, $t)
+        pub fn from_shelling<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_file: T, name: &str) -> $t {
+            to_shelling!(isoliton_namespaceable_file, name, $t)
         }
 
-        pub fn from_keyword<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_fuse: T, name: &str) -> $t {
-            to_keyword!(isoliton_namespaceable_fuse, name, $t)
+        pub fn from_keyword<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_file: T, name: &str) -> $t {
+            to_keyword!(isoliton_namespaceable_file, name, $t)
         }
 
         fn precedence(&self) -> i32 {

@@ -2,20 +2,20 @@
 
 use einsteindb_util::codec::number;
 use foundationdb::{
-    ReadOptions as RawReadOptions, TableFilter, TableGreedoids, WriteOptions as RawWriteOptions,
+    ReadOptions as Primitive_CausetReadOptions, TableFilter, TableGreedoids, WriteOptions as Primitive_CausetWriteOptions,
 };
 
-pub struct FdbReadOptions(RawReadOptions);
+pub struct FdbReadOptions(Primitive_CausetReadOptions);
 
 impl FdbReadOptions {
-    pub fn into_raw(self) -> RawReadOptions {
+    pub fn into_primitive_causet(self) -> Primitive_CausetReadOptions {
         self.0
     }
 }
 
 impl From<fdb_traits::ReadOptions> for FdbReadOptions {
     fn from(opts: fdb_traits::ReadOptions) -> Self {
-        let mut r = RawReadOptions::default();
+        let mut r = Primitive_CausetReadOptions::default();
         r.fill_cache(opts.fill_cache());
         FdbReadOptions(r)
     }
@@ -27,17 +27,17 @@ impl From<&fdb_traits::ReadOptions> for FdbReadOptions {
     }
 }
 
-pub struct FdbWriteOptions(RawWriteOptions);
+pub struct FdbWriteOptions(Primitive_CausetWriteOptions);
 
 impl FdbWriteOptions {
-    pub fn into_raw(self) -> RawWriteOptions {
+    pub fn into_primitive_causet(self) -> Primitive_CausetWriteOptions {
         self.0
     }
 }
 
 impl From<fdb_traits::WriteOptions> for FdbWriteOptions {
     fn from(opts: fdb_traits::WriteOptions) -> Self {
-        let mut r = RawWriteOptions::default();
+        let mut r = Primitive_CausetWriteOptions::default();
         r.set_sync(opts.sync());
         r.set_no_slowdown(opts.no_slowdown());
         FdbWriteOptions(r)
@@ -57,8 +57,8 @@ impl From<fdb_traits::IterOptions> for FdbReadOptions {
     }
 }
 
-fn build_read_opts(iter_opts: fdb_traits::IterOptions) -> RawReadOptions {
-    let mut opts = RawReadOptions::new();
+fn build_read_opts(iter_opts: fdb_traits::IterOptions) -> Primitive_CausetReadOptions {
+    let mut opts = Primitive_CausetReadOptions::new();
     opts.fill_cache(iter_opts.fill_cache());
     opts.set_max_skippable_internal_keys(iter_opts.max_skippable_internal_keys());
     if iter_opts.key_only() {

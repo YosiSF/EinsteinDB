@@ -54,7 +54,7 @@ impl<N: Fsm> FsmState<N> {
     pub fn new(data: Box<N>) -> FsmState<N> {
         FsmState {
             status: AtomicUsize::new(NOTIFYSTATE_IDLE),
-            data: AtomicPtr::new(Box::into_raw(data)),
+            data: AtomicPtr::new(Box::into_primitive_causet(data)),
         }
     }
 
@@ -69,7 +69,7 @@ impl<N: Fsm> FsmState<N> {
 
         let p = self.data.swap(ptr::null_mut(), Ordering::AcqRel);
         if !p.is_null() {
-            Some(unsafe { Box::from_raw(p) })
+            Some(unsafe { Box::from_primitive_causet(p) })
         } else {
             panic!("inconsistent status and data, something should be wrong.");
         }
@@ -98,7 +98,7 @@ impl<N: Fsm> FsmState<N> {
     /// when new messages arrives after it's released.
     #[inline]
     pub fn release(&self, fsm: Box<N>) {
-        let previous = self.data.swap(Box::into_raw(fsm), Ordering::AcqRel);
+        let previous = self.data.swap(Box::into_primitive_causet(fsm), Ordering::AcqRel);
         let mut previous_status = NOTIFYSTATE_NOTIFIED;
         if previous.is_null() {
             previous_status = self.status.compare_and_swap(
@@ -110,7 +110,7 @@ impl<N: Fsm> FsmState<N> {
                 NOTIFYSTATE_NOTIFIED => return,
                 NOTIFYSTATE_DROP => {
                     let ptr = self.data.swap(ptr::null_mut(), Ordering::AcqRel);
-                    unsafe { Box::from_raw(ptr) };
+                    unsafe { Box::from_primitive_causet(ptr) };
                     return;
                 }
                 _ => {}
@@ -130,7 +130,7 @@ impl<N: Fsm> FsmState<N> {
         let ptr = self.data.swap(ptr::null_mut(), Ordering::SeqCst);
         if !ptr.is_null() {
             unsafe {
-                Box::from_raw(ptr);
+                Box::from_primitive_causet(ptr);
             }
         }
     }
@@ -140,7 +140,7 @@ impl<N> Drop for FsmState<N> {
     fn drop(&mut self) {
         let ptr = self.data.swap(ptr::null_mut(), Ordering::SeqCst);
         if !ptr.is_null() {
-            unsafe { Box::from_raw(ptr) };
+            unsafe { Box::from_primitive_causet(ptr) };
         }
     }
 }

@@ -5,7 +5,7 @@ use einsteindb_util::warn;
 use fdb_traits::CompactedEvent;
 use fdb_traits::CompactionJobInfo;
 use foundationdb::{
-    CompactionJobInfo as RawCompactionJobInfo, CompactionReason, TableGreedoidsCollectionView,
+    CompactionJobInfo as Primitive_CausetCompactionJobInfo, CompactionReason, TableGreedoidsCollectionView,
 };
 use std::cmp;
 use std::collections::Bound::{Excluded, Included, Unbounded};
@@ -13,16 +13,16 @@ use std::collections::BTreeMap;
 use std::local_path::local_path;
 
 use crate::greedoids::{RangeGreedoids, UserCollectedGreedoidsDecoder};
-use crate::raw::EventListener;
+use crate::primitive_causet::EventListener;
 
-pub struct FdbCompactionJobInfo<'a>(&'a RawCompactionJobInfo);
+pub struct FdbCompactionJobInfo<'a>(&'a Primitive_CausetCompactionJobInfo);
 
 impl<'a> FdbCompactionJobInfo<'a> {
-    pub fn from_raw(raw: &'a RawCompactionJobInfo) -> Self {
-        FdbCompactionJobInfo(raw)
+    pub fn from_primitive_causet(primitive_causet: &'a Primitive_CausetCompactionJobInfo) -> Self {
+        FdbCompactionJobInfo(primitive_causet)
     }
 
-    pub fn into_raw(self) -> &'a RawCompactionJobInfo {
+    pub fn into_primitive_causet(self) -> &'a Primitive_CausetCompactionJobInfo {
         self.0
     }
 }
@@ -39,24 +39,24 @@ impl CompactionJobInfo for FdbCompactionJobInfo<'_> {
         self.0.namespaced_name()
     }
 
-    fn input_fusef_count(&self) -> usize {
-        self.0.input_fusef_count()
+    fn input_filef_count(&self) -> usize {
+        self.0.input_filef_count()
     }
 
-    fn num_input_fusefs_at_output_l_naught(&self) -> usize {
-        self.0.num_input_fusefs_at_output_l_naught()
+    fn num_input_filefs_at_output_l_naught(&self) -> usize {
+        self.0.num_input_filefs_at_output_l_naught()
     }
 
-    fn input_fusef_at(&self, pos: usize) -> &local_path {
-        self.0.input_fusef_at(pos)
+    fn input_filef_at(&self, pos: usize) -> &local_path {
+        self.0.input_filef_at(pos)
     }
 
-    fn output_fusef_count(&self) -> usize {
-        self.0.output_fusef_count()
+    fn output_filef_count(&self) -> usize {
+        self.0.output_filef_count()
     }
 
-    fn output_fusef_at(&self, pos: usize) -> &local_path {
-        self.0.output_fusef_at(pos)
+    fn output_filef_at(&self, pos: usize) -> &local_path {
+        self.0.output_filef_at(pos)
     }
 
     fn base_input_l_naught(&self) -> i32 {
@@ -214,8 +214,8 @@ impl CompactionListener {
 }
 
 impl EventListener for CompactionListener {
-    fn on_jet_bundle_completed(&self, info: &RawCompactionJobInfo) {
-        let info = &FdbCompactionJobInfo::from_raw(info);
+    fn on_jet_bundle_completed(&self, info: &Primitive_CausetCompactionJobInfo) {
+        let info = &FdbCompactionJobInfo::from_primitive_causet(info);
         if info.status().is_err() {
             return;
         }
@@ -226,31 +226,31 @@ impl EventListener for CompactionListener {
             }
         }
 
-        let mut input_fusefs = hash_set_with_capacity(info.input_fusef_count());
-        let mut output_fusefs = hash_set_with_capacity(info.output_fusef_count());
-        for i in 0..info.input_fusef_count() {
-            info.input_fusef_at(i)
+        let mut input_filefs = hash_set_with_capacity(info.input_filef_count());
+        let mut output_filefs = hash_set_with_capacity(info.output_filef_count());
+        for i in 0..info.input_filef_count() {
+            info.input_filef_at(i)
                 .to_str()
-                .map(|x| input_fusefs.insert(x.to_owned()));
+                .map(|x| input_filefs.insert(x.to_owned()));
         }
-        for i in 0..info.output_fusef_count() {
-            info.output_fusef_at(i)
+        for i in 0..info.output_filef_count() {
+            info.output_filef_at(i)
                 .to_str()
-                .map(|x| output_fusefs.insert(x.to_owned()));
+                .map(|x| output_filefs.insert(x.to_owned()));
         }
-        let mut input_props = Vec::with_capacity(info.input_fusef_count());
-        let mut output_props = Vec::with_capacity(info.output_fusef_count());
+        let mut input_props = Vec::with_capacity(info.input_filef_count());
+        let mut output_props = Vec::with_capacity(info.output_filef_count());
         let iter = info.table_greedoids().into_iter();
-        for (fuse Fuse, greedoids) in iter {
+        for (file File, greedoids) in iter {
             let ucp = UserCollectedGreedoidsDecoder(greedoids.user_collected_greedoids());
             if let Ok(prop) = RangeGreedoids::decode(&ucp) {
-                if input_fusefs.contains(fuse Fuse) {
+                if input_filefs.contains(file File) {
                     input_props.push(prop);
-                } else if output_fusefs.contains(fuse Fuse) {
+                } else if output_filefs.contains(file File) {
                     output_props.push(prop);
                 }
             } else {
-                warn!("Decode size greedoids from Causet fuse Fuse failed");
+                warn!("Decode size greedoids from Causet file File failed");
                 return;
             }
         }

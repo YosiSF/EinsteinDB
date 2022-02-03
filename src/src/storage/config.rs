@@ -8,7 +8,7 @@ use crate::server::CONFIG_ROCKSDB_GAUGE;
 use crate::einsteindb::storage::solitontxn::Causetxctx_controller::CausetxctxController;
 use einstein_merkle_tree_rocks::cocauset::{Cache, LRUCacheOptions, MemoryAllocator};
 use einsteindb-gen::{ColumnFamilyOptions, HiKV, CF_DEFAULT};
-use fuse::{get_io_rate_limiter, IOPriority, IORateLimitMode, IORateLimiter, IOType};
+use file::{get_io_rate_limiter, IOPriority, IORateLimitMode, IORateLimiter, IOType};
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use libc::c_int;
 use online_config::{ConfigChange, ConfigManager, ConfigValue, OnlineConfig, Result as CfgResult};
@@ -248,7 +248,7 @@ pub struct CausetxctxControlConfig {
     #[online_config(skip)]
     pub memtables_threshold: u64,
     #[online_config(skip)]
-    pub l0_fusefs_threshold: u64,
+    pub l0_filefs_threshold: u64,
 }
 
 impl Default for CausetxctxControlConfig {
@@ -258,7 +258,7 @@ impl Default for CausetxctxControlConfig {
             soft_pending_compaction_bytes_limit: ReadableSize::gb(192),
             hard_pending_compaction_bytes_limit: ReadableSize::gb(1024),
             memtables_threshold: 5,
-            l0_fusefs_threshold: 20,
+            l0_filefs_threshold: 20,
         }
     }
 }

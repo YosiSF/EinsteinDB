@@ -5,8 +5,8 @@ use fdb_traits::DBOptions;
 use fdb_traits::DBOptionsExt;
 use fdb_traits::Result;
 use fdb_traits::TitanDBOptions;
-use foundationdb::DBOptions as RawDBOptions;
-use foundationdb::TitanDBOptions as RawTitanDBOptions;
+use foundationdb::DBOptions as Primitive_CausetDBOptions;
+use foundationdb::TitanDBOptions as Primitive_CausetTitanDBOptions;
 
 use crate::fdb_lsh_tree;
 
@@ -14,7 +14,7 @@ impl DBOptionsExt for Fdbeinstein_merkle_tree {
     type DBOptions = FdbDBOptions;
 
     fn get_db_options(&self) -> Self::DBOptions {
-        FdbDBOptions::from_raw(self.as_inner().get_db_options())
+        FdbDBOptions::from_primitive_causet(self.as_inner().get_db_options())
     }
     fn set_db_options(&self, options: &[(&str, &str)]) -> Result<()> {
         self.as_inner()
@@ -23,14 +23,14 @@ impl DBOptionsExt for Fdbeinstein_merkle_tree {
     }
 }
 
-pub struct FdbDBOptions(RawDBOptions);
+pub struct FdbDBOptions(Primitive_CausetDBOptions);
 
 impl FdbDBOptions {
-    pub fn from_raw(raw: RawDBOptions) -> FdbDBOptions {
-        FdbDBOptions(raw)
+    pub fn from_primitive_causet(primitive_causet: Primitive_CausetDBOptions) -> FdbDBOptions {
+        FdbDBOptions(primitive_causet)
     }
 
-    pub fn into_raw(self) -> RawDBOptions {
+    pub fn into_primitive_causet(self) -> Primitive_CausetDBOptions {
         self.0
     }
 
@@ -43,7 +43,7 @@ impl DBOptions for FdbDBOptions {
     type TitanDBOptions = FdbTitanDBOptions;
 
     fn new() -> Self {
-        FdbDBOptions::from_raw(RawDBOptions::new())
+        FdbDBOptions::from_primitive_causet(Primitive_CausetDBOptions::new())
     }
 
     fn get_max_background_jobs(&self) -> i32 {
@@ -71,25 +71,25 @@ impl DBOptions for FdbDBOptions {
     }
 
     fn set_titandb_options(&mut self, opts: &Self::TitanDBOptions) {
-        self.0.set_titandb_options(opts.as_raw())
+        self.0.set_titandb_options(opts.as_primitive_causet())
     }
 }
 
-pub struct FdbTitanDBOptions(RawTitanDBOptions);
+pub struct FdbTitanDBOptions(Primitive_CausetTitanDBOptions);
 
 impl FdbTitanDBOptions {
-    pub fn from_raw(raw: RawTitanDBOptions) -> FdbTitanDBOptions {
-        FdbTitanDBOptions(raw)
+    pub fn from_primitive_causet(primitive_causet: Primitive_CausetTitanDBOptions) -> FdbTitanDBOptions {
+        FdbTitanDBOptions(primitive_causet)
     }
 
-    pub fn as_raw(&self) -> &RawTitanDBOptions {
+    pub fn as_primitive_causet(&self) -> &Primitive_CausetTitanDBOptions {
         &self.0
     }
 }
 
 impl TitanDBOptions for FdbTitanDBOptions {
     fn new() -> Self {
-        FdbTitanDBOptions::from_raw(RawTitanDBOptions::new())
+        FdbTitanDBOptions::from_primitive_causet(Primitive_CausetTitanDBOptions::new())
     }
 
     fn set_min_blob_size(&mut self, size: u64) {

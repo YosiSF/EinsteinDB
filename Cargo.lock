@@ -3,6 +3,16 @@
 version = 3
 
 [[package]]
+name = "EinsteinDB"
+version = "0.1.0"
+dependencies = [
+ "einsteindb-prod",
+ "log4rs",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -277,16 +287,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "einsteindb"
-version = "0.1.0"
-dependencies = [
- "einsteindb-prod",
- "log4rs",
- "serde_derive",
- "serde_json",
 ]
 
 [[package]]

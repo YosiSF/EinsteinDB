@@ -86,7 +86,7 @@ pub fn tls_flush<R: CausetxctxStatsReporter>(reporter: &R) {
             tls_flush_perf_stats!(req_tag, perf_stats, get_from_memtable_time);
             tls_flush_perf_stats!(req_tag, perf_stats, get_from_memtable_count);
             tls_flush_perf_stats!(req_tag, perf_stats, get_post_process_time);
-            tls_flush_perf_stats!(req_tag, perf_stats, get_from_output_fusefs_time);
+            tls_flush_perf_stats!(req_tag, perf_stats, get_from_output_filefs_time);
             tls_flush_perf_stats!(req_tag, perf_stats, seek_on_memtable_time);
             tls_flush_perf_stats!(req_tag, perf_stats, seek_on_memtable_count);
             tls_flush_perf_stats!(req_tag, perf_stats, next_on_memtable_count);
@@ -289,7 +289,7 @@ make_auto_flush_static_metric! {
         get_from_memtable_time,
         get_from_memtable_count,
         get_post_process_time,
-        get_from_output_fusefs_time,
+        get_from_output_filefs_time,
         seek_on_memtable_time,
         seek_on_memtable_count,
         next_on_memtable_count,
@@ -455,13 +455,13 @@ lazy_static! {
     .unwrap();
     pub static ref SCHED_L0_GAUGE: IntGaugeVec = register_int_gauge_vec!(
         "einstfdbhikv_scheduler_l0",
-        "The number of l0 fusefs.",
+        "The number of l0 filefs.",
         &["cf"]
     )
     .unwrap();
     pub static ref SCHED_L0_AVG_GAUGE: IntGaugeVec = register_int_gauge_vec!(
         "einstfdbhikv_scheduler_l0_avg",
-        "The number of average l0 fusefs.",
+        "The number of average l0 filefs.",
         &["cf"]
     )
     .unwrap();

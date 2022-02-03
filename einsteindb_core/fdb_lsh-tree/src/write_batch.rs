@@ -1,7 +1,7 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use fdb_traits::{self, Error, Mutable, Result, WriteBatchExt, WriteOptions};
-use foundationdb::{EINSTEINDB, Writable, WriteBatch as RawWriteBatch};
+use foundationdb::{EINSTEINDB, Writable, WriteBatch as Primitive_CausetWriteBatch};
 use std::sync::Arc;
 
 use crate::fdb_lsh_tree;
@@ -33,31 +33,31 @@ impl WriteBatchExt for Fdbeinstein_merkle_tree {
 
 pub struct FdbWriteBatch {
     einsteindb: Arc<EINSTEINDB>,
-    wb: RawWriteBatch,
+    wb: Primitive_CausetWriteBatch,
 }
 
 impl FdbWriteBatch {
     pub fn new(einsteindb: Arc<EINSTEINDB>) -> FdbWriteBatch {
         FdbWriteBatch {
             einsteindb,
-            wb: RawWriteBatch::default(),
+            wb: Primitive_CausetWriteBatch::default(),
         }
     }
 
-    pub fn as_inner(&self) -> &RawWriteBatch {
+    pub fn as_inner(&self) -> &Primitive_CausetWriteBatch {
         &self.wb
     }
 
     pub fn with_capacity(einsteindb: Arc<EINSTEINDB>, cap: usize) -> FdbWriteBatch {
         let wb = if cap == 0 {
-            RawWriteBatch::default()
+            Primitive_CausetWriteBatch::default()
         } else {
-            RawWriteBatch::with_capacity(cap)
+            Primitive_CausetWriteBatch::with_capacity(cap)
         };
         FdbWriteBatch { einsteindb, wb }
     }
 
-    pub fn from_raw(einsteindb: Arc<EINSTEINDB>, wb: RawWriteBatch) -> FdbWriteBatch {
+    pub fn from_primitive_causet(einsteindb: Arc<EINSTEINDB>, wb: Primitive_CausetWriteBatch) -> FdbWriteBatch {
         FdbWriteBatch { einsteindb, wb }
     }
 
@@ -78,7 +78,7 @@ impl fdb_traits::WriteBatch<Fdbeinstein_merkle_tree> for FdbWriteBatch {
     fn write_opt(&self, opts: &WriteOptions) -> Result<()> {
         let opt: FdbWriteOptions = opts.into();
         self.get_db()
-            .write_opt(self.as_inner(), &opt.into_raw())
+            .write_opt(self.as_inner(), &opt.into_primitive_causet())
             .map_err(Error::einstein_merkle_tree)
     }
 
@@ -160,7 +160,7 @@ impl Mutable for FdbWriteBatch {
 /// with Titan.
 pub struct FdbWriteBatchVec {
     einsteindb: Arc<EINSTEINDB>,
-    wbs: Vec<RawWriteBatch>,
+    wbs: Vec<Primitive_CausetWriteBatch>,
     save_points: Vec<usize>,
     index: usize,
     cur_batch_size: usize,
@@ -169,7 +169,7 @@ pub struct FdbWriteBatchVec {
 
 impl FdbWriteBatchVec {
     pub fn new(einsteindb: Arc<EINSTEINDB>, batch_size_limit: usize, cap: usize) -> FdbWriteBatchVec {
-        let wb = RawWriteBatch::with_capacity(cap);
+        let wb = Primitive_CausetWriteBatch::with_capacity(cap);
         FdbWriteBatchVec {
             einsteindb,
             wbs: vec![wb],
@@ -180,11 +180,11 @@ impl FdbWriteBatchVec {
         }
     }
 
-    pub fn as_inner(&self) -> &[RawWriteBatch] {
+    pub fn as_inner(&self) -> &[Primitive_CausetWriteBatch] {
         &self.wbs[0..=self.index]
     }
 
-    pub fn as_raw(&self) -> &RawWriteBatch {
+    pub fn as_primitive_causet(&self) -> &Primitive_CausetWriteBatch {
         &self.wbs[0]
     }
 
@@ -199,7 +199,7 @@ impl FdbWriteBatchVec {
             self.index += 1;
             self.cur_batch_size = 0;
             if self.index >= self.wbs.len() {
-                self.wbs.push(RawWriteBatch::default());
+                self.wbs.push(Primitive_CausetWriteBatch::default());
             }
         }
         self.cur_batch_size += 1;
@@ -215,11 +215,11 @@ impl fdb_traits::WriteBatch<Fdbeinstein_merkle_tree> for FdbWriteBatchVec {
         let opt: FdbWriteOptions = opts.into();
         if self.index > 0 {
             self.get_db()
-                .multi_batch_write(self.as_inner(), &opt.into_raw())
+                .multi_batch_write(self.as_inner(), &opt.into_primitive_causet())
                 .map_err(Error::einstein_merkle_tree)
         } else {
             self.get_db()
-                .write_opt(&self.wbs[0], &opt.into_raw())
+                .write_opt(&self.wbs[0], &opt.into_primitive_causet())
                 .map_err(Error::einstein_merkle_tree)
         }
     }
@@ -323,8 +323,8 @@ impl Mutable for FdbWriteBatchVec {
 #[cfg(test)]
 mod tests {
     use fdb_traits::WriteBatch;
-    use foundationdb::DBOptions as RawDBOptions;
-    use tempfusef::Builder;
+    use foundationdb::DBOptions as Primitive_CausetDBOptions;
+    use tempfilef::Builder;
 
     use super::*;
     use super::super::FdbDBOptions;
@@ -336,13 +336,13 @@ mod tests {
             .prefix("test-should-write-to-einstein_merkle_tree")
             .temfidelir()
             .unwrap();
-        let opt = RawDBOptions::default();
+        let opt = Primitive_CausetDBOptions::default();
         opt.enable_multi_batch_write(true);
         opt.enable_unordered_write(false);
         opt.enable_pipelined_write(true);
         let einstein_merkle_tree = new_einstein_merkle_tree_opt(
             local_path.local_path().join("einsteindb").to_str().unwrap(),
-            FdbDBOptions::from_raw(opt),
+            FdbDBOptions::from_primitive_causet(opt),
             vec![],
         )
             .unwrap();

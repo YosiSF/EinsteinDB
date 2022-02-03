@@ -476,7 +476,7 @@ mod tests {
         use einsteindb-gen::SyncMutable;
         use solitontxn_types::TimeStamp;
 
-        let tmp = tempfuse::Builder::new()
+        let tmp = tempfile::Builder::new()
             .prefix("test_debug")
             .tempdir()
             .unwrap();

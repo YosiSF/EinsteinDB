@@ -9,7 +9,7 @@ use foundationdb::{
 use std::io::Result;
 use std::sync::Arc;
 
-use crate::raw::Env;
+use crate::primitive_causet::Env;
 
 // Use einstein_merkle_tree::Env directly since Env is not abstracted.
 pub(crate) fn get_env(
@@ -32,25 +32,25 @@ pub struct WrappedEncryptionKeyManager<T: EncryptionKeyManager> {
 }
 
 impl<T: EncryptionKeyManager> DBEncryptionKeyManager for WrappedEncryptionKeyManager<T> {
-    fn get_fusef(&self, fname: &str) -> Result<DBFileEncryptionInfo> {
+    fn get_filef(&self, fname: &str) -> Result<DBFileEncryptionInfo> {
         self.manager
-            .get_fusef(fname)
-            .map(convert_fusef_encryption_info)
+            .get_filef(fname)
+            .map(convert_filef_encryption_info)
     }
-    fn new_fusef(&self, fname: &str) -> Result<DBFileEncryptionInfo> {
+    fn new_filef(&self, fname: &str) -> Result<DBFileEncryptionInfo> {
         self.manager
-            .new_fusef(fname)
-            .map(convert_fusef_encryption_info)
+            .new_filef(fname)
+            .map(convert_filef_encryption_info)
     }
-    fn delete_fusef(&self, fname: &str) -> Result<()> {
-        self.manager.delete_fusef(fname)
+    fn delete_filef(&self, fname: &str) -> Result<()> {
+        self.manager.delete_filef(fname)
     }
-    fn link_fusef(&self, src_fname: &str, dst_fname: &str) -> Result<()> {
-        self.manager.link_fusef(src_fname, dst_fname)
+    fn link_filef(&self, src_fname: &str, dst_fname: &str) -> Result<()> {
+        self.manager.link_filef(src_fname, dst_fname)
     }
 }
 
-fn convert_fusef_encryption_info(input: FileEncryptionInfo) -> DBFileEncryptionInfo {
+fn convert_filef_encryption_info(input: FileEncryptionInfo) -> DBFileEncryptionInfo {
     DBFileEncryptionInfo {
         method: convert_encryption_method(input.method),
         key: input.key,

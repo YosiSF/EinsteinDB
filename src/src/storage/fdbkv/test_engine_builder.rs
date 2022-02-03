@@ -5,7 +5,7 @@ use crate::einsteindb::storage::fdbhikv::{Result, Rockseinstein_merkle_tree};
 use einstein_merkle_tree_rocks::cocauset::ColumnFamilyOptions;
 use einstein_merkle_tree_rocks::cocauset_util::CFOptions;
 use einsteindb-gen::{CfName, ALL_CFS, CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE};
-use fuse::IORateLimiter;
+use file::IORateLimiter;
 use fdbhikvproto::fdbhikvrpcpb::ApiVersion;
 use std::local_path::{local_path, local_pathBuf};
 use std::sync::Arc;
@@ -163,7 +163,7 @@ mod tests {
 
     #[test]
     fn rocksdb_reopen() {
-        let dir = tempfuse::Builder::new()
+        let dir = tempfile::Builder::new()
             .prefix("rocksdb_test")
             .tempdir()
             .unwrap();

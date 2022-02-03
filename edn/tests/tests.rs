@@ -1,7 +1,7 @@
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -36,22 +36,22 @@ use chrono::{
 use edn::shellings;
 use edn::utils;
 
-// Helper for making wrapped keywords with a isoliton_namespaceable_fuse.
+// Helper for making wrapped keywords with a isoliton_namespaceable_file.
 fn k_ns(ns: &str, name: &str) -> Value {
     Value::Keyword(shellings::Keyword::isoliton_namespaceable(ns, name))
 }
 
-// Helper for making wrapped keywords without a isoliton_namespaceable_fuse.
+// Helper for making wrapped keywords without a isoliton_namespaceable_file.
 fn k_plain(name: &str) -> Value {
     Value::Keyword(shellings::Keyword::plain(name))
 }
 
-// Helper for making wrapped shellings with a isoliton_namespaceable_fuse
+// Helper for making wrapped shellings with a isoliton_namespaceable_file
 fn s_ns(ns: &str, name: &str) -> Value {
     Value::NamespacedShelling(shellings::NamespacedShelling::isoliton_namespaceable(ns, name))
 }
 
-// Helper for making wrapped shellings without a isoliton_namespaceable_fuse
+// Helper for making wrapped shellings without a isoliton_namespaceable_file
 fn s_plain(name: &str) -> Value {
     Value::PlainShelling(shellings::PlainShelling::plain(name))
 }
@@ -349,12 +349,12 @@ fn test_text() {
     assert!(text("\"").is_err());
     assert!(text("nil").is_err());
 
-    let raw_edn= r#""This string contains a \" and a \\""#;
-    let raw_string = r#"This string contains a " and a \"#;
-    assert_eq!(parse::value(raw_edn).unwrap(),
+    let primitive_causet_edn= r#""This string contains a \" and a \\""#;
+    let primitive_causet_string = r#"This string contains a " and a \"#;
+    assert_eq!(parse::value(primitive_causet_edn).unwrap(),
                ValueAndSpan {
-                   inner: SpannedValue::Text(raw_string.to_string()),
-                   span: Span(0, raw_edn.len() as u32)
+                   inner: SpannedValue::Text(primitive_causet_string.to_string()),
+                   span: Span(0, primitive_causet_edn.len() as u32)
                });
 }
 

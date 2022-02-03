@@ -3,9 +3,9 @@
 use std::sync::Arc;
 
 use crate::fdb_lsh_tree;
-use crate::raw::EINSTEINDB;
+use crate::primitive_causet::EINSTEINDB;
 
-/// A trait to enter the world of einstein_merkle_tree traits from a raw `Arc<EINSTEINDB>`
+/// A trait to enter the world of einstein_merkle_tree traits from a primitive_causet `Arc<EINSTEINDB>`
 /// with as little syntax as possible.
 ///
 /// This will be used during the transition from FdbDB to the

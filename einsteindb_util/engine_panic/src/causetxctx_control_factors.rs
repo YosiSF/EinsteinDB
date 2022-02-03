@@ -4,7 +4,7 @@ use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{SymplecticControlFactorsExt, Result};
 
 impl SymplecticControlFactorsExt for Paniceinstein_merkle_tree {
-    fn get_namespaced_num_fusefs_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>> {
+    fn get_namespaced_num_filefs_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>> {
         panic!()
     }
 

@@ -1,7 +1,7 @@
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -68,7 +68,7 @@ impl Value {
                     .append(pp.text("}"))
                     .group()
             }
-            Value::NamespacedShelling(ref v) => pp.text(v.isoliton_namespaceable_fuse()).append("/").append(v.name()),
+            Value::NamespacedShelling(ref v) => pp.text(v.isoliton_namespaceable_file()).append("/").append(v.name()),
             Value::PlainShelling(ref v) => pp.text(v.to_string()),
             Value::Keyword(ref v) => pp.text(v.to_string()),
             Value::Text(ref v) => pp.text("\"").append(v.as_str()).append("\""),

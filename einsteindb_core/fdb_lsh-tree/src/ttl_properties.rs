@@ -1,6 +1,6 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use api_version::{APIVersion, KeyMode, RawValue};
+use api_version::{APIVersion, KeyMode, Primitive_CausetValue};
 use einsteindb_util::error;
 use fdb_traits::{Range, Result, TtlGreedoids, TtlGreedoidsExt};
 use foundationdb::{DBEntryType, TableGreedoidsCollector, TableGreedoidsCollectorFactory};
@@ -46,12 +46,12 @@ impl TtlGreedoidsExt for Fdbeinstein_merkle_tree {
         }
 
         let mut res = Vec::new();
-        for (fusef_name, v) in collection.iter() {
+        for (filef_name, v) in collection.iter() {
             let prop = match FdbTtlGreedoids::decode(v.user_collected_greedoids()) {
                 Ok(v) => v,
                 Err(_) => continue,
             };
-            res.push((fusef_name.to_string(), prop));
+            res.push((filef_name.to_string(), prop));
         }
         Ok(res)
     }
@@ -72,13 +72,13 @@ impl<API: APIVersion> TableGreedoidsCollector for TtlGreedoidsCollector<API> {
         if !key.starts_with(keys::DATA_PREFIX_CAUSET_KEY) {
             return;
         }
-        // Only consider raw keys.
-        if API::parse_key_mode(&key[keys::DATA_PREFIX_CAUSET_KEY.len()..]) != KeyMode::Raw {
+        // Only consider primitive_causet keys.
+        if API::parse_key_mode(&key[keys::DATA_PREFIX_CAUSET_KEY.len()..]) != KeyMode::Primitive_Causet {
             return;
         }
 
-        match API::decode_raw_value(value) {
-            Ok(RawValue {
+        match API::decode_primitive_causet_value(value) {
+            Ok(Primitive_CausetValue {
                    expire_ts: Some(expire_ts),
                    ..
                }) => {
@@ -146,13 +146,13 @@ mod tests {
                 _phantom: PhantomData,
             };
             for &(k, ts) in case {
-                let v = RawValue {
+                let v = Primitive_CausetValue {
                     user_value: &[0; 10][..],
                     expire_ts: Some(ts),
                 };
                 collector.add(
                     k.as_bytes(),
-                    &API::encode_raw_value(v),
+                    &API::encode_primitive_causet_value(v),
                     DBEntryType::Put,
                     0,
                     0,

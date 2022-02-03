@@ -6,9 +6,9 @@ use crate::fdb_lsh_tree;
 use crate::util;
 
 impl SymplecticControlFactorsExt for Fdbeinstein_merkle_tree {
-    fn get_namespaced_num_fusefs_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>> {
+    fn get_namespaced_num_filefs_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>> {
         let handle = util::get_namespaced_handle(self.as_inner(), namespaced)?;
-        Ok(crate::util::get_namespaced_num_fusefs_at_l_naught(
+        Ok(crate::util::get_namespaced_num_filefs_at_l_naught(
             self.as_inner(),
             handle,
             l_naught,

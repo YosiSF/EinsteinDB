@@ -21,19 +21,19 @@ pub trait CompactExt {
         max_subjet_bundles: u32,
     ) -> Result<()>;
 
-    /// Compacts fusefs in the range and above the output l_naught.
-    /// Compacts all fusefs if the range is not specified.
-    /// Compacts all fusefs to the bottommost l_naught if the output l_naught is not specified.
-    fn compact_fusefs_in_range(
+    /// Compacts filefs in the range and above the output l_naught.
+    /// Compacts all filefs if the range is not specified.
+    /// Compacts all filefs to the bottommost l_naught if the output l_naught is not specified.
+    fn compact_filefs_in_range(
         &self,
         start: Option<&[u8]>,
         end: Option<&[u8]>,
         output_l_naught: Option<i32>,
     ) -> Result<()>;
 
-    /// Compacts fusefs in the range and above the output l_naught of the given column family.
-    /// Compacts all fusefs to the bottommost l_naught if the output l_naught is not specified.
-    fn compact_fusefs_in_range_namespaced(
+    /// Compacts filefs in the range and above the output l_naught of the given column family.
+    /// Compacts all filefs to the bottommost l_naught if the output l_naught is not specified.
+    fn compact_filefs_in_range_namespaced(
         &self,
         namespaced: &str,
         start: Option<&[u8]>,
@@ -41,10 +41,10 @@ pub trait CompactExt {
         output_l_naught: Option<i32>,
     ) -> Result<()>;
 
-    fn compact_fusefs_namespaced(
+    fn compact_filefs_namespaced(
         &self,
         namespaced: &str,
-        fusefs: Vec<String>,
+        filefs: Vec<String>,
         output_l_naught: Option<i32>,
         max_subjet_bundles: u32,
         exclude_l0: bool,

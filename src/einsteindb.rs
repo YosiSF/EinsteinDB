@@ -1,7 +1,7 @@
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -2291,7 +2291,7 @@ mod tests {
         // We cannot resolve lookup refs that aren't :einsteindb/unique.
         assert_transact!(conn,
                          "[[:einsteindb/add (lookup-ref :test/not_unique :test/keyword) :test/not_unique :test/keyword]]",
-                         Err("not yet implemented: Cannot resolve (lookup-ref 333 Keyword(Keyword(NamespaceableName { isoliton_namespaceable_fuse: Some(\"test\"), name: \"keyword\" }))) with attribute that is not :einsteindb/unique"));
+                         Err("not yet implemented: Cannot resolve (lookup-ref 333 Keyword(Keyword(NamespaceableName { isoliton_namespaceable_file: Some(\"test\"), name: \"keyword\" }))) with attribute that is not :einsteindb/unique"));
 
         // We type check the lookup ref's value against the lookup ref's attribute.
         assert_transact!(conn,

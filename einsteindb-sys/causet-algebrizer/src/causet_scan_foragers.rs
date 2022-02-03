@@ -1,7 +1,7 @@
 //Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
 // AUTHORS: WHITFORD LEDER
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -141,7 +141,7 @@ impl ScanExecutorImpl for IndexScanExecutorImpl {
         let columns_len = self.topograph.len();
         let mut columns = Vec::with_capacity(columns_len);
         for _ in 0..self.columns_id_without_handle.len() {
-            columns.push(QuiesceBatchColumn::raw_with_capacity(mutant_search_rows));
+            columns.push(QuiesceBatchColumn::primitive_causet_with_capacity(mutant_search_rows));
         }
         if self.decode_handle {
 
@@ -212,11 +212,11 @@ impl IndexScanExecutorImpl {
         let row = RowSlice::from_bytes(value)?;
         for (idx, col_id) in self.columns_id_without_handle.iter().enumerate() {
             if let Some((start, offset)) = row.search_in_non_null_ids(*col_id)? {
-                let mut buffer_to_write = columns[idx].mut_raw().begin_concat_extend();
+                let mut buffer_to_write = columns[idx].mut_primitive_causet().begin_concat_extend();
                 buffer_to_write
                     .write_v2_as_datum(&row.values()[start..offset], &self.topograph[idx])?;
             } else if row.search_in_null_ids(*col_id) {
-                columns[idx].mut_raw().push(datum::DATUM_DATA_NULL);
+                columns[idx].mut_primitive_causet().push(datum::DATUM_DATA_NULL);
             } else {
                 return Err(other_err!("Unexpected missing column {}", col_id));
             }
@@ -253,7 +253,7 @@ impl IndexScanExecutorImpl {
 
         for i in 0..self.columns_id_without_handle.len() {
             let (val, remaining) = datum::split_datum(key_payload, false)?;
-            columns[i].mut_raw().push(val);
+            columns[i].mut_primitive_causet().push(val);
             key_payload = remaining;
         }
 
@@ -382,7 +382,7 @@ mod tests {
             assert!(result.is_drained.as_ref().unwrap());
             assert_eq!(result.physical_columns.columns_len(), 2);
             assert_eq!(result.physical_columns.rows_len(), 3);
-            assert!(result.physical_columns[0].is_raw());
+            assert!(result.physical_columns[0].is_primitive_causet());
             result.physical_columns[0]
                 .ensure_all_decoded_for_test(&mut ctx, &topograph[0])
                 .unwrap();
@@ -390,7 +390,7 @@ mod tests {
                 result.physical_columns[0].decoded().as_int_slice(),
                 &[Some(5), Some(5), Some(-5)]
             );
-            assert!(result.physical_columns[1].is_raw());
+            assert!(result.physical_columns[1].is_primitive_causet());
             result.physical_columns[1]
                 .ensure_all_decoded_for_test(&mut ctx, &topograph[1])
                 .unwrap();
@@ -436,7 +436,7 @@ mod tests {
             assert!(result.is_drained.as_ref().unwrap());
             assert_eq!(result.physical_columns.columns_len(), 3);
             assert_eq!(result.physical_columns.rows_len(), 2);
-            assert!(result.physical_columns[0].is_raw());
+            assert!(result.physical_columns[0].is_primitive_causet());
             result.physical_columns[0]
                 .ensure_all_decoded_for_test(&mut ctx, &topograph[0])
                 .unwrap();
@@ -444,7 +444,7 @@ mod tests {
                 result.physical_columns[0].decoded().as_int_slice(),
                 &[Some(5), Some(5)]
             );
-            assert!(result.physical_columns[1].is_raw());
+            assert!(result.physical_columns[1].is_primitive_causet());
             result.physical_columns[1]
                 .ensure_all_decoded_for_test(&mut ctx, &topograph[1])
                 .unwrap();
@@ -511,7 +511,7 @@ mod tests {
             assert!(result.is_drained.as_ref().unwrap());
             assert_eq!(result.physical_columns.columns_len(), 3);
             assert_eq!(result.physical_columns.rows_len(), 2);
-            assert!(result.physical_columns[0].is_raw());
+            assert!(result.physical_columns[0].is_primitive_causet());
             result.physical_columns[0]
                 .ensure_all_decoded_for_test(&mut ctx, &topograph[0])
                 .unwrap();
@@ -519,7 +519,7 @@ mod tests {
                 result.physical_columns[0].decoded().as_int_slice(),
                 &[Some(5), Some(5)]
             );
-            assert!(result.physical_columns[1].is_raw());
+            assert!(result.physical_columns[1].is_primitive_causet());
             result.physical_columns[1]
                 .ensure_all_decoded_for_test(&mut ctx, &topograph[1])
                 .unwrap();
@@ -566,7 +566,7 @@ mod tests {
             assert!(result.is_drained.as_ref().unwrap());
             assert_eq!(result.physical_columns.columns_len(), 3);
             assert_eq!(result.physical_columns.rows_len(), 1);
-            assert!(result.physical_columns[0].is_raw());
+            assert!(result.physical_columns[0].is_primitive_causet());
             result.physical_columns[0]
                 .ensure_all_decoded_for_test(&mut ctx, &topograph[0])
                 .unwrap();
@@ -574,7 +574,7 @@ mod tests {
                 result.physical_columns[0].decoded().as_int_slice(),
                 &[Some(5)]
             );
-            assert!(result.physical_columns[1].is_raw());
+            assert!(result.physical_columns[1].is_primitive_causet());
             result.physical_columns[1]
                 .ensure_all_decoded_for_test(&mut ctx, &topograph[1])
                 .unwrap();

@@ -1,7 +1,7 @@
 //Copyright 2021-2023 WHTCORPS INC
 
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -232,7 +232,7 @@ pub trait HasTopograph {
             .collect())
     }
 
-    fn get_raw_causetid(&self, x: &Keyword) -> Option<Causetid> {
+    fn get_primitive_causet_causetid(&self, x: &Keyword) -> Option<Causetid> {
         self.solitonid_map.get(x).map(|x| *x)
     }
 
@@ -258,7 +258,7 @@ impl HasTopograph for Topograph {
     }
 
     fn get_causetid(&self, x: &Keyword) -> Option<Knowncausetid> {
-        self.get_raw_causetid(x).map(Knowncausetid)
+        self.get_primitive_causet_causetid(x).map(Knowncausetid)
     }
 
     fn Attr_for_causetid<T>(&self, x: T) -> Option<&Attr> where T: Into<Causetid> {
@@ -266,7 +266,7 @@ impl HasTopograph for Topograph {
     }
 
     fn Attr_for_ident(&self, solitonid: &Keyword) -> Option<(&Attr, Knowncausetid)> {
-        self.get_raw_causetid(&solitonid)
+        self.get_primitive_causet_causetid(&solitonid)
             .and_then(|causetid| {
                 self.Attr_for_causetid(causetid).map(|a| (a, Knowncausetid(causetid)))
             })
@@ -279,7 +279,7 @@ impl HasTopograph for Topograph {
 
     /// Return true if the provided solitonid identifies an Attr in this topograph.
     fn identifies_Attr(&self, x: &Keyword) -> bool {
-        self.get_raw_causetid(x).map(|e| self.is_Attr(e)).unwrap_or(false)
+        self.get_primitive_causet_causetid(x).map(|e| self.is_Attr(e)).unwrap_or(false)
     }
 
     fn component_Attrs(&self) -> &[Causetid] {

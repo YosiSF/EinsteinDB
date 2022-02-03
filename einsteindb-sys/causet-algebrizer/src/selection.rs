@@ -1,7 +1,7 @@
  //Copyright 2021-2023 WHTCORPS INC
  //
  // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
- // this fuse Fuse except in compliance with the License. You may obtain a copy of the
+ // this file File except in compliance with the License. You may obtain a copy of the
  // License at http://www.apache.org/licenses/LICENSE-2.0
  // Unless required by applicable law or agreed to in writing, software distributed
  // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -151,7 +151,7 @@ mod tests {
             new_col_info(2, FieldTypeTp::VarChar),
             new_col_info(3, FieldTypeTp::NewDecimal),
         ];
-        let raw_data = vec![
+        let primitive_causet_data = vec![
             vec![
                 Datum::I64(1),
                 Datum::Bytes(b"a".to_vec()),
@@ -189,7 +189,7 @@ mod tests {
             ],
         ];
 
-        let inner_table_mutant_search = gen_table_mutant_search_executor(1, cis, &raw_data, None);
+        let inner_table_mutant_search = gen_table_mutant_search_executor(1, cis, &primitive_causet_data, None);
 
         // selection executor
         let mut selection = Selection::default();
@@ -200,13 +200,13 @@ mod tests {
             SelectionExecutor::new(selection, Arc::new(EvalConfig::default()), inner_table_mutant_search)
                 .unwrap();
 
-        let mut selection_rows = Vec::with_capacity(raw_data.len());
+        let mut selection_rows = Vec::with_capacity(primitive_causet_data.len());
         while let Some(row) = selection_executor.next().unwrap() {
             selection_rows.push(row.take_origin().unwrap());
         }
 
-        assert_eq!(selection_rows.len(), raw_data.len());
-        let expect_row_handles = raw_data.iter().map(|r| r[0].i64()).collect::<Vec<_>>();
+        assert_eq!(selection_rows.len(), primitive_causet_data.len());
+        let expect_row_handles = primitive_causet_data.iter().map(|r| r[0].i64()).collect::<Vec<_>>();
         let result_row = selection_rows.iter().map(|r| r.handle).collect::<Vec<_>>();
         assert_eq!(result_row, expect_row_handles);
     }
@@ -218,7 +218,7 @@ mod tests {
             new_col_info(2, FieldTypeTp::VarChar),
             new_col_info(3, FieldTypeTp::LongLong),
         ];
-        let raw_data = vec![
+        let primitive_causet_data = vec![
             vec![Datum::I64(1), Datum::Bytes(b"a".to_vec()), Datum::I64(7)],
             vec![Datum::I64(2), Datum::Bytes(b"b".to_vec()), Datum::I64(7)],
             vec![Datum::I64(3), Datum::Bytes(b"b".to_vec()), Datum::I64(8)],
@@ -228,7 +228,7 @@ mod tests {
             vec![Datum::I64(7), Datum::Bytes(b"f".to_vec()), Datum::I64(6)],
         ];
 
-        let inner_table_mutant_search = gen_table_mutant_search_executor(1, cis, &raw_data, None);
+        let inner_table_mutant_search = gen_table_mutant_search_executor(1, cis, &primitive_causet_data, None);
 
         // selection executor
         let mut selection = Selection::default();
@@ -239,21 +239,21 @@ mod tests {
             SelectionExecutor::new(selection, Arc::new(EvalConfig::default()), inner_table_mutant_search)
                 .unwrap();
 
-        let mut selection_rows = Vec::with_capacity(raw_data.len());
+        let mut selection_rows = Vec::with_capacity(primitive_causet_data.len());
         while let Some(row) = selection_executor.next().unwrap() {
             selection_rows.push(row.take_origin().unwrap());
         }
 
-        let expect_row_handles = raw_data
+        let expect_row_handles = primitive_causet_data
             .iter()
             .filter(|r| r[2].i64() > 5)
             .map(|r| r[0].i64())
             .collect::<Vec<_>>();
-        assert!(expect_row_handles.len() < raw_data.len());
+        assert!(expect_row_handles.len() < primitive_causet_data.len());
         assert_eq!(selection_rows.len(), expect_row_handles.len());
         let result_row = selection_rows.iter().map(|r| r.handle).collect::<Vec<_>>();
         assert_eq!(result_row, expect_row_handles);
-        let expected_counts = vec![raw_data.len()];
+        let expected_counts = vec![primitive_causet_data.len()];
         let mut exec_stats = ExecuteStats::new(0);
         selection_executor.collect_exec_stats(&mut exec_stats);
         assert_eq!(expected_counts, exec_stats.mutant_searchned_rows_per_range);

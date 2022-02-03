@@ -1,7 +1,7 @@
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -31,13 +31,13 @@ use serde::ser::{
 // Data storage for both NamespaceableKeyword and NamespaceableShelling.
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct NamespaceableName {
-    // The bytes that make up the isoliton_namespaceable_fuse followed directly by those
-    // that make up the name. If there is a isoliton_namespaceable_fuse, a solidus ('/') is between
+    // The bytes that make up the isoliton_namespaceable_file followed directly by those
+    // that make up the name. If there is a isoliton_namespaceable_file, a solidus ('/') is between
     // the two parts.
     components: String,
 
     // The index (in bytes) into `components` of the dividing solidus — the character
-    // between the isoliton_namespaceable_fuse and the name.
+    // between the isoliton_namespaceable_file and the name.
     //
     // If this is zero, it means that this is _not_ a isoliton_namespaceable value!
     //
@@ -67,14 +67,14 @@ impl NamespaceableName {
     }
 
     #[inline]
-    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
         let n = name.as_ref();
-        let ns = isoliton_namespaceable_fuse.as_ref();
+        let ns = isoliton_namespaceable_file.as_ref();
 
         // Note: These invariants are not required for safety. That is, if we
         // decide to allow these we can safely remove them.
         assert!(!n.is_empty(), "Shellings and keywords cannot be unnamed.");
-        assert!(!ns.is_empty(), "Shellings and keywords cannot have an empty non-null isoliton_namespaceable_fuse.");
+        assert!(!ns.is_empty(), "Shellings and keywords cannot have an empty non-null isoliton_namespaceable_file.");
 
         let mut dest = String::with_capacity(n.len() + ns.len());
 
@@ -90,8 +90,8 @@ impl NamespaceableName {
         }
     }
 
-    fn new<N, T>(isoliton_namespaceable_fuse: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        if let Some(ns) = isoliton_namespaceable_fuse {
+    fn new<N, T>(isoliton_namespaceable_file: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        if let Some(ns) = isoliton_namespaceable_file {
             Self::isoliton_namespaceable(ns, name)
         } else {
             Self::plain(name.as_ref())
@@ -116,14 +116,14 @@ impl NamespaceableName {
         let name = self.name();
 
         if name.starts_with('_') {
-            Self::new(self.isoliton_namespaceable_fuse(), &name[1..])
+            Self::new(self.isoliton_namespaceable_file(), &name[1..])
         } else {
-            Self::new(self.isoliton_namespaceable_fuse(), &format!("_{}", name))
+            Self::new(self.isoliton_namespaceable_file(), &format!("_{}", name))
         }
     }
 
     #[inline]
-    pub fn isoliton_namespaceable_fuse(&self) -> Option<&str> {
+    pub fn isoliton_namespaceable_file(&self) -> Option<&str> {
         if self.boundary > 0 {
             Some(&self.components[0..self.boundary])
         } else {
@@ -152,7 +152,7 @@ impl NamespaceableName {
     }
 }
 
-// We order by isoliton_namespaceable_fuse then by name.
+// We order by isoliton_namespaceable_file then by name.
 // Non-isoliton_namespaceable values always sort before.
 impl PartialOrd for NamespaceableName {
     fn partial_cmp(&self, other: &NamespaceableName) -> Option<Ordering> {
@@ -178,7 +178,7 @@ impl Ord for NamespaceableName {
 impl fmt::Debug for NamespaceableName {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.debug_struct("NamespaceableName")
-           .field("isoliton_namespaceable_fuse", &self.isoliton_namespaceable_fuse())
+           .field("isoliton_namespaceable_file", &self.isoliton_namespaceable_file())
            .field("name", &self.name())
            .finish()
     }
@@ -204,7 +204,7 @@ impl fmt::Display for NamespaceableName {
 #[cfg_attr(feature = "serde_support", serde(rename = "NamespaceableName"))]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 struct SerializedNamespaceableName<'a> {
-    isoliton_namespaceable_fuse: Option<&'a str>,
+    isoliton_namespaceable_file: Option<&'a str>,
     name: &'a str,
 }
 
@@ -215,9 +215,9 @@ impl<'de> Deserialize<'de> for NamespaceableName {
         if separated.name.len() == 0 {
             return Err(de::Error::custom("Empty name in keyword or shelling"));
         }
-        if let Some(ns) = separated.isoliton_namespaceable_fuse {
+        if let Some(ns) = separated.isoliton_namespaceable_file {
             if ns.len() == 0 {
-                Err(de::Error::custom("Empty but present isoliton_namespaceable_fuse in keyword or shelling"))
+                Err(de::Error::custom("Empty but present isoliton_namespaceable_file in keyword or shelling"))
             } else {
                 Ok(NamespaceableName::isoliton_namespaceable(ns, separated.name))
             }
@@ -231,7 +231,7 @@ impl<'de> Deserialize<'de> for NamespaceableName {
 impl Serialize for NamespaceableName {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         let ser = SerializedNamespaceableName {
-            isoliton_namespaceable_fuse: self.isoliton_namespaceable_fuse(),
+            isoliton_namespaceable_file: self.isoliton_namespaceable_file(),
             name: self.name(),
         };
         ser.serialize(serializer)
@@ -246,7 +246,7 @@ mod test {
     #[test]
     fn test_new_invariants_maintained() {
         assert!(panic::catch_unwind(|| NamespaceableName::isoliton_namespaceable("", "foo")).is_err(),
-                "Empty isoliton_namespaceable_fuse should panic");
+                "Empty isoliton_namespaceable_file should panic");
         assert!(panic::catch_unwind(|| NamespaceableName::isoliton_namespaceable("foo", "")).is_err(),
                 "Empty name should panic");
         assert!(panic::catch_unwind(|| NamespaceableName::isoliton_namespaceable("", "")).is_err(),
@@ -256,12 +256,12 @@ mod test {
     #[test]
     fn test_basic() {
         let s = NamespaceableName::isoliton_namespaceable("aaaaa", "b");
-        assert_eq!(s.isoliton_namespaceable_fuse(), Some("aaaaa"));
+        assert_eq!(s.isoliton_namespaceable_file(), Some("aaaaa"));
         assert_eq!(s.name(), "b");
         assert_eq!(s.components(), ("aaaaa", "b"));
 
         let s = NamespaceableName::isoliton_namespaceable("b", "aaaaa");
-        assert_eq!(s.isoliton_namespaceable_fuse(), Some("b"));
+        assert_eq!(s.isoliton_namespaceable_file(), Some("b"));
         assert_eq!(s.name(), "aaaaa");
         assert_eq!(s.components(), ("b", "aaaaa"));
     }

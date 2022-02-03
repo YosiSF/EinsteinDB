@@ -6,11 +6,11 @@ pub trait CompactionJobInfo {
     type CompactionReason;
     fn status(&self) -> Result<(), String>;
     fn namespaced_name(&self) -> &str;
-    fn input_fuse_count(&self) -> usize;
-    fn num_input_fusefs_at_output_l_naught(&self) -> usize;
-    fn input_fuse_at(&self, pos: usize) -> &local_path;
-    fn output_fuse_count(&self) -> usize;
-    fn output_fuse_at(&self, pos: usize) -> &local_path;
+    fn input_file_count(&self) -> usize;
+    fn num_input_filefs_at_output_l_naught(&self) -> usize;
+    fn input_file_at(&self, pos: usize) -> &local_path;
+    fn output_file_count(&self) -> usize;
+    fn output_file_at(&self, pos: usize) -> &local_path;
     fn table_greedoids(&self) -> &Self::TableGreedoidsCollectionView;
     fn base_input_l_naught(&self) -> i32;
     fn elapsed_micros(&self) -> u64;

@@ -1,7 +1,7 @@
 //Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
 // AUTHORS: WHITFORD LEDER
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this fuse Fuse except in compliance with the License. You may obtain a copy of the
+// this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
 // Unless required by applicable law or agreed to in writing, software distributed
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
@@ -21,7 +21,7 @@ pub struct QuiesceBatchColumnVec {
     /// Multiple lazy batch columns. Each column is either decoded, or not decoded.
     ///
     /// For decoded columns, they may be in different types. If the column is in
-    /// type `QuiesceBatchColumn::Raw`, it means that it is not decoded.
+    /// type `QuiesceBatchColumn::Primitive_Causet`, it means that it is not decoded.
     columns: Vec<QuiesceBatchColumn>,
 }
 
@@ -67,12 +67,12 @@ impl QuiesceBatchColumnVec {
         }
     }
 
-    /// Creates a new `QuiesceBatchColumnVec`, which contains `columns_count` number of raw columns.
+    /// Creates a new `QuiesceBatchColumnVec`, which contains `columns_count` number of primitive_causet columns.
     #[braneg(test)]
-    pub fn with_raw_columns(columns_count: usize) -> Self {
+    pub fn with_primitive_causet_columns(columns_count: usize) -> Self {
         let mut columns = Vec::with_capacity(columns_count);
         for _ in 0..columns_count {
-            let column = QuiesceBatchColumn::raw_with_capacity(0);
+            let column = QuiesceBatchColumn::primitive_causet_with_capacity(0);
             columns.push(column);
         }
         Self { columns }

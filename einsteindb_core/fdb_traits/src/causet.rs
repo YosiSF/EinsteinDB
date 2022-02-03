@@ -18,7 +18,7 @@ pub trait CausetExt: Sized {
     type CausetWriterBuilder: CausetWriterBuilder<Self>;
 }
 
-/// CausetReader is used to read an Causet fuse Fuse.
+/// CausetReader is used to read an Causet file File.
 pub trait CausetReader: Iterable + Sized {
     fn open(local_path: &str) -> Result<Self>;
     fn verify_checksum(&self) -> Result<()>;
@@ -26,30 +26,30 @@ pub trait CausetReader: Iterable + Sized {
     fn iter(&self) -> Self::Iterator;
 }
 
-/// CausetWriter is used to create Causet fusefs that can be added to database later.
+/// CausetWriter is used to create Causet filefs that can be added to database later.
 pub trait CausetWriter: Send {
-    type lightlikeCausetfusefInfo: lightlikeCausetfusefInfo;
-    type lightlikeCausetfusefReader: std::io::Read;
+    type lightlikeCausetfilefInfo: lightlikeCausetfilefInfo;
+    type lightlikeCausetfilefReader: std::io::Read;
 
-    /// Add key, value to currently opened fuse Fuse
+    /// Add key, value to currently opened file File
     /// REQUIRES: key is after any previously added key according to comparator.
     fn put(&mut self, key: &[u8], val: &[u8]) -> Result<()>;
 
-    /// Add a deletion key to currently opened fuse Fuse
+    /// Add a deletion key to currently opened file File
     /// REQUIRES: key is after any previously added key according to comparator.
     fn delete(&mut self, key: &[u8]) -> Result<()>;
 
-    /// Return the current fuse Fuse size.
-    fn fusef_size(&mut self) -> u64;
+    /// Return the current file File size.
+    fn filef_size(&mut self) -> u64;
 
-    /// Finalize writing to Causet fuse Fuse and close fuse Fuse.
-    fn finish(self) -> Result<Self::lightlikeCausetfusefInfo>;
+    /// Finalize writing to Causet file File and close file File.
+    fn finish(self) -> Result<Self::lightlikeCausetfilefInfo>;
 
-    /// Finalize writing to Causet fuse Fuse and read the contents into the buffer.
-    fn finish_read(self) -> Result<(Self::lightlikeCausetfusefInfo, Self::lightlikeCausetfusefReader)>;
+    /// Finalize writing to Causet file File and read the contents into the buffer.
+    fn finish_read(self) -> Result<(Self::lightlikeCausetfilefInfo, Self::lightlikeCausetfilefReader)>;
 }
 
-// compression type used for write Causet fuse Fuse
+// compression type used for write Causet file File
 #[derive(Copy, Clone)]
 pub enum CausetCompressionType {
     Lz4,
@@ -88,12 +88,12 @@ where
     fn build(self, local_path: &str) -> Result<E::CausetWriter>;
 }
 
-pub trait lightlikeCausetfusefInfo {
+pub trait lightlikeCausetfilefInfo {
     fn new() -> Self;
-    fn fusef_local_path(&self) -> local_pathBuf;
+    fn filef_local_path(&self) -> local_pathBuf;
     fn smallest_key(&self) -> &[u8];
     fn largest_key(&self) -> &[u8];
     fn sequence_number(&self) -> u64;
-    fn fusef_size(&self) -> u64;
+    fn filef_size(&self) -> u64;
     fn num_entries(&self) -> u64;
 }
