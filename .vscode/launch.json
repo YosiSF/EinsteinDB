@@ -1,28 +1,18 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
-        {
-            "type": "lldb",
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
             "request": "launch",
-            "name": "Debug unit tests in library 'einsteindb'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--lib",
-                    "--package=einsteindb"
-                ],
-                "filter": {
-                    "name": "einsteindb",
-                    "kind": "lib"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        }
- _sp   ]
+            "program": "${workspaceFolder}/Cargo.toml", //this is where we will run our program, it is a path to Cargo.toml manifest file, which tells cargo how to build and run our project 
+
+            "args":[],                                  //we don't need any args for now
+
+            "stopAtEntry": true,                        //we don't want to stop at entry point of the program when we start debugging so this is false by default
+
+            //"cwd":"${workspaceFolder}/src/main.rs",      //this is where we will start running our program from, it is a path to src/main.rs file inside our project folder 
+
+          
+        }]    
 }
