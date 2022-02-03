@@ -1,10 +1,7 @@
 [package]
-authors = [
-    "Karl Whitford <karl@einst.ai>",
-    "Josh Leder <slushie@gmail.com>",
-    "'The lone gunman' <whtcorpsinc> <whtcorpsarpanet@gmail.com>"
-]
+authors = ["Karl Whitford <karl@einst.ai>","Josh Leder <slushie@gmail.com>", "'The lone gunman' <whtcorpsinc> <whtcorpsarpanet@gmail.com>"]
 
+[lib]
 name = "einsteindb"
 license = "Apache-2.0"
 keywords = ["embedded", "distributed-systems", "BFTRaft" ]
@@ -23,8 +20,6 @@ syncable = ["einsteindb_lenin", "lenin_traits", "einsteindb_core/syncable"]
 [workspace]
 members = ["cmd", "ffi", "tools/cli", "einsteindb-gen", "einsteindb-sys", "einsteindb"]
 
-[lib]
-name = "einsteindb"
 
 [build-dependencies]
 rustc_version = "0.4.0"
@@ -81,9 +76,7 @@ test-einstein_merkle_trees-panic = [
 ]
 bcc-iosnoop = [
     "file_system/bcc-iosnoop",
-]
-cloud-storage-grpc = ["Causet_importer/cloud-storage-grpc"]
-cloud-storage-dylib = ["Causet_importer/cloud-storage-dylib"]
+
 #log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 slog = { version = "2.3", features = ["max_level_trace", "release_max_level_debug"] }
 slog-async = { version = "2.3", default-features = false }
