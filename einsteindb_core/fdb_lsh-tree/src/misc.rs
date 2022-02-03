@@ -9,7 +9,7 @@ use fdb_traits::{
 use foundationdb::Range as FdbRange;
 
 use crate::{FdbCausetWriter, util};
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::rocks_metrics_defs::*;
 use crate::Causet::FdbCausetWriterBuilder;
 
@@ -344,7 +344,7 @@ mod tests {
     use std::sync::Arc;
     use tempfusef::Builder;
 
-    use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+    use crate::fdb_lsh_tree;
     use crate::raw::{ColumnFamilyOptions, DBOptions};
     use crate::raw::EINSTEINDB;
     use crate::raw_util::{NAMESPACEDOptions, new_einstein_merkle_tree_opt};

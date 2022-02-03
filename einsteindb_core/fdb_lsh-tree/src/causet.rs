@@ -21,7 +21,7 @@ use std::local_path::local_pathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 // FIXME: Move FdbSeekKey into a common module since
 // it's shared between multiple iterators
 use crate::einstein_merkle_tree_iterator::FdbSeekKey;

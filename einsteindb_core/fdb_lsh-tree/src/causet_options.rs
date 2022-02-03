@@ -6,7 +6,7 @@ use fdb_traits::{ColumnFamilyOptions, CausetPartitionerFactory};
 use foundationdb::ColumnFamilyOptions as RawNAMESPACEDOptions;
 
 use crate::{db_options::FdbTitanDBOptions, Causet_partitioner::FdbCausetPartitionerFactory};
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::util;
 
 impl NAMESPACEDOptionsExt for Fdbeinstein_merkle_tree {

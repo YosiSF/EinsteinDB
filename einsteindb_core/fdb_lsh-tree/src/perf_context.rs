@@ -2,7 +2,7 @@
 
 use fdb_traits::{PerfContext, PerfContextExt, PerfContextKind, PerfLevel};
 
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::perf_context_impl::PerfContextStatistics;
 
 impl PerfContextExt for Fdbeinstein_merkle_tree {

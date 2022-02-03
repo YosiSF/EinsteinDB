@@ -11,7 +11,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::db_options::FdbDBOptions;
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::namespaced_options::FdbColumnFamilyOptions;
 use crate::raw_util::NAMESPACEDOptions;
 use crate::raw_util::new_einstein_merkle_tree as new_einstein_merkle_tree_raw;

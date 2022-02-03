@@ -4,7 +4,7 @@ use fdb_traits::{self, Error, Mutable, Result, WriteBatchExt, WriteOptions};
 use foundationdb::{EINSTEINDB, Writable, WriteBatch as RawWriteBatch};
 use std::sync::Arc;
 
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::options::FdbWriteOptions;
 use crate::util::get_namespaced_handle;
 

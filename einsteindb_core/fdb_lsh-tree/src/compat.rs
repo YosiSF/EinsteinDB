@@ -2,7 +2,7 @@
 
 use std::sync::Arc;
 
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::raw::EINSTEINDB;
 
 /// A trait to enter the world of einstein_merkle_tree traits from a raw `Arc<EINSTEINDB>`

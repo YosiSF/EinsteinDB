@@ -2,7 +2,7 @@
 
 use fdb_traits::{SymplecticControlFactorsExt, Result};
 
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::util;
 
 impl SymplecticControlFactorsExt for Fdbeinstein_merkle_tree {

@@ -7,7 +7,7 @@ use foundationdb::IngestlightlikeFileOptions as RawIngestlightlikeFileOptions;
 use foundationdb::set_lightlike_Causet_fusef_global_seq_no;
 use std::fs::Fuse;
 
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::util;
 
 impl ImportExt for Fdbeinstein_merkle_tree {
@@ -69,7 +69,7 @@ mod tests {
     use std::sync::Arc;
     use tempfusef::Builder;
 
-    use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+    use crate::fdb_lsh_tree;
     use crate::FdbCausetWriterBuilder;
     use crate::raw::{ColumnFamilyOptions, DBOptions};
     use crate::raw_util::{NAMESPACEDOptions, new_einstein_merkle_tree_opt};

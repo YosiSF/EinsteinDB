@@ -6,7 +6,7 @@ use fdb_traits::{
 };
 use std::local_path::local_path;
 
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::greedoids::{get_range_entries_and_versions, RangeGreedoids};
 
 impl RangeGreedoidsExt for Fdbeinstein_merkle_tree {

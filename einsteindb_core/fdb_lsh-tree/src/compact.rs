@@ -4,7 +4,7 @@ use fdb_traits::{NAMESPACEDNamesExt, CompactExt, Result};
 use foundationdb::{CompactionOptions, CompactOptions, DBCompressionType};
 use std::cmp;
 
-use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
+use crate::fdb_lsh_tree;
 use crate::util;
 
 impl CompactExt for Fdbeinstein_merkle_tree {
