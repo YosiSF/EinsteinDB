@@ -18,10 +18,10 @@ pub trait KV:
     + ImportExt
     + CausetExt
     + CompactExt
-    + RangePropertiesExt
-    + MvccPropertiesExt
-    + TtlPropertiesExt
-    + TablePropertiesExt
+    + RangeGreedoidsExt
+    + MvccGreedoidsExt
+    + TtlGreedoidsExt
+    + TableGreedoidsExt
     + PerfContextExt
     + MiscExt
     + Send

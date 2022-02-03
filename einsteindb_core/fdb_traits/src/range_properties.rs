@@ -2,13 +2,13 @@
 
 //! Various metrics related to key ranges
 //!
-//! In FdbDB these are typically implemented with user collected properties,
+//! In FdbDB these are typically implemented with user collected greedoids,
 //! which might require the database to be constructed with specific options.
 
 use crate::errors::Result;
 use crate::Range;
 
-pub trait RangePropertiesExt {
+pub trait RangeGreedoidsExt {
     /// Gets the number of keys in a range.
     fn get_range_approximate_keys(&self, range: Range<'_>, large_threshold: u64) -> Result<u64>;
 

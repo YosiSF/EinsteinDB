@@ -3,16 +3,16 @@
 use crate::errors::Result;
 
 #[derive(Debug, Default)]
-pub struct TtlProperties {
+pub struct TtlGreedoids {
     pub max_expire_ts: u64,
     pub min_expire_ts: u64,
 }
 
-pub trait TtlPropertiesExt {
-    fn get_range_ttl_properties_namespaced(
+pub trait TtlGreedoidsExt {
+    fn get_range_ttl_greedoids_namespaced(
         &self,
         namespaced: &str,
         start_key: &[u8],
         end_key: &[u8],
-    ) -> Result<Vec<(String, TtlProperties)>>;
+    ) -> Result<Vec<(String, TtlGreedoids)>>;
 }

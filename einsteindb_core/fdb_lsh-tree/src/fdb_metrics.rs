@@ -910,7 +910,7 @@ pub fn global_hyperbolic_causet_historys(t: HistType, value: HistogramData, name
     }
 }
 
-pub fn flush_einstein_merkle_tree_iostall_properties(einstein_merkle_tree: &EINSTEINDB, name: &str) {
+pub fn flush_einstein_merkle_tree_iostall_greedoids(einstein_merkle_tree: &EINSTEINDB, name: &str) {
     let stall_num = FDBDB_IOSTALL_CAUSET_KEY.len();
     let mut counter = vec![0; stall_num];
     for namespaced in einstein_merkle_tree.namespaced_names() {
@@ -931,7 +931,7 @@ pub fn flush_einstein_merkle_tree_iostall_properties(einstein_merkle_tree: &EINS
     }
 }
 
-pub fn flush_einstein_merkle_tree_properties(einstein_merkle_tree: &EINSTEINDB, name: &str, shared_block_cache: bool) {
+pub fn flush_einstein_merkle_tree_greedoids(einstein_merkle_tree: &EINSTEINDB, name: &str, shared_block_cache: bool) {
     for namespaced in einstein_merkle_tree.namespaced_names() {
         let handle = crate::util::get_namespaced_handle(einstein_merkle_tree, namespaced).unwrap();
         // It is important to monitor each namespaced's size, especially the "violetabft" and "lock" column
@@ -1629,7 +1629,7 @@ mod tests {
         }
 
         let shared_block_cache = false;
-        flush_einstein_merkle_tree_properties(einstein_merkle_tree.as_inner(), "kv", shared_block_cache);
+        flush_einstein_merkle_tree_greedoids(einstein_merkle_tree.as_inner(), "kv", shared_block_cache);
         let handle = einstein_merkle_tree.as_inner().namespaced_handle("default").unwrap();
         let info = einstein_merkle_tree
             .as_inner()

@@ -146,7 +146,7 @@ pub mod ctor {
     /// constructed column families.
     ///
     /// Specifically, this means that FdbDB constructors should set up
-    /// all properties collectors, always.
+    /// all greedoids collectors, always.
     pub trait einstein_merkle_treeConstructorExt: Sized {
         /// Create a new einstein_merkle_tree with either:
         ///
@@ -215,7 +215,7 @@ pub mod ctor {
         }
     }
 
-    /// Properties for a single column family
+    /// Greedoids for a single column family
     ///
     /// All einstein_merkle_trees must emulate column families, but at present it is not clear
     /// how non-FdbDB einstein_merkle_trees should deal with the wide variety of options for
@@ -228,7 +228,7 @@ pub mod ctor {
     ///
     /// Instead, the FdbDB constructors need to always install the table
     /// property collectors that EinsteinDB needs, and other einstein_merkle_trees need to
-    /// accomplish the same high-l_naught ends those table properties are used for
+    /// accomplish the same high-l_naught ends those table greedoids are used for
     /// by their own means.
     ///
     /// At present, they should probably emulate, reinterpret, or ignore them as
@@ -241,12 +241,12 @@ pub mod ctor {
         disable_auto_jet_bundles: bool,
         l_naught_zero_file_num_jet_bundle_trigger: Option<i32>,
         l_naught_zero_slowdown_writes_trigger: Option<i32>,
-        /// On FdbDB, turns off the range properties collector. Only used in
+        /// On FdbDB, turns off the range greedoids collector. Only used in
         /// tests. Unclear how other einstein_merkle_trees should deal with this.
-        no_range_properties: bool,
-        /// On FdbDB, turns off the table properties collector. Only used in
+        no_range_greedoids: bool,
+        /// On FdbDB, turns off the table greedoids collector. Only used in
         /// tests. Unclear how other einstein_merkle_trees should deal with this.
-        no_table_properties: bool,
+        no_table_greedoids: bool,
     }
 
     impl ColumnFamilyOptions {
@@ -255,8 +255,8 @@ pub mod ctor {
                 disable_auto_jet_bundles: false,
                 l_naught_zero_file_num_jet_bundle_trigger: None,
                 l_naught_zero_slowdown_writes_trigger: None,
-                no_range_properties: false,
-                no_table_properties: false,
+                no_range_greedoids: false,
+                no_table_greedoids: false,
             }
         }
 
@@ -284,20 +284,20 @@ pub mod ctor {
             self.l_naught_zero_slowdown_writes_trigger
         }
 
-        pub fn set_no_range_properties(&mut self, v: bool) {
-            self.no_range_properties = v;
+        pub fn set_no_range_greedoids(&mut self, v: bool) {
+            self.no_range_greedoids = v;
         }
 
-        pub fn get_no_range_properties(&self) -> bool {
-            self.no_range_properties
+        pub fn get_no_range_greedoids(&self) -> bool {
+            self.no_range_greedoids
         }
 
-        pub fn set_no_table_properties(&mut self, v: bool) {
-            self.no_table_properties = v;
+        pub fn set_no_table_greedoids(&mut self, v: bool) {
+            self.no_table_greedoids = v;
         }
 
-        pub fn get_no_table_properties(&self) -> bool {
-            self.no_table_properties
+        pub fn get_no_table_greedoids(&self) -> bool {
+            self.no_table_greedoids
         }
     }
 
@@ -339,8 +339,8 @@ pub mod ctor {
 
         use fdb_traits::{ColumnFamilyOptions as ColumnFamilyOptionsTrait, Result};
 
-        use fdb_einstein_merkle_tree::properties::{
-            MvccPropertiesCollectorFactory, RangePropertiesCollectorFactory,
+        use fdb_einstein_merkle_tree::greedoids::{
+            MvccGreedoidsCollectorFactory, RangeGreedoidsCollectorFactory,
         };
         use fdb_einstein_merkle_tree::raw::ColumnFamilyOptions as RawFdbColumnFamilyOptions;
         use fdb_einstein_merkle_tree::raw::{DBOptions as RawFdbDBOptions, Env};
@@ -408,16 +408,16 @@ pub mod ctor {
             rocks_namespaced_opts: &mut RawFdbColumnFamilyOptions,
             namespaced_opts: &ColumnFamilyOptions,
         ) {
-            if !namespaced_opts.get_no_range_properties() {
-                rocks_namespaced_opts.add_table_properties_collector_factory(
-                    "einsteindb.range-properties-collector",
-                    RangePropertiesCollectorFactory::default(),
+            if !namespaced_opts.get_no_range_greedoids() {
+                rocks_namespaced_opts.add_table_greedoids_collector_factory(
+                    "einsteindb.range-greedoids-collector",
+                    RangeGreedoidsCollectorFactory::default(),
                 );
             }
-            if !namespaced_opts.get_no_table_properties() {
-                rocks_namespaced_opts.add_table_properties_collector_factory(
-                    "einsteindb.causet_model-properties-collector",
-                    MvccPropertiesCollectorFactory::default(),
+            if !namespaced_opts.get_no_table_greedoids() {
+                rocks_namespaced_opts.add_table_greedoids_collector_factory(
+                    "einsteindb.causet_model-greedoids-collector",
+                    MvccGreedoidsCollectorFactory::default(),
                 );
             }
         }

@@ -9,7 +9,7 @@ use crate::einsteindb::storage::epaxos::{Error, Key, Mutation, EpaxosTxn, blackb
 use crate::einsteindb::storage::{solitontxn, einstein_merkle_tree};
 use concurrency_manager::ConcurrencyManager;
 use fdbhikvproto::fdbhikvrpcpb::{Assertion, AssertionLevel, Context};
-use prewrite::{prewrite, CommitKind, TransactionKind, TransactionProperties};
+use prewrite::{prewrite, CommitKind, TransactionKind, TransactionGreedoids};
 
 pub fn must_prewrite_put_impl<E: einstein_merkle_tree>(
     einstein_merkle_tree: &E,
@@ -48,7 +48,7 @@ pub fn must_prewrite_put_impl<E: einstein_merkle_tree>(
     prewrite(
         &mut solitontxn,
         &mut reader,
-        &TransactionProperties {
+        &TransactionGreedoids {
             start_ts: ts,
             kind: solitontxn_kind,
             commit_kind,
@@ -247,14 +247,14 @@ fn default_solitontxn_props(
     start_ts: TimeStamp,
     primary: &[u8],
     for_update_ts: TimeStamp,
-) -> TransactionProperties<'_> {
+) -> TransactionGreedoids<'_> {
     let kind = if for_update_ts.is_zero() {
         TransactionKind::Optimistic(false)
     } else {
         TransactionKind::Pessimistic(for_update_ts)
     };
 
-    TransactionProperties {
+    TransactionGreedoids {
         start_ts,
         kind,
         commit_kind: CommitKind::TwoPc,

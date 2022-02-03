@@ -5,14 +5,14 @@ use einsteindb_util::warn;
 use fdb_traits::CompactedEvent;
 use fdb_traits::CompactionJobInfo;
 use foundationdb::{
-    CompactionJobInfo as RawCompactionJobInfo, CompactionReason, TablePropertiesCollectionView,
+    CompactionJobInfo as RawCompactionJobInfo, CompactionReason, TableGreedoidsCollectionView,
 };
 use std::cmp;
 use std::collections::Bound::{Excluded, Included, Unbounded};
 use std::collections::BTreeMap;
 use std::local_path::local_path;
 
-use crate::properties::{RangeProperties, UserCollectedPropertiesDecoder};
+use crate::greedoids::{RangeGreedoids, UserCollectedGreedoidsDecoder};
 use crate::raw::EventListener;
 
 pub struct FdbCompactionJobInfo<'a>(&'a RawCompactionJobInfo);
@@ -28,7 +28,7 @@ impl<'a> FdbCompactionJobInfo<'a> {
 }
 
 impl CompactionJobInfo for FdbCompactionJobInfo<'_> {
-    type TablePropertiesCollectionView = TablePropertiesCollectionView;
+    type TableGreedoidsCollectionView = TableGreedoidsCollectionView;
     type CompactionReason = CompactionReason;
 
     fn status(&self) -> Result<(), String> {
@@ -63,8 +63,8 @@ impl CompactionJobInfo for FdbCompactionJobInfo<'_> {
         self.0.base_input_l_naught()
     }
 
-    fn table_properties(&self) -> &Self::TablePropertiesCollectionView {
-        self.0.table_properties()
+    fn table_greedoids(&self) -> &Self::TableGreedoidsCollectionView {
+        self.0.table_greedoids()
     }
 
     fn elapsed_micros(&self) -> u64 {
@@ -107,8 +107,8 @@ pub struct FdbCompactedEvent {
     pub total_output_bytes: u64,
     pub start_key: Vec<u8>,
     pub end_key: Vec<u8>,
-    pub input_props: Vec<RangeProperties>,
-    pub output_props: Vec<RangeProperties>,
+    pub input_props: Vec<RangeGreedoids>,
+    pub output_props: Vec<RangeGreedoids>,
 }
 
 impl FdbCompactedEvent {
@@ -116,8 +116,8 @@ impl FdbCompactedEvent {
         info: &FdbCompactionJobInfo<'_>,
         start_key: Vec<u8>,
         end_key: Vec<u8>,
-        input_props: Vec<RangeProperties>,
-        output_props: Vec<RangeProperties>,
+        input_props: Vec<RangeGreedoids>,
+        output_props: Vec<RangeGreedoids>,
     ) -> FdbCompactedEvent {
         FdbCompactedEvent {
             namespaced: info.namespaced_name().to_owned(),
@@ -240,17 +240,17 @@ impl EventListener for CompactionListener {
         }
         let mut input_props = Vec::with_capacity(info.input_file_count());
         let mut output_props = Vec::with_capacity(info.output_file_count());
-        let iter = info.table_properties().into_iter();
-        for (file, properties) in iter {
-            let ucp = UserCollectedPropertiesDecoder(properties.user_collected_properties());
-            if let Ok(prop) = RangeProperties::decode(&ucp) {
+        let iter = info.table_greedoids().into_iter();
+        for (file, greedoids) in iter {
+            let ucp = UserCollectedGreedoidsDecoder(greedoids.user_collected_greedoids());
+            if let Ok(prop) = RangeGreedoids::decode(&ucp) {
                 if input_files.contains(file) {
                     input_props.push(prop);
                 } else if output_files.contains(file) {
                     output_props.push(prop);
                 }
             } else {
-                warn!("Decode size properties from Causet file failed");
+                warn!("Decode size greedoids from Causet file failed");
                 return;
             }
         }

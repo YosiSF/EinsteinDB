@@ -13,7 +13,7 @@ use crate::{Fdbeinstein_merkle_treeIterator, FdbLightlikePersistence};
 use crate::db_vector::FdbCauset;
 use crate::options::FdbReadOptions;
 use crate::rocks_metrics::{
-    global_hyperbolic_causet_historys, flush_einstein_merkle_tree_iostall_properties, flush_einstein_merkle_tree_properties,
+    global_hyperbolic_causet_historys, flush_einstein_merkle_tree_iostall_greedoids, flush_einstein_merkle_tree_greedoids,
     flush_einstein_merkle_tree_ticker_metrics,
 };
 use crate::rocks_metrics_defs::{
@@ -96,8 +96,8 @@ impl KV for Fdbeinstein_merkle_tree {
                 }
             }
         }
-        flush_einstein_merkle_tree_properties(&self.einsteindb, instance, self.shared_block_cache);
-        flush_einstein_merkle_tree_iostall_properties(&self.einsteindb, instance);
+        flush_einstein_merkle_tree_greedoids(&self.einsteindb, instance, self.shared_block_cache);
+        flush_einstein_merkle_tree_iostall_greedoids(&self.einsteindb, instance);
     }
 
     fn reset_statistics(&self) {

@@ -635,7 +635,7 @@ mod tests {
     };
     use crate::einsteindb::storage::epaxos::{Mutation, EpaxosTxn, blackbraneReader};
     use crate::einsteindb::storage::solitontxn::{
-        commit, prewrite, CommitKind, TransactionKind, TransactionProperties,
+        commit, prewrite, CommitKind, TransactionKind, TransactionGreedoids,
     };
     use concurrency_manager::ConcurrencyManager;
     use einsteindb-gen::CfName;
@@ -689,7 +689,7 @@ mod tests {
                     prewrite(
                         &mut solitontxn,
                         &mut reader,
-                        &TransactionProperties {
+                        &TransactionGreedoids {
                             start_ts: START_TS,
                             kind: TransactionKind::Optimistic(false),
                             commit_kind: CommitKind::TwoPc,

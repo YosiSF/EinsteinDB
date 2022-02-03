@@ -2,7 +2,7 @@
 
 use std::local_path::local_path;
 pub trait CompactionJobInfo {
-    type TablePropertiesCollectionView;
+    type TableGreedoidsCollectionView;
     type CompactionReason;
     fn status(&self) -> Result<(), String>;
     fn namespaced_name(&self) -> &str;
@@ -11,7 +11,7 @@ pub trait CompactionJobInfo {
     fn input_file_at(&self, pos: usize) -> &local_path;
     fn output_file_count(&self) -> usize;
     fn output_file_at(&self, pos: usize) -> &local_path;
-    fn table_properties(&self) -> &Self::TablePropertiesCollectionView;
+    fn table_greedoids(&self) -> &Self::TableGreedoidsCollectionView;
     fn base_input_l_naught(&self) -> i32;
     fn elapsed_micros(&self) -> u64;
     fn num_corrupt_keys(&self) -> u64;

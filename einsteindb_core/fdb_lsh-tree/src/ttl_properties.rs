@@ -2,29 +2,29 @@
 
 use api_version::{APIVersion, KeyMode, RawValue};
 use einsteindb_util::error;
-use fdb_traits::{Range, Result, TtlProperties, TtlPropertiesExt};
-use foundationdb::{DBEntryType, TablePropertiesCollector, TablePropertiesCollectorFactory};
+use fdb_traits::{Range, Result, TtlGreedoids, TtlGreedoidsExt};
+use foundationdb::{DBEntryType, TableGreedoidsCollector, TableGreedoidsCollectorFactory};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use crate::{Fdbeinstein_merkle_tree, UserProperties};
-use crate::decode_properties::DecodeProperties;
+use crate::{Fdbeinstein_merkle_tree, UserGreedoids};
+use crate::decode_greedoids::DecodeGreedoids;
 
 const PROP_MAX_EXPIRE_TS: &str = "einsteindb.max_expire_ts";
 const PROP_MIN_EXPIRE_TS: &str = "einsteindb.min_expire_ts";
 
-pub struct FdbTtlProperties;
+pub struct FdbTtlGreedoids;
 
-impl FdbTtlProperties {
-    pub fn encode(ttl_props: &TtlProperties) -> UserProperties {
-        let mut props = UserProperties::new();
+impl FdbTtlGreedoids {
+    pub fn encode(ttl_props: &TtlGreedoids) -> UserGreedoids {
+        let mut props = UserGreedoids::new();
         props.encode_u64(PROP_MAX_EXPIRE_TS, ttl_props.max_expire_ts);
         props.encode_u64(PROP_MIN_EXPIRE_TS, ttl_props.min_expire_ts);
         props
     }
 
-    pub fn decode<T: DecodeProperties>(props: &T) -> Result<TtlProperties> {
-        let res = TtlProperties {
+    pub fn decode<T: DecodeGreedoids>(props: &T) -> Result<TtlGreedoids> {
+        let res = TtlGreedoids {
             max_expire_ts: props.decode_u64(PROP_MAX_EXPIRE_TS)?,
             min_expire_ts: props.decode_u64(PROP_MIN_EXPIRE_TS)?,
         };
@@ -32,22 +32,22 @@ impl FdbTtlProperties {
     }
 }
 
-impl TtlPropertiesExt for Fdbeinstein_merkle_tree {
-    fn get_range_ttl_properties_namespaced(
+impl TtlGreedoidsExt for Fdbeinstein_merkle_tree {
+    fn get_range_ttl_greedoids_namespaced(
         &self,
         namespaced: &str,
         start_key: &[u8],
         end_key: &[u8],
-    ) -> Result<Vec<(String, TtlProperties)>> {
+    ) -> Result<Vec<(String, TtlGreedoids)>> {
         let range = Range::new(start_key, end_key);
-        let collection = self.get_properties_of_tables_in_range(namespaced, &[range])?;
+        let collection = self.get_greedoids_of_tables_in_range(namespaced, &[range])?;
         if collection.is_empty() {
             return Ok(vec![]);
         }
 
         let mut res = Vec::new();
         for (file_name, v) in collection.iter() {
-            let prop = match FdbTtlProperties::decode(v.user_collected_properties()) {
+            let prop = match FdbTtlGreedoids::decode(v.user_collected_greedoids()) {
                 Ok(v) => v,
                 Err(_) => continue,
             };
@@ -58,12 +58,12 @@ impl TtlPropertiesExt for Fdbeinstein_merkle_tree {
 }
 
 /// Can only be used for default NAMESPACED.
-pub struct TtlPropertiesCollector<API: APIVersion> {
-    prop: TtlProperties,
+pub struct TtlGreedoidsCollector<API: APIVersion> {
+    prop: TtlGreedoids,
     _phantom: PhantomData<API>,
 }
 
-impl<API: APIVersion> TablePropertiesCollector for TtlPropertiesCollector<API> {
+impl<API: APIVersion> TableGreedoidsCollector for TtlGreedoidsCollector<API> {
     fn add(&mut self, key: &[u8], value: &[u8], entry_type: DBEntryType, _: u64, _: u64) {
         if entry_type != DBEntryType::Put {
             return;
@@ -105,20 +105,20 @@ impl<API: APIVersion> TablePropertiesCollector for TtlPropertiesCollector<API> {
         if self.prop.max_expire_ts == 0 && self.prop.min_expire_ts == 0 {
             return HashMap::default();
         }
-        FdbTtlProperties::encode(&self.prop).0
+        FdbTtlGreedoids::encode(&self.prop).0
     }
 }
 
 #[derive(Default)]
-pub struct TtlPropertiesCollectorFactory<API: APIVersion> {
+pub struct TtlGreedoidsCollectorFactory<API: APIVersion> {
     _phantom: PhantomData<API>,
 }
 
-impl<API: APIVersion> TablePropertiesCollectorFactory<TtlPropertiesCollector<API>>
-for TtlPropertiesCollectorFactory<API>
+impl<API: APIVersion> TableGreedoidsCollectorFactory<TtlGreedoidsCollector<API>>
+for TtlGreedoidsCollectorFactory<API>
 {
-    fn create_table_properties_collector(&mut self, _: u32) -> TtlPropertiesCollector<API> {
-        TtlPropertiesCollector {
+    fn create_table_greedoids_collector(&mut self, _: u32) -> TtlGreedoidsCollector<API> {
+        TtlGreedoidsCollector {
             prop: Default::default(),
             _phantom: PhantomData,
         }
@@ -134,14 +134,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_ttl_properties() {
-        test_ttl_properties_impl::<APIV1TTL>();
-        test_ttl_properties_impl::<APIV2>();
+    fn test_ttl_greedoids() {
+        test_ttl_greedoids_impl::<APIV1TTL>();
+        test_ttl_greedoids_impl::<APIV2>();
     }
 
-    fn test_ttl_properties_impl<API: APIVersion>() {
-        let get_properties = |case: &[(&'static str, u64)]| -> Result<TtlProperties> {
-            let mut collector = TtlPropertiesCollector::<API> {
+    fn test_ttl_greedoids_impl<API: APIVersion>() {
+        let get_greedoids = |case: &[(&'static str, u64)]| -> Result<TtlGreedoids> {
+            let mut collector = TtlGreedoidsCollector::<API> {
                 prop: Default::default(),
                 _phantom: PhantomData,
             };
@@ -162,8 +162,8 @@ mod tests {
                 let v = vec![0; 10];
                 collector.add(k.as_bytes(), &v, DBEntryType::Other, 0, 0);
             }
-            let result = UserProperties(collector.finish());
-            FdbTtlProperties::decode(&result)
+            let result = UserGreedoids(collector.finish());
+            FdbTtlGreedoids::decode(&result)
         };
 
         let case1 = [
@@ -173,7 +173,7 @@ mod tests {
             ("zr\0d", u64::MAX),
             ("zr\0e", 0),
         ];
-        let props = get_properties(&case1).unwrap();
+        let props = get_greedoids(&case1).unwrap();
         assert_eq!(props.max_expire_ts, u64::MAX);
         match API::TAG {
             ApiVersion::V1 => unreachable!(),
@@ -183,13 +183,13 @@ mod tests {
         }
 
         let case2 = [("zr\0a", 0)];
-        assert!(get_properties(&case2).is_err());
+        assert!(get_greedoids(&case2).is_err());
 
         let case3 = [];
-        assert!(get_properties(&case3).is_err());
+        assert!(get_greedoids(&case3).is_err());
 
         let case4 = [("zr\0a", 1)];
-        let props = get_properties(&case4).unwrap();
+        let props = get_greedoids(&case4).unwrap();
         assert_eq!(props.max_expire_ts, 1);
         assert_eq!(props.min_expire_ts, 1);
     }

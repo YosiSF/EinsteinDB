@@ -1,6 +1,6 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! Base types used by various foundationdb properties decoders
+//! Base types used by various foundationdb greedoids decoders
 
 use einsteindb_util::codec::number::{self, NumberEncoder};
 use einsteindb_util::codec::Result;
@@ -72,7 +72,7 @@ impl IndexHandles {
     }
 }
 
-pub trait DecodeProperties {
+pub trait DecodeGreedoids {
     fn decode(&self, k: &str) -> Result<&[u8]>;
 
     fn decode_u64(&self, k: &str) -> Result<u64> {
@@ -86,7 +86,7 @@ pub trait DecodeProperties {
     }
 }
 
-impl DecodeProperties for foundationdb::UserCollectedProperties {
+impl DecodeGreedoids for foundationdb::UserCollectedGreedoids {
     fn decode(&self, k: &str) -> einsteindb_util::codec::Result<&[u8]> {
         self.get(k.as_bytes())
             .ok_or(einsteindb_util::codec::Error::KeyNotFound)

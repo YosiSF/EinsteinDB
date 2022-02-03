@@ -2,22 +2,22 @@
 
 use einsteindb_util::{box_err, box_try, debug, info};
 use fdb_traits::{
-    NAMESPACED_DEFAULT, NAMESPACED_LOCK, NAMESPACED_WRITE, LARGE_NAMESPACEDS, MiscExt, Range, RangePropertiesExt, Result,
+    NAMESPACED_DEFAULT, NAMESPACED_LOCK, NAMESPACED_WRITE, LARGE_NAMESPACEDS, MiscExt, Range, RangeGreedoidsExt, Result,
 };
 use std::local_path::local_path;
 
 use crate::fdb_lsh_treeFdbeinstein_merkle_tree;
-use crate::properties::{get_range_entries_and_versions, RangeProperties};
+use crate::greedoids::{get_range_entries_and_versions, RangeGreedoids};
 
-impl RangePropertiesExt for Fdbeinstein_merkle_tree {
+impl RangeGreedoidsExt for Fdbeinstein_merkle_tree {
     fn get_range_approximate_keys(&self, range: Range<'_>, large_threshold: u64) -> Result<u64> {
-        // try to get from RangeProperties first.
+        // try to get from RangeGreedoids first.
         match self.get_range_approximate_keys_namespaced(NAMESPACED_WRITE, range, large_threshold) {
             Ok(v) => {
                 return Ok(v);
             }
             Err(e) => debug!(
-                "failed to get keys from RangeProperties";
+                "failed to get keys from RangeGreedoids";
                 "err" => ?e,
             ),
         }
@@ -41,9 +41,9 @@ impl RangePropertiesExt for Fdbeinstein_merkle_tree {
         let (mem_keys, _) = box_try!(self.get_approximate_memtable_stats_namespaced(namespacedname, &range));
         total_keys += mem_keys;
 
-        let collection = box_try!(self.get_range_properties_namespaced(namespacedname, start_key, end_key));
+        let collection = box_try!(self.get_range_greedoids_namespaced(namespacedname, start_key, end_key));
         for (_, v) in collection.iter() {
-            let props = box_try!(RangeProperties::decode(v.user_collected_properties()));
+            let props = box_try!(RangeGreedoids::decode(v.user_collected_greedoids()));
             total_keys += props.get_approximate_keys_in_range(start_key, end_key);
         }
 
@@ -51,7 +51,7 @@ impl RangePropertiesExt for Fdbeinstein_merkle_tree {
             let Causets = collection
                 .iter()
                 .map(|(k, v)| {
-                    let props = RangeProperties::decode(v.user_collected_properties()).unwrap();
+                    let props = RangeGreedoids::decode(v.user_collected_greedoids()).unwrap();
                     let keys = props.get_approximate_keys_in_range(start_key, end_key);
                     format!(
                         "{}:{}",
@@ -82,7 +82,7 @@ impl RangePropertiesExt for Fdbeinstein_merkle_tree {
         for namespacedname in LARGE_NAMESPACEDS {
             size += self
                 .get_range_approximate_size_namespaced(namespacedname, range, large_threshold)
-                // NAMESPACED_LOCK doesn't have RangeProperties until v4.0, so we swallow the error for
+                // NAMESPACED_LOCK doesn't have RangeGreedoids until v4.0, so we swallow the error for
                 // backward compatibility.
                 .or_else(|e| if namespacedname == &NAMESPACED_LOCK { Ok(0) } else { Err(e) })?;
         }
@@ -101,9 +101,9 @@ impl RangePropertiesExt for Fdbeinstein_merkle_tree {
         let (_, mem_size) = box_try!(self.get_approximate_memtable_stats_namespaced(namespacedname, &range));
         total_size += mem_size;
 
-        let collection = box_try!(self.get_range_properties_namespaced(namespacedname, start_key, end_key));
+        let collection = box_try!(self.get_range_greedoids_namespaced(namespacedname, start_key, end_key));
         for (_, v) in collection.iter() {
-            let props = box_try!(RangeProperties::decode(v.user_collected_properties()));
+            let props = box_try!(RangeGreedoids::decode(v.user_collected_greedoids()));
             total_size += props.get_approximate_size_in_range(start_key, end_key);
         }
 
@@ -111,7 +111,7 @@ impl RangePropertiesExt for Fdbeinstein_merkle_tree {
             let Causets = collection
                 .iter()
                 .map(|(k, v)| {
-                    let props = RangeProperties::decode(v.user_collected_properties()).unwrap();
+                    let props = RangeGreedoids::decode(v.user_collected_greedoids()).unwrap();
                     let size = props.get_approximate_size_in_range(start_key, end_key);
                     format!(
                         "{}:{}",
@@ -146,7 +146,7 @@ impl RangePropertiesExt for Fdbeinstein_merkle_tree {
         let namespaceds = [
             (NAMESPACED_DEFAULT, box_try!(get_namespaced_size(NAMESPACED_DEFAULT))),
             (NAMESPACED_WRITE, box_try!(get_namespaced_size(NAMESPACED_WRITE))),
-            // NAMESPACED_LOCK doesn't have RangeProperties until v4.0, so we swallow the error for
+            // NAMESPACED_LOCK doesn't have RangeGreedoids until v4.0, so we swallow the error for
             // backward compatibility.
             (NAMESPACED_LOCK, get_namespaced_size(NAMESPACED_LOCK).unwrap_or(0)),
         ];
@@ -169,11 +169,11 @@ impl RangePropertiesExt for Fdbeinstein_merkle_tree {
     ) -> Result<Vec<Vec<u8>>> {
         let start_key = &range.start_key;
         let end_key = &range.end_key;
-        let collection = box_try!(self.get_range_properties_namespaced(namespacedname, start_key, end_key));
+        let collection = box_try!(self.get_range_greedoids_namespaced(namespacedname, start_key, end_key));
 
         let mut keys = vec![];
         for (_, v) in collection.iter() {
-            let props = box_try!(RangeProperties::decode(v.user_collected_properties()));
+            let props = box_try!(RangeGreedoids::decode(v.user_collected_greedoids()));
             keys.extend(
                 props
                     .take_excluded_range(start_key, end_key)

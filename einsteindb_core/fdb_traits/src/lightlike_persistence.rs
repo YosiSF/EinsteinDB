@@ -4,10 +4,7 @@ use crate::iterable::Iterable;
 use crate::peekable::Peekable;
 use std::fmt::Debug;
 
-/// A consistent read-only view of the database.
-///
-/// LightlikePersistences can be sent and shared, but not cloned. To make a lightlike_persistence
-/// clonable, call `into_sync` to create a `SyncLightlikePersistence`.
+/// A consistent read-only  `into_sync` to create a `SyncLightlikePersistence`.
 pub trait LightlikePersistence
 where
     Self: 'static + Peekable + Iterable + Send + Sync + Sized + Debug,

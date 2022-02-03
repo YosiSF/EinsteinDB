@@ -14,7 +14,7 @@ use crate::einsteindb::storage::{
         Result as EpaxosResult, blackbraneReader, TxnCommitRecord,
     },
     solitontxn::{
-        actions::prewrite::{prewrite, CommitKind, TransactionKind, TransactionProperties},
+        actions::prewrite::{prewrite, CommitKind, TransactionKind, TransactionGreedoids},
         commands::{
             Command, CommandExt, ReleasedDaggers, ResponsePolicy, TypedCommand, WriteCommand,
             WriteContext, WriteResult,
@@ -438,7 +438,7 @@ impl<K: PrewriteKind> Prewriter<K> {
             (&None, false) => CommitKind::TwoPc,
         };
 
-        let mut props = TransactionProperties {
+        let mut props = TransactionGreedoids {
             start_ts: self.start_ts,
             kind: self.kind.solitontxn_kind(),
             commit_kind,

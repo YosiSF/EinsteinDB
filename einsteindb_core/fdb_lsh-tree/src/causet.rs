@@ -47,7 +47,7 @@ impl FdbCausetReader {
             total_bytes: 0,
             meta: Causet,
         };
-        self.inner.read_table_properties(|p| {
+        self.inner.read_table_greedoids(|p| {
             meta.total_kvs = p.num_entries();
             meta.total_bytes = p.raw_key_size() + p.raw_value_size();
         });
@@ -67,7 +67,7 @@ impl FdbCausetReader {
 
     pub fn compression_name(&self) -> String {
         let mut result = String::new();
-        self.inner.read_table_properties(|p| {
+        self.inner.read_table_greedoids(|p| {
             result = p.compression_name().to_owned();
         });
         result

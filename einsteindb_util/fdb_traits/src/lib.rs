@@ -289,20 +289,20 @@ mod write_batch;
 pub use crate::write_batch::*;
 mod encryption;
 pub use crate::encryption::*;
-mod mvcc_properties;
+mod mvcc_greedoids;
 mod Causet_partitioner;
 pub use crate::Causet_partitioner::*;
-mod range_properties;
-pub use crate::mvcc_properties::*;
-pub use crate::range_properties::*;
-mod ttl_properties;
-pub use crate::ttl_properties::*;
+mod range_greedoids;
+pub use crate::mvcc_greedoids::*;
+pub use crate::range_greedoids::*;
+mod ttl_greedoids;
+pub use crate::ttl_greedoids::*;
 mod perf_context;
 pub use crate::perf_context::*;
 mod symplectic_control_factors;
 pub use crate::symplectic_control_factors::*;
-mod table_properties;
-pub use crate::table_properties::*;
+mod table_greedoids;
+pub use crate::table_greedoids::*;
 
 // These modules contain more general traits, some of which may be implemented
 // by multiple types.

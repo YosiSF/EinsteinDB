@@ -25,7 +25,7 @@ use fdbhikvproto::fdbhikvrpcpb::{Assertion, AssertionLevel};
 pub fn prewrite<S: blackbrane>(
     solitontxn: &mut EpaxosTxn,
     reader: &mut blackbraneReader<S>,
-    solitontxn_props: &TransactionProperties<'_>,
+    solitontxn_props: &TransactionGreedoids<'_>,
     mutation: Mutation,
     secondary_keys: &Option<Vec<Vec<u8>>>,
     is_pessimistic_dagger: bool,
@@ -150,7 +150,7 @@ pub fn prewrite<S: blackbrane>(
 }
 
 #[derive(Clone, Debug)]
-pub struct TransactionProperties<'a> {
+pub struct TransactionGreedoids<'a> {
     pub start_ts: TimeStamp,
     pub kind: TransactionKind,
     pub commit_kind: CommitKind,
@@ -163,7 +163,7 @@ pub struct TransactionProperties<'a> {
     pub assertion_level: AssertionLevel,
 }
 
-impl<'a> TransactionProperties<'a> {
+impl<'a> TransactionGreedoids<'a> {
     fn max_commit_ts(&self) -> TimeStamp {
         match &self.commit_kind {
             CommitKind::TwoPc => unreachable!(),
@@ -232,7 +232,7 @@ struct PrewriteMutation<'a> {
     should_not_exist: bool,
     should_not_write: bool,
     assertion: Assertion,
-    solitontxn_props: &'a TransactionProperties<'a>,
+    solitontxn_props: &'a TransactionGreedoids<'a>,
 }
 
 impl<'a> PrewriteMutation<'a> {
@@ -240,7 +240,7 @@ impl<'a> PrewriteMutation<'a> {
         mutation: Mutation,
         secondary_keys: &'a Option<Vec<Vec<u8>>>,
         is_pessimistic_dagger: bool,
-        solitontxn_props: &'a TransactionProperties<'a>,
+        solitontxn_props: &'a TransactionGreedoids<'a>,
     ) -> Result<PrewriteMutation<'a>> {
         let should_not_write = mutation.should_not_write();
 
@@ -675,8 +675,8 @@ pub mod tests {
     #[cfg(test)]
     use solitontxn_types::OldValue;
 
-    fn optimistic_solitontxn_props(primary: &[u8], start_ts: TimeStamp) -> TransactionProperties<'_> {
-        TransactionProperties {
+    fn optimistic_solitontxn_props(primary: &[u8], start_ts: TimeStamp) -> TransactionGreedoids<'_> {
+        TransactionGreedoids {
             start_ts,
             kind: TransactionKind::Optimistic(false),
             commit_kind: CommitKind::TwoPc,
@@ -697,8 +697,8 @@ pub mod tests {
         max_commit_ts: TimeStamp,
         solitontxn_size: u64,
         one_pc: bool,
-    ) -> TransactionProperties<'_> {
-        TransactionProperties {
+    ) -> TransactionGreedoids<'_> {
+        TransactionGreedoids {
             start_ts,
             kind: TransactionKind::Optimistic(false),
             commit_kind: if one_pc {
@@ -1012,7 +1012,7 @@ pub mod tests {
         let (_, old_value) = prewrite(
             &mut solitontxn,
             &mut reader,
-            &TransactionProperties {
+            &TransactionGreedoids {
                 start_ts: ts,
                 kind: TransactionKind::Pessimistic(TimeStamp::default()),
                 commit_kind: CommitKind::TwoPc,
@@ -1044,7 +1044,7 @@ pub mod tests {
 
         let mut solitontxn = EpaxosTxn::new(10.into(), cm.clone());
         let mut reader = blackbraneReader::new(10.into(), blackbrane, false);
-        let solitontxn_props = TransactionProperties {
+        let solitontxn_props = TransactionGreedoids {
             start_ts: 10.into(),
             kind: TransactionKind::Pessimistic(20.into()),
             commit_kind: CommitKind::Async(50.into()),
@@ -1094,7 +1094,7 @@ pub mod tests {
 
         let mut solitontxn = EpaxosTxn::new(10.into(), cm.clone());
         let mut reader = blackbraneReader::new(10.into(), blackbrane, false);
-        let solitontxn_props = TransactionProperties {
+        let solitontxn_props = TransactionGreedoids {
             start_ts: 10.into(),
             kind: TransactionKind::Pessimistic(20.into()),
             commit_kind: CommitKind::OnePc(50.into()),
@@ -1203,7 +1203,7 @@ pub mod tests {
 
         let mut solitontxn = EpaxosTxn::new(50.into(), cm.clone());
         let mut reader = blackbraneReader::new(50.into(), blackbrane.clone(), false);
-        let solitontxn_props = TransactionProperties {
+        let solitontxn_props = TransactionGreedoids {
             start_ts: 50.into(),
             kind: TransactionKind::Optimistic(false),
             commit_kind: CommitKind::TwoPc,
@@ -1263,7 +1263,7 @@ pub mod tests {
         // 2. Check GC fence when reading the old value.
         let mut solitontxn = EpaxosTxn::new(50.into(), cm);
         let mut reader = blackbraneReader::new(50.into(), blackbrane, false);
-        let solitontxn_props = TransactionProperties {
+        let solitontxn_props = TransactionGreedoids {
             start_ts: 50.into(),
             kind: TransactionKind::Optimistic(false),
             commit_kind: CommitKind::TwoPc,
@@ -1441,7 +1441,7 @@ pub mod tests {
 
         for einstein_merkle_tree in &[einstein_merkle_tree_rollback, einstein_merkle_tree_dagger] {
             let start_ts = TimeStamp::from(50);
-            let solitontxn_props = TransactionProperties {
+            let solitontxn_props = TransactionGreedoids {
                 start_ts,
                 kind: TransactionKind::Optimistic(false),
                 commit_kind: CommitKind::TwoPc,
@@ -1495,7 +1495,7 @@ pub mod tests {
     fn test_old_value_put_delete_dagger_insert() {
         let einstein_merkle_tree = crate::storage::Testeinstein_merkle_treeBuilder::new().build().unwrap();
         let start_ts = old_value_put_delete_dagger_insert(&einstein_merkle_tree, b"k1");
-        let solitontxn_props = TransactionProperties {
+        let solitontxn_props = TransactionGreedoids {
             start_ts,
             kind: TransactionKind::Optimistic(false),
             commit_kind: CommitKind::TwoPc,
@@ -1636,7 +1636,7 @@ pub mod tests {
                 let cm = ConcurrencyManager::new(start_ts);
                 let mut solitontxn = EpaxosTxn::new(start_ts, cm);
                 let mut reader = blackbraneReader::new(start_ts, blackbrane, true);
-                let solitontxn_props = TransactionProperties {
+                let solitontxn_props = TransactionGreedoids {
                     start_ts,
                     kind: TransactionKind::Optimistic(false),
                     commit_kind: CommitKind::TwoPc,
@@ -1672,7 +1672,7 @@ pub mod tests {
                 let cm = ConcurrencyManager::new(start_ts);
                 let mut solitontxn = EpaxosTxn::new(start_ts, cm);
                 let mut reader = blackbraneReader::new(start_ts, blackbrane, true);
-                let solitontxn_props = TransactionProperties {
+                let solitontxn_props = TransactionGreedoids {
                     start_ts,
                     kind: TransactionKind::Optimistic(false),
                     commit_kind: CommitKind::TwoPc,

@@ -2,7 +2,7 @@
 
 use einsteindb_util::codec::number;
 use foundationdb::{
-    ReadOptions as RawReadOptions, TableFilter, TableProperties, WriteOptions as RawWriteOptions,
+    ReadOptions as RawReadOptions, TableFilter, TableGreedoids, WriteOptions as RawWriteOptions,
 };
 
 pub struct FdbReadOptions(RawReadOptions);
@@ -103,15 +103,15 @@ impl TsFilter {
 }
 
 impl TableFilter for TsFilter {
-    fn table_filter(&self, props: &TableProperties) -> bool {
+    fn table_filter(&self, props: &TableGreedoids) -> bool {
         if self.hint_max_ts.is_none() && self.hint_min_ts.is_none() {
             return true;
         }
 
-        let user_props = props.user_collected_properties();
+        let user_props = props.user_collected_greedoids();
 
         if let Some(hint_min_ts) = self.hint_min_ts {
-            // TODO avoid hard code after refactor MvccProperties from
+            // TODO avoid hard code after refactor MvccGreedoids from
             // einsteindb/src/violetabfttimelike_store/Dagger/ into some component about einstein_merkle_tree.
             if let Some(mut p) = user_props.get("einsteindb.max_ts") {
                 if let Ok(get_max) = number::decode_u64(&mut p) {
@@ -123,7 +123,7 @@ impl TableFilter for TsFilter {
         }
 
         if let Some(hint_max_ts) = self.hint_max_ts {
-            // TODO avoid hard code after refactor MvccProperties from
+            // TODO avoid hard code after refactor MvccGreedoids from
             // einsteindb/src/violetabfttimelike_store/Dagger/ into some component about einstein_merkle_tree.
             if let Some(mut p) = user_props.get("einsteindb.min_ts") {
                 if let Ok(get_min) = number::decode_u64(&mut p) {

@@ -24,17 +24,17 @@ extern crate test;
 pub use compact_listener::*;
 pub use compat::*;
 pub use config::*;
-pub use decode_properties::*;
+pub use decode_greedoids::*;
 pub use event_listener::*;
 pub use symplectic_control_factors::*;
 pub use symplectic_listener::*;
 pub use foundationdb::PerfContext;
 pub use foundationdb::PerfLevel;
 pub use foundationdb::set_perf_l_naught;
-pub use properties::*;
+pub use greedoids::*;
 pub use rocks_metrics::*;
 pub use rocks_metrics_defs::*;
-pub use ttl_properties::*;
+pub use ttl_greedoids::*;
 
 pub use crate::compact::*;
 pub use crate::db_options::*;
@@ -44,15 +44,15 @@ pub use crate::einstein_merkle_tree_iterator::*;
 pub use crate::import::*;
 pub use crate::logger::*;
 pub use crate::misc::*;
-pub use crate::mvcc_properties::*;
+pub use crate::mvcc_greedoids::*;
 pub use crate::namespaced_names::*;
 pub use crate::namespaced_options::*;
 pub use crate::perf_context::*;
-pub use crate::range_properties::*;
+pub use crate::range_greedoids::*;
 pub use crate::lightlike_persistence::*;
 pub use crate::Causet::*;
 pub use crate::Causet_partitioner::*;
-pub use crate::table_properties::*;
+pub use crate::table_greedoids::*;
 pub use crate::write_batch::*;
 
 mod namespaced_names;
@@ -73,18 +73,18 @@ mod logger;
 
 mod misc;
 
-pub mod range_properties;
+pub mod range_greedoids;
 mod lightlike_persistence;
 
 mod Causet;
 
 mod Causet_partitioner;
 
-mod table_properties;
+mod table_greedoids;
 
 mod write_batch;
 
-pub mod mvcc_properties;
+pub mod mvcc_greedoids;
 
 pub mod perf_context;
 
@@ -101,9 +101,9 @@ mod compat;
 
 mod compact_listener;
 
-pub mod decode_properties;
+pub mod decode_greedoids;
 
-pub mod properties;
+pub mod greedoids;
 
 pub mod rocks_metrics;
 
@@ -115,7 +115,7 @@ pub mod symplectic_listener;
 
 pub mod config;
 
-pub mod ttl_properties;
+pub mod ttl_greedoids;
 
 pub mod encryption;
 

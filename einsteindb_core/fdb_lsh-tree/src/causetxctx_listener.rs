@@ -29,7 +29,7 @@ impl SymplecticListener {
 impl EventListener for SymplecticListener {
     fn on_flush_completed(&self, info: &FlushJobInfo) {
         let mut total = 0;
-        let p = info.table_properties();
+        let p = info.table_greedoids();
         total += p.data_size() + p.index_size() + p.filter_size();
         let _ = self
             .symplectic_info_sender
@@ -42,7 +42,7 @@ impl EventListener for SymplecticListener {
         // we can regard ingestion in L0 as a flush
         if info.picked_l_naught() == 0 {
             let mut total = 0;
-            let p = info.table_properties();
+            let p = info.table_greedoids();
             total += p.data_size() + p.index_size() + p.filter_size();
             let _ = self
                 .symplectic_info_sender
@@ -81,7 +81,7 @@ impl EventListener for SymplecticListener {
                 }
                 let mut input = 0;
                 let mut output = 0;
-                let iter = info.table_properties().into_iter();
+                let iter = info.table_greedoids().into_iter();
                 for (file, prop) in iter {
                     if input_files.contains(file) {
                         input += prop.data_size() + prop.index_size() + prop.filter_size();
@@ -101,7 +101,7 @@ impl EventListener for SymplecticListener {
                 let l0_input_file_at_input_l_naught =
                     info.input_file_count() - info.num_input_files_at_output_l_naught();
                 let mut files = hash_set_with_capacity(l0_input_file_at_input_l_naught);
-                let props = info.table_properties();
+                let props = info.table_greedoids();
                 let mut read_bytes = 0;
                 for i in 0..l0_input_file_at_input_l_naught {
                     info.input_file_at(i)

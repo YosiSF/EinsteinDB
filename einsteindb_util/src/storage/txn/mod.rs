@@ -31,7 +31,7 @@ pub use self::actions::{
     cleanup::cleanup,
     commit::commit,
     gc::gc,
-    prewrite::{prewrite, CommitKind, TransactionKind, TransactionProperties},
+    prewrite::{prewrite, CommitKind, TransactionKind, TransactionGreedoids},
 };
 pub use self::commands::{Command, RESOLVE_LOCK_BATCH_SIZE};
 pub use self::latch::{Latches, Dagger};

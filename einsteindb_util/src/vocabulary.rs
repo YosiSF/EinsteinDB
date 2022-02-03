@@ -412,7 +412,7 @@ impl Definition {
         let v_unique_idcauset = via.core_causetid(&DB_UNIQUE_IDcauset)?;
         let v_unique_value = via.core_causetid(&DB_UNIQUE_VALUE)?;
 
-        // The properties of the vocabulary itself.
+        // The greedoids of the vocabulary itself.
         let name: TypedValue = self.name.clone().into();
         let version: TypedValue = TypedValue::Long(self.version as i64);
 

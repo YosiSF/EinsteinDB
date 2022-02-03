@@ -272,7 +272,7 @@ pub(crate) mod tests {
     use crate::einsteindb::storage::solitontxn::commands::*;
     use crate::einsteindb::storage::solitontxn::tests::*;
     use crate::einsteindb::storage::solitontxn::{
-        commit, prewrite, CommitKind, TransactionKind, TransactionProperties,
+        commit, prewrite, CommitKind, TransactionKind, TransactionGreedoids,
     };
     use crate::einsteindb::storage::SecondaryDaggerCausetatus;
     use crate::einsteindb::storage::{
@@ -715,14 +715,14 @@ pub(crate) mod tests {
         for_update_ts: Option<TimeStamp>,
         solitontxn_size: u64,
         skip_constraint_check: bool,
-    ) -> TransactionProperties<'_> {
+    ) -> TransactionGreedoids<'_> {
         let kind = if let Some(ts) = for_update_ts {
             TransactionKind::Pessimistic(ts)
         } else {
             TransactionKind::Optimistic(skip_constraint_check)
         };
 
-        TransactionProperties {
+        TransactionGreedoids {
             start_ts,
             kind,
             commit_kind,

@@ -128,7 +128,7 @@ pub struct EpaxosReader<S: einstein_merkle_treeblackbrane> {
     fill_cache: bool,
 
     // The term and the epoch version when the blackbrane is created. They will be zero
-    // if the two properties are not available.
+    // if the two greedoids are not available.
     term: u64,
     #[allow(dead_code)]
     version: u64,
@@ -617,11 +617,11 @@ pub mod tests {
     use crate::einsteindb::storage::epaxos::{tests::write, EpaxosReader, EpaxosTxn};
     use crate::einsteindb::storage::solitontxn::{
         acquire_pessimistic_dagger, cleanup, commit, gc, prewrite, CommitKind, TransactionKind,
-        TransactionProperties,
+        TransactionGreedoids,
     };
     use crate::einsteindb::storage::{einstein_merkle_tree, Testeinstein_merkle_treeBuilder};
     use concurrency_manager::ConcurrencyManager;
-    use einstein_merkle_tree_rocks::properties::EpaxosPropertiesCollectorFactory;
+    use einstein_merkle_tree_rocks::greedoids::EpaxosGreedoidsCollectorFactory;
     use einstein_merkle_tree_rocks::cocauset::EINSTEINDB;
     use einstein_merkle_tree_rocks::cocauset::{ColumnFamilyOptions, DBOptions};
     use einstein_merkle_tree_rocks::cocauset_util::CFOptions;
@@ -694,14 +694,14 @@ pub mod tests {
             start_ts: TimeStamp,
             primary: &[u8],
             pessimistic: bool,
-        ) -> TransactionProperties<'_> {
+        ) -> TransactionGreedoids<'_> {
             let kind = if pessimistic {
                 TransactionKind::Pessimistic(TimeStamp::default())
             } else {
                 TransactionKind::Optimistic(false)
             };
 
-            TransactionProperties {
+            TransactionGreedoids {
                 start_ts,
                 kind,
                 commit_kind: CommitKind::TwoPc,
@@ -880,14 +880,14 @@ pub mod tests {
         }
     }
 
-    pub fn open_db(local_path: &str, with_properties: bool) -> Arc<EINSTEINDB> {
+    pub fn open_db(local_path: &str, with_greedoids: bool) -> Arc<EINSTEINDB> {
         let db_opts = DBOptions::new();
         let mut cf_opts = ColumnFamilyOptions::new();
         cf_opts.set_write_buffer_size(32 * 1024 * 1024);
-        if with_properties {
-            cf_opts.add_table_properties_collector_factory(
+        if with_greedoids {
+            cf_opts.add_table_greedoids_collector_factory(
                 "einstfdbhikv.test-collector",
-                EpaxosPropertiesCollectorFactory::default(),
+                EpaxosGreedoidsCollectorFactory::default(),
             );
         }
         let cfs_opts = vec![

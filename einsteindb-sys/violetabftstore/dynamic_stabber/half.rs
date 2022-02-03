@@ -149,7 +149,7 @@ mod tests {
     use tempfile::Builder;
 
     use crate::store::{SplitCheckRunner, SplitCheckTask};
-    use foundationeinsteindb::properties::RangePropertiesCollectorFactory;
+    use foundationeinsteindb::greedoids::RangeGreedoidsCollectorFactory;
     use einsteindb_util::config::ReadableSize;
     use einsteindb_util::escape;
     use einsteindb_util::worker::Runnable;
@@ -168,8 +168,8 @@ mod tests {
             .iter()
             .map(|brane| {
                 let mut cf_opts = BraneOptions::new();
-                let f = Box::new(RangePropertiesCollectorFactory::default());
-                cf_opts.add_table_properties_collector_factory("einsteindb.size-collector", f);
+                let f = Box::new(RangeGreedoidsCollectorFactory::default());
+                cf_opts.add_table_greedoids_collector_factory("einsteindb.size-collector", f);
                 BRANEOptions::new(brane, cf_opts)
             })
             .collect();
@@ -226,8 +226,8 @@ mod tests {
         let einsteindb_opts = einsteindbOptions::new();
         let mut cf_opts = BraneOptions::new();
         cf_opts.set_level_zero_file_num_compaction_trigger(10);
-        let f = Box::new(RangePropertiesCollectorFactory::default());
-        cf_opts.add_table_properties_collector_factory("einsteindb.size-collector", f);
+        let f = Box::new(RangeGreedoidsCollectorFactory::default());
+        cf_opts.add_table_greedoids_collector_factory("einsteindb.size-collector", f);
         let cfs_opts = LARGE_branes
             .iter()
             .map(|brane| BRANEOptions::new(brane, cf_opts.clone()))

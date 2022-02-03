@@ -3,10 +3,10 @@
 use einsteindb_util::codec::{Error, Result};
 use einsteindb_util::codec::number::{self, NumberEncoder};
 use einsteindb_util::info;
-use fdb_traits::{MvccProperties, Range};
+use fdb_traits::{MvccGreedoids, Range};
 use foundationdb::{
-    DBEntryType, TablePropertiesCollector, TablePropertiesCollectorFactory, TitanBlobIndex,
-    UserCollectedProperties,
+    DBEntryType, TableGreedoidsCollector, TableGreedoidsCollectorFactory, TitanBlobIndex,
+    UserCollectedGreedoids,
 };
 use std::cmp;
 use std::collections::HashMap;
@@ -15,8 +15,8 @@ use std::ops::{Deref, DerefMut};
 use std::u64;
 use txn_types::{Key, Write, WriteType};
 
-use crate::decode_properties::{DecodeProperties, IndexHandle, IndexHandles};
-use crate::mvcc_properties::*;
+use crate::decode_greedoids::{DecodeGreedoids, IndexHandle, IndexHandles};
+use crate::mvcc_greedoids::*;
 
 const PROP_TOTAL_SIZE: &str = "einsteindb.total_size";
 const PROP_SIZE_INDEX: &str = "einsteindb.size_index";
@@ -37,45 +37,45 @@ fn get_entry_size(value: &[u8], entry_type: DBEntryType) -> std::result::Result<
 
 // Deprecated. Only for compatible issue from v2.0 or older version.
 #[derive(Debug, Default)]
-pub struct SizeProperties {
+pub struct SizeGreedoids {
     pub total_size: u64,
     pub index_handles: IndexHandles,
 }
 
-impl SizeProperties {
-    pub fn encode(&self) -> UserProperties {
-        let mut props = UserProperties::new();
+impl SizeGreedoids {
+    pub fn encode(&self) -> UserGreedoids {
+        let mut props = UserGreedoids::new();
         props.encode_u64(PROP_TOTAL_SIZE, self.total_size);
         props.encode_handles(PROP_SIZE_INDEX, &self.index_handles);
         props
     }
 
-    pub fn decode<T: DecodeProperties>(props: &T) -> Result<SizeProperties> {
-        Ok(SizeProperties {
+    pub fn decode<T: DecodeGreedoids>(props: &T) -> Result<SizeGreedoids> {
+        Ok(SizeGreedoids {
             total_size: props.decode_u64(PROP_TOTAL_SIZE)?,
             index_handles: props.decode_handles(PROP_SIZE_INDEX)?,
         })
     }
 }
 
-pub struct UserProperties(pub HashMap<Vec<u8>, Vec<u8>>);
+pub struct UserGreedoids(pub HashMap<Vec<u8>, Vec<u8>>);
 
-impl Deref for UserProperties {
+impl Deref for UserGreedoids {
     type Target = HashMap<Vec<u8>, Vec<u8>>;
     fn deref(&self) -> &HashMap<Vec<u8>, Vec<u8>> {
         &self.0
     }
 }
 
-impl DerefMut for UserProperties {
+impl DerefMut for UserGreedoids {
     fn deref_mut(&mut self) -> &mut HashMap<Vec<u8>, Vec<u8>> {
         &mut self.0
     }
 }
 
-impl UserProperties {
-    pub fn new() -> UserProperties {
-        UserProperties(HashMap::new())
+impl UserGreedoids {
+    pub fn new() -> UserGreedoids {
+        UserGreedoids(HashMap::new())
     }
 
     fn encode(&mut self, name: &str, value: Vec<u8>) {
@@ -93,13 +93,13 @@ impl UserProperties {
     }
 }
 
-impl Default for UserProperties {
+impl Default for UserGreedoids {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl DecodeProperties for UserProperties {
+impl DecodeGreedoids for UserGreedoids {
     fn decode(&self, k: &str) -> Result<&[u8]> {
         match self.0.get(k.as_bytes()) {
             Some(v) => Ok(v.as_slice()),
@@ -110,9 +110,9 @@ impl DecodeProperties for UserProperties {
 
 // FIXME: This is a temporary hack to implement a foreign trait on a foreign
 // type until the einstein_merkle_tree abstraction situation is straightened out.
-pub struct UserCollectedPropertiesDecoder<'a>(pub &'a UserCollectedProperties);
+pub struct UserCollectedGreedoidsDecoder<'a>(pub &'a UserCollectedGreedoids);
 
-impl<'a> DecodeProperties for UserCollectedPropertiesDecoder<'a> {
+impl<'a> DecodeGreedoids for UserCollectedGreedoidsDecoder<'a> {
     fn decode(&self, k: &str) -> Result<&[u8]> {
         match self.0.get(k.as_bytes()) {
             Some(v) => Ok(v),
@@ -134,11 +134,11 @@ pub struct RangeOffsets {
 }
 
 #[derive(Debug, Default)]
-pub struct RangeProperties {
+pub struct RangeGreedoids {
     pub offsets: Vec<(Vec<u8>, RangeOffsets)>,
 }
 
-impl RangeProperties {
+impl RangeGreedoids {
     pub fn get(&self, key: &[u8]) -> &RangeOffsets {
         let idx = self
             .offsets
@@ -147,7 +147,7 @@ impl RangeProperties {
         &self.offsets[idx].1
     }
 
-    pub fn encode(&self) -> UserProperties {
+    pub fn encode(&self) -> UserGreedoids {
         let mut buf = Vec::with_capacity(1024);
         for (k, offsets) in &self.offsets {
             buf.encode_u64(k.len() as u64).unwrap();
@@ -155,24 +155,24 @@ impl RangeProperties {
             buf.encode_u64(offsets.size).unwrap();
             buf.encode_u64(offsets.keys).unwrap();
         }
-        let mut props = UserProperties::new();
+        let mut props = UserGreedoids::new();
         props.encode(PROP_RANGE_INDEX, buf);
         props
     }
 
-    pub fn decode<T: DecodeProperties>(props: &T) -> Result<RangeProperties> {
-        match RangeProperties::decode_from_range_properties(props) {
+    pub fn decode<T: DecodeGreedoids>(props: &T) -> Result<RangeGreedoids> {
+        match RangeGreedoids::decode_from_range_greedoids(props) {
             Ok(res) => return Ok(res),
             Err(e) => info!(
-                "decode to RangeProperties failed with err: {:?}, try to decode to SizeProperties, maybe upgrade from v2.0 or older version?",
+                "decode to RangeGreedoids failed with err: {:?}, try to decode to SizeGreedoids, maybe upgrade from v2.0 or older version?",
                 e
             ),
         }
-        SizeProperties::decode(props).map(|res| res.into())
+        SizeGreedoids::decode(props).map(|res| res.into())
     }
 
-    fn decode_from_range_properties<T: DecodeProperties>(props: &T) -> Result<RangeProperties> {
-        let mut res = RangeProperties::default();
+    fn decode_from_range_greedoids<T: DecodeGreedoids>(props: &T) -> Result<RangeGreedoids> {
+        let mut res = RangeGreedoids::default();
         let mut buf = props.decode(PROP_RANGE_INDEX)?;
         while !buf.is_empty() {
             let klen = number::decode_u64(&mut buf)?;
@@ -268,9 +268,9 @@ impl RangeProperties {
     }
 }
 
-impl From<SizeProperties> for RangeProperties {
-    fn from(p: SizeProperties) -> RangeProperties {
-        let mut res = RangeProperties::default();
+impl From<SizeGreedoids> for RangeGreedoids {
+    fn from(p: SizeGreedoids) -> RangeGreedoids {
+        let mut res = RangeGreedoids::default();
         for (key, size_handle) in p.index_handles.into_map() {
             let range = RangeOffsets {
                 size: size_handle.offset,
@@ -282,8 +282,8 @@ impl From<SizeProperties> for RangeProperties {
     }
 }
 
-pub struct RangePropertiesCollector {
-    props: RangeProperties,
+pub struct RangeGreedoidsCollector {
+    props: RangeGreedoids,
     last_offsets: RangeOffsets,
     last_key: Vec<u8>,
     cur_offsets: RangeOffsets,
@@ -291,10 +291,10 @@ pub struct RangePropertiesCollector {
     prop_keys_index_distance: u64,
 }
 
-impl Default for RangePropertiesCollector {
+impl Default for RangeGreedoidsCollector {
     fn default() -> Self {
-        RangePropertiesCollector {
-            props: RangeProperties::default(),
+        RangeGreedoidsCollector {
+            props: RangeGreedoids::default(),
             last_offsets: RangeOffsets::default(),
             last_key: vec![],
             cur_offsets: RangeOffsets::default(),
@@ -304,9 +304,9 @@ impl Default for RangePropertiesCollector {
     }
 }
 
-impl RangePropertiesCollector {
+impl RangeGreedoidsCollector {
     pub fn new(prop_size_index_distance: u64, prop_keys_index_distance: u64) -> Self {
-        RangePropertiesCollector {
+        RangeGreedoidsCollector {
             prop_size_index_distance,
             prop_keys_index_distance,
             ..Default::default()
@@ -327,7 +327,7 @@ impl RangePropertiesCollector {
     }
 }
 
-impl TablePropertiesCollector for RangePropertiesCollector {
+impl TableGreedoidsCollector for RangeGreedoidsCollector {
     fn add(&mut self, key: &[u8], value: &[u8], entry_type: DBEntryType, _: u64, _: u64) {
         // size
         let size = match get_entry_size(value, entry_type) {
@@ -357,29 +357,29 @@ impl TablePropertiesCollector for RangePropertiesCollector {
     }
 }
 
-pub struct RangePropertiesCollectorFactory {
+pub struct RangeGreedoidsCollectorFactory {
     pub prop_size_index_distance: u64,
     pub prop_keys_index_distance: u64,
 }
 
-impl Default for RangePropertiesCollectorFactory {
+impl Default for RangeGreedoidsCollectorFactory {
     fn default() -> Self {
-        RangePropertiesCollectorFactory {
+        RangeGreedoidsCollectorFactory {
             prop_size_index_distance: DEFAULT_PROP_SIZE_INDEX_DISTANCE,
             prop_keys_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
         }
     }
 }
 
-impl TablePropertiesCollectorFactory<RangePropertiesCollector> for RangePropertiesCollectorFactory {
-    fn create_table_properties_collector(&mut self, _: u32) -> RangePropertiesCollector {
-        RangePropertiesCollector::new(self.prop_size_index_distance, self.prop_keys_index_distance)
+impl TableGreedoidsCollectorFactory<RangeGreedoidsCollector> for RangeGreedoidsCollectorFactory {
+    fn create_table_greedoids_collector(&mut self, _: u32) -> RangeGreedoidsCollector {
+        RangeGreedoidsCollector::new(self.prop_size_index_distance, self.prop_keys_index_distance)
     }
 }
 
 /// Can only be used for write NAMESPACED.
-pub struct MvccPropertiesCollector {
-    props: MvccProperties,
+pub struct MvccGreedoidsCollector {
+    props: MvccGreedoids,
     last_row: Vec<u8>,
     num_errors: u64,
     row_versions: u64,
@@ -387,10 +387,10 @@ pub struct MvccPropertiesCollector {
     row_index_handles: IndexHandles,
 }
 
-impl MvccPropertiesCollector {
-    fn new() -> MvccPropertiesCollector {
-        MvccPropertiesCollector {
-            props: MvccProperties::new(),
+impl MvccGreedoidsCollector {
+    fn new() -> MvccGreedoidsCollector {
+        MvccGreedoidsCollector {
+            props: MvccGreedoids::new(),
             last_row: Vec::new(),
             num_errors: 0,
             row_versions: 0,
@@ -400,7 +400,7 @@ impl MvccPropertiesCollector {
     }
 }
 
-impl TablePropertiesCollector for MvccPropertiesCollector {
+impl TableGreedoidsCollector for MvccGreedoidsCollector {
     fn add(&mut self, key: &[u8], value: &[u8], entry_type: DBEntryType, _: u64, _: u64) {
         // TsFilter filters Causet based on max_ts and min_ts during iterating.
         // To prevent seeing outdated (GC) records, we should consider
@@ -425,7 +425,7 @@ impl TablePropertiesCollector for MvccPropertiesCollector {
         self.props.min_ts = cmp::min(self.props.min_ts, ts);
         self.props.max_ts = cmp::max(self.props.max_ts, ts);
         if entry_type == DBEntryType::Delete {
-            // Empty value for delete entry type, skip following properties.
+            // Empty value for delete entry type, skip following greedoids.
             return;
         }
 
@@ -477,7 +477,7 @@ impl TablePropertiesCollector for MvccPropertiesCollector {
             self.row_index_handles
                 .insert(self.last_row.clone(), self.cur_index_handle.clone());
         }
-        let mut res = FdbMvccProperties::encode(&self.props);
+        let mut res = FdbMvccGreedoids::encode(&self.props);
         res.encode_u64(PROP_NUM_ERRORS, self.num_errors);
         res.encode_handles(PROP_ROWS_INDEX, &self.row_index_handles);
         res.0
@@ -486,11 +486,11 @@ impl TablePropertiesCollector for MvccPropertiesCollector {
 
 /// Can only be used for write NAMESPACED.
 #[derive(Default)]
-pub struct MvccPropertiesCollectorFactory {}
+pub struct MvccGreedoidsCollectorFactory {}
 
-impl TablePropertiesCollectorFactory<MvccPropertiesCollector> for MvccPropertiesCollectorFactory {
-    fn create_table_properties_collector(&mut self, _: u32) -> MvccPropertiesCollector {
-        MvccPropertiesCollector::new()
+impl TableGreedoidsCollectorFactory<MvccGreedoidsCollector> for MvccGreedoidsCollectorFactory {
+    fn create_table_greedoids_collector(&mut self, _: u32) -> MvccGreedoidsCollector {
+        MvccGreedoidsCollector::new()
     }
 }
 
@@ -501,7 +501,7 @@ pub fn get_range_entries_and_versions(
     end: &[u8],
 ) -> Option<(u64, u64)> {
     let range = Range::new(start, end);
-    let collection = match einstein_merkle_tree.get_properties_of_tables_in_range(namespaced, &[range]) {
+    let collection = match einstein_merkle_tree.get_greedoids_of_tables_in_range(namespaced, &[range]) {
         Ok(v) => v,
         Err(_) => return None,
     };
@@ -510,11 +510,11 @@ pub fn get_range_entries_and_versions(
         return None;
     }
 
-    // Aggregate total MVCC properties and total number entries.
-    let mut props = MvccProperties::new();
+    // Aggregate total MVCC greedoids and total number entries.
+    let mut props = MvccGreedoids::new();
     let mut num_entries = 0;
     for (_, v) in collection.iter() {
-        let causet_model = match FdbMvccProperties::decode(v.user_collected_properties()) {
+        let causet_model = match FdbMvccGreedoids::decode(v.user_collected_greedoids()) {
             Ok(v) => v,
             Err(_) => return None,
         };
@@ -536,14 +536,14 @@ mod tests {
 
     use crate::compat::Compat;
     use crate::raw::{ColumnFamilyOptions, DBOptions, Writable};
-    use crate::raw::{DBEntryType, TablePropertiesCollector};
+    use crate::raw::{DBEntryType, TableGreedoidsCollector};
     use crate::raw_util::NAMESPACEDOptions;
 
     use super::*;
 
     #[allow(clippy::many_single_char_names)]
     #[test]
-    fn test_range_properties() {
+    fn test_range_greedoids() {
         let cases = [
             ("a", 0, 1),
             // handle "a": size(size = 1, offset = 1),keys(1,1)
@@ -569,7 +569,7 @@ mod tests {
             // handle　"o": keys = 1, offset = 12 + 2*DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE
         ];
 
-        let mut collector = RangePropertiesCollector::default();
+        let mut collector = RangeGreedoidsCollector::default();
         for &(k, vlen, count) in &cases {
             let v = vec![0; vlen as usize];
             for _ in 0..count {
@@ -580,9 +580,9 @@ mod tests {
             let v = vec![0; vlen as usize];
             collector.add(k.as_bytes(), &v, DBEntryType::Other, 0, 0);
         }
-        let result = UserProperties(collector.finish());
+        let result = UserGreedoids(collector.finish());
 
-        let props = RangeProperties::decode(&result).unwrap();
+        let props = RangeGreedoids::decode(&result).unwrap();
         assert_eq!(props.smallest_key().unwrap(), cases[0].0.as_bytes());
         assert_eq!(
             props.largest_key().unwrap(),
@@ -621,7 +621,7 @@ mod tests {
             ("g", "g", i, i, 0),
         ];
         for &(start, end, end_idx, start_idx, count) in &cases {
-            let props = RangeProperties::decode(&result).unwrap();
+            let props = RangeGreedoids::decode(&result).unwrap();
             let size = end_idx.size - start_idx.size;
             assert_eq!(
                 props.get_approximate_size_in_range(start.as_bytes(), end.as_bytes()),
@@ -642,7 +642,7 @@ mod tests {
     }
 
     #[test]
-    fn test_range_properties_with_blob_index() {
+    fn test_range_greedoids_with_blob_index() {
         let cases = [
             ("a", 0),
             // handle "a": size(size = 1, offset = 1),keys(1,1)
@@ -664,7 +664,7 @@ mod tests {
         let handles = ["a", "e", "i", "k"];
 
         let mut rng = rand::thread_rng();
-        let mut collector = RangePropertiesCollector::default();
+        let mut collector = RangeGreedoidsCollector::default();
         let mut extra_value_size: u64 = 0;
         for &(k, vlen) in &cases {
             if handles.contains(&k) || rng.gen_range(0..2) == 0 {
@@ -679,9 +679,9 @@ mod tests {
                 collector.add(k.as_bytes(), &v, DBEntryType::BlobIndex, 0, 0);
             }
         }
-        let result = UserProperties(collector.finish());
+        let result = UserGreedoids(collector.finish());
 
-        let props = RangeProperties::decode(&result).unwrap();
+        let props = RangeGreedoids::decode(&result).unwrap();
         assert_eq!(props.smallest_key().unwrap(), cases[0].0.as_bytes());
         assert_eq!(
             props.largest_key().unwrap(),
@@ -707,9 +707,9 @@ mod tests {
         let db_opts = DBOptions::new();
         let mut namespaced_opts = ColumnFamilyOptions::new();
         namespaced_opts.set_l_naught_zero_file_num_jet_bundle_trigger(10);
-        namespaced_opts.add_table_properties_collector_factory(
-            "einsteindb.causet_model-properties-collector",
-            MvccPropertiesCollectorFactory::default(),
+        namespaced_opts.add_table_greedoids_collector_factory(
+            "einsteindb.causet_model-greedoids-collector",
+            MvccGreedoidsCollectorFactory::default(),
         );
         let namespaceds_opts = LARGE_NAMESPACEDS
             .iter()
@@ -745,7 +745,7 @@ mod tests {
     }
 
     #[test]
-    fn test_mvcc_properties() {
+    fn test_mvcc_greedoids() {
         let cases = [
             ("ab", 2, WriteType::Put, DBEntryType::Put),
             ("ab", 1, WriteType::Delete, DBEntryType::Put),
@@ -757,7 +757,7 @@ mod tests {
             ("ef", 6, WriteType::Put, DBEntryType::Delete),
             ("gh", 7, WriteType::Delete, DBEntryType::Put),
         ];
-        let mut collector = MvccPropertiesCollector::new();
+        let mut collector = MvccGreedoidsCollector::new();
         for &(key, ts, write_type, entry_type) in &cases {
             let ts = ts.into();
             let k = Key::from_raw(key.as_bytes()).append_ts(ts);
@@ -765,9 +765,9 @@ mod tests {
             let v = Write::new(write_type, ts, None).as_ref().to_bytes();
             collector.add(&k, &v, entry_type, 0, 0);
         }
-        let result = UserProperties(collector.finish());
+        let result = UserGreedoids(collector.finish());
 
-        let props = FdbMvccProperties::decode(&result).unwrap();
+        let props = FdbMvccGreedoids::decode(&result).unwrap();
         assert_eq!(props.min_ts, 1.into());
         assert_eq!(props.max_ts, 7.into());
         assert_eq!(props.num_rows, 4);
@@ -777,7 +777,7 @@ mod tests {
     }
 
     #[bench]
-    fn bench_mvcc_properties(b: &mut Bencher) {
+    fn bench_mvcc_greedoids(b: &mut Bencher) {
         let ts = 1.into();
         let num_entries = 100;
         let mut entries = Vec::new();
@@ -789,7 +789,7 @@ mod tests {
             entries.push((k, w.as_ref().to_bytes()));
         }
 
-        let mut collector = MvccPropertiesCollector::new();
+        let mut collector = MvccGreedoidsCollector::new();
         b.iter(|| {
             for &(ref k, ref v) in &entries {
                 collector.add(k, v, DBEntryType::Put, 0, 0);

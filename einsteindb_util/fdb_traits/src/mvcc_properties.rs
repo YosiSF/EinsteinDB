@@ -4,7 +4,7 @@ use std::cmp;
 use txn_types::TimeStamp;
 
 #[derive(Clone, Debug)]
-pub struct MvccProperties {
+pub struct MvccGreedoids {
     pub min_ts: TimeStamp,     // The minimal timestamp.
     pub max_ts: TimeStamp,     // The maximal timestamp.
     pub num_rows: u64,         // The number of rows.
@@ -14,9 +14,9 @@ pub struct MvccProperties {
     pub max_row_versions: u64, // The maximal number of MVCC versions of a single row.
 }
 
-impl MvccProperties {
-    pub fn new() -> MvccProperties {
-        MvccProperties {
+impl MvccGreedoids {
+    pub fn new() -> MvccGreedoids {
+        MvccGreedoids {
             min_ts: TimeStamp::max(),
             max_ts: TimeStamp::zero(),
             num_rows: 0,
@@ -27,7 +27,7 @@ impl MvccProperties {
         }
     }
 
-    pub fn add(&mut self, other: &MvccProperties) {
+    pub fn add(&mut self, other: &MvccGreedoids) {
         self.min_ts = cmp::min(self.min_ts, other.min_ts);
         self.max_ts = cmp::max(self.max_ts, other.max_ts);
         self.num_rows += other.num_rows;
@@ -38,18 +38,18 @@ impl MvccProperties {
     }
 }
 
-impl Default for MvccProperties {
+impl Default for MvccGreedoids {
     fn default() -> Self {
         Self::new()
     }
 }
 
-pub trait MvccPropertiesExt {
-    fn get_mvcc_properties_namespaced(
+pub trait MvccGreedoidsExt {
+    fn get_mvcc_greedoids_namespaced(
         &self,
         namespaced: &str,
         safe_point: TimeStamp,
         start_key: &[u8],
         end_key: &[u8],
-    ) -> Option<MvccProperties>;
+    ) -> Option<MvccGreedoids>;
 }

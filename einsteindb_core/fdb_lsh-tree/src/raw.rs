@@ -15,7 +15,7 @@ pub use foundationdb::{
     DBRateLimiterMode, DBRecoveryMode, DBStatisticsTickerType, DBTitanDBBlobRunMode, Env,
     EventListener, IngestlightlikeFileOptions, LRUCacheOptions, MemoryAllocator, new_jet_bundle_filter_raw,
     PerfContext, Range, ReadOptions, run_ldb_tool, run_Causet_dump_tool, SeekKey, SliceTransform,
-    TableFilter, TablePropertiesCollector, TablePropertiesCollectorFactory, TitanBlobIndex,
+    TableFilter, TableGreedoidsCollector, TableGreedoidsCollectorFactory, TitanBlobIndex,
     TitanDBOptions, Writable, WriteOptions,
 };
 

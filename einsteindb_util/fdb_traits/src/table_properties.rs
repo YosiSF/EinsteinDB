@@ -2,27 +2,27 @@
 
 use crate::{Range, Result};
 
-pub trait UserCollectedProperties {
+pub trait UserCollectedGreedoids {
     fn get(&self, index: &[u8]) -> Option<&[u8]>;
     fn approximate_size_and_keys(&self, start: &[u8], end: &[u8]) -> Option<(usize, usize)>;
 }
 
-pub trait TablePropertiesCollection {
-    type UserCollectedProperties: UserCollectedProperties;
+pub trait TableGreedoidsCollection {
+    type UserCollectedGreedoids: UserCollectedGreedoids;
 
-    /// Iterator all `UserCollectedProperties`, break if `f` returns false.
-    fn iter_user_collected_properties<F>(&self, f: F)
+    /// Iterator all `UserCollectedGreedoids`, break if `f` returns false.
+    fn iter_user_collected_greedoids<F>(&self, f: F)
     where
-        F: FnMut(&Self::UserCollectedProperties) -> bool;
+        F: FnMut(&Self::UserCollectedGreedoids) -> bool;
 }
 
-pub trait TablePropertiesExt {
-    type TablePropertiesCollection: TablePropertiesCollection;
+pub trait TableGreedoidsExt {
+    type TableGreedoidsCollection: TableGreedoidsCollection;
 
     /// Collection of tables covering the given range.
-    fn table_properties_collection(
+    fn table_greedoids_collection(
         &self,
         namespaced: &str,
         ranges: &[Range<'_>],
-    ) -> Result<Self::TablePropertiesCollection>;
+    ) -> Result<Self::TableGreedoidsCollection>;
 }
