@@ -7,22 +7,22 @@
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
-
-extern crate failure;
-extern crate indexmap;
-extern crate itertools;
-#[macro_use] extern crate lazy_static;
-#[macro_use] extern crate log;
+//
+//extern crate failure;
+//extern crate indexmap;
+//extern crate itertools;
+//#[macro_use] extern crate lazy_static;
+//#[macro_use] extern crate log;
 
 #[cfg(feature = "syncable")]
 #[macro_use] extern crate serde_derive;
 
-extern crate petgraph;
+//extern crate petgraph;
 extern crate rusqlite;
 extern crate tabwriter;
 extern crate time;
-#[macro_use] extern crate edn;
-#[macro_use] extern crate einsteindb_core;
+extern crate edn;
+extern crate einsteindb_core;
 extern crate einsteindb_traits;
 #[macro_use] extern crate core_traits;
 extern crate einstai_BerolinaSQL;
@@ -45,13 +45,13 @@ mod bootstrap;
 pub mod causetids;
 pub mod internal_types;    // pub because we need them for building causets programmatically.
 mod spacetime;
-mod topograph;
+//mod topograph;
 pub mod tx_observer;
 mod watcher;
 pub mod timelines;
 mod tx;
 mod tx_checking;
-pub mod types;
+//pub mod types;
 mod upsert_resolution;
 
 // Export these for reference from sync code and tests.
