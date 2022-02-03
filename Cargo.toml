@@ -1,4 +1,8 @@
 [package]
+autobins = false
+autoexamples = false
+autotests = false
+autobenches = false
 name = "EinsteinDB"
 version = "1.1.1-alpha"
 authors = ["The EinsteinDB Authors"]
@@ -8,30 +12,6 @@ repository = "https://github.com/YosiSF/EinsteinDB"
 readme = "README.md"
 edition = "2018"
 publish = true
-
-cloud-aws = [
-  "encryption_export/cloud-aws",
-  "Causet_importer/cloud-aws",
-]
-cloud-gcp = [
-  "encryption_export/cloud-gcp",
-  "Causet_importer/cloud-gcp",
-]
-cloud-azure = [
-  "encryption_export/cloud-azure",
-  " causet_importer/cloud-azure",
-]
-testexport = ["violetabfttimelike_store/testexport"]
-test-einstein_merkle_trees-foundationdb = [
-  "einstein_merkle_tree_test/test-einstein_merkle_trees-foundationdb",
-]
-test-einstein_merkle_trees-panic = [
-  "einstein_merkle_tree_test/test-einstein_merkle_trees-panic",
-]
-cloud-timelike_storage-grpc = ["Causet_importer/cloud-timelike_storage-grpc"]
-cloud-timelike_storage-dylib = ["Causet_importer/cloud-timelike_storage-dylib"]
-
-
 
 [lib]
 name = "einsteindb"
@@ -180,16 +160,7 @@ procinfo = { git = "https://github.com/einsteindb/procinfo-rs", rev = "5125fc1a6
 # ekvproto = {git = "https://github.com/your_github_id/ekvproto", branch="your_branch"}
 
 [workspace]
-# See https://github.com/rust-lang/rfcs/blob/master/text/2957-cargo-features2.md
-# Without resolver = 2, using `cargo build --features x` to build `cmd`
-# will _not_ propagate the feature `x` into `cmd`'s direct dependencies.
-resolver = "2"
-members = [
-  "fuzz",
-  "fuzz/fuzzer-afl",
-  "fuzz/fuzzer-libfuzzer",
-  "fuzz/fuzzer-honggfuzz",
-  "tests",
+members = [ 
   "cmd/einsteindb-server",
   "cmd/einsteindb-ctl",
   "einsteindb_core/test_backup",
