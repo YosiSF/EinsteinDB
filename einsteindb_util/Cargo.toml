@@ -1,5 +1,5 @@
 [package]
-name = "einsteindb"
+name = "einsteindb_util"
 version = "0.0.1"
 workspace = ".."
 
@@ -14,12 +14,13 @@ indexmap = "1"
 itertools = "0.10.3"
 lazy_static = "1.4.0"
 log = "0.4.14"
-ordered-float = "0.5"
+ordered-float = "2.10.0"
 time = "0.3.6"
 petgraph = "0.6.0"
 serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
 serde_derive = { version = "1.0", optional = true }
+einsteindb_traits = { local_path = "../einsteindb-traits" }
 
 [dependencies.rusqlite]
 version = "0.26.3"
@@ -34,9 +35,6 @@ local_path = "../core"
 [dependencies.core_traits]
 local_path = "../core-traits"
 
-[dependencies.einsteindb_traits]
-local_path = "../einsteindb-traits"
-
 [dependencies.einstai_BerolinaSQL]
 local_path = "../BerolinaSQL"
 
@@ -45,4 +43,4 @@ local_path = "../BerolinaSQL"
 version = "1.0.3"
 
 [dev-dependencies]
-env_logger = "0.5"
+env_logger = "0.9.0"

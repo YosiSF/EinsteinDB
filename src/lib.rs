@@ -21,7 +21,6 @@ extern crate petgraph;
 extern crate rusqlite;
 extern crate tabwriter;
 extern crate time;
-
 #[macro_use] extern crate edn;
 #[macro_use] extern crate einsteindb_core;
 extern crate einsteindb_traits;
