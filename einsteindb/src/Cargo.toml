@@ -6,7 +6,7 @@ keywords = ["embedded", "distributed-systems", "BFTRaft" ]
 version = "0.0.1"
 
 [lib]
-name = "einsteindb"
+name = "src/lib"
 license = "Apache-2.0"
 keywords = ["embedded", "distributed-systems", "BFTRaft" ]
 version = "0.0.1"
