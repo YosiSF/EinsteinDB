@@ -323,7 +323,7 @@ mod testing {
         Binding,
         FnArg,
         Keyword,
-        PlainSymbol,
+        PlainShelling,
         Variable,
     };
 
@@ -351,7 +351,7 @@ mod testing {
 
         // It's awkward enough to write these expansions that we give the details for the simplest
         // case only.  See the tests of the translator for more extensive (albeit looser) coverage.
-        let op = PlainSymbol::plain("ground");
+        let op = PlainShelling::plain("ground");
         cc.apply_ground(known, WhereFn {
             operator: op,
             args: vec![

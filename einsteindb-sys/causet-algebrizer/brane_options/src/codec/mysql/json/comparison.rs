@@ -81,7 +81,7 @@ impl<'a> PartialEq for JsonRef<'a> {
     }
 }
 impl<'a> PartialOrd for JsonRef<'a> {
-    // See `CompareBinary` in Milevaeinsteindb `types/json/binary_functions.go`
+    // See `CompareBinary` in MEDB `types/json/binary_functions.go`
     fn partial_cmp(&self, right: &JsonRef<'_>) -> Option<Ordering> {
         let precedence_diff = self.get_precedence() - right.get_precedence();
         if precedence_diff == 0 {
@@ -153,7 +153,7 @@ impl<'a> PartialOrd for JsonRef<'a> {
 
         let left_data = self.as_f64();
         let right_data = right.as_f64();
-        // Milevaeinsteindb treats boolean as integer, but boolean is different from integer in JSON.
+        // MEDB treats boolean as integer, but boolean is different from integer in JSON.
         // so we need convert them to same type and then compare.
         if let (Ok(left), Ok(right)) = (left_data, right_data) {
             return left.partial_cmp(&right);

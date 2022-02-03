@@ -9,7 +9,7 @@ use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-use crate::{Fdbeinstein_merkle_treeIterator, FdbSnapshot};
+use crate::{Fdbeinstein_merkle_treeIterator, FdbLightlikePersistence};
 use crate::db_vector::FdbDBVector;
 use crate::options::FdbReadOptions;
 use crate::rocks_metrics::{
@@ -65,10 +65,10 @@ impl Fdbeinstein_merkle_tree {
 }
 
 impl KV for Fdbeinstein_merkle_tree {
-    type Snapshot = FdbSnapshot;
+    type LightlikePersistence = FdbLightlikePersistence;
 
-    fn snapshot(&self) -> FdbSnapshot {
-        FdbSnapshot::new(self.einsteindb.clone())
+    fn lightlike_persistence(&self) -> FdbLightlikePersistence {
+        FdbLightlikePersistence::new(self.einsteindb.clone())
     }
 
     fn sync(&self) -> Result<()> {
@@ -194,7 +194,7 @@ mod tests {
     use std::sync::Arc;
     use tempfile::Builder;
 
-    use crate::{Fdbeinstein_merkle_tree, FdbSnapshot};
+    use crate::{Fdbeinstein_merkle_tree, FdbLightlikePersistence};
     use crate::raw_util;
 
     #[test]
@@ -212,7 +212,7 @@ mod tests {
         einstein_merkle_tree.put_msg(key, &r).unwrap();
         einstein_merkle_tree.put_msg_namespaced(namespaced, key, &r).unwrap();
 
-        let snap = einstein_merkle_tree.snapshot();
+        let snap = einstein_merkle_tree.lightlike_persistence();
 
         let mut r1: Region = einstein_merkle_tree.get_msg(key).unwrap().unwrap();
         assert_eq!(r, r1);
@@ -312,7 +312,7 @@ mod tests {
 
         assert_eq!(data.len(), 1);
 
-        let snap = FdbSnapshot::new(einstein_merkle_tree.get_sync_db());
+        let snap = FdbLightlikePersistence::new(einstein_merkle_tree.get_sync_db());
 
         einstein_merkle_tree.put(b"a3", b"v3").unwrap();
         assert!(einstein_merkle_tree.seek(b"a3").unwrap().is_some());

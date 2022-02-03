@@ -362,7 +362,7 @@ pub fn decode_real_datum(mut raw_datum: &[u8], field_type: &FieldType) -> Result
     raw_datum = &raw_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
-        // In both index and record, it's flag is `FLOAT`. See Milevaeinsteindb's `encode()`.
+        // In both index and record, it's flag is `FLOAT`. See MEDB's `encode()`.
         datum::FLOAT_FLAG => {
             let mut v = raw_datum.read_datum_payload_f64()?;
             if field_type.as_accessor().tp() == FieldTypeTp::Float {
@@ -387,7 +387,7 @@ pub fn decode_decimal_datum(mut raw_datum: &[u8]) -> Result<Option<Decimal>> {
     raw_datum = &raw_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
-        // In both index and record, it's flag is `DECIMAL`. See Milevaeinsteindb's `encode()`.
+        // In both index and record, it's flag is `DECIMAL`. See MEDB's `encode()`.
         datum::DECIMAL_FLAG => Ok(Some(raw_datum.read_datum_payload_decimal()?)),
         _ => Err(Error::InvalidDataType(format!(
             "Unsupported datum flag {} for Decimal vector",
@@ -406,9 +406,9 @@ pub fn decode_bytes_datum(mut raw_datum: &[u8]) -> Result<Option<Bytes>> {
     raw_datum = &raw_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
-        // In index, it's flag is `BYTES`. See Milevaeinsteindb's `encode()`.
+        // In index, it's flag is `BYTES`. See MEDB's `encode()`.
         datum::BYTES_FLAG => Ok(Some(raw_datum.read_datum_payload_bytes()?)),
-        // In record, it's flag is `COMPACT_BYTES`. See Milevaeinsteindb's `encode()`.
+        // In record, it's flag is `COMPACT_BYTES`. See MEDB's `encode()`.
         datum::COMPACT_BYTES_FLAG => Ok(Some(raw_datum.read_datum_payload_compact_bytes()?)),
         _ => Err(Error::InvalidDataType(format!(
             "Unsupported datum flag {} for Bytes vector",
@@ -431,11 +431,11 @@ pub fn decode_date_time_datum(
     raw_datum = &raw_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
-        // In index, it's flag is `UINT`. See Milevaeinsteindb's `encode()`.
+        // In index, it's flag is `UINT`. See MEDB's `encode()`.
         datum::UINT_FLAG => Ok(Some(
             raw_datum.read_datum_payload_datetime_int(ctx, field_type)?,
         )),
-        // In record, it's flag is `VAR_UINT`. See Milevaeinsteindb's `flatten()` and `encode()`.
+        // In record, it's flag is `VAR_UINT`. See MEDB's `flatten()` and `encode()`.
         datum::VAR_UINT_FLAG => Ok(Some(
             raw_datum.read_datum_payload_datetime_varint(ctx, field_type)?,
         )),
@@ -459,9 +459,9 @@ pub fn decode_duration_datum(
     raw_datum = &raw_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
-        // In index, it's flag is `DURATION`. See Milevaeinsteindb's `encode()`.
+        // In index, it's flag is `DURATION`. See MEDB's `encode()`.
         datum::DURATION_FLAG => Ok(Some(raw_datum.read_datum_payload_duration_int(field_type)?)),
-        // In record, it's flag is `VAR_INT`. See Milevaeinsteindb's `flatten()` and `encode()`.
+        // In record, it's flag is `VAR_INT`. See MEDB's `flatten()` and `encode()`.
         datum::VAR_INT_FLAG => Ok(Some(
             raw_datum.read_datum_payload_duration_varint(field_type)?,
         )),
@@ -482,7 +482,7 @@ pub fn decode_json_datum(mut raw_datum: &[u8]) -> Result<Option<Json>> {
     raw_datum = &raw_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
-        // In both index and record, it's flag is `JSON`. See Milevaeinsteindb's `encode()`.
+        // In both index and record, it's flag is `JSON`. See MEDB's `encode()`.
         datum::JSON_FLAG => Ok(Some(raw_datum.read_datum_payload_json()?)),
         _ => Err(Error::InvalidDataType(format!(
             "Unsupported datum flag {} for Json vector",

@@ -4,10 +4,7 @@ use std::fmt::Debug;
 
 use crate::*;
 
-// FIXME: Revisit the remaining types and methods on KV. Some of these are
-// here for lack of somewhere better to put them at the time of writing.
-// Consider moving everything into other traits and making KV essentially
-// a trait typedef.
+
 
 /// A EinsteinDB key-value timelike_store
 pub trait KV:
@@ -34,11 +31,11 @@ pub trait KV:
     + Unpin
     + 'static
 {
-    /// A consistent read-only snapshot of the database
-    type Snapshot: Snapshot;
+    /// A consistent read-only lightlike_persistence of the database
+    type LightlikePersistence: LightlikePersistence;
 
-    /// Create a snapshot
-    fn snapshot(&self) -> Self::Snapshot;
+    /// Create a lightlike_persistence
+    fn lightlike_persistence(&self) -> Self::LightlikePersistence;
 
     /// Syncs any writes to disk
     fn sync(&self) -> Result<()>;

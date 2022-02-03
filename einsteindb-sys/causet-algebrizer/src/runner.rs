@@ -22,7 +22,7 @@ use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::*;
 use allegroeinstein-prolog-causet-BerolinaSQL::metrics::*;
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::{IntervalRange, Storage};
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext};
+use causet_algebrizer::MEDB_query_datatype::expr::{EvalConfig, EvalContext};
 
 pub struct ExecutorsRunner<SS> {
     deadline: Deadline,

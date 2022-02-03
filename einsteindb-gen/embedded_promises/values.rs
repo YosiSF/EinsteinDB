@@ -15,14 +15,14 @@
 /// Used through-out the transactor to match core einsteindb constructs.
 
 use edn::types::Value;
-use edn::symbols;
+use edn::shellings;
 
 /// TODO: take just ":einsteindb.part/einsteindb" and define einsteindb_PART_einsteindb using "einsteindb.part" and "einsteindb".
 macro_rules! lazy_static_isoliton_namespaceable_keyword_value (
     ($tag:solitonid, $isoliton_namespaceable_fuse:expr, $name:expr) => (
         lazy_static! {
             pub static ref $tag: Value = {
-                Value::Keyword(symbols::Keyword::isoliton_namespaceable($isoliton_namespaceable_fuse, $name))
+                Value::Keyword(shellings::Keyword::isoliton_namespaceable($isoliton_namespaceable_fuse, $name))
             };
         }
     )

@@ -61,13 +61,13 @@ pub mod violetabft {
     #[cfg(feature = "test-einstein_merkle_tree-violetabft-panic")]
     pub use einstein_merkle_tree_panic::{
         Paniceinstein_merkle_tree as VioletaBFTTesteinstein_merkle_tree, Paniceinstein_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
-        PanicSnapshot as VioletaBFTTestSnapshot, PanicWriteBatch as VioletaBFTTestWriteBatch,
+        PanicLightlikePersistence as VioletaBFTTestLightlikePersistence, PanicWriteBatch as VioletaBFTTestWriteBatch,
     };
 
     #[cfg(feature = "test-einstein_merkle_tree-violetabft-foundationdb")]
     pub use fdb_einstein_merkle_tree::{
         Fdbeinstein_merkle_tree as VioletaBFTTesteinstein_merkle_tree, Fdbeinstein_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
-        FdbSnapshot as VioletaBFTTestSnapshot, FdbWriteBatch as VioletaBFTTestWriteBatch,
+        FdbLightlikePersistence as VioletaBFTTestLightlikePersistence, FdbWriteBatch as VioletaBFTTestWriteBatch,
     };
 
     pub fn new_einstein_merkle_tree(
@@ -99,13 +99,13 @@ pub mod kv {
     #[cfg(feature = "test-einstein_merkle_tree-kv-panic")]
     pub use einstein_merkle_tree_panic::{
         Paniceinstein_merkle_tree as KvTesteinstein_merkle_tree, Paniceinstein_merkle_treeIterator as KvTesteinstein_merkle_treeIterator,
-        PanicSnapshot as KvTestSnapshot, PanicWriteBatch as KvTestWriteBatch,
+        PanicLightlikePersistence as KvTestLightlikePersistence, PanicWriteBatch as KvTestWriteBatch,
     };
 
     #[cfg(feature = "test-einstein_merkle_tree-kv-foundationdb")]
     pub use fdb_einstein_merkle_tree::{
         Fdbeinstein_merkle_tree as KvTesteinstein_merkle_tree, Fdbeinstein_merkle_treeIterator as KvTesteinstein_merkle_treeIterator,
-        FdbSnapshot as KvTestSnapshot, FdbWriteBatch as KvTestWriteBatch,
+        FdbLightlikePersistence as KvTestLightlikePersistence, FdbWriteBatch as KvTestWriteBatch,
     };
 
     pub fn new_einstein_merkle_tree(

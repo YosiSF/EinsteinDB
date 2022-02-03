@@ -1095,17 +1095,17 @@ pub fn flush_einstein_merkle_tree_properties(einstein_merkle_tree: &DB, name: &s
         }
     }
 
-    // For snapshot
-    if let Some(n) = einstein_merkle_tree.get_property_int(FDBDB_NUM_SNAPSHOTS) {
-        STORE_einstein_merkle_tree_NUM_SNAPSHOTS_GAUGE_VEC
+    // For lightlike_persistence
+    if let Some(n) = einstein_merkle_tree.get_property_int(FDBDB_NUM_LIGHTLIKE_PERSISTENCES) {
+        STORE_einstein_merkle_tree_NUM_LIGHTLIKE_PERSISTENCES_GAUGE_VEC
             .with_label_values(&[name])
             .set(n as i64);
     }
-    if let Some(t) = einstein_merkle_tree.get_property_int(FDBDB_OLDEST_SNAPSHOT_TIME) {
-        // FdbDB returns 0 if no snapshots.
+    if let Some(t) = einstein_merkle_tree.get_property_int(FDBDB_OLDEST_LIGHTLIKE_PERSISTENCE_TIME) {
+        // FdbDB returns 0 if no lightlike_persistences.
         let now = time::get_time().sec as u64;
         let d = if t > 0 && now > t { now - t } else { 0 };
-        STORE_einstein_merkle_tree_OLDEST_SNAPSHOT_DURATION_GAUGE_VEC
+        STORE_einstein_merkle_tree_OLDEST_LIGHTLIKE_PERSISTENCE_DURATION_GAUGE_VEC
             .with_label_values(&[name])
             .set(d as i64);
     }
@@ -1164,14 +1164,14 @@ lazy_static! {
         "Number of files at each l_naught",
         &["einsteindb", "namespaced", "l_naught"]
     ).unwrap();
-    pub static ref STORE_einstein_merkle_tree_NUM_SNAPSHOTS_GAUGE_VEC: IntGaugeVec = register_int_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_num_snapshots",
-        "Number of unreleased snapshots",
+    pub static ref STORE_einstein_merkle_tree_NUM_LIGHTLIKE_PERSISTENCES_GAUGE_VEC: IntGaugeVec = register_int_gauge_vec!(
+        "einsteindb_einstein_merkle_tree_num_lightlike_persistences",
+        "Number of unreleased lightlike_persistences",
         &["einsteindb"]
     ).unwrap();
-    pub static ref STORE_einstein_merkle_tree_OLDEST_SNAPSHOT_DURATION_GAUGE_VEC: IntGaugeVec = register_int_gauge_vec!(
-        "einsteindb_einstein_merkle_tree_oldest_snapshot_duration",
-        "Oldest unreleased snapshot duration in seconds",
+    pub static ref STORE_einstein_merkle_tree_OLDEST_LIGHTLIKE_PERSISTENCE_DURATION_GAUGE_VEC: IntGaugeVec = register_int_gauge_vec!(
+        "einsteindb_einstein_merkle_tree_oldest_lightlike_persistence_duration",
+        "Oldest unreleased lightlike_persistence duration in seconds",
         &["einsteindb"]
     ).unwrap();
     pub static ref STORE_einstein_merkle_tree_WRITE_STALL_REASON_GAUGE_VEC: IntGaugeVec = register_int_gauge_vec!(

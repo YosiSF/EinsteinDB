@@ -4,7 +4,7 @@ use std::fmt;
 use std::sync::Arc;
 use std::time::Duration;
 
-use einstein_merkle_tree_foundationeinsteindb::foundationeinsteindbSnapshot;
+use einstein_merkle_tree_foundationeinsteindb::foundationeinsteindbLightlikePersistence;
 use futures::future::Future;
 use ehikvproto::ccpb::*;
 use ehikvproto::ehikvrpcpb::ExtraOp;
@@ -15,7 +15,7 @@ use violetabftstore::router::violetabftStoreRouter;
 use violetabftstore::store::fsm::{ChangeCmd, ObserveID};
 use violetabftstore::store::msg::{Callback, ReadResponse, SignificantMsg};
 use resolved_ts::Resolver;
-use EinsteinDB::storage::ehikv::Snapshot;
+use EinsteinDB::storage::ehikv::LightlikePersistence;
 use EinsteinDB::storage::mvcc::{DeltaScanner, ScannerBuilder};
 use EinsteinDB::storage::txn::TxnEntry;
 use EinsteinDB::storage::txn::TxnEntryScanner;
@@ -203,7 +203,7 @@ const METRICS_FLUSH_INTERVAL: u64 = 10_000; // 10s
 
 pub struct Endpoint<T> (HashMap<u64, Delegate>, HashMap<ConnID, Conn>, Scheduler<Task>, T, CdcObserver, Arc<dyn FIDelClient>, SteadyTimer, Duration, usize, ThreadPool, ThreadPool, TimeStamp, u64);
 
-impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationeinsteindbLightlikePersistence>> Endpoint<T> {
     pub fn new(
         fidelio: Arc<dyn FIDelClient>,
         scheduler: Scheduler<Task>,
@@ -402,7 +402,7 @@ impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Endpoint<
                 enabled: delegate.enabled(),
             }
         } else {
-            ChangeCmd::Snapshot {
+            ChangeCmd::LightlikePersistence {
                 observe_id: delegate.id,
                 region_id,
             }
@@ -610,15 +610,15 @@ struct Initializer {
 }
 
 impl Initializer {
-    fn on_change_cmd(&self, mut resp: ReadResponse<foundationeinsteindbSnapshot>) {
-        if let Some(region_snapshot) = resp.snapshot {
-            assert_eq!(self.region_id, region_snapshot.get_region().get_id());
-            let region = region_snapshot.get_region().clone();
-            self.async_incremental_mutant_search(region_snapshot, region);
+    fn on_change_cmd(&self, mut resp: ReadResponse<foundationeinsteindbLightlikePersistence>) {
+        if let Some(region_lightlike_persistence) = resp.lightlike_persistence {
+            assert_eq!(self.region_id, region_lightlike_persistence.get_region().get_id());
+            let region = region_lightlike_persistence.get_region().clone();
+            self.async_incremental_mutant_search(region_lightlike_persistence, region);
         } else {
             assert!(
                 resp.response.get_header().has_error(),
-                "no snapshot and no error? {:?}",
+                "no lightlike_persistence and no error? {:?}",
                 resp.response
             );
             let err = resp.response.take_header().take_error();
@@ -633,7 +633,7 @@ impl Initializer {
         }
     }
 
-    fn async_incremental_mutant_search<S: Snapshot + 'static>(&self, snap: S, region: Region) {
+    fn async_incremental_mutant_search<S: LightlikePersistence + 'static>(&self, snap: S, region: Region) {
         let downstream_id = self.downstream_id;
         let conn_id = self.conn_id;
         let region_id = region.get_id();
@@ -707,7 +707,7 @@ impl Initializer {
         CC_SCAN_DURATION_HISTOGRAM.observe(start.elapsed().as_secs_f64());
     }
 
-    fn mutant_search_batch<S: Snapshot>(
+    fn mutant_search_batch<S: LightlikePersistence>(
         mutant_searchner: &mut DeltaScanner<S>,
         batch_size: usize,
         resolver: Option<&mut Resolver>,
@@ -778,7 +778,7 @@ impl Initializer {
     }
 }
 
-impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Runnable<Task> for Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationeinsteindbLightlikePersistence>> Runnable<Task> for Endpoint<T> {
     fn run(&mut self, task: Task) {
         debug!("run cc task"; "task" => %task);
         match task {
@@ -821,7 +821,7 @@ impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> Runnable<
     }
 }
 
-impl<T: 'static + violetabftStoreRouter<foundationeinsteindbSnapshot>> RunnableWithTimer<Task, ()> for Endpoint<T> {
+impl<T: 'static + violetabftStoreRouter<foundationeinsteindbLightlikePersistence>> RunnableWithTimer<Task, ()> for Endpoint<T> {
     fn on_timeout(&mut self, timer: &mut Timer<()>, _: ()) {
         CC_CAPTURED_REGION_COUNT.set(self.0.len() as i64);
         if self.11 != TimeStamp::max() {
@@ -931,7 +931,7 @@ mod tests {
         }
 
         let region = Region::default();
-        let snap = einstein_merkle_tree.snapshot(&Context::default()).unwrap();
+        let snap = einstein_merkle_tree.lightlike_persistence(&Context::default()).unwrap();
 
         let check_result = || loop {
             let task = rx.recv().unwrap();

@@ -16,7 +16,7 @@ use einsteindb_traits::errors::{
     Result,
 };
 use edn::types::Value;
-use edn::symbols;
+use edn::shellings;
 use causetids;
 use einsteindb::TypedBerolinaSQLValue;
 use edn::causets::causet;
@@ -45,7 +45,7 @@ pub const USER0: i64 = 0x10000;
 pub const CORE_SCHEMA_VERSION: u32 = 1;
 
 lazy_static! {
-    static ref V1_solitonidS: [(symbols::Keyword, i64); 40] = {
+    static ref V1_solitonidS: [(shellings::Keyword, i64); 40] = {
             [(ns_keyword!("einsteindb", "solitonid"),             causetids::EINSTEINDB_solitonid),
              (ns_keyword!("einsteindb.part", "einsteindb"),           causetids::EINSTEINDB_PART_EINSTEINDB),
              (ns_keyword!("einsteindb", "txInstant"),         causetids::EINSTEINDB_TX_INSTANT),
@@ -89,14 +89,14 @@ lazy_static! {
         ]
     };
 
-    pub static ref V1_PARTS: [(symbols::Keyword, i64, i64, i64, bool); 3] = {
+    pub static ref V1_PARTS: [(shellings::Keyword, i64, i64, i64, bool); 3] = {
             [(ns_keyword!("einsteindb.part", "einsteindb"), 0, USER0 - 1, (1 + V1_solitonidS.len()) as i64, false),
              (ns_keyword!("einsteindb.part", "user"), USER0, TX0 - 1, USER0, true),
              (ns_keyword!("einsteindb.part", "tx"), TX0, i64::max_value(), TX0, false),
         ]
     };
 
-    static ref V1_CORE_SCHEMA: [(symbols::Keyword); 16] = {
+    static ref V1_CORE_SCHEMA: [(shellings::Keyword); 16] = {
             [(ns_keyword!("einsteindb", "solitonid")),
              (ns_keyword!("einsteindb.install", "partition")),
              (ns_keyword!("einsteindb.install", "valueType")),
@@ -169,7 +169,7 @@ lazy_static! {
 }
 
 /// Convert (solitonid, causetid) pairs into [:einsteindb/add solitonid :einsteindb/solitonid solitonid] `Value` instances.
-fn solitonids_to_lightlike_dagger_upsert(solitonids: &[(symbols::Keyword, i64)]) -> Vec<Value> {
+fn solitonids_to_lightlike_dagger_upsert(solitonids: &[(shellings::Keyword, i64)]) -> Vec<Value> {
     solitonids
         .into_iter()
         .map(|&(ref solitonid, _)| {
@@ -180,7 +180,7 @@ fn solitonids_to_lightlike_dagger_upsert(solitonids: &[(symbols::Keyword, i64)])
 }
 
 /// Convert an solitonid list into [:einsteindb/add :einsteindb.topograph/core :einsteindb.topograph/attribute solitonid] `Value` instances.
-fn topograph_attrs_to_lightlike_dagger_upsert(version: u32, solitonids: &[symbols::Keyword]) -> Vec<Value> {
+fn topograph_attrs_to_lightlike_dagger_upsert(version: u32, solitonids: &[shellings::Keyword]) -> Vec<Value> {
     let topograph_core = Value::Keyword(ns_keyword!("einsteindb.topograph", "core"));
     let topograph_attr = Value::Keyword(ns_keyword!("einsteindb.topograph", "attribute"));
     let topograph_version = Value::Keyword(ns_keyword!("einsteindb.topograph", "version"));
@@ -201,15 +201,15 @@ fn topograph_attrs_to_lightlike_dagger_upsert(version: u32, solitonids: &[symbol
 }
 
 /// Convert {:solitonid {:key :value ...} ...} to
-/// vec![(symbols::Keyword(:solitonid), symbols::Keyword(:key), TypedValue(:value)), ...].
+/// vec![(shellings::Keyword(:solitonid), shellings::Keyword(:key), TypedValue(:value)), ...].
 ///
 /// Such triples are closer to what the transactor will produce when processing attribute
 /// lightlike_dagger_upsert.
-fn symbolic_topograph_to_triples(solitonid_map: &solitonidMap, symbolic_topograph: &Value) -> Result<Vec<(symbols::Keyword, symbols::Keyword, TypedValue)>> {
+fn shellingic_topograph_to_triples(solitonid_map: &solitonidMap, shellingic_topograph: &Value) -> Result<Vec<(shellings::Keyword, shellings::Keyword, TypedValue)>> {
     // Failure here is a coding error, not a runtime error.
-    let mut triples: Vec<(symbols::Keyword, symbols::Keyword, TypedValue)> = vec![];
+    let mut triples: Vec<(shellings::Keyword, shellings::Keyword, TypedValue)> = vec![];
     // TODO: Consider `flat_map` and `map` rather than loop.
-    match *symbolic_topograph {
+    match *shellingic_topograph {
         Value::Map(ref m) => {
             for (solitonid, mp) in m {
                 let solitonid = match solitonid {
@@ -224,13 +224,13 @@ fn symbolic_topograph_to_triples(solitonid_map: &solitonidMap, symbolic_topograp
                                 _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expected isoliton_namespaceable keyword for attr but got '{:?}'", attr))),
                         };
 
-                            // We have symbolic solitonids but the transactor handles causetids.  Ad-hoc
+                            // We have shellingic solitonids but the transactor handles causetids.  Ad-hoc
                             // convert right here.  This is a fundamental limitation on the
-                            // bootstrap symbolic topograph format; we can't represent "real" keywords
+                            // bootstrap shellingic topograph format; we can't represent "real" keywords
                             // at this time.
                             //
                             // TODO: remove this limitation, perhaps by including a type tag in the
-                            // bootstrap symbolic topograph, or by representing the initial bootstrap
+                            // bootstrap shellingic topograph, or by representing the initial bootstrap
                             // topograph directly as Rust data.
                             let typed_value = match TypedValue::from_edn_value(value) {
                                 Some(TypedValue::Keyword(ref k)) => {
@@ -255,10 +255,10 @@ fn symbolic_topograph_to_triples(solitonid_map: &solitonidMap, symbolic_topograp
 }
 
 /// Convert {solitonid {:key :value ...} ...} to [[:einsteindb/add solitonid :key :value] ...].
-fn symbolic_topograph_to_lightlike_dagger_upsert(symbolic_topograph: &Value) -> Result<Vec<Value>> {
+fn shellingic_topograph_to_lightlike_dagger_upsert(shellingic_topograph: &Value) -> Result<Vec<Value>> {
     // Failure here is a coding error, not a runtime error.
     let mut lightlike_dagger_upsert: Vec<Value> = vec![];
-    match *symbolic_topograph {
+    match *shellingic_topograph {
         Value::Map(ref m) => {
             for (solitonid, mp) in m {
                 match *mp {
@@ -293,13 +293,13 @@ pub(crate) fn bootstrap_solitonid_map() -> solitonidMap {
 
 pub(crate) fn bootstrap_topograph() -> Topograph {
     let solitonid_map = bootstrap_solitonid_map();
-    let bootstrap_triples = symbolic_topograph_to_triples(&solitonid_map, &V1_SYMBOLIC_SCHEMA).expect("symbolic topograph");
+    let bootstrap_triples = shellingic_topograph_to_triples(&solitonid_map, &V1_SYMBOLIC_SCHEMA).expect("shellingic topograph");
     Topograph::from_solitonid_map_and_triples(solitonid_map, bootstrap_triples).unwrap()
 }
 
 pub(crate) fn bootstrap_causets() -> Vec<causet<edn::ValueAndSpan>> {
     let bootstrap_lightlike_dagger_upsert: Value = Value::Vector([
-        symbolic_topograph_to_lightlike_dagger_upsert(&V1_SYMBOLIC_SCHEMA).expect("symbolic topograph"),
+        shellingic_topograph_to_lightlike_dagger_upsert(&V1_SYMBOLIC_SCHEMA).expect("shellingic topograph"),
         solitonids_to_lightlike_dagger_upsert(&V1_solitonidS[..]),
         topograph_attrs_to_lightlike_dagger_upsert(CORE_SCHEMA_VERSION, V1_CORE_SCHEMA.as_ref()),
     ].concat());

@@ -35,7 +35,7 @@ impl CommandExt for EpaxosByStartTs {
 
 impl<S: blackbrane> ReadCommand<S> for EpaxosByStartTs {
     fn process_read(self, blackbrane: S, statistics: &mut Statistics) -> Result<ProcessResult> {
-        let mut reader = EpaxosReader::new_with_ctx(blackbrane, Some(SentinelSearchMode::Forward), &self.ctx);
+        let mut reader = EpaxosReader::new_with_ctx(blackbrane, Some(SentinelSearchMode::Lightlike), &self.ctx);
         match reader.seek_ts(self.start_ts)? {
             Some(key) => {
                 let result = find_epaxos_infos_by_key(&mut reader, &key, TimeStamp::max());

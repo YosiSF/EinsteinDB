@@ -49,7 +49,7 @@ pub use crate::namespaced_names::*;
 pub use crate::namespaced_options::*;
 pub use crate::perf_context::*;
 pub use crate::range_properties::*;
-pub use crate::snapshot::*;
+pub use crate::lightlike_persistence::*;
 pub use crate::Causet::*;
 pub use crate::Causet_partitioner::*;
 pub use crate::table_properties::*;
@@ -74,7 +74,7 @@ mod logger;
 mod misc;
 
 pub mod range_properties;
-mod snapshot;
+mod lightlike_persistence;
 
 mod Causet;
 

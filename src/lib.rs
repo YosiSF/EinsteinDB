@@ -32,9 +32,6 @@ extern crate more_asserts;
 #[cfg(test)]
 extern crate test;
 
-pub mod Foundation;
-pub mod gopmem;
-
 
 /// Returns the einsteindb version information.
 pub fn einsteindb_version_info(build_time: Option<&str>) -> String {

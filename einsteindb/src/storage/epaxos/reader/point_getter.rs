@@ -121,7 +121,7 @@ impl<S: blackbrane> PointGetterBuilder<S> {
             .mutant_search_mode(if self.multi {
                 SentinelSearchMode::Mixed
             } else {
-                SentinelSearchMode::Forward
+                SentinelSearchMode::Lightlike
             })
             .build()?;
 

@@ -103,7 +103,7 @@ mod testing {
 
     use edn::query::{
         Keyword,
-        PlainSymbol,
+        PlainShelling,
         Variable
     };
 
@@ -557,7 +557,7 @@ mod testing {
         let parsed = parse_find_string(query).expect("parse failed");
         let err = algebrize(known, parsed).expect_err("algebrization should have failed");
         match err {
-            AlgebrizerError::UnboundVariable(var) => { assert_eq!(var, PlainSymbol("?x".to_string())); },
+            AlgebrizerError::UnboundVariable(var) => { assert_eq!(var, PlainShelling("?x".to_string())); },
             x => panic!("expected Unbound Variable error, got {:?}", x),
         }
     }

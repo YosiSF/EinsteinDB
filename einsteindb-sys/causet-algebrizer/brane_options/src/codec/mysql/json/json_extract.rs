@@ -19,7 +19,7 @@ impl<'a> JsonRef<'a> {
     /// the target JSON matched any path expressions, which may be autowrapped as an array.
     /// If there is no any expression matched, it returns None.
     ///
-    /// See `Extract()` in Milevaeinsteindb `json.binary_function.go`
+    /// See `Extract()` in MEDB `json.binary_function.go`
     pub fn extract(&self, path_expr_list: &[PathExpression]) -> Result<Option<Json>> {
         let mut elem_list = Vec::with_capacity(path_expr_list.len());
         for path_expr in path_expr_list {

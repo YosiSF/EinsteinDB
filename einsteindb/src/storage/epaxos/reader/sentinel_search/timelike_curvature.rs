@@ -100,7 +100,7 @@ impl<S: blackbrane> timelike_curvatureHikvMutantSentinelSearch<S> {
         }
 
         // Similar to lightlike_completion mutant_searchner, the general idea is to simultaneously step write
-        // cursor and dagger cursor. Please refer to `ForwardHikvMutantSentinelSearch` for details.
+        // cursor and dagger cursor. Please refer to `LightlikeHikvMutantSentinelSearch` for details.
 
         loop {
             let (current_user_key, mut has_write, has_dagger) = {

@@ -206,7 +206,7 @@ mod tests {
         let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut iter_opt = IterOptions::default();
         iter_opt.set_max_skippable_internal_keys(1);
-        let mut iter = Cursor::new(blackbrane.iter(iter_opt).unwrap(), SentinelSearchMode::Forward, false);
+        let mut iter = Cursor::new(blackbrane.iter(iter_opt).unwrap(), SentinelSearchMode::Lightlike, false);
 
         let mut statistics = CfStatistics::default();
         let res = iter.seek(&Key::from_cocauset(b"foo"), &mut statistics);
@@ -233,7 +233,7 @@ mod tests {
         let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut iter = Cursor::new(
             blackbrane.iter(IterOptions::default()).unwrap(),
-            SentinelSearchMode::Forward,
+            SentinelSearchMode::Lightlike,
             false,
         );
 
@@ -306,7 +306,7 @@ mod tests {
         let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
         let mut iter = CursorBuilder::new(&blackbrane, CF_WRITE)
             .prefix_seek(true)
-            .mutant_search_mode(SentinelSearchMode::Forward)
+            .mutant_search_mode(SentinelSearchMode::Lightlike)
             .build()
             .unwrap();
 

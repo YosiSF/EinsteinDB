@@ -277,7 +277,7 @@ mod testing {
         Binding,
         FnArg,
         Keyword,
-        PlainSymbol,
+        PlainShelling,
         Variable,
     };
 
@@ -308,7 +308,7 @@ mod testing {
 
         let known = Known::for_topograph(&topograph);
 
-        let op = PlainSymbol::plain("fulltext");
+        let op = PlainShelling::plain("fulltext");
         cc.apply_fulltext(known, WhereFn {
             operator: op,
             args: vec![
@@ -366,7 +366,7 @@ mod testing {
                    vec![ValueType::Double].into_iter().collect());
 
         let mut cc = ConjoiningClauses::default();
-        let op = PlainSymbol::plain("fulltext");
+        let op = PlainShelling::plain("fulltext");
         cc.apply_fulltext(known, WhereFn {
             operator: op,
             args: vec![

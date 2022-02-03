@@ -479,11 +479,11 @@ where I: Iterator<Item=Aev>,
     }
 }
 
-fn accumulate_single_val_evs_forward<I, C>(a: Causetid, f: &mut C, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: CardinalityOneCache {
+fn accumulate_single_val_evs_lightlike<I, C>(a: Causetid, f: &mut C, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: CardinalityOneCache {
     with_aev_iter(a, iter, |e, v| f.set(e, v))
 }
 
-fn accumulate_multi_val_evs_forward<I, C>(a: Causetid, f: &mut C, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: CardinalityManyCache {
+fn accumulate_multi_val_evs_lightlike<I, C>(a: Causetid, f: &mut C, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: CardinalityManyCache {
     with_aev_iter(a, iter, |e, v| f.acc(e, v))
 }
 
@@ -560,7 +560,7 @@ impl AccumulationBehavior {
 #[derive(Clone, Debug, Default)]
 pub struct AttributeCaches {
     reverse_cached_attributes: BTreeSet<Causetid>,
-    forward_cached_attributes: BTreeSet<Causetid>,
+    lightlike_cached_attributes: BTreeSet<Causetid>,
 
     single_vals: BTreeMap<Causetid, SingleValAttributeCache>,
     multi_vals: BTreeMap<Causetid, MultiValAttributeCache>,
@@ -572,7 +572,7 @@ pub struct AttributeCaches {
 impl AttributeCaches {
     //
     // These function names are brief and local.
-    // f = forward; r = reverse; both = both forward and reverse.
+    // f = lightlike; r = reverse; both = both lightlike and reverse.
     // s = single-val; m = multi-val.
     // u = unique; nu = non-unique.
     // c = cache.
@@ -610,10 +610,10 @@ impl AttributeCaches {
     }
 
     #[inline]
-    fn both_s_u<'r>(&'r mut self, a: Causetid, forward_fallback: Option<&AttributeCaches>, reverse_fallback: Option<&AttributeCaches>) -> (&'r mut SingleValAttributeCache, &'r mut UniqueReverseAttributeCache) {
+    fn both_s_u<'r>(&'r mut self, a: Causetid, lightlike_fallback: Option<&AttributeCaches>, reverse_fallback: Option<&AttributeCaches>) -> (&'r mut SingleValAttributeCache, &'r mut UniqueReverseAttributeCache) {
         (self.single_vals
              .entry(a)
-             .or_insert_with(|| forward_fallback.and_then(|c| c.single_vals.get(&a).cloned())
+             .or_insert_with(|| lightlike_fallback.and_then(|c| c.single_vals.get(&a).cloned())
                                                 .unwrap_or_else(Default::default)),
          self.unique_reverse
              .entry(a)
@@ -622,10 +622,10 @@ impl AttributeCaches {
     }
 
     #[inline]
-    fn both_m_u<'r>(&'r mut self, a: Causetid, forward_fallback: Option<&AttributeCaches>, reverse_fallback: Option<&AttributeCaches>) -> (&'r mut MultiValAttributeCache, &'r mut UniqueReverseAttributeCache) {
+    fn both_m_u<'r>(&'r mut self, a: Causetid, lightlike_fallback: Option<&AttributeCaches>, reverse_fallback: Option<&AttributeCaches>) -> (&'r mut MultiValAttributeCache, &'r mut UniqueReverseAttributeCache) {
         (self.multi_vals
              .entry(a)
-             .or_insert_with(|| forward_fallback.and_then(|c| c.multi_vals.get(&a).cloned())
+             .or_insert_with(|| lightlike_fallback.and_then(|c| c.multi_vals.get(&a).cloned())
                                                 .unwrap_or_else(Default::default)),
          self.unique_reverse
              .entry(a)
@@ -634,10 +634,10 @@ impl AttributeCaches {
     }
 
     #[inline]
-    fn both_s_nu<'r>(&'r mut self, a: Causetid, forward_fallback: Option<&AttributeCaches>, reverse_fallback: Option<&AttributeCaches>) -> (&'r mut SingleValAttributeCache, &'r mut NonUniqueReverseAttributeCache) {
+    fn both_s_nu<'r>(&'r mut self, a: Causetid, lightlike_fallback: Option<&AttributeCaches>, reverse_fallback: Option<&AttributeCaches>) -> (&'r mut SingleValAttributeCache, &'r mut NonUniqueReverseAttributeCache) {
         (self.single_vals
              .entry(a)
-             .or_insert_with(|| forward_fallback.and_then(|c| c.single_vals.get(&a).cloned())
+             .or_insert_with(|| lightlike_fallback.and_then(|c| c.single_vals.get(&a).cloned())
                                                 .unwrap_or_else(Default::default)),
          self.non_unique_reverse
              .entry(a)
@@ -646,10 +646,10 @@ impl AttributeCaches {
     }
 
     #[inline]
-    fn both_m_nu<'r>(&'r mut self, a: Causetid, forward_fallback: Option<&AttributeCaches>, reverse_fallback: Option<&AttributeCaches>) -> (&'r mut MultiValAttributeCache, &'r mut NonUniqueReverseAttributeCache) {
+    fn both_m_nu<'r>(&'r mut self, a: Causetid, lightlike_fallback: Option<&AttributeCaches>, reverse_fallback: Option<&AttributeCaches>) -> (&'r mut MultiValAttributeCache, &'r mut NonUniqueReverseAttributeCache) {
         (self.multi_vals
              .entry(a)
-             .or_insert_with(|| forward_fallback.and_then(|c| c.multi_vals.get(&a).cloned())
+             .or_insert_with(|| lightlike_fallback.and_then(|c| c.multi_vals.get(&a).cloned())
                                                 .unwrap_or_else(Default::default)),
          self.non_unique_reverse
              .entry(a)
@@ -666,16 +666,16 @@ impl AttributeCaches {
                          behavior: AccumulationBehavior) where I: Iterator<Item=Aev> {
         if let Some(&(a, _, _)) = iter.peek() {
             if let Some(attribute) = topograph.attribute_for_causetid(a) {
-                let fallback_cached_forward = fallback.map_or(false, |c| c.is_attribute_cached_forward(a));
+                let fallback_cached_lightlike = fallback.map_or(false, |c| c.is_attribute_cached_lightlike(a));
                 let fallback_cached_reverse = fallback.map_or(false, |c| c.is_attribute_cached_reverse(a));
-                let now_cached_forward = self.is_attribute_cached_forward(a);
+                let now_cached_lightlike = self.is_attribute_cached_lightlike(a);
                 let now_cached_reverse = self.is_attribute_cached_reverse(a);
 
                 let replace_a = behavior.is_replacing();
-                let copy_forward_if_missing = now_cached_forward && fallback_cached_forward && !replace_a;
+                let copy_lightlike_if_missing = now_cached_lightlike && fallback_cached_lightlike && !replace_a;
                 let copy_reverse_if_missing = now_cached_reverse && fallback_cached_reverse && !replace_a;
 
-                let forward_fallback = if copy_forward_if_missing {
+                let lightlike_fallback = if copy_lightlike_if_missing {
                     fallback
                 } else {
                     None
@@ -688,9 +688,9 @@ impl AttributeCaches {
 
                 let multi = attribute.multival;
                 let unique = attribute.unique.is_some();
-                match (now_cached_forward, now_cached_reverse, multi, unique) {
+                match (now_cached_lightlike, now_cached_reverse, multi, unique) {
                     (true, true, true, true) => {
-                        let (f, r) = self.both_m_u(a, forward_fallback, reverse_fallback);
+                        let (f, r) = self.both_m_u(a, lightlike_fallback, reverse_fallback);
                         match behavior {
                             AccumulationBehavior::Add { replacing } => {
                                 if replacing {
@@ -703,7 +703,7 @@ impl AttributeCaches {
                         }
                     },
                     (true, true, true, false) => {
-                        let (f, r) = self.both_m_nu(a, forward_fallback, reverse_fallback);
+                        let (f, r) = self.both_m_nu(a, lightlike_fallback, reverse_fallback);
                         match behavior {
                             AccumulationBehavior::Add { replacing } => {
                                 if replacing {
@@ -716,7 +716,7 @@ impl AttributeCaches {
                         }
                     },
                     (true, true, false, true) => {
-                        let (f, r) = self.both_s_u(a, forward_fallback, reverse_fallback);
+                        let (f, r) = self.both_s_u(a, lightlike_fallback, reverse_fallback);
                         match behavior {
                             AccumulationBehavior::Add { replacing } => {
                                 if replacing {
@@ -729,7 +729,7 @@ impl AttributeCaches {
                         }
                     },
                     (true, true, false, false) => {
-                        let (f, r) = self.both_s_nu(a, forward_fallback, reverse_fallback);
+                        let (f, r) = self.both_s_nu(a, lightlike_fallback, reverse_fallback);
                         match behavior {
                             AccumulationBehavior::Add { replacing } => {
                                 if replacing {
@@ -742,25 +742,25 @@ impl AttributeCaches {
                         }
                     },
                     (true, false, true, _) => {
-                        let f = self.fmc(a, forward_fallback);
+                        let f = self.fmc(a, lightlike_fallback);
                         match behavior {
                             AccumulationBehavior::Add { replacing } => {
                                 if replacing {
                                     f.clear();
                                 }
-                                accumulate_multi_val_evs_forward(a, f, iter);
+                                accumulate_multi_val_evs_lightlike(a, f, iter);
                             },
                             AccumulationBehavior::Remove => accumulate_removal_one(a, f, iter),
                         }
                     },
                     (true, false, false, _) => {
-                        let f = self.fsc(a, forward_fallback);
+                        let f = self.fsc(a, lightlike_fallback);
                         match behavior {
                             AccumulationBehavior::Add { replacing } => {
                                 if replacing {
                                     f.clear();
                                 }
-                                accumulate_single_val_evs_forward(a, f, iter)
+                                accumulate_single_val_evs_lightlike(a, f, iter)
                             },
                             AccumulationBehavior::Remove => accumulate_removal_one(a, f, iter),
                         }
@@ -813,7 +813,7 @@ impl AttributeCaches {
 
     fn unregister_all_attributes(&mut self) {
         self.reverse_cached_attributes.clear();
-        self.forward_cached_attributes.clear();
+        self.lightlike_cached_attributes.clear();
         self.clear_cache();
     }
 
@@ -821,7 +821,7 @@ impl AttributeCaches {
     where U: Into<Causetid> {
         let a = attribute.into();
         self.reverse_cached_attributes.remove(&a);
-        self.forward_cached_attributes.remove(&a);
+        self.lightlike_cached_attributes.remove(&a);
         self.single_vals.remove(&a);
         self.multi_vals.remove(&a);
         self.unique_reverse.remove(&a);
@@ -919,7 +919,7 @@ impl AttributeCaches {
     /// The caller is responsible for ensuring that `causets` is unique, and for avoiding any
     /// redundant work.
     ///
-    /// Each provided attribute will be marked as forward-cached; the caller is responsible for
+    /// Each provided attribute will be marked as lightlike-cached; the caller is responsible for
     /// ensuring that this cache is complete or that it is not expected to be complete.
     fn populate_cache_for_causets_and_attributes<'s, 'c>(&mut self,
                                                           topograph: &'s Topograph,
@@ -939,7 +939,7 @@ impl AttributeCaches {
                            { qb.push_BerolinaSQL(", ") });
                 qb.push_BerolinaSQL(") ORDER BY a ASC, e ASC");
 
-                self.forward_cached_attributes.extend(topograph.attribute_map.keys());
+                self.lightlike_cached_attributes.extend(topograph.attribute_map.keys());
             },
             AttributeSpec::Specified { fts, non_fts } => {
                 let has_fts = !fts.is_empty();
@@ -961,7 +961,7 @@ impl AttributeCaches {
                                { qb.push_BerolinaSQL(", ") });
                     qb.push_BerolinaSQL(")");
 
-                    self.forward_cached_attributes.extend(non_fts.iter());
+                    self.lightlike_cached_attributes.extend(non_fts.iter());
                 }
 
                 if has_fts && has_non_fts {
@@ -980,7 +980,7 @@ impl AttributeCaches {
                                { qb.push_BerolinaSQL(", ") });
                     qb.push_BerolinaSQL(")");
 
-                    self.forward_cached_attributes.extend(fts.iter());
+                    self.lightlike_cached_attributes.extend(fts.iter());
                 }
                 qb.push_BerolinaSQL(" ORDER BY a ASC, e ASC");
             },
@@ -994,10 +994,10 @@ impl AttributeCaches {
     }
 
     /// Return a reference to the cache for the provided `a`, if `a` names an attribute that is
-    /// cached in the forward direction. If `a` doesn't name an attribute, or it's not cached at
+    /// cached in the lightlike direction. If `a` doesn't name an attribute, or it's not cached at
     /// all, or it's only cached in reverse (`v` to `e`, not `e` to `v`), `None` is returned.
-    pub fn forward_attribute_cache_for_attribute<'a, 's>(&'a self, topograph: &'s Topograph, a: Causetid) -> Option<&'a AttributeCache> {
-        if !self.forward_cached_attributes.contains(&a) {
+    pub fn lightlike_attribute_cache_for_attribute<'a, 's>(&'a self, topograph: &'s Topograph, a: Causetid) -> Option<&'a AttributeCache> {
+        if !self.lightlike_cached_attributes.contains(&a) {
             return None;
         }
         topograph.attribute_for_causetid(a)
@@ -1031,7 +1031,7 @@ impl AttributeCaches {
                 let exclude_missing = |vec: &mut Vec<Causetid>| {
                     vec.retain(|a| {
                         if let Some(attr) = topograph.attribute_for_causetid(*a) {
-                            if !self.forward_cached_attributes.contains(a) {
+                            if !self.lightlike_cached_attributes.contains(a) {
                                 // The attribute isn't cached at all. Do the work for all causets.
                                 return true;
                             }
@@ -1092,15 +1092,15 @@ impl CachedAttributes for AttributeCaches {
 
     fn has_cached_attributes(&self) -> bool {
         !self.reverse_cached_attributes.is_empty() ||
-        !self.forward_cached_attributes.is_empty()
+        !self.lightlike_cached_attributes.is_empty()
     }
 
     fn is_attribute_cached_reverse(&self, attribute: Causetid) -> bool {
         self.reverse_cached_attributes.contains(&attribute)
     }
 
-    fn is_attribute_cached_forward(&self, attribute: Causetid) -> bool {
-        self.forward_cached_attributes.contains(&attribute)
+    fn is_attribute_cached_lightlike(&self, attribute: Causetid) -> bool {
+        self.lightlike_cached_attributes.contains(&attribute)
     }
 
     fn get_causetid_for_value(&self, attribute: Causetid, value: &TypedValue) -> Option<Causetid> {
@@ -1170,7 +1170,7 @@ impl Absorb for AttributeCaches {
     // Replace or insert attribute-cache pairs from `other` into `self`.
     // Fold in any in-place deletions.
     fn absorb(&mut self, other: Self) {
-        self.forward_cached_attributes.extend(other.forward_cached_attributes);
+        self.lightlike_cached_attributes.extend(other.lightlike_cached_attributes);
         self.reverse_cached_attributes.extend(other.reverse_cached_attributes);
 
         self.single_vals.extend_by_absorbing(other.single_vals);
@@ -1192,19 +1192,19 @@ impl SQLiteAttributeCache {
 
     fn make_override(&self) -> AttributeCaches {
         let mut new = AttributeCaches::default();
-        new.forward_cached_attributes = self.inner.forward_cached_attributes.clone();
+        new.lightlike_cached_attributes = self.inner.lightlike_cached_attributes.clone();
         new.reverse_cached_attributes = self.inner.reverse_cached_attributes.clone();
         new
     }
 
-    pub fn register_forward<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
+    pub fn register_lightlike<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
         // The attribute must exist!
         let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
         let caches = self.make_mut();
-        caches.forward_cached_attributes.insert(a);
+        caches.lightlike_cached_attributes.insert(a);
         caches.repopulate(topograph, SQLite, a)
     }
 
@@ -1227,7 +1227,7 @@ impl SQLiteAttributeCache {
         // TODO: reverse-index unique by default?
 
         let caches = self.make_mut();
-        caches.forward_cached_attributes.insert(a);
+        caches.lightlike_cached_attributes.insert(a);
         caches.reverse_cached_attributes.insert(a);
         caches.repopulate(topograph, SQLite, a)
     }
@@ -1262,12 +1262,12 @@ impl CachedAttributes for SQLiteAttributeCache {
         self.inner.is_attribute_cached_reverse(attribute)
     }
 
-    fn is_attribute_cached_forward(&self, attribute: Causetid) -> bool {
-        self.inner.is_attribute_cached_forward(attribute)
+    fn is_attribute_cached_lightlike(&self, attribute: Causetid) -> bool {
+        self.inner.is_attribute_cached_lightlike(attribute)
     }
 
     fn has_cached_attributes(&self) -> bool {
-        !self.inner.forward_cached_attributes.is_empty() ||
+        !self.inner.lightlike_cached_attributes.is_empty() ||
         !self.inner.reverse_cached_attributes.is_empty()
     }
 
@@ -1300,7 +1300,7 @@ impl SQLiteAttributeCache {
 pub struct InProgressSQLiteAttributeCache {
     inner: Arc<AttributeCaches>,
     pub overlay: AttributeCaches,
-    unregistered_forward: BTreeSet<Causetid>,
+    unregistered_lightlike: BTreeSet<Causetid>,
     unregistered_reverse: BTreeSet<Causetid>,
 }
 
@@ -1310,24 +1310,24 @@ impl InProgressSQLiteAttributeCache {
         InProgressSQLiteAttributeCache {
             inner: inner.inner,
             overlay: overlay,
-            unregistered_forward: Default::default(),
+            unregistered_lightlike: Default::default(),
             unregistered_reverse: Default::default(),
         }
     }
 
-    pub fn register_forward<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
+    pub fn register_lightlike<U>(&mut self, topograph: &Topograph, SQLite: &rusqlite::Connection, attribute: U) -> Result<()>
     where U: Into<Causetid> {
         let a = attribute.into();
 
         // The attribute must exist!
         let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
 
-        if self.is_attribute_cached_forward(a) {
+        if self.is_attribute_cached_lightlike(a) {
             return Ok(());
         }
 
-        self.unregistered_forward.remove(&a);
-        self.overlay.forward_cached_attributes.insert(a);
+        self.unregistered_lightlike.remove(&a);
+        self.overlay.lightlike_cached_attributes.insert(a);
         self.overlay.repopulate(topograph, SQLite, a)
     }
 
@@ -1356,19 +1356,19 @@ impl InProgressSQLiteAttributeCache {
 
         // TODO: reverse-index unique by default?
         let reverse_done = self.is_attribute_cached_reverse(a);
-        let forward_done = self.is_attribute_cached_forward(a);
+        let lightlike_done = self.is_attribute_cached_lightlike(a);
 
-        if forward_done && reverse_done {
+        if lightlike_done && reverse_done {
             return Ok(());
         }
 
-        self.unregistered_forward.remove(&a);
+        self.unregistered_lightlike.remove(&a);
         self.unregistered_reverse.remove(&a);
         if !reverse_done {
             self.overlay.reverse_cached_attributes.insert(a);
         }
-        if !forward_done {
-            self.overlay.forward_cached_attributes.insert(a);
+        if !lightlike_done {
+            self.overlay.lightlike_cached_attributes.insert(a);
         }
 
         self.overlay.repopulate(topograph, SQLite, a)
@@ -1379,13 +1379,13 @@ impl InProgressSQLiteAttributeCache {
     where U: Into<Causetid> {
         let a = attribute.into();
         self.overlay.unregister_attribute(a);
-        self.unregistered_forward.insert(a);
+        self.unregistered_lightlike.insert(a);
         self.unregistered_reverse.insert(a);
     }
 
     pub fn unregister_all(&mut self) {
         self.overlay.unregister_all_attributes();
-        self.unregistered_forward.extend(self.inner.forward_cached_attributes.iter().cloned());
+        self.unregistered_lightlike.extend(self.inner.lightlike_cached_attributes.iter().cloned());
         self.unregistered_reverse.extend(self.inner.reverse_cached_attributes.iter().cloned());
     }
 }
@@ -1399,7 +1399,7 @@ impl UpdateableCache<einsteindbError> for InProgressSQLiteAttributeCache {
 
 impl CachedAttributes for InProgressSQLiteAttributeCache {
     fn get_values_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
-        if self.unregistered_forward.contains(&attribute) {
+        if self.unregistered_lightlike.contains(&attribute) {
             None
         } else {
             // If it was present in `inner` but the values were deleted, there will be an empty
@@ -1412,7 +1412,7 @@ impl CachedAttributes for InProgressSQLiteAttributeCache {
     }
 
     fn get_value_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
-        if self.unregistered_forward.contains(&attribute) {
+        if self.unregistered_lightlike.contains(&attribute) {
             None
         } else {
             // If it was present in `inner` but the value was deleted, there will be `Some(None)`
@@ -1431,10 +1431,10 @@ impl CachedAttributes for InProgressSQLiteAttributeCache {
          self.overlay.reverse_cached_attributes.contains(&attribute))
     }
 
-    fn is_attribute_cached_forward(&self, attribute: Causetid) -> bool {
-        !self.unregistered_forward.contains(&attribute) &&
-        (self.inner.forward_cached_attributes.contains(&attribute) ||
-         self.overlay.forward_cached_attributes.contains(&attribute))
+    fn is_attribute_cached_lightlike(&self, attribute: Causetid) -> bool {
+        !self.unregistered_lightlike.contains(&attribute) &&
+        (self.inner.lightlike_cached_attributes.contains(&attribute) ||
+         self.overlay.lightlike_cached_attributes.contains(&attribute))
     }
 
     fn has_cached_attributes(&self) -> bool {
@@ -1444,16 +1444,16 @@ impl CachedAttributes for InProgressSQLiteAttributeCache {
         }
 
         // If we haven't removed any, pass through to inner.
-        if self.unregistered_forward.is_empty() &&
+        if self.unregistered_lightlike.is_empty() &&
            self.unregistered_reverse.is_empty() {
             return self.inner.has_cached_attributes();
         }
 
         // Otherwise, we need to check whether we've removed anything that was cached.
         if self.inner
-               .forward_cached_attributes
+               .lightlike_cached_attributes
                .iter()
-               .filter(|a| !self.unregistered_forward.contains(a))
+               .filter(|a| !self.unregistered_lightlike.contains(a))
                .next()
                .is_some() {
             return true;
@@ -1524,9 +1524,9 @@ impl InProgressSQLiteAttributeCache {
         ::std::mem::drop(self.inner);
         if let Some(dest) = Arc::get_mut(&mut destination.inner) {
             // Yeah, we unregister in both directions. The only way
-            // `unregistered_forward` won't be the same as `unregistered_reverse` is if
+            // `unregistered_lightlike` won't be the same as `unregistered_reverse` is if
             // our `overlay` added one direction back in.
-            for unregistered in self.unregistered_forward.union(&self.unregistered_reverse) {
+            for unregistered in self.unregistered_lightlike.union(&self.unregistered_reverse) {
                 dest.unregister_attribute(*unregistered);
             }
 
@@ -1581,7 +1581,7 @@ impl<'a> TransactWatcher for InProgressCacheTransactWatcher<'a> {
         };
         match target.entry(a) {
             Entry::Vacant(entry) => {
-                let is_cached = self.cache.is_attribute_cached_forward(a) ||
+                let is_cached = self.cache.is_attribute_cached_lightlike(a) ||
                                 self.cache.is_attribute_cached_reverse(a);
                 if is_cached {
                     entry.insert(Either::Right(vec![(e, v.clone())]));

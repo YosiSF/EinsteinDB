@@ -1,6 +1,6 @@
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! This crate implements normal executors of Milevaeinsteindb_query
+//! This crate implements normal executors of MEDB_query
 
 #![feature(test)]
 
@@ -38,8 +38,8 @@ pub use self::topn::TopNExecutor;
 use std::sync::Arc;
 
 use codec::prelude::NumberDecoder;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::prelude::*;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeFlag;
+use causet_algebrizer::MEDB_query_datatype::prelude::*;
+use causet_algebrizer::MEDB_query_datatype::FieldTypeFlag;
 use EinsteinDB_util::collections::HashSet;
 use einsteindbpb::ColumnInfo;
 use einsteindbpb::{Expr, ExprType};
@@ -47,9 +47,9 @@ use einsteindbpb::{Expr, ExprType};
 use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::*;
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::IntervalRange;
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum, DatumEncoder};
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::{self, RowColsDict};
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, EvalWarnings};
+use causet_algebrizer::MEDB_query_datatype::codec::datum::{self, Datum, DatumEncoder};
+use causet_algebrizer::MEDB_query_datatype::codec::table::{self, RowColsDict};
+use causet_algebrizer::MEDB_query_datatype::expr::{EvalContext, EvalWarnings};
 
 extern crate failure;
 
@@ -142,9 +142,9 @@ impl<'s, 'c> KnownCauset<'s, 'c> {
             .unwrap_or(false)
     }
 
-    pub fn is_Attr_cached_forward<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
+    pub fn is_Attr_cached_lightlike<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
         self.cache
-            .map(|cache| cache.is_Attr_cached_forward(causetid.into()))
+            .map(|cache| cache.is_Attr_cached_lightlike(causetid.into()))
             .unwrap_or(false)
     }
 
@@ -786,9 +786,9 @@ pub mod tests {
     use codec::prelude::NumberEncoder;
     use ehikvproto::interlock::KeyRange;
     use allegroeinstein-prolog-causet-BerolinaSQL::storage::test_fixture::FixtureStorage;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::{datum, table, Datum};
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::{FieldTypeAccessor, FieldTypeTp};
+    use causet_algebrizer::MEDB_query_datatype::codec::{datum, table, Datum};
+    use causet_algebrizer::MEDB_query_datatype::expr::EvalContext;
+    use causet_algebrizer::MEDB_query_datatype::{FieldTypeAccessor, FieldTypeTp};
     use EinsteinDB_util::collections::HashMap;
     use EinsteinDB_util::map;
     use einsteindbpb::ColumnInfo;

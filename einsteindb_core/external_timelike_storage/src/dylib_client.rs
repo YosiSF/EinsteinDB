@@ -117,8 +117,8 @@ pub fn extern_to_io_err(e: ffi_support::ExternError) -> io::Error {
 }
 
 type FfiInitFn<'a> =
-    libloading::Symbol<'a, unsafe extern "C" fn(error: &mut ffi_support::ExternError) -> ()>;
-type FfiFn<'a> = libloading::Symbol<
+    libloading::Shelling<'a, unsafe extern "C" fn(error: &mut ffi_support::ExternError) -> ()>;
+type FfiFn<'a> = libloading::Shelling<
     'a,
     unsafe extern "C" fn(error: &mut ffi_support::ExternError, bytes: Vec<u8>) -> (),
 >;

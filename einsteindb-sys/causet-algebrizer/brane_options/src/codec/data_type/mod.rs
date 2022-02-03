@@ -85,7 +85,7 @@ where
 
 impl<'a> AsMyBerolinaSQLBool for JsonRef<'a> {
     fn as_myBerolinaSQL_bool(&self, _context: &mut EvalContext) -> Result<bool> {
-        // TODO: This logic is not correct. See pingcap/Milevaeinsteindb#9593
+        // TODO: This logic is not correct. See pingcap/MEDB#9593
         Ok(false)
     }
 }
@@ -126,7 +126,7 @@ pub trait UnsafeRefInto<T> {
     ///
     /// This function uses `std::mem::transmute`.
     /// The only place that copr uses this function is in
-    /// `Milevaeinsteindb_query_vec_aggr`, together with a set of `uFIDelate` macros.
+    /// `MEDB_query_vec_aggr`, together with a set of `uFIDelate` macros.
     unsafe fn unsafe_into(self) -> T;
 }
 

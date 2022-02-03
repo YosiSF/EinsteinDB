@@ -78,12 +78,12 @@ impl<Src: BatchExecutor> BatchExecutor for BatchLimitExecutor<Src> {
 mod tests {
     use super::*;
 
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
+    use causet_algebrizer::MEDB_query_datatype::FieldTypeTp;
 
     use crate::util::mock_executor::MockExecutor;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::batch::QuiesceBatchColumnVec;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::data_type::VectorValue;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalWarnings;
+    use causet_algebrizer::MEDB_query_datatype::codec::batch::QuiesceBatchColumnVec;
+    use causet_algebrizer::MEDB_query_datatype::codec::data_type::VectorValue;
+    use causet_algebrizer::MEDB_query_datatype::expr::EvalWarnings;
 
     #[test]
     fn test_limit_0() {

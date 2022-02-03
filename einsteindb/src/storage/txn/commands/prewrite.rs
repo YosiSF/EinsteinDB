@@ -32,7 +32,7 @@ use solitontxn_types::{Key, Mutation, OldValue, OldValues, TimeStamp, TxnExtra, 
 
 use super::ReaderWithStats;
 
-pub(crate) const FORWARD_MIN_MUTATIONS_NUM: usize = 12;
+pub(crate) const LIGHTLIKE_MIN_MUTATIONS_NUM: usize = 12;
 
 command! {
     /// The prewrite phase of a transaction. The first phase of 2PC.
@@ -664,7 +664,7 @@ impl PrewriteKind for Optimistic {
         blackbrane: &impl blackbrane,
         context: &mut WriteContext<'_, impl DaggerManager>,
     ) -> Result<()> {
-        if mutations.len() > FORWARD_MIN_MUTATIONS_NUM {
+        if mutations.len() > LIGHTLIKE_MIN_MUTATIONS_NUM {
             mutations.sort_by(|a, b| a.key().cmp(b.key()));
             let left_key = mutations.first().unwrap().key();
             let right_key = mutations
@@ -914,11 +914,11 @@ mod tests {
 
     #[test]
     fn test_prewrite_skip_constraint_check() {
-        inner_test_prewrite_skip_constraint_check(0, FORWARD_MIN_MUTATIONS_NUM + 1);
-        inner_test_prewrite_skip_constraint_check(5, FORWARD_MIN_MUTATIONS_NUM + 1);
+        inner_test_prewrite_skip_constraint_check(0, LIGHTLIKE_MIN_MUTATIONS_NUM + 1);
+        inner_test_prewrite_skip_constraint_check(5, LIGHTLIKE_MIN_MUTATIONS_NUM + 1);
         inner_test_prewrite_skip_constraint_check(
-            FORWARD_MIN_MUTATIONS_NUM as u8,
-            FORWARD_MIN_MUTATIONS_NUM + 1,
+            LIGHTLIKE_MIN_MUTATIONS_NUM as u8,
+            LIGHTLIKE_MIN_MUTATIONS_NUM + 1,
         );
     }
 
@@ -956,7 +956,7 @@ mod tests {
         set_perf_level(PerfLevel::EnableTimeExceptForMutex);
         let perf = PerfStatisticsInstant::new();
         let mut statistic = Statistics::default();
-        while mutations.len() > FORWARD_MIN_MUTATIONS_NUM + 1 {
+        while mutations.len() > LIGHTLIKE_MIN_MUTATIONS_NUM + 1 {
             mutations.pop();
         }
         prewrite(

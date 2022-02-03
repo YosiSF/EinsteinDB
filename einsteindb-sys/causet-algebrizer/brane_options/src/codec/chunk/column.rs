@@ -521,7 +521,7 @@ impl Column {
         let mut raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In both index and record, it's flag is `FLOAT`. See Milevaeinsteindb's `encode()`.
+            // In both index and record, it's flag is `FLOAT`. See MEDB's `encode()`.
             datum::FLOAT_FLAG => {
                 let v = raw_datum.read_datum_payload_f64()?;
                 self.append_f64(v)?;
@@ -554,7 +554,7 @@ impl Column {
         let mut raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In both index and record, it's flag is `FLOAT`. See Milevaeinsteindb's `encode()`.
+            // In both index and record, it's flag is `FLOAT`. See MEDB's `encode()`.
             datum::FLOAT_FLAG => {
                 let v = raw_datum.read_datum_payload_f64()?;
                 self.append_f32(v as f32)?;
@@ -605,10 +605,10 @@ impl Column {
         let mut raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In index, it's flag is `BYTES`. See Milevaeinsteindb's `encode()`.
+            // In index, it's flag is `BYTES`. See MEDB's `encode()`.
             // TODO: this method's performance can be further improved
             datum::BYTES_FLAG => self.append_bytes(&raw_datum.read_datum_payload_bytes()?)?,
-            // In record, it's flag is `COMPACT_BYTES`. See Milevaeinsteindb's `encode()`.
+            // In record, it's flag is `COMPACT_BYTES`. See MEDB's `encode()`.
             datum::COMPACT_BYTES_FLAG => {
                 let vn = raw_datum.read_var_i64()? as usize;
                 let data = raw_datum.read_bytes(vn)?;
@@ -656,13 +656,13 @@ impl Column {
 
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In index, it's flag is `UINT`. See Milevaeinsteindb's `encode()`.
+            // In index, it's flag is `UINT`. See MEDB's `encode()`.
             datum::UINT_FLAG => {
                 self.data
                     .write_time_to_chunk_by_datum_payload_int(raw_datum, ctx, field_type)?;
                 self.finish_append_fixed();
             }
-            // In record, it's flag is `VAR_UINT`. See Milevaeinsteindb's `flatten()` and `encode()`.
+            // In record, it's flag is `VAR_UINT`. See MEDB's `flatten()` and `encode()`.
             datum::VAR_UINT_FLAG => {
                 self.data
                     .write_time_to_chunk_by_datum_payload_varint(raw_datum, ctx, field_type)?;
@@ -705,13 +705,13 @@ impl Column {
         let raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In index, it's flag is `DURATION`. See Milevaeinsteindb's `encode()`.
+            // In index, it's flag is `DURATION`. See MEDB's `encode()`.
             datum::DURATION_FLAG => {
                 self.data
                     .write_duration_to_chunk_by_datum_payload_int(raw_datum)?;
                 self.finish_append_fixed();
             }
-            // In record, it's flag is `VAR_INT`. See Milevaeinsteindb's `flatten()` and `encode()`.
+            // In record, it's flag is `VAR_INT`. See MEDB's `flatten()` and `encode()`.
             datum::VAR_INT_FLAG => {
                 self.data
                     .write_duration_to_chunk_by_datum_payload_varint(raw_datum)?;
@@ -754,7 +754,7 @@ impl Column {
         let raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In both index and record, it's flag is `DECIMAL`. See Milevaeinsteindb's `encode()`.
+            // In both index and record, it's flag is `DECIMAL`. See MEDB's `encode()`.
             datum::DECIMAL_FLAG => {
                 self.data
                     .write_decimal_to_chunk_by_datum_payload(raw_datum)?;
@@ -798,7 +798,7 @@ impl Column {
         let raw_datum = &src_datum[1..];
         match flag {
             datum::NIL_FLAG => self.append_null(),
-            // In both index and record, it's flag is `JSON`. See Milevaeinsteindb's `encode()`.
+            // In both index and record, it's flag is `JSON`. See MEDB's `encode()`.
             datum::JSON_FLAG => {
                 self.data.write_json_to_chunk_by_datum_payload(raw_datum)?;
                 self.finished_append_var();

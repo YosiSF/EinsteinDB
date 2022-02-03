@@ -16,7 +16,7 @@ use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
-use edn::symbols;
+use edn::shellings;
 
 use core_traits::{
     attribute,
@@ -244,20 +244,20 @@ impl AttributeBuilder {
 }
 
 pub trait TopographBuilding {
-    fn require_ident(&self, causetid: Causetid) -> Result<&symbols::Keyword>;
-    fn require_causetid(&self, solitonid: &symbols::Keyword) -> Result<KnownCausetid>;
+    fn require_ident(&self, causetid: Causetid) -> Result<&shellings::Keyword>;
+    fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<KnownCausetid>;
     fn require_attribute_for_causetid(&self, causetid: Causetid) -> Result<&Attribute>;
     fn from_ident_map_and_attribute_map(ident_map: SolitonidMap, attribute_map: AttributeMap) -> Result<Topograph>;
     fn from_ident_map_and_triples<U>(ident_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
-        where U: IntoIterator<Item=(symbols::Keyword, symbols::Keyword, TypedValue)>;
+        where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, TypedValue)>;
 }
 
 impl TopographBuilding for Topograph {
-    fn require_ident(&self, causetid: Causetid) -> Result<&symbols::Keyword> {
+    fn require_ident(&self, causetid: Causetid) -> Result<&shellings::Keyword> {
         self.get_ident(causetid).ok_or(einsteindbErrorKind::UnrecognizedCausetid(causetid).into())
     }
 
-    fn require_causetid(&self, solitonid: &symbols::Keyword) -> Result<KnownCausetid> {
+    fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<KnownCausetid> {
         self.get_causetid(&solitonid).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(solitonid.to_string()).into())
     }
 
@@ -275,11 +275,11 @@ impl TopographBuilding for Topograph {
 
     /// Turn vec![(Keyword(:solitonid), Keyword(:key), TypedValue(:value)), ...] into a einstai `Topograph`.
     fn from_ident_map_and_triples<U>(ident_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
-        where U: IntoIterator<Item=(symbols::Keyword, symbols::Keyword, TypedValue)>{
+        where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, TypedValue)>{
 
-        let causetid_lightlike_dagger_upsert: Result<Vec<(Causetid, Causetid, TypedValue)>> = lightlike_dagger_upsert.into_iter().map(|(symbolic_ident, symbolic_attr, value)| {
-            let solitonid: i64 = *ident_map.get(&symbolic_ident).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(symbolic_ident.to_string()))?;
-            let attr: i64 = *ident_map.get(&symbolic_attr).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(symbolic_attr.to_string()))?;
+        let causetid_lightlike_dagger_upsert: Result<Vec<(Causetid, Causetid, TypedValue)>> = lightlike_dagger_upsert.into_iter().map(|(shellingic_ident, shellingic_attr, value)| {
+            let solitonid: i64 = *ident_map.get(&shellingic_ident).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(shellingic_ident.to_string()))?;
+            let attr: i64 = *ident_map.get(&shellingic_attr).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(shellingic_attr.to_string()))?;
             Ok((solitonid, attr, value))
         }).collect();
 

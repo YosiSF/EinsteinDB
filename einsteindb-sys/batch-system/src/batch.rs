@@ -255,7 +255,7 @@ impl<N: Fsm, C: Fsm, Handler: PollHandler<N, C>> Poller<N, C, Handler> {
         !batch.is_empty()
     }
 
-    // Poll for readiness and forward to handler. Remove stale peer if necessary.
+    // Poll for readiness and lightlike to handler. Remove stale peer if necessary.
     fn poll(&mut self) {
         let mut batch = Batch::with_capacity(self.max_batch_size);
         let mut reschedule_fsms = Vec::with_capacity(self.max_batch_size);

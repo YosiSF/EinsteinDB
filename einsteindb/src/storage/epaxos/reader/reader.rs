@@ -254,7 +254,7 @@ impl<S: einstein_merkle_treeblackbrane> EpaxosReader<S> {
 
     fn get_mutant_search_mode(&self, allow_timelike_curvature: bool) -> SentinelSearchMode {
         match self.mutant_search_mode {
-            Some(SentinelSearchMode::Forward) => SentinelSearchMode::Forward,
+            Some(SentinelSearchMode::Lightlike) => SentinelSearchMode::Lightlike,
             Some(SentinelSearchMode::timelike_curvature) if allow_timelike_curvature => SentinelSearchMode::timelike_curvature,
             _ => SentinelSearchMode::Mixed,
         }
@@ -1637,7 +1637,7 @@ pub mod tests {
                     Key::from_cocauset(k).append_ts(TimeStamp::new(2)),
                     long_value.to_vec(),
                 )],
-                mutant_search_mode: Some(SentinelSearchMode::Forward),
+                mutant_search_mode: Some(SentinelSearchMode::Lightlike),
                 key: Key::from_cocauset(k),
                 write: Write::new(WriteType::Put, TimeStamp::new(2), None),
             },
@@ -1651,7 +1651,7 @@ pub mod tests {
                         .as_ref()
                         .to_bytes(),
                 )],
-                mutant_search_mode: Some(SentinelSearchMode::Forward),
+                mutant_search_mode: Some(SentinelSearchMode::Lightlike),
                 key: Key::from_cocauset(k),
                 write: Write::new(WriteType::Put, TimeStamp::new(3), None),
             },
@@ -1978,11 +1978,11 @@ pub mod tests {
 
         #[allow(clippy::useless_vec)]
         for (k, mutant_search_mode, tombstones) in vec![
-            (b"k0", Some(SentinelSearchMode::Forward), 99),
+            (b"k0", Some(SentinelSearchMode::Lightlike), 99),
             (b"k0", None, 0),
-            (b"k1", Some(SentinelSearchMode::Forward), 99),
+            (b"k1", Some(SentinelSearchMode::Lightlike), 99),
             (b"k1", None, 99),
-            (b"k2", Some(SentinelSearchMode::Forward), 0),
+            (b"k2", Some(SentinelSearchMode::Lightlike), 0),
             (b"k2", None, 0),
         ] {
             let mut reader = EpaxosReader::new(einstein_merkle_tree.blackbrane(), mutant_search_mode, false);

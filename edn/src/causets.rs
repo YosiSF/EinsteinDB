@@ -17,9 +17,9 @@ use value_rc::{
     ValueRc,
 };
 
-use symbols::{
+use shellings::{
     Keyword,
-    PlainSymbol,
+    PlainShelling,
 };
 
 use types::{
@@ -111,7 +111,7 @@ pub struct LookupRef<V> {
 /// generalization.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub struct TxFunction {
-    pub op: PlainSymbol,
+    pub op: PlainShelling,
 }
 
 pub type MapNotation<V> = BTreeMap<CausetidOrSolitonid, ValuePlace<V>>;

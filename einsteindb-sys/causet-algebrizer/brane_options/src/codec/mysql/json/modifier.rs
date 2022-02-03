@@ -12,7 +12,7 @@ use std::ptr;
 /// the encoded bytes directly. Only used by `json_replace`, `json_set`,
 /// `json_insert` and `json_remove`
 ///
-/// See `binaryModifier` in Milevaeinsteindb `json/binary_function.go`
+/// See `binaryModifier` in MEDB `json/binary_function.go`
 pub struct BinaryModifier<'a> {
     // The target Json to be modified
     old: JsonRef<'a>,

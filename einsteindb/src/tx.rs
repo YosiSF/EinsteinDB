@@ -366,13 +366,13 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             fn causet_v_into_term_e<W: TransactableValue>(&mut self, x: entmod::ValuePlace<W>, spacelike_completion_a: &entmod::CausetidOrSolitonid) -> Result<KnownCausetidOr<LookupRefOrTempId>> {
                 match spacelike_completion_a.unreversed() {
                     None => {
-                        bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode map notation value in :attr/_reversed notation for forward attribute")));
+                        bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode map notation value in :attr/_reversed notation for lightlike attribute")));
                     },
-                    Some(forward_a) => {
-                        let forward_a = self.causet_a_into_term_a(forward_a)?;
-                        let forward_attribute = self.topograph.require_attribute_for_causetid(forward_a)?;
-                        if forward_attribute.value_type != ValueType::Ref {
-                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", forward_a)))
+                    Some(lightlike_a) => {
+                        let lightlike_a = self.causet_a_into_term_a(lightlike_a)?;
+                        let lightlike_attribute = self.topograph.require_attribute_for_causetid(lightlike_a)?;
+                        if lightlike_attribute.value_type != ValueType::Ref {
+                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", lightlike_a)))
                         }
 
                         match x {
@@ -387,7 +387,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                             Ok(Either::Left(KnownCausetid(causetid)))
                                         } else {
                                             // The given value is expected to be :einsteindb.type/ref, so this shouldn't happen.
-                                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} with value that is not :einsteindb.valueType :einsteindb.type/ref", forward_a)))
+                                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} with value that is not :einsteindb.valueType :einsteindb.type/ref", lightlike_a)))
                                         }
                                     }
                                 }
@@ -410,10 +410,10 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                             },
 
                             entmod::ValuePlace::Vector(_) =>
-                                bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode vector value in :attr/_reversed notation for attribute {}", forward_a))),
+                                bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode vector value in :attr/_reversed notation for attribute {}", lightlike_a))),
 
                             entmod::ValuePlace::MapNotation(_) =>
-                                bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode map notation value in :attr/_reversed notation for attribute {}", forward_a))),
+                                bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode map notation value in :attr/_reversed notation for attribute {}", lightlike_a))),
                         }
                     },
                 }
@@ -653,7 +653,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         // Now we can collect upsert populations.
         let (mut generation, inert_terms) = Generation::from(terms, &self.topograph)?;
 
-        // And evolve them forward.
+        // And evolve them lightlike.
         while generation.can_evolve() {
             debug!("generation {:?}", generation);
 

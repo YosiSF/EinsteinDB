@@ -542,7 +542,7 @@ impl ConvertTo<Decimal> for Duration {
     /// This function should not return err,
     /// if it return err, then the err is because of bug.
     ///
-    /// Port from Milevaeinsteindb' Duration::ToNumber
+    /// Port from MEDB' Duration::ToNumber
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Decimal> {
         let r = self.to_numeric_string().parse::<Decimal>();

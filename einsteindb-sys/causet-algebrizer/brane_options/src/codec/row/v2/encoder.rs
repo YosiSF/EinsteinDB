@@ -8,9 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-//! This `encoder` module is only used for test, so the implementation is very straightforward.
+//! This `encoder` module is only used for test, so the implementation is very straightlightlike.
 //!
-//! According to https://github.com/pingcap/Milevaeinsteindb/blob/master/docs/design/2022-07-19-row-format.md
+//! According to https://github.com/pingcap/MEDB/blob/master/docs/design/2022-07-19-row-format.md
 //!
 //! The row format is:
 //!

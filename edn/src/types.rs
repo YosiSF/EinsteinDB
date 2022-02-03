@@ -25,7 +25,7 @@ use num::BigInt;
 use ordered_float::OrderedFloat;
 use uuid::Uuid;
 
-use symbols;
+use shellings;
 
 /// Value represents one of the allowed values in an EML string.
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -38,9 +38,9 @@ pub enum Value {
     Float(OrderedFloat<f64>),
     Text(String),
     Uuid(Uuid),
-    PlainSymbol(symbols::PlainSymbol),
-    NamespacedSymbol(symbols::NamespacedSymbol),
-    Keyword(symbols::Keyword),
+    PlainShelling(shellings::PlainShelling),
+    NamespacedShelling(shellings::NamespacedShelling),
+    Keyword(shellings::Keyword),
     Vector(Vec<Value>),
     // We're using a LinkedList here instead of a Vec or VecDeque because the
     // LinkedList is faster for appending (which we do a lot of).
@@ -66,9 +66,9 @@ pub enum SpannedValue {
     Float(OrderedFloat<f64>),
     Text(String),
     Uuid(Uuid),
-    PlainSymbol(symbols::PlainSymbol),
-    NamespacedSymbol(symbols::NamespacedSymbol),
-    Keyword(symbols::Keyword),
+    PlainShelling(shellings::PlainShelling),
+    NamespacedShelling(shellings::NamespacedShelling),
+    Keyword(shellings::Keyword),
     Vector(Vec<ValueAndSpan>),
     List(LinkedList<ValueAndSpan>),
     Set(BTreeSet<ValueAndSpan>),
@@ -154,8 +154,8 @@ impl From<SpannedValue> for Value {
             SpannedValue::Float(v) => Value::Float(v),
             SpannedValue::Text(v) => Value::Text(v),
             SpannedValue::Uuid(v) => Value::Uuid(v),
-            SpannedValue::PlainSymbol(v) => Value::PlainSymbol(v),
-            SpannedValue::NamespacedSymbol(v) => Value::NamespacedSymbol(v),
+            SpannedValue::PlainShelling(v) => Value::PlainShelling(v),
+            SpannedValue::NamespacedShelling(v) => Value::NamespacedShelling(v),
             SpannedValue::Keyword(v) => Value::Keyword(v),
             SpannedValue::Vector(v) => Value::Vector(v.into_iter().map(|x| x.without_spans()).collect()),
             SpannedValue::List(v) => Value::List(v.into_iter().map(|x| x.without_spans()).collect()),
@@ -236,32 +236,32 @@ macro_rules! def_into {
     }
 }
 
-/// Converts `name` into a plain or isoliton_namespaceable value symbol, depending on
+/// Converts `name` into a plain or isoliton_namespaceable value shelling, depending on
 /// whether or not `isoliton_namespaceable_fuse` is given.
 ///
 /// # Examples
 ///
 /// ```
-/// # use edn::types::to_symbol;
+/// # use edn::types::to_shelling;
 /// # use edn::types::Value;
-/// # use edn::symbols;
-/// let value = to_symbol!("foo", "bar", Value);
-/// assert_eq!(value, Value::NamespacedSymbol(symbols::NamespacedSymbol::isoliton_namespaceable("foo", "bar")));
+/// # use edn::shellings;
+/// let value = to_shelling!("foo", "bar", Value);
+/// assert_eq!(value, Value::NamespacedShelling(shellings::NamespacedShelling::isoliton_namespaceable("foo", "bar")));
 ///
-/// let value = to_symbol!(None, "baz", Value);
-/// assert_eq!(value, Value::PlainSymbol(symbols::PlainSymbol::plain("baz")));
+/// let value = to_shelling!(None, "baz", Value);
+/// assert_eq!(value, Value::PlainShelling(shellings::PlainShelling::plain("baz")));
 ///
-/// let value = to_symbol!("foo", "bar", SpannedValue);
-/// assert_eq!(value.into(), to_symbol!("foo", "bar", Value));
+/// let value = to_shelling!("foo", "bar", SpannedValue);
+/// assert_eq!(value.into(), to_shelling!("foo", "bar", Value));
 ///
-/// let value = to_symbol!(None, "baz", SpannedValue);
-/// assert_eq!(value.into(), to_symbol!(None, "baz", Value));
+/// let value = to_shelling!(None, "baz", SpannedValue);
+/// assert_eq!(value.into(), to_shelling!(None, "baz", Value));
 /// ```
-macro_rules! to_symbol {
+macro_rules! to_shelling {
     ( $isoliton_namespaceable_fuse:expr, $name:expr, $t:tt ) => {
         $isoliton_namespaceable_fuse.into().map_or_else(
-            || $t::PlainSymbol(symbols::PlainSymbol::plain($name)),
-            |ns| $t::NamespacedSymbol(symbols::NamespacedSymbol::isoliton_namespaceable(ns, $name)))
+            || $t::PlainShelling(shellings::PlainShelling::plain($name)),
+            |ns| $t::NamespacedShelling(shellings::NamespacedShelling::isoliton_namespaceable(ns, $name)))
     }
 }
 
@@ -273,12 +273,12 @@ macro_rules! to_symbol {
 /// ```
 /// # use edn::types::to_keyword;
 /// # use edn::types::Value;
-/// # use edn::symbols;
+/// # use edn::shellings;
 /// let value = to_keyword!("foo", "bar", Value);
-/// assert_eq!(value, Value::Keyword(symbols::Keyword::isoliton_namespaceable("foo", "bar")));
+/// assert_eq!(value, Value::Keyword(shellings::Keyword::isoliton_namespaceable("foo", "bar")));
 ///
 /// let value = to_keyword!(None, "baz", Value);
-/// assert_eq!(value, Value::Keyword(symbols::Keyword::plain("baz")));
+/// assert_eq!(value, Value::Keyword(shellings::Keyword::plain("baz")));
 ///
 /// let value = to_keyword!("foo", "bar", SpannedValue);
 /// assert_eq!(value.into(), to_keyword!("foo", "bar", Value));
@@ -289,8 +289,8 @@ macro_rules! to_symbol {
 macro_rules! to_keyword {
     ( $isoliton_namespaceable_fuse:expr, $name:expr, $t:tt ) => {
         $isoliton_namespaceable_fuse.into().map_or_else(
-            || $t::Keyword(symbols::Keyword::plain($name)),
-            |ns| $t::Keyword(symbols::Keyword::isoliton_namespaceable(ns, $name)))
+            || $t::Keyword(shellings::Keyword::plain($name)),
+            |ns| $t::Keyword(shellings::Keyword::isoliton_namespaceable(ns, $name)))
     }
 }
 
@@ -306,8 +306,8 @@ macro_rules! def_common_value_methods {
         def_is!(is_float, $t::Float(_));
         def_is!(is_text, $t::Text(_));
         def_is!(is_uuid, $t::Uuid(_));
-        def_is!(is_symbol, $t::PlainSymbol(_));
-        def_is!(is_isoliton_namespaceable_symbol, $t::NamespacedSymbol(_));
+        def_is!(is_shelling, $t::PlainShelling(_));
+        def_is!(is_isoliton_namespaceable_shelling, $t::NamespacedShelling(_));
         def_is!(is_vector, $t::Vector(_));
         def_is!(is_list, $t::List(_));
         def_is!(is_set, $t::Set(_));
@@ -342,24 +342,24 @@ macro_rules! def_common_value_methods {
         def_as_ref!(as_ordered_float, $t::Float, OrderedFloat<f64>);
         def_as_ref!(as_text, $t::Text, String);
         def_as_ref!(as_uuid, $t::Uuid, Uuid);
-        def_as_ref!(as_symbol, $t::PlainSymbol, symbols::PlainSymbol);
-        def_as_ref!(as_isoliton_namespaceable_symbol, $t::NamespacedSymbol, symbols::NamespacedSymbol);
+        def_as_ref!(as_shelling, $t::PlainShelling, shellings::PlainShelling);
+        def_as_ref!(as_isoliton_namespaceable_shelling, $t::NamespacedShelling, shellings::NamespacedShelling);
 
-        pub fn as_keyword(&self) -> Option<&symbols::Keyword> {
+        pub fn as_keyword(&self) -> Option<&shellings::Keyword> {
             match self {
                 &$t::Keyword(ref k) => Some(k),
                 _ => None,
             }
         }
 
-        pub fn as_plain_keyword(&self) -> Option<&symbols::Keyword> {
+        pub fn as_plain_keyword(&self) -> Option<&shellings::Keyword> {
             match self {
                 &$t::Keyword(ref k) if !k.is_isoliton_namespaceable() => Some(k),
                 _ => None,
             }
         }
 
-        pub fn as_isoliton_namespaceable_keyword(&self) -> Option<&symbols::Keyword> {
+        pub fn as_isoliton_namespaceable_keyword(&self) -> Option<&shellings::Keyword> {
             match self {
                 &$t::Keyword(ref k) if k.is_isoliton_namespaceable() => Some(k),
                 _ => None,
@@ -379,17 +379,17 @@ macro_rules! def_common_value_methods {
         def_into!(into_float, $t::Float, f64, |v: OrderedFloat<f64>| v.into_inner());
         def_into!(into_text, $t::Text, String,);
         def_into!(into_uuid, $t::Uuid, Uuid,);
-        def_into!(into_symbol, $t::PlainSymbol, symbols::PlainSymbol,);
-        def_into!(into_isoliton_namespaceable_symbol, $t::NamespacedSymbol, symbols::NamespacedSymbol,);
+        def_into!(into_shelling, $t::PlainShelling, shellings::PlainShelling,);
+        def_into!(into_isoliton_namespaceable_shelling, $t::NamespacedShelling, shellings::NamespacedShelling,);
 
-        pub fn into_keyword(self) -> Option<symbols::Keyword> {
+        pub fn into_keyword(self) -> Option<shellings::Keyword> {
             match self {
                 $t::Keyword(k) => Some(k),
                 _ => None,
             }
         }
 
-        pub fn into_plain_keyword(self) -> Option<symbols::Keyword> {
+        pub fn into_plain_keyword(self) -> Option<shellings::Keyword> {
             match self {
                 $t::Keyword(k) => {
                     if !k.is_isoliton_namespaceable() {
@@ -402,7 +402,7 @@ macro_rules! def_common_value_methods {
             }
         }
 
-        pub fn into_isoliton_namespaceable_keyword(self) -> Option<symbols::Keyword> {
+        pub fn into_isoliton_namespaceable_keyword(self) -> Option<shellings::Keyword> {
             match self {
                 $t::Keyword(k) => {
                     if k.is_isoliton_namespaceable() {
@@ -425,8 +425,8 @@ macro_rules! def_common_value_methods {
         def_from!(from_float, $t, $t::Float, f64, |src: f64| OrderedFloat::from(src));
         def_from!(from_ordered_float, $t, $t::Float, OrderedFloat<f64>,);
 
-        pub fn from_symbol<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_fuse: T, name: &str) -> $t {
-            to_symbol!(isoliton_namespaceable_fuse, name, $t)
+        pub fn from_shelling<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_fuse: T, name: &str) -> $t {
+            to_shelling!(isoliton_namespaceable_fuse, name, $t)
         }
 
         pub fn from_keyword<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_fuse: T, name: &str) -> $t {
@@ -443,8 +443,8 @@ macro_rules! def_common_value_methods {
                 $t::Instant(_) => 5,
                 $t::Text(_) => 6,
                 $t::Uuid(_) => 7,
-                $t::PlainSymbol(_) => 8,
-                $t::NamespacedSymbol(_) => 9,
+                $t::PlainShelling(_) => 8,
+                $t::NamespacedShelling(_) => 9,
                 $t::Keyword(ref k) if !k.is_isoliton_namespaceable() => 10,
                 $t::Keyword(_) => 11,
                 $t::Vector(_) => 12,
@@ -464,8 +464,8 @@ macro_rules! def_common_value_methods {
                 $t::Float(_) => false,
                 $t::Text(_) => false,
                 $t::Uuid(_) => false,
-                $t::PlainSymbol(_) => false,
-                $t::NamespacedSymbol(_) => false,
+                $t::PlainShelling(_) => false,
+                $t::NamespacedShelling(_) => false,
                 $t::Keyword(_) => false,
                 $t::Vector(_) => true,
                 $t::List(_) => true,
@@ -501,8 +501,8 @@ macro_rules! def_common_value_ord {
             (&$t::Float(ref a), &$t::Float(ref b)) => b.cmp(a),
             (&$t::Text(ref a), &$t::Text(ref b)) => b.cmp(a),
             (&$t::Uuid(ref a), &$t::Uuid(ref b)) => b.cmp(a),
-            (&$t::PlainSymbol(ref a), &$t::PlainSymbol(ref b)) => b.cmp(a),
-            (&$t::NamespacedSymbol(ref a), &$t::NamespacedSymbol(ref b)) => b.cmp(a),
+            (&$t::PlainShelling(ref a), &$t::PlainShelling(ref b)) => b.cmp(a),
+            (&$t::NamespacedShelling(ref a), &$t::NamespacedShelling(ref b)) => b.cmp(a),
             (&$t::Keyword(ref a), &$t::Keyword(ref b)) => b.cmp(a),
             (&$t::Vector(ref a), &$t::Vector(ref b)) => b.cmp(a),
             (&$t::List(ref a), &$t::List(ref b)) => b.cmp(a),
@@ -539,7 +539,7 @@ macro_rules! def_common_value_display {
             $t::BigDecimal(ref v) => write!($f, "{}M", v),
             $t::Uuid(ref v) => write!($f, "#uuid \"{}\"", v),
             $t::Keyword(ref v) => write!($f, ":{}", v),
-            $t::Symbol(ref s) => write!($f, "{}", s.as_str()),
+            $t::Shelling(ref s) => write!($f, "{}", s.as_str()),
             $t::String(ref s) => {
                 let mut escaped = String::new();
 
@@ -570,7 +570,7 @@ macro_rules! def_common_value_display {
 
     ( @display integer ) => {}, // do nothing; we handle integers elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
 
-    ( @display symbol ) => {{}} // do nothing; we handle symbols elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
+    ( @display shelling ) => {{}} // do nothing; we handle shellings elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
 
     ($value:expr,)  -> {} ; ($value:expr, $(@$kind:tt)*); ($value:expr,)  -> {} ; ($value:expr, $(@$kind:tt)*); ($value:expr,)  -> {} ; ($value:expr, $(@$kind:tt)*); ($value:expr,)  -> {} ; ($value:expr, $(@$kind : tt)*) => {
         def_common_value_display!($value, $($kind)*);
@@ -579,8 +579,8 @@ macro_rules! def_common_value_display {
             // TODO: EML escaping.
             $t::Text(ref v) => write!($f, "\"{}\"", v),
             $t::Uuid(ref u) => write!($f, "#uuid \"{}\"", u.hyphenated().to_string()),
-            $t::PlainSymbol(ref v) => v.fmt($f),
-            $t::NamespacedSymbol(ref v) => v.fmt($f),
+            $t::PlainShelling(ref v) => v.fmt($f),
+            $t::NamespacedShelling(ref v) => v.fmt($f),
             $t::Keyword(ref v) => v.fmt($f),
             $t::Vector(ref v) => {
                 write!($f, "[")?;
@@ -763,14 +763,14 @@ mod test {
                 Value::from_bigint("4").unwrap()
             ])),
             Value::Map(BTreeMap::from_iter(vec![
-                (Value::from_symbol("foo", "bar"), Value::Integer(42)),
+                (Value::from_shelling("foo", "bar"), Value::Integer(42)),
                 (Value::from_keyword("baz", "boz"), Value::Integer(43))
             ])),
             Value::Vector(vec![]),
             Value::from_keyword(None, "five"),
             Value::from_keyword("six", "seven"),
-            Value::from_symbol(None, "eight"),
-            Value::from_symbol("nine", "ten"),
+            Value::from_shelling(None, "eight"),
+            Value::from_shelling("nine", "ten"),
             Value::Boolean(true),
             Value::Boolean(false),
             Value::Nil,
@@ -793,8 +793,8 @@ mod test {
         assert_eq!(Value::from_bigint("1").cmp(&Value::from_bigint("2")), Ordering::Greater);
         assert_eq!(Value::from_float(1f64).cmp(&Value::from_float(2f64)), Ordering::Greater);
         assert_eq!(Value::Text("1".to_string()).cmp(&Value::Text("2".to_string())), Ordering::Greater);
-        assert_eq!(Value::from_symbol("a", "b").cmp(&Value::from_symbol("c", "d")), Ordering::Greater);
-        assert_eq!(Value::from_symbol(None, "a").cmp(&Value::from_symbol(None, "b")), Ordering::Greater);
+        assert_eq!(Value::from_shelling("a", "b").cmp(&Value::from_shelling("c", "d")), Ordering::Greater);
+        assert_eq!(Value::from_shelling(None, "a").cmp(&Value::from_shelling(None, "b")), Ordering::Greater);
         assert_eq!(Value::from_keyword(":a", ":b").cmp(&Value::from_keyword(":c", ":d")), Ordering::Greater);
         assert_eq!(Value::from_keyword(None, ":a").cmp(&Value::from_keyword(None, ":b")), Ordering::Greater);
         assert_eq!(Value::Vector(vec![]).cmp(&Value::Vector(vec![])), Ordering::Equal);
@@ -805,8 +805,8 @@ mod test {
 
     #[test]
     fn test_keyword_as() {
-        let isoliton_namespaceable = symbols::Keyword::isoliton_namespaceable("foo", "bar");
-        let plain = symbols::Keyword::plain("bar");
+        let isoliton_namespaceable = shellings::Keyword::isoliton_namespaceable("foo", "bar");
+        let plain = shellings::Keyword::plain("bar");
         let n_v = Value::Keyword(isoliton_namespaceable);
         let p_v = Value::Keyword(plain);
 

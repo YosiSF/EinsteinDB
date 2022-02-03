@@ -309,8 +309,8 @@ mod tests {
         let mut in_progress = store.begin_transaction().expect("began");
         in_progress.import(fixture_path("cities.schema")).expect("transacted schema");
         in_progress.import(fixture_path("all_seattle.edn")).expect("transacted data");
-        in_progress.cache(&kw!(:neighborhood/district), CacheDirection::Forward, CacheAction::Register).expect("cache done");
-        in_progress.cache(&kw!(:district/name), CacheDirection::Forward, CacheAction::Register).expect("cache done");
+        in_progress.cache(&kw!(:neighborhood/district), CacheDirection::Lightlike, CacheAction::Register).expect("cache done");
+        in_progress.cache(&kw!(:district/name), CacheDirection::Lightlike, CacheAction::Register).expect("cache done");
         in_progress.cache(&kw!(:neighborhood/name), CacheDirection::Reverse, CacheAction::Register).expect("cache done");
 
         let query = r#"[:find ?district
@@ -340,7 +340,7 @@ mod tests {
     trait StoreCache {
         fn get_causetid_for_value(&self, attr: Causetid, val: &TypedValue) -> Option<Causetid>;
         fn is_attribute_cached_reverse(&self, attr: Causetid) -> bool;
-        fn is_attribute_cached_forward(&self, attr: Causetid) -> bool;
+        fn is_attribute_cached_lightlike(&self, attr: Causetid) -> bool;
     }
 
     impl StoreCache for Store {
@@ -349,8 +349,8 @@ mod tests {
             cache.get_causetid_for_value(attr, val)
         }
 
-        fn is_attribute_cached_forward(&self, attr: Causetid) -> bool {
-            self.conn.current_cache().is_attribute_cached_forward(attr)
+        fn is_attribute_cached_lightlike(&self, attr: Causetid) -> bool {
+            self.conn.current_cache().is_attribute_cached_lightlike(attr)
         }
 
         fn is_attribute_cached_reverse(&self, attr: Causetid) -> bool {
@@ -388,12 +388,12 @@ mod tests {
 
         // … and cache the others via the store.
         store.cache(&kw!(:foo/baz), CacheDirection::Both).expect("cache done");
-        store.cache(&kw!(:foo/x), CacheDirection::Forward).expect("cache done");
+        store.cache(&kw!(:foo/x), CacheDirection::Lightlike).expect("cache done");
         {
             assert!(store.is_attribute_cached_reverse(foo_bar));
-            assert!(store.is_attribute_cached_forward(foo_baz));
+            assert!(store.is_attribute_cached_lightlike(foo_baz));
             assert!(store.is_attribute_cached_reverse(foo_baz));
-            assert!(store.is_attribute_cached_forward(foo_x));
+            assert!(store.is_attribute_cached_lightlike(foo_x));
         }
 
         // Add some data.
@@ -402,14 +402,14 @@ mod tests {
 
             {
                 assert!(in_progress.cache.is_attribute_cached_reverse(foo_bar));
-                assert!(in_progress.cache.is_attribute_cached_forward(foo_baz));
+                assert!(in_progress.cache.is_attribute_cached_lightlike(foo_baz));
                 assert!(in_progress.cache.is_attribute_cached_reverse(foo_baz));
-                assert!(in_progress.cache.is_attribute_cached_forward(foo_x));
+                assert!(in_progress.cache.is_attribute_cached_lightlike(foo_x));
 
                 assert!(in_progress.cache.overlay.is_attribute_cached_reverse(foo_bar));
-                assert!(in_progress.cache.overlay.is_attribute_cached_forward(foo_baz));
+                assert!(in_progress.cache.overlay.is_attribute_cached_lightlike(foo_baz));
                 assert!(in_progress.cache.overlay.is_attribute_cached_reverse(foo_baz));
-                assert!(in_progress.cache.overlay.is_attribute_cached_forward(foo_x));
+                assert!(in_progress.cache.overlay.is_attribute_cached_lightlike(foo_x));
             }
 
             in_progress.transact(r#"[

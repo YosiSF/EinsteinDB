@@ -56,13 +56,13 @@ use ::value_rc::{
 
 pub use ::{
     Keyword,
-    PlainSymbol,
+    PlainShelling,
 };
 
 pub type SrcVarName = String;          // Do not include the required syntactic '$'.
 
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct Variable(pub Rc<PlainSymbol>);
+pub struct Variable(pub Rc<PlainShelling>);
 
 impl Variable {
     pub fn as_str(&self) -> &str {
@@ -73,14 +73,14 @@ impl Variable {
         self.0.as_ref().0.clone()
     }
 
-    pub fn name(&self) -> PlainSymbol {
+    pub fn name(&self) -> PlainShelling {
         self.0.as_ref().clone()
     }
 
     /// Return a new `Variable`, assuming that the provided string is a valid name.
     pub fn from_valid_name(name: &str) -> Variable {
-        let s = PlainSymbol::plain(name);
-        assert!(s.is_var_symbol());
+        let s = PlainShelling::plain(name);
+        assert!(s.is_var_shelling());
         Variable(Rc::new(s))
     }
 }
@@ -89,13 +89,13 @@ pub trait FromValue<T> {
     fn from_value(v: &::ValueAndSpan) -> Option<T>;
 }
 
-/// If the provided EML value is a PlainSymbol beginning with '?', return
+/// If the provided EML value is a PlainShelling beginning with '?', return
 /// it wrapped in a Variable. If not, return None.
 /// TODO: intern strings. #398.
 impl FromValue<Variable> for Variable {
     fn from_value(v: &::ValueAndSpan) -> Option<Variable> {
-        if let ::SpannedValue::PlainSymbol(ref s) = v.inner {
-            Variable::from_symbol(s)
+        if let ::SpannedValue::PlainShelling(ref s) = v.inner {
+            Variable::from_shelling(s)
         } else {
             None
         }
@@ -103,8 +103,8 @@ impl FromValue<Variable> for Variable {
 }
 
 impl Variable {
-    pub fn from_rc(sym: Rc<PlainSymbol>) -> Option<Variable> {
-        if sym.is_var_symbol() {
+    pub fn from_rc(sym: Rc<PlainShelling>) -> Option<Variable> {
+        if sym.is_var_shelling() {
             Some(Variable(sym.clone()))
         } else {
             None
@@ -112,8 +112,8 @@ impl Variable {
     }
 
     /// TODO: intern strings. #398.
-    pub fn from_symbol(sym: &PlainSymbol) -> Option<Variable> {
-        if sym.is_var_symbol() {
+    pub fn from_shelling(sym: &PlainShelling) -> Option<Variable> {
+        if sym.is_var_shelling() {
             Some(Variable(Rc::new(sym.clone())))
         } else {
             None
@@ -134,12 +134,12 @@ impl std::fmt::Display for Variable {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct QueryFunction(pub PlainSymbol);
+pub struct QueryFunction(pub PlainShelling);
 
 impl FromValue<QueryFunction> for QueryFunction {
     fn from_value(v: &::ValueAndSpan) -> Option<QueryFunction> {
-        if let ::SpannedValue::PlainSymbol(ref s) = v.inner {
-            QueryFunction::from_symbol(s)
+        if let ::SpannedValue::PlainShelling(ref s) = v.inner {
+            QueryFunction::from_shelling(s)
         } else {
             None
         }
@@ -147,7 +147,7 @@ impl FromValue<QueryFunction> for QueryFunction {
 }
 
 impl QueryFunction {
-    pub fn from_symbol(sym: &PlainSymbol) -> Option<QueryFunction> {
+    pub fn from_shelling(sym: &PlainShelling) -> Option<QueryFunction> {
         // TODO: validate the acceptable set of function names.
         Some(QueryFunction(sym.clone()))
     }
@@ -177,8 +177,8 @@ pub enum SrcVar {
 
 impl FromValue<SrcVar> for SrcVar {
     fn from_value(v: &::ValueAndSpan) -> Option<SrcVar> {
-        if let ::SpannedValue::PlainSymbol(ref s) = v.inner {
-            SrcVar::from_symbol(s)
+        if let ::SpannedValue::PlainShelling(ref s) = v.inner {
+            SrcVar::from_shelling(s)
         } else {
             None
         }
@@ -186,8 +186,8 @@ impl FromValue<SrcVar> for SrcVar {
 }
 
 impl SrcVar {
-    pub fn from_symbol(sym: &PlainSymbol) -> Option<SrcVar> {
-        if sym.is_src_symbol() {
+    pub fn from_shelling(sym: &PlainShelling) -> Option<SrcVar> {
+        if sym.is_src_shelling() {
             if sym.0 == "$" {
                 Some(SrcVar::DefaultSrc)
             } else {
@@ -240,11 +240,11 @@ impl FromValue<FnArg> for FnArg {
         match v.inner {
             Integer(x) =>
                 Some(FnArg::CausetidOrInteger(x)),
-            PlainSymbol(ref x) if x.is_src_symbol() =>
-                SrcVar::from_symbol(x).map(FnArg::SrcVar),
-            PlainSymbol(ref x) if x.is_var_symbol() =>
-                Variable::from_symbol(x).map(FnArg::Variable),
-            PlainSymbol(_) => None,
+            PlainShelling(ref x) if x.is_src_shelling() =>
+                SrcVar::from_shelling(x).map(FnArg::SrcVar),
+            PlainShelling(ref x) if x.is_var_shelling() =>
+                Variable::from_shelling(x).map(FnArg::Variable),
+            PlainShelling(_) => None,
             Keyword(ref x) =>
                 Some(FnArg::SolitonidOrKeyword(x.clone())),
             Instant(x) =>
@@ -261,7 +261,7 @@ impl FromValue<FnArg> for FnArg {
                 // TODO: intern strings. #398.
                 Some(FnArg::Constant(x.clone().into())),
             Nil |
-            NamespacedSymbol(_) |
+            NamespacedShelling(_) |
             Vector(_) |
             List(_) |
             Set(_) |
@@ -355,10 +355,10 @@ impl FromValue<PatternNonValuePlace> for PatternNonValuePlace {
             } else {
                 None
             },
-            ::SpannedValue::PlainSymbol(ref x) => if x.0.as_str() == "_" {
+            ::SpannedValue::PlainShelling(ref x) => if x.0.as_str() == "_" {
                 Some(PatternNonValuePlace::Placeholder)
             } else {
-                if let Some(v) = Variable::from_symbol(x) {
+                if let Some(v) = Variable::from_shelling(x) {
                     Some(PatternNonValuePlace::Variable(v))
                 } else {
                     None
@@ -406,10 +406,10 @@ impl FromValue<PatternValuePlace> for PatternValuePlace {
         match v.inner {
             ::SpannedValue::Integer(x) =>
                 Some(PatternValuePlace::CausetidOrInteger(x)),
-            ::SpannedValue::PlainSymbol(ref x) if x.0.as_str() == "_" =>
+            ::SpannedValue::PlainShelling(ref x) if x.0.as_str() == "_" =>
                 Some(PatternValuePlace::Placeholder),
-            ::SpannedValue::PlainSymbol(ref x) =>
-                Variable::from_symbol(x).map(PatternValuePlace::Variable),
+            ::SpannedValue::PlainShelling(ref x) =>
+                Variable::from_shelling(x).map(PatternValuePlace::Variable),
             ::SpannedValue::Keyword(ref x) if x.is_isoliton_namespaceable() =>
                 Some(x.clone().into()),
             ::SpannedValue::Boolean(x) =>
@@ -428,7 +428,7 @@ impl FromValue<PatternValuePlace> for PatternValuePlace {
 
             // These don't appear in queries.
             ::SpannedValue::Nil => None,
-            ::SpannedValue::NamespacedSymbol(_) => None,
+            ::SpannedValue::NamespacedShelling(_) => None,
             ::SpannedValue::Keyword(_) => None,                // … yet.
             ::SpannedValue::Map(_) => None,
             ::SpannedValue::List(_) => None,
@@ -869,13 +869,13 @@ impl Pattern {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Predicate {
-    pub operator: PlainSymbol,
+    pub operator: PlainShelling,
     pub args: Vec<FnArg>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WhereFn {
-    pub operator: PlainSymbol,
+    pub operator: PlainShelling,
     pub args: Vec<FnArg>,
     pub binding: Binding,
 }

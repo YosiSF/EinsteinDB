@@ -25,7 +25,7 @@ use ::{
 
 pub trait CachedAttributes {
     fn is_attribute_cached_reverse(&self, causetid: Causetid) -> bool;
-    fn is_attribute_cached_forward(&self, causetid: Causetid) -> bool;
+    fn is_attribute_cached_lightlike(&self, causetid: Causetid) -> bool;
     fn has_cached_attributes(&self) -> bool;
 
     fn get_values_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>>;

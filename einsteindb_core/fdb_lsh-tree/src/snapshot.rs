@@ -1,6 +1,6 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use fdb_traits::{self, Iterable, IterOptions, Peekable, ReadOptions, Result, Snapshot};
+use fdb_traits::{self, Iterable, IterOptions, Peekable, ReadOptions, Result, LightlikePersistence};
 use foundationdb::{DB, DBIterator};
 use foundationdb::rocksdb_options::UnsafeSnap;
 use std::fmt::{self, Debug, Formatter};
@@ -11,19 +11,19 @@ use crate::Fdbeinstein_merkle_treeIterator;
 use crate::options::FdbReadOptions;
 use crate::util::get_namespaced_handle;
 
-pub struct FdbSnapshot {
+pub struct FdbLightlikePersistence {
     einsteindb: Arc<DB>,
     snap: UnsafeSnap,
 }
 
-unsafe impl Send for FdbSnapshot {}
+unsafe impl Send for FdbLightlikePersistence {}
 
-unsafe impl Sync for FdbSnapshot {}
+unsafe impl Sync for FdbLightlikePersistence {}
 
-impl FdbSnapshot {
+impl FdbLightlikePersistence {
     pub fn new(einsteindb: Arc<DB>) -> Self {
         unsafe {
-            FdbSnapshot {
+            FdbLightlikePersistence {
                 snap: einsteindb.unsafe_snap(),
                 einsteindb,
             }
@@ -31,19 +31,19 @@ impl FdbSnapshot {
     }
 }
 
-impl Snapshot for FdbSnapshot {
+impl LightlikePersistence for FdbLightlikePersistence {
     fn namespaced_names(&self) -> Vec<&str> {
         self.einsteindb.namespaced_names()
     }
 }
 
-impl Debug for FdbSnapshot {
+impl Debug for FdbLightlikePersistence {
     fn fmt(&self, fmt: &mut Formatter<'_>) -> fmt::Result {
-        write!(fmt, "einstein_merkle_tree Snapshot Impl")
+        write!(fmt, "einstein_merkle_tree LightlikePersistence Impl")
     }
 }
 
-impl Drop for FdbSnapshot {
+impl Drop for FdbLightlikePersistence {
     fn drop(&mut self) {
         unsafe {
             self.einsteindb.release_snap(&self.snap);
@@ -51,14 +51,14 @@ impl Drop for FdbSnapshot {
     }
 }
 
-impl Iterable for FdbSnapshot {
+impl Iterable for FdbLightlikePersistence {
     type Iterator = Fdbeinstein_merkle_treeIterator;
 
     fn iterator_opt(&self, opts: IterOptions) -> Result<Self::Iterator> {
         let opt: FdbReadOptions = opts.into();
         let mut opt = opt.into_raw();
         unsafe {
-            opt.set_snapshot(&self.snap);
+            opt.set_lightlike_persistence(&self.snap);
         }
         Ok(Fdbeinstein_merkle_treeIterator::from_raw(DBIterator::new(
             self.einsteindb.clone(),
@@ -70,7 +70,7 @@ impl Iterable for FdbSnapshot {
         let opt: FdbReadOptions = opts.into();
         let mut opt = opt.into_raw();
         unsafe {
-            opt.set_snapshot(&self.snap);
+            opt.set_lightlike_persistence(&self.snap);
         }
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
         Ok(Fdbeinstein_merkle_treeIterator::from_raw(DBIterator::new_namespaced(
@@ -81,14 +81,14 @@ impl Iterable for FdbSnapshot {
     }
 }
 
-impl Peekable for FdbSnapshot {
+impl Peekable for FdbLightlikePersistence {
     type DBVector = FdbDBVector;
 
     fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<FdbDBVector>> {
         let opt: FdbReadOptions = opts.into();
         let mut opt = opt.into_raw();
         unsafe {
-            opt.set_snapshot(&self.snap);
+            opt.set_lightlike_persistence(&self.snap);
         }
         let v = self.einsteindb.get_opt(key, &opt)?;
         Ok(v.map(FdbDBVector::from_raw))
@@ -103,7 +103,7 @@ impl Peekable for FdbSnapshot {
         let opt: FdbReadOptions = opts.into();
         let mut opt = opt.into_raw();
         unsafe {
-            opt.set_snapshot(&self.snap);
+            opt.set_lightlike_persistence(&self.snap);
         }
         let handle = get_namespaced_handle(self.einsteindb.as_ref(), namespaced)?;
         let v = self.einsteindb.get_namespaced_opt(handle, key, &opt)?;

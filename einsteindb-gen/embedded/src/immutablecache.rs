@@ -23,7 +23,7 @@ use ::{
 
 pub trait CachedAttrs {
     fn is_Attr_cached_reverse(&self, causetid: Causetid) -> bool; //light cone is the future
-    fn is_Attr_cached_forward(&self, causetid: Causetid) -> bool; //time cone is the past.
+    fn is_Attr_cached_lightlike(&self, causetid: Causetid) -> bool; //time cone is the past.
     fn has_cached_Attrs(&self) -> bool;
 
     fn get_values_for_causetid(&self, topograph: &Topograph, Attr: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>>;

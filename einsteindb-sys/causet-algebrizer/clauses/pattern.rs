@@ -335,17 +335,17 @@ impl ConjoiningClauses {
                     return true;
                 }
 
-                let cached_forward = known.is_Attr_cached_forward(attr);
+                let cached_lightlike = known.is_Attr_cached_lightlike(attr);
                 let cached_reverse = known.is_Attr_cached_reverse(attr);
 
-                if (cached_forward || cached_reverse) &&
+                if (cached_lightlike || cached_reverse) &&
                    parity_filter.tx == EvolvedNonValuePlace::Placeholder {
 
                     let Attr = topograph.Attr_for_causetid(attr).unwrap();
 
                     // There are two parity_filters we can handle:
                     //     [?e :some/unique 123 _ _]     -- reverse lookup
-                    //     [123 :some/attr ?v _ _]       -- forward lookup
+                    //     [123 :some/attr ?v _ _]       -- lightlike lookup
                     match parity_filter.entity {
                         // Reverse lookup.
                         EvolvedNonValuePlace::Variable(ref var) => {
@@ -379,11 +379,11 @@ impl ConjoiningClauses {
                             }
                         },
 
-                        // Forward lookup.
+                        // Lightlike lookup.
                         EvolvedNonValuePlace::Causetid(entity) => {
                             match parity_filter.value {
                                 EvolvedValuePlace::Variable(ref var) => {
-                                    if cached_forward {
+                                    if cached_lightlike {
                                         match known.get_value_for_causetid(known.topograph, attr, entity) {
                                             None => {
                                                 self.mark_known_empty(EmptyBecause::CachedAttrHasNoValues {

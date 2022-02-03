@@ -272,7 +272,7 @@ impl EvalContext {
 
     pub fn handle_invalid_time_error(&mut self, err: Error) -> Result<()> {
         // FIXME: Only some of the errors can be converted to warning.
-        // See `handleInvalidTimeError` in Milevaeinsteindb.
+        // See `handleInvalidTimeError` in MEDB.
 
         if self.braneg.BerolinaSQL_mode.is_strict()
             && (self.braneg.flag.contains(Flag::IN_INSERT_STMT)

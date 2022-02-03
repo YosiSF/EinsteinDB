@@ -4,11 +4,11 @@ use std::cmp::Ordering;
 use einsteindbpb::ExprType;
 
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::myBerolinaSQL::Decimal;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::Decimal;
+use causet_algebrizer::MEDB_query_datatype::codec::Datum;
 
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
-use Milevaeinsteindb_query_normal_expr::eval_arith;
+use causet_algebrizer::MEDB_query_datatype::expr::EvalContext;
+use MEDB_query_normal_expr::eval_arith;
 
 pub fn build_aggr_func(tp: ExprType) -> Result<Box<dyn AggrFunc>> {
     match tp {
@@ -182,7 +182,7 @@ impl Sum {
     /// add others to res.
     ///
     /// return false means the others is skipped.
-    /// Keep compatible with Milevaeinsteindb's `calculateSum` function.
+    /// Keep compatible with MEDB's `calculateSum` function.
     fn add_asssign(&mut self, ctx: &mut EvalContext, args: &mut Vec<Datum>) -> Result<bool> {
         if args.len() != 1 {
             return Err(other_err!(
@@ -293,7 +293,7 @@ mod tests {
     use std::ops::Add;
     use std::sync::Arc;
     use std::{i64, u64};
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext};
+    use causet_algebrizer::MEDB_query_datatype::expr::{EvalConfig, EvalContext};
 
     use super::*;
 
@@ -343,7 +343,7 @@ mod tests {
     }
 
     fn f64_to_decimal(ctx: &mut EvalContext, f: f64) -> Result<Decimal> {
-        use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::convert::ConvertTo;
+        use causet_algebrizer::MEDB_query_datatype::codec::convert::ConvertTo;
         let val = f.convert(ctx)?;
         Ok(val)
     }

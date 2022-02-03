@@ -467,7 +467,7 @@ pub fn max_decimal(prec: u8, frac_cnt: u8) -> Decimal {
     res
 }
 
-/// `max_or_min_dec`(`NewMaxOrMinDec` in Milevaeinsteindb) returns the max or min
+/// `max_or_min_dec`(`NewMaxOrMinDec` in MEDB) returns the max or min
 /// value decimal for given precision and fraction.
 /// The `prec` should >= `frac_cnt`.
 ///
@@ -1105,7 +1105,7 @@ impl Decimal {
 
     // TODO: remove this after merge the `refactor ScalarFunc::builtin_cast`
     //
-    /// convert_to(ProduceDecWithSpecifiedTp in Milevaeinsteindb)
+    /// convert_to(ProduceDecWithSpecifiedTp in MEDB)
     /// produces a new decimal according to `flen` and `decimal`.
     pub fn convert_to(self, ctx: &mut EvalContext, flen: u8, decimal: u8) -> Result<Decimal> {
         let (prec, frac) = self.prec_and_frac();
@@ -1727,7 +1727,7 @@ impl ConvertTo<f64> for Decimal {
     /// This function should not return err,
     /// if it return err, then the err because of bug.
     ///
-    /// Port from Milevaeinsteindb's MyDecimal::ToFloat64.
+    /// Port from MEDB's MyDecimal::ToFloat64.
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<f64> {
         let r = self.to_string().parse::<f64>();
@@ -1799,8 +1799,8 @@ impl ConvertTo<Decimal> for Real {
 }
 
 impl ConvertTo<Decimal> for &[u8] {
-    // FIXME: the err handle is not exactly same as Milevaeinsteindb's,
-    //  Milevaeinsteindb's seems has bug, fix this after fix Milevaeinsteindb's
+    // FIXME: the err handle is not exactly same as MEDB's,
+    //  MEDB's seems has bug, fix this after fix MEDB's
     #[inline]
     fn convert(&self, ctx: &mut EvalContext) -> Result<Decimal> {
         let r = Decimal::from_bytes(self).unwrap_or_else(|_| Res::Ok(Decimal::zero()));
@@ -1824,7 +1824,7 @@ impl ConvertTo<Decimal> for Bytes {
 }
 
 impl ConvertTo<Decimal> for Json {
-    /// Port from Milevaeinsteindb's types.ConvertJSONToDecimal
+    /// Port from MEDB's types.ConvertJSONToDecimal
     #[inline]
     fn convert(&self, ctx: &mut EvalContext) -> Result<Decimal> {
         self.as_ref().convert(ctx)
@@ -1832,17 +1832,17 @@ impl ConvertTo<Decimal> for Json {
 }
 
 impl<'a> ConvertTo<Decimal> for JsonRef<'a> {
-    /// Port from Milevaeinsteindb's types.ConvertJSONToDecimal
+    /// Port from MEDB's types.ConvertJSONToDecimal
     #[inline]
     fn convert(&self, ctx: &mut EvalContext) -> Result<Decimal> {
         match self.get_type() {
             JsonType::String => {
                 Decimal::from_str(self.get_str()?).or_else(|e| {
                     ctx.handle_truncate_err(e)?;
-                    // FIXME: if Milevaeinsteindb's MyDecimal::FromString return err,
+                    // FIXME: if MEDB's MyDecimal::FromString return err,
                     //  it may has res. However, if EinsteinDB's Decimal::from_str
                     //  return err, it has no res, so I return zero here,
-                    //  but it may different from Milevaeinsteindb's MyDecimal::FromString
+                    //  but it may different from MEDB's MyDecimal::FromString
                     Ok(Decimal::zero())
                 })
             }
@@ -2114,7 +2114,7 @@ fn read_word<T: BufferReader + ?Sized>(
     size: usize,
     is_first: &mut bool,
 ) -> Result<u32> {
-    // Note: In Milevaeinsteindb's implementation, the first byte to read is flipped:
+    // Note: In MEDB's implementation, the first byte to read is flipped:
     // dCopy[0] ^= 0x80
     //
     // In EinsteinDB, we do zero copy so that we need `is_first` flag.
@@ -3019,7 +3019,7 @@ mod tests {
              Res::OverCausetxctx("0")),
             (WORD_BUF_LEN, b"-0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002932935661422768",
              Res::Truncated("0.000000000000000000000000000000000000000000000000000000000000000000000000")),
-            // The following case return truncated in Milevaeinsteindb, need to fix it in bytes_to_int_without_context
+            // The following case return truncated in MEDB, need to fix it in bytes_to_int_without_context
             (WORD_BUF_LEN, b"1eabc", Res::Ok("1")),
             (WORD_BUF_LEN, b"1e", Res::Ok("1")),
             (WORD_BUF_LEN, b"1e 1ddd", Res::Ok("10")),
@@ -3128,7 +3128,7 @@ mod tests {
     }
 
     #[test]
-    fn test_decode_chunk_from_Milevaeinsteindb() {
+    fn test_decode_chunk_from_MEDB() {
         let src: Vec<u8> = vec![
             3, 3, 3, 0, 123, 0, 0, 0, 0, 2, 46, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

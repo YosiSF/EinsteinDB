@@ -1,0 +1,13 @@
+/Users/tyco/Documents/GitHub/EinsteinDB/target/debug/deps/quote-6b5bb422c00b6b06.rmeta: /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/lib.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/ext.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/format.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/ident_fragment.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/to_tokens.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/runtime.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/spanned.rs
+
+/Users/tyco/Documents/GitHub/EinsteinDB/target/debug/deps/libquote-6b5bb422c00b6b06.rlib: /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/lib.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/ext.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/format.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/ident_fragment.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/to_tokens.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/runtime.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/spanned.rs
+
+/Users/tyco/Documents/GitHub/EinsteinDB/target/debug/deps/quote-6b5bb422c00b6b06.d: /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/lib.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/ext.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/format.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/ident_fragment.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/to_tokens.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/runtime.rs /Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/spanned.rs
+
+/Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/lib.rs:
+/Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/ext.rs:
+/Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/format.rs:
+/Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/ident_fragment.rs:
+/Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/to_tokens.rs:
+/Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/runtime.rs:
+/Users/tyco/.cargo/registry/src/github.com-1ecc6299db9ec823/quote-1.0.15/src/spanned.rs:

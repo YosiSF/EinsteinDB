@@ -18,8 +18,8 @@ use einsteindbpb::TableScan;
 use super::{mutant_search::InnerExecutor, Row, ScanExecutor, ScanExecutorOptions};
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::Storage;
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::{self, check_record_key};
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+use causet_algebrizer::MEDB_query_datatype::codec::table::{self, check_record_key};
+use causet_algebrizer::MEDB_query_datatype::expr::EvalContext;
 
 pub struct TableInnerExecutor {
     col_ids: HashSet<i64>,
@@ -94,7 +94,7 @@ mod tests {
     use super::super::Executor;
     use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::ExecuteStats;
     use allegroeinstein-prolog-causet-BerolinaSQL::storage::test_fixture::FixtureStorage;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+    use causet_algebrizer::MEDB_query_datatype::expr::EvalContext;
 
     const TABLE_ID: i64 = 1;
     const KEY_NUMBER: usize = 10;

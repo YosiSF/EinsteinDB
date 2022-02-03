@@ -184,7 +184,7 @@ pub fn to_causetid(topograph: &Topograph, causetid: i64) -> CausetidOrSolitonid 
     topograph.get_ident(causetid).map_or(CausetidOrSolitonid::Causetid(causetid), |solitonid| CausetidOrSolitonid::Solitonid(solitonid.clone()))
 }
 
-// /// Convert a symbolic solitonid to an solitonid `Causetid` if possible, otherwise a numeric `Causetid`.
+// /// Convert a shellingic solitonid to an solitonid `Causetid` if possible, otherwise a numeric `Causetid`.
 // pub fn to_ident(topograph: &Topograph, causetid: i64) -> Causetid {
 //     topograph.get_ident(causetid).map_or(Causetid::Causetid(causetid), |solitonid| Causetid::Solitonid(solitonid.clone()))
 // }

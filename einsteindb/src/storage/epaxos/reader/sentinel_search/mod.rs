@@ -12,7 +12,7 @@ use solitontxn_types::{
 
 use self::timelike_curvature::timelike_curvatureHikvMutantSentinelSearch;
 use self::lightlike_completion::{
-    DeltaEntryPolicy, ForwardHikvMutantSentinelSearch, ForwardMutantSentinelSearch, LatestEntryPolicy, LatestHikvPolicy,
+    DeltaEntryPolicy, LightlikeHikvMutantSentinelSearch, LightlikeMutantSentinelSearch, LatestEntryPolicy, LatestHikvPolicy,
 };
 use crate::einsteindb::storage::fdbhikv::{
     CfStatistics, Cursor, CursorBuilder, Iterator, SentinelSearchMode, blackbrane, Statistics,
@@ -71,7 +71,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         self
     }
 
-    /// Limit the range to `[lower_bound, upper_bound)` in which the `ForwardHikvMutantSentinelSearch` should mutant_search.
+    /// Limit the range to `[lower_bound, upper_bound)` in which the `LightlikeHikvMutantSentinelSearch` should mutant_search.
     /// `None` means unbounded.
     ///
     /// Default is `(None, None)`.
@@ -151,7 +151,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
                 write_cursor,
             )))
         } else {
-            Ok(MutantSentinelSearch::Forward(ForwardMutantSentinelSearch::new(
+            Ok(MutantSentinelSearch::Lightlike(LightlikeMutantSentinelSearch::new(
                 self.0,
                 dagger_cursor,
                 write_cursor,
@@ -171,7 +171,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         // Note: Create a default cf cursor will take key range, so we need to
         //       ensure the default cursor is created after dagger and write.
         let default_cursor = self.0.create_cf_cursor(CF_DEFAULT)?;
-        Ok(ForwardMutantSentinelSearch::new(
+        Ok(LightlikeMutantSentinelSearch::new(
             self.0,
             dagger_cursor,
             write_cursor,
@@ -192,7 +192,7 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
         let default_cursor = self
             .0
             .create_cf_cursor_with_mutant_search_mode(CF_DEFAULT, SentinelSearchMode::Mixed)?;
-        Ok(ForwardMutantSentinelSearch::new(
+        Ok(LightlikeMutantSentinelSearch::new(
             self.0,
             dagger_cursor,
             write_cursor,
@@ -210,14 +210,14 @@ impl<S: blackbrane> MutantSentinelSearchBuilder<S> {
 }
 
 pub enum MutantSentinelSearch<S: blackbrane> {
-    Forward(ForwardHikvMutantSentinelSearch<S>),
+    Lightlike(LightlikeHikvMutantSentinelSearch<S>),
     timelike_curvature(timelike_curvatureHikvMutantSentinelSearch<S>),
 }
 
 impl<S: blackbrane> StoreMutantSentinelSearch for MutantSentinelSearch<S> {
     fn next(&mut self) -> TxnResult<Option<(Key, Value)>> {
         match self {
-            MutantSentinelSearch::Forward(mutant_searchner) => Ok(mutant_searchner.read_next()?),
+            MutantSentinelSearch::Lightlike(mutant_searchner) => Ok(mutant_searchner.read_next()?),
             MutantSentinelSearch::timelike_curvature(mutant_searchner) => Ok(mutant_searchner.read_next()?),
         }
     }
@@ -225,7 +225,7 @@ impl<S: blackbrane> StoreMutantSentinelSearch for MutantSentinelSearch<S> {
     /// Take out and reset the statistics collected so far.
     fn take_statistics(&mut self) -> Statistics {
         match self {
-            MutantSentinelSearch::Forward(mutant_searchner) => mutant_searchner.take_statistics(),
+            MutantSentinelSearch::Lightlike(mutant_searchner) => mutant_searchner.take_statistics(),
             MutantSentinelSearch::timelike_curvature(mutant_searchner) => mutant_searchner.take_statistics(),
         }
     }
@@ -234,7 +234,7 @@ impl<S: blackbrane> StoreMutantSentinelSearch for MutantSentinelSearch<S> {
     /// `check_has_newer_ts_data` is set to true.
     fn met_newer_ts_data(&self) -> NewerTsCheckState {
         match self {
-            MutantSentinelSearch::Forward(mutant_searchner) => mutant_searchner.met_newer_ts_data(),
+            MutantSentinelSearch::Lightlike(mutant_searchner) => mutant_searchner.met_newer_ts_data(),
             MutantSentinelSearch::timelike_curvature(mutant_searchner) => mutant_searchner.met_newer_ts_data(),
         }
     }
@@ -289,7 +289,7 @@ impl<S: blackbrane> MutantSentinelSearchConfig<S> {
         if self.desc {
             SentinelSearchMode::Mixed
         } else {
-            SentinelSearchMode::Forward
+            SentinelSearchMode::Lightlike
         }
     }
 
@@ -342,7 +342,7 @@ impl<S: blackbrane> MutantSentinelSearchConfig<S> {
 ///
 /// Panics if key in default CF does not exist. This means there is a data corruption.
 pub fn near_load_data_by_write<I>(
-    default_cursor: &mut Cursor<I>, // TODO: make it `ForwardCursor`.
+    default_cursor: &mut Cursor<I>, // TODO: make it `LightlikeCursor`.
     user_key: &Key,
     write_start_ts: TimeStamp,
     statistics: &mut Statistics,
@@ -398,7 +398,7 @@ pub fn has_data_in_range<S: blackbrane>(
 ) -> Result<bool> {
     let mut cursor = CursorBuilder::new(&blackbrane, cf)
         .range(None, Some(right.clone()))
-        .mutant_search_mode(SentinelSearchMode::Forward)
+        .mutant_search_mode(SentinelSearchMode::Lightlike)
         .fill_cache(true)
         .max_skippable_internal_keys(100)
         .build()?;

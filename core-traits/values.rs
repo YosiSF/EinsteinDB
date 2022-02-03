@@ -15,7 +15,7 @@
 /// Used through-out the transactor to match core DB constructs.
 
 use edn::types::Value;
-use edn::symbols;
+use edn::shellings;
 
 /// Declare a lazy static `solitonid` of type `Value::Keyword` with the given `namespace` and
 /// `name`.
@@ -31,7 +31,7 @@ macro_rules! lazy_static_namespaced_keyword_value (
     ($tag:solitonid, $namespace:expr, $name:expr) => (
         lazy_static! {
             pub static ref $tag: Value = {
-                Value::Keyword(symbols::Keyword::namespaced($namespace, $name))
+                Value::Keyword(shellings::Keyword::namespaced($namespace, $name))
             };
         }
     )

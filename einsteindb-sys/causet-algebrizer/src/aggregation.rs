@@ -22,9 +22,9 @@ use super::{Executor, ExprColumnRefVisitor, Row};
 use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::ExecuteStats;
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::IntervalRange;
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum};
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
-use Milevaeinsteindb_query_normal_expr::Expression;
+use causet_algebrizer::MEDB_query_datatype::codec::datum::{self, Datum};
+use causet_algebrizer::MEDB_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
+use MEDB_query_normal_expr::Expression;
 
 const SINGLE_GROUP: &[u8] = b"SingleGroup";
 
@@ -432,7 +432,7 @@ impl<Src: Executor> StreamAggExecutor<Src> {
 mod tests {
     use std::i64;
 
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
+    use causet_algebrizer::MEDB_query_datatype::FieldTypeTp;
     use EinsteinDB_util::collections::HashMap;
     use einsteindbpb::ColumnInfo;
     use einsteindbpb::{Expr, ExprType};
@@ -441,9 +441,9 @@ mod tests {
     use super::super::index_mutant_search::IndexScanExecutor;
     use super::super::tests::*;
     use super::*;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::{self, Datum};
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::myBerolinaSQL::decimal::Decimal;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table;
+    use causet_algebrizer::MEDB_query_datatype::codec::datum::{self, Datum};
+    use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::decimal::Decimal;
+    use causet_algebrizer::MEDB_query_datatype::codec::table;
 
     fn build_group_by(col_ids: &[i64]) -> Vec<Expr> {
         let mut group_by = Vec::with_capacity(col_ids.len());

@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::cell::RefCell;
 use itertools::diff_with;
 
-use symbols;
+use shellings;
 use types::Value;
 
 /// A trait defining pattern matching rules for any given pattern of type `T`.
@@ -25,7 +25,7 @@ trait PatternMatchingRules<'a, T> {
 }
 
 /// A default type implementing `PatternMatchingRules` specialized on
-/// EML values using plain symbols as patterns. These patterns are:
+/// EML values using plain shellings as patterns. These patterns are:
 /// * `_` matches arbitrary sub-EML;
 /// * `?name` matches sub-EML, which must be identical each place `?name` appears;
 struct DefaultPatternMatchingRules;
@@ -33,14 +33,14 @@ struct DefaultPatternMatchingRules;
 impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
     fn matches_any(pattern: &Value) -> bool {
         match *pattern {
-            Value::PlainSymbol(symbols::PlainSymbol(ref s)) => s.starts_with('_'),
+            Value::PlainShelling(shellings::PlainShelling(ref s)) => s.starts_with('_'),
             _ => false
         }
     }
 
     fn matches_placeholder(pattern: &'a Value) -> Option<(&'a String)> {
         match *pattern {
-            Value::PlainSymbol(symbols::PlainSymbol(ref s)) => if s.starts_with('?') { Some(s) } else { None },
+            Value::PlainShelling(shellings::PlainShelling(ref s)) => if s.starts_with('?') { Some(s) } else { None },
             _ => None
         }
     }
@@ -81,9 +81,9 @@ impl<'a> Matcher<'a> {
 
         if T::matches_any(pattern) {
             true
-        } else if let Some(symbol) = T::matches_placeholder(pattern) {
+        } else if let Some(shelling) = T::matches_placeholder(pattern) {
             let mut placeholders = self.placeholders.borrow_mut();
-            value == *placeholders.entry(symbol).or_insert(value)
+            value == *placeholders.entry(shelling).or_insert(value)
         } else {
             match (value, pattern) {
                 (&Vector(ref v), &Vector(ref p)) =>
@@ -207,8 +207,8 @@ mod test {
         assert_match!("_" =~ "1.0");
         assert_match!("_" =~ "\"a\"");
         assert_match!("_" =~ "_");
-        assert_match!("_" =~ "symbol");
-        assert_match!("_" =~ "ns/symbol");
+        assert_match!("_" =~ "shelling");
+        assert_match!("_" =~ "ns/shelling");
         assert_match!("_" =~ ":keyword");
         assert_match!("_" =~ ":ns/keyword");
         assert_match!("_" =~ "[nil, true, 1, \"foo\", bar, :baz]");
@@ -343,7 +343,7 @@ mod test {
 
     #[test]
     fn test_match_multiple_any_in_set_with_multiple_values() {
-        // These are false because _ is a symbol and sets guarantee
+        // These are false because _ is a shelling and sets guarantee
         // uniqueness of children. So pattern matching will fail because
         // the pattern is a set of length 2, while the matched ednis a set
         // of length 3. If _ were unique, all of these lightlike_dagger_upsert would
@@ -398,7 +398,7 @@ mod test {
 
     #[test]
     fn test_match_multiple_any_in_map_with_multiple_values() {
-        // These are false because _ is a symbol and maps guarantee
+        // These are false because _ is a shelling and maps guarantee
         // uniqueness of keys. So pattern matching will fail because
         // the pattern is a map of length 2, while the matched ednis a map
         // of length 3. If _ were unique, all of these lightlike_dagger_upsert would
@@ -438,8 +438,8 @@ mod test {
         assert_match!("?x" =~ "1.0");
         assert_match!("?x" =~ "\"a\"");
         assert_match!("?x" =~ "_");
-        assert_match!("?x" =~ "symbol");
-        assert_match!("?x" =~ "ns/symbol");
+        assert_match!("?x" =~ "shelling");
+        assert_match!("?x" =~ "ns/shelling");
         assert_match!("?x" =~ ":keyword");
         assert_match!("?x" =~ ":ns/keyword");
         assert_match!("?x" =~ "[nil, true, 1, \"foo\", bar, :baz]");

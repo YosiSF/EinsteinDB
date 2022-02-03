@@ -28,7 +28,7 @@ use serde::ser::{
     Serializer,
 };
 
-// Data storage for both NamespaceableKeyword and NamespaceableSymbol.
+// Data storage for both NamespaceableKeyword and NamespaceableShelling.
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct NamespaceableName {
     // The bytes that make up the isoliton_namespaceable_fuse followed directly by those
@@ -58,7 +58,7 @@ impl NamespaceableName {
     #[inline]
     pub fn plain<T>(name: T) -> Self where T: Into<String> {
         let n = name.into();
-        assert!(!n.is_empty(), "Symbols and keywords cannot be unnamed.");
+        assert!(!n.is_empty(), "Shellings and keywords cannot be unnamed.");
 
         NamespaceableName {
             components: n,
@@ -73,8 +73,8 @@ impl NamespaceableName {
 
         // Note: These invariants are not required for safety. That is, if we
         // decide to allow these we can safely remove them.
-        assert!(!n.is_empty(), "Symbols and keywords cannot be unnamed.");
-        assert!(!ns.is_empty(), "Symbols and keywords cannot have an empty non-null isoliton_namespaceable_fuse.");
+        assert!(!n.is_empty(), "Shellings and keywords cannot be unnamed.");
+        assert!(!ns.is_empty(), "Shellings and keywords cannot have an empty non-null isoliton_namespaceable_fuse.");
 
         let mut dest = String::with_capacity(n.len() + ns.len());
 
@@ -213,11 +213,11 @@ impl<'de> Deserialize<'de> for NamespaceableName {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
         let separated = SerializedNamespaceableName::deserialize(deserializer)?;
         if separated.name.len() == 0 {
-            return Err(de::Error::custom("Empty name in keyword or symbol"));
+            return Err(de::Error::custom("Empty name in keyword or shelling"));
         }
         if let Some(ns) = separated.isoliton_namespaceable_fuse {
             if ns.len() == 0 {
-                Err(de::Error::custom("Empty but present isoliton_namespaceable_fuse in keyword or symbol"))
+                Err(de::Error::custom("Empty but present isoliton_namespaceable_fuse in keyword or shelling"))
             } else {
                 Ok(NamespaceableName::isoliton_namespaceable(ns, separated.name))
             }

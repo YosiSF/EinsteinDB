@@ -16,8 +16,8 @@ use std::usize;
 use einsteindbpb::ByItem;
 
 use crate::OriginCols;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::Datum;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, Result};
+use causet_algebrizer::MEDB_query_datatype::codec::datum::Datum;
+use causet_algebrizer::MEDB_query_datatype::expr::{EvalContext, Result};
 
 const HEAP_MAX_CAPACITY: usize = 1024;
 
@@ -185,9 +185,9 @@ mod tests {
 
     use crate::OriginCols;
     use codec::prelude::NumberEncoder;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::RowColsDict;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalContext;
+    use causet_algebrizer::MEDB_query_datatype::codec::table::RowColsDict;
+    use causet_algebrizer::MEDB_query_datatype::codec::Datum;
+    use causet_algebrizer::MEDB_query_datatype::expr::EvalContext;
     use EinsteinDB_util::collections::HashMap;
 
     use super::*;

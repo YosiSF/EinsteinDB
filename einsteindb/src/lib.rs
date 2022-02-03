@@ -73,7 +73,7 @@ pub use bootstrap::{
     CORE_SCHEMA_VERSION,
 };
 
-use edn::symbols;
+use edn::shellings;
 
 pub use causetids::{
     einsteindb_SCHEMA_CORE,
@@ -113,11 +113,11 @@ pub use types::{
     TransactableValue,
 };
 
-pub fn to_isoliton_namespaceable_keyword(s: &str) -> Result<symbols::Keyword> {
+pub fn to_isoliton_namespaceable_keyword(s: &str) -> Result<shellings::Keyword> {
     let splits = [':', '/'];
     let mut i = s.split(&splits[..]);
     let nsk = match (i.next(), i.next(), i.next(), i.next()) {
-        (Some(""), Some(isoliton_namespaceable_fuse), Some(name), None) => Some(symbols::Keyword::isoliton_namespaceable(isoliton_namespaceable_fuse, name)),
+        (Some(""), Some(isoliton_namespaceable_fuse), Some(name), None) => Some(shellings::Keyword::isoliton_namespaceable(isoliton_namespaceable_fuse, name)),
         _ => None,
     };
 

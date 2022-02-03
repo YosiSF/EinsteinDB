@@ -1168,7 +1168,7 @@ impl<E: einstein_merkle_tree, L: DaggerManager> Storage<E, L> {
                     let perf_statistics = PerfStatisticsInstant::new();
                     let mut reader = EpaxosReader::new(
                         blackbrane,
-                        Some(SentinelSearchMode::Forward),
+                        Some(SentinelSearchMode::Lightlike),
                         !ctx.get_not_fill_cache(),
                     );
                     let result = reader
@@ -3062,7 +3062,7 @@ mod tests {
             )
             .unwrap();
         rx.recv().unwrap();
-        // Forward
+        // Lightlike
         expect_multi_values(
             vec![None, None, None],
             bdagger_on(storage.mutant_search(
@@ -3092,7 +3092,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        // Forward with bound
+        // Lightlike with bound
         expect_multi_values(
             vec![None, None],
             bdagger_on(storage.mutant_search(
@@ -3122,7 +3122,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        // Forward with limit
+        // Lightlike with limit
         expect_multi_values(
             vec![None, None],
             bdagger_on(storage.mutant_search(
@@ -3169,7 +3169,7 @@ mod tests {
             )
             .unwrap();
         rx.recv().unwrap();
-        // Forward
+        // Lightlike
         expect_multi_values(
             vec![
                 Some((b"a".to_vec(), b"aa".to_vec())),
@@ -3207,7 +3207,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        // Forward with sample step
+        // Lightlike with sample step
         expect_multi_values(
             vec![
                 Some((b"a".to_vec(), b"aa".to_vec())),
@@ -3243,7 +3243,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        // Forward with sample step and limit
+        // Lightlike with sample step and limit
         expect_multi_values(
             vec![Some((b"a".to_vec(), b"aa".to_vec()))],
             bdagger_on(storage.mutant_search(
@@ -3273,7 +3273,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        // Forward with bound
+        // Lightlike with bound
         expect_multi_values(
             vec![
                 Some((b"a".to_vec(), b"aa".to_vec())),
@@ -3310,7 +3310,7 @@ mod tests {
             .unwrap(),
         );
 
-        // Forward with limit
+        // Lightlike with limit
         expect_multi_values(
             vec![
                 Some((b"a".to_vec(), b"aa".to_vec())),
@@ -3405,7 +3405,7 @@ mod tests {
             )
             .unwrap();
         rx.recv().unwrap();
-        // Forward
+        // Lightlike
         expect_multi_values(
             vec![None, None, None],
             bdagger_on(storage.mutant_search(
@@ -3435,7 +3435,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        // Forward with bound
+        // Lightlike with bound
         expect_multi_values(
             vec![None, None],
             bdagger_on(storage.mutant_search(
@@ -3465,7 +3465,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        // Forward with limit
+        // Lightlike with limit
         expect_multi_values(
             vec![None, None],
             bdagger_on(storage.mutant_search(
@@ -3512,7 +3512,7 @@ mod tests {
             )
             .unwrap();
         rx.recv().unwrap();
-        // Forward
+        // Lightlike
         expect_multi_values(
             vec![
                 Some((b"a".to_vec(), vec![])),
@@ -3550,7 +3550,7 @@ mod tests {
             ))
             .unwrap(),
         );
-        // Forward with bound
+        // Lightlike with bound
         expect_multi_values(
             vec![Some((b"a".to_vec(), vec![])), Some((b"b".to_vec(), vec![]))],
             bdagger_on(storage.mutant_search(
@@ -3581,7 +3581,7 @@ mod tests {
             .unwrap(),
         );
 
-        // Forward with limit
+        // Lightlike with limit
         expect_multi_values(
             vec![Some((b"a".to_vec(), vec![])), Some((b"b".to_vec(), vec![]))],
             bdagger_on(storage.mutant_search(

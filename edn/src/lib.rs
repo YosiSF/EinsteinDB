@@ -30,7 +30,7 @@ pub use causal_set::{
 // Intentionally not pub.
 mod namespaceable_name;
 pub mod query;
-pub mod symbols;
+pub mod shellings;
 pub mod types;
 pub mod pretty_print;
 pub mod utils;
@@ -66,8 +66,8 @@ pub use types::{
     ValueAndSpan,
 };
 
-pub use symbols::{
+pub use shellings::{
     Keyword,
-    NamespacedSymbol,
-    PlainSymbol,
+    NamespacedShelling,
+    PlainShelling,
 };

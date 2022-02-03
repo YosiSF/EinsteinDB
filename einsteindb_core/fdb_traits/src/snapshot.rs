@@ -6,9 +6,9 @@ use std::fmt::Debug;
 
 /// A consistent read-only view of the database.
 ///
-/// Snapshots can be sent and shared, but not cloned. To make a snapshot
-/// clonable, call `into_sync` to create a `SyncSnapshot`.
-pub trait Snapshot
+/// LightlikePersistences can be sent and shared, but not cloned. To make a lightlike_persistence
+/// clonable, call `into_sync` to create a `SyncLightlikePersistence`.
+pub trait LightlikePersistence
 where
     Self: 'static + Peekable + Iterable + Send + Sync + Sized + Debug,
 {

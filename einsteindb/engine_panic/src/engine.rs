@@ -1,7 +1,7 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::db_vector::PanicDBVector;
-use crate::snapshot::PanicSnapshot;
+use crate::lightlike_persistence::PanicLightlikePersistence;
 use crate::write_batch::PanicWriteBatch;
 use fdb_traits::{
     IterOptions, Iterable, Iterator, KV, Peekable, ReadOptions, Result, SeekKey, SyncMutable,
@@ -12,9 +12,9 @@ use fdb_traits::{
 pub struct Paniceinstein_merkle_tree;
 
 impl KV for Paniceinstein_merkle_tree {
-    type Snapshot = PanicSnapshot;
+    type LightlikePersistence = PanicLightlikePersistence;
 
-    fn snapshot(&self) -> Self::Snapshot {
+    fn lightlike_persistence(&self) -> Self::LightlikePersistence {
         panic!()
     }
     fn sync(&self) -> Result<()> {

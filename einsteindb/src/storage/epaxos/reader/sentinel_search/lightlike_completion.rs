@@ -113,7 +113,7 @@ impl<S: blackbrane> Cursors<S> {
     }
 }
 
-pub struct ForwardMutantSentinelSearch<S: blackbrane, P: SentinelSearchPolicy<S>> {
+pub struct LightlikeMutantSentinelSearch<S: blackbrane, P: SentinelSearchPolicy<S>> {
     cfg: MutantSentinelSearchConfig<S>,
     cursors: Cursors<S>,
     /// Is iteration started
@@ -123,20 +123,20 @@ pub struct ForwardMutantSentinelSearch<S: blackbrane, P: SentinelSearchPolicy<S>
     met_newer_ts_data: NewerTsCheckState,
 }
 
-impl<S: blackbrane, P: SentinelSearchPolicy<S>> ForwardMutantSentinelSearch<S, P> {
+impl<S: blackbrane, P: SentinelSearchPolicy<S>> LightlikeMutantSentinelSearch<S, P> {
     pub fn new(
         cfg: MutantSentinelSearchConfig<S>,
         dagger_cursor: Option<Cursor<S::Iter>>,
         write_cursor: Cursor<S::Iter>,
         default_cursor: Option<Cursor<S::Iter>>,
         mutant_search_policy: P,
-    ) -> ForwardMutantSentinelSearch<S, P> {
+    ) -> LightlikeMutantSentinelSearch<S, P> {
         let cursors = Cursors {
             dagger: dagger_cursor,
             write: write_cursor,
             default: default_cursor,
         };
-        ForwardMutantSentinelSearch {
+        LightlikeMutantSentinelSearch {
             met_newer_ts_data: if cfg.check_has_newer_ts_data {
                 NewerTsCheckState::NotMetYet
             } else {
@@ -359,7 +359,7 @@ impl<S: blackbrane, P: SentinelSearchPolicy<S>> ForwardMutantSentinelSearch<S, P
     }
 }
 
-/// `ForwardMutantSentinelSearch` with this policy outputs the latest key value pairs.
+/// `LightlikeMutantSentinelSearch` with this policy outputs the latest key value pairs.
 pub struct LatestHikvPolicy;
 
 impl<S: blackbrane> SentinelSearchPolicy<S> for LatestHikvPolicy {
@@ -481,7 +481,7 @@ impl<S: blackbrane> SentinelSearchPolicy<S> for LatestHikvPolicy {
 
 /// The SentinelSearchPolicy for outputting `TxnEntry`.
 ///
-/// The `ForwardMutantSentinelSearch` with this policy only outputs records whose commit_ts
+/// The `LightlikeMutantSentinelSearch` with this policy only outputs records whose commit_ts
 /// is greater than `after_ts`. It also supports outputting delete records
 /// if `output_delete` is set to `true`.
 pub struct LatestEntryPolicy {
@@ -631,7 +631,7 @@ fn mutant_search_latest_handle_dagger<S: blackbrane, T>(
 
 /// The SentinelSearchPolicy for outputting `TxnEntry` for every daggers or commits in specified ts range.
 ///
-/// The `ForwardMutantSentinelSearch` with this policy mutant_searchs all entries whose `commit_ts`s
+/// The `LightlikeMutantSentinelSearch` with this policy mutant_searchs all entries whose `commit_ts`s
 /// (or daggers' `start_ts`s) in range (`from_ts`, `cfg.ts`].
 pub struct DeltaEntryPolicy {
     from_ts: TimeStamp,
@@ -726,7 +726,7 @@ impl<S: blackbrane> SentinelSearchPolicy<S> for DeltaEntryPolicy {
             let write_value = cursors.write.value(&mut statistics.write);
             let commit_ts = Key::decode_ts_from(cursors.write.key(&mut statistics.write))?;
 
-            // commit_ts > cfg.ts never happens since the ForwardMutantSentinelSearch will skip those greater
+            // commit_ts > cfg.ts never happens since the LightlikeMutantSentinelSearch will skip those greater
             // versions.
 
             if commit_ts <= self.from_ts {
@@ -818,17 +818,17 @@ impl<S: blackbrane> SentinelSearchPolicy<S> for DeltaEntryPolicy {
 /// Internally, for each key, rollbacks are ignored and smaller version will be tried. If the
 /// isolation level is SI, daggers will be checked first.
 ///
-/// Use `MutantSentinelSearchBuilder` to build `ForwardHikvMutantSentinelSearch`.
-pub type ForwardHikvMutantSentinelSearch<S> = ForwardMutantSentinelSearch<S, LatestHikvPolicy>;
+/// Use `MutantSentinelSearchBuilder` to build `LightlikeHikvMutantSentinelSearch`.
+pub type LightlikeHikvMutantSentinelSearch<S> = LightlikeMutantSentinelSearch<S, LatestHikvPolicy>;
 
-/// This mutant_searchner is like `ForwardHikvMutantSentinelSearch` but outputs `TxnEntry`.
-pub type EntryMutantSentinelSearch<S> = ForwardMutantSentinelSearch<S, LatestEntryPolicy>;
+/// This mutant_searchner is like `LightlikeHikvMutantSentinelSearch` but outputs `TxnEntry`.
+pub type EntryMutantSentinelSearch<S> = LightlikeMutantSentinelSearch<S, LatestEntryPolicy>;
 
 /// This mutant_searchner mutant_searchs all entries whose commit_ts (or daggers' start_ts) is in range
 /// (from_ts, cfg.ts].
-pub type DeltaMutantSentinelSearch<S> = ForwardMutantSentinelSearch<S, DeltaEntryPolicy>;
+pub type DeltaMutantSentinelSearch<S> = LightlikeMutantSentinelSearch<S, DeltaEntryPolicy>;
 
-impl<S, P> TxnEntryMutantSentinelSearch for ForwardMutantSentinelSearch<S, P>
+impl<S, P> TxnEntryMutantSentinelSearch for LightlikeMutantSentinelSearch<S, P>
 where
     S: blackbrane,
     P: SentinelSearchPolicy<S, Output = TxnEntry> + Send,
@@ -1087,7 +1087,7 @@ mod latest_fdbhikv_tests {
     use einsteindb-gen::{CF_LOCK, CF_WRITE};
     use fdbhikvproto::fdbhikvrpcpb::Context;
 
-    /// Check whether everything works as usual when `ForwardHikvMutantSentinelSearch::get()` goes out of bound.
+    /// Check whether everything works as usual when `LightlikeHikvMutantSentinelSearch::get()` goes out of bound.
     #[test]
     fn test_get_out_of_bound() {
         let einstein_merkle_tree = Testeinstein_merkle_treeBuilder::new().build().unwrap();
@@ -1153,7 +1153,7 @@ mod latest_fdbhikv_tests {
     }
 
     /// Check whether everything works as usual when
-    /// `ForwardHikvMutantSentinelSearch::move_write_cursor_to_next_user_key()` goes out of bound.
+    /// `LightlikeHikvMutantSentinelSearch::move_write_cursor_to_next_user_key()` goes out of bound.
     ///
     /// Case 1. next() out of bound
     #[test]
@@ -1234,7 +1234,7 @@ mod latest_fdbhikv_tests {
     }
 
     /// Check whether everything works as usual when
-    /// `ForwardHikvMutantSentinelSearch::move_write_cursor_to_next_user_key()` goes out of bound.
+    /// `LightlikeHikvMutantSentinelSearch::move_write_cursor_to_next_user_key()` goes out of bound.
     ///
     /// Case 2. seek() out of bound
     #[test]

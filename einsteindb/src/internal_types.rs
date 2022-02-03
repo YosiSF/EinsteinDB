@@ -79,11 +79,11 @@ impl TransactableValue for ValueAndSpan {
                 let mut it = ls.iter();
                 match (it.next().map(|x| &x.inner), it.next(), it.next(), it.next()) {
                     // Like "(transaction-id)".
-                    (Some(&PlainSymbol(ref op)), None, None, None) => {
+                    (Some(&PlainShelling(ref op)), None, None, None) => {
                         Ok(causetPlace::TxFunction(TxFunction { op: op.clone() }))
                     },
                     // Like "(lookup-ref)".
-                    (Some(&PlainSymbol(edn::PlainSymbol(ref s))), Some(a), Some(v), None) if s == "lookup-ref" => {
+                    (Some(&PlainShelling(edn::PlainShelling(ref s))), Some(a), Some(v), None) if s == "lookup-ref" => {
                         match a.clone().into_causet_place()? {
                             causetPlace::Causetid(a) => Ok(causetPlace::LookupRef(causets::LookupRef { a: causets::AttributePlace::Causetid(a), v: v.clone() })),
                             causetPlace::TempId(_) |
@@ -100,8 +100,8 @@ impl TransactableValue for ValueAndSpan {
             BigInteger(_) |
             Float(_) |
             Uuid(_) |
-            PlainSymbol(_) |
-            NamespacedSymbol(_) |
+            PlainShelling(_) |
+            NamespacedShelling(_) |
             Vector(_) |
             Set(_) |
             Map(_) => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace)),

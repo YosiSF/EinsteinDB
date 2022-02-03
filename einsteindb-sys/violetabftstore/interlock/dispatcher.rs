@@ -130,9 +130,9 @@ macro_rules! impl_box_observer_g {
 impl_box_observer!(BoxAdminObserver, AdminObserver, WrappedAdminObserver);
 impl_box_observer!(BoxQueryObserver, QueryObserver, WrappedQueryObserver);
 impl_box_observer!(
-    BoxApplySnapshotObserver,
-    ApplySnapshotObserver,
-    WrappedApplySnapshotObserver
+    BoxApplyLightlikePersistenceObserver,
+    ApplyLightlikePersistenceObserver,
+    WrappedApplyLightlikePersistenceObserver
 );
 impl_box_observer_g!(
     BoxSplitCheckObserver,
@@ -155,7 +155,7 @@ where
 {
     admin_observers: Vec<Entry<BoxAdminObserver>>,
     query_observers: Vec<Entry<BoxQueryObserver>>,
-    apply_snapshot_observers: Vec<Entry<BoxApplySnapshotObserver>>,
+    apply_lightlike_persistence_observers: Vec<Entry<BoxApplyLightlikePersistenceObserver>>,
     split_check_observers: Vec<Entry<BoxSplitCheckObserver<E>>>,
     role_observers: Vec<Entry<BoxRoleObserver>>,
     region_change_observers: Vec<Entry<BoxRegionChangeObserver>>,
@@ -168,7 +168,7 @@ impl<E> Default for Registry<E> {
         Registry {
             admin_observers: Default::default(),
             query_observers: Default::default(),
-            apply_snapshot_observers: Default::default(),
+            apply_lightlike_persistence_observers: Default::default(),
             split_check_observers: Default::default(),
             role_observers: Default::default(),
             region_change_observers: Default::default(),
@@ -199,12 +199,12 @@ impl<E> Registry<E> {
         push!(priority, qo, self.query_observers);
     }
 
-    pub fn register_apply_snapshot_observer(
+    pub fn register_apply_lightlike_persistence_observer(
         &mut self,
         priority: u32,
-        aso: BoxApplySnapshotObserver,
+        aso: BoxApplyLightlikePersistenceObserver,
     ) {
-        push!(priority, aso, self.apply_snapshot_observers);
+        push!(priority, aso, self.apply_lightlike_persistence_observers);
     }
 
     pub fn register_split_check_observer(&mut self, priority: u32, sco: BoxSplitCheckObserver<E>) {
@@ -292,7 +292,7 @@ impl<E> InterlockHost<E>
 where
     E: HiKV,
 {
-    pub fn new<C: CasualRouter<E::Snapshot> + Clone + Send + 'static>(ch: C) -> InterlockHost<E> {
+    pub fn new<C: CasualRouter<E::LightlikePersistence> + Clone + Send + 'static>(ch: C) -> InterlockHost<E> {
         let mut registry = Registry::default();
         registry.register_split_check_observer(
             200,
@@ -378,7 +378,7 @@ where
         }
     }
 
-    pub fn pre_apply_plain_ehikvs_from_snapshot(
+    pub fn pre_apply_plain_ehikvs_from_lightlike_persistence(
         &self,
         region: &Region,
         brane: BRANEName,
@@ -386,17 +386,17 @@ where
     ) {
         loop_ob!(
             region,
-            &self.registry.apply_snapshot_observers,
+            &self.registry.apply_lightlike_persistence_observers,
             pre_apply_plain_ehikvs,
             brane,
             ehikv_pairs
         );
     }
 
-    pub fn pre_apply_Causet_from_snapshot(&self, region: &Region, brane: BRANEName, path: &str) {
+    pub fn pre_apply_Causet_from_lightlike_persistence(&self, region: &Region, brane: BRANEName, path: &str) {
         loop_ob!(
             region,
-            &self.registry.apply_snapshot_observers,
+            &self.registry.apply_lightlike_persistence_observers,
             pre_apply_Causet,
             brane,
             path
@@ -597,7 +597,7 @@ mod tests {
         }
     }
 
-    impl ApplySnapshotObserver for Testinterlock {
+    impl ApplyLightlikePersistenceObserver for Testinterlock {
         fn pre_apply_plain_ehikvs(
             &self,
             ctx: &mut ObserverContext<'_>,
@@ -651,7 +651,7 @@ mod tests {
         host.registry
             .register_query_observer(1, BoxQueryObserver::new(ob.clone()));
         host.registry
-            .register_apply_snapshot_observer(1, BoxApplySnapshotObserver::new(ob.clone()));
+            .register_apply_lightlike_persistence_observer(1, BoxApplyLightlikePersistenceObserver::new(ob.clone()));
         host.registry
             .register_role_observer(1, BoxRoleObserver::new(ob.clone()));
         host.registry
@@ -687,9 +687,9 @@ mod tests {
         host.on_region_changed(&region, RegionChangeEvent::Create, StateRole::Follower);
         assert_all!(&[&ob.called], &[36]);
 
-        host.pre_apply_plain_ehikvs_from_snapshot(&region, "default", &[]);
+        host.pre_apply_plain_ehikvs_from_lightlike_persistence(&region, "default", &[]);
         assert_all!(&[&ob.called], &[45]);
-        host.pre_apply_Causet_from_snapshot(&region, "default", "");
+        host.pre_apply_Causet_from_lightlike_persistence(&region, "default", "");
         assert_all!(&[&ob.called], &[55]);
         let observe_id = ObserveID::new();
         host.prepare_for_apply(observe_id, 0);

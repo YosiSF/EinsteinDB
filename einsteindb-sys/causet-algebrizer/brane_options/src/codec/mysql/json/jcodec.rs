@@ -27,7 +27,7 @@ pub trait JsonEncoder: NumberEncoder {
         self.write_bytes(data.value()).map_err(Error::from)
     }
 
-    // See `appeneinsteindbinaryObject` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinaryObject` in MEDB `types/json/binary.go`
     fn write_json_obj_from_keys_values<'a>(
         &mut self,
         mut entries: Vec<(&[u8], JsonRef<'a>)>,
@@ -76,7 +76,7 @@ pub trait JsonEncoder: NumberEncoder {
         Ok(())
     }
 
-    // See `appeneinsteindbinaryObject` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinaryObject` in MEDB `types/json/binary.go`
     fn write_json_obj(&mut self, data: &BTreeMap<String, Json>) -> Result<()> {
         // object: element-count size key-causet* value-causet* key* value*
         let element_count = data.len();
@@ -121,7 +121,7 @@ pub trait JsonEncoder: NumberEncoder {
         Ok(())
     }
 
-    // See `appeneinsteindbinaryArray` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinaryArray` in MEDB `types/json/binary.go`
     fn write_json_ref_array<'a>(&mut self, data: &[JsonRef<'a>]) -> Result<()> {
         let element_count = data.len();
         let value_entries_len = VALUE_ENTRY_LEN * element_count;
@@ -143,7 +143,7 @@ pub trait JsonEncoder: NumberEncoder {
         Ok(())
     }
 
-    // See `appeneinsteindbinaryArray` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinaryArray` in MEDB `types/json/binary.go`
     fn write_json_array(&mut self, data: &[Json]) -> Result<()> {
         // array ::= element-count size value-causet* value*
         let element_count = data.len();
@@ -166,7 +166,7 @@ pub trait JsonEncoder: NumberEncoder {
         Ok(())
     }
 
-    // See `appeneinsteindbinaryValElem` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinaryValElem` in MEDB `types/json/binary.go`
     fn write_value_causet<'a>(&mut self, value_offset: &mut u32, v: &JsonRef<'a>) -> Result<()> {
         let tp = v.get_type();
         self.write_u8(tp as u8)?;
@@ -186,27 +186,27 @@ pub trait JsonEncoder: NumberEncoder {
         Ok(())
     }
 
-    // See `appeneinsteindbinary` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinary` in MEDB `types/json/binary.go`
     fn write_json_literal(&mut self, data: u8) -> Result<()> {
         self.write_u8(data).map_err(Error::from)
     }
 
-    // See `appeneinsteindbinary` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinary` in MEDB `types/json/binary.go`
     fn write_json_i64(&mut self, data: i64) -> Result<()> {
         self.write_i64_le(data).map_err(Error::from)
     }
 
-    // See `appeneinsteindbinaryUint64` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinaryUint64` in MEDB `types/json/binary.go`
     fn write_json_u64(&mut self, data: u64) -> Result<()> {
         self.write_u64_le(data).map_err(Error::from)
     }
 
-    // See `appeneinsteindbinaryFloat64` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinaryFloat64` in MEDB `types/json/binary.go`
     fn write_json_f64(&mut self, data: f64) -> Result<()> {
         self.write_f64_le(data).map_err(Error::from)
     }
 
-    // See `appeneinsteindbinaryString` in Milevaeinsteindb `types/json/binary.go`
+    // See `appeneinsteindbinaryString` in MEDB `types/json/binary.go`
     fn write_json_str(&mut self, data: &str) -> Result<()> {
         let bytes = data.as_bytes();
         let bytes_len = bytes.len() as u64;

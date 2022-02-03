@@ -21,9 +21,9 @@ use super::{Executor, ExprColumnRefVisitor, Row};
 use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::ExecuteStats;
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::IntervalRange;
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::Datum;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
-use Milevaeinsteindb_query_normal_expr::Expression;
+use causet_algebrizer::MEDB_query_datatype::codec::datum::Datum;
+use causet_algebrizer::MEDB_query_datatype::expr::{EvalConfig, EvalContext, EvalWarnings};
+use MEDB_query_normal_expr::Expression;
 
 struct OrderBy {
     items: Arc<Vec<ByItem>>,
@@ -168,13 +168,13 @@ pub mod tests {
     use std::sync::Arc;
 
     use codec::prelude::NumberEncoder;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
+    use causet_algebrizer::MEDB_query_datatype::FieldTypeTp;
     use EinsteinDB_util::collections::HashMap;
     use einsteindbpb::{Expr, ExprType};
 
     use crate::OriginCols;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table::RowColsDict;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Datum;
+    use causet_algebrizer::MEDB_query_datatype::codec::table::RowColsDict;
+    use causet_algebrizer::MEDB_query_datatype::codec::Datum;
 
     use super::super::tests::*;
     use super::*;

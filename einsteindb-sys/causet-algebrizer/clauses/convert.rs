@@ -90,7 +90,7 @@ impl ValueTypes for FnArg {
                 &FnArg::Vector(_) |
                 &FnArg::SrcVar(_) => bail!(AlgebrizerError::UnsupportedArgument),
 
-                // These are all straightforward.
+                // These are all straightlightlike.
                 &FnArg::Constant(NonIntegerConstant::Boolean(_)) => ValueTypeSet::of_one(ValueType::Boolean),
                 &FnArg::Constant(NonIntegerConstant::Instant(_)) => ValueTypeSet::of_one(ValueType::Instant),
                 &FnArg::Constant(NonIntegerConstant::Uuid(_)) => ValueTypeSet::of_one(ValueType::Uuid),
@@ -220,7 +220,7 @@ impl ConjoiningClauses {
             FnArg::Vector(_) |
             FnArg::SrcVar(_) => bail!(AlgebrizerError::InvalidGroundConstant),
 
-            // These are all straightforward.
+            // These are all straightlightlike.
             FnArg::Constant(NonIntegerConstant::Boolean(x)) => {
                 coerce_to_typed_value!(var, x, known_types, ValueType::Boolean, TypedValue::Boolean)
             },

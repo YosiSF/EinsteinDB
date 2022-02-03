@@ -15,7 +15,7 @@ extern crate serde_test;
 extern crate serde_json;
 
 extern crate edn;
-use edn::symbols::Keyword;
+use edn::shellings::Keyword;
 use serde_test::{assert_tokens, Token};
 
 #[cfg(feature = "serde_support")]

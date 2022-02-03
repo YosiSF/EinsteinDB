@@ -41,7 +41,7 @@ impl<S: blackbrane> ReadCommand<S> for ResolveDaggerReadPhase {
     fn process_read(self, blackbrane: S, statistics: &mut Statistics) -> Result<ProcessResult> {
         let tag = self.tag();
         let (ctx, solitontxn_status) = (self.ctx, self.solitontxn_status);
-        let mut reader = EpaxosReader::new_with_ctx(blackbrane, Some(SentinelSearchMode::Forward), &ctx);
+        let mut reader = EpaxosReader::new_with_ctx(blackbrane, Some(SentinelSearchMode::Lightlike), &ctx);
         let result = reader.mutant_search_daggers(
             self.mutant_search_key.as_ref(),
             None,

@@ -356,7 +356,7 @@ mod parser {
                     (components.len() == 3).as_option()?;
                     rest = &rest[1..];
                 }
-                // If a punctuation is acquired, move forward the pointer.
+                // If a punctuation is acquired, move lightlike the pointer.
                 else if rest[0].is_ascii_punctuation() {
                     rest = &rest[1..];
                 } else {
@@ -518,7 +518,7 @@ mod parser {
         // NOTE: These numbers can be consider as strings
         // The parser eats two digits each time from the end of string,
         // and fill it into `Time` with reversed order.
-        // Port from: https://github.com/pingcap/Milevaeinsteindb/blob/b1aad071489619998e4caefd235ed01f179c2einsteindb2/types/time.go#L1263
+        // Port from: https://github.com/pingcap/MEDB/blob/b1aad071489619998e4caefd235ed01f179c2einsteindb2/types/time.go#L1263
         let aligned = match input {
             101..=691_231 => (input + 20_000_000) * 1_000_000,
             700_101..=991_231 => (input + 19_000_000) * 1_000_000,
@@ -1535,7 +1535,7 @@ impl ConvertTo<f64> for Time {
 }
 
 impl ConvertTo<Decimal> for Time {
-    // Port from Milevaeinsteindb's Time::ToNumber
+    // Port from MEDB's Time::ToNumber
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Decimal> {
         if self.is_zero() {
@@ -1547,7 +1547,7 @@ impl ConvertTo<Decimal> for Time {
 }
 
 impl ConvertTo<Duration> for Time {
-    /// Port from Milevaeinsteindb's Time::ConvertToDuration
+    /// Port from MEDB's Time::ConvertToDuration
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Duration> {
         if self.is_zero() {

@@ -136,9 +136,9 @@ impl<'s, 'c> Known<'s, 'c> {
             .unwrap_or(false)
     }
 
-    pub fn is_Attr_cached_forward<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
+    pub fn is_Attr_cached_lightlike<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
         self.cache
-            .map(|cache| cache.is_Attr_cached_forward(causetid.into()))
+            .map(|cache| cache.is_Attr_cached_lightlike(causetid.into()))
             .unwrap_or(false)
     }
 

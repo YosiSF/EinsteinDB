@@ -12,7 +12,7 @@ extern crate edn;
 
 use edn::{
     Keyword,
-    PlainSymbol,
+    PlainShelling,
 };
 
 use edn::query::{
@@ -59,7 +59,7 @@ fn can_parse_predicates() {
                        value: PatternValuePlace::Variable(Variable::from_valid_name("?y")),
                        tx: PatternNonValuePlace::Placeholder,
                    }),
-                   WhereClause::Pred(Predicate { operator: PlainSymbol::plain("<"), args: vec![
+                   WhereClause::Pred(Predicate { operator: PlainShelling::plain("<"), args: vec![
                        FnArg::Variable(Variable::from_valid_name("?y")), FnArg::CausetidOrInteger(10),
                    ]}),
                ]);
@@ -203,7 +203,7 @@ fn can_parse_simple_or_and_join() {
                                        ],
                                    )),
 
-                                   WhereClause::Pred(Predicate { operator: PlainSymbol::plain("<"), args: vec![
+                                   WhereClause::Pred(Predicate { operator: PlainShelling::plain("<"), args: vec![
                                        FnArg::Variable(Variable::from_valid_name("?y")), FnArg::CausetidOrInteger(1),
                                    ]}),
                                ],

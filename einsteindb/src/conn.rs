@@ -341,7 +341,7 @@ impl Conn {
             CacheAction::Register => {
                 match cache_direction {
                     CacheDirection::Both => cache.register(schema, SQLite, attribute_causetid),
-                    CacheDirection::Forward => cache.register_forward(schema, SQLite, attribute_causetid),
+                    CacheDirection::Lightlike => cache.register_lightlike(schema, SQLite, attribute_causetid),
                     CacheDirection::Reverse => cache.register_reverse(schema, SQLite, attribute_causetid),
                 }.map_err(|e| e.into())
             },
@@ -641,7 +641,7 @@ mod tests {
 
         let kw = kw!(:foo/bat);
         let schema = conn.current_schema();
-        let res = conn.cache(&mut SQLite, &schema, &kw, CacheDirection::Forward, CacheAction::Register);
+        let res = conn.cache(&mut SQLite, &schema, &kw, CacheDirection::Lightlike, CacheAction::Register);
         match res.expect_err("expected cache to fail") {
             einsteindbError::UnknownAttribute(msg) => assert_eq!(msg, ":foo/bat"),
             x => panic!("expected UnknownAttribute error, got {:?}", x),
@@ -695,7 +695,7 @@ mod tests {
         println!("Uncached time: {:?}", uncached_elapsed_time);
 
         let schema = conn.current_schema();
-        conn.cache(&mut SQLite, &schema, &kw, CacheDirection::Forward, CacheAction::Register).expect("expected caching to work");
+        conn.cache(&mut SQLite, &schema, &kw, CacheDirection::Lightlike, CacheAction::Register).expect("expected caching to work");
 
         for _ in 1..5 {
             let start = Instant::now();
@@ -723,7 +723,7 @@ mod tests {
 
         println!("Query is {}", query);
 
-        assert!(!conn.current_cache().is_attribute_cached_forward(einsteindb_solitonid));
+        assert!(!conn.current_cache().is_attribute_cached_lightlike(einsteindb_solitonid));
 
         {
             let mut ip = conn.begin_transaction(&mut SQLite).expect("began");
@@ -736,10 +736,10 @@ mod tests {
             let end = time::PreciseTime::now();
             println!("Uncached took {}µs", start.to(end).num_microseconds().unwrap());
 
-            ip.cache(&kw!(:einsteindb/solitonid), CacheDirection::Forward, CacheAction::Register).expect("registered");
-            ip.cache(&kw!(:einsteindb/valueType), CacheDirection::Forward, CacheAction::Register).expect("registered");
+            ip.cache(&kw!(:einsteindb/solitonid), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
+            ip.cache(&kw!(:einsteindb/valueType), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
 
-            assert!(ip.cache.is_attribute_cached_forward(einsteindb_solitonid));
+            assert!(ip.cache.is_attribute_cached_lightlike(einsteindb_solitonid));
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
             assert_eq!(solitonid, Some(TypedValue::typed_ns_keyword("einsteindb.type", "string").into()));
@@ -753,22 +753,22 @@ mod tests {
             ip.rollback().expect("rolled back");
         }
 
-        assert!(!conn.current_cache().is_attribute_cached_forward(einsteindb_solitonid));
+        assert!(!conn.current_cache().is_attribute_cached_lightlike(einsteindb_solitonid));
 
         {
             let mut ip = conn.begin_transaction(&mut SQLite).expect("began");
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
             assert_eq!(solitonid, Some(TypedValue::typed_ns_keyword("einsteindb.type", "string").into()));
-            ip.cache(&kw!(:einsteindb/solitonid), CacheDirection::Forward, CacheAction::Register).expect("registered");
-            ip.cache(&kw!(:einsteindb/valueType), CacheDirection::Forward, CacheAction::Register).expect("registered");
+            ip.cache(&kw!(:einsteindb/solitonid), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
+            ip.cache(&kw!(:einsteindb/valueType), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
 
-            assert!(ip.cache.is_attribute_cached_forward(einsteindb_solitonid));
+            assert!(ip.cache.is_attribute_cached_lightlike(einsteindb_solitonid));
 
             ip.commit().expect("rolled back");
         }
 
-        assert!(conn.current_cache().is_attribute_cached_forward(einsteindb_solitonid));
-        assert!(conn.current_cache().is_attribute_cached_forward(einsteindb_type));
+        assert!(conn.current_cache().is_attribute_cached_lightlike(einsteindb_solitonid));
+        assert!(conn.current_cache().is_attribute_cached_lightlike(einsteindb_type));
     }
 }

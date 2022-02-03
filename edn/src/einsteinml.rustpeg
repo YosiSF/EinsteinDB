@@ -27,7 +27,7 @@ use uuid::Uuid;
 use causets::*;
 use query;
 use query::FromValue;
-use symbols::*;
+use shellings::*;
 use types::{SpannedValue, Span, ValueAndSpan};
 
 // Goal: Be able to parse https://github.com/edn-format/edn
@@ -143,27 +143,27 @@ namespace_divider = "."
 namespace_separator = "/"
 
 // TODO: Be more picky here
-// Keywords follow the rules of symbols, except they can (and must) begin with :
+// Keywords follow the rules of shellings, except they can (and must) begin with :
 // e.g. :fred or :my/fred. See https://github.com/edn-format/edn#keywords
-symbol_char_initial = [a-zA-Z0-9*!_?$%&=<>]
-symbol_char_subsequent = [+a-zA-Z0-9*!_?$%&=<>-]
+shelling_char_initial = [a-zA-Z0-9*!_?$%&=<>]
+shelling_char_subsequent = [+a-zA-Z0-9*!_?$%&=<>-]
 
-symbol_namespace = symbol_char_initial symbol_char_subsequent* (namespace_divider symbol_char_subsequent+)*
-symbol_name = ( symbol_char_initial+ symbol_char_subsequent* )
-plain_symbol_name = symbol_name / "..." / "."
+shelling_namespace = shelling_char_initial shelling_char_subsequent* (namespace_divider shelling_char_subsequent+)*
+shelling_name = ( shelling_char_initial+ shelling_char_subsequent* )
+plain_shelling_name = shelling_name / "..." / "."
 
 keyword_prefix = ":"
 
-pub symbol -> SpannedValue =
-    ns:( sns:$(symbol_namespace) namespace_separator { sns })?
-    n:$(plain_symbol_name)
-    { SpannedValue::from_symbol(ns, n) }
-    / #expected("symbol")
+pub shelling -> SpannedValue =
+    ns:( sns:$(shelling_namespace) namespace_separator { sns })?
+    n:$(plain_shelling_name)
+    { SpannedValue::from_shelling(ns, n) }
+    / #expected("shelling")
 
 pub keyword -> SpannedValue =
     keyword_prefix
-    ns:( sns:$(symbol_namespace) namespace_separator { sns })?
-    n:$(symbol_name)
+    ns:( sns:$(shelling_namespace) namespace_separator { sns })?
+    n:$(shelling_name)
     { SpannedValue::from_keyword(ns, n) }
     / #expected("keyword")
 
@@ -187,7 +187,7 @@ pub map -> SpannedValue = "{" __ v:(pair)* __ "}"
 // It's important that float comes before integer or the parser assumes that
 // floats are integers and fails to parse
 pub value -> ValueAndSpan =
-    __ start:#position v:(nil / nan / infinity / boolean / number / inst / uuid / text / keyword / symbol / list / vector / map / set) end:#position __ {
+    __ start:#position v:(nil / nan / infinity / boolean / number / inst / uuid / text / keyword / shelling / list / vector / map / set) end:#position __ {
         ValueAndSpan {
             inner: v,
             span: Span::new(start, end)
@@ -213,8 +213,8 @@ pub op -> OpType
 
 raw_keyword -> Keyword =
     keyword_prefix
-    ns:( sns:$(symbol_namespace) namespace_separator { sns })?
-    n:$(symbol_name) {
+    ns:( sns:$(shelling_namespace) namespace_separator { sns })?
+    n:$(shelling_name) {
         match ns {
             Some(ns) => Keyword::isoliton_namespaceable(ns, n),
             None => Keyword::plain(n),
@@ -222,18 +222,18 @@ raw_keyword -> Keyword =
     }
     / #expected("keyword")
 
-raw_forward_keyword -> Keyword
-    = v:raw_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected :forward or :forward/keyword") } }
+raw_lightlike_keyword -> Keyword
+    = v:raw_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected :lightlike or :lightlike/keyword") } }
 
 raw_spacelike_completion_keyword -> Keyword
     = v:raw_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected :_backword or :spacelike_completion/_keyword") } }
 
 raw_isoliton_namespaceable_keyword -> Keyword
-    = keyword_prefix ns:$(symbol_namespace) namespace_separator n:$(symbol_name) { Keyword::isoliton_namespaceable(ns, n) }
+    = keyword_prefix ns:$(shelling_namespace) namespace_separator n:$(shelling_name) { Keyword::isoliton_namespaceable(ns, n) }
     / #expected("isoliton_namespaceable keyword")
 
-raw_forward_isoliton_namespaceable_keyword -> Keyword
-    = v:raw_isoliton_namespaceable_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected isoliton_namespaceable :forward/keyword") } }
+raw_lightlike_isoliton_namespaceable_keyword -> Keyword
+    = v:raw_isoliton_namespaceable_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected isoliton_namespaceable :lightlike/keyword") } }
 
 raw_spacelike_completion_isoliton_namespaceable_keyword -> Keyword
     = v:raw_isoliton_namespaceable_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected isoliton_namespaceable :spacelike_completion/_keyword") } }
@@ -243,10 +243,10 @@ causetid -> CausetidOrSolitonid
     / v:raw_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v) }
     / #expected("causetid")
 
-forward_causetid -> CausetidOrSolitonid
+lightlike_causetid -> CausetidOrSolitonid
     = v:( raw_basedinteger / raw_hexinteger / raw_octalinteger / raw_integer ) { CausetidOrSolitonid::Causetid(v) }
-    / v:raw_forward_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v) }
-    / #expected("forward causetid")
+    / v:raw_lightlike_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v) }
+    / #expected("lightlike causetid")
 
 spacelike_completion_causetid -> CausetidOrSolitonid
     = v:raw_spacelike_completion_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v.to_reversed()) }
@@ -257,7 +257,7 @@ lookup_ref -> LookupRef<ValueAndSpan>
     / #expected("lookup-ref")
 
 tx_function -> TxFunction
-    = "(" __ n:$(symbol_name) __ ")" { TxFunction { op: PlainSymbol::plain(n) } }
+    = "(" __ n:$(shelling_name) __ ")" { TxFunction { op: PlainShelling::plain(n) } }
 
 causet_place -> causetPlace<ValueAndSpan>
     = v:raw_text { causetPlace::TempId(TempId::External(v).into()) }
@@ -279,7 +279,7 @@ value_place -> ValuePlace<ValueAndSpan>
     / __ v:atom __ { ValuePlace::Atom(v) }
 
 pub causet -> causet<ValueAndSpan>
-    = __ "[" __ op:(op) __ e:(causet_place) __ a:(forward_causetid)  __ v:(value_place) __  "]" __ { causet::AddOrRetract { op, e: e, a: AttributePlace::Causetid(a), v: v } }
+    = __ "[" __ op:(op) __ e:(causet_place) __ a:(lightlike_causetid)  __ v:(value_place) __  "]" __ { causet::AddOrRetract { op, e: e, a: AttributePlace::Causetid(a), v: v } }
     / __ "[" __ op:(op) __ e:(value_place)  __ a:(spacelike_completion_causetid) __ v:(causet_place) __ "]" __ { causet::AddOrRetract { op, e: v, a: AttributePlace::Causetid(a), v: e } }
     / __ map:map_notation __ { causet::MapNotation(map) }
     / #expected("causet")
@@ -295,7 +295,7 @@ pub causets -> Vec<causet<ValueAndSpan>>
 // whitespace-eating rule or an explicit whitespace eating `__`.
 
 query_function -> query::QueryFunction
-    = __ n:$(symbol_name) __ {? query::QueryFunction::from_symbol(&PlainSymbol::plain(n)).ok_or("expected query function") }
+    = __ n:$(shelling_name) __ {? query::QueryFunction::from_shelling(&PlainShelling::plain(n)).ok_or("expected query function") }
 
 fn_arg -> query::FnArg
     = v:value {? query::FnArg::from_value(&v).ok_or("expected query function argument") }
@@ -315,7 +315,7 @@ find_spec -> query::FindSpec
 
 pull_attribute -> query::PullAttributeSpec
     = __ "*" __ { query::PullAttributeSpec::Wildcard }
-    / __ k:raw_forward_isoliton_namespaceable_keyword __ alias:(":as" __ alias:raw_forward_keyword __ { alias })? {
+    / __ k:raw_lightlike_isoliton_namespaceable_keyword __ alias:(":as" __ alias:raw_lightlike_keyword __ { alias })? {
         let attribute = query::PullConcreteAttribute::Solitonid(::std::rc::Rc::new(k));
         let alias = alias.map(|alias| ::std::rc::Rc::new(alias));
         query::PullAttributeSpec::Attribute(

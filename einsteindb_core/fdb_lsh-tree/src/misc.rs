@@ -293,12 +293,12 @@ impl MiscExt for Fdbeinstein_merkle_tree {
         self.as_inner().get_latest_sequence_number()
     }
 
-    fn get_oldest_snapshot_sequence_number(&self) -> Option<u64> {
+    fn get_oldest_lightlike_persistence_sequence_number(&self) -> Option<u64> {
         match self
             .as_inner()
-            .get_property_int(FDBDB_OLDEST_SNAPSHOT_SEQUENCE)
+            .get_property_int(FDBDB_OLDEST_LIGHTLIKE_PERSISTENCE_SEQUENCE)
         {
-            // Some(0) indicates that no snapshot is in use
+            // Some(0) indicates that no lightlike_persistence is in use
             Some(0) => None,
             s => s,
         }

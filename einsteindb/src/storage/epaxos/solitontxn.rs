@@ -896,7 +896,7 @@ pub(crate) mod tests {
         must_commit(&einstein_merkle_tree, &[6], 3, 6);
 
         let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
-        let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Forward), true);
+        let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Lightlike), true);
 
         let v = reader.mutant_search_values_in_default(&Key::from_cocauset(&[3])).unwrap();
         assert_eq!(v.len(), 2);
@@ -939,7 +939,7 @@ pub(crate) mod tests {
         must_commit(&einstein_merkle_tree, &[6], 3, 6);
 
         let blackbrane = einstein_merkle_tree.blackbrane(Default::default()).unwrap();
-        let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Forward), true);
+        let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Lightlike), true);
 
         assert_eq!(
             reader.seek_ts(3.into()).unwrap().unwrap(),

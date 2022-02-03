@@ -22,7 +22,7 @@ impl Json {
     /// 3. a scalar value is autowrapped as an array before merge;
     /// 4. an adjacent array and object are merged by autowrapping the object as an array.
     ///
-    /// See `MergeBinary()` in Milevaeinsteindb `json/binary_function.go`
+    /// See `MergeBinary()` in MEDB `json/binary_function.go`
     #[allow(clippy::comparison_chain)]
     pub fn merge<'a>(bjs: Vec<JsonRef<'a>>) -> Result<Json> {
         let mut result = vec![];
@@ -72,7 +72,7 @@ impl<'a> MergeUnit<'a> {
     }
 }
 
-// See `mergeBinaryArray()` in Milevaeinsteindb `json/binary_function.go`
+// See `mergeBinaryArray()` in MEDB `json/binary_function.go`
 fn merge_binary_array<'a>(elems: &[MergeUnit<'a>]) -> Result<Json> {
     let mut buf = vec![];
     for j in elems.iter() {
@@ -89,7 +89,7 @@ fn merge_binary_array<'a>(elems: &[MergeUnit<'a>]) -> Result<Json> {
     Json::from_ref_array(buf)
 }
 
-// See `mergeBinaryObject()` in Milevaeinsteindb `json/binary_function.go`
+// See `mergeBinaryObject()` in MEDB `json/binary_function.go`
 fn merge_binary_object<'a>(objects: &mut Vec<JsonRef<'a>>) -> Result<Json> {
     let mut ehikv_map: BTreeMap<String, Json> = BTreeMap::new();
     for j in objects.drain(..) {

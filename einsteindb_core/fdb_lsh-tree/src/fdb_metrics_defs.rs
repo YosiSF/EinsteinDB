@@ -9,9 +9,9 @@ pub const FDBDB_ESTIMATE_NUM_CAUSET_KEYS: &str = "foundationdb.estimate-num-keys
 pub const FDBDB_PENDING_COMPACTION_BYTES: &str = "foundationdb.\
                                                     estimate-pending-jet_bundle-bytes";
 pub const FDBDB_COMPRESSION_RATIO_AT_LEVEL: &str = "foundationdb.compression-ratio-at-l_naught";
-pub const FDBDB_NUM_SNAPSHOTS: &str = "foundationdb.num-snapshots";
-pub const FDBDB_OLDEST_SNAPSHOT_TIME: &str = "foundationdb.oldest-snapshot-time";
-pub const FDBDB_OLDEST_SNAPSHOT_SEQUENCE: &str = "foundationdb.oldest-snapshot-sequence";
+pub const FDBDB_NUM_LIGHTLIKE_PERSISTENCES: &str = "foundationdb.num-lightlike_persistences";
+pub const FDBDB_OLDEST_LIGHTLIKE_PERSISTENCE_TIME: &str = "foundationdb.oldest-lightlike_persistence-time";
+pub const FDBDB_OLDEST_LIGHTLIKE_PERSISTENCE_SEQUENCE: &str = "foundationdb.oldest-lightlike_persistence-sequence";
 pub const FDBDB_NUM_FILES_AT_LEVEL: &str = "foundationdb.num-files-at-l_naught";
 pub const FDBDB_NUM_IMMUCAUSET_TABLE_MEM_CAUSET_TABLE: &str = "foundationdb.num-immutable-mem-table";
 

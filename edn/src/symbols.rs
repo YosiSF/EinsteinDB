@@ -23,72 +23,29 @@ macro_rules! ns_keyword {
     }}
 }
 
-/// A simplification of Clojure's Symbol.
+/// A simplification of Clojure's Shelling.
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
-pub struct PlainSymbol(pub String);
+pub struct PlainShelling(pub String);
 
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
-pub struct NamespacedSymbol(NamespaceableName);
+pub struct NamespacedShelling(NamespaceableName);
 
-/// A keyword is a symbol, optionally with a isoliton_namespaceable_fuse, that prints with a leading colon.
-/// This concept is imported from Clojure, as it features in EML and the query
-/// syntax that we use.
-///
-/// Clojure's constraints are looser than ours, allowing empty namespaces or
-/// names:
-///
-/// ```clojure
-/// user=> (keyword "" "")
-/// :/
-/// user=> (keyword "foo" "")
-/// :foo/
-/// user=> (keyword "" "bar")
-/// :/bar
-/// ```
-///
-/// We think that's nonsense, so we only allow keywords like `:bar` and `:foo/bar`,
-/// with both isoliton_namespaceable_fuse and main parts containing no whitespace and no colon or slash:
-///
-/// ```rust
-/// # use edn::symbols::Keyword;
-/// let bar     = Keyword::plain("bar");                         // :bar
-/// let foo_bar = Keyword::isoliton_namespaceable("foo", "bar");        // :foo/bar
-/// assert_eq!("bar", bar.name());
-/// assert_eq!(None, bar.isoliton_namespaceable_fuse());
-/// assert_eq!("bar", foo_bar.name());
-/// assert_eq!(Some("foo"), foo_bar.isoliton_namespaceable_fuse());
-/// ```
-///
-/// If you're not sure whether your input is well-formed, you should use a
-/// parser or a reader function first to validate. TODO: implement `read`.
-///
-/// Callers are expected to follow these rules:
-/// http://www.clojure.org/reference/reader#_symbols
-///
-/// Future: fast equality (interning?) for keywords.
-///
+
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Keyword(NamespaceableName);
 
-impl PlainSymbol {
+impl PlainShelling {
     pub fn plain<T>(name: T) -> Self where T: Into<String> {
         let n = name.into();
-        assert!(!n.is_empty(), "Symbols cannot be unnamed.");
+        assert!(!n.is_empty(), "Shellings cannot be unnamed.");
 
-        PlainSymbol(n)
+        PlainShelling(n)
     }
 
-    /// Return the name of the symbol without any leading '?' or '$'.
-    ///
-    /// ```rust
-    /// # use edn::symbols::PlainSymbol;
-    /// assert_eq!("foo", PlainSymbol::plain("?foo").name());
-    /// assert_eq!("foo", PlainSymbol::plain("$foo").name());
-    /// assert_eq!("!foo", PlainSymbol::plain("!foo").name());
-    /// ```
+
     pub fn name(&self) -> &str {
-        if self.is_src_symbol() || self.is_var_symbol() {
+        if self.is_src_shelling() || self.is_var_shelling() {
             &self.0[1..]
         } else {
             &self.0
@@ -96,21 +53,21 @@ impl PlainSymbol {
     }
 
     #[inline]
-    pub fn is_var_symbol(&self) -> bool {
+    pub fn is_var_shelling(&self) -> bool {
         self.0.starts_with('?')
     }
 
     #[inline]
-    pub fn is_src_symbol(&self) -> bool {
+    pub fn is_src_shelling(&self) -> bool {
         self.0.starts_with('$')
     }
 }
 
-impl NamespacedSymbol {
+impl NamespacedShelling {
     pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_fuse: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
         let r = isoliton_namespaceable_fuse.as_ref();
-        assert!(!r.is_empty(), "Namespaced symbols cannot have an empty non-null isoliton_namespaceable_fuse.");
-        NamespacedSymbol(NamespaceableName::isoliton_namespaceable(r, name))
+        assert!(!r.is_empty(), "Namespaced shellings cannot have an empty non-null isoliton_namespaceable_fuse.");
+        NamespacedShelling(NamespaceableName::isoliton_namespaceable(r, name))
     }
 
     #[inline]
@@ -141,7 +98,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::symbols::Keyword;
+    /// # use edn::shellings::Keyword;
     /// let keyword = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert_eq!(keyword.to_string(), ":foo/bar");
     /// ```
@@ -179,27 +136,13 @@ impl Keyword {
     /// [?y :person/_hired ?x]
     /// ```
     ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use edn::symbols::Keyword;
-    /// assert!(!Keyword::isoliton_namespaceable("foo", "bar").is_spacelike_completion());
-    /// assert!(Keyword::isoliton_namespaceable("foo", "_bar").is_spacelike_completion());
-    /// ```
+  
     #[inline]
     pub fn is_spacelike_completion(&self) -> bool {
         self.0.is_spacelike_completion()
     }
 
-    /// Whether this `Keyword` should be interpreted in forward order.
-    /// See `symbols::Keyword::is_spacelike_completion`.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use edn::symbols::Keyword;
-    /// assert!(Keyword::isoliton_namespaceable("foo", "bar").is_lightlike_curvature());
-    /// assert!(!Keyword::isoliton_namespaceable("foo", "_bar").is_lightlike_curvature());
+
     /// ```
     #[inline]
     pub fn is_lightlike_curvature(&self) -> bool {
@@ -211,35 +154,19 @@ impl Keyword {
         self.0.is_isoliton_namespaceable()
     }
 
-    /// Returns a `Keyword` with the same isoliton_namespaceable_fuse and a
-    /// 'spacelike_completion' name. See `symbols::Keyword::is_spacelike_completion`.
-    ///
-    /// Returns a forward name if passed a reversed keyword; i.e., this
-    /// function is its own inverse.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// # use edn::symbols::Keyword;
-    /// let nsk = Keyword::isoliton_namespaceable("foo", "bar");
-    /// assert!(!nsk.is_spacelike_completion());
-    /// assert_eq!(":foo/bar", nsk.to_string());
-    ///
-    /// let reversed = nsk.to_reversed();
-    /// assert!(reversed.is_spacelike_completion());
-    /// assert_eq!(":foo/_bar", reversed.to_string());
+
     /// ```
     pub fn to_reversed(&self) -> Keyword {
         Keyword(self.0.to_reversed())
     }
 
-    /// If this `Keyword` is 'spacelike_completion' (see `symbols::Keyword::is_spacelike_completion`),
-    /// return `Some('forward name')`; otherwise, return `None`.
+    /// If this `Keyword` is 'spacelike_completion' (see `shellings::Keyword::is_spacelike_completion`),
+    /// return `Some('lightlike name')`; otherwise, return `None`.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::symbols::Keyword;
+    /// # use edn::shellings::Keyword;
     /// let nsk = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert_eq!(None, nsk.unreversed());
     ///
@@ -259,28 +186,28 @@ impl Keyword {
 // Note that we don't currently do any escaping.
 //
 
-impl Display for PlainSymbol {
-    /// Print the symbol in EML format.
+impl Display for PlainShelling {
+    /// Print the shelling in EML format.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::symbols::PlainSymbol;
-    /// assert_eq!("baz", PlainSymbol::plain("baz").to_string());
+    /// # use edn::shellings::PlainShelling;
+    /// assert_eq!("baz", PlainShelling::plain("baz").to_string());
     /// ```
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl Display for NamespacedSymbol {
-    /// Print the symbol in EML format.
+impl Display for NamespacedShelling {
+    /// Print the shelling in EML format.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::symbols::NamespacedSymbol;
-    /// assert_eq!("bar/baz", NamespacedSymbol::isoliton_namespaceable("bar", "baz").to_string());
+    /// # use edn::shellings::NamespacedShelling;
+    /// assert_eq!("bar/baz", NamespacedShelling::isoliton_namespaceable("bar", "baz").to_string());
     /// ```
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
         self.0.fmt(f)
@@ -293,7 +220,7 @@ impl Display for Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::symbols::Keyword;
+    /// # use edn::shellings::Keyword;
     /// assert_eq!(":baz", Keyword::plain("baz").to_string());
     /// assert_eq!(":bar/baz", Keyword::isoliton_namespaceable("bar", "baz").to_string());
     /// assert_eq!(":bar/_baz", Keyword::isoliton_namespaceable("bar", "baz").to_reversed().to_string());

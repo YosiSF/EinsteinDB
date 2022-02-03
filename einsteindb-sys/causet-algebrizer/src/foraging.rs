@@ -12,8 +12,8 @@ use std::convert::TryFrom;
 use std::hash::Hash;
 use std::sync::Arc;
 
-use causet_algebrizer::Milevaeinsteindb_query_datatype::Collation;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::{EvalType, FieldTypeAccessor};
+use causet_algebrizer::MEDB_query_datatype::Collation;
+use causet_algebrizer::MEDB_query_datatype::{EvalType, FieldTypeAccessor};
 use EinsteinDB_util::box_try;
 use EinsteinDB_util::collections::HashMap;
 use fidelpb::Aggregation;
@@ -24,12 +24,12 @@ use crate::util::aggr_executor::*;
 use crate::util::hash_aggr_helper::HashAggregationHelper;
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::IntervalRange;
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::collation::{match_template_collator, SortKey};
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::data_type::*;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalConfig, EvalContext};
-use Milevaeinsteindb_query_vec_aggr::*;
-use Milevaeinsteindb_query_vec_expr::{RpnExpression, RpnExpressionBuilder, RpnStackNode};
+use causet_algebrizer::MEDB_query_datatype::codec::batch::{QuiesceBatchColumn, QuiesceBatchColumnVec};
+use causet_algebrizer::MEDB_query_datatype::codec::collation::{match_template_collator, SortKey};
+use causet_algebrizer::MEDB_query_datatype::codec::data_type::*;
+use causet_algebrizer::MEDB_query_datatype::expr::{EvalConfig, EvalContext};
+use MEDB_query_vec_aggr::*;
+use MEDB_query_vec_expr::{RpnExpression, RpnExpressionBuilder, RpnStackNode};
 
 pub macro match_template_hashable($t:tt, $($tail:tt)*) {
     match_template::match_template! {
@@ -304,7 +304,7 @@ impl<Src: BatchExecutor> AggregationExecutorImpl<Src> for FastHashAggregationImp
                             if let Groups::Bytes(group) = &mut self.groups {
                                 match_template_collator!(
                                     TT,
-                                    match self.group_by_field_type.collation().map_err(causet_algebrizer::Milevaeinsteindb_query_datatype::codec::Error::from)? {
+                                    match self.group_by_field_type.collation().map_err(causet_algebrizer::MEDB_query_datatype::codec::Error::from)? {
                                         Collation::TT => {
                                             #[allow(clippy::transmute_ptr_to_ptr)]
                                             let group: &mut HashMap<Option<SortKey<Bytes, TT>>, usize> =
@@ -458,15 +458,15 @@ where
 mod tests {
     use super::*;
 
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
+    use causet_algebrizer::MEDB_query_datatype::FieldTypeTp;
     use fidelpb::ScalarFuncSig;
 
     use crate::util::aggr_executor::tests::*;
     use crate::util::mock_executor::MockExecutor;
     use crate::BatchSlowHashAggregationExecutor;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalWarnings;
-    use Milevaeinsteindb_query_vec_expr::impl_arithmetic::{arithmetic_fn_meta, RealPlus};
-    use Milevaeinsteindb_query_vec_expr::{RpnExpression, RpnExpressionBuilder};
+    use causet_algebrizer::MEDB_query_datatype::expr::EvalWarnings;
+    use MEDB_query_vec_expr::impl_arithmetic::{arithmetic_fn_meta, RealPlus};
+    use MEDB_query_vec_expr::{RpnExpression, RpnExpressionBuilder};
     use fidelpb::ExprType;
     use fidelpb_helper::ExprDefBuilder;
 

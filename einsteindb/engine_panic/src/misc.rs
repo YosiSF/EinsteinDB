@@ -57,7 +57,7 @@ impl MiscExt for Paniceinstein_merkle_tree {
         panic!()
     }
 
-    fn get_oldest_snapshot_sequence_number(&self) -> Option<u64> {
+    fn get_oldest_lightlike_persistence_sequence_number(&self) -> Option<u64> {
         panic!()
     }
 

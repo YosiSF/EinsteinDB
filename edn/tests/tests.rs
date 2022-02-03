@@ -33,27 +33,27 @@ use chrono::{
     TimeZone,
     Utc,
 };
-use edn::symbols;
+use edn::shellings;
 use edn::utils;
 
 // Helper for making wrapped keywords with a isoliton_namespaceable_fuse.
 fn k_ns(ns: &str, name: &str) -> Value {
-    Value::Keyword(symbols::Keyword::isoliton_namespaceable(ns, name))
+    Value::Keyword(shellings::Keyword::isoliton_namespaceable(ns, name))
 }
 
 // Helper for making wrapped keywords without a isoliton_namespaceable_fuse.
 fn k_plain(name: &str) -> Value {
-    Value::Keyword(symbols::Keyword::plain(name))
+    Value::Keyword(shellings::Keyword::plain(name))
 }
 
-// Helper for making wrapped symbols with a isoliton_namespaceable_fuse
+// Helper for making wrapped shellings with a isoliton_namespaceable_fuse
 fn s_ns(ns: &str, name: &str) -> Value {
-    Value::NamespacedSymbol(symbols::NamespacedSymbol::isoliton_namespaceable(ns, name))
+    Value::NamespacedShelling(shellings::NamespacedShelling::isoliton_namespaceable(ns, name))
 }
 
-// Helper for making wrapped symbols without a isoliton_namespaceable_fuse
+// Helper for making wrapped shellings without a isoliton_namespaceable_fuse
 fn s_plain(name: &str) -> Value {
-    Value::PlainSymbol(symbols::PlainSymbol::plain(name))
+    Value::PlainShelling(shellings::PlainShelling::plain(name))
 }
 
 // Helpers for parsing strings and converting them into edn::Value.
@@ -79,7 +79,7 @@ fn_parse_into_value!(basedinteger);
 fn_parse_into_value!(integer);
 fn_parse_into_value!(float);
 fn_parse_into_value!(text);
-fn_parse_into_value!(symbol);
+fn_parse_into_value!(shelling);
 fn_parse_into_value!(keyword);
 fn_parse_into_value!(list);
 fn_parse_into_value!(vector);
@@ -367,32 +367,32 @@ fn test_span_text() {
 }
 
 #[test]
-fn test_symbol() {
-    assert_eq!(symbol("$").unwrap(), s_plain("$"));
-    assert_eq!(symbol(".").unwrap(), s_plain("."));
-    assert_eq!(symbol("...").unwrap(), s_plain("..."));
+fn test_shelling() {
+    assert_eq!(shelling("$").unwrap(), s_plain("$"));
+    assert_eq!(shelling(".").unwrap(), s_plain("."));
+    assert_eq!(shelling("...").unwrap(), s_plain("..."));
 
-    assert_eq!(symbol("hello/world").unwrap(), s_ns("hello", "world"));
-    assert_eq!(symbol("foo-bar/baz-boz").unwrap(), s_ns("foo-bar", "baz-boz"));
+    assert_eq!(shelling("hello/world").unwrap(), s_ns("hello", "world"));
+    assert_eq!(shelling("foo-bar/baz-boz").unwrap(), s_ns("foo-bar", "baz-boz"));
 
-    assert_eq!(symbol("foo-bar/baz_boz").unwrap(), s_ns("foo-bar", "baz_boz"));
-    assert_eq!(symbol("foo_bar/baz-boz").unwrap(), s_ns("foo_bar", "baz-boz"));
-    assert_eq!(symbol("foo_bar/baz_boz").unwrap(), s_ns("foo_bar", "baz_boz"));
+    assert_eq!(shelling("foo-bar/baz_boz").unwrap(), s_ns("foo-bar", "baz_boz"));
+    assert_eq!(shelling("foo_bar/baz-boz").unwrap(), s_ns("foo_bar", "baz-boz"));
+    assert_eq!(shelling("foo_bar/baz_boz").unwrap(), s_ns("foo_bar", "baz_boz"));
 
-    assert_eq!(symbol("symbol").unwrap(), s_plain("symbol"));
-    assert_eq!(symbol("hello").unwrap(), s_plain("hello"));
-    assert_eq!(symbol("foo-bar").unwrap(), s_plain("foo-bar"));
-    assert_eq!(symbol("foo_bar").unwrap(), s_plain("foo_bar"));
+    assert_eq!(shelling("shelling").unwrap(), s_plain("shelling"));
+    assert_eq!(shelling("hello").unwrap(), s_plain("hello"));
+    assert_eq!(shelling("foo-bar").unwrap(), s_plain("foo-bar"));
+    assert_eq!(shelling("foo_bar").unwrap(), s_plain("foo_bar"));
 }
 
 #[test]
-fn test_span_symbol() {
+fn test_span_shelling() {
     assert_eq!(parse::value("hello").unwrap(), ValueAndSpan {
-        inner: SpannedValue::from_symbol(None, "hello"),
+        inner: SpannedValue::from_shelling(None, "hello"),
         span: Span(0, 5)
     });
     assert_eq!(parse::value("hello/world").unwrap(), ValueAndSpan {
-        inner: SpannedValue::from_symbol("hello", "world"),
+        inner: SpannedValue::from_shelling("hello", "world"),
         span: Span(0, 11)
     });
 }
@@ -406,7 +406,7 @@ fn test_keyword() {
     assert_eq!(keyword(":foo_bar/baz-boz").unwrap(), k_ns("foo_bar", "baz-boz"));
     assert_eq!(keyword(":foo_bar/baz_boz").unwrap(), k_ns("foo_bar", "baz_boz"));
 
-    assert_eq!(keyword(":symbol").unwrap(), k_plain("symbol"));
+    assert_eq!(keyword(":shelling").unwrap(), k_plain("shelling"));
     assert_eq!(keyword(":hello").unwrap(), k_plain("hello"));
     assert_eq!(keyword(":foo-bar").unwrap(), k_plain("foo-bar"));
     assert_eq!(keyword(":foo_bar").unwrap(), k_plain("foo_bar"));
@@ -448,7 +448,7 @@ fn test_value() {
     assert_eq!(value("\"hello world\"").unwrap(), Text("hello world".to_string()));
     assert_eq!(value("$").unwrap(), s_plain("$"));
     assert_eq!(value(".").unwrap(), s_plain("."));
-    assert_eq!(value("$symbol").unwrap(), s_plain("$symbol"));
+    assert_eq!(value("$shelling").unwrap(), s_plain("$shelling"));
     assert_eq!(value(":hello").unwrap(), k_plain("hello"));
     assert_eq!(value("[1]").unwrap(), Vector(vec![Integer(1)]));
     assert_eq!(value("(1)").unwrap(), List(LinkedList::from_iter(vec![Integer(1)])));
@@ -492,15 +492,15 @@ fn test_span_value() {
         span: Span(0,13)
     });
     assert_eq!(parse::value("$").unwrap(), ValueAndSpan {
-        inner: SpannedValue::from_symbol(None, "$"),
+        inner: SpannedValue::from_shelling(None, "$"),
         span: Span(0,1)
     });
     assert_eq!(parse::value(".").unwrap(), ValueAndSpan {
-        inner: SpannedValue::from_symbol(None, "."),
+        inner: SpannedValue::from_shelling(None, "."),
         span: Span(0,1)
     });
-    assert_eq!(parse::value("$symbol").unwrap(), ValueAndSpan {
-        inner: SpannedValue::from_symbol(None, "$symbol"),
+    assert_eq!(parse::value("$shelling").unwrap(), ValueAndSpan {
+        inner: SpannedValue::from_shelling(None, "$shelling"),
         span: Span(0,7)
     });
     assert_eq!(parse::value(":hello").unwrap(), ValueAndSpan {
@@ -834,7 +834,7 @@ fn test_map() {
 
     let test = "{:a 1, $b {:b/a nil, :b/b #{nil 5}}, c [1 2], d (3 4)}";
     let value = Map(BTreeMap::from_iter(vec![
-        (Keyword(symbols::Keyword::plain("a")), Integer(1)),
+        (Keyword(shellings::Keyword::plain("a")), Integer(1)),
         (s_plain("$b"), Map(BTreeMap::from_iter(vec![
             (k_ns("b", "a"), Nil),
             (k_ns("b", "b"), Set(BTreeSet::from_iter(vec![
@@ -1427,8 +1427,8 @@ fn test_is_and_as_type_helper_functions() {
         Value::BigInteger(bigger),
         Value::Float(OrderedFloat(22.22f64)),
         Value::Text("hello world".to_string()),
-        s_plain("$symbol"),
-        s_ns("$ns", "$symbol"),
+        s_plain("$shelling"),
+        s_ns("$ns", "$shelling"),
         k_plain("hello"),
         k_ns("hello", "world"),
         Value::Vector(vec![Value::Integer(1)]),
@@ -1447,8 +1447,8 @@ fn test_is_and_as_type_helper_functions() {
             value.is_big_integer(),
             value.is_float(),
             value.is_text(),
-            value.is_symbol(),
-            value.is_isoliton_namespaceable_symbol(),
+            value.is_shelling(),
+            value.is_isoliton_namespaceable_shelling(),
             value.is_keyword(),
             value.is_isoliton_namespaceable_keyword(),
             value.is_vector(),
@@ -1477,10 +1477,10 @@ fn test_is_and_as_type_helper_functions() {
         def_test_as_type!(value, as_big_integer, i == 3, &max_i64 * &max_i64);
         def_test_as_type!(value, as_ordered_float, i == 4, OrderedFloat(22.22f64));
         def_test_as_type!(value, as_text, i == 5, "hello world".to_string());
-        def_test_as_type!(value, as_symbol, i == 6, symbols::PlainSymbol::plain("$symbol"));
-        def_test_as_type!(value, as_isoliton_namespaceable_symbol, i == 7, symbols::NamespacedSymbol::isoliton_namespaceable("$ns", "$symbol"));
-        def_test_as_type!(value, as_plain_keyword, i == 8, symbols::Keyword::plain("hello"));
-        def_test_as_type!(value, as_isoliton_namespaceable_keyword, i == 9, symbols::Keyword::isoliton_namespaceable("hello", "world"));
+        def_test_as_type!(value, as_shelling, i == 6, shellings::PlainShelling::plain("$shelling"));
+        def_test_as_type!(value, as_isoliton_namespaceable_shelling, i == 7, shellings::NamespacedShelling::isoliton_namespaceable("$ns", "$shelling"));
+        def_test_as_type!(value, as_plain_keyword, i == 8, shellings::Keyword::plain("hello"));
+        def_test_as_type!(value, as_isoliton_namespaceable_keyword, i == 9, shellings::Keyword::isoliton_namespaceable("hello", "world"));
         def_test_as_type!(value, as_vector, i == 10, vec![Value::Integer(1)]);
         def_test_as_type!(value, as_list, i == 11, LinkedList::from_iter(vec![]));
         def_test_as_type!(value, as_set, i == 12, BTreeSet::from_iter(vec![]));
@@ -1495,10 +1495,10 @@ fn test_is_and_as_type_helper_functions() {
         def_test_into_type!(value, into_big_integer, i == 3, &max_i64 * &max_i64);
         def_test_into_type!(value, into_ordered_float, i == 4, OrderedFloat(22.22f64));
         def_test_into_type!(value, into_text, i == 5, "hello world".to_string());
-        def_test_into_type!(value, into_symbol, i == 6, symbols::PlainSymbol::plain("$symbol"));
-        def_test_into_type!(value, into_isoliton_namespaceable_symbol, i == 7, symbols::NamespacedSymbol::isoliton_namespaceable("$ns", "$symbol"));
-        def_test_into_type!(value, into_plain_keyword, i == 8, symbols::Keyword::plain("hello"));
-        def_test_into_type!(value, into_isoliton_namespaceable_keyword, i == 9, symbols::Keyword::isoliton_namespaceable("hello", "world"));
+        def_test_into_type!(value, into_shelling, i == 6, shellings::PlainShelling::plain("$shelling"));
+        def_test_into_type!(value, into_isoliton_namespaceable_shelling, i == 7, shellings::NamespacedShelling::isoliton_namespaceable("$ns", "$shelling"));
+        def_test_into_type!(value, into_plain_keyword, i == 8, shellings::Keyword::plain("hello"));
+        def_test_into_type!(value, into_isoliton_namespaceable_keyword, i == 9, shellings::Keyword::isoliton_namespaceable("hello", "world"));
         def_test_into_type!(value, into_vector, i == 10, vec![Value::Integer(1)]);
         def_test_into_type!(value, into_list, i == 11, LinkedList::from_iter(vec![]));
         def_test_into_type!(value, into_set, i == 12, BTreeSet::from_iter(vec![]));

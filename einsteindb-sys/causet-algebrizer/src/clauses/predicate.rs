@@ -19,7 +19,7 @@ use einsteindb_core::{
 
 use edn::query::{
     FnArg,
-    PlainSymbol,
+    PlainShelling,
     Predicate,
     TypeAnnotation,
 };
@@ -64,7 +64,7 @@ fn potential_types(&self, topograph: &Topograph, fn_arg: &FnArg) -> Result<Value
 pub(crate) fn apply_type_anno(&mut self, anno: &TypeAnnotation) -> Result<()> {
     match ValueType::from_keyword(&anno.value_type) {
         Some(value_type) => self.add_type_requirement(anno.variable.clone(), ValueTypeSet::of_one(value_type)),
-        None => bail!(AlgebrizerError::InvalidArgumentType(PlainSymbol::plain("type"), ValueTypeSet::any(), 2)),
+        None => bail!(AlgebrizerError::InvalidArgumentType(PlainShelling::plain("type"), ValueTypeSet::any(), 2)),
     }
     Ok(())
 }

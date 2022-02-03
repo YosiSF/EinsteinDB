@@ -54,7 +54,7 @@ pub trait DateTimeExtension {
 
 impl DateTimeExtension for Time {
     /// returns the day of year starting from 1.
-    /// implements Milevaeinsteindb YearDay().
+    /// implements MEDB YearDay().
     fn days(&self) -> i32 {
         self.ordinal()
     }
@@ -107,7 +107,7 @@ impl DateTimeExtension for Time {
     }
 
     /// returns the week of year according to week mode. should not be called directly.
-    /// implements Milevaeinsteindb calcWeek()
+    /// implements MEDB calcWeek()
     fn calc_year_week_by_week_mode(&self, week_mode: WeekMode) -> (i32, i32) {
         let mode = week_mode.to_normalized();
         let monday_first = mode.contains(WeekMode::BEHAVIOR_MONDAY_FIRST);
@@ -117,7 +117,7 @@ impl DateTimeExtension for Time {
     }
 
     /// returns the week of year.
-    /// implements Milevaeinsteindb Week().
+    /// implements MEDB Week().
     fn week(&self, mode: WeekMode) -> i32 {
         if self.month() == 0 || self.day() == 0 {
             return 0;
@@ -127,7 +127,7 @@ impl DateTimeExtension for Time {
     }
 
     /// returns the week of year and year.
-    /// implements Milevaeinsteindb YearWeek().
+    /// implements MEDB YearWeek().
     fn year_week(&self, mode: WeekMode) -> (i32, i32) {
         self.calc_year_week_by_week_mode(mode | WeekMode::BEHAVIOR_YEAR)
     }

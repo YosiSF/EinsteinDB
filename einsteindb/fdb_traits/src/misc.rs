@@ -61,8 +61,8 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
     ///
     /// Note:
     ///    - After this operation, some keys in the range might still exist in the database.
-    ///    - After this operation, some keys in the range might be removed from existing snapshot,
-    ///      so you shouldn't expect to be able to read data from the range using existing snapshots
+    ///    - After this operation, some keys in the range might be removed from existing lightlike_persistence,
+    ///      so you shouldn't expect to be able to read data from the range using existing lightlike_persistences
     ///      any more.
     ///
     /// Ref: <https://github.com/facebook/foundationdb/wiki/Delete-A-Range-Of-Keys>
@@ -83,7 +83,7 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
 
     fn get_latest_sequence_number(&self) -> u64;
 
-    fn get_oldest_snapshot_sequence_number(&self) -> Option<u64>;
+    fn get_oldest_lightlike_persistence_sequence_number(&self) -> Option<u64>;
 
     fn get_total_Causet_files_size_namespaced(&self, namespaced: &str) -> Result<Option<u64>>;
 

@@ -18,8 +18,8 @@ use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::ExecuteStats;
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::mutant_searchner::{RangesScanner, RangesScannerOptions};
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::{IntervalRange, Range, Storage};
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::table;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::{EvalContext, EvalWarnings};
+use causet_algebrizer::MEDB_query_datatype::codec::table;
+use causet_algebrizer::MEDB_query_datatype::expr::{EvalContext, EvalWarnings};
 
 // an InnerExecutor is used in ScanExecutor,
 // hold the different logics between table mutant_search and index mutant_search

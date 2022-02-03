@@ -23,7 +23,7 @@
 //!
 //! [_column family_]: https://github.com/facebook/foundationdb/wiki/Column-Families
 //!
-//! Consistent read-only views of the database are accessed through _snapshots_.
+//! Consistent read-only views of the database are accessed through _lightlike_persistences_.
 //!
 //! Multiple writes can be committed atomically with a _write batch_.
 //!
@@ -47,15 +47,15 @@
 //!   define classes of einstein_merkle_tree that do not implement all collections of
 //!   features.
 //!
-//! - [`Snapshot`] - a view into the state of the database at a moment in time.
+//! - [`LightlikePersistence`] - a view into the state of the database at a moment in time.
 //!   For reading sets of consistent data.
 //!
 //! - [`Peekable`] - types that can read single values. This includes einstein_merkle_trees
-//!   and snapshots.
+//!   and lightlike_persistences.
 //!
 //! - [`Iterable`] - types that can iterate over the values of a range of keys,
 //!   by creating instances of the EinsteinDB-specific [`Iterator`] trait. This
-//!   includes einstein_merkle_trees and snapshots.
+//!   includes einstein_merkle_trees and lightlike_persistences.
 //!
 //! - [`SyncMutable`] and [`Mutable`] - types to which single key/value pairs
 //!   can be written. This includes einstein_merkle_trees and write batches.
@@ -130,11 +130,11 @@
 //!   - <https://github.com/rust-lang/rust/issues/44265>
 //!
 //! - Traits can't have mutually-recursive associated types. That is, if
-//!   `KV` has a `Snapshot` associated type, `Snapshot` can't then have a
+//!   `KV` has a `LightlikePersistence` associated type, `LightlikePersistence` can't then have a
 //!   `KV` associated type - the compiler will not be able to resolve both
-//!   `KV`s to the same type. In these cases, e.g. `Snapshot` needs to be
-//!   parameterized over its einstein_merkle_tree type and `impl Snapshot<Fdbeinstein_merkle_tree> for
-//!   FdbSnapshot`.
+//!   `KV`s to the same type. In these cases, e.g. `LightlikePersistence` needs to be
+//!   parameterized over its einstein_merkle_tree type and `impl LightlikePersistence<Fdbeinstein_merkle_tree> for
+//!   FdbLightlikePersistence`.
 //!
 //!
 //! # The porting process
@@ -241,7 +241,7 @@
 //!
 //! - Use the .c() method from fdb_lsh-merkle_merkle_tree::compat::Compat to get a
 //!   KV reference from Arc<DB> in the fewest characters. It also
-//!   works on Snapshot, and can be adapted to other types.
+//!   works on LightlikePersistence, and can be adapted to other types.
 //!
 //! - Use `IntoOther` to adapt between error types of dependencies that are not
 //!   themselves interdependent. E.g. violetabft::Error can be created from
@@ -281,8 +281,8 @@ mod import;
 pub use import::*;
 mod misc;
 pub use misc::*;
-mod snapshot;
-pub use crate::snapshot::*;
+mod lightlike_persistence;
+pub use crate::lightlike_persistence::*;
 mod Causet;
 pub use crate::Causet::*;
 mod write_batch;

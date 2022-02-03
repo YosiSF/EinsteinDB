@@ -32,7 +32,7 @@ use std::collections::btree_map::Entry;
 use add_retract_alter_set::{
     AddRetractAlterSet,
 };
-use edn::symbols;
+use edn::shellings;
 use causetids;
 use einsteindb_traits::errors::{
     einsteindbErrorKind,
@@ -81,7 +81,7 @@ pub enum AttributeAlteration {
 /// An alteration to an solitonid.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub enum SolitonidAlteration {
-    Solitonid(symbols::Keyword),
+    Solitonid(shellings::Keyword),
 }
 
 /// Summarizes changes to Spacetime such as a a `Topograph` and (in the future) a `PartitionMap`.
@@ -115,7 +115,7 @@ impl SpacetimeReport {
 /// - we're allowing optional attributes to not be retracted and dangle afterwards
 ///
 /// Returns a set of attribute spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions which do not involve topograph-defining attributes.
-fn update_attribute_map_from_topograph_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions(attribute_map: &mut AttributeMap, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: Vec<EAV>, ident_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: &BTreeMap<Causetid, symbols::Keyword>) -> Result<Vec<EAV>> {
+fn update_attribute_map_from_topograph_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions(attribute_map: &mut AttributeMap, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: Vec<EAV>, ident_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: &BTreeMap<Causetid, shellings::Keyword>) -> Result<Vec<EAV>> {
     // Process spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions of topograph attributes first. It's allowed to retract a topograph attribute
     // if all of the topograph-defining topograph attributes are being retracted.
     // A defining set of attributes is :einsteindb/solitonid, :einsteindb/valueType, :einsteindb/cardinality.
@@ -351,7 +351,7 @@ pub fn update_topograph_from_causetid_quadruples<U>(topograph: &mut Topograph, l
     // retracted at most once), which means all attribute alterations are simple changes from an old
     // value to a new value.
     let mut attribute_set: AddRetractAlterSet<(Causetid, Causetid), TypedValue> = AddRetractAlterSet::default();
-    let mut ident_set: AddRetractAlterSet<Causetid, symbols::Keyword> = AddRetractAlterSet::default();
+    let mut ident_set: AddRetractAlterSet<Causetid, shellings::Keyword> = AddRetractAlterSet::default();
 
     for (e, a, typed_value, added) in lightlike_dagger_upsert.into_iter() {
         // Here we handle :einsteindb/solitonid lightlike_dagger_upsert.

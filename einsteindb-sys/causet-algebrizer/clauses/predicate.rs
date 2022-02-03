@@ -19,7 +19,7 @@ use einsteindb_core::{
 
 use edn::query::{
     FnArg,
-    PlainSymbol,
+    PlainShelling,
     Predicate,
     TypeAnnotation,
 };
@@ -72,7 +72,7 @@ impl ConjoiningClauses {
     pub(crate) fn apply_type_anno(&mut self, anno: &TypeAnnotation) -> Result<()> {
         match ValueType::from_keyword(&anno.value_type) {
             Some(value_type) => self.add_type_requirement(anno.variable.clone(), ValueTypeSet::of_one(value_type)),
-            None => bail!(AlgebrizerError::InvalidArgumentType(PlainSymbol::plain("type"), ValueTypeSet::any(), 2)),
+            None => bail!(AlgebrizerError::InvalidArgumentType(PlainShelling::plain("type"), ValueTypeSet::any(), 2)),
         }
         Ok(())
     }
@@ -205,7 +205,7 @@ mod testing {
         Pattern,
         PatternNonValuePlace,
         PatternValuePlace,
-        PlainSymbol,
+        PlainShelling,
         Variable,
     };
 
@@ -247,7 +247,7 @@ mod testing {
         });
         assert!(!cc.is_known_empty());
 
-        let op = PlainSymbol::plain("<");
+        let op = PlainShelling::plain("<");
         let comp = Inequality::from_datalog_operator(op.name()).unwrap();
         assert!(cc.apply_inequality(known, comp, Predicate {
              operator: op,
@@ -308,7 +308,7 @@ mod testing {
         });
         assert!(!cc.is_known_empty());
 
-        let op = PlainSymbol::plain(">=");
+        let op = PlainShelling::plain(">=");
         let comp = Inequality::from_datalog_operator(op.name()).unwrap();
         assert!(cc.apply_inequality(known, comp, Predicate {
              operator: op,

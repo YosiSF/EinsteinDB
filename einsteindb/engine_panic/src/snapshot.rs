@@ -3,20 +3,20 @@
 use crate::db_vector::PanicDBVector;
 use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{
-    IterOptions, Iterable, Iterator, Peekable, ReadOptions, Result, SeekKey, Snapshot,
+    IterOptions, Iterable, Iterator, Peekable, ReadOptions, Result, SeekKey, LightlikePersistence,
 };
 use std::ops::Deref;
 
 #[derive(Clone, Debug)]
-pub struct PanicSnapshot;
+pub struct PanicLightlikePersistence;
 
-impl Snapshot for PanicSnapshot {
+impl LightlikePersistence for PanicLightlikePersistence {
     fn namespaced_names(&self) -> Vec<&str> {
         panic!()
     }
 }
 
-impl Peekable for PanicSnapshot {
+impl Peekable for PanicLightlikePersistence {
     type DBVector = PanicDBVector;
 
     fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<Self::DBVector>> {
@@ -32,8 +32,8 @@ impl Peekable for PanicSnapshot {
     }
 }
 
-impl Iterable for PanicSnapshot {
-    type Iterator = PanicSnapshotIterator;
+impl Iterable for PanicLightlikePersistence {
+    type Iterator = PanicLightlikePersistenceIterator;
 
     fn iterator_opt(&self, opts: IterOptions) -> Result<Self::Iterator> {
         panic!()
@@ -43,9 +43,9 @@ impl Iterable for PanicSnapshot {
     }
 }
 
-pub struct PanicSnapshotIterator;
+pub struct PanicLightlikePersistenceIterator;
 
-impl Iterator for PanicSnapshotIterator {
+impl Iterator for PanicLightlikePersistenceIterator {
     fn seek(&mut self, key: SeekKey<'_>) -> Result<bool> {
         panic!()
     }

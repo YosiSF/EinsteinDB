@@ -158,7 +158,7 @@ impl<'a> JsonRef<'a> {
 
     // Returns the JSON value as u64
     //
-    // See `GetUint64()` in Milevaeinsteindb `json/binary.go`
+    // See `GetUint64()` in MEDB `json/binary.go`
     pub(crate) fn get_u64(&self) -> u64 {
         assert_eq!(self.type_code, JsonType::U64);
         NumberCodec::decode_u64_le(self.value())
@@ -166,7 +166,7 @@ impl<'a> JsonRef<'a> {
 
     // Returns the JSON value as i64
     //
-    // See `GetInt64()` in Milevaeinsteindb `json/binary.go`
+    // See `GetInt64()` in MEDB `json/binary.go`
     pub(crate) fn get_i64(&self) -> i64 {
         assert_eq!(self.type_code, JsonType::I64);
         NumberCodec::decode_i64_le(self.value())
@@ -174,7 +174,7 @@ impl<'a> JsonRef<'a> {
 
     // Returns the JSON value as f64
     //
-    // See `GetFloat64()` in Milevaeinsteindb `json/binary.go`
+    // See `GetFloat64()` in MEDB `json/binary.go`
     pub(crate) fn get_double(&self) -> f64 {
         assert_eq!(self.type_code, JsonType::Double);
         NumberCodec::decode_f64_le(self.value())
@@ -182,7 +182,7 @@ impl<'a> JsonRef<'a> {
 
     // Gets the count of Object or Array
     //
-    // See `GetElemCount()` in Milevaeinsteindb `json/binary.go`
+    // See `GetElemCount()` in MEDB `json/binary.go`
     pub(crate) fn get_elem_count(&self) -> usize {
         assert!((self.type_code == JsonType::Object) | (self.type_code == JsonType::Array));
         NumberCodec::decode_u32_le(self.value()) as usize
@@ -375,7 +375,7 @@ pub fn json_object(ehikvs: Vec<Datum>) -> Result<Json> {
 }
 
 impl ConvertTo<f64> for Json {
-    ///  Keep compatible with Milevaeinsteindb's `ConvertJSONToFloat` function.
+    ///  Keep compatible with MEDB's `ConvertJSONToFloat` function.
     #[inline]
     fn convert(&self, ctx: &mut EvalContext) -> Result<f64> {
         self.as_ref().convert(ctx)
@@ -383,7 +383,7 @@ impl ConvertTo<f64> for Json {
 }
 
 impl<'a> ConvertTo<f64> for JsonRef<'a> {
-    ///  Keep compatible with Milevaeinsteindb's `ConvertJSONToFloat` function.
+    ///  Keep compatible with MEDB's `ConvertJSONToFloat` function.
     #[inline]
     fn convert(&self, ctx: &mut EvalContext) -> Result<f64> {
         let d = match self.get_type() {
@@ -474,7 +474,7 @@ impl crate::codec::data_type::AsMyBerolinaSQLBool for Json {
         &self,
         _context: &mut crate::expr::EvalContext,
     ) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<bool> {
-        // TODO: This logic is not correct. See pingcap/Milevaeinsteindb#9593
+        // TODO: This logic is not correct. See pingcap/MEDB#9593
         Ok(false)
     }
 }

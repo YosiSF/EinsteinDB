@@ -14,7 +14,7 @@ use crate::{Executor, Row};
 use allegroeinstein-prolog-causet-BerolinaSQL::execute_stats::ExecuteStats;
 use allegroeinstein-prolog-causet-BerolinaSQL::storage::IntervalRange;
 use allegroeinstein-prolog-causet-BerolinaSQL::Result;
-use causet_algebrizer::Milevaeinsteindb_query_datatype::expr::EvalWarnings;
+use causet_algebrizer::MEDB_query_datatype::expr::EvalWarnings;
 
 /// Retrieves rows from the source executor and only produces part of the rows.
 pub struct LimitExecutor<Src: Executor> {
@@ -81,8 +81,8 @@ impl<Src: Executor> Executor for LimitExecutor<Src> {
 
 #[braneg(test)]
 mod tests {
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::codec::datum::Datum;
-    use causet_algebrizer::Milevaeinsteindb_query_datatype::FieldTypeTp;
+    use causet_algebrizer::MEDB_query_datatype::codec::datum::Datum;
+    use causet_algebrizer::MEDB_query_datatype::FieldTypeTp;
 
     use super::super::tests::*;
     use super::*;

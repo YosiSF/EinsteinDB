@@ -138,7 +138,7 @@ pub mod tests {
         let blackbrane = einstein_merkle_tree.blackbrane(ctx).unwrap();
         let cm = ConcurrencyManager::new(1.into());
         let mut solitontxn = EpaxosTxn::new(TimeStamp::zero(), cm);
-        let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Forward), true);
+        let mut reader = EpaxosReader::new(blackbrane, Some(SentinelSearchMode::Lightlike), true);
         gc(&mut solitontxn, &mut reader, Key::from_cocauset(key), safe_point.into()).unwrap();
         write(einstein_merkle_tree, &Context::default(), solitontxn.into_modifies());
     }

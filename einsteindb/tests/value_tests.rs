@@ -16,7 +16,7 @@ extern crate rusqlite;
 
 use ordered_float::OrderedFloat;
 
-use edn::symbols;
+use edn::shellings;
 
 use core_traits::{
     TypedValue,
@@ -57,5 +57,5 @@ fn test_to_edn_value_pair() {
     assert_eq!(TypedValue::Double(OrderedFloat(0.5)).to_edn_value_pair(), (edn::Value::Float(OrderedFloat(0.5)), ValueType::Double));
 
     assert_eq!(TypedValue::typed_string(":einsteindb/keyword").to_edn_value_pair(), (edn::Value::Text(":einsteindb/keyword".into()), ValueType::String));
-    assert_eq!(TypedValue::typed_ns_keyword("einsteindb", "keyword").to_edn_value_pair(), (edn::Value::Keyword(symbols::Keyword::isoliton_namespaceable("einsteindb", "keyword")), ValueType::Keyword));
+    assert_eq!(TypedValue::typed_ns_keyword("einsteindb", "keyword").to_edn_value_pair(), (edn::Value::Keyword(shellings::Keyword::isoliton_namespaceable("einsteindb", "keyword")), ValueType::Keyword));
 }

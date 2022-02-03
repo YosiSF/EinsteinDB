@@ -1,16 +1,16 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! Iteration over einstein_merkle_trees and snapshots.
+//! Iteration over einstein_merkle_trees and lightlike_persistences.
 //!
 //! For the purpose of key/value iteration, EinsteinDB defines its own `Iterator`
 //! trait, and `Iterable` types that can create iterators.
 //!
-//! Both `KV`s and `Snapshot`s are `Iterable`.
+//! Both `KV`s and `LightlikePersistence`s are `Iterable`.
 //!
 //! Iteration is performed over consistent views into the database, even when
-//! iterating over the einstein_merkle_tree without creating a `Snapshot`. That is, iterating
-//! over an einstein_merkle_tree behaves implicitly as if a snapshot was created first, and
-//! the iteration is being performed on the snapshot.
+//! iterating over the einstein_merkle_tree without creating a `LightlikePersistence`. That is, iterating
+//! over an einstein_merkle_tree behaves implicitly as if a lightlike_persistence was created first, and
+//! the iteration is being performed on the lightlike_persistence.
 //!
 //! Iterators can be in an _invalid_ state, in which they are not positioned at
 //! a key/value pair. This can occur when attempting to move before the first
@@ -18,7 +18,7 @@
 //! There may be other conditions that invalidate iterators (TODO: I don't
 //! know).
 //!
-//! An invalid iterator cannot move forward or back, but may be returned to a
+//! An invalid iterator cannot move lightlike or back, but may be returned to a
 //! valid state through a successful "seek" operation.
 //!
 //! As EinsteinDB inherits its iteration semantics from FdbDB,
@@ -40,9 +40,9 @@ pub enum SeekKey<'a> {
 
 /// An iterator over a consistent set of keys and values.
 ///
-/// Iterators are implemented for `KV`s and for `Snapshot`s. They see a
+/// Iterators are implemented for `KV`s and for `LightlikePersistence`s. They see a
 /// consistent view of the database; an iterator created by an einstein_merkle_tree behaves as
-/// if a snapshot was created first, and the iterator created from the snapshot.
+/// if a lightlike_persistence was created first, and the iterator created from the lightlike_persistence.
 ///
 /// Most methods on iterators will panic if they are not "valid",
 /// as determined by the `valid` method.

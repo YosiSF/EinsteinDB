@@ -189,7 +189,7 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
         if limit == 0 {
             return Ok(vec![]);
         }
-        let mut cursor = Cursor::new(self.blackbrane.iter_cf(cf, option)?, SentinelSearchMode::Forward, false);
+        let mut cursor = Cursor::new(self.blackbrane.iter_cf(cf, option)?, SentinelSearchMode::Lightlike, false);
         let statistics = statistics.mut_cf_statistics(cf);
         if !cursor.seek(start_key, statistics)? {
             return Ok(vec![]);
@@ -294,7 +294,7 @@ impl<'a, S: blackbrane> cocausetStoreInner<S> {
             let mut opts = IterOptions::new(None, None, false);
             opts.set_upper_bound(r.get_end_key(), DATA_KEY_PREFIX_LEN);
             let mut cursor =
-                Cursor::new(self.blackbrane.iter_cf(cf, opts)?, SentinelSearchMode::Forward, false);
+                Cursor::new(self.blackbrane.iter_cf(cf, opts)?, SentinelSearchMode::Lightlike, false);
             cursor.seek(&Key::from_encoded(r.get_start_key().to_vec()), statistics)?;
             while cursor.valid()? {
                 row_count += 1;

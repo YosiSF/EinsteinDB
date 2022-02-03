@@ -19,7 +19,7 @@ use crate::codec::{datum, Error, Result};
 
 #[inline]
 fn decode_v2_u64(v: &[u8]) -> Result<u64> {
-    // See `decodeInt` in Milevaeinsteindb.
+    // See `decodeInt` in MEDB.
     match v.len() {
         1 => Ok(u64::from(v[0])),
         2 => Ok(u64::from(NumberCodec::decode_u16_le(v))),
@@ -33,7 +33,7 @@ fn decode_v2_u64(v: &[u8]) -> Result<u64> {
 
 #[inline]
 fn decode_v2_i64(v: &[u8]) -> Result<i64> {
-    // See `decodeUint` in Milevaeinsteindb.
+    // See `decodeUint` in MEDB.
     match v.len() {
         1 => Ok(i64::from(v[0] as i8)),
         2 => Ok(i64::from(NumberCodec::decode_u16_le(v) as i16)),
@@ -60,7 +60,7 @@ pub trait V1CompatibleEncoder: DatumFlagAndPayloadEncoder {
     }
 
     fn write_v2_as_datum(&mut self, src: &[u8], ft: &dyn FieldTypeAccessor) -> Result<()> {
-        // See `fieldType2Flag.go` in Milevaeinsteindb.
+        // See `fieldType2Flag.go` in MEDB.
         match ft.tp() {
             FieldTypeTp::Tiny
             | FieldTypeTp::Short
@@ -99,7 +99,7 @@ pub trait V1CompatibleEncoder: DatumFlagAndPayloadEncoder {
                 self.write_v2_as_datum_i64(src)?;
             }
             FieldTypeTp::Duration => {
-                // This implementation is different from Milevaeinsteindb. Milevaeinsteindb encodes v2 duration into v1
+                // This implementation is different from MEDB. MEDB encodes v2 duration into v1
                 // with datum flag VarInt, but we will encode with datum flag Duration, since
                 // Duration datum flag results in fixed-length datum payload, which is faster
                 // to encode and decode.
