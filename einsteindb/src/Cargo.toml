@@ -1,5 +1,9 @@
 [package]
 authors = ["Karl Whitford <karl@einst.ai>","Josh Leder <slushie@gmail.com>", "'The lone gunman' <whtcorpsinc> <whtcorpsarpanet@gmail.com>"]
+name = "einsteindb"
+license = "Apache-2.0"
+keywords = ["embedded", "distributed-systems", "BFTRaft" ]
+version = "0.0.1"
 
 [lib]
 name = "einsteindb"
@@ -49,34 +53,6 @@ unicode_reader = "1.0.2"
 num-traits = "0.2"
 byteorder = "1"
 crunchy = "0.2.2"
-
-portable = ["foundation_einsteindb/portable"]
-sse = ["foundation_einsteindb/sse"]
-mem-profiling = ["memcam/mem-profiling"]
-failpoints = [
-    "fail/failpoints",
-    "raftstore/failpoints",
-    "einsteindb_util/failpoints",
-    "foundation_einsteindb/failpoints"
-]
-cloud-aws = [
-    "encryption_export/cloud-aws",
-    "Causet_importer/cloud-aws",
-]
-cloud-gcp = [
-    "encryption_export/cloud-gcp",
-    "Causet_importer/cloud-gcp",
-]
-testexport = ["raftstore/testexport"]
-test-einstein_merkle_trees-foundationeinsteindb = [
-    "einstein_merkle_tree_test/test-einstein_merkle_trees-foundationeinsteindb",
-]
-test-einstein_merkle_trees-panic = [
-    "einstein_merkle_tree_test/test-einstein_merkle_trees-panic",
-]
-bcc-iosnoop = [
-    "file_system/bcc-iosnoop",
-
 #log = { version = "0.4", features = ["max_level_trace", "release_max_level_debug"] }
 slog = { version = "2.3", features = ["max_level_trace", "release_max_level_debug"] }
 slog-async = { version = "2.3", default-features = false }
