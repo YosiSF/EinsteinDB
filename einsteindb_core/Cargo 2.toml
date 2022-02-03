@@ -1,0 +1,19 @@
+[package]
+name = "einsteindb_core"
+version = "0.0.1"
+workspace = ".."
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+enum-set = "0.0.8"
+failure = "0.1.1"
+indexmap = "1"
+ordered-float = { version = "2.10.0", features = ["serde"] }
+uuid = { version = "0.8.2", features = ["v4", "serde"] }
+
+[dependencies.core_traits]
+local_path = "./src/core-traits"
+
+[dependencies.edn]
+local_path = "../edn"
+features = ["serde_support"]

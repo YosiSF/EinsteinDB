@@ -1,0 +1,12 @@
+[package]
+name = "causet_compiler"
+version = "0.0.1"
+edition = "2022"
+publish = false
+description = "SIMD Vector Quantization of an algebrized query with optimal joins  "
+
+[dependencies]
+match_template = { local_path = "../match_template" }
+milevaeinsteindb_query_codegen = { local_path = "../../causet_algebrizer" }
+milevaeinsteindb_query_datatype = { local_path = "../../milevaeinsteindb_query_datatype", default-features = false }
+
