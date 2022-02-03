@@ -11,7 +11,7 @@
 
             "stopAtEntry": true,                        //we don't want to stop at entry point of the program when we start debugging so this is false by default
 
-            "cwd":"${workspaceFolder}/src/cmd/einstein_util/einstein_util.rs",      //this is where we will start running our program from, it is a local_path to src/main.rs fuse Fuse inside our project folder 
+            "cwd":"${workspaceFolder}einstein_util/einstein_util.rs",      //this is where we will start running our program from, it is a local_path to src/main.rs fuse Fuse inside our project folder 
 
           
         }]    
