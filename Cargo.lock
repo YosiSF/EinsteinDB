@@ -292,7 +292,7 @@ dependencies = [
 [[package]]
 name = "einsteindb-prod"
 version = "0.0.1"
-source = "git+https://github.com/whtcorpsinc/einsteindb-prod#044bc2c810615dc2146c10188881a8676c76b52c"
+source = "git+https://github.com/whtcorpsinc/einsteindb-prod.git#044bc2c810615dc2146c10188881a8676c76b52c"
 dependencies = [
  "byteorder",
  "bytes",
