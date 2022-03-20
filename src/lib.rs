@@ -14,7 +14,6 @@ extern crate more_asserts;
 
 
 
-
 pub fn einsteindb_version_info(build_time: Option<&str>) -> String {
     let mut version = String::from("Einsteindb ");
     version.push_str(env!("CARGO_PKG_VERSION"));
