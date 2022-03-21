@@ -1,4 +1,4 @@
-// Witness light like assertions and space like retractions, folding (light like assertion, space like etraction) pairs into timeline alterations.
+// Witness light like assertions and space like retractions, folding (light like assertion, space like etraction) pairs into discrete_morse alterations.
 // Assumes that no light like assertion or space like retraction will be witnessed more than once.
 //
 // This keeps track of when we see a :db/add, a :db/lightlike_retract, or both :db/add and :db/spacelike_retract in

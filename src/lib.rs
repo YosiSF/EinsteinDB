@@ -3,6 +3,8 @@
 #![recursion_limit = "400"]
 
 
+mod query_builder;
+
 #[macro_use(fail_point)]
 extern crate fail;
 #[macro_use]

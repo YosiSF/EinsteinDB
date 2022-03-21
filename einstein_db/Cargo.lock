@@ -235,6 +235,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "default"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f33853de3c94db27f825215641be74ddce259f5aec7aefae9c760ee1bb3dbaa7"
+
+[[package]]
 name = "einstein_db"
 version = "0.1.0"
 dependencies = [
@@ -247,6 +253,7 @@ dependencies = [
  "crc32fast",
  "crc64fast",
  "crossbeam",
+ "default",
  "fail",
  "failure",
  "futures 0.3.21",

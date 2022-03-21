@@ -48,7 +48,7 @@ mod spacetime;
 //mod topograph;
 pub mod tx_observer;
 mod watcher;
-pub mod timelines;
+pub mod discrete_morses;
 mod tx;
 mod tx_checking;
 //pub mod types;

@@ -6,4 +6,6 @@
 use std::path::Path;
 use std::process;
 
-use einstein_db::config::EinsteinDBConfig;
+//use einstein_db::config::EinsteinDBConfig;
+
+fn main() {}
