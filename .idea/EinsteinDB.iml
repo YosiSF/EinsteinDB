@@ -6,9 +6,11 @@
       <sourceFolder url="file://$MODULE_DIR$/einstein_db/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/einstein_db/einsteindb-server/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/soliton/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/einstein_db/target" />
       <excludeFolder url="file://$MODULE_DIR$/einstein_db/einsteindb-server/target" />
+      <excludeFolder url="file://$MODULE_DIR$/soliton/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
