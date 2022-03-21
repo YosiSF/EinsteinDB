@@ -63,4 +63,4 @@ tokio = { version = "1.17", features = ["full"] }
 tokio-openssl = "0.6.3"
 toml = "0.5"
 url = "2.2.2"
-walkdir = "2.3.2"
+#default-members = ["einstein_db/einsteindb-server", "einstein_db/einsteindb-ctl"]

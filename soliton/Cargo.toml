@@ -1,0 +1,12 @@
+[package]
+name = "soliton"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+[features]
+default = []
+sqlcipher = ["rusqlite/sqlcipher"]
+syncable = ["serde", "serde_json", "serde_derive"]
