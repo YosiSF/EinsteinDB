@@ -9,14 +9,13 @@ use std::process;
 use clap::{crate_authors, App, Arg};
 use server::setup::{ensure_no_unrecognized_config, validate_and_persist_config};
 
-use einstein_db::config::EinsteinDBConfig;
 
 fn main() {
     let build_timestamp = option_env!("EINSTEINDB_BUILD_TIME");
     let version_info = einstein_db::einstein_db_version_info(build_timestamp);
 
     let matches = App::new("EinsteinDB")
-        .about("A Relativistically Linearized Causal Consistent LSH-Table")
+        .about("Hands-Free Adaptive Row-and-Column Relativistic Linearized Semantic Persistence for cache oblivious B-Tress in Hybrid Workloads")
         .author(crate_authors!())
         .version(version_info.as_ref())
         .long_version(version_info.as_ref())
@@ -143,7 +142,7 @@ fn main() {
         .get_matches();
 
     if matches.is_present("print-sample-config") {
-        let config = TiKvConfig::default();
+        let config = EinsteinDBConfig::default();
         println!("{}", toml::to_string_pretty(&config).unwrap());
         process::exit(0);
     }
@@ -153,7 +152,7 @@ fn main() {
 
     let mut config = matches
         .value_of_os("config")
-        .map_or_else(TiKvConfig::default, |path| {
+        .map_or_else(EinsteinDBConfig::default, |path| {
             let path = Path::new(path);
             EinsteinDBConfig::from_file(
                 path,
