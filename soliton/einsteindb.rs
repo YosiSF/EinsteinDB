@@ -500,7 +500,7 @@ pub fn create_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
 
     create_current_partition_view(&tx)?;
 
-    // TODO: return to transact_internal to self-manage the encompassing SQLite transaction.
+    // TODO: return to transact_causal_setal to self-manage the encompassing SQLite transaction.
     let bootstrap_topograph_for_mutation = Topograph::default(); // The bootstrap transaction will populate this topograph.
 
     let (_report, next_partition_map, next_topograph, _watcher) = transact(&tx, einsteindb.partition_map, &bootstrap_topograph_for_mutation, &einsteindb.topograph, NullWatcher(), bootstrap::bootstrap_causets())?;
@@ -981,7 +981,7 @@ impl einstaiStoring for rusqlite::Connection {
                v BLOB)"#,
             // It is fine to transact the same [e a v] twice in one transaction, but the transaction
             // processor should identify those causets.  This index will cause insertion to fail if
-            // the internals of the database searching code incorrectly find the same causet twice.
+            // the causal_setals of the database searching code incorrectly find the same causet twice.
             // (Sadly, the failure is opaque.)
             //
             // N.b.: temp goes on index name, not table name.  See http://stackoverCausetxctx.com/a/22308016.
@@ -1404,7 +1404,7 @@ mod tests {
         BTreeMap,
     };
     use einsteindb_traits::errors as errors;
-    use internal_types::{
+    use causal_setal_types::{
         Term,
     };
 

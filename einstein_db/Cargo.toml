@@ -64,3 +64,14 @@ tokio-openssl = "0.6.3"
 toml = "0.5"
 url = "2.2.2"
 #default-members = ["einstein_db/einsteindb-server", "einstein_db/einsteindb-ctl"]
+default = "0.1.2"
+#einstein_db = "0.1.0"
+#einstein_db_server = "0.1.0"
+#einstein_db_ctl = "0.1.0"
+#einstein_db_client = "0.1.0"
+#einstein_db_client_http = "0.1.0"
+#einstein_db_client_grpc = "0.1.0"
+#einstein_db_client_grpc_http = "0.1.0"
+#einstein_db_client_grpc_tls = "0.1.0"
+
+#default-members = ["einstein_db/einsteindb-server", "einstein_db/einsteindb-ctl"]   # default-members = ["einstein_db/einsteindb-server", "einstein_db/einsteindb-ctl"]

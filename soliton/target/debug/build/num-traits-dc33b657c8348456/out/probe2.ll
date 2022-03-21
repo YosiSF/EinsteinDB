@@ -29,7 +29,7 @@ bb1:                                              ; preds = %start
 
 ; <f64 as core::convert::num::FloatToInt<i32>>::to_int_unchecked
 ; Function Attrs: inlinehint uwtable
-define internal i32 @"_ZN65_$LT$f64$u20$as$u20$core..convert..num..FloatToInt$LT$i32$GT$$GT$16to_int_unchecked17h5ef42ff25cce71f5E"(double %self) unnamed_addr #1 {
+define causal_setal i32 @"_ZN65_$LT$f64$u20$as$u20$core..convert..num..FloatToInt$LT$i32$GT$$GT$16to_int_unchecked17h5ef42ff25cce71f5E"(double %self) unnamed_addr #1 {
 start:
   %0 = alloca i32, align 4
   %1 = fptosi double %self to i32

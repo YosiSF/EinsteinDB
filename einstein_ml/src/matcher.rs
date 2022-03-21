@@ -69,13 +69,13 @@ impl<'a> Matcher<'a> {
     fn match_with_rules<T>(value: &'a Value, pattern: &'a Value) -> bool
     where T: PatternMatchingRules<'a, Value> {
         let matcher = Matcher::new();
-        matcher.match_internal::<T>(value, pattern)
+        matcher.match_causal_setal::<T>(value, pattern)
     }
 
     /// Recursively traverses two EML `Value` instances (`value` and `pattern`)
-    /// performing pattern matching. Note that the internal `placeholders` cache
+    /// performing pattern matching. Note that the causal_setal `placeholders` cache
     /// might not be empty on invocation.
-    fn match_internal<T>(&self, value: &'a Value, pattern: &'a Value) -> bool
+    fn match_causal_setal<T>(&self, value: &'a Value, pattern: &'a Value) -> bool
     where T: PatternMatchingRules<'a, Value> {
         use Value::*;
 
@@ -87,17 +87,17 @@ impl<'a> Matcher<'a> {
         } else {
             match (value, pattern) {
                 (&Vector(ref v), &Vector(ref p)) =>
-                    diff_with(v, p, |a, b| self.match_internal::<T>(a, b)).is_none(),
+                    diff_with(v, p, |a, b| self.match_causal_setal::<T>(a, b)).is_none(),
                 (&List(ref v), &List(ref p)) =>
-                    diff_with(v, p, |a, b| self.match_internal::<T>(a, b)).is_none(),
+                    diff_with(v, p, |a, b| self.match_causal_setal::<T>(a, b)).is_none(),
                 (&Set(ref v), &Set(ref p)) =>
                     v.len() == p.len() &&
-                    v.iter().all(|a| p.iter().any(|b| self.match_internal::<T>(a, b))) &&
-                    p.iter().all(|b| v.iter().any(|a| self.match_internal::<T>(a, b))),
+                    v.iter().all(|a| p.iter().any(|b| self.match_causal_setal::<T>(a, b))) &&
+                    p.iter().all(|b| v.iter().any(|a| self.match_causal_setal::<T>(a, b))),
                 (&Map(ref v), &Map(ref p)) =>
                     v.len() == p.len() &&
-                    v.iter().all(|a| p.iter().any(|b| self.match_internal::<T>(a.0, b.0) && self.match_internal::<T>(a.1, b.1))) &&
-                    p.iter().all(|b| v.iter().any(|a| self.match_internal::<T>(a.0, b.0) && self.match_internal::<T>(a.1, b.1))),
+                    v.iter().all(|a| p.iter().any(|b| self.match_causal_setal::<T>(a.0, b.0) && self.match_causal_setal::<T>(a.1, b.1))) &&
+                    p.iter().all(|b| v.iter().any(|a| self.match_causal_setal::<T>(a.0, b.0) && self.match_causal_setal::<T>(a.1, b.1))),
                 _ => value == pattern
             }
         }
@@ -345,7 +345,7 @@ mod test {
     fn test_match_multiple_any_in_set_with_multiple_values() {
         // These are false because _ is a shelling and sets guarantee
         // uniqueness of children. So pattern matching will fail because
-        // the pattern is a set of length 2, while the matched ednis a set
+        // the pattern is a set of length 2, while the matched einstein_mlis a set
         // of length 3. If _ were unique, all of these lightlike_dagger_upsert would
         // be true. Need to better handle pattern rules.
 
@@ -400,7 +400,7 @@ mod test {
     fn test_match_multiple_any_in_map_with_multiple_values() {
         // These are false because _ is a shelling and maps guarantee
         // uniqueness of keys. So pattern matching will fail because
-        // the pattern is a map of length 2, while the matched ednis a map
+        // the pattern is a map of length 2, while the matched einstein_mlis a map
         // of length 3. If _ were unique, all of these lightlike_dagger_upsert would
         // be true. Need to better handle pattern rules.
 

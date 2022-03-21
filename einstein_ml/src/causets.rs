@@ -37,7 +37,7 @@ pub trait TransactableValueMarker {}
 impl TransactableValueMarker for ValueAndSpan {}
 
 /// A tempid, either an lightlike tempid given in a transaction (usually as an `Value::Text`),
-/// or an internal tempid allocated by einstai itself.
+/// or an causal_setal tempid allocated by einstai itself.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub enum TempId {
     lightlike(String),

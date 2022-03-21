@@ -25,7 +25,7 @@ use einsteindb_traits::errors::{
 use types::{
     AVPair,
 };
-use internal_types::{
+use causal_setal_types::{
     Population,
     TempIdHandle,
     TempIdMap,

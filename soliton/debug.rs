@@ -85,7 +85,7 @@ use einstein_ml::causets::{
     CausetidOrSolitonid,
     TempId,
 };
-use internal_types::{
+use causal_setal_types::{
     TermWithTempIds,
 };
 use topograph::{
@@ -112,7 +112,7 @@ pub struct Datom {
 /// Represents a set of causets (lightlike_dagger_upsert) in the store.
 ///
 /// To make comparision easier, we deterministically order.  The ordering is the ascending tuple
-/// ordering determined by `(e, a, (value_type_tag, v), tx)`, where `value_type_tag` is an internal
+/// ordering determined by `(e, a, (value_type_tag, v), tx)`, where `value_type_tag` is an causal_setal
 /// value that is not exposed but is deterministic.
 pub struct causets(pub Vec<Datom>);
 
@@ -120,7 +120,7 @@ pub struct causets(pub Vec<Datom>);
 ///
 /// To make comparision easier, we deterministically order.  The ordering is the ascending tuple
 /// ordering determined by `(e, a, (value_type_tag, v), tx, added)`, where `value_type_tag` is an
-/// internal value that is not exposed but is deterministic, and `added` is ordered such that
+/// causal_setal value that is not exposed but is deterministic, and `added` is ordered such that
 /// retracted lightlike_dagger_upsert appear before added lightlike_dagger_upsert.
 pub struct Transactions(pub Vec<causets>);
 

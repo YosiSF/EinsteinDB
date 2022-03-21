@@ -41,23 +41,15 @@ pub enum Value {
     PlainShelling(shellings::PlainShelling),
     NamespacedShelling(shellings::NamespacedShelling),
     Keyword(shellings::Keyword),
-    Vector(Vec<Value>),
-    // We're using a LinkedList here instead of a Vec or VecDeque because the
-    // LinkedList is faster for appending (which we do a lot of).
-    // See https://github.com/YosiSF/EinsteinDB/issues/231
     List(LinkedList<Value>),
-    // We're using BTree{Set, Map} rather than Hash{Set, Map} because the BTree variants
-    // implement Hash. The Hash variants don't in order to preserve O(n) hashing
-    // time, which is hard given recursive data structures.
-    // See https://internals.rust-lang.org/t/implementing-hash-for-hashset-hashmap/3817/1
     Set(BTreeSet<Value>),
     Map(BTreeMap<Value, Value>),
 }
 
-/// `SpannedValue` is the parallel to `Value` but used in `ValueAndSpan`.
+/// `kSpannedCausetValue` is the parallel to `Value` but used in `ValueAndSpan`.
 /// Container types have `ValueAndSpan` children.
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
-pub enum SpannedValue {
+pub enum kSpannedCausetValue {
     Nil,
     Boolean(bool),
     Integer(i64),
@@ -85,16 +77,16 @@ impl Span {
     }
 }
 
-/// A wrapper type around `SpannedValue` and `Span`, representing some EML value
+/// A wrapper type around `kSpannedCausetValue` and `Span`, representing some EML value
 /// and the parsing offset (start, end) in the original EML string.
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct ValueAndSpan {
-    pub inner: SpannedValue,
+    pub inner: kSpannedCausetValue,
     pub span: Span,
 }
 
 impl ValueAndSpan {
-    pub fn new<I>(spanned_value: SpannedValue, span: I) -> ValueAndSpan where I: Into<Option<Span>> {
+    pub fn new<I>(spanned_value: kSpannedCausetValue, span: I) -> ValueAndSpan where I: Into<Option<Span>> {
         ValueAndSpan {
             inner: spanned_value,
             span: span.into().unwrap_or(Span(0, 0)), // TODO: consider if this has implications.
@@ -143,24 +135,24 @@ impl Value {
     }
 }
 
-impl From<SpannedValue> for Value {
-    fn from(src: SpannedValue) -> Value {
+impl From<kSpannedCausetValue> for Value {
+    fn from(src: kSpannedCausetValue) -> Value {
         match src {
-            SpannedValue::Nil => Value::Nil,
-            SpannedValue::Boolean(v) => Value::Boolean(v),
-            SpannedValue::Integer(v) => Value::Integer(v),
-            SpannedValue::Instant(v) => Value::Instant(v),
-            SpannedValue::BigInteger(v) => Value::BigInteger(v),
-            SpannedValue::Float(v) => Value::Float(v),
-            SpannedValue::Text(v) => Value::Text(v),
-            SpannedValue::Uuid(v) => Value::Uuid(v),
-            SpannedValue::PlainShelling(v) => Value::PlainShelling(v),
-            SpannedValue::NamespacedShelling(v) => Value::NamespacedShelling(v),
-            SpannedValue::Keyword(v) => Value::Keyword(v),
-            SpannedValue::Vector(v) => Value::Vector(v.into_iter().map(|x| x.without_spans()).collect()),
-            SpannedValue::List(v) => Value::List(v.into_iter().map(|x| x.without_spans()).collect()),
-            SpannedValue::Set(v) => Value::Set(v.into_iter().map(|x| x.without_spans()).collect()),
-            SpannedValue::Map(v) => Value::Map(v.into_iter().map(|(x, y)| (x.without_spans(), y.without_spans())).collect()),
+            kSpannedCausetValue::Nil => Value::Nil,
+            kSpannedCausetValue::Boolean(v) => Value::Boolean(v),
+            kSpannedCausetValue::Integer(v) => Value::Integer(v),
+            kSpannedCausetValue::Instant(v) => Value::Instant(v),
+            kSpannedCausetValue::BigInteger(v) => Value::BigInteger(v),
+            kSpannedCausetValue::Float(v) => Value::Float(v),
+            kSpannedCausetValue::Text(v) => Value::Text(v),
+            kSpannedCausetValue::Uuid(v) => Value::Uuid(v),
+            kSpannedCausetValue::PlainShelling(v) => Value::PlainShelling(v),
+            kSpannedCausetValue::NamespacedShelling(v) => Value::NamespacedShelling(v),
+            kSpannedCausetValue::Keyword(v) => Value::Keyword(v),
+            kSpannedCausetValue::Vector(v) => Value::Vector(v.into_iter().map(|x| x.without_spans()).collect()),
+            kSpannedCausetValue::List(v) => Value::List(v.into_iter().map(|x| x.without_spans()).collect()),
+            kSpannedCausetValue::Set(v) => Value::Set(v.into_iter().map(|x| x.without_spans()).collect()),
+            kSpannedCausetValue::Map(v) => Value::Map(v.into_iter().map(|(x, y)| (x.without_spans(), y.without_spans())).collect()),
         }
     }
 }
@@ -171,7 +163,7 @@ impl From<ValueAndSpan> for Value {
     }
 }
 
-/// Creates `from_$TYPE` helper functions for Value and SpannedValue,
+/// Creates `from_$TYPE` helper functions for Value and kSpannedCausetValue,
 /// like `from_float()` or `from_ordered_float()`.
 macro_rules! def_from {
     ($name: solitonid, $out: ty, $kind: local_path, $t: ty, $( $transform: expr ),* ) => {
@@ -182,7 +174,7 @@ macro_rules! def_from {
     }
 }
 
-/// Creates `from_$TYPE` helper functions for Value or SpannedValue,
+/// Creates `from_$TYPE` helper functions for Value or kSpannedCausetValue,
 /// like `from_bigint()` where the conversion is optional.
 macro_rules! def_from_option {
     ($name: solitonid, $out: ty, $kind: local_path, $t: ty, $( $transform: expr ),* ) => {
@@ -193,7 +185,7 @@ macro_rules! def_from_option {
     }
 }
 
-/// Creates `is_$TYPE` helper functions for Value or SpannedValue, like
+/// Creates `is_$TYPE` helper functions for Value or kSpannedCausetValue, like
 /// `is_big_integer()` or `is_text()`.
 macro_rules! def_is {
     ($name: solitonid, $pat: pat) => {
@@ -203,7 +195,7 @@ macro_rules! def_is {
     }
 }
 
-/// Creates `as_$TYPE` helper functions for Value or SpannedValue, like
+/// Creates `as_$TYPE` helper functions for Value or kSpannedCausetValue, like
 /// `as_integer()`, which returns the underlying value representing the
 /// original variable wrapped in an Option, like `Option<i64>`.
 macro_rules! def_as {
@@ -214,7 +206,7 @@ macro_rules! def_as {
     }
 }
 
-/// Creates `as_$TYPE` helper functions for Value or SpannedValue, like
+/// Creates `as_$TYPE` helper functions for Value or kSpannedCausetValue, like
 /// `as_big_integer()`, which returns a reference to the underlying value
 /// representing the original variable wrapped in an Option, like `Option<&BigInt>`.
 macro_rules! def_as_ref {
@@ -225,7 +217,7 @@ macro_rules! def_as_ref {
     }
 }
 
-/// Creates `into_$TYPE` helper functions for Value or SpannedValue, like
+/// Creates `into_$TYPE` helper functions for Value or kSpannedCausetValue, like
 /// `into_big_integer()`, which consumes it returning underlying value
 /// representing the original variable wrapped in an Option, like `Option<BigInt>`.
 macro_rules! def_into {
@@ -242,19 +234,19 @@ macro_rules! def_into {
 /// # Examples
 ///
 /// ```
-/// # use edn::types::to_shelling;
-/// # use edn::types::Value;
-/// # use edn::shellings;
+/// # use einstein_ml::types::to_shelling;
+/// # use einstein_ml::types::Value;
+/// # use einstein_ml::shellings;
 /// let value = to_shelling!("foo", "bar", Value);
 /// assert_eq!(value, Value::NamespacedShelling(shellings::NamespacedShelling::isoliton_namespaceable("foo", "bar")));
 ///
 /// let value = to_shelling!(None, "baz", Value);
 /// assert_eq!(value, Value::PlainShelling(shellings::PlainShelling::plain("baz")));
 ///
-/// let value = to_shelling!("foo", "bar", SpannedValue);
+/// let value = to_shelling!("foo", "bar", kSpannedCausetValue);
 /// assert_eq!(value.into(), to_shelling!("foo", "bar", Value));
 ///
-/// let value = to_shelling!(None, "baz", SpannedValue);
+/// let value = to_shelling!(None, "baz", kSpannedCausetValue);
 /// assert_eq!(value.into(), to_shelling!(None, "baz", Value));
 /// ```
 macro_rules! to_shelling {
@@ -271,19 +263,19 @@ macro_rules! to_shelling {
 /// # Examples
 ///
 /// ```
-/// # use edn::types::to_keyword;
-/// # use edn::types::Value;
-/// # use edn::shellings;
+/// # use einstein_ml::types::to_keyword;
+/// # use einstein_ml::types::Value;
+/// # use einstein_ml::shellings;
 /// let value = to_keyword!("foo", "bar", Value);
 /// assert_eq!(value, Value::Keyword(shellings::Keyword::isoliton_namespaceable("foo", "bar")));
 ///
 /// let value = to_keyword!(None, "baz", Value);
 /// assert_eq!(value, Value::Keyword(shellings::Keyword::plain("baz")));
 ///
-/// let value = to_keyword!("foo", "bar", SpannedValue);
+/// let value = to_keyword!("foo", "bar", kSpannedCausetValue);
 /// assert_eq!(value.into(), to_keyword!("foo", "bar", Value));
 ///
-/// let value = to_keyword!(None, "baz", SpannedValue);
+/// let value = to_keyword!(None, "baz", kSpannedCausetValue);
 /// assert_eq!(value.into(), to_keyword!(None, "baz", Value));
 /// ```
 macro_rules! to_keyword {
@@ -295,7 +287,7 @@ macro_rules! to_keyword {
 }
 
 /// Implements multiple is*, as*, into* and from* methods common to
-/// both Value and SpannedValue.
+/// both Value and kSpannedCausetValue.
 macro_rules! def_common_value_methods {
     ( $t:tt<$tchild:tt> ) => {
         def_is!(is_nil, $t::Nil);
@@ -488,7 +480,7 @@ macro_rules! def_common_value_methods {
     }
 }
 
-/// Compares Value or SpannedValue instances and returns Ordering.
+/// Compares Value or kSpannedCausetValue instances and returns Ordering.
 /// Used in `Ord` impleeinstaiions.
 macro_rules! def_common_value_ord {
     ( $t:tt, $value:expr, $other:expr ) => {
@@ -513,7 +505,7 @@ macro_rules! def_common_value_ord {
     }
 }
 
-/// Converts a Value or SpannedValue to string, given a formatter.
+/// Converts a Value or kSpannedCausetValue to string, given a formatter.
 // TODO: Make sure float syntax is correct, handle NaN and escaping.
 
 macro_rules! def_common_value_display {
@@ -641,7 +633,7 @@ macro_rules! def_common_value_impl {
 }
 
 def_common_value_impl!(Value<Value>);
-def_common_value_impl!(SpannedValue<ValueAndSpan>);
+def_common_value_impl!(kSpannedCausetValue<ValueAndSpan>);
 
 impl ValueAndSpan {
     pub fn without_spans(self) -> Value {
@@ -748,7 +740,7 @@ mod test {
     }
 
     #[test]
-    fn test_print_edn() {
+    fn test_print_einstein_ml() {
         assert_eq!("1234N", Value::from_bigint("1234").unwrap().to_string());
 
         let string = "[ 1 2 ( 3.14 ) #{ 4N } { foo/bar 42 :baz/boz 43 } [ ] :five :six/seven eight nine/ten true false nil #f NaN #f -Infinity #f +Infinity ]";
@@ -786,7 +778,7 @@ mod test {
 
     #[test]
     fn test_ord() {
-        // TODO: Check we follow the equality rules at the bottom of https://github.com/edn-format/edn
+        // TODO: Check we follow the equality rules at the bottom of https://github.com/einstein_ml-format/einstein_ml
         assert_eq!(Value::Nil.cmp(&Value::Nil), Ordering::Equal);
         assert_eq!(Value::Boolean(false).cmp(&Value::Boolean(true)), Ordering::Greater);
         assert_eq!(Value::Integer(1).cmp(&Value::Integer(2)), Ordering::Greater);

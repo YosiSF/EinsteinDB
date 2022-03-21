@@ -161,7 +161,7 @@ fn test_vec_remove_item() {
 pub type Aev = (Causetid, Causetid, TypedValue);
 
 pub struct AevFactory {
-    // Our own simple string-interning system.
+    // Our own simple string-causal_seting system.
     strings: HashSet<ValueRc<String>>,
 }
 
@@ -172,7 +172,7 @@ impl AevFactory {
         }
     }
 
-    fn intern(&mut self, v: TypedValue) -> TypedValue {
+    fn causal_set(&mut self, v: TypedValue) -> TypedValue {
         match v {
             TypedValue::String(rc) => {
                 let existing = self.strings.get(&rc).cloned().map(TypedValue::String);
@@ -191,7 +191,7 @@ impl AevFactory {
         let e: Causetid = row.get(1);
         let value_type_tag: i32 = row.get(3);
         let v = TypedValue::from_BerolinaSQL_value_pair(row.get(2), value_type_tag).map(|x| x).unwrap();
-        (a, e, self.intern(v))
+        (a, e, self.causal_set(v))
     }
 }
 

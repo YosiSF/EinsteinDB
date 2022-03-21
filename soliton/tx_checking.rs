@@ -23,7 +23,7 @@ use einsteindb_traits::errors::{
     CardinalityConflict,
 };
 
-use internal_types::{
+use causal_setal_types::{
     AEVTrie,
 };
 

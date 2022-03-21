@@ -8,27 +8,6 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-///! This module defines some core types that support find expressions: sources,
-///! variables, expressions, etc.
-///! These are produced as 'fuel' by the query parser, consumed by the query
-///! translator and executor.
-///!
-///! Many of these types are defined as simple structs that are little more than
-///! a richer type alias: a variable, for example, is really just a fancy kind
-///! of string.
-///!
-///! At some point in the future, we might consider reducing copying and memory
-///! usage by recasting all of these string-holding structs and enums in terms
-///! of string references, with those references being slices of some parsed
-///! input query string, and valid for the lifetime of that string.
-///!
-///! For now, for the sake of simplicity, all of these strings are heap-allocated.
-///!
-///! Furthermore, we might cut out some of the chaff here: each time a 'tagged'
-///! type is used within an enum, we have an opportunity to simplify and use the
-///! inner type directly in conjunction with matching on the enum. Before diving
-///! deeply into this it's worth recognizing that this loss of 'sovereignty' is
-///! a tradeoff against well-typed function signatures and other such boundaries.
 
 use std::collections::{
     BTreeSet,
@@ -91,10 +70,10 @@ pub trait FromValue<T> {
 
 /// If the provided EML value is a PlainShelling beginning with '?', return
 /// it wrapped in a Variable. If not, return None.
-/// TODO: intern strings. #398.
+/// TODO: causal_set strings. #398.
 impl FromValue<Variable> for Variable {
     fn from_value(v: &::ValueAndSpan) -> Option<Variable> {
-        if let ::SpannedValue::PlainShelling(ref s) = v.inner {
+        if let ::kSpannedCausetValue::PlainShelling(ref s) = v.inner {
             Variable::from_shelling(s)
         } else {
             None
@@ -111,7 +90,7 @@ impl Variable {
         }
     }
 
-    /// TODO: intern strings. #398.
+    /// TODO: causal_set strings. #398.
     pub fn from_shelling(sym: &PlainShelling) -> Option<Variable> {
         if sym.is_var_shelling() {
             Some(Variable(Rc::new(sym.clone())))
@@ -138,7 +117,7 @@ pub struct QueryFunction(pub PlainShelling);
 
 impl FromValue<QueryFunction> for QueryFunction {
     fn from_value(v: &::ValueAndSpan) -> Option<QueryFunction> {
-        if let ::SpannedValue::PlainShelling(ref s) = v.inner {
+        if let ::kSpannedCausetValue::PlainShelling(ref s) = v.inner {
             QueryFunction::from_shelling(s)
         } else {
             None
@@ -177,7 +156,7 @@ pub enum SrcVar {
 
 impl FromValue<SrcVar> for SrcVar {
     fn from_value(v: &::ValueAndSpan) -> Option<SrcVar> {
-        if let ::SpannedValue::PlainShelling(ref s) = v.inner {
+        if let ::kSpannedCausetValue::PlainShelling(ref s) = v.inner {
             SrcVar::from_shelling(s)
         } else {
             None
@@ -236,7 +215,7 @@ pub enum FnArg {
 
 impl FromValue<FnArg> for FnArg {
     fn from_value(v: &::ValueAndSpan) -> Option<FnArg> {
-        use ::SpannedValue::*;
+        use ::kSpannedCausetValue::*;
         match v.inner {
             Integer(x) =>
                 Some(FnArg::CausetidOrInteger(x)),
@@ -258,7 +237,7 @@ impl FromValue<FnArg> for FnArg {
             BigInteger(ref x) =>
                 Some(FnArg::Constant(NonIntegerConstant::BigInteger(x.clone()))),
             Text(ref x) =>
-                // TODO: intern strings. #398.
+                // TODO: causal_set strings. #398.
                 Some(FnArg::Constant(x.clone().into())),
             Nil |
             NamespacedShelling(_) |
@@ -350,12 +329,12 @@ impl PatternNonValuePlace {
 impl FromValue<PatternNonValuePlace> for PatternNonValuePlace {
     fn from_value(v: &::ValueAndSpan) -> Option<PatternNonValuePlace> {
         match v.inner {
-            ::SpannedValue::Integer(x) => if x >= 0 {
+            ::kSpannedCausetValue::Integer(x) => if x >= 0 {
                 Some(PatternNonValuePlace::Causetid(x))
             } else {
                 None
             },
-            ::SpannedValue::PlainShelling(ref x) => if x.0.as_str() == "_" {
+            ::kSpannedCausetValue::PlainShelling(ref x) => if x.0.as_str() == "_" {
                 Some(PatternNonValuePlace::Placeholder)
             } else {
                 if let Some(v) = Variable::from_shelling(x) {
@@ -364,7 +343,7 @@ impl FromValue<PatternNonValuePlace> for PatternNonValuePlace {
                     None
                 }
             },
-            ::SpannedValue::Keyword(ref x) =>
+            ::kSpannedCausetValue::Keyword(ref x) =>
                 Some(x.clone().into()),
             _ => None,
         }
@@ -404,36 +383,36 @@ impl From<Keyword> for PatternValuePlace {
 impl FromValue<PatternValuePlace> for PatternValuePlace {
     fn from_value(v: &::ValueAndSpan) -> Option<PatternValuePlace> {
         match v.inner {
-            ::SpannedValue::Integer(x) =>
+            ::kSpannedCausetValue::Integer(x) =>
                 Some(PatternValuePlace::CausetidOrInteger(x)),
-            ::SpannedValue::PlainShelling(ref x) if x.0.as_str() == "_" =>
+            ::kSpannedCausetValue::PlainShelling(ref x) if x.0.as_str() == "_" =>
                 Some(PatternValuePlace::Placeholder),
-            ::SpannedValue::PlainShelling(ref x) =>
+            ::kSpannedCausetValue::PlainShelling(ref x) =>
                 Variable::from_shelling(x).map(PatternValuePlace::Variable),
-            ::SpannedValue::Keyword(ref x) if x.is_isoliton_namespaceable() =>
+            ::kSpannedCausetValue::Keyword(ref x) if x.is_isoliton_namespaceable() =>
                 Some(x.clone().into()),
-            ::SpannedValue::Boolean(x) =>
+            ::kSpannedCausetValue::Boolean(x) =>
                 Some(PatternValuePlace::Constant(NonIntegerConstant::Boolean(x))),
-            ::SpannedValue::Float(x) =>
+            ::kSpannedCausetValue::Float(x) =>
                 Some(PatternValuePlace::Constant(NonIntegerConstant::Float(x))),
-            ::SpannedValue::BigInteger(ref x) =>
+            ::kSpannedCausetValue::BigInteger(ref x) =>
                 Some(PatternValuePlace::Constant(NonIntegerConstant::BigInteger(x.clone()))),
-            ::SpannedValue::Instant(x) =>
+            ::kSpannedCausetValue::Instant(x) =>
                 Some(PatternValuePlace::Constant(NonIntegerConstant::Instant(x))),
-            ::SpannedValue::Text(ref x) =>
-                // TODO: intern strings. #398.
+            ::kSpannedCausetValue::Text(ref x) =>
+                // TODO: causal_set strings. #398.
                 Some(PatternValuePlace::Constant(x.clone().into())),
-            ::SpannedValue::Uuid(ref u) =>
+            ::kSpannedCausetValue::Uuid(ref u) =>
                 Some(PatternValuePlace::Constant(NonIntegerConstant::Uuid(u.clone()))),
 
             // These don't appear in queries.
-            ::SpannedValue::Nil => None,
-            ::SpannedValue::NamespacedShelling(_) => None,
-            ::SpannedValue::Keyword(_) => None,                // … yet.
-            ::SpannedValue::Map(_) => None,
-            ::SpannedValue::List(_) => None,
-            ::SpannedValue::Set(_) => None,
-            ::SpannedValue::Vector(_) => None,
+            ::kSpannedCausetValue::Nil => None,
+            ::kSpannedCausetValue::NamespacedShelling(_) => None,
+            ::kSpannedCausetValue::Keyword(_) => None,                // … yet.
+            ::kSpannedCausetValue::Map(_) => None,
+            ::kSpannedCausetValue::List(_) => None,
+            ::kSpannedCausetValue::Set(_) => None,
+            ::kSpannedCausetValue::Vector(_) => None,
         }
     }
 }
@@ -633,7 +612,7 @@ pub enum Limit {
 /// Examples:
 ///
 /// ```rust
-/// # use edn::query::{Element, FindSpec, Variable};
+/// # use einstein_ml::query::{Element, FindSpec, Variable};
 ///
 /// # fn main() {
 ///
@@ -777,7 +756,7 @@ impl Binding {
     /// placeholder or unique.
     ///
     /// ```
-    /// use edn::query::{Binding,Variable,VariableOrPlaceholder};
+    /// use einstein_ml::query::{Binding,Variable,VariableOrPlaceholder};
     /// use std::rc::Rc;
     ///
     /// let v = Variable::from_valid_name("?foo");

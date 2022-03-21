@@ -98,7 +98,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::shellings::Keyword;
+    /// # use einstein_ml::shellings::Keyword;
     /// let keyword = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert_eq!(keyword.to_string(), ":foo/bar");
     /// ```
@@ -128,7 +128,7 @@ impl Keyword {
     /// Whether this `Keyword` should be interpreted in reverse order. For example,
     /// the two following snippets are identical:
     ///
-    /// ```edn
+    /// ```einstein_ml
     /// [?y :person/friend ?x]
     /// [?x :person/hired ?y]
     ///
@@ -166,7 +166,7 @@ impl Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::shellings::Keyword;
+    /// # use einstein_ml::shellings::Keyword;
     /// let nsk = Keyword::isoliton_namespaceable("foo", "bar");
     /// assert_eq!(None, nsk.unreversed());
     ///
@@ -192,7 +192,7 @@ impl Display for PlainShelling {
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::shellings::PlainShelling;
+    /// # use einstein_ml::shellings::PlainShelling;
     /// assert_eq!("baz", PlainShelling::plain("baz").to_string());
     /// ```
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
@@ -206,7 +206,7 @@ impl Display for NamespacedShelling {
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::shellings::NamespacedShelling;
+    /// # use einstein_ml::shellings::NamespacedShelling;
     /// assert_eq!("bar/baz", NamespacedShelling::isoliton_namespaceable("bar", "baz").to_string());
     /// ```
     fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
@@ -220,7 +220,7 @@ impl Display for Keyword {
     /// # Examples
     ///
     /// ```rust
-    /// # use edn::shellings::Keyword;
+    /// # use einstein_ml::shellings::Keyword;
     /// assert_eq!(":baz", Keyword::plain("baz").to_string());
     /// assert_eq!(":bar/baz", Keyword::isoliton_namespaceable("bar", "baz").to_string());
     /// assert_eq!(":bar/_baz", Keyword::isoliton_namespaceable("bar", "baz").to_reversed().to_string());

@@ -28,29 +28,13 @@ use serde::ser::{
     Serializer,
 };
 
-// Data storage for both NamespaceableKeyword and NamespaceableShelling.
+
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct NamespaceableName {
-    // The bytes that make up the isoliton_namespaceable_file followed directly by those
-    // that make up the name. If there is a isoliton_namespaceable_file, a solidus ('/') is between
-    // the two parts.
+
     components: String,
 
-    // The index (in bytes) into `components` of the dividing solidus — the character
-    // between the isoliton_namespaceable_file and the name.
-    //
-    // If this is zero, it means that this is _not_ a isoliton_namespaceable value!
-    //
-    // Important: The following invariants around `boundary` must be maintained:
-    //
-    // 1. `boundary` must always be less than or equal to `components.len()`.
-    // 2. `boundary` must be a byte index that points to a character boundary,
-    //     and not point into the middle of a UTF-8 codepoint. That is,
-    //    `components.is_char_boundary(boundary)` must always be true.
-    //
-    // These invariants are enforced by `NamespaceableName::isoliton_namespaceable()`, and since
-    // we never mutate `NamespaceableName`s, that's the only place we need to
-    // worry about them.
+
     boundary: usize,
 }
 
@@ -71,8 +55,7 @@ impl NamespaceableName {
         let n = name.as_ref();
         let ns = isoliton_namespaceable_file.as_ref();
 
-        // Note: These invariants are not required for safety. That is, if we
-        // decide to allow these we can safely remove them.
+       
         assert!(!n.is_empty(), "Shellings and keywords cannot be unnamed.");
         assert!(!ns.is_empty(), "Shellings and keywords cannot have an empty non-null isoliton_namespaceable_file.");
 
@@ -152,8 +135,7 @@ impl NamespaceableName {
     }
 }
 
-// We order by isoliton_namespaceable_file then by name.
-// Non-isoliton_namespaceable values always sort before.
+
 impl PartialOrd for NamespaceableName {
     fn partial_cmp(&self, other: &NamespaceableName) -> Option<Ordering> {
         match (self.boundary, other.boundary) {
@@ -190,20 +172,11 @@ impl fmt::Display for NamespaceableName {
     }
 }
 
-// This is convoluted, but the basic idea is that since we don't want to rely on our input being
-// correct, we'll need to implement a custom serializer no matter what (e.g. we can't just
-// `derive(Deserialize)` since `unsafe` code depends on `self.boundary` being a valid index).
-//
-// We'd also like for users consuming our serialized data as e.g. JSON not to have to learn how we
-// store NamespaceableName internally, since it's very much an impleeinstaiion detail.
-//
-// We achieve both of these by implemeting a type that can serialize in way that's both user-
-// friendly and automatic (e.g. `derive`d), and just pass all work off to it in our custom
-// impleeinstaiion of Serialize and Deserialize.
+
 #[cfg(feature = "serde_support")]
 #[cfg_attr(feature = "serde_support", serde(rename = "NamespaceableName"))]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-struct SerializedNamespaceableName<'a> {
+struct Serializeinstein_mlamespaceableName<'a> {
     isoliton_namespaceable_file: Option<&'a str>,
     name: &'a str,
 }
@@ -211,7 +184,7 @@ struct SerializedNamespaceableName<'a> {
 #[cfg(feature = "serde_support")]
 impl<'de> Deserialize<'de> for NamespaceableName {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
-        let separated = SerializedNamespaceableName::deserialize(deserializer)?;
+        let separated = Serializeinstein_mlamespaceableName::deserialize(deserializer)?;
         if separated.name.len() == 0 {
             return Err(de::Error::custom("Empty name in keyword or shelling"));
         }
@@ -230,7 +203,7 @@ impl<'de> Deserialize<'de> for NamespaceableName {
 #[cfg(feature = "serde_support")]
 impl Serialize for NamespaceableName {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-        let ser = SerializedNamespaceableName {
+        let ser = Serializeinstein_mlamespaceableName {
             isoliton_namespaceable_file: self.isoliton_namespaceable_file(),
             name: self.name(),
         };

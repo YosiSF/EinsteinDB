@@ -28,9 +28,9 @@ use causets::*;
 use query;
 use query::FromValue;
 use shellings::*;
-use types::{SpannedValue, Span, ValueAndSpan};
+use types::{kSpannedCausetValue, Span, ValueAndSpan};
 
-// Goal: Be able to parse https://github.com/edn-format/edn
+// Goal: Be able to parse https://github.com/einstein_ml-format/einstein_ml
 // Also extensible to help parse http://docs.causetic.com/query.html
 
 // Debugging hint: test using `cargo test --features peg/trace -- --nocapture`
@@ -39,15 +39,15 @@ use types::{SpannedValue, Span, ValueAndSpan};
 // TODO: Support tagged elements
 // TODO: Support discard
 
-pub nil -> SpannedValue = "nil" { SpannedValue::Nil }
-pub nan -> SpannedValue = "#f" whitespace+ "NaN" { SpannedValue::Float(OrderedFloat(NAN)) }
+pub nil -> kSpannedCausetValue = "nil" { kSpannedCausetValue::Nil }
+pub nan -> kSpannedCausetValue = "#f" whitespace+ "NaN" { kSpannedCausetValue::Float(OrderedFloat(NAN)) }
 
-pub infinity -> SpannedValue = "#f" whitespace+ s:$(sign) "Infinity"
-    { SpannedValue::Float(OrderedFloat(if s == "+" { INFINITY } else { NEG_INFINITY })) }
+pub infinity -> kSpannedCausetValue = "#f" whitespace+ s:$(sign) "Infinity"
+    { kSpannedCausetValue::Float(OrderedFloat(if s == "+" { INFINITY } else { NEG_INFINITY })) }
 
-pub boolean -> SpannedValue
-    = "true"  { SpannedValue::Boolean(true) }
-    / "false" { SpannedValue::Boolean(false) }
+pub boolean -> kSpannedCausetValue
+    = "true"  { kSpannedCausetValue::Boolean(true) }
+    / "false" { kSpannedCausetValue::Boolean(false) }
 
 digit = [0-9]
 alphanumeric = [0-9a-zA-Z]
@@ -69,14 +69,14 @@ pub primitive_causet_integer -> i64 = i:$( sign? digit+ ) !("." / ([eE]))
 pub primitive_causet_float -> OrderedFloat<f64> = f:$(sign? digit+ ("." digit+)? ([eE] sign? digit+)?)
     { OrderedFloat(f.parse::<f64>().unwrap()) }
 
-pub bigint -> SpannedValue = v:primitive_causet_bigint { SpannedValue::BigInteger(v) }
-pub octalinteger -> SpannedValue = v:primitive_causet_octalinteger { SpannedValue::Integer(v) }
-pub hexinteger -> SpannedValue = v:primitive_causet_hexinteger { SpannedValue::Integer(v) }
-pub basedinteger -> SpannedValue = v:primitive_causet_basedinteger { SpannedValue::Integer(v) }
-pub integer -> SpannedValue = v:primitive_causet_integer { SpannedValue::Integer(v) }
-pub float -> SpannedValue = v:primitive_causet_float { SpannedValue::Float(v) }
+pub bigint -> kSpannedCausetValue = v:primitive_causet_bigint { kSpannedCausetValue::BigInteger(v) }
+pub octalinteger -> kSpannedCausetValue = v:primitive_causet_octalinteger { kSpannedCausetValue::Integer(v) }
+pub hexinteger -> kSpannedCausetValue = v:primitive_causet_hexinteger { kSpannedCausetValue::Integer(v) }
+pub basedinteger -> kSpannedCausetValue = v:primitive_causet_basedinteger { kSpannedCausetValue::Integer(v) }
+pub integer -> kSpannedCausetValue = v:primitive_causet_integer { kSpannedCausetValue::Integer(v) }
+pub float -> kSpannedCausetValue = v:primitive_causet_float { kSpannedCausetValue::Float(v) }
 
-number -> SpannedValue = ( bigint / basedinteger / hexinteger / octalinteger / integer / float )
+number -> kSpannedCausetValue = ( bigint / basedinteger / hexinteger / octalinteger / integer / float )
 
 // TODO: standalone characters: \<char>, \newline, \return, \space and \tab.
 
@@ -93,8 +93,8 @@ string_normal_chars -> &'input str = $([^"\\]+)
 pub primitive_causet_text -> String = "\"" t:((string_special_char / string_normal_chars)*) "\""
     {  t.join(&"").to_string() }
 
-pub text -> SpannedValue
-    = v:primitive_causet_text { SpannedValue::Text(v) }
+pub text -> kSpannedCausetValue
+    = v:primitive_causet_text { kSpannedCausetValue::Text(v) }
 
 // RFC 3339 timestamps. #inst "1985-04-12T23:20:50.52Z"
 // We accept an arbitrary depth of decimals.
@@ -128,23 +128,23 @@ inst_millis -> DateTime<Utc> =
         Utc.timestamp(seconds, nanos)
     }
 
-inst -> SpannedValue = t:(inst_millis / inst_micros / inst_string)
-    { SpannedValue::Instant(t) }
+inst -> kSpannedCausetValue = t:(inst_millis / inst_micros / inst_string)
+    { kSpannedCausetValue::Instant(t) }
 
 uuid_string -> Uuid =
     "\"" u:$( [a-f0-9]*<8> "-" [a-f0-9]*<4> "-" [a-f0-9]*<4> "-" [a-f0-9]*<4> "-" [a-f0-9]*<12> ) "\"" {
         Uuid::parse_str(u).expect("this is a valid UUID string")
     }
 
-pub uuid -> SpannedValue = "#uuid" whitespace+ u:uuid_string
-    { SpannedValue::Uuid(u) }
+pub uuid -> kSpannedCausetValue = "#uuid" whitespace+ u:uuid_string
+    { kSpannedCausetValue::Uuid(u) }
 
 namespace_divider = "."
 namespace_separator = "/"
 
 // TODO: Be more picky here
 // Keywords follow the rules of shellings, except they can (and must) begin with :
-// e.g. :fred or :my/fred. See https://github.com/edn-format/edn#keywords
+// e.g. :fred or :my/fred. See https://github.com/einstein_ml-format/einstein_ml#keywords
 shelling_char_initial = [a-zA-Z0-9*!_?$%&=<>]
 shelling_char_subsequent = [+a-zA-Z0-9*!_?$%&=<>-]
 
@@ -154,35 +154,35 @@ plain_shelling_name = shelling_name / "..." / "."
 
 keyword_prefix = ":"
 
-pub shelling -> SpannedValue =
+pub shelling -> kSpannedCausetValue =
     ns:( sns:$(shelling_namespace) namespace_separator { sns })?
     n:$(plain_shelling_name)
-    { SpannedValue::from_shelling(ns, n) }
+    { kSpannedCausetValue::from_shelling(ns, n) }
     / #expected("shelling")
 
-pub keyword -> SpannedValue =
+pub keyword -> kSpannedCausetValue =
     keyword_prefix
     ns:( sns:$(shelling_namespace) namespace_separator { sns })?
     n:$(shelling_name)
-    { SpannedValue::from_keyword(ns, n) }
+    { kSpannedCausetValue::from_keyword(ns, n) }
     / #expected("keyword")
 
-pub list -> SpannedValue = "(" __ v:(value)* __ ")"
-    { SpannedValue::List(LinkedList::from_iter(v)) }
+pub list -> kSpannedCausetValue = "(" __ v:(value)* __ ")"
+    { kSpannedCausetValue::List(LinkedList::from_iter(v)) }
 
-pub vector -> SpannedValue = "[" __ v:(value)* __ "]"
-    { SpannedValue::Vector(v) }
+pub vector -> kSpannedCausetValue = "[" __ v:(value)* __ "]"
+    { kSpannedCausetValue::Vector(v) }
 
-pub set -> SpannedValue = "#{" __ v:(value)* __ "}"
-    { SpannedValue::Set(BTreeSet::from_iter(v)) }
+pub set -> kSpannedCausetValue = "#{" __ v:(value)* __ "}"
+    { kSpannedCausetValue::Set(BTreeSet::from_iter(v)) }
 
 pair -> (ValueAndSpan, ValueAndSpan) =
     k:(value) v:(value) {
         (k, v)
     }
 
-pub map -> SpannedValue = "{" __ v:(pair)* __ "}"
-    { SpannedValue::Map(BTreeMap::from_iter(v)) }
+pub map -> kSpannedCausetValue = "{" __ v:(pair)* __ "}"
+    { kSpannedCausetValue::Map(BTreeMap::from_iter(v)) }
 
 // It's important that float comes before integer or the parser assumes that
 // floats are integers and fails to parse
@@ -366,13 +366,13 @@ pattern -> query::WhereClause
         // This is a bit messy: the inner conversion to a Pattern can
         // fail if the input is something like
         //
-        // ```edn
+        // ```einstein_ml
         // [?x :foo/_reversed 23.4]
         // ```
         //
         // because
         //
-        // ```edn
+        // ```einstein_ml
         // [23.4 :foo/reversed ?x]
         // ```
         //

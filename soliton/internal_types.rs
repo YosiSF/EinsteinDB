@@ -30,7 +30,7 @@ use einsteindb_core::util::Either;
 
 use einstein_ml;
 use einstein_ml::{
-    SpannedValue,
+    kSpannedCausetValue,
     ValueAndSpan,
     ValueRc,
 };
@@ -63,7 +63,7 @@ impl TransactableValue for ValueAndSpan {
     }
 
     fn into_causet_place(self) -> Result<causetPlace<Self>> {
-        use self::SpannedValue::*;
+        use self::kSpannedCausetValue::*;
         match self.inner {
             Integer(v) => Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Causetid(v))),
             Keyword(v) => {
@@ -191,7 +191,7 @@ impl TermWithoutTempIds {
     }
 }
 
-/// Given a `KnownCausetidOr` or a `TypedValueOr`, replace any internal `LookupRef` with the causetid from
+/// Given a `KnownCausetidOr` or a `TypedValueOr`, replace any causal_setal `LookupRef` with the causetid from
 /// the given map.  Fail if any `LookupRef` cannot be replaced.
 ///
 /// `lift` allows to specify how the causetid found is mapped into the output type.  (This could

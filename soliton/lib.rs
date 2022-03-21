@@ -43,7 +43,7 @@ pub mod cache;
 pub mod einsteindb;
 mod bootstrap;
 pub mod causetids;
-pub mod internal_types;    // pub because we need them for building causets programmatically.
+pub mod causal_setal_types;    // pub because we need them for building causets programmatically.
 mod spacetime;
 //mod topograph;
 pub mod tx_observer;

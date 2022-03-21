@@ -47,7 +47,7 @@ use types::{
     PartitionMap,
 };
 
-use internal_types::{
+use causal_setal_types::{
     Term,
     TermWithoutTempIds,
 };

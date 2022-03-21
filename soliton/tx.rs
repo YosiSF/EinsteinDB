@@ -71,7 +71,7 @@ use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
-use internal_types::{
+use causal_setal_types::{
     AddAndRetract,
     AEVTrie,
     KnownCausetidOr,
@@ -266,8 +266,8 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
     /// Pipeline stage 1: convert `causet` instances into `Term` instances, ready for term
     /// rewriting.
     ///
-    /// The `Term` instances produce share interned TempId and LookupRef handles, and we return the
-    /// interned handle sets so that consumers can ensure all handles are used appropriately.
+    /// The `Term` instances produce share causal_seted TempId and LookupRef handles, and we return the
+    /// causal_seted handle sets so that consumers can ensure all handles are used appropriately.
     fn causets_into_terms_with_temp_ids_and_lookup_refs<I, V: TransactableValue>(&self, causets: I) -> Result<(Vec<TermWithTempIdsAndLookupRefs>, InternSet<TempId>, InternSet<AVPair>)> where I: IntoIterator<Item=causet<V>> {
         struct InProcess<'a> {
             partition_map: &'a PartitionMap,
@@ -302,7 +302,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                 self.topograph.require_causetid(e)
             }
 
-            fn intern_lookup_ref<W: TransactableValue>(&mut self, lookup_ref: &entmod::LookupRef<W>) -> Result<LookupRef> {
+            fn causal_set_lookup_ref<W: TransactableValue>(&mut self, lookup_ref: &entmod::LookupRef<W>) -> Result<LookupRef> {
                 let lr_a: i64 = match lookup_ref.a {
                     AttributePlace::Causetid(entmod::CausetidOrSolitonid::Causetid(ref a)) => *a,
                     AttributePlace::Causetid(entmod::CausetidOrSolitonid::Solitonid(ref a)) => self.topograph.require_causetid(&a)?.into(),
@@ -314,10 +314,10 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                     bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve (lookup-ref {} {:?}) with attribute that is not :einsteindb/unique", lr_a, lr_typed_value)))
                 }
 
-                Ok(self.lookup_refs.intern((lr_a, lr_typed_value)))
+                Ok(self.lookup_refs.causal_set((lr_a, lr_typed_value)))
             }
 
-            /// Allocate private internal tempids reserved for einstai.  Internal tempids just need to be
+            /// Allocate private causal_setal tempids reserved for einstai.  Internal tempids just need to be
             /// unique within one transaction; they should never escape a transaction.
             fn allocate_einstai_id<W: TransactableValue>(&mut self) -> entmod::causetPlace<W> {
                 self.einstai_id_count += 1;
@@ -335,11 +335,11 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                     },
 
                     entmod::causetPlace::TempId(e) => {
-                        Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.intern(e))))
+                        Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.causal_set(e))))
                     },
 
                     entmod::causetPlace::LookupRef(ref lookup_ref) => {
-                        Ok(Either::Right(LookupRefOrTempId::LookupRef(self.intern_lookup_ref(lookup_ref)?)))
+                        Ok(Either::Right(LookupRefOrTempId::LookupRef(self.causal_set_lookup_ref(lookup_ref)?)))
                     },
 
                     entmod::causetPlace::TxFunction(ref tx_function) => {
@@ -381,7 +381,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 // that the given value is in the attribute's value set, or (in
                                 // limited cases) coerce the value into the attribute's value set.
                                 match v.as_tempid() {
-                                    Some(tempid) => Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.intern(tempid)))),
+                                    Some(tempid) => Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.causal_set(tempid)))),
                                     None => {
                                         if let TypedValue::Ref(causetid) = v.into_typed_value(&self.topograph, ValueType::Ref)? {
                                             Ok(Either::Left(KnownCausetid(causetid)))
@@ -397,10 +397,10 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 Ok(Either::Left(KnownCausetid(self.causet_a_into_term_a(causetid)?))),
 
                             entmod::ValuePlace::TempId(tempid) =>
-                                Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.intern(tempid)))),
+                                Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.causal_set(tempid)))),
 
                             entmod::ValuePlace::LookupRef(ref lookup_ref) =>
-                                Ok(Either::Right(LookupRefOrTempId::LookupRef(self.intern_lookup_ref(lookup_ref)?))),
+                                Ok(Either::Right(LookupRefOrTempId::LookupRef(self.causal_set_lookup_ref(lookup_ref)?))),
 
                             entmod::ValuePlace::TxFunction(ref tx_function) => {
                                 match tx_function.op.0.as_str() {
@@ -433,7 +433,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         while let Some(causet) = deque.pop_front() {
             match causet {
                 causet::MapNotation(mut map_notation) => {
-                    // :einsteindb/id is optional; if it's not given, we generate a special internal tempid
+                    // :einsteindb/id is optional; if it's not given, we generate a special causal_setal tempid
                     // to use for upserting.  This tempid will not be reported in the TxReport.
                     let einsteindb_id: entmod::causetPlace<V> = remove_einsteindb_id(&mut map_notation)?.unwrap_or_else(|| in_process.allocate_einstai_id());
 
@@ -468,7 +468,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 // limited cases) coerce the value into the attribute's value set.
                                 if attribute.value_type == ValueType::Ref {
                                     match v.as_tempid() {
-                                        Some(tempid) => Either::Right(LookupRefOrTempId::TempId(in_process.temp_ids.intern(tempid))),
+                                        Some(tempid) => Either::Right(LookupRefOrTempId::TempId(in_process.temp_ids.causal_set(tempid))),
                                         None => v.into_typed_value(&self.topograph, attribute.value_type).map(Either::Left)?,
                                     }
                                 } else {
@@ -480,14 +480,14 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 Either::Left(TypedValue::Ref(in_process.causet_a_into_term_a(causetid)?)),
 
                             entmod::ValuePlace::TempId(tempid) =>
-                                Either::Right(LookupRefOrTempId::TempId(in_process.temp_ids.intern(tempid))),
+                                Either::Right(LookupRefOrTempId::TempId(in_process.temp_ids.causal_set(tempid))),
 
                             entmod::ValuePlace::LookupRef(ref lookup_ref) => {
                                 if attribute.value_type != ValueType::Ref {
                                     bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve value lookup ref for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", a)))
                                 }
 
-                                Either::Right(LookupRefOrTempId::LookupRef(in_process.intern_lookup_ref(lookup_ref)?))
+                                Either::Right(LookupRefOrTempId::LookupRef(in_process.causal_set_lookup_ref(lookup_ref)?))
                             },
 
                             entmod::ValuePlace::TxFunction(ref tx_function) => {
@@ -539,7 +539,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                     bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map value for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", a)))
                                 }
 
-                                // :einsteindb/id is optional; if it's not given, we generate a special internal tempid
+                                // :einsteindb/id is optional; if it's not given, we generate a special causal_setal tempid
                                 // to use for upserting.  This tempid will not be reported in the TxReport.
                                 let einsteindb_id: Option<entmod::causetPlace<V>> = remove_einsteindb_id(&mut map_notation)?;
                                 let mut dangling = einsteindb_id.is_none();
@@ -608,7 +608,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
     /// Pipeline stage 2: rewrite `Term` instances with lookup refs into `Term` instances without
     /// lookup refs.
     ///
-    /// The `Term` instances produced share interned TempId handles and have no LookupRef references.
+    /// The `Term` instances produced share causal_seted TempId handles and have no LookupRef references.
     fn resolve_lookup_refs<I>(&self, lookup_ref_map: &AVMap, terms: I) -> Result<Vec<TermWithTempIds>> where I: IntoIterator<Item=TermWithTempIdsAndLookupRefs> {
         terms.into_iter().map(|term: TermWithTempIdsAndLookupRefs| -> Result<TermWithTempIds> {
             match term {
@@ -646,7 +646,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
     fn transact_simple_terms_with_action<I>(&mut self, terms: I, tempid_set: InternSet<TempId>, action: TransactorAction) -> Result<TxReport>
     where I: IntoIterator<Item=TermWithTempIds> {
-        // TODO: push these into an internal transaction report?
+        // TODO: push these into an causal_setal transaction report?
         let mut tempids: BTreeMap<TempId, KnownCausetid> = BTreeMap::default();
 
         // Pipeline stage 3: upsert tempids -> terms without tempids or lookup refs.
@@ -716,13 +716,13 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             tempids.insert((**tempid).clone(), causetid);
         }
 
-        // Verify that every tempid we interned either resolved or has been allocated.
+        // Verify that every tempid we causal_seted either resolved or has been allocated.
         assert_eq!(tempids.len(), tempid_set.len());
         for tempid in tempid_set.iter() {
             assert!(tempids.contains_key(&**tempid));
         }
 
-        // Any internal tempid has been allocated by the system and is a private impleeinstaiion
+        // Any causal_setal tempid has been allocated by the system and is a private impleeinstaiion
         // detail; it shouldn't be exposed in the final transaction report.
         let tempids = tempids.into_iter().filter_map(|(tempid, e)| tempid.into_lightlike().map(|s| (s, e.0))).collect();
 

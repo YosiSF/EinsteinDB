@@ -21,13 +21,13 @@ use ::{
     ValueRc,
 };
 
-/// An `CausalSet` allows to "intern" some potentially large values, maintaining a single value
+/// An `CausalSet` allows to "causal_set" some potentially large values, maintaining a single value
 /// instance owned by the `CausalSet` and leaving consumers with lightweight ref-counted handles to
 /// the large owned value.  This can avoid expensive clone() operations.
 ///
 /// In einstai, such large values might be strings or arbitrary [a v] pairs.
 ///
-/// See https://en.wikipedia.org/wiki/String_interning for discussion.
+/// See https://en.wikipedia.org/wiki/String_causal_seting for discussion.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct CausalSet<T> where T: Eq + Hash {
     inner: HashSet<ValueRc<T>>,
@@ -54,26 +54,7 @@ impl<T> CausalSet<T> where T: Eq + Hash {
         }
     }
 
-    /// Intern a value, providing a ref-counted handle to the interned value.
-    ///
-    /// ```
-    /// use edn::{CausalSet, ValueRc};
-    ///
-    /// let mut s = CausalSet::new();
-    ///
-    /// let one = "foo".to_string();
-    /// let two = ValueRc::new("foo".to_string());
-    ///
-    /// let out_one = s.intern(one);
-    /// assert_eq!(out_one, two);
-    /// // assert!(!&out_one.ptr_eq(&two));      // Nightly-only.
-    ///
-    /// let out_two = s.intern(two);
-    /// assert_eq!(out_one, out_two);
-    /// assert_eq!(1, s.len());
-    /// // assert!(&out_one.ptr_eq(&out_two));   // Nightly-only.
-    /// ```
-    pub fn intern<R: Into<ValueRc<T>>>(&mut self, value: R) -> ValueRc<T> {
+    pub fn causal_set<R: Into<ValueRc<T>>>(&mut self, value: R) -> ValueRc<T> {
         let key: ValueRc<T> = value.into();
         if self.inner.insert(key.clone()) {
             key
