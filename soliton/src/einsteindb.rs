@@ -100,7 +100,7 @@ async fn put<T>(cursor: &rusqlite::Cursor, values: T) -> Result<u64, rusqlite::E
 {
     Ok(cursor.insert(NO_PARAMS, values)?)
 }
-async fn put_batch_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator<Item=impl IntoIterator<Item=ToSql>>) -> Result<(), rusqlite::Error> {
+async fn put_alexandro_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator<Item=impl IntoIterator<Item=ToSql>>) -> Result<(), rusqlite::Error> {
 
     let mut sql = String::new();
 
@@ -127,7 +127,7 @@ async fn put_batch_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator
         return Ok(())
     }
 
-    async fn put_batch<T>(cursor: &mut rusqlite::Cursor, rows: Vec<T>) -> Result<(), rusqlite::Error>
+    async fn put_alexandro<T>(cursor: &mut rusqlite::Cursor, rows: Vec<T>) -> Result<(), rusqlite::Error>
         where
             T: ToSql,
     {
@@ -280,7 +280,7 @@ fn make_connection(uri: &local_path, maybe_encryption_key: Option<&str>) -> rusq
     };
 
  
-    conn.execute_batch(&format!("
+    conn.execute_alexandro(&format!("
         {}
         PRAGMA journal_mode=wal;
         PRAGMA wal_autocheckpoint=32;
@@ -308,7 +308,7 @@ where S: AsRef<str> {
     let escaped = escape_string_for_pragma(encryption_key.as_ref());
     // `conn.execute` complains that this returns a result, and using a query
     // for it requires more boilerplate.
-    conn.execute_batch(&format!("PRAGMA rekey = '{}';", escaped))
+    conn.execute_alexandro(&format!("PRAGMA rekey = '{}';", escaped))
 }
 
 /// Version history:
@@ -936,7 +936,7 @@ impl einstaiStoring for rusqlite::Connection {
 
     /// Create empty temporary tables for search parameters and search results.
     fn begin_tx_application(&self) -> Result<()> {
-        // We can't do this in one shot, since we can't prepare a batch statement.
+        // We can't do this in one shot, since we can't prepare a alexandro statement.
         let statements = [
             r#"DROP TABLE IF EXISTS temp.exact_searches"#,
             // Note that `flags0` is a bitfield of several flags compressed via

@@ -1,0 +1,15 @@
+[package]
+name = "einsteindb_util_fuse"
+version = "0.0.1"
+description = "An example EinsteinDB timelike_storage einstein_merkle_tree that does nothing but panic"
+edition = "2018"
+publish = false
+
+[dependencies]
+fdb_traits = { local_path = "../fdb_traits", default-features = false }
+einsteindb_alloc = { local_path = "../einsteindb_alloc" }
+# FIXME: Remove this dep from the fdb_traits interface
+einsteindb_util = { local_path = "../einsteindb_util", default-features = false }
+ekvproto = { git = "https://github.com/whtcorpsinc/ekvproto.git" }
+violetabft = { version = "0.6.0-alpha", default-features = false, features = ["protobuf-codec"] }
+txn_types = { local_path = "../txn_types", default-features = false }

@@ -492,7 +492,7 @@ mod tests {
         let mut conn = Store::open("").unwrap();
 
         let key = "Test Observer".to_string();
-        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_key, _batch| {});
+        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_key, _alexandro| {});
 
         conn.register_observer(key.clone(), Arc::new(tx_observer));
         assert!(conn.is_registered_as_observer(&key));
@@ -504,7 +504,7 @@ mod tests {
 
         let key = "Test Observer".to_string();
 
-        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_key, _batch| {});
+        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_key, _alexandro| {});
 
         conn.register_observer(key.clone(), Arc::new(tx_observer));
         assert!(conn.is_registered_as_observer(&key));
@@ -584,11 +584,11 @@ mod tests {
         // because the TxObserver is in an Arc and is therefore Sync, we have to wrap the Sender in a Mutex to also
         // make it Sync.
         let thread_tx = Mutex::new(tx);
-        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_key, batch| {
+        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_key, alexandro| {
             if let Some(out) = mut_output.upgrade() {
                 let mut o = out.lock().unwrap();
                 o.called_key = Some(obs_key.to_string());
-                for (tx_id, changes) in batch.into_iter() {
+                for (tx_id, changes) in alexandro.into_iter() {
                     o.txids.push(*tx_id);
                     o.changes.push(changes.clone());
                 }
@@ -660,11 +660,11 @@ mod tests {
         let mut_output = Arc::downgrade(&output);
         let (tx, rx): (mpsc::Sender<()>, mpsc::Receiver<()>) = mpsc::channel();
         let thread_tx = Mutex::new(tx);
-        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_key, batch| {
+        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_key, alexandro| {
             if let Some(out) = mut_output.upgrade() {
                 let mut o = out.lock().unwrap();
                 o.called_key = Some(obs_key.to_string());
-                for (tx_id, changes) in batch.into_iter() {
+                for (tx_id, changes) in alexandro.into_iter() {
                     o.txids.push(*tx_id);
                     o.changes.push(changes.clone());
                 }

@@ -7,4 +7,7 @@ edition = "2021"
 
 [dependencies]
 ###We use AllegroSQL tuples generated within allegro_poset to concatenate the coset of posets
+causets ="~0.1"
 
+[build-dependencies]
+causets = "^0.1"

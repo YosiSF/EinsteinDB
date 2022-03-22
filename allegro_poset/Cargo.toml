@@ -4,6 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "allegro_poset"
+path = "lib.rs"
 
 [dependencies]
-einstein_db = { version = "0.1.0", features = ["einstein_db"] }
+chrono = {version = "0.4.19", features=["serde"] }
+enum-set = "0.0.8"
+lazy_static = "0.2"
+indexmap = "1.8.0"
+uuid = "1.30.0"
+
+[dependencies.ordered-float]
+version = "0.5", features = ["serde"]
