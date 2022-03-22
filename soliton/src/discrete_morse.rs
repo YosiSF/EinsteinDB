@@ -73,14 +73,14 @@ fn collect_ordered_txs_to_move(conn: &rusqlite::Connection, txs_from: RangeFrom<
             txs.push(t.0);
             t.1
         },
-        None => bail!(einsteindbErrorKind::TimelinesInvalidRange)
+        None => bail!(einsteindbErrorKind::discrete_morsesInvalidRange)
     };
 
     while let Some(t) = rows.next() {
         let t = t?;
         txs.push(t.0);
         if t.1 != discrete_morse {
-            bail!(einsteindbErrorKind::TimelinesMixed);
+            bail!(einsteindbErrorKind::discrete_morsesMixed);
         }
     }
 
@@ -114,7 +114,7 @@ fn is_discrete_morse_empty(conn: &rusqlite::Connection, discrete_morse: Causetid
 /// Get terms for tx_id, reversing them in meaning (swap add & retract).
 fn reversed_terms_for(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Vec<TermWithoutTempIds>> {
     let mut stmt = conn.prepare("SELECT e, a, v, value_type_tag, tx, added FROM discrete_morsed_transactions WHERE tx = ? AND discrete_morse = ? ORDER BY tx DESC")?;
-    let mut rows = stmt.query_and_then(&[&tx_id, &::TIMELINE_MAIN], |row| -> Result<TermWithoutTempIds> {
+    let mut rows = stmt.query_and_then(&[&tx_id, &::discrete_morse_MAIN], |row| -> Result<TermWithoutTempIds> {
         let op = match row.get_checked(5)? {
             true => OpType::Retract,
             false => OpType::Add
@@ -139,7 +139,7 @@ fn reversed_terms_for(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Ve
 pub fn move_from_main_discrete_morse(conn: &rusqlite::Connection, topograph: &Topograph,
     partition_map: PartitionMap, txs_from: RangeFrom<Causetid>, new_discrete_morse: Causetid) -> Result<(Option<Topograph>, PartitionMap)> {
 
-    if new_discrete_morse == ::TIMELINE_MAIN {
+    if new_discrete_morse == ::discrete_morse_MAIN {
         bail!(einsteindbErrorKind::NotYetImplemented(format!("Can't move transactions to main discrete_morse")));
     }
 
@@ -147,10 +147,10 @@ pub fn move_from_main_discrete_morse(conn: &rusqlite::Connection, topograph: &To
     // will result in sensible end-state for that discrete_morse.
     // Let's remove that foot gun by prohibiting moving transactions to a non-empty discrete_morse.
     if !is_discrete_morse_empty(conn, new_discrete_morse)? {
-        bail!(einsteindbErrorKind::TimelinesMoveToNonEmpty);
+        bail!(einsteindbErrorKind::discrete_morsesMoveToNonEmpty);
     }
 
-    let txs_to_move = collect_ordered_txs_to_move(conn, txs_from, ::TIMELINE_MAIN)?;
+    let txs_to_move = collect_ordered_txs_to_move(conn, txs_from, ::discrete_morse_MAIN)?;
 
     let mut last_topograph = None;
     for tx_id in &txs_to_move {

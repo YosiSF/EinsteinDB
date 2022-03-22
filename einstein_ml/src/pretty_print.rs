@@ -68,7 +68,7 @@ impl Value {
                     .append(pp.text("}"))
                     .group()
             }
-            Value::NamespacedShelling(ref v) => pp.text(v.isoliton_namespaceable_file()).append("/").append(v.name()),
+            Value::NamespacedShelling(ref v) => pp.text(v.isolate_namespace_file()).append("/").append(v.name()),
             Value::PlainShelling(ref v) => pp.text(v.to_string()),
             Value::Keyword(ref v) => pp.text(v.to_string()),
             Value::Text(ref v) => pp.text("\"").append(v.as_str()).append("\""),

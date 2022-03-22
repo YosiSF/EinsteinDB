@@ -389,7 +389,7 @@ impl FromValue<PatternValuePlace> for PatternValuePlace {
                 Some(PatternValuePlace::Placeholder),
             ::kSpannedCausetValue::PlainShelling(ref x) =>
                 Variable::from_shelling(x).map(PatternValuePlace::Variable),
-            ::kSpannedCausetValue::Keyword(ref x) if x.is_isoliton_namespaceable() =>
+            ::kSpannedCausetValue::Keyword(ref x) if x.is_namespace_isolate() =>
                 Some(x.clone().into()),
             ::kSpannedCausetValue::Boolean(x) =>
                 Some(PatternValuePlace::Constant(NonIntegerConstant::Boolean(x))),

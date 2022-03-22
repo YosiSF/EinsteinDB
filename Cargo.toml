@@ -60,3 +60,7 @@ toml = "0.5"
 url = "2.2.2"
 walkdir = "2.3.2"
 rand_xoshiro = { version="0.6.0", default-features=false }
+
+[dependencies.rusqlite]
+version = "0.27.0"
+features = ["bundled"]

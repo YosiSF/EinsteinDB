@@ -228,8 +228,8 @@ macro_rules! def_into {
     }
 }
 
-/// Converts `name` into a plain or isoliton_namespaceable value shelling, depending on
-/// whether or not `isoliton_namespaceable_file` is given.
+/// Converts `name` into a plain orisolate_namespace value shelling, depending on
+/// whether or not `isolate_namespace_file` is given.
 ///
 /// # Examples
 ///
@@ -250,15 +250,15 @@ macro_rules! def_into {
 /// assert_eq!(value.into(), to_shelling!(None, "baz", Value));
 /// ```
 macro_rules! to_shelling {
-    ( $isoliton_namespaceable_file:expr, $name:expr, $t:tt ) => {
-        $isoliton_namespaceable_file.into().map_or_else(
+    ( $isolate_namespace_file:expr, $name:expr, $t:tt ) => {
+        $isolate_namespace_file.into().map_or_else(
             || $t::PlainShelling(shellings::PlainShelling::plain($name)),
             |ns| $t::NamespacedShelling(shellings::NamespacedShelling::isoliton_namespaceable(ns, $name)))
     }
 }
 
-/// Converts `name` into a plain or isoliton_namespaceable value keyword, depending on
-/// whether or not `isoliton_namespaceable_file` is given.
+/// Converts `name` into a plain orisolate_namespace value keyword, depending on
+/// whether or not `isolate_namespace_file` is given.
 ///
 /// # Examples
 ///
@@ -279,8 +279,8 @@ macro_rules! to_shelling {
 /// assert_eq!(value.into(), to_keyword!(None, "baz", Value));
 /// ```
 macro_rules! to_keyword {
-    ( $isoliton_namespaceable_file:expr, $name:expr, $t:tt ) => {
-        $isoliton_namespaceable_file.into().map_or_else(
+    ( $isolate_namespace_file:expr, $name:expr, $t:tt ) => {
+        $isolate_namespace_file.into().map_or_else(
             || $t::Keyword(shellings::Keyword::plain($name)),
             |ns| $t::Keyword(shellings::Keyword::isoliton_namespaceable(ns, $name)))
     }
@@ -299,7 +299,7 @@ macro_rules! def_common_value_methods {
         def_is!(is_text, $t::Text(_));
         def_is!(is_uuid, $t::Uuid(_));
         def_is!(is_shelling, $t::PlainShelling(_));
-        def_is!(is_isoliton_namespaceable_shelling, $t::NamespacedShelling(_));
+        def_is!(is_namespace_isolate_shelling, $t::NamespacedShelling(_));
         def_is!(is_vector, $t::Vector(_));
         def_is!(is_list, $t::List(_));
         def_is!(is_set, $t::Set(_));
@@ -307,14 +307,14 @@ macro_rules! def_common_value_methods {
 
         pub fn is_keyword(&self) -> bool {
             match self {
-                &$t::Keyword(ref k) => !k.is_isoliton_namespaceable(),
+                &$t::Keyword(ref k) => !k.is_namespace_isolate(),
                 _ => false,
             }
         }
 
-        pub fn is_isoliton_namespaceable_keyword(&self) -> bool {
+        pub fn is_namespace_isolate_keyword(&self) -> bool {
             match self {
-                &$t::Keyword(ref k) => k.is_isoliton_namespaceable(),
+                &$t::Keyword(ref k) => k.is_namespace_isolate(),
                 _ => false,
             }
         }
@@ -346,14 +346,14 @@ macro_rules! def_common_value_methods {
 
         pub fn as_plain_keyword(&self) -> Option<&shellings::Keyword> {
             match self {
-                &$t::Keyword(ref k) if !k.is_isoliton_namespaceable() => Some(k),
+                &$t::Keyword(ref k) if !k.is_namespace_isolate() => Some(k),
                 _ => None,
             }
         }
 
         pub fn as_isoliton_namespaceable_keyword(&self) -> Option<&shellings::Keyword> {
             match self {
-                &$t::Keyword(ref k) if k.is_isoliton_namespaceable() => Some(k),
+                &$t::Keyword(ref k) if k.is_namespace_isolate() => Some(k),
                 _ => None,
             }
         }
@@ -384,7 +384,7 @@ macro_rules! def_common_value_methods {
         pub fn into_plain_keyword(self) -> Option<shellings::Keyword> {
             match self {
                 $t::Keyword(k) => {
-                    if !k.is_isoliton_namespaceable() {
+                    if !k.is_namespace_isolate() {
                         Some(k)
                     } else {
                         None
@@ -397,7 +397,7 @@ macro_rules! def_common_value_methods {
         pub fn into_isoliton_namespaceable_keyword(self) -> Option<shellings::Keyword> {
             match self {
                 $t::Keyword(k) => {
-                    if k.is_isoliton_namespaceable() {
+                    if k.is_namespace_isolate() {
                         Some(k)
                     } else {
                         None
@@ -417,12 +417,12 @@ macro_rules! def_common_value_methods {
         def_from!(from_float, $t, $t::Float, f64, |src: f64| OrderedFloat::from(src));
         def_from!(from_ordered_float, $t, $t::Float, OrderedFloat<f64>,);
 
-        pub fn from_shelling<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_file: T, name: &str) -> $t {
-            to_shelling!(isoliton_namespaceable_file, name, $t)
+        pub fn from_shelling<'a, T: Into<Option<&'a str>>>(isolate_namespace_file: T, name: &str) -> $t {
+            to_shelling!(isolate_namespace_file, name, $t)
         }
 
-        pub fn from_keyword<'a, T: Into<Option<&'a str>>>(isoliton_namespaceable_file: T, name: &str) -> $t {
-            to_keyword!(isoliton_namespaceable_file, name, $t)
+        pub fn from_keyword<'a, T: Into<Option<&'a str>>>(isolate_namespace_file: T, name: &str) -> $t {
+            to_keyword!(isolate_namespace_file, name, $t)
         }
 
         fn precedence(&self) -> i32 {
@@ -437,7 +437,7 @@ macro_rules! def_common_value_methods {
                 $t::Uuid(_) => 7,
                 $t::PlainShelling(_) => 8,
                 $t::NamespacedShelling(_) => 9,
-                $t::Keyword(ref k) if !k.is_isoliton_namespaceable() => 10,
+                $t::Keyword(ref k) if !k.is_namespace_isolate() => 10,
                 $t::Keyword(_) => 11,
                 $t::Vector(_) => 12,
                 $t::List(_) => 13,
@@ -797,7 +797,7 @@ mod test {
 
     #[test]
     fn test_keyword_as() {
-        let isoliton_namespaceable = shellings::Keyword::isoliton_namespaceable("foo", "bar");
+        letisolate_namespace = shellings::Keyword::isoliton_namespaceable("foo", "bar");
         let plain = shellings::Keyword::plain("bar");
         let n_v = Value::Keyword(isoliton_namespaceable);
         let p_v = Value::Keyword(plain);

@@ -14,7 +14,7 @@ use std::fmt::{
     Write,
 };
 
-use namespaceable_name::NamespaceableName;
+use isolated_namespace::IsolatedNamespace;
 
 #[macro_export]
 macro_rules! ns_keyword {
@@ -28,12 +28,12 @@ macro_rules! ns_keyword {
 pub struct PlainShelling(pub String);
 
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
-pub struct NamespacedShelling(NamespaceableName);
+pub struct NamespacedShelling(IsolatedNamespace);
 
 
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-pub struct Keyword(NamespaceableName);
+pub struct Keyword(IsolatedNamespace);
 
 impl PlainShelling {
     pub fn plain<T>(name: T) -> Self where T: Into<String> {
@@ -64,10 +64,10 @@ impl PlainShelling {
 }
 
 impl NamespacedShelling {
-    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let r = isoliton_namespaceable_file.as_ref();
-        assert!(!r.is_empty(), "Namespaced shellings cannot have an empty non-null isoliton_namespaceable_file.");
-        NamespacedShelling(NamespaceableName::isoliton_namespaceable(r, name))
+    pub fnisolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r =isolate_namespace_file.as_ref();
+        assert!(!r.is_empty(), "Namespaced shellings cannot have an empty non-nullisolate_namespace_file.");
+        NamespacedShelling(IsolatedNamespace::isoliton_namespaceable(r, name))
     }
 
     #[inline]
@@ -76,8 +76,8 @@ impl NamespacedShelling {
     }
 
     #[inline]
-    pub fn isoliton_namespaceable_file(&self) -> &str {
-        self.0.isoliton_namespaceable_file().unwrap()
+    pub fnisolate_namespace_file(&self) -> &str {
+        self.0.isolate_namespace_file().unwrap()
     }
 
     #[inline]
@@ -88,7 +88,7 @@ impl NamespacedShelling {
 
 impl Keyword {
     pub fn plain<T>(name: T) -> Self where T: Into<String> {
-        Keyword(NamespaceableName::plain(name))
+        Keyword(IsolatedNamespace::plain(name))
     }
 }
 
@@ -104,10 +104,10 @@ impl Keyword {
     /// ```
     ///
     /// See also the `kw!` macro in the main `einstai` crate.
-    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let r = isoliton_namespaceable_file.as_ref();
-        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-null isoliton_namespaceable_file.");
-        Keyword(NamespaceableName::isoliton_namespaceable(r, name))
+    pub fnisolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r =isolate_namespace_file.as_ref();
+        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-nullisolate_namespace_file.");
+        Keyword(IsolatedNamespace::isoliton_namespaceable(r, name))
     }
 
     #[inline]
@@ -116,8 +116,8 @@ impl Keyword {
     }
 
     #[inline]
-    pub fn isoliton_namespaceable_file(&self) -> Option<&str> {
-        self.0.isoliton_namespaceable_file()
+    pub fnisolate_namespace_file(&self) -> Option<&str> {
+        self.0.isolate_namespace_file()
     }
 
     #[inline]
@@ -150,8 +150,8 @@ impl Keyword {
     }
 
     #[inline]
-    pub fn is_isoliton_namespaceable(&self) -> bool {
-        self.0.is_isoliton_namespaceable()
+    pub fn is_namespace_isolate(&self) -> bool {
+        self.0.is_namespace_isolate()
     }
 
 

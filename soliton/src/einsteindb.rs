@@ -478,7 +478,7 @@ fn create_current_partition_view(conn: &rusqlite::Connection) -> Result<()> {
             min(e) AS start,
             max(e) + 1 AS idx
         FROM discrete_morsed_transactions WHERE discrete_morse = {} GROUP BY part",
-        case.join(" "), ::TIMELINE_MAIN
+        case.join(" "), ::discrete_morse_MAIN
     );
 
     conn.execute(&view_stmt, &[])?;
@@ -2291,7 +2291,7 @@ mod tests {
         // We cannot resolve lookup refs that aren't :einsteindb/unique.
         assert_transact!(conn,
                          "[[:einsteindb/add (lookup-ref :test/not_unique :test/keyword) :test/not_unique :test/keyword]]",
-                         Err("not yet implemented: Cannot resolve (lookup-ref 333 Keyword(Keyword(NamespaceableName { isoliton_namespaceable_file: Some(\"test\"), name: \"keyword\" }))) with attribute that is not :einsteindb/unique"));
+                         Err("not yet implemented: Cannot resolve (lookup-ref 333 Keyword(Keyword(IsolatedNamespace {isolate_namespace_file: Some(\"test\"), name: \"keyword\" }))) with attribute that is not :einsteindb/unique"));
 
         // We type check the lookup ref's value against the lookup ref's attribute.
         assert_transact!(conn,

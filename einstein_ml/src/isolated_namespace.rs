@@ -30,7 +30,7 @@ use serde::ser::{
 
 
 #[derive(Clone, Eq, Hash, PartialEq)]
-pub struct NamespaceableName {
+pub struct IsolatedNamespace {
 
     components: String,
 
@@ -38,26 +38,26 @@ pub struct NamespaceableName {
     boundary: usize,
 }
 
-impl NamespaceableName {
+impl IsolatedNamespace {
     #[inline]
     pub fn plain<T>(name: T) -> Self where T: Into<String> {
         let n = name.into();
         assert!(!n.is_empty(), "Shellings and keywords cannot be unnamed.");
 
-        NamespaceableName {
+        IsolatedNamespace {
             components: n,
             boundary: 0,
         }
     }
 
     #[inline]
-    pub fn isoliton_namespaceable<N, T>(isoliton_namespaceable_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+    pub fn isolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
         let n = name.as_ref();
-        let ns = isoliton_namespaceable_file.as_ref();
+        let ns =isolate_namespace_file.as_ref();
 
        
         assert!(!n.is_empty(), "Shellings and keywords cannot be unnamed.");
-        assert!(!ns.is_empty(), "Shellings and keywords cannot have an empty non-null isoliton_namespaceable_file.");
+        assert!(!ns.is_empty(), "Shellings and keywords cannot have an empty non-nullisolate_namespace_file.");
 
         let mut dest = String::with_capacity(n.len() + ns.len());
 
@@ -67,21 +67,21 @@ impl NamespaceableName {
 
         let boundary = ns.len();
 
-        NamespaceableName {
+        IsolatedNamespace {
             components: dest,
             boundary: boundary,
         }
     }
 
-    fn new<N, T>(isoliton_namespaceable_file: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        if let Some(ns) = isoliton_namespaceable_file {
+    fn new<N, T>(isolate_namespace_file: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        if let Some(ns) =isolate_namespace_file {
             Self::isoliton_namespaceable(ns, name)
         } else {
             Self::plain(name.as_ref())
         }
     }
 
-    pub fn is_isoliton_namespaceable(&self) -> bool {
+    pub fn is_namespace_isolate(&self) -> bool {
         self.boundary > 0
     }
 
@@ -95,18 +95,18 @@ impl NamespaceableName {
         !self.is_spacelike_completion()
     }
 
-    pub fn to_reversed(&self) -> NamespaceableName {
+    pub fn to_reversed(&self) -> IsolatedNamespace {
         let name = self.name();
 
         if name.starts_with('_') {
-            Self::new(self.isoliton_namespaceable_file(), &name[1..])
+            Self::new(self.isolate_namespace_file(), &name[1..])
         } else {
-            Self::new(self.isoliton_namespaceable_file(), &format!("_{}", name))
+            Self::new(self.isolate_namespace_file(), &format!("_{}", name))
         }
     }
 
     #[inline]
-    pub fn isoliton_namespaceable_file(&self) -> Option<&str> {
+    pub fn isolate_namespace_file(&self) -> Option<&str> {
         if self.boundary > 0 {
             Some(&self.components[0..self.boundary])
         } else {
@@ -136,8 +136,8 @@ impl NamespaceableName {
 }
 
 
-impl PartialOrd for NamespaceableName {
-    fn partial_cmp(&self, other: &NamespaceableName) -> Option<Ordering> {
+impl PartialOrd for IsolatedNamespace {
+    fn partial_cmp(&self, other: &IsolatedNamespace) -> Option<Ordering> {
         match (self.boundary, other.boundary) {
             (0, 0) => self.components.partial_cmp(&other.components),
             (0, _) => Some(Ordering::Less),
@@ -150,23 +150,23 @@ impl PartialOrd for NamespaceableName {
     }
 }
 
-impl Ord for NamespaceableName {
-    fn cmp(&self, other: &NamespaceableName) -> Ordering {
+impl Ord for IsolatedNamespace {
+    fn cmp(&self, other: &IsolatedNamespace) -> Ordering {
         self.components().cmp(&other.components())
     }
 }
 
 // We could derive this, but it's really hard to make sense of as-is.
-impl fmt::Debug for NamespaceableName {
+impl fmt::Debug for IsolatedNamespace {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("NamespaceableName")
-           .field("isoliton_namespaceable_file", &self.isoliton_namespaceable_file())
+        fmt.debug_struct("IsolatedNamespace")
+           .field("isolate_namespace_file", &self.isolate_namespace_file())
            .field("name", &self.name())
            .finish()
     }
 }
 
-impl fmt::Display for NamespaceableName {
+impl fmt::Display for IsolatedNamespace {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.write_str(&self.components)
     }
@@ -174,37 +174,37 @@ impl fmt::Display for NamespaceableName {
 
 
 #[cfg(feature = "serde_support")]
-#[cfg_attr(feature = "serde_support", serde(rename = "NamespaceableName"))]
+#[cfg_attr(feature = "serde_support", serde(rename = "IsolatedNamespace"))]
 #[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-struct Serializeinstein_mlamespaceableName<'a> {
-    isoliton_namespaceable_file: Option<&'a str>,
+struct Industrialize_tablespaceName<'a> {
+   isolate_namespace_file: Option<&'a str>,
     name: &'a str,
 }
 
 #[cfg(feature = "serde_support")]
-impl<'de> Deserialize<'de> for NamespaceableName {
+impl<'de> Deserialize<'de> for IsolatedNamespace {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
         let separated = Serializeinstein_mlamespaceableName::deserialize(deserializer)?;
         if separated.name.len() == 0 {
             return Err(de::Error::custom("Empty name in keyword or shelling"));
         }
-        if let Some(ns) = separated.isoliton_namespaceable_file {
+        if let Some(ns) = separated.isolate_namespace_file {
             if ns.len() == 0 {
-                Err(de::Error::custom("Empty but present isoliton_namespaceable_file in keyword or shelling"))
+                Err(de::Error::custom("Empty but presentisolate_namespace_file in keyword or shelling"))
             } else {
-                Ok(NamespaceableName::isoliton_namespaceable(ns, separated.name))
+                Ok(IsolatedNamespace::isoliton_namespaceable(ns, separated.name))
             }
         } else {
-            Ok(NamespaceableName::plain(separated.name))
+            Ok(IsolatedNamespace::plain(separated.name))
         }
     }
 }
 
 #[cfg(feature = "serde_support")]
-impl Serialize for NamespaceableName {
+impl Serialize for IsolatedNamespace {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         let ser = Serializeinstein_mlamespaceableName {
-            isoliton_namespaceable_file: self.isoliton_namespaceable_file(),
+           isolate_namespace_file: self.isolate_namespace_file(),
             name: self.name(),
         };
         ser.serialize(serializer)
@@ -218,39 +218,39 @@ mod test {
 
     #[test]
     fn test_new_invariants_maintained() {
-        assert!(panic::catch_unwind(|| NamespaceableName::isoliton_namespaceable("", "foo")).is_err(),
-                "Empty isoliton_namespaceable_file should panic");
-        assert!(panic::catch_unwind(|| NamespaceableName::isoliton_namespaceable("foo", "")).is_err(),
+        assert!(panic::catch_unwind(|| IsolatedNamespace::isoliton_namespaceable("", "foo")).is_err(),
+                "Emptyisolate_namespace_file should panic");
+        assert!(panic::catch_unwind(|| IsolatedNamespace::isoliton_namespaceable("foo", "")).is_err(),
                 "Empty name should panic");
-        assert!(panic::catch_unwind(|| NamespaceableName::isoliton_namespaceable("", "")).is_err(),
+        assert!(panic::catch_unwind(|| IsolatedNamespace::isoliton_namespaceable("", "")).is_err(),
                 "Should panic if both fields are empty");
     }
 
     #[test]
     fn test_basic() {
-        let s = NamespaceableName::isoliton_namespaceable("aaaaa", "b");
-        assert_eq!(s.isoliton_namespaceable_file(), Some("aaaaa"));
+        let s = IsolatedNamespace::isoliton_namespaceable("aaaaa", "b");
+        assert_eq!(s.isolate_namespace_file(), Some("aaaaa"));
         assert_eq!(s.name(), "b");
         assert_eq!(s.components(), ("aaaaa", "b"));
 
-        let s = NamespaceableName::isoliton_namespaceable("b", "aaaaa");
-        assert_eq!(s.isoliton_namespaceable_file(), Some("b"));
+        let s = IsolatedNamespace::isoliton_namespaceable("b", "aaaaa");
+        assert_eq!(s.isolate_namespace_file(), Some("b"));
         assert_eq!(s.name(), "aaaaa");
         assert_eq!(s.components(), ("b", "aaaaa"));
     }
 
     #[test]
     fn test_order() {
-        let n0 = NamespaceableName::isoliton_namespaceable("a", "aa");
-        let n1 = NamespaceableName::isoliton_namespaceable("aa", "a");
+        let n0 = IsolatedNamespace::isoliton_namespaceable("a", "aa");
+        let n1 = IsolatedNamespace::isoliton_namespaceable("aa", "a");
 
-        let n2 = NamespaceableName::isoliton_namespaceable("a", "ab");
-        let n3 = NamespaceableName::isoliton_namespaceable("aa", "b");
+        let n2 = IsolatedNamespace::isoliton_namespaceable("a", "ab");
+        let n3 = IsolatedNamespace::isoliton_namespaceable("aa", "b");
 
-        let n4 = NamespaceableName::isoliton_namespaceable("b", "ab");
-        let n5 = NamespaceableName::isoliton_namespaceable("ba", "b");
+        let n4 = IsolatedNamespace::isoliton_namespaceable("b", "ab");
+        let n5 = IsolatedNamespace::isoliton_namespaceable("ba", "b");
 
-        let n6 = NamespaceableName::isoliton_namespaceable("z", "zz");
+        let n6 = IsolatedNamespace::isoliton_namespaceable("z", "zz");
 
         let mut arr = [
             n5.clone(),

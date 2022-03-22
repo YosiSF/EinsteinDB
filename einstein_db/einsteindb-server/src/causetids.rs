@@ -10,7 +10,7 @@
 
 #![allow(dead_code)]
 
-/// Literal `Causetid` values in the the "einsteindb" isoliton_namespaceable_file.
+/// Literal `Causetid` values in the the "einsteindb"isolate_namespace_file.
 ///
 /// Used through-out the transactor to match core EINSTEINDB constructs.
 

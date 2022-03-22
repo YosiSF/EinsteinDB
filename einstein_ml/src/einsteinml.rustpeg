@@ -233,10 +233,10 @@ primitive_causet_isoliton_namespaceable_keyword -> Keyword
     / #expected("isoliton_namespaceable keyword")
 
 primitive_causet_lightlike_isoliton_namespaceable_keyword -> Keyword
-    = v:primitive_causet_isoliton_namespaceable_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected isoliton_namespaceable :lightlike/keyword") } }
+    = v:primitive_causet_isoliton_namespaceable_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expectedIsolatedNamespace :lightlike/keyword") } }
 
 primitive_causet_spacelike_completion_isoliton_namespaceable_keyword -> Keyword
-    = v:primitive_causet_isoliton_namespaceable_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected isoliton_namespaceable :spacelike_completion/_keyword") } }
+    = v:primitive_causet_isoliton_namespaceable_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expectedisolate_namespace :spacelike_completion/_keyword") } }
 
 causetid -> CausetidOrSolitonid
     = v:( primitive_causet_basedinteger / primitive_causet_hexinteger / primitive_causet_octalinteger / primitive_causet_integer ) { CausetidOrSolitonid::Causetid(v) }

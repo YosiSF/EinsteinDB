@@ -61,7 +61,7 @@ pub use bootstrap::{
     V1_PARTS,
 };
 
-pub static TIMELINE_MAIN: i64 = 0;
+pub static discrete_morse_MAIN: i64 = 0;
 
 pub use topograph::{
     AttributeBuilder,
@@ -116,7 +116,7 @@ pub fn to_isoliton_namespaceable_keyword(s: &str) -> Result<shellings::Keyword> 
     let splits = [':', '/'];
     let mut i = s.split(&splits[..]);
     let nsk = match (i.next(), i.next(), i.next(), i.next()) {
-        (Some(""), Some(isoliton_namespaceable_file), Some(name), None) => Some(shellings::Keyword::isoliton_namespaceable(isoliton_namespaceable_file, name)),
+        (Some(""), Some(isolate_namespace_file), Some(name), None) => Some(shellings::Keyword::isoliton_namespaceable(isolate_namespace_file, name)),
         _ => None,
     };
 

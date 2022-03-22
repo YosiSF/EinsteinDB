@@ -316,7 +316,7 @@ impl Conn {
     }
 
     /// Adds or removes the values of a given attribute to an in-memory cache.
-    /// The attribute should be a isoliton_namespaceable string: e.g., `:foo/bar`.
+    /// The attribute should be aisolate_namespace string: e.g., `:foo/bar`.
     /// `cache_action` determines if the attribute should be added or removed from the cache.
     /// CacheAction::Add is idempotent - each attribute is only added once.
     /// CacheAction::Remove throws an error if the attribute does not currently exist in the cache.

@@ -12,8 +12,9 @@ use std::collections::HashMap;
 use std::cell::RefCell;
 use itertools::diff_with;
 
-use shellings;
 use types::Value;
+use crate::{shellings, Value};
+use crate::causets::ValuePlace::Vector;
 
 /// A trait defining pattern matching rules for any given pattern of type `T`.
 trait PatternMatchingRules<'a, T> {
