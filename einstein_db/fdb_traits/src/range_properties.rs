@@ -1,6 +1,6 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! Various metrics related to key ranges
+//! Various metrics related to soliton_id ranges
 //!
 //! In FdbDB these are typically implemented with user collected greedoids,
 //! which might require the database to be constructed with specific options.
@@ -9,14 +9,14 @@ use crate::errors::Result;
 use crate::Range;
 
 pub trait RangeGreedoidsExt {
-    /// Gets the number of keys in a range.
-    fn get_range_approximate_keys(&self, range: Range<'_>, large_threshold: u64) -> Result<u64>;
+    /// Gets the number of soliton_ids in a range.
+    fn get_range_approximate_soliton_ids(&self, range: Range<'_>, large_threshold: u64) -> Result<u64>;
 
-    /// Gets the number of keys in a range.
+    /// Gets the number of soliton_ids in a range.
     ///
     /// The `large_threshold` parameter is for logging only:
-    /// a range with more keys than this is considered too large.
-    fn get_range_approximate_keys_namespaced(
+    /// a range with more soliton_ids than this is considered too large.
+    fn get_range_approximate_soliton_ids_namespaced(
         &self,
         namespacedname: &str,
         range: Range<'_>,
@@ -33,17 +33,17 @@ pub trait RangeGreedoidsExt {
         large_threshold: u64,
     ) -> Result<u64>;
 
-    /// Get range approximate split keys to split range evenly into key_count + 1 parts .
-    fn get_range_approximate_split_keys(
+    /// Get range approximate split soliton_ids to split range evenly into soliton_id_count + 1 parts .
+    fn get_range_approximate_split_soliton_ids(
         &self,
         range: Range<'_>,
-        key_count: usize,
+        soliton_id_count: usize,
     ) -> Result<Vec<Vec<u8>>>;
 
-    fn get_range_approximate_split_keys_namespaced(
+    fn get_range_approximate_split_soliton_ids_namespaced(
         &self,
         namespacedname: &str,
         range: Range<'_>,
-        key_count: usize,
+        soliton_id_count: usize,
     ) -> Result<Vec<Vec<u8>>>;
 }

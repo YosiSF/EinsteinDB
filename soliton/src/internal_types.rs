@@ -12,12 +12,6 @@
 
 //! Types used only within the transactor.  These should not be exposed outside of this crate.
 
-use std::collections::{
-    BTreeMap,
-    BTreeSet,
-    HashMap,
-};
-
 use core_traits::{
     Attribute,
     Causetid,
@@ -25,9 +19,6 @@ use core_traits::{
     TypedValue,
     ValueType,
 };
-
-use einsteindb_core::util::Either;
-
 use einstein_ml;
 use einstein_ml::{
     kSpannedCausetValue,
@@ -41,15 +32,18 @@ use einstein_ml::causets::{
     TempId,
     TxFunction,
 };
-
+use einsteindb_core::util::Either;
 use einsteindb_traits::errors as errors;
 use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
-use topograph::{
-    TopographTypeChecking,
+use std::collections::{
+    BTreeMap,
+    BTreeSet,
+    HashMap,
 };
+use topograph::TopographTypeChecking;
 use types::{
     AVMap,
     AVPair,
@@ -57,9 +51,11 @@ use types::{
     TransactableValue,
 };
 
+use self::Either::*;
+
 impl TransactableValue for ValueAndSpan {
-    fn into_typed_value(self, topograph: &Topograph, value_type: ValueType) -> Result<TypedValue> {
-        topograph.to_typed_value(&self, value_type)
+    fn into_typed_causet_locale(self, topograph: &Topograph, causet_locale_type: ValueType) -> Result<TypedValue> {
+        topograph.to_typed_causet_locale(&self, causet_locale_type)
     }
 
     fn into_causet_place(self) -> Result<causetPlace<Self>> {
@@ -114,9 +110,9 @@ impl TransactableValue for ValueAndSpan {
 }
 
 impl TransactableValue for TypedValue {
-    fn into_typed_value(self, _topograph: &Topograph, value_type: ValueType) -> Result<TypedValue> {
-        if self.value_type() != value_type {
-            bail!(einsteindbErrorKind::BadValuePair(format!("{:?}", self), value_type));
+    fn into_typed_causet_locale(self, _topograph: &Topograph, causet_locale_type: ValueType) -> Result<TypedValue> {
+        if self.causet_locale_type() != causet_locale_type {
+            bail!(einsteindbErrorKind::BadValuePair(format!("{:?}", self), causet_locale_type));
         }
         Ok(self)
     }
@@ -146,8 +142,6 @@ impl TransactableValue for TypedValue {
 pub enum Term<E, V> {
     AddOrRetract(OpType, E, Causetid, V),
 }
-
-use self::Either::*;
 
 pub type KnownCausetidOr<T> = Either<KnownCausetid, T>;
 pub type TypedValueOr<T> = Either<TypedValue, T>;

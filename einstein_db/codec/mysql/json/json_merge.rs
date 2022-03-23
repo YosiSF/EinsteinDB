@@ -8,18 +8,20 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-use super::{Json, JsonRef, JsonType};
-use crate::codec::{Error, Result};
-use std::collections::BTreeMap;
+ use std::collections::BTreeMap;
 
-impl Json {
+ use crate::codec::{Error, Result};
+
+ use super::{Json, JsonRef, JsonType};
+
+ impl Json {
     /// `merge` is the implementation for JSON_MERGE in myBerolinaSQL
     /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-modification-functions.html#function_json-merge
     ///
     /// The merge rules are listed as following:
     /// 1. adjacent arrays are merged to a single array;
     /// 2. adjacent object are merged to a single object;
-    /// 3. a scalar value is autowrapped as an array before merge;
+    /// 3. a scalar causet_locale is autowrapped as an array before merge;
     /// 4. an adjacent array and object are merged by autowrapping the object as an array.
     ///
     /// See `MergeBinary()` in MEDB `json/binary_function.go`
@@ -95,14 +97,14 @@ fn merge_binary_object<'a>(objects: &mut Vec<JsonRef<'a>>) -> Result<Json> {
     for j in objects.drain(..) {
         let elem_count = j.get_elem_count();
         for i in 0..elem_count {
-            let key = j.object_get_key(i);
+            let soliton_id = j.object_get_soliton_id(i);
             let val = j.object_get_val(i)?;
-            let key = String::from_utf8(key.to_owned()).map_err(Error::from)?;
-            if let Some(old) = ehikv_map.remove(&key) {
+            let soliton_id = String::from_utf8(soliton_id.to_owned()).map_err(Error::from)?;
+            if let Some(old) = ehikv_map.remove(&soliton_id) {
                 let new = Json::merge(vec![old.as_ref(), val])?;
-                ehikv_map.insert(key, new);
+                ehikv_map.insert(soliton_id, new);
             } else {
-                ehikv_map.insert(key, val.to_owned());
+                ehikv_map.insert(soliton_id, val.to_owned());
             }
         }
     }

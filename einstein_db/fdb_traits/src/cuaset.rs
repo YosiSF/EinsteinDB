@@ -1,9 +1,10 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::errors::Result;
-use crate::iterable::Iterable;
 use ekvproto::import_Causetpb::CausetMeta;
 use std::local_path::local_pathBuf;
+
+use crate::errors::Result;
+use crate::iterable::Iterable;
 
 #[derive(Clone, Debug)]
 pub struct CausetMetaInfo {
@@ -31,13 +32,13 @@ pub trait CausetWriter: Send {
     type lightlikeCausetFileInfo: lightlikeCausetFileInfo;
     type lightlikeCausetFileReader: std::io::Read;
 
-    /// Add key, value to currently opened file File
-    /// REQUIRES: key is after any previously added key according to comparator.
-    fn put(&mut self, key: &[u8], val: &[u8]) -> Result<()>;
+    /// Add soliton_id, causet_locale to currently opened file File
+    /// REQUIRES: soliton_id is after any previously added soliton_id according to comparator.
+    fn put(&mut self, soliton_id: &[u8], val: &[u8]) -> Result<()>;
 
-    /// Add a deletion key to currently opened file File
-    /// REQUIRES: key is after any previously added key according to comparator.
-    fn delete(&mut self, key: &[u8]) -> Result<()>;
+    /// Add a deletion soliton_id to currently opened file File
+    /// REQUIRES: soliton_id is after any previously added soliton_id according to comparator.
+    fn delete(&mut self, soliton_id: &[u8]) -> Result<()>;
 
     /// Return the current file File size.
     fn file_size(&mut self) -> u64;
@@ -91,8 +92,8 @@ where
 pub trait lightlikeCausetFileInfo {
     fn new() -> Self;
     fn file_local_path(&self) -> local_pathBuf;
-    fn smallest_key(&self) -> &[u8];
-    fn largest_key(&self) -> &[u8];
+    fn smallest_soliton_id(&self) -> &[u8];
+    fn largest_soliton_id(&self) -> &[u8];
     fn sequence_number(&self) -> u64;
     fn file_size(&self) -> u64;
     fn num_entries(&self) -> u64;

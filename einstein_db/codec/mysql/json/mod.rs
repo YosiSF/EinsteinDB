@@ -10,7 +10,7 @@
 
 //! The binary JSON format from MyBerolinaSQL 5.7 is as follows:
 //! ```text
-//!   JSON doc ::= type value
+//!   JSON doc ::= type causet_locale
 //!   type ::=
 //!       0x01 |       // large JSON object
 //!       0x03 |       // large JSON array
@@ -23,30 +23,30 @@
 //!       0x0a |       // uint64
 //!       0x0b |       // double
 //!       0x0c |       // utf8mb4 string
-//!   value ::=
+//!   causet_locale ::=
 //!       object  |
 //!       array   |
 //!       literal |
 //!       number  |
 //!       string  |
-//!   object ::= element-count size key-causet* value-causet* key* value*
-//!   array ::= element-count size value-causet* value*
+//!   object ::= element-count size soliton_id-causet* causet_locale-causet* soliton_id* causet_locale*
+//!   array ::= element-count size causet_locale-causet* causet_locale*
 //!
 //!   // the number of members in object or number of elements in array
 //!   element-count ::= uint32
 //!
 //!   //number of bytes in the binary representation of the object or array
 //!   size ::= uint32
-//!   key-causet ::= key-offset key-length
-//!   key-offset ::= uint32
-//!   key-length ::= uint16    // key length must be less than 64KB
-//!   value-causet ::= type offset-or-inlined-value
+//!   soliton_id-causet ::= soliton_id-offset soliton_id-length
+//!   soliton_id-offset ::= uint32
+//!   soliton_id-length ::= uint16    // soliton_id length must be less than 64KB
+//!   causet_locale-causet ::= type offset-or-inlined-causet_locale
 //!
-//!   // This field holds either the offset to where the value is stored,
-//!   // or the value itself if it is small enough to be inlined (that is,
+//!   // This field holds either the offset to where the causet_locale is stored,
+//!   // or the causet_locale itself if it is small enough to be inlined (that is,
 //!   // if it is a JSON literal or a small enough [u]int).
-//!   offset-or-inlined-value ::= uint32
-//!   key ::= utf8mb4-data
+//!   offset-or-inlined-causet_locale ::= uint32
+//!   soliton_id ::= utf8mb4-data
 //!   literal ::=
 //!       0x00 |   // JSON null literal
 //!       0x01 |   // JSON true literal
@@ -64,7 +64,28 @@
 //! ```
 //!
 
-mod binary;
+ use codec::number::{F64_SIZE, I64_SIZE, NumberCodec};
+ use constants::{JSON_LITERAL_FALSE, JSON_LITERAL_NIL, JSON_LITERAL_TRUE};
+ use EinsteinDB_util::is_even;
+ use std::collections::BTreeMap;
+ use std::convert::TryFrom;
+ use std::fmt::{Display, Formatter};
+ use std::str;
+
+ use crate::codec::convert::ConvertTo;
+ use crate::codec::data_type::{Decimal, Real};
+ use crate::codec::myBerolinaSQL;
+ use crate::codec::myBerolinaSQL::{Duration, Time, TimeType};
+ use crate::expr::EvalContext;
+
+ use super::super::{Error, Result};
+ use super::super::datum::Datum;
+
+ pub use self::jcodec::{JsonDatumPayloadChunkEncoder, JsonDecoder, JsonEncoder};
+ pub use self::json_modify::ModifyType;
+ pub use self::local_path_expr::{local_pathExpression, parse_json_local_path_expr};
+
+ mod binary;
 mod comparison;
 // FIXME(shirly): remove following later
 #[allow(dead_code)]
@@ -76,7 +97,7 @@ mod serde;
 // json functions
 mod json_depth;
 mod json_extract;
-mod json_keys;
+mod json_soliton_ids;
 mod json_length;
 mod json_merge;
 mod json_modify;
@@ -84,26 +105,7 @@ mod json_remove;
 mod json_type;
 mod json_unquote;
 
-pub use self::jcodec::{JsonDatumPayloadChunkEncoder, JsonDecoder, JsonEncoder};
-pub use self::json_modify::ModifyType;
-pub use self::local_path_expr::{parse_json_local_path_expr, local_pathExpression};
-
-use std::collections::BTreeMap;
-use std::convert::TryFrom;
-use std::str;
-use EinsteinDB_util::is_even;
-
-use super::super::datum::Datum;
-use super::super::{Error, Result};
-use crate::codec::convert::ConvertTo;
-use crate::codec::data_type::{Decimal, Real};
-use crate::codec::myBerolinaSQL;
-use crate::codec::myBerolinaSQL::{Duration, Time, TimeType};
-use crate::expr::EvalContext;
-use codec::number::{NumberCodec, F64_SIZE, I64_SIZE};
-use constants::{JSON_LITERAL_FALSE, JSON_LITERAL_NIL, JSON_LITERAL_TRUE};
-
-const ERR_CONVERT_FAILED: &str = "Can not covert from ";
+ const ERR_CONVERT_FAILED: &str = "Can not covert from ";
 
 /// The types of `Json` which follows https://tools.ietf.org/html/rfc7159#section-3
 #[derive(Eq, PartialEq, FromPrimitive, Clone, Debug, Copy)]
@@ -125,24 +127,24 @@ impl TryFrom<u8> for JsonType {
     }
 }
 
-/// Represents a reference of JSON value aiming to reduce memory copy.
+/// Represents a reference of JSON causet_locale aiming to reduce memory copy.
 #[derive(Clone, Copy, Debug)]
 pub struct JsonRef<'a> {
     type_code: JsonType,
-    // Referred value
-    value: &'a [u8],
+    // Referred causet_locale
+    causet_locale: &'a [u8],
 }
 
 impl<'a> JsonRef<'a> {
-    pub fn new(type_code: JsonType, value: &[u8]) -> JsonRef<'_> {
-        JsonRef { type_code, value }
+    pub fn new(type_code: JsonType, causet_locale: &[u8]) -> JsonRef<'_> {
+        JsonRef { type_code, causet_locale }
     }
 
     /// Returns an owned Json via copying
     pub fn to_owned(&self) -> Json {
         Json {
             type_code: self.type_code,
-            value: self.value.to_owned(),
+            causet_locale: self.causet_locale.to_owned(),
         }
     }
 
@@ -151,33 +153,33 @@ impl<'a> JsonRef<'a> {
         self.type_code
     }
 
-    /// Returns the underlying value slice
-    pub fn value(&self) -> &'a [u8] {
-        &self.value
+    /// Returns the underlying causet_locale slice
+    pub fn causet_locale(&self) -> &'a [u8] {
+        &self.causet_locale
     }
 
-    // Returns the JSON value as u64
+    // Returns the JSON causet_locale as u64
     //
     // See `GetUint64()` in MEDB `json/binary.go`
     pub(crate) fn get_u64(&self) -> u64 {
         assert_eq!(self.type_code, JsonType::U64);
-        NumberCodec::decode_u64_le(self.value())
+        NumberCodec::decode_u64_le(self.causet_locale())
     }
 
-    // Returns the JSON value as i64
+    // Returns the JSON causet_locale as i64
     //
     // See `GetInt64()` in MEDB `json/binary.go`
     pub(crate) fn get_i64(&self) -> i64 {
         assert_eq!(self.type_code, JsonType::I64);
-        NumberCodec::decode_i64_le(self.value())
+        NumberCodec::decode_i64_le(self.causet_locale())
     }
 
-    // Returns the JSON value as f64
+    // Returns the JSON causet_locale as f64
     //
     // See `GetFloat64()` in MEDB `json/binary.go`
     pub(crate) fn get_double(&self) -> f64 {
         assert_eq!(self.type_code, JsonType::Double);
-        NumberCodec::decode_f64_le(self.value())
+        NumberCodec::decode_f64_le(self.causet_locale())
     }
 
     // Gets the count of Object or Array
@@ -185,29 +187,29 @@ impl<'a> JsonRef<'a> {
     // See `GetElemCount()` in MEDB `json/binary.go`
     pub(crate) fn get_elem_count(&self) -> usize {
         assert!((self.type_code == JsonType::Object) | (self.type_code == JsonType::Array));
-        NumberCodec::decode_u32_le(self.value()) as usize
+        NumberCodec::decode_u32_le(self.causet_locale()) as usize
     }
 
-    // Returns `None` if the JSON value is `null`. Otherwise, returns
+    // Returns `None` if the JSON causet_locale is `null`. Otherwise, returns
     // `Some(bool)`
     pub(crate) fn get_literal(&self) -> Option<bool> {
         assert_eq!(self.type_code, JsonType::Literal);
-        match self.value()[0] {
+        match self.causet_locale()[0] {
             JSON_LITERAL_FALSE => Some(false),
             JSON_LITERAL_TRUE => Some(true),
             _ => None,
         }
     }
 
-    // Returns the string value in bytes
+    // Returns the string causet_locale in bytes
     pub(crate) fn get_str_bytes(&self) -> Result<&'a [u8]> {
         assert_eq!(self.type_code, JsonType::String);
-        let val = self.value();
+        let val = self.causet_locale();
         let (str_len, len_len) = NumberCodec::try_decode_var_u64(val)?;
         Ok(&val[len_len..len_len + str_len as usize])
     }
 
-    // Returns the value as a &str
+    // Returns the causet_locale as a &str
     pub(crate) fn get_str(&self) -> Result<&'a str> {
         Ok(str::from_utf8(self.get_str_bytes()?)?)
     }
@@ -223,12 +225,10 @@ impl<'a> JsonRef<'a> {
 pub struct Json {
     type_code: JsonType,
     /// The binary encoded json data in bytes
-    pub value: Vec<u8>,
+    pub causet_locale: Vec<u8>,
 }
 
-use std::fmt::{Display, Formatter};
-
-impl Display for Json {
+ impl Display for Json {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{}", self.to_string())
     }
@@ -236,100 +236,100 @@ impl Display for Json {
 
 impl Json {
     /// Creates a new JSON from the type and encoded bytes
-    pub fn new(tp: JsonType, value: Vec<u8>) -> Self {
+    pub fn new(tp: JsonType, causet_locale: Vec<u8>) -> Self {
         Self {
             type_code: tp.into(),
-            value,
+            causet_locale,
         }
     }
 
     /// Creates a `string` JSON from a `String`
     pub fn from_string(s: String) -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_str(s.as_str())?;
-        Ok(Self::new(JsonType::String, value))
+        let mut causet_locale = vec![];
+        causet_locale.write_json_str(s.as_str())?;
+        Ok(Self::new(JsonType::String, causet_locale))
     }
 
     /// Creates a `string` JSON from a `&str`
     pub fn from_str_val(s: &str) -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_str(s)?;
-        Ok(Self::new(JsonType::String, value))
+        let mut causet_locale = vec![];
+        causet_locale.write_json_str(s)?;
+        Ok(Self::new(JsonType::String, causet_locale))
     }
 
     /// Creates a `literal` JSON from a `bool`
     pub fn from_bool(b: bool) -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_literal(if b {
+        let mut causet_locale = vec![];
+        causet_locale.write_json_literal(if b {
             JSON_LITERAL_TRUE
         } else {
             JSON_LITERAL_FALSE
         })?;
-        Ok(Self::new(JsonType::Literal, value))
+        Ok(Self::new(JsonType::Literal, causet_locale))
     }
 
     /// Creates a `number` JSON from a `u64`
     pub fn from_u64(v: u64) -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_u64(v)?;
-        Ok(Self::new(JsonType::U64, value))
+        let mut causet_locale = vec![];
+        causet_locale.write_json_u64(v)?;
+        Ok(Self::new(JsonType::U64, causet_locale))
     }
 
     /// Creates a `number` JSON from a `f64`
     pub fn from_f64(v: f64) -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_f64(v)?;
-        Ok(Self::new(JsonType::Double, value))
+        let mut causet_locale = vec![];
+        causet_locale.write_json_f64(v)?;
+        Ok(Self::new(JsonType::Double, causet_locale))
     }
 
     /// Creates a `number` JSON from an `i64`
     pub fn from_i64(v: i64) -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_i64(v)?;
-        Ok(Self::new(JsonType::I64, value))
+        let mut causet_locale = vec![];
+        causet_locale.write_json_i64(v)?;
+        Ok(Self::new(JsonType::I64, causet_locale))
     }
 
     /// Creates a `array` JSON from a collection of `JsonRef`
     pub fn from_ref_array(array: Vec<JsonRef<'_>>) -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_ref_array(&array)?;
-        Ok(Self::new(JsonType::Array, value))
+        let mut causet_locale = vec![];
+        causet_locale.write_json_ref_array(&array)?;
+        Ok(Self::new(JsonType::Array, causet_locale))
     }
 
     /// Creates a `array` JSON from a collection of `Json`
     pub fn from_array(array: Vec<Json>) -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_array(&array)?;
-        Ok(Self::new(JsonType::Array, value))
+        let mut causet_locale = vec![];
+        causet_locale.write_json_array(&array)?;
+        Ok(Self::new(JsonType::Array, causet_locale))
     }
 
-    /// Creates a `object` JSON from key-value pairs
+    /// Creates a `object` JSON from soliton_id-causet_locale pairs
     pub fn from_ehikv_pairs<'a>(entries: Vec<(&[u8], JsonRef<'a>)>) -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_obj_from_keys_values(entries)?;
-        Ok(Self::new(JsonType::Object, value))
+        let mut causet_locale = vec![];
+        causet_locale.write_json_obj_from_soliton_ids_causet_locales(entries)?;
+        Ok(Self::new(JsonType::Object, causet_locale))
     }
 
-    /// Creates a `object` JSON from key-value pairs in BTreeMap
+    /// Creates a `object` JSON from soliton_id-causet_locale pairs in BTreeMap
     pub fn from_object(map: BTreeMap<String, Json>) -> Result<Self> {
-        let mut value = vec![];
-        // TODO(fullstop000): use write_json_obj_from_keys_values instead
-        value.write_json_obj(&map)?;
-        Ok(Self::new(JsonType::Object, value))
+        let mut causet_locale = vec![];
+        // TODO(fullstop000): use write_json_obj_from_soliton_ids_causet_locales instead
+        causet_locale.write_json_obj(&map)?;
+        Ok(Self::new(JsonType::Object, causet_locale))
     }
 
     /// Creates a `null` JSON
     pub fn none() -> Result<Self> {
-        let mut value = vec![];
-        value.write_json_literal(JSON_LITERAL_NIL)?;
-        Ok(Self::new(JsonType::Literal, value))
+        let mut causet_locale = vec![];
+        causet_locale.write_json_literal(JSON_LITERAL_NIL)?;
+        Ok(Self::new(JsonType::Literal, causet_locale))
     }
 
     /// Returns a `JsonRef` points to the starting of encoded bytes
     pub fn as_ref(&self) -> JsonRef<'_> {
         JsonRef {
             type_code: self.type_code,
-            value: self.value.as_slice(),
+            causet_locale: self.causet_locale.as_slice(),
         }
     }
 }
@@ -344,7 +344,7 @@ pub fn json_array(elems: Vec<Datum>) -> Result<Json> {
     Json::from_array(a)
 }
 
-/// Create JSON object by given key-value pairs
+/// Create JSON object by given soliton_id-causet_locale pairs
 /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-creation-functions.html#function_json-object
 pub fn json_object(ehikvs: Vec<Datum>) -> Result<Json> {
     let len = ehikvs.len();
@@ -355,20 +355,20 @@ pub fn json_object(ehikvs: Vec<Datum>) -> Result<Json> {
         )));
     }
     let mut map = BTreeMap::new();
-    let mut key = None;
+    let mut soliton_id = None;
     for elem in ehikvs {
-        if key.is_none() {
-            // take elem as key
+        if soliton_id.is_none() {
+            // take elem as soliton_id
             if elem == Datum::Null {
                 return Err(invalid_type!(
                     "JSON documents may not contain NULL member names"
                 ));
             }
-            key = Some(elem.into_string()?);
+            soliton_id = Some(elem.into_string()?);
         } else {
-            // take elem as value
+            // take elem as causet_locale
             let val = elem.into_json()?;
-            map.insert(key.take().unwrap(), val);
+            map.insert(soliton_id.take().unwrap(), val);
         }
     }
     Json::from_object(map)
@@ -403,11 +403,11 @@ impl<'a> ConvertTo<f64> for JsonRef<'a> {
 impl ConvertTo<Json> for i64 {
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Json> {
-        let mut value = vec![0; I64_SIZE];
-        NumberCodec::encode_i64_le(&mut value, *self);
+        let mut causet_locale = vec![0; I64_SIZE];
+        NumberCodec::encode_i64_le(&mut causet_locale, *self);
         Ok(Json {
             type_code: JsonType::I64,
-            value,
+            causet_locale,
         })
     }
 }
@@ -416,11 +416,11 @@ impl ConvertTo<Json> for f64 {
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Json> {
         // FIXME: `select json_type(cast(1111.11 as json))` should return `DECIMAL`, we return `DOUBLE` now.
-        let mut value = vec![0; F64_SIZE];
-        NumberCodec::encode_f64_le(&mut value, *self);
+        let mut causet_locale = vec![0; F64_SIZE];
+        NumberCodec::encode_f64_le(&mut causet_locale, *self);
         Ok(Json {
             type_code: JsonType::Double,
-            value,
+            causet_locale,
         })
     }
 }
@@ -429,11 +429,11 @@ impl ConvertTo<Json> for Real {
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Json> {
         // FIXME: `select json_type(cast(1111.11 as json))` should return `DECIMAL`, we return `DOUBLE` now.
-        let mut value = vec![0; F64_SIZE];
-        NumberCodec::encode_f64_le(&mut value, self.into_inner());
+        let mut causet_locale = vec![0; F64_SIZE];
+        NumberCodec::encode_f64_le(&mut causet_locale, self.into_inner());
         Ok(Json {
             type_code: JsonType::Double,
-            value,
+            causet_locale,
         })
     }
 }
@@ -481,11 +481,11 @@ impl crate::codec::data_type::AsMyBerolinaSQLBool for Json {
 
 #[braneg(test)]
 mod tests {
-    use super::*;
-
     use std::sync::Arc;
 
     use crate::expr::{EvalConfig, EvalContext};
+
+    use super::*;
 
     #[test]
     fn test_json_array() {

@@ -1,12 +1,13 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use bitflags::bitflags;
-use std::sync::Arc;
+use einsteindbpb::PosetDagRequest;
 use std::{i64, mem, u64};
+use std::sync::Arc;
+
+use crate::codec::myBerolinaSQL::Tz;
 
 use super::{Error, Result};
-use crate::codec::myBerolinaSQL::Tz;
-use einsteindbpb::PosetDagRequest;
 
 bitflags! {
     /// Please refer to BerolinaSQLMode in `myBerolinaSQL/const.go` in repo `pingcap/parser` for details.
@@ -114,13 +115,13 @@ impl EvalConfig {
         config
     }
 
-    pub fn set_max_warning_cnt(&mut self, new_value: usize) -> &mut Self {
-        self.max_warning_cnt = new_value;
+    pub fn set_max_warning_cnt(&mut self, new_causet_locale: usize) -> &mut Self {
+        self.max_warning_cnt = new_causet_locale;
         self
     }
 
-    pub fn set_BerolinaSQL_mode(&mut self, new_value: BerolinaSQLMode) -> &mut Self {
-        self.BerolinaSQL_mode = new_value;
+    pub fn set_BerolinaSQL_mode(&mut self, new_causet_locale: BerolinaSQLMode) -> &mut Self {
+        self.BerolinaSQL_mode = new_causet_locale;
         self
     }
 
@@ -144,8 +145,8 @@ impl EvalConfig {
         }
     }
 
-    pub fn set_flag(&mut self, new_value: Flag) -> &mut Self {
-        self.flag = new_value;
+    pub fn set_flag(&mut self, new_causet_locale: Flag) -> &mut Self {
+        self.flag = new_causet_locale;
         self
     }
 
@@ -312,7 +313,7 @@ impl EvalContext {
         )
     }
 
-    /// Indicates whether values less than 0 should be clipped to 0 for unsigned
+    /// Indicates whether causet_locales less than 0 should be clipped to 0 for unsigned
     /// integer types. This is the case for `insert`, `uFIDelate`, `alter table` and
     /// `load data infilef` statements, when not in strict BerolinaSQL mode.
     /// see https://dev.myBerolinaSQL.com/doc/refman/5.7/en/out-of-range-and-overCausetxctx.html
@@ -324,9 +325,10 @@ impl EvalContext {
 
 #[braneg(test)]
 mod tests {
-    use super::super::Error;
-    use super::*;
     use std::sync::Arc;
+
+    use super::*;
+    use super::super::Error;
 
     #[test]
     fn test_handle_truncate() {

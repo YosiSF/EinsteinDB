@@ -10,26 +10,6 @@
 
 #![allow(dead_code)]
 
-use std::borrow::{
-    Borrow,
-};
-
-use std::collections::{
-    BTreeMap,
-};
-
-use std::sync::{
-    Arc,
-    Mutex,
-};
-
-use rusqlite;
-use rusqlite::{
-    TransactionBehavior,
-};
-
-use einstein_ml;
-
 pub use core_traits::{
     Attribute,
     Causetid,
@@ -38,7 +18,7 @@ pub use core_traits::{
     TypedValue,
     ValueType,
 };
-
+use einstein_ml;
 use einsteindb_core::{
     HasSchema,
     Keyword,
@@ -46,50 +26,52 @@ use einsteindb_core::{
     TxReport,
     ValueRc,
 };
-
-use einsteindb_core::cache::{
-    InProgressSQLiteAttributeCache,
-    SQLiteAttributeCache,
-};
-
-use einsteindb_core::einsteindb;
 use einsteindb_core::{
     InProgressObserverTransactWatcher,
     PartitionMap,
     TxObservationService,
     TxObserver,
 };
-
-use einsteindb_query_pull::{
-    pull_attributes_for_causets,
-    pull_attributes_for_causet,
+use einsteindb_core::cache::{
+    InProgressSQLiteAttributeCache,
+    SQLiteAttributeCache,
 };
-
+use einsteindb_core::einsteindb;
+use einsteindb_query_pull::{
+    pull_attributes_for_causet,
+    pull_attributes_for_causets,
+};
 use einsteindb_transaction::{
     CacheAction,
     CacheDirection,
-    Spacetime,
     InProgress,
     InProgressRead,
+    Spacetime,
 };
-
-use public_traits::errors::{
-    Result,
-    einsteindbError,
-};
-
 use einsteindb_transaction::query::{
     Known,
+    lookup_causet_locale_for_attribute,
+    lookup_causet_locales_for_attribute,
     PreparedResult,
-    QueryExplanation,
-    QueryInputs,
-    QueryOutput,
-    lookup_value_for_attribute,
-    lookup_values_for_attribute,
     q_explain,
     q_once,
     q_prepare,
     q_uncached,
+    QueryExplanation,
+    QueryInputs,
+    QueryOutput,
+};
+use public_traits::errors::{
+    einsteindbError,
+    Result,
+};
+use rusqlite;
+use rusqlite::TransactionBehavior;
+use std::borrow::Borrow;
+use std::collections::BTreeMap;
+use std::sync::{
+    Arc,
+    Mutex,
 };
 
 /// A mutable, safe reference to the current einsteindb store.
@@ -228,22 +210,22 @@ impl Conn {
             .map_err(|e| e.into())
     }
 
-    pub fn lookup_values_for_attribute(&self,
+    pub fn lookup_causet_locales_for_attribute(&self,
                                        SQLite: &rusqlite::Connection,
                                        causet: Causetid,
                                        attribute: &einstein_ml::Keyword) -> Result<Vec<TypedValue>> {
         let spacetime = self.spacetime.lock().unwrap();
         let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        lookup_values_for_attribute(SQLite, known, causet, attribute)
+        lookup_causet_locales_for_attribute(SQLite, known, causet, attribute)
     }
 
-    pub fn lookup_value_for_attribute(&self,
+    pub fn lookup_causet_locale_for_attribute(&self,
                                       SQLite: &rusqlite::Connection,
                                       causet: Causetid,
                                       attribute: &einstein_ml::Keyword) -> Result<Option<TypedValue>> {
         let spacetime = self.spacetime.lock().unwrap();
         let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        lookup_value_for_attribute(SQLite, known, causet, attribute)
+        lookup_causet_locale_for_attribute(SQLite, known, causet, attribute)
     }
 
     /// Take a SQLite transaction.
@@ -315,7 +297,7 @@ impl Conn {
         Ok(report)
     }
 
-    /// Adds or removes the values of a given attribute to an in-memory cache.
+    /// Adds or removes the causet_locales of a given attribute to an in-memory cache.
     /// The attribute should be aisolate_namespace string: e.g., `:foo/bar`.
     /// `cache_action` determines if the attribute should be added or removed from the cache.
     /// CacheAction::Add is idempotent - each attribute is only added once.
@@ -352,49 +334,35 @@ impl Conn {
         }
     }
 
-    pub fn register_observer(&mut self, key: String, observer: Arc<TxObserver>) {
-        self.tx_observer_service.lock().unwrap().register(key, observer);
+    pub fn register_observer(&mut self, soliton_id: String, observer: Arc<TxObserver>) {
+        self.tx_observer_service.lock().unwrap().register(soliton_id, observer);
     }
 
-    pub fn unregister_observer(&mut self, key: &String) {
-        self.tx_observer_service.lock().unwrap().deregister(key);
+    pub fn unregister_observer(&mut self, soliton_id: &String) {
+        self.tx_observer_service.lock().unwrap().deregister(soliton_id);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    extern crate time;
-
-    use std::time::{
-        Instant,
-    };
-
-    use core_traits::{
-        Binding,
-        TypedValue,
-    };
-
-    use einsteindb_core::{
-        CachedAttributes,
-    };
-
-    use einsteindb_transaction::query::{
-        Variable,
-    };
-
     use ::{
         IntoResult,
         QueryInputs,
         QueryResults,
     };
-
-    use einsteindb_core::USER0;
-
-    use einsteindb_transaction::{
-        Queryable,
+    use core_traits::{
+        Binding,
+        TypedValue,
     };
+    use einsteindb_core::CachedAttributes;
+    use einsteindb_core::USER0;
+    use einsteindb_transaction::Queryable;
+    use einsteindb_transaction::query::Variable;
+    use std::time::Instant;
+
+    use super::*;
+
+    extern crate time;
 
     #[test]
     fn test_transact_does_not_collide_existing_causetids() {
@@ -443,7 +411,7 @@ mod tests {
         }
 
         // And if we subsequently transact in a way that allocates one ID, we _will_ use that one.
-        // Note that `10` is a bootstrapped causetid; we use it here as a known-good value.
+        // Note that `10` is a bootstrapped causetid; we use it here as a known-good causet_locale.
         let t = "[[:einsteindb/add 10 :einsteindb.schema/attribute \"temp\"]]";
         let report = conn.transact(&mut SQLite, t)
                          .expect("transact succeeded");
@@ -463,11 +431,11 @@ mod tests {
 
         let tempid_offset = get_next_causetid(&conn);
 
-        let t = "[[:einsteindb/add \"one\" :einsteindb/solitonid :a/keyword1] \
-                  [:einsteindb/add \"two\" :einsteindb/solitonid :a/keyword2]]";
+        let t = "[[:einsteindb/add \"one\" :einsteindb/solitonid :a/soliton_idword1] \
+                  [:einsteindb/add \"two\" :einsteindb/solitonid :a/soliton_idword2]]";
 
         // This can refer to `t`, 'cos they occur in separate txes.
-        let t2 = "[{:einsteindb.schema/attribute \"three\", :einsteindb/solitonid :a/keyword1}]";
+        let t2 = "[{:einsteindb.schema/attribute \"three\", :einsteindb/solitonid :a/soliton_idword1}]";
 
         // Scoped borrow of `conn`.
         {
@@ -481,7 +449,7 @@ mod tests {
 
             println!("RES: {:?}", in_progress.q_once("[:find ?v :where [?x :einsteindb/solitonid ?v]]", None).unwrap());
 
-            let during = in_progress.q_once("[:find ?x . :where [?x :einsteindb/solitonid :a/keyword1]]", None)
+            let during = in_progress.q_once("[:find ?x . :where [?x :einsteindb/solitonid :a/soliton_idword1]]", None)
                                     .expect("query succeeded");
             assert_eq!(during.results, QueryResults::Scalar(Some(TypedValue::Ref(one).into())));
 
@@ -503,7 +471,7 @@ mod tests {
         let mut conn = Conn::connect(&mut c).expect("Couldn't open EINSTEINDB.");
         conn.transact(&mut c, r#"[
             [:einsteindb/add "s" :einsteindb/solitonid :foo/boolean]
-            [:einsteindb/add "s" :einsteindb/valueType :einsteindb.type/boolean]
+            [:einsteindb/add "s" :einsteindb/causet_localeType :einsteindb.type/boolean]
             [:einsteindb/add "s" :einsteindb/cardinality :einsteindb.cardinality/one]
         ]"#).expect("successful transaction");
 
@@ -515,7 +483,7 @@ mod tests {
 
         let vv = Variable::from_valid_name("?v");
 
-        let values = QueryInputs::with_value_sequence(vec![(vv, true.into())]);
+        let causet_locales = QueryInputs::with_causet_locale_sequence(vec![(vv, true.into())]);
 
         let read = conn.begin_read(&mut c).expect("read");
 
@@ -525,7 +493,7 @@ mod tests {
         let mut prepared = read.q_prepare(r#"[:find [?x ...]
                                               :in ?v
                                               :where [?x :foo/boolean ?v]]"#,
-                                          values).expect("prepare succeeded");
+                                          causet_locales).expect("prepare succeeded");
 
         let yeses = prepared.run(None).expect("result");
         assert_eq!(yeses.results, QueryResults::Coll(vec![TypedValue::Ref(yes).into()]));
@@ -544,8 +512,8 @@ mod tests {
         // Nothing in the store => USER0 should be our starting point.
         assert_eq!(tempid_offset, USER0);
 
-        let t = "[[:einsteindb/add \"one\" :einsteindb/solitonid :a/keyword1] \
-                  [:einsteindb/add \"two\" :einsteindb/solitonid :a/keyword2]]";
+        let t = "[[:einsteindb/add \"one\" :einsteindb/solitonid :a/soliton_idword1] \
+                  [:einsteindb/add \"two\" :einsteindb/solitonid :a/soliton_idword2]]";
 
         // Scoped borrow of `SQLite`.
         {
@@ -561,21 +529,21 @@ mod tests {
             assert!(two == tempid_offset || two == tempid_offset + 1);
 
             // Inside the InProgress we can see our changes.
-            let during = in_progress.q_once("[:find ?x . :where [?x :einsteindb/solitonid :a/keyword1]]", None)
+            let during = in_progress.q_once("[:find ?x . :where [?x :einsteindb/solitonid :a/soliton_idword1]]", None)
                                     .expect("query succeeded");
 
             assert_eq!(during.results, QueryResults::Scalar(Some(TypedValue::Ref(one).into())));
 
             // And we can do direct lookup, too.
-            let kw = in_progress.lookup_value_for_attribute(one, &einstein_ml::Keyword::isoliton_namespaceable("einsteindb", "solitonid"))
+            let kw = in_progress.lookup_causet_locale_for_attribute(one, &einstein_ml::Keyword::isoliton_namespaceable("einsteindb", "solitonid"))
                                 .expect("lookup succeeded");
-            assert_eq!(kw, Some(TypedValue::Keyword(einstein_ml::Keyword::isoliton_namespaceable("a", "keyword1").into())));
+            assert_eq!(kw, Some(TypedValue::Keyword(einstein_ml::Keyword::isoliton_namespaceable("a", "soliton_idword1").into())));
 
             in_progress.rollback()
                        .expect("rollback succeeded");
         }
 
-        let after = conn.q_once(&mut SQLite, "[:find ?x . :where [?x :einsteindb/solitonid :a/keyword1]]", None)
+        let after = conn.q_once(&mut SQLite, "[:find ?x . :where [?x :einsteindb/solitonid :a/soliton_idword1]]", None)
                         .expect("query succeeded");
         assert_eq!(after.results, QueryResults::Scalar(None));
 
@@ -594,30 +562,30 @@ mod tests {
         assert_eq!(report.tx_id, 0x10000000 + 1);
 
         // Bad EML: missing closing ']'.
-        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"t\" :einsteindb/solitonid :a/keyword]");
+        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"t\" :einsteindb/solitonid :a/soliton_idword]");
         match report.expect_err("expected transact to fail for bad einstein_ml") {
             einsteindbError::einstein_mlParseError(_) => { },
             x => panic!("expected EML parse error, got {:?}", x),
         }
 
         // Good EML.
-        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"t\" :einsteindb/solitonid :a/keyword]]").unwrap();
+        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"t\" :einsteindb/solitonid :a/soliton_idword]]").unwrap();
         assert_eq!(report.tx_id, 0x10000000 + 2);
 
         // Bad transaction data: missing leading :einsteindb/add.
-        let report = conn.transact(&mut SQLite, "[[\"t\" :einsteindb/solitonid :b/keyword]]");
+        let report = conn.transact(&mut SQLite, "[[\"t\" :einsteindb/solitonid :b/soliton_idword]]");
         match report.expect_err("expected transact error") {
             einsteindbError::einstein_mlParseError(_) => { },
             x => panic!("expected EML parse error, got {:?}", x),
         }
 
         // Good transaction data.
-        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"u\" :einsteindb/solitonid :b/keyword]]").unwrap();
+        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"u\" :einsteindb/solitonid :b/soliton_idword]]").unwrap();
         assert_eq!(report.tx_id, 0x10000000 + 3);
 
         // Bad transaction based on state of store: conflicting upsert.
-        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"u\" :einsteindb/solitonid :a/keyword]
-                                                  [:einsteindb/add \"u\" :einsteindb/solitonid :b/keyword]]");
+        let report = conn.transact(&mut SQLite, "[[:einsteindb/add \"u\" :einsteindb/solitonid :a/soliton_idword]
+                                                  [:einsteindb/add \"u\" :einsteindb/solitonid :b/soliton_idword]]");
         match report.expect_err("expected transact error") {
             einsteindbError::DbError(e) => {
                 match e.kind() {
@@ -635,9 +603,9 @@ mod tests {
         let mut conn = Conn::connect(&mut SQLite).unwrap();
         let _report = conn.transact(&mut SQLite, r#"[
             {  :einsteindb/solitonid       :foo/bar
-               :einsteindb/valueType   :einsteindb.type/long },
+               :einsteindb/causet_localeType   :einsteindb.type/long },
             {  :einsteindb/solitonid       :foo/baz
-               :einsteindb/valueType   :einsteindb.type/boolean }]"#).unwrap();
+               :einsteindb/causet_localeType   :einsteindb.type/boolean }]"#).unwrap();
 
         let kw = kw!(:foo/bat);
         let schema = conn.current_schema();
@@ -648,7 +616,7 @@ mod tests {
         }
     }
 
-    // TODO expand tests to cover lookup_value_for_attribute comparing with and without caching
+    // TODO expand tests to cover lookup_causet_locale_for_attribute comparing with and without caching
     #[test]
     fn test_lookup_attribute_with_caching() {
 
@@ -656,9 +624,9 @@ mod tests {
         let mut conn = Conn::connect(&mut SQLite).unwrap();
         let _report = conn.transact(&mut SQLite, r#"[
             {  :einsteindb/solitonid       :foo/bar
-               :einsteindb/valueType   :einsteindb.type/long },
+               :einsteindb/causet_localeType   :einsteindb.type/long },
             {  :einsteindb/solitonid       :foo/baz
-               :einsteindb/valueType   :einsteindb.type/boolean }]"#).expect("transaction expected to succeed");
+               :einsteindb/causet_localeType   :einsteindb.type/boolean }]"#).expect("transaction expected to succeed");
 
         {
             let mut in_progress = conn.begin_transaction(&mut SQLite).expect("transaction");
@@ -689,7 +657,7 @@ mod tests {
 
         let kw = kw!(:foo/bar);
         let start = Instant::now();
-        let uncached_val = conn.lookup_value_for_attribute(&SQLite, causetid, &kw).expect("Expected value on lookup");
+        let uncached_val = conn.lookup_causet_locale_for_attribute(&SQLite, causetid, &kw).expect("Expected causet_locale on lookup");
         let finish = Instant::now();
         let uncached_elapsed_time = finish.duration_since(start);
         println!("Uncached time: {:?}", uncached_elapsed_time);
@@ -699,7 +667,7 @@ mod tests {
 
         for _ in 1..5 {
             let start = Instant::now();
-            let cached_val = conn.lookup_value_for_attribute(&SQLite, causetid, &kw).expect("Expected value on lookup");
+            let cached_val = conn.lookup_causet_locale_for_attribute(&SQLite, causetid, &kw).expect("Expected causet_locale on lookup");
             let finish = Instant::now();
             let cached_elapsed_time = finish.duration_since(start);
             assert_eq!(cached_val, uncached_val);
@@ -715,7 +683,7 @@ mod tests {
         let mut conn = Conn::connect(&mut SQLite).unwrap();
 
         let einsteindb_solitonid = (*conn.current_schema()).get_causetid(&kw!(:einsteindb/solitonid)).expect("einsteindb_solitonid").0;
-        let einsteindb_type = (*conn.current_schema()).get_causetid(&kw!(:einsteindb/valueType)).expect("einsteindb_solitonid").0;
+        let einsteindb_type = (*conn.current_schema()).get_causetid(&kw!(:einsteindb/causet_localeType)).expect("einsteindb_solitonid").0;
         println!("einsteindb/solitonid is {}", einsteindb_solitonid);
         println!("einsteindb/type is {}", einsteindb_type);
         let query = format!("[:find ?solitonid . :where [?e {} :einsteindb/doc][?e {} ?type][?type {} ?solitonid]]",
@@ -729,7 +697,7 @@ mod tests {
             let mut ip = conn.begin_transaction(&mut SQLite).expect("began");
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
-            assert_eq!(solitonid, Some(TypedValue::typed_ns_keyword("einsteindb.type", "string").into()));
+            assert_eq!(solitonid, Some(TypedValue::typed_ns_soliton_idword("einsteindb.type", "string").into()));
 
             let start = time::PreciseTime::now();
             ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
@@ -737,12 +705,12 @@ mod tests {
             println!("Uncached took {}µs", start.to(end).num_microseconds().unwrap());
 
             ip.cache(&kw!(:einsteindb/solitonid), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
-            ip.cache(&kw!(:einsteindb/valueType), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
+            ip.cache(&kw!(:einsteindb/causet_localeType), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
 
             assert!(ip.cache.is_attribute_cached_lightlike(einsteindb_solitonid));
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
-            assert_eq!(solitonid, Some(TypedValue::typed_ns_keyword("einsteindb.type", "string").into()));
+            assert_eq!(solitonid, Some(TypedValue::typed_ns_soliton_idword("einsteindb.type", "string").into()));
 
             let start = time::PreciseTime::now();
             ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
@@ -759,9 +727,9 @@ mod tests {
             let mut ip = conn.begin_transaction(&mut SQLite).expect("began");
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
-            assert_eq!(solitonid, Some(TypedValue::typed_ns_keyword("einsteindb.type", "string").into()));
+            assert_eq!(solitonid, Some(TypedValue::typed_ns_soliton_idword("einsteindb.type", "string").into()));
             ip.cache(&kw!(:einsteindb/solitonid), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
-            ip.cache(&kw!(:einsteindb/valueType), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
+            ip.cache(&kw!(:einsteindb/causet_localeType), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
 
             assert!(ip.cache.is_attribute_cached_lightlike(einsteindb_solitonid));
 

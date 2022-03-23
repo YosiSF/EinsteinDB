@@ -31,36 +31,36 @@ pub trait WriteBatchExt: Sized {
 
 /// A trait implemented by WriteBatch
 pub trait Mutable: Send {
-    /// Write a key/value in the default column family
-    fn put(&mut self, key: &[u8], value: &[u8]) -> Result<()>;
+    /// Write a soliton_id/causet_locale in the default causet_merge family
+    fn put(&mut self, soliton_id: &[u8], causet_locale: &[u8]) -> Result<()>;
 
-    /// Write a key/value in a given column family
-    fn put_namespaced(&mut self, namespaced: &str, key: &[u8], value: &[u8]) -> Result<()>;
+    /// Write a soliton_id/causet_locale in a given causet_merge family
+    fn put_namespaced(&mut self, namespaced: &str, soliton_id: &[u8], causet_locale: &[u8]) -> Result<()>;
 
-    /// Delete a key/value in the default column family
-    fn delete(&mut self, key: &[u8]) -> Result<()>;
+    /// Delete a soliton_id/causet_locale in the default causet_merge family
+    fn delete(&mut self, soliton_id: &[u8]) -> Result<()>;
 
-    /// Delete a key/value in a given column family
-    fn delete_namespaced(&mut self, namespaced: &str, key: &[u8]) -> Result<()>;
+    /// Delete a soliton_id/causet_locale in a given causet_merge family
+    fn delete_namespaced(&mut self, namespaced: &str, soliton_id: &[u8]) -> Result<()>;
 
-    /// Delete a range of key/values in the default column family
-    fn delete_range(&mut self, begin_key: &[u8], end_key: &[u8]) -> Result<()>;
+    /// Delete a range of soliton_id/causet_locales in the default causet_merge family
+    fn delete_range(&mut self, begin_soliton_id: &[u8], end_soliton_id: &[u8]) -> Result<()>;
 
-    /// Delete a range of key/values in a given column family
-    fn delete_range_namespaced(&mut self, namespaced: &str, begin_key: &[u8], end_key: &[u8]) -> Result<()>;
+    /// Delete a range of soliton_id/causet_locales in a given causet_merge family
+    fn delete_range_namespaced(&mut self, namespaced: &str, begin_soliton_id: &[u8], end_soliton_id: &[u8]) -> Result<()>;
 
-    fn put_msg<M: protobuf::Message>(&mut self, key: &[u8], m: &M) -> Result<()> {
-        self.put(key, &m.write_to_bytes()?)
+    fn put_msg<M: protobuf::Message>(&mut self, soliton_id: &[u8], m: &M) -> Result<()> {
+        self.put(soliton_id, &m.write_to_bytes()?)
     }
-    fn put_msg_namespaced<M: protobuf::Message>(&mut self, namespaced: &str, key: &[u8], m: &M) -> Result<()> {
-        self.put_namespaced(namespaced, key, &m.write_to_bytes()?)
+    fn put_msg_namespaced<M: protobuf::Message>(&mut self, namespaced: &str, soliton_id: &[u8], m: &M) -> Result<()> {
+        self.put_namespaced(namespaced, soliton_id, &m.write_to_bytes()?)
     }
 }
 
 /// Batches of multiple writes that are committed atomically
 ///
 /// Each write alexandro consists of a series of commands: put, delete
-/// delete_range, and their column-family-specific equivalents.
+/// delete_range, and their causet_merge-family-specific equivalents.
 ///
 /// Because write alexandroes are atomic, once written to disk all their effects are
 /// visible as if all other writes in the system were written either before or
@@ -71,7 +71,7 @@ pub trait Mutable: Send {
 /// and then write the whole serialized alexandro to disk at once.
 ///
 /// Write alexandroes may be reused after being written. In that case they write
-/// exactly the same data as previously, Replacing any keys that may have
+/// exactly the same data as previously, Replacing any soliton_ids that may have
 /// changed in between the two alexandro writes.
 ///
 /// Commands issued to write alexandroes can be rolled back prior to being committed

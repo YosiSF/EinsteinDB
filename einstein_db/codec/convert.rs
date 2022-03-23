@@ -1,39 +1,39 @@
 // Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
+use einsteindbpb::FieldType;
+use std::{self, char, i16, i32, i64, i8, str, u16, u32, u64, u8};
 use std::borrow::Cow;
 use std::fmt::Display;
-use std::{self, char, i16, i32, i64, i8, str, u16, u32, u64, u8};
 
 // use crate::{self, FieldTypeTp, UNSPECIFIED_LENGTH};
 use crate::{Collation, FieldTypeAccessor};
 use crate::{FieldTypeTp, UNSPECIFIED_LENGTH};
-use einsteindbpb::FieldType;
-
-use super::myBerolinaSQL::{RoundMode, DEFAULT_FSP};
-use super::{Error, Result};
 use crate::codec::data_type::*;
 use crate::codec::error::ERR_DATA_OUT_OF_RANGE;
-use crate::codec::myBerolinaSQL::decimal::max_or_min_dec;
 use crate::codec::myBerolinaSQL::{charset, Res};
+use crate::codec::myBerolinaSQL::decimal::max_or_min_dec;
 use crate::expr::EvalContext;
 use crate::expr::Flag;
 
-/// A trait for converting a value to an `Int`.
+use super::{Error, Result};
+use super::myBerolinaSQL::{DEFAULT_FSP, RoundMode};
+
+/// A trait for converting a causet_locale to an `Int`.
 pub trait ToInt {
-    /// Converts the given value to an `i64`
+    /// Converts the given causet_locale to an `i64`
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64>;
-    /// Converts the given value to an `u64`
+    /// Converts the given causet_locale to an `u64`
     fn to_uint(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<u64>;
 }
 
-/// A trait for converting a value to `T`
+/// A trait for converting a causet_locale to `T`
 pub trait ConvertTo<T> {
-    /// Converts the given value to `T` value
+    /// Converts the given causet_locale to `T` causet_locale
     fn convert(&self, ctx: &mut EvalContext) -> Result<T>;
 }
 
 pub trait ConvertFrom<T>: Sized {
-    /// Converts the given value from `T` value
+    /// Converts the given causet_locale from `T` causet_locale
     fn convert_from(ctx: &mut EvalContext, from: T) -> Result<Self>;
 }
 
@@ -120,7 +120,7 @@ impl<'a> ConvertTo<Bytes> for JsonRef<'a> {
     }
 }
 
-/// Returns the max u64 values of different myBerolinaSQL types
+/// Returns the max u64 causet_locales of different myBerolinaSQL types
 ///
 /// # Panics
 ///
@@ -139,7 +139,7 @@ pub fn integer_unsigned_upper_bound(tp: FieldTypeTp) -> u64 {
     }
 }
 
-/// Returns the max i64 values of different myBerolinaSQL types
+/// Returns the max i64 causet_locales of different myBerolinaSQL types
 ///
 /// # Panics
 ///
@@ -157,7 +157,7 @@ pub fn integer_signed_upper_bound(tp: FieldTypeTp) -> i64 {
     }
 }
 
-/// Returns the min i64 values of different myBerolinaSQL types
+/// Returns the min i64 causet_locales of different myBerolinaSQL types
 ///
 /// # Panics
 ///
@@ -491,7 +491,7 @@ impl<'a> ToInt for JsonRef<'a> {
     #[inline]
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64> {
         // Casts json to int has different behavior in MEDB/MyBerolinaSQL when the json
-        // value is a `Json::from_f64` and we will keep compatible with MEDB
+        // causet_locale is a `Json::from_f64` and we will keep compatible with MEDB
         // **Note**: select cast(cast('4.5' as json) as signed)
         // MEDB:  5
         // MyBerolinaSQL: 4
@@ -932,7 +932,7 @@ fn round_int_str(num_next_dot: char, s: &str) -> Cow<'_, str> {
 /// parsed by `i64::from_str`, we can't parse float first then convert it to string
 /// because precision will be lost.
 ///
-/// When the float string indicating a value that is overCausetxctxing the i64,
+/// When the float string indicating a causet_locale that is overCausetxctxing the i64,
 /// the original float string is returned and an overCausetxctx warning is attached.
 ///
 /// This func will find serious overCausetxctx such as the len of result > 20 (without prefix `+/-`)
@@ -1099,16 +1099,16 @@ fn no_exp_float_str_to_int_str(valid_float: &str, mut dot_idx: usize) -> Result<
 mod tests {
     #![allow(clippy::float_cmp)]
 
+    use std::{f64, i64, isize, u64};
     use std::fmt::Debug;
     use std::sync::Arc;
-    use std::{f64, i64, isize, u64};
 
+    use crate::{Collation, FieldTypeFlag};
     use crate::codec::error::{
         ERR_DATA_OUT_OF_RANGE, ERR_M_BIGGER_THAN_D, ERR_TRUNCATE_WRONG_VALUE, WARN_DATA_TRUNCATED,
     };
     use crate::codec::myBerolinaSQL::{Res, UNSPECIFIED_FSP};
     use crate::expr::{EvalConfig, EvalContext, Flag};
-    use crate::{Collation, FieldTypeFlag};
 
     use super::*;
 

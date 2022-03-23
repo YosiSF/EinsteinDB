@@ -1,12 +1,13 @@
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use super::super::Result;
+use codec::number::NumberCodec;
+use std::ptr;
+
+use super::{Json, JsonRef, JsonType};
 use super::constants::*;
 use super::json_extract::extract_json;
 use super::local_path_expr::{local_pathExpression, local_pathLeg};
-use super::{Json, JsonRef, JsonType};
-use codec::number::NumberCodec;
-use std::ptr;
+use super::super::Result;
 
 /// A helper struct that derives a new JSON by combining and manipulating
 /// the encoded bytes directly. Only used by `json_replace`, `json_set`,
@@ -16,11 +17,11 @@ use std::ptr;
 pub struct BinaryModifier<'a> {
     // The target Json to be modified
     old: JsonRef<'a>,
-    // The ptr point to the memory location of `old.value` that `new_value` should be appended
+    // The ptr point to the memory location of `old.causet_locale` that `new_causet_locale` should be appended
     to_be_modified_ptr: *const u8,
-    // The new encoded value
+    // The new encoded causet_locale
     // TODO(fullstop000): Can we just use Json instead ?
-    new_value: Option<Json>,
+    new_causet_locale: Option<Json>,
 }
 
 impl<'a> BinaryModifier<'a> {
@@ -31,40 +32,40 @@ impl<'a> BinaryModifier<'a> {
             old,
             // Mark invalid
             to_be_modified_ptr: ptr::null(),
-            new_value: None,
+            new_causet_locale: None,
         }
     }
 
-    /// Replaces the existing value JSON and adds nonexisting value
+    /// Replaces the existing causet_locale JSON and adds nonexisting causet_locale
     /// specified by the expression local_path with `new`
     pub fn set(mut self, local_path: &local_pathExpression, new: Json) -> Result<Json> {
         let result = extract_json(self.old, local_path.legs.as_slice())?;
         if !result.is_empty() {
             self.to_be_modified_ptr = result[0].as_ptr();
-            self.new_value = Some(new);
+            self.new_causet_locale = Some(new);
         } else {
             self.do_insert(&local_path.legs, new)?;
         }
         self.rebuild()
     }
 
-    /// Replaces the existing value JSON specified by the expression local_path with `new`
+    /// Replaces the existing causet_locale JSON specified by the expression local_path with `new`
     pub fn replace(mut self, local_path: &local_pathExpression, new: Json) -> Result<Json> {
         let result = extract_json(self.old, local_path.legs.as_slice())?;
         if result.is_empty() {
             return Ok(self.old.to_owned());
         }
         self.to_be_modified_ptr = result[0].as_ptr();
-        self.new_value = Some(new);
+        self.new_causet_locale = Some(new);
         self.rebuild()
     }
 
     /// Inserts a `new` into `old` JSON document by given expression local_path without replacing
-    /// existing values
+    /// existing causet_locales
     pub fn insert(mut self, local_path: &local_pathExpression, new: Json) -> Result<Json> {
         let result = extract_json(self.old, local_path.legs.as_slice())?;
         if !result.is_empty() {
-            // The local_path-value is existing. The insertion is ignored with no overwrite.
+            // The local_path-causet_locale is existing. The insertion is ignored with no overwrite.
             return Ok(self.old.to_owned());
         }
         self.do_insert(local_path.legs.as_slice(), new)?;
@@ -84,7 +85,7 @@ impl<'a> BinaryModifier<'a> {
         let parent_node = &result[0];
         match &*last_leg {
             local_pathLeg::Index(_) => {
-                // Record the parent node value offset, as it's actually relative to `old`
+                // Record the parent node causet_locale offset, as it's actually relative to `old`
                 self.to_be_modified_ptr = parent_node.as_ptr();
                 match parent_node.get_type() {
                     JsonType::Array => {
@@ -93,17 +94,17 @@ impl<'a> BinaryModifier<'a> {
                         for i in 0..elem_count {
                             elems.push(parent_node.array_get_elem(i)?);
                         }
-                        // We can ignore the idx in the local_pathLeg here since we have checked the local_path-value existence
+                        // We can ignore the idx in the local_pathLeg here since we have checked the local_path-causet_locale existence
                         elems.push(new.as_ref());
-                        self.new_value = Some(Json::from_ref_array(elems)?);
+                        self.new_causet_locale = Some(Json::from_ref_array(elems)?);
                     }
                     _ => {
-                        let new_value = vec![*parent_node, new.as_ref()];
-                        self.new_value = Some(Json::from_ref_array(new_value)?);
+                        let new_causet_locale = vec![*parent_node, new.as_ref()];
+                        self.new_causet_locale = Some(Json::from_ref_array(new_causet_locale)?);
                     }
                 }
             }
-            local_pathLeg::Key(insert_key) => {
+            local_pathLeg::Key(insert_soliton_id) => {
                 // Ignore constant
                 if parent_node.get_type() != JsonType::Object {
                     return Ok(());
@@ -111,14 +112,14 @@ impl<'a> BinaryModifier<'a> {
                 self.to_be_modified_ptr = parent_node.as_ptr();
                 let elem_count = parent_node.get_elem_count();
                 let mut entries = Vec::with_capacity(elem_count + 1);
-                match parent_node.object_search_key(insert_key.as_bytes()) {
+                match parent_node.object_search_soliton_id(insert_soliton_id.as_bytes()) {
                     Some(insert_idx) => {
                         for i in 0..elem_count {
                             if insert_idx == i {
-                                entries.push((insert_key.as_bytes(), new.as_ref()));
+                                entries.push((insert_soliton_id.as_bytes(), new.as_ref()));
                             }
                             entries.push((
-                                parent_node.object_get_key(i),
+                                parent_node.object_get_soliton_id(i),
                                 parent_node.object_get_val(i)?,
                             ));
                         }
@@ -126,14 +127,14 @@ impl<'a> BinaryModifier<'a> {
                     None => {
                         for i in 0..elem_count {
                             entries.push((
-                                parent_node.object_get_key(i),
+                                parent_node.object_get_soliton_id(i),
                                 parent_node.object_get_val(i)?,
                             ));
                         }
-                        entries.push((insert_key.as_bytes(), new.as_ref()))
+                        entries.push((insert_soliton_id.as_bytes(), new.as_ref()))
                     }
                 }
-                self.new_value = Some(Json::from_ehikv_pairs(entries)?);
+                self.new_causet_locale = Some(Json::from_ehikv_pairs(entries)?);
             }
             _ => {}
         }
@@ -173,22 +174,22 @@ impl<'a> BinaryModifier<'a> {
                             elems.push(parent_node.array_get_elem(i)?);
                         }
                     }
-                    self.new_value = Some(Json::from_ref_array(elems)?);
+                    self.new_causet_locale = Some(Json::from_ref_array(elems)?);
                 }
             }
-            local_pathLeg::Key(remove_key) => {
+            local_pathLeg::Key(remove_soliton_id) => {
                 // Ignore constant
                 if parent_node.get_type() == JsonType::Object {
                     self.to_be_modified_ptr = parent_node.as_ptr();
                     let elem_count = parent_node.get_elem_count();
                     let mut entries = Vec::with_capacity(elem_count - 1);
                     for i in 0..elem_count {
-                        let key = parent_node.object_get_key(i);
-                        if key != remove_key.as_bytes() {
-                            entries.push((key, parent_node.object_get_val(i)?));
+                        let soliton_id = parent_node.object_get_soliton_id(i);
+                        if soliton_id != remove_soliton_id.as_bytes() {
+                            entries.push((soliton_id, parent_node.object_get_val(i)?));
                         }
                     }
-                    self.new_value = Some(Json::from_ehikv_pairs(entries)?);
+                    self.new_causet_locale = Some(Json::from_ehikv_pairs(entries)?);
                 }
             }
             _ => {}
@@ -198,13 +199,13 @@ impl<'a> BinaryModifier<'a> {
 
     fn rebuild(&mut self) -> Result<Json> {
         let mut buf = Vec::with_capacity(
-            self.old.value.len() + self.new_value.as_ref().map_or(0, |v| v.value.len()),
+            self.old.causet_locale.len() + self.new_causet_locale.as_ref().map_or(0, |v| v.causet_locale.len()),
         );
         let new_tp = self.rebuild_to(&mut buf)?;
         Ok(Json::new(new_tp, buf))
     }
 
-    // Apply `new_value` as a modification to `old` by encoding the result into
+    // Apply `new_causet_locale` as a modification to `old` by encoding the result into
     // the given buffer
     //
     // Returns the old JSON's `JsonType` if the old is untouched or
@@ -213,11 +214,11 @@ impl<'a> BinaryModifier<'a> {
         if self.to_be_modified_ptr == self.old.as_ptr() {
             // Replace the old directly
             self.to_be_modified_ptr = ptr::null();
-            buf.extend_from_slice(&self.new_value.as_ref().unwrap().value);
-            return Ok(self.new_value.as_ref().unwrap().as_ref().get_type());
+            buf.extend_from_slice(&self.new_causet_locale.as_ref().unwrap().causet_locale);
+            return Ok(self.new_causet_locale.as_ref().unwrap().as_ref().get_type());
         } else if self.to_be_modified_ptr.is_null() {
             // No modification, use the old one
-            buf.extend_from_slice(self.old.value);
+            buf.extend_from_slice(self.old.causet_locale);
             return Ok(self.old.get_type());
         }
         let tp = self.old.get_type();
@@ -227,7 +228,7 @@ impl<'a> BinaryModifier<'a> {
             | JsonType::U64
             | JsonType::Double
             | JsonType::String => {
-                buf.extend_from_slice(self.old.value);
+                buf.extend_from_slice(self.old.causet_locale);
             }
             JsonType::Object | JsonType::Array => {
                 let doc_off = buf.len();
@@ -236,26 +237,26 @@ impl<'a> BinaryModifier<'a> {
                 let val_causet_start = match current.get_type() {
                     JsonType::Array => {
                         let copy_size = HEADER_LEN + elem_count * VALUE_ENTRY_LEN;
-                        buf.extend_from_slice(&current.value[..copy_size]);
+                        buf.extend_from_slice(&current.causet_locale[..copy_size]);
                         HEADER_LEN
                     }
                     JsonType::Object => {
                         let copy_size = HEADER_LEN + elem_count * (KEY_ENTRY_LEN + VALUE_ENTRY_LEN);
                         // Append ehikv entries
-                        buf.extend_from_slice(&current.value[..copy_size]);
-                        // Append keys
+                        buf.extend_from_slice(&current.causet_locale[..copy_size]);
+                        // Append soliton_ids
                         if elem_count > 0 {
-                            let first_key_offset =
-                                NumberCodec::decode_u32_le(&current.value[HEADER_LEN..]) as usize;
-                            let last_key_offset = NumberCodec::decode_u32_le(
-                                &current.value[HEADER_LEN + (elem_count - 1) * KEY_ENTRY_LEN..],
+                            let first_soliton_id_offset =
+                                NumberCodec::decode_u32_le(&current.causet_locale[HEADER_LEN..]) as usize;
+                            let last_soliton_id_offset = NumberCodec::decode_u32_le(
+                                &current.causet_locale[HEADER_LEN + (elem_count - 1) * KEY_ENTRY_LEN..],
                             ) as usize;
-                            let last_key_len = NumberCodec::decode_u16_le(
-                                &current.value
+                            let last_soliton_id_len = NumberCodec::decode_u16_le(
+                                &current.causet_locale
                                     [HEADER_LEN + (elem_count - 1) * KEY_ENTRY_LEN + U32_LEN..],
                             ) as usize;
                             buf.extend_from_slice(
-                                &current.value[first_key_offset..last_key_offset + last_key_len],
+                                &current.causet_locale[first_soliton_id_offset..last_soliton_id_offset + last_soliton_id_len],
                             );
                         }
                         HEADER_LEN + elem_count * KEY_ENTRY_LEN
@@ -263,7 +264,7 @@ impl<'a> BinaryModifier<'a> {
                     // This must be impossible
                     _ => return Err(box_err!("Unexpected source json type")),
                 };
-                // Resolve values
+                // Resolve causet_locales
                 for i in 0..elem_count {
                     let val_causet_offset = val_causet_start + i * VALUE_ENTRY_LEN;
                     self.old = current.val_causet_get(val_causet_offset)?;

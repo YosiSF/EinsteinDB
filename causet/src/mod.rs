@@ -8,12 +8,12 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+pub use self::range::*;
+
 mod range;
 pub mod ranges_iter;
 pub mod mutant_searchner;
 pub mod test_fixture;
-
-pub use self::range::*;
 
 pub type Result<T> = std::result::Result<T, crate::error::StorageError>;
 
@@ -27,7 +27,7 @@ pub trait Storage: Send {
     fn begin_mutant_search(
         &mut self,
         is_spacelike_completion_mutant_search: bool,
-        is_key_only: bool,
+        is_soliton_id_only: bool,
         range: IntervalRange,
     ) -> Result<()>;
 
@@ -35,7 +35,7 @@ pub trait Storage: Send {
 
     // TODO: Use const generics.
     // TODO: Use reference is better.
-    fn get(&mut self, is_key_only: bool, range: PointRange) -> Result<Option<OwnedHikvPair>>;
+    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<OwnedHikvPair>>;
 
     fn met_uncacheable_data(&self) -> Option<bool>;
 
@@ -48,18 +48,18 @@ impl<T: Storage + ?Sized> Storage for Box<T> {
     fn begin_mutant_search(
         &mut self,
         is_spacelike_completion_mutant_search: bool,
-        is_key_only: bool,
+        is_soliton_id_only: bool,
         range: IntervalRange,
     ) -> Result<()> {
-        (**self).begin_mutant_search(is_spacelike_completion_mutant_search, is_key_only, range)
+        (**self).begin_mutant_search(is_spacelike_completion_mutant_search, is_soliton_id_only, range)
     }
 
     fn mutant_search_next(&mut self) -> Result<Option<OwnedHikvPair>> {
         (**self).mutant_search_next()
     }
 
-    fn get(&mut self, is_key_only: bool, range: PointRange) -> Result<Option<OwnedHikvPair>> {
-        (**self).get(is_key_only, range)
+    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<OwnedHikvPair>> {
+        (**self).get(is_soliton_id_only, range)
     }
 
     fn met_uncacheable_data(&self) -> Option<bool> {

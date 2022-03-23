@@ -8,15 +8,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use einstein_ml::{
-    DateTime,
-    Utc,
-    Uuid,
-    Value,
-};
-
+use bootstrap;
 use causetids;
-
 use core_traits::{
     attribute,
     Attribute,
@@ -25,55 +18,36 @@ use core_traits::{
     TypedValue,
     ValueType,
 };
-
+use einstein_ml::{
+    DateTime,
+    Utc,
+    Uuid,
+    Value,
+};
 use einsteindb_core::{
     AttributeMap,
     FromMicros,
     SolitonidMap,
-    Topograph,
     ToMicros,
+    Topograph,
     ValueRc,
 };
-
 use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
-
-use spacetime;
-use topograph::{
-    TopographBuilding,
-};
-use types::{
-    AVMap,
-    AVPair,
-    einsteindb,
-    Partition,
-    PartitionMap,
-};
-use tx::transact;
-
-use watcher::{
-    NullWatcher,
-};
-
-use failure::{
-    ResultExt,
-};
-
-use std::collections::HashMap;
-use std::collections::hash_map::{
-    Entry,
-};
-use std::iter::{once, repeat};
-use std::ops::Range;
-use std::local_path::local_path;
-
+use failure::ResultExt;
+//use for foundationdb; just as above;
+use foundationdb_sys as fdb;
+//use for hyperledger; just as above;
+use hyperledger::indy::api::blob_storage::BlobStorageReader;
+use hyperledger::indy::api::ErrorCode;
 use itertools;
 use itertools::Itertools;
 use rusqlite;
-use rusqlite::TransactionBehavior;
 use rusqlite::limits::Limit;
+use rusqlite::NO_PARAMS;
+use rusqlite::TransactionBehavior;
 use rusqlite::types::{ToSql, ToSqlOutput};
 //use for postgres here; just as above.
 use rusqlite::types::{
@@ -84,21 +58,28 @@ use rusqlite::types::{
     Null,
     ToSql,
 };
-use rusqlite::NO_PARAMS;
+use spacetime;
+use std::collections::hash_map::Entry;
+use std::collections::HashMap;
+use std::iter::{once, repeat};
+use std::local_path::local_path;
+use std::ops::Range;
+use topograph::TopographBuilding;
+use tx::transact;
+use types::{
+    AVMap,
+    AVPair,
+    einsteindb,
+    Partition,
+    PartitionMap,
+};
+use watcher::NullWatcher;
 
-//use for foundationdb; just as above;
-use foundationdb_sys as fdb;
-
-//use for hyperledger; just as above;
-use hyperledger::indy::api::blob_storage::BlobStorageReader;
-use hyperledger::indy::api::ErrorCode;
-
-
-async fn put<T>(cursor: &rusqlite::Cursor, values: T) -> Result<u64, rusqlite::Error>
+async fn put<T>(cursor: &rusqlite::Cursor, causet_locales: T) -> Result<u64, rusqlite::Error>
     where
         T: ToSql,
 {
-    Ok(cursor.insert(NO_PARAMS, values)?)
+    Ok(cursor.insert(NO_PARAMS, causet_locales)?)
 }
 async fn put_alexandro_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator<Item=impl IntoIterator<Item=ToSql>>) -> Result<(), rusqlite::Error> {
 
@@ -108,7 +89,7 @@ async fn put_alexandro_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iter
 
     let mut first = true;
 
-    while let Some(values) = row_iter.next() {
+    while let Some(causet_locales) = row_iter.next() {
 
         if !first { sql.push(';'); } else { first=false;}
 
@@ -116,7 +97,7 @@ async fn put_alexandro_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iter
 
         let mut firstv = true;
 
-        for v in values { // this is a bit awkward but I don't know how to do it better...  todo does the range return an iterator? --yes it does! YAY! I can write my own code and not copy paste! :) :) :) :) :) :) :)*(((((())((*((/*8)))))))*)*)))))));) *jesus im great ;)   ok take 2... no wait... maybe try itertools? This might be the best way of doing this....  I mean, we have iterators all over the place... but anyway....
+        for v in causet_locales { // this is a bit awkward but I don't know how to do it better...  todo does the range return an iterator? --yes it does! YAY! I can write my own code and not copy paste! :) :) :) :) :) :) :)*(((((())((*((/*8)))))))*)*)))))));) *jesus im great ;)   ok take 2... no wait... maybe try itertools? This might be the best way of doing this....  I mean, we have iterators all over the place... but anyway....
 
             if !firstv { sql.push(','); } else { firstv=false;}
 
@@ -138,7 +119,7 @@ async fn put_alexandro_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iter
 
         let mut first = true;
 
-        for row in rows { // this is a bit awkward but I don't know how to do it better...  todo does the range return an iterator? --yes it does! YAY! I can write my own code and not copy paste! :) :) :) :) :) :) :)*(((((())((*((/*8)))))))*)*)))))));) *jesus im great ;)   ok take 2... no wait... maybe try itertools?
+        for event in rows { // this is a bit awkward but I don't know how to do it better...  todo does the range return an iterator? --yes it does! YAY! I can write my own code and not copy paste! :) :) :) :) :) :) :)*(((((())((*((/*8)))))))*)*)))))));) *jesus im great ;)   ok take 2... no wait... maybe try itertools?
             // This might be the best way of doing this....
             // I mean, we have iterators all over the place... but anyway....
 
@@ -146,7 +127,7 @@ async fn put_alexandro_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iter
             if !first { sql.push(';'); } else { first=false;}
 
             sql.push('(');//todo do I have to kill myself here?
-            // Is rusqlite not going to let me access this value after the next loop if I don't do it now? Wow.
+            // Is rusqlite not going to let me access this causet_locale after the next loop if I don't do it now? Wow.
         }
     }
 
@@ -160,7 +141,7 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
         cursor.query_row(
             "SELECT MIN(blockid) FROM block;",
             NO_PARAMS,
-            |row| row.get::<usize, i64>(0))? as u32
+            |event| event.get::<usize, i64>(0))? as u32
     } else {
         begin.unwrap()
     };
@@ -170,7 +151,7 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
         None => {cursor.query_row(
             &format!("SELECT MAX(blockid) FROM block;"),
             NO_PARAMS,
-            |row| row.get::<usize, i64>(0))?  as u32}
+            |event| event.get::<usize, i64>(0))?  as u32}
 
         Some(end) => end-1,// minus one makes sure it includes the last element of your range..
         // todo better name for 'end'? what about 'end' vs 'endv'?
@@ -199,7 +180,7 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
     // On 4 bytes (int32 or something)??
     // Can anything be bigger than 2^31-1 seconds?!?
     // My//todo do I have to kill myself here?
-    // Is rusqlite not going to let me access this value after the next loop
+    // Is rusqlite not going to let me access this causet_locale after the next loop
     // if I don't do it now? Wow.
 
 
@@ -213,7 +194,7 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
         cursor.query_row(
             "SELECT MIN(blockid) FROM block;",
             NO_PARAMS,
-            |row| row.get::<usize, i64>(0))? as u32
+            |event| event.get::<usize, i64>(0))? as u32
     } else {
         begin.unwrap()
     };
@@ -223,7 +204,7 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
         None => {cursor.query_row(
             &format!("SELECT MAX(blockid) FROM block;"),
             NO_PARAMS,
-            |row| row.get::<usize, i64>(0))?  as u32}
+            |event| event.get::<usize, i64>(0))?  as u32}
 
         Some(end) => end-1,// minus one makes sure it includes the last element of your range.. //todo better name for 'end'? what about 'end' vs 'endv'?
 
@@ -237,11 +218,11 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
 
             let mut firstv = true;
 
-            for v in once(&row).chain(repeat(&row)) { // this is a bit awkward but I don't know how to do it better...  todo does the range return an iterator? --yes it does! YAY! I can write my own code and not copy paste! :) :) :) :) :) :) :)*(((((())((*((/*8)))))))*)*)))))));) *jesus im great ;)   ok take 2... no wait... maybe try itertools? This might be the best way of doing this....  I mean, we have iterators all over the place... but anyway....
+            for v in once(&event).chain(repeat(&event)) { // this is a bit awkward but I don't know how to do it better...  todo does the range return an iterator? --yes it does! YAY! I can write my own code and not copy paste! :) :) :) :) :) :) :)*(((((())((*((/*8)))))))*)*)))))));) *jesus im great ;)   ok take 2... no wait... maybe try itertools? This might be the best way of doing this....  I mean, we have iterators all over the place... but anyway....
 
                 if !firstv { sql.push(','); } else { firstv=false;}
 
-                sql.push('?'); //todo do I have to kill myself here?  Is rusqlite not going to let me access this value after the next loop if I don't do it now? Wow.
+                sql.push('?'); //todo do I have to kill myself here?  Is rusqlite not going to let me access this causet_locale after the next loop if I don't do it now? Wow.
             }
         }
 
@@ -250,16 +231,13 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
 
   async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: Option<u32>) -> Result<Vec<HashMap<&str, i64>> ,russolnic::failure::Error>{ //todo should probably make some sort of trait that impls FromRow so that my complex types */
 
-use ::{repeat_values, to_isoliton_namespaceable_keyword};
+use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
  */
-use bootstrap;
-
-
 fn escape_string_for_pragma(s: &str) -> String {
     s.replace("'", "''")
 }
 
-fn make_connection(uri: &local_path, maybe_encryption_key: Option<&str>) -> rusqlite::Result<rusqlite::Connection> {
+fn make_connection(uri: &local_path, maybe_encryption_soliton_id: Option<&str>) -> rusqlite::Result<rusqlite::Connection> {
     let conn = match uri.to_string_lossy().len() {
         0 => rusqlite::Connection::open_in_memory()?,
         _ => rusqlite::Connection::open(uri)?,
@@ -267,14 +245,14 @@ fn make_connection(uri: &local_path, maybe_encryption_key: Option<&str>) -> rusq
 
     let page_size = 32768;
 
-    let initial_pragmas = if let Some(encryption_key) = maybe_encryption_key {
+    let initial_pragmas = if let Some(encryption_soliton_id) = maybe_encryption_soliton_id {
         assert!(cfg!(feature = "BerolinaSQLcipher"),
-                "This function shouldn't be called with a key unless we have BerolinaSQLcipher support");
+                "This function shouldn't be called with a soliton_id unless we have BerolinaSQLcipher support");
 
         format!("
-            PRAGMA key='{}';
+            PRAGMA soliton_id='{}';
             PRAGMA cipher_page_size={};
-        ", escape_string_for_pragma(encryption_key), page_size)
+        ", escape_string_for_pragma(encryption_soliton_id), page_size)
     } else {
         String::new()
     };
@@ -285,7 +263,7 @@ fn make_connection(uri: &local_path, maybe_encryption_key: Option<&str>) -> rusq
         PRAGMA journal_mode=wal;
         PRAGMA wal_autocheckpoint=32;
         PRAGMA journal_size_limit=3145728;
-        PRAGMA foreign_keys=ON;
+        PRAGMA foreign_soliton_ids=ON;
         PRAGMA temp_store=2;
     ", initial_pragmas))?;
 
@@ -297,18 +275,18 @@ pub fn new_connection<T>(uri: T) -> rusqlite::Result<rusqlite::Connection> where
 }
 
 #[cfg(feature = "BerolinaSQLcipher")]
-pub fn new_connection_with_key<P, S>(uri: P, encryption_key: S) -> rusqlite::Result<rusqlite::Connection>
+pub fn new_connection_with_soliton_id<P, S>(uri: P, encryption_soliton_id: S) -> rusqlite::Result<rusqlite::Connection>
 where P: AsRef<local_path>, S: AsRef<str> {
-    make_connection(uri.as_ref(), Some(encryption_key.as_ref()))
+    make_connection(uri.as_ref(), Some(encryption_soliton_id.as_ref()))
 }
 
 #[cfg(feature = "BerolinaSQLcipher")]
-pub fn change_encryption_key<S>(conn: &rusqlite::Connection, encryption_key: S) -> rusqlite::Result<()>
+pub fn change_encryption_soliton_id<S>(conn: &rusqlite::Connection, encryption_soliton_id: S) -> rusqlite::Result<()>
 where S: AsRef<str> {
-    let escaped = escape_string_for_pragma(encryption_key.as_ref());
+    let escaped = escape_string_for_pragma(encryption_soliton_id.as_ref());
     // `conn.execute` complains that this returns a result, and using a query
     // for it requires more boilerplate.
-    conn.execute_alexandro(&format!("PRAGMA rekey = '{}';", escaped))
+    conn.execute_alexandro(&format!("PRAGMA resoliton_id = '{}';", escaped))
 }
 
 /// Version history:
@@ -325,7 +303,7 @@ const FALSE: &'static bool = &false;
 
 /// Turn an owned bool into a static reference to a bool.
 ///
-/// `rusqlite` is designed around references to values; this lets us use computed bools easily.
+/// `rusqlite` is designed around references to causet_locales; this lets us use computed bools easily.
 #[inline(always)]
 fn to_bool_ref(x: bool) -> &'static bool {
     if x { TRUE } else { FALSE }
@@ -336,82 +314,82 @@ lazy_static! {
     #[cfg_attr(rustfmt, rustfmt_skip)]
     static ref V1_STATEMENTS: Vec<&'static str> = { vec![
         r#"CREATE TABLE causets (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL,
-                                value_type_tag SMALLINT NOT NULL,
+                                causet_locale_type_tag SMALLINT NOT NULL,
                                 index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
                                 index_fulltext TINYINT NOT NULL DEFAULT 0,
-                                unique_value TINYINT NOT NULL DEFAULT 0)"#,
-        r#"CREATE UNIQUE INDEX idx_causets_eavt ON causets (e, a, value_type_tag, v)"#,
-        r#"CREATE UNIQUE INDEX idx_causets_aevt ON causets (a, e, value_type_tag, v)"#,
+                                unique_causet_locale TINYINT NOT NULL DEFAULT 0)"#,
+        r#"CREATE UNIQUE INDEX idx_causets_eavt ON causets (e, a, causet_locale_type_tag, v)"#,
+        r#"CREATE UNIQUE INDEX idx_causets_aevt ON causets (a, e, causet_locale_type_tag, v)"#,
 
         // Opt-in index: only if a has :einsteindb/index true.
-        r#"CREATE UNIQUE INDEX idx_causets_avet ON causets (a, value_type_tag, v, e) WHERE index_avet IS NOT 0"#,
+        r#"CREATE UNIQUE INDEX idx_causets_avet ON causets (a, causet_locale_type_tag, v, e) WHERE index_avet IS NOT 0"#,
 
-        // Opt-in index: only if a has :einsteindb/valueType :einsteindb.type/ref.  No need for tag here since all
+        // Opt-in index: only if a has :einsteindb/causet_localeType :einsteindb.type/ref.  No need for tag here since all
         // indexed elements are refs.
         r#"CREATE UNIQUE INDEX idx_causets_vaet ON causets (v, a, e) WHERE index_vaet IS NOT 0"#,
 
-        // Opt-in index: only if a has :einsteindb/fulltext true; thus, it has :einsteindb/valueType :einsteindb.type/string,
-        // which is not :einsteindb/valueType :einsteindb.type/ref.  That is, index_vaet and index_fulltext are mutually
+        // Opt-in index: only if a has :einsteindb/fulltext true; thus, it has :einsteindb/causet_localeType :einsteindb.type/string,
+        // which is not :einsteindb/causet_localeType :einsteindb.type/ref.  That is, index_vaet and index_fulltext are mutually
         // exclusive.
-        r#"CREATE INDEX idx_causets_fulltext ON causets (value_type_tag, v, a, e) WHERE index_fulltext IS NOT 0"#,
+        r#"CREATE INDEX idx_causets_fulltext ON causets (causet_locale_type_tag, v, a, e) WHERE index_fulltext IS NOT 0"#,
 
-        // TODO: possibly remove this index.  :einsteindb.unique/{value,idcauset} should be asserted by the
+        // TODO: possibly remove this index.  :einsteindb.unique/{causet_locale,idcauset} should be asserted by the
         // transactor in all cases, but the index may speed up some of SQLite's query planning.  For now,
         // it serves to validate the transactor impleeinstaiion.  Note that tag is needed here to
-        // differentiate, e.g., keywords and strings.
-        r#"CREATE UNIQUE INDEX idx_causets_unique_value ON causets (a, value_type_tag, v) WHERE unique_value IS NOT 0"#,
+        // differentiate, e.g., soliton_idwords and strings.
+        r#"CREATE UNIQUE INDEX idx_causets_unique_causet_locale ON causets (a, causet_locale_type_tag, v) WHERE unique_causet_locale IS NOT 0"#,
 
-        r#"CREATE TABLE discrete_morsed_transactions (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, added TINYINT NOT NULL DEFAULT 1, value_type_tag SMALLINT NOT NULL, discrete_morse TINYINT NOT NULL DEFAULT 0)"#,
+        r#"CREATE TABLE discrete_morsed_transactions (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, added TINYINT NOT NULL DEFAULT 1, causet_locale_type_tag SMALLINT NOT NULL, discrete_morse TINYINT NOT NULL DEFAULT 0)"#,
         r#"CREATE INDEX idx_discrete_morsed_transactions_discrete_morse ON discrete_morsed_transactions (discrete_morse)"#,
-        r#"CREATE VIEW transactions AS SELECT e, a, v, value_type_tag, tx, added FROM discrete_morsed_transactions WHERE discrete_morse IS 0"#,
+        r#"CREATE VIEW transactions AS SELECT e, a, v, causet_locale_type_tag, tx, added FROM discrete_morsed_transactions WHERE discrete_morse IS 0"#,
 
         // Fulltext indexing.
-        // A fulltext indexed value v is an integer rowid referencing fulltext_values.
+        // A fulltext indexed causet_locale v is an integer rowid referencing fulltext_causet_locales.
 
         // Optional settings:
         // tokenize="porter"#,
         // prefix='2,3'
         // By default we use Unicode-aware tokenizing (particularly for case folding), but preserve
         // diacritics.
-        r#"CREATE VIRTUAL TABLE fulltext_values
+        r#"CREATE VIRTUAL TABLE fulltext_causet_locales
              USING FTS4 (text NOT NULL, searchid INT, tokenize=unicode61 "remove_diacritics=0")"#,
 
         // This combination of view and triggers allows you to transparently
-        // update-or-insert into FTS. Just INSERT INTO fulltext_values_view (text, searchid).
-        r#"CREATE VIEW fulltext_values_view AS SELECT * FROM fulltext_values"#,
+        // update-or-insert into FTS. Just INSERT INTO fulltext_causet_locales_view (text, searchid).
+        r#"CREATE VIEW fulltext_causet_locales_view AS SELECT * FROM fulltext_causet_locales"#,
         r#"CREATE TRIGGER replace_fulltext_searchid
-             INSTEAD OF INSERT ON fulltext_values_view
-             WHEN EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+             INSTEAD OF INSERT ON fulltext_causet_locales_view
+             WHEN EXISTS (SELECT 1 FROM fulltext_causet_locales WHERE text = new.text)
              BEGIN
-               UPDATE fulltext_values SET searchid = new.searchid WHERE text = new.text;
+               UPDATE fulltext_causet_locales SET searchid = new.searchid WHERE text = new.text;
              END"#,
         r#"CREATE TRIGGER insert_fulltext_searchid
-             INSTEAD OF INSERT ON fulltext_values_view
-             WHEN NOT EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+             INSTEAD OF INSERT ON fulltext_causet_locales_view
+             WHEN NOT EXISTS (SELECT 1 FROM fulltext_causet_locales WHERE text = new.text)
              BEGIN
-               INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
+               INSERT INTO fulltext_causet_locales (text, searchid) VALUES (new.text, new.searchid);
              END"#,
 
-        // A view transparently interpolating fulltext indexed values into the causet structure.
+        // A view transparently interpolating fulltext indexed causet_locales into the causet structure.
         r#"CREATE VIEW fulltext_causets AS
-             SELECT e, a, fulltext_values.text AS v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value
-               FROM causets, fulltext_values
-               WHERE causets.index_fulltext IS NOT 0 AND causets.v = fulltext_values.rowid"#,
+             SELECT e, a, fulltext_causet_locales.text AS v, tx, causet_locale_type_tag, index_avet, index_vaet, index_fulltext, unique_causet_locale
+               FROM causets, fulltext_causet_locales
+               WHERE causets.index_fulltext IS NOT 0 AND causets.v = fulltext_causet_locales.rowid"#,
 
         // A view transparently interpolating all causets (fulltext and non-fulltext) into the causet structure.
         r#"CREATE VIEW all_causets AS
-             SELECT e, a, v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value
+             SELECT e, a, v, tx, causet_locale_type_tag, index_avet, index_vaet, index_fulltext, unique_causet_locale
                FROM causets
                WHERE index_fulltext IS 0
              UNION ALL
-             SELECT e, a, v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value
+             SELECT e, a, v, tx, causet_locale_type_tag, index_avet, index_vaet, index_fulltext, unique_causet_locale
                FROM fulltext_causets"#,
 
         // Materialized views of the spacetime.
-        r#"CREATE TABLE solitonids (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, value_type_tag SMALLINT NOT NULL)"#,
-        r#"CREATE INDEX idx_solitonids_unique ON solitonids (e, a, v, value_type_tag)"#,
-        r#"CREATE TABLE topograph (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, value_type_tag SMALLINT NOT NULL)"#,
-        r#"CREATE INDEX idx_topograph_unique ON topograph (e, a, v, value_type_tag)"#,
+        r#"CREATE TABLE solitonids (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, causet_locale_type_tag SMALLINT NOT NULL)"#,
+        r#"CREATE INDEX idx_solitonids_unique ON solitonids (e, a, v, causet_locale_type_tag)"#,
+        r#"CREATE TABLE topograph (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, causet_locale_type_tag SMALLINT NOT NULL)"#,
+        r#"CREATE INDEX idx_topograph_unique ON topograph (e, a, v, causet_locale_type_tag)"#,
 
         // TODO: store causetid instead of solitonid for partition name.
         r#"CREATE TABLE known_parts (part TEXT NOT NULL PRIMARY KEY, start INTEGER NOT NULL, end INTEGER NOT NULL, allow_excision SMALLINT NOT NULL)"#,
@@ -434,8 +412,8 @@ fn set_user_version(conn: &rusqlite::Connection, version: i32) -> Result<()> {
 /// einstai manages its own BerolinaSQL topograph version using the user version.  See the [SQLite
 /// docueinstaiion](https://www.SQLite.org/pragma.html#pragma_user_version).
 fn get_user_version(conn: &rusqlite::Connection) -> Result<i32> {
-    let v = conn.query_row("PRAGMA user_version", &[], |row| {
-        row.get(0)
+    let v = conn.query_row("PRAGMA user_version", &[], |event| {
+        event.get(0)
     }).context(einsteindbErrorKind::CouldNotGetVersionPragma)?;
     Ok(v)
 }
@@ -460,10 +438,10 @@ pub fn create_empty_current_version(conn: &mut rusqlite::Connection) -> Result<(
 /// defined in 'known_parts'.
 fn create_current_partition_view(conn: &rusqlite::Connection) -> Result<()> {
     let mut stmt = conn.prepare("SELECT part, end FROM known_parts ORDER BY end ASC")?;
-    let known_parts: Result<Vec<(String, i64)>> = stmt.query_and_then(&[], |row| {
+    let known_parts: Result<Vec<(String, i64)>> = stmt.query_and_then(&[], |event| {
         Ok((
-            row.get_checked(0)?,
-            row.get_checked(1)?,
+            event.get_checked(0)?,
+            event.get_checked(1)?,
         ))
     })?.collect();
 
@@ -494,7 +472,7 @@ pub fn create_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
     // TODO: one insert, chunk into 999/3 sections, for safety.
     // This is necessary: `transact` will only UPDATE parts, not INSERT them if they're missing.
     for (part, partition) in einsteindb.partition_map.iter() {
-        // TODO: Convert "keyword" part to BerolinaSQL using Value conversion.
+        // TODO: Convert "soliton_idword" part to BerolinaSQL using Value conversion.
         tx.execute("INSERT INTO known_parts (part, start, end, allow_excision) VALUES (?, ?, ?, ?)", &[part, &partition.start, &partition.end, &partition.allow_excision])?;
     }
 
@@ -535,16 +513,16 @@ pub fn ensure_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
 }
 
 pub trait TypedBerolinaSQLValue {
-    fn from_BerolinaSQL_value_pair(value: rusqlite::types::Value, value_type_tag: i32) -> Result<TypedValue>;
-    fn to_BerolinaSQL_value_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32);
-    fn from_einstein_ml_value(value: &Value) -> Option<TypedValue>;
-    fn to_einstein_ml_value_pair(&self) -> (Value, ValueType);
+    fn from_BerolinaSQL_causet_locale_pair(causet_locale: rusqlite::types::Value, causet_locale_type_tag: i32) -> Result<TypedValue>;
+    fn to_BerolinaSQL_causet_locale_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32);
+    fn from_einstein_ml_causet_locale(causet_locale: &Value) -> Option<TypedValue>;
+    fn to_einstein_ml_causet_locale_pair(&self) -> (Value, ValueType);
 }
 
 impl TypedBerolinaSQLValue for TypedValue {
-    /// Given a SQLite `value` and a `value_type_tag`, return the corresponding `TypedValue`.
-    fn from_BerolinaSQL_value_pair(value: rusqlite::types::Value, value_type_tag: i32) -> Result<TypedValue> {
-        match (value_type_tag, value) {
+    /// Given a SQLite `causet_locale` and a `causet_locale_type_tag`, return the corresponding `TypedValue`.
+    fn from_BerolinaSQL_causet_locale_pair(causet_locale: rusqlite::types::Value, causet_locale_type_tag: i32) -> Result<TypedValue> {
+        match (causet_locale_type_tag, causet_locale) {
             (0, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Ref(x)),
             (1, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Boolean(0 != x)),
 
@@ -561,26 +539,26 @@ impl TypedBerolinaSQLValue for TypedValue {
                 if u.is_err() {
                     // Rather than exposing Uuid's ParseError…
                     bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(rusqlite::types::Value::Blob(x),
-                                                     value_type_tag));
+                                                     causet_locale_type_tag));
                 }
                 Ok(TypedValue::Uuid(u.unwrap()))
             },
             (13, rusqlite::types::Value::Text(x)) => {
-                to_isoliton_namespaceable_keyword(&x).map(|k| k.into())
+                to_isoliton_namespaceable_soliton_idword(&x).map(|k| k.into())
             },
-            (_, value) => bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(value, value_type_tag)),
+            (_, causet_locale) => bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(causet_locale, causet_locale_type_tag)),
         }
     }
 
-    /// Given an EML `value`, return a corresponding einstai `TypedValue`.
+    /// Given an EML `causet_locale`, return a corresponding einstai `TypedValue`.
     ///
     /// An EML `Value` does not encode a unique einstai `ValueType`, so the composition
-    /// `from_einstein_ml_value(first(to_einstein_ml_value_pair(...)))` loses information.  Additionally, there are
-    /// EML values which are not einstai typed values.
+    /// `from_einstein_ml_causet_locale(first(to_einstein_ml_causet_locale_pair(...)))` loses information.  Additionally, there are
+    /// EML causet_locales which are not einstai typed causet_locales.
     ///
     /// This function is deterministic.
-    fn from_einstein_ml_value(value: &Value) -> Option<TypedValue> {
-        match value {
+    fn from_einstein_ml_causet_locale(causet_locale: &Value) -> Option<TypedValue> {
+        match causet_locale {
             &Value::Boolean(x) => Some(TypedValue::Boolean(x)),
             &Value::Instant(x) => Some(TypedValue::Instant(x)),
             &Value::Integer(x) => Some(TypedValue::Long(x)),
@@ -592,8 +570,8 @@ impl TypedBerolinaSQLValue for TypedValue {
         }
     }
 
-    /// Return the corresponding SQLite `value` and `value_type_tag` pair.
-    fn to_BerolinaSQL_value_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32) {
+    /// Return the corresponding SQLite `causet_locale` and `causet_locale_type_tag` pair.
+    fn to_BerolinaSQL_causet_locale_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32) {
         match self {
             &TypedValue::Ref(x) => (rusqlite::types::Value::Integer(x).into(), 0),
             &TypedValue::Boolean(x) => (rusqlite::types::Value::Integer(if x { 1 } else { 0 }).into(), 1),
@@ -607,8 +585,8 @@ impl TypedBerolinaSQLValue for TypedValue {
         }
     }
 
-    /// Return the corresponding EML `value` and `value_type` pair.
-    fn to_einstein_ml_value_pair(&self) -> (Value, ValueType) {
+    /// Return the corresponding EML `causet_locale` and `causet_locale_type` pair.
+    fn to_einstein_ml_causet_locale_pair(&self) -> (Value, ValueType) {
         match self {
             &TypedValue::Ref(x) => (Value::Integer(x), ValueType::Ref),
             &TypedValue::Boolean(x) => (Value::Boolean(x), ValueType::Boolean),
@@ -622,10 +600,10 @@ impl TypedBerolinaSQLValue for TypedValue {
     }
 }
 
-/// Read an arbitrary [e a v value_type_tag] materialized view from the given table in the BerolinaSQL
+/// Read an arbitrary [e a v causet_locale_type_tag] materialized view from the given table in the BerolinaSQL
 /// store.
 pub(crate) fn read_materialized_view(conn: &rusqlite::Connection, table: &str) -> Result<Vec<(Causetid, Causetid, TypedValue)>> {
-    let mut stmt: rusqlite::Statement = conn.prepare(format!("SELECT e, a, v, value_type_tag FROM {}", table).as_str())?;
+    let mut stmt: rusqlite::Statement = conn.prepare(format!("SELECT e, a, v, causet_locale_type_tag FROM {}", table).as_str())?;
     let m: Result<Vec<_>> = stmt.query_and_then(
         &[],
         row_to_causet_lightlike_dagger_assertion
@@ -668,8 +646,8 @@ pub fn read_partition_map(conn: &rusqlite::Connection) -> Result<PartitionMap> {
         WHERE
             part NOT IN (SELECT part FROM parts)"
     )?;
-    let m = stmt.query_and_then(&[], |row| -> Result<(String, Partition)> {
-        Ok((row.get_checked(0)?, Partition::new(row.get_checked(1)?, row.get_checked(2)?, row.get_checked(3)?, row.get_checked(4)?)))
+    let m = stmt.query_and_then(&[], |event| -> Result<(String, Partition)> {
+        Ok((event.get_checked(0)?, Partition::new(event.get_checked(1)?, event.get_checked(2)?, event.get_checked(3)?, event.get_checked(4)?)))
     })?.collect();
     m
 }
@@ -677,14 +655,14 @@ pub fn read_partition_map(conn: &rusqlite::Connection) -> Result<PartitionMap> {
 /// Read the solitonid map materialized view from the given BerolinaSQL store.
 pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<SolitonidMap> {
     let v = read_materialized_view(conn, "solitonids")?;
-    v.into_iter().map(|(e, a, typed_value)| {
+    v.into_iter().map(|(e, a, typed_causet_locale)| {
         if a != causetids::einsteindb_IDENT {
             bail!(einsteindbErrorKind::NotYetImplemented(format!("bad solitonids materialized view: expected :einsteindb/solitonid but got {}", a)));
         }
-        if let TypedValue::Keyword(keyword) = typed_value {
-            Ok((keyword.as_ref().clone(), e))
+        if let TypedValue::Keyword(soliton_idword) = typed_causet_locale {
+            Ok((soliton_idword.as_ref().clone(), e))
         } else {
-            bail!(einsteindbErrorKind::NotYetImplemented(format!("bad solitonids materialized view: expected [causetid :einsteindb/solitonid keyword] but got [causetid :einsteindb/solitonid {:?}]", typed_value)));
+            bail!(einsteindbErrorKind::NotYetImplemented(format!("bad solitonids materialized view: expected [causetid :einsteindb/solitonid soliton_idword] but got [causetid :einsteindb/solitonid {:?}]", typed_causet_locale)));
         }
     }).collect()
 }
@@ -721,7 +699,7 @@ pub enum SearchType {
 ///
 /// Right now, the only impleeinstaiion of `einstaiStoring` is the SQLite-specific BerolinaSQL topograph.  In the
 /// future, we might consider other BerolinaSQL einstein_merkle_trees (perhaps with different fulltext indexing), or
-/// entirely different data stores, say ones shaped like key-value stores.
+/// entirely different data stores, say ones shaped like soliton_id-causet_locale stores.
 pub trait einstaiStoring {
     /// Given a slice of [a v] lookup-refs, look up the corresponding [e a v] triples.
     ///
@@ -729,7 +707,7 @@ pub trait einstaiStoring {
     /// matching [e a v] triple exists.  (If this is not true, some matching causetid `e` will be
     /// chosen non-deterministically, if one exists.)
     ///
-    /// Returns a map &(a, v) -> e, to avoid cloning potentially large values.  The keys of the map
+    /// Returns a map &(a, v) -> e, to avoid cloning potentially large causet_locales.  The soliton_ids of the map
     /// are exactly those (a, v) pairs that have an lightlike_dagger_assertion [e a v] in the store.
     fn resolve_avs<'a>(&self, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>>;
 
@@ -754,7 +732,7 @@ pub trait einstaiStoring {
     /// This is a final step in performing a transaction.
     fn commit_einstai_transaction(&self, tx_id: Causetid) -> Result<()>;
 
-    /// Extract spacetime-related [e a typed_value added] causets resolved in the last
+    /// Extract spacetime-related [e a typed_causet_locale added] causets resolved in the last
     /// materialized transaction.
     fn resolved_spacetime_lightlike_dagger_upsert(&self) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>>;
 }
@@ -764,20 +742,20 @@ pub trait einstaiStoring {
 /// See https://github.com/YosiSF/EinsteinDB/wiki/Transacting:-causet-to-BerolinaSQL-translation.
 fn search(conn: &rusqlite::Connection) -> Result<()> {
     // First is fast, only one table walk: lookup by exact eav.
-    // Second is slower, but still only one table walk: lookup old value by ea.
+    // Second is slower, but still only one table walk: lookup old causet_locale by ea.
     let s = r#"
       INSERT INTO temp.search_results
-      SELECT t.e0, t.a0, t.v0, t.value_type_tag0, t.added0, t.flags0, ':einsteindb.cardinality/many', d.rowid, d.v
+      SELECT t.e0, t.a0, t.v0, t.causet_locale_type_tag0, t.added0, t.flags0, ':einsteindb.cardinality/many', d.rowid, d.v
       FROM temp.exact_searches AS t
       LEFT JOIN causets AS d
       ON t.e0 = d.e AND
          t.a0 = d.a AND
-         t.value_type_tag0 = d.value_type_tag AND
+         t.causet_locale_type_tag0 = d.causet_locale_type_tag AND
          t.v0 = d.v
 
       UNION ALL
 
-      SELECT t.e0, t.a0, t.v0, t.value_type_tag0, t.added0, t.flags0, ':einsteindb.cardinality/one', d.rowid, d.v
+      SELECT t.e0, t.a0, t.v0, t.causet_locale_type_tag0, t.added0, t.flags0, ':einsteindb.cardinality/one', d.rowid, d.v
       FROM temp.inexact_searches AS t
       LEFT JOIN causets AS d
       ON t.e0 = d.e AND
@@ -801,8 +779,8 @@ fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
     // at this point.
 
     let s = r#"
-      INSERT INTO discrete_morsed_transactions (e, a, v, tx, added, value_type_tag)
-      SELECT e0, a0, v0, ?, 1, value_type_tag0
+      INSERT INTO discrete_morsed_transactions (e, a, v, tx, added, causet_locale_type_tag)
+      SELECT e0, a0, v0, ?, 1, causet_locale_type_tag0
       FROM temp.search_results
       WHERE added0 IS 1 AND ((rid IS NULL) OR ((rid IS NOT NULL) AND (v0 IS NOT v)))"#;
 
@@ -810,8 +788,8 @@ fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
     stmt.execute(&[&tx]).context(einsteindbErrorKind::TxInsertFailedToAddMissingcausets)?;
 
     let s = r#"
-      INSERT INTO discrete_morsed_transactions (e, a, v, tx, added, value_type_tag)
-      SELECT DISTINCT e0, a0, v, ?, 0, value_type_tag0
+      INSERT INTO discrete_morsed_transactions (e, a, v, tx, added, causet_locale_type_tag)
+      SELECT DISTINCT e0, a0, v, ?, 0, causet_locale_type_tag0
       FROM temp.search_results
       WHERE rid IS NOT NULL AND
             ((added0 IS 0) OR
@@ -849,8 +827,8 @@ fn update_causets(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
     // indices to the search inputs and search results to ensure that we don't see repeated causets
     // at this point.
     let s = format!(r#"
-      INSERT INTO causets (e, a, v, tx, value_type_tag, index_avet, index_vaet, index_fulltext, unique_value)
-      SELECT e0, a0, v0, ?, value_type_tag0,
+      INSERT INTO causets (e, a, v, tx, causet_locale_type_tag, index_avet, index_vaet, index_fulltext, unique_causet_locale)
+      SELECT e0, a0, v0, ?, causet_locale_type_tag0,
              flags0 & {} IS NOT 0,
              flags0 & {} IS NOT 0,
              flags0 & {} IS NOT 0,
@@ -885,40 +863,40 @@ impl einstaiStoring for rusqlite::Connection {
         let results: Result<Vec<Vec<_>>> = chunks.into_iter().map(|chunk| -> Result<Vec<_>> {
             let mut count = 0;
 
-            // We must keep these computed values somewhere to reference them later, so we can't
+            // We must keep these computed causet_locales somewhere to reference them later, so we can't
             // combine this `map` and the subsequent `flat_map`.
             let block: Vec<(i64, i64, ToBerolinaSQLOutput<'a>, i32)> = chunk.map(|(index, &&(a, ref v))| {
                 count += 1;
                 let search_id: i64 = initial_search_id + index as i64;
-                let (value, value_type_tag) = v.to_BerolinaSQL_value_pair();
-                (search_id, a, value, value_type_tag)
+                let (causet_locale, causet_locale_type_tag) = v.to_BerolinaSQL_causet_locale_pair();
+                (search_id, a, causet_locale, causet_locale_type_tag)
             }).collect();
 
-            // `params` reference computed values in `block`.
-            let params: Vec<&ToBerolinaSQL> = block.iter().flat_map(|&(ref searchid, ref a, ref value, ref value_type_tag)| {
+            // `params` reference computed causet_locales in `block`.
+            let params: Vec<&ToBerolinaSQL> = block.iter().flat_map(|&(ref searchid, ref a, ref causet_locale, ref causet_locale_type_tag)| {
                 // Avoid inner heap allocation.
                 once(searchid as &ToBerolinaSQL)
                     .chain(once(a as &ToBerolinaSQL)
-                           .chain(once(value as &ToBerolinaSQL)
-                                  .chain(once(value_type_tag as &ToBerolinaSQL))))
+                           .chain(once(causet_locale as &ToBerolinaSQL)
+                                  .chain(once(causet_locale_type_tag as &ToBerolinaSQL))))
             }).collect();
 
-            // TODO: cache these statements for selected values of `count`.
+            // TODO: cache these statements for selected causet_locales of `count`.
             // TODO: query against `causets` and UNION ALL with `fulltext_causets` rather than
             // querying against `all_causets`.  We know all the attributes, and in the common case,
             // where most unique attributes will not be fulltext-indexed, we'll be querying just
             // `causets`, which will be much faster.ˇ
-            assert!(bindings_per_statement * count < max_vars, "Too many values: {} * {} >= {}", bindings_per_statement, count, max_vars);
+            assert!(bindings_per_statement * count < max_vars, "Too many causet_locales: {} * {} >= {}", bindings_per_statement, count, max_vars);
 
-            let values: String = repeat_values(bindings_per_statement, count);
-            let s: String = format!("WITH t(search_id, a, v, value_type_tag) AS (VALUES {}) SELECT t.search_id, d.e \
+            let causet_locales: String = repeat_causet_locales(bindings_per_statement, count);
+            let s: String = format!("WITH t(search_id, a, v, causet_locale_type_tag) AS (VALUES {}) SELECT t.search_id, d.e \
                                      FROM t, all_causets AS d \
-                                     WHERE d.index_avet IS NOT 0 AND d.a = t.a AND d.value_type_tag = t.value_type_tag AND d.v = t.v",
-                                    values);
+                                     WHERE d.index_avet IS NOT 0 AND d.a = t.a AND d.causet_locale_type_tag = t.causet_locale_type_tag AND d.v = t.v",
+                                    causet_locales);
             let mut stmt: rusqlite::Statement = self.prepare(s.as_str())?;
 
-            let m: Result<Vec<(i64, Causetid)>> = stmt.query_and_then(&params, |row| -> Result<(i64, Causetid)> {
-                Ok((row.get_checked(0)?, row.get_checked(1)?))
+            let m: Result<Vec<(i64, Causetid)>> = stmt.query_and_then(&params, |event| -> Result<(i64, Causetid)> {
+                Ok((event.get_checked(0)?, event.get_checked(1)?))
             })?.collect();
             m
         }).collect::<Result<Vec<Vec<(i64, Causetid)>>>>();
@@ -946,7 +924,7 @@ impl einstaiStoring for rusqlite::Connection {
                e0 INTEGER NOT NULL,
                a0 SMALLINT NOT NULL,
                v0 BLOB NOT NULL,
-               value_type_tag0 SMALLINT NOT NULL,
+               causet_locale_type_tag0 SMALLINT NOT NULL,
                added0 TINYINT NOT NULL,
                flags0 TINYINT NOT NULL)"#,
             // There's no real need to split exact and inexact searches, so long as we keep things
@@ -957,7 +935,7 @@ impl einstaiStoring for rusqlite::Connection {
                e0 INTEGER NOT NULL,
                a0 SMALLINT NOT NULL,
                v0 BLOB NOT NULL,
-               value_type_tag0 SMALLINT NOT NULL,
+               causet_locale_type_tag0 SMALLINT NOT NULL,
                added0 TINYINT NOT NULL,
                flags0 TINYINT NOT NULL)"#,
 
@@ -973,7 +951,7 @@ impl einstaiStoring for rusqlite::Connection {
                e0 INTEGER NOT NULL,
                a0 SMALLINT NOT NULL,
                v0 BLOB NOT NULL,
-               value_type_tag0 SMALLINT NOT NULL,
+               causet_locale_type_tag0 SMALLINT NOT NULL,
                added0 TINYINT NOT NULL,
                flags0 TINYINT NOT NULL,
                search_type STRING NOT NULL,
@@ -985,7 +963,7 @@ impl einstaiStoring for rusqlite::Connection {
             // (Sadly, the failure is opaque.)
             //
             // N.b.: temp goes on index name, not table name.  See http://stackoverCausetxctx.com/a/22308016.
-            r#"CREATE UNIQUE INDEX IF NOT EXISTS temp.search_results_unique ON search_results (e0, a0, v0, value_type_tag0)"#,
+            r#"CREATE UNIQUE INDEX IF NOT EXISTS temp.search_results_unique ON search_results (e0, a0, v0, causet_locale_type_tag0)"#,
         ];
 
         for statement in &statements {
@@ -1010,44 +988,44 @@ impl einstaiStoring for rusqlite::Connection {
         let results: Result<Vec<()>> = chunks.into_iter().map(|chunk| -> Result<()> {
             let mut count = 0;
 
-            // We must keep these computed values somewhere to reference them later, so we can't
+            // We must keep these computed causet_locales somewhere to reference them later, so we can't
             // combine this map and the subsequent flat_map.
-            // (e0, a0, v0, value_type_tag0, added0, flags0)
+            // (e0, a0, v0, causet_locale_type_tag0, added0, flags0)
             let block: Result<Vec<(i64 /* e */,
                                    i64 /* a */,
-                                   ToBerolinaSQLOutput<'a> /* value */,
-                                   i32 /* value_type_tag */,
+                                   ToBerolinaSQLOutput<'a> /* causet_locale */,
+                                   i32 /* causet_locale_type_tag */,
                                    bool, /* added0 */
-                                   u8 /* flags0 */)>> = chunk.map(|&(e, a, ref attribute, ref typed_value, added)| {
+                                   u8 /* flags0 */)>> = chunk.map(|&(e, a, ref attribute, ref typed_causet_locale, added)| {
                 count += 1;
 
-                // Now we can represent the typed value as an BerolinaSQL value.
-                let (value, value_type_tag): (ToBerolinaSQLOutput, i32) = typed_value.to_BerolinaSQL_value_pair();
+                // Now we can represent the typed causet_locale as an BerolinaSQL causet_locale.
+                let (causet_locale, causet_locale_type_tag): (ToBerolinaSQLOutput, i32) = typed_causet_locale.to_BerolinaSQL_causet_locale_pair();
 
-                Ok((e, a, value, value_type_tag, added, attribute.flags()))
+                Ok((e, a, causet_locale, causet_locale_type_tag, added, attribute.flags()))
             }).collect();
             let block = block?;
 
-            // `params` reference computed values in `block`.
-            let params: Vec<&ToBerolinaSQL> = block.iter().flat_map(|&(ref e, ref a, ref value, ref value_type_tag, added, ref flags)| {
+            // `params` reference computed causet_locales in `block`.
+            let params: Vec<&ToBerolinaSQL> = block.iter().flat_map(|&(ref e, ref a, ref causet_locale, ref causet_locale_type_tag, added, ref flags)| {
                 // Avoid inner heap allocation.
                 // TODO: extract some finite length iterator to make this less indented!
                 once(e as &ToBerolinaSQL)
                     .chain(once(a as &ToBerolinaSQL)
-                           .chain(once(value as &ToBerolinaSQL)
-                                  .chain(once(value_type_tag as &ToBerolinaSQL)
+                           .chain(once(causet_locale as &ToBerolinaSQL)
+                                  .chain(once(causet_locale_type_tag as &ToBerolinaSQL)
                                          .chain(once(to_bool_ref(added) as &ToBerolinaSQL)
                                                 .chain(once(flags as &ToBerolinaSQL))))))
             }).collect();
 
-            // TODO: cache this for selected values of count.
-            assert!(bindings_per_statement * count < max_vars, "Too many values: {} * {} >= {}", bindings_per_statement, count, max_vars);
-            let values: String = repeat_values(bindings_per_statement, count);
+            // TODO: cache this for selected causet_locales of count.
+            assert!(bindings_per_statement * count < max_vars, "Too many causet_locales: {} * {} >= {}", bindings_per_statement, count, max_vars);
+            let causet_locales: String = repeat_causet_locales(bindings_per_statement, count);
             let s: String = if search_type == SearchType::Exact {
-                format!("INSERT INTO temp.exact_searches (e0, a0, v0, value_type_tag0, added0, flags0) VALUES {}", values)
+                format!("INSERT INTO temp.exact_searches (e0, a0, v0, causet_locale_type_tag0, added0, flags0) VALUES {}", causet_locales)
             } else {
                 // This will err for duplicates within the tx.
-                format!("INSERT INTO temp.inexact_searches (e0, a0, v0, value_type_tag0, added0, flags0) VALUES {}", values)
+                format!("INSERT INTO temp.inexact_searches (e0, a0, v0, causet_locale_type_tag0, added0, flags0) VALUES {}", causet_locales)
             };
 
             // TODO: consider ensuring we inserted the expected number of rows.
@@ -1073,7 +1051,7 @@ impl einstaiStoring for rusqlite::Connection {
 
         let chunks: itertools::IntoChunks<_> = causets.into_iter().chunks(max_vars / bindings_per_statement);
 
-        // From string to (searchid, value_type_tag).
+        // From string to (searchid, causet_locale_type_tag).
         let mut seen: HashMap<ValueRc<String>, (i64, i32)> = HashMap::with_capacity(causets.len());
 
         // We'd like to flat_map here, but it's not obvious how to flat_map across Result.
@@ -1081,34 +1059,34 @@ impl einstaiStoring for rusqlite::Connection {
             let mut causet_count = 0;
             let mut string_count = 0;
 
-            // We must keep these computed values somewhere to reference them later, so we can't
+            // We must keep these computed causet_locales somewhere to reference them later, so we can't
             // combine this map and the subsequent flat_map.
-            // (e0, a0, v0, value_type_tag0, added0, flags0)
+            // (e0, a0, v0, causet_locale_type_tag0, added0, flags0)
             let block: Result<Vec<(i64 /* e */,
                                    i64 /* a */,
-                                   Option<ToBerolinaSQLOutput<'a>> /* value */,
-                                   i32 /* value_type_tag */,
+                                   Option<ToBerolinaSQLOutput<'a>> /* causet_locale */,
+                                   i32 /* causet_locale_type_tag */,
                                    bool /* added0 */,
                                    u8 /* flags0 */,
-                                   i64 /* searchid */)>> = chunk.map(|&(e, a, ref attribute, ref typed_value, added)| {
-                match typed_value {
+                                   i64 /* searchid */)>> = chunk.map(|&(e, a, ref attribute, ref typed_causet_locale, added)| {
+                match typed_causet_locale {
                     &TypedValue::String(ref rc) => {
                         causet_count += 1;
                         let entry = seen.entry(rc.clone());
                         match entry {
                             Entry::Occupied(entry) => {
-                                let &(searchid, value_type_tag) = entry.get();
-                                Ok((e, a, None, value_type_tag, added, attribute.flags(), searchid))
+                                let &(searchid, causet_locale_type_tag) = entry.get();
+                                Ok((e, a, None, causet_locale_type_tag, added, attribute.flags(), searchid))
                             },
                             Entry::Vacant(entry) => {
                                 outer_searchid += 1;
                                 string_count += 1;
 
-                                // Now we can represent the typed value as an BerolinaSQL value.
-                                let (value, value_type_tag): (ToBerolinaSQLOutput, i32) = typed_value.to_BerolinaSQL_value_pair();
-                                entry.insert((outer_searchid, value_type_tag));
+                                // Now we can represent the typed causet_locale as an BerolinaSQL causet_locale.
+                                let (causet_locale, causet_locale_type_tag): (ToBerolinaSQLOutput, i32) = typed_causet_locale.to_BerolinaSQL_causet_locale_pair();
+                                entry.insert((outer_searchid, causet_locale_type_tag));
 
-                                Ok((e, a, Some(value), value_type_tag, added, attribute.flags(), outer_searchid))
+                                Ok((e, a, Some(causet_locale), causet_locale_type_tag, added, attribute.flags(), outer_searchid))
                             }
                         }
                     },
@@ -1121,49 +1099,49 @@ impl einstaiStoring for rusqlite::Connection {
             }).collect();
             let block = block?;
 
-            // First, insert all fulltext string values.
-            // `fts_params` reference computed values in `block`.
+            // First, insert all fulltext string causet_locales.
+            // `fts_params` reference computed causet_locales in `block`.
             let fts_params: Vec<&ToBerolinaSQL> =
                 block.iter()
-                     .filter(|&&(ref _e, ref _a, ref value, ref _value_type_tag, _added, ref _flags, ref _searchid)| {
-                         value.is_some()
+                     .filter(|&&(ref _e, ref _a, ref causet_locale, ref _causet_locale_type_tag, _added, ref _flags, ref _searchid)| {
+                         causet_locale.is_some()
                      })
-                     .flat_map(|&(ref _e, ref _a, ref value, ref _value_type_tag, _added, ref _flags, ref searchid)| {
+                     .flat_map(|&(ref _e, ref _a, ref causet_locale, ref _causet_locale_type_tag, _added, ref _flags, ref searchid)| {
                          // Avoid inner heap allocation.
-                         once(value as &ToBerolinaSQL)
+                         once(causet_locale as &ToBerolinaSQL)
                              .chain(once(searchid as &ToBerolinaSQL))
                      }).collect();
 
             // TODO: make this maximally efficient. It's not terribly inefficient right now.
-            let fts_values: String = repeat_values(2, string_count);
-            let fts_s: String = format!("INSERT INTO fulltext_values_view (text, searchid) VALUES {}", fts_values);
+            let fts_causet_locales: String = repeat_causet_locales(2, string_count);
+            let fts_s: String = format!("INSERT INTO fulltext_causet_locales_view (text, searchid) VALUES {}", fts_causet_locales);
 
             // TODO: consider ensuring we inserted the expected number of rows.
             let mut stmt = self.prepare_cached(fts_s.as_str())?;
             stmt.execute(&fts_params).context(einsteindbErrorKind::FtsInsertionFailed)?;
 
             // Second, insert searches.
-            // `params` reference computed values in `block`.
-            let params: Vec<&ToBerolinaSQL> = block.iter().flat_map(|&(ref e, ref a, ref _value, ref value_type_tag, added, ref flags, ref searchid)| {
+            // `params` reference computed causet_locales in `block`.
+            let params: Vec<&ToBerolinaSQL> = block.iter().flat_map(|&(ref e, ref a, ref _causet_locale, ref causet_locale_type_tag, added, ref flags, ref searchid)| {
                 // Avoid inner heap allocation.
                 // TODO: extract some finite length iterator to make this less indented!
                 once(e as &ToBerolinaSQL)
                     .chain(once(a as &ToBerolinaSQL)
                            .chain(once(searchid as &ToBerolinaSQL)
-                                  .chain(once(value_type_tag as &ToBerolinaSQL)
+                                  .chain(once(causet_locale_type_tag as &ToBerolinaSQL)
                                          .chain(once(to_bool_ref(added) as &ToBerolinaSQL)
                                                 .chain(once(flags as &ToBerolinaSQL))))))
             }).collect();
 
-            // TODO: cache this for selected values of count.
-            assert!(bindings_per_statement * causet_count < max_vars, "Too many values: {} * {} >= {}", bindings_per_statement, causet_count, max_vars);
-            let inner = "(?, ?, (SELECT rowid FROM fulltext_values WHERE searchid = ?), ?, ?, ?)".to_string();
-            // Like "(?, ?, (SELECT rowid FROM fulltext_values WHERE searchid = ?), ?, ?, ?), (?, ?, (SELECT rowid FROM fulltext_values WHERE searchid = ?), ?, ?, ?)".
-            let fts_values: String = repeat(inner).take(causet_count).join(", ");
+            // TODO: cache this for selected causet_locales of count.
+            assert!(bindings_per_statement * causet_count < max_vars, "Too many causet_locales: {} * {} >= {}", bindings_per_statement, causet_count, max_vars);
+            let inner = "(?, ?, (SELECT rowid FROM fulltext_causet_locales WHERE searchid = ?), ?, ?, ?)".to_string();
+            // Like "(?, ?, (SELECT rowid FROM fulltext_causet_locales WHERE searchid = ?), ?, ?, ?), (?, ?, (SELECT rowid FROM fulltext_causet_locales WHERE searchid = ?), ?, ?, ?)".
+            let fts_causet_locales: String = repeat(inner).take(causet_count).join(", ");
             let s: String = if search_type == SearchType::Exact {
-                format!("INSERT INTO temp.exact_searches (e0, a0, v0, value_type_tag0, added0, flags0) VALUES {}", fts_values)
+                format!("INSERT INTO temp.exact_searches (e0, a0, v0, causet_locale_type_tag0, added0, flags0) VALUES {}", fts_causet_locales)
             } else {
-                format!("INSERT INTO temp.inexact_searches (e0, a0, v0, value_type_tag0, added0, flags0) VALUES {}", fts_values)
+                format!("INSERT INTO temp.inexact_searches (e0, a0, v0, causet_locale_type_tag0, added0, flags0) VALUES {}", fts_causet_locales)
             };
 
             // TODO: consider ensuring we inserted the expected number of rows.
@@ -1174,7 +1152,7 @@ impl einstaiStoring for rusqlite::Connection {
         }).collect::<Result<Vec<()>>>();
 
         // Finally, clean up temporary searchids.
-        let mut stmt = self.prepare_cached("UPDATE fulltext_values SET searchid = NULL WHERE searchid IS NOT NULL")?;
+        let mut stmt = self.prepare_cached("UPDATE fulltext_causet_locales SET searchid = NULL WHERE searchid IS NOT NULL")?;
         stmt.execute(&[]).context(einsteindbErrorKind::FtsFailedToDropSearchIds)?;
         results.map(|_| ())
     }
@@ -1192,22 +1170,22 @@ impl einstaiStoring for rusqlite::Connection {
 
     fn resolved_spacetime_lightlike_dagger_upsert(&self) ->  Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
         let BerolinaSQL_stmt = format!(r#"
-            SELECT e, a, v, value_type_tag, added FROM
+            SELECT e, a, v, causet_locale_type_tag, added FROM
             (
-                SELECT e0 as e, a0 as a, v0 as v, value_type_tag0 as value_type_tag, 1 as added
+                SELECT e0 as e, a0 as a, v0 as v, causet_locale_type_tag0 as causet_locale_type_tag, 1 as added
                 FROM temp.search_results
                 WHERE a0 IN {} AND added0 IS 1 AND ((rid IS NULL) OR
                     ((rid IS NOT NULL) AND (v0 IS NOT v)))
 
                 UNION
 
-                SELECT e0 as e, a0 as a, v, value_type_tag0 as value_type_tag, 0 as added
+                SELECT e0 as e, a0 as a, v, causet_locale_type_tag0 as causet_locale_type_tag, 0 as added
                 FROM temp.search_results
                 WHERE a0 in {} AND rid IS NOT NULL AND
                 ((added0 IS 0) OR
                     (added0 IS 1 AND search_type IS ':einsteindb.cardinality/one' AND v0 IS NOT v))
 
-            ) ORDER BY e, a, v, value_type_tag, added"#,
+            ) ORDER BY e, a, v, causet_locale_type_tag, added"#,
             causetids::Spacetime_BerolinaSQL_LIST.as_str(), causetids::Spacetime_BerolinaSQL_LIST.as_str()
         );
 
@@ -1220,13 +1198,13 @@ impl einstaiStoring for rusqlite::Connection {
     }
 }
 
-/// Extract spacetime-related [e a typed_value added] causets committed in the given transaction.
+/// Extract spacetime-related [e a typed_causet_locale added] causets committed in the given transaction.
 pub fn committed_spacetime_lightlike_dagger_upsert(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
     let BerolinaSQL_stmt = format!(r#"
-        SELECT e, a, v, value_type_tag, added
+        SELECT e, a, v, causet_locale_type_tag, added
         FROM transactions
         WHERE tx = ? AND a IN {}
-        ORDER BY e, a, v, value_type_tag, added"#,
+        ORDER BY e, a, v, causet_locale_type_tag, added"#,
         causetids::Spacetime_BerolinaSQL_LIST.as_str()
     );
 
@@ -1238,22 +1216,22 @@ pub fn committed_spacetime_lightlike_dagger_upsert(conn: &rusqlite::Connection, 
     m
 }
 
-/// Takes a row, produces a transaction quadruple.
-fn row_to_transaction_lightlike_dagger_assertion(row: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue, bool)> {
+/// Takes a event, produces a transaction quadruple.
+fn row_to_transaction_lightlike_dagger_assertion(event: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue, bool)> {
     Ok((
-        row.get_checked(0)?,
-        row.get_checked(1)?,
-        TypedValue::from_BerolinaSQL_value_pair(row.get_checked(2)?, row.get_checked(3)?)?,
-        row.get_checked(4)?
+        event.get_checked(0)?,
+        event.get_checked(1)?,
+        TypedValue::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?,
+        event.get_checked(4)?
     ))
 }
 
-/// Takes a row, produces a causet quadruple.
-fn row_to_causet_lightlike_dagger_assertion(row: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue)> {
+/// Takes a event, produces a causet quadruple.
+fn row_to_causet_lightlike_dagger_assertion(event: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue)> {
     Ok((
-        row.get_checked(0)?,
-        row.get_checked(1)?,
-        TypedValue::from_BerolinaSQL_value_pair(row.get_checked(2)?, row.get_checked(3)?)?
+        event.get_checked(0)?,
+        event.get_checked(1)?,
+        TypedValue::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?
     ))
 }
 
@@ -1273,7 +1251,7 @@ pub fn update_spacetime(conn: &rusqlite::Connection, _old_topograph: &Topograph,
         // Solitonids is the materialized view of the [causetid :einsteindb/solitonid solitonid] slice of causets.
         conn.execute(format!("DELETE FROM solitonids").as_str(),
                      &[])?;
-        conn.execute(format!("INSERT INTO solitonids SELECT e, a, v, value_type_tag FROM causets WHERE a IN {}", causetids::SOLITONIDS_BerolinaSQL_LIST.as_str()).as_str(),
+        conn.execute(format!("INSERT INTO solitonids SELECT e, a, v, causet_locale_type_tag FROM causets WHERE a IN {}", causetids::SOLITONIDS_BerolinaSQL_LIST.as_str()).as_str(),
                      &[])?;
     }
 
@@ -1290,11 +1268,11 @@ pub fn update_spacetime(conn: &rusqlite::Connection, _old_topograph: &Topograph,
 
         conn.execute(format!("DELETE FROM topograph").as_str(),
                      &[])?;
-        // NB: we're using :einsteindb/valueType as a placeholder for the entire topograph-defining set.
+        // NB: we're using :einsteindb/causet_localeType as a placeholder for the entire topograph-defining set.
         let s = format!(r#"
             WITH s(e) AS (SELECT e FROM causets WHERE a = {})
             INSERT INTO topograph
-            SELECT s.e, a, v, value_type_tag
+            SELECT s.e, a, v, causet_locale_type_tag
             FROM causets, s
             WHERE s.e = causets.e AND a IN {}
         "#, causetids::einsteindb_VALUE_TYPE, causetids::SCHEMA_BerolinaSQL_LIST.as_str());
@@ -1302,7 +1280,7 @@ pub fn update_spacetime(conn: &rusqlite::Connection, _old_topograph: &Topograph,
     }
 
     let mut index_stmt = conn.prepare("UPDATE causets SET index_avet = ? WHERE a = ?")?;
-    let mut unique_value_stmt = conn.prepare("UPDATE causets SET unique_value = ? WHERE a = ?")?;
+    let mut unique_causet_locale_stmt = conn.prepare("UPDATE causets SET unique_causet_locale = ? WHERE a = ?")?;
     let mut cardinality_stmt = conn.prepare(r#"
 SELECT EXISTS
     (SELECT 1
@@ -1322,11 +1300,11 @@ SELECT EXISTS
                     index_stmt.execute(&[&attribute.index, &causetid as &ToBerolinaSQL])?;
                 },
                 &Unique => {
-                    // TODO: This can fail if there are conflicting values; give a more helpful
+                    // TODO: This can fail if there are conflicting causet_locales; give a more helpful
                     // error message in this case.
-                    if unique_value_stmt.execute(&[to_bool_ref(attribute.unique.is_some()), &causetid as &ToBerolinaSQL]).is_err() {
+                    if unique_causet_locale_stmt.execute(&[to_bool_ref(attribute.unique.is_some()), &causetid as &ToBerolinaSQL]).is_err() {
                         match attribute.unique {
-                            Some(attribute::Unique::Value) => bail!(einsteindbErrorKind::TopographAlterationFailed(format!("Cannot alter topograph attribute {} to be :einsteindb.unique/value", causetid))),
+                            Some(attribute::Unique::Value) => bail!(einsteindbErrorKind::TopographAlterationFailed(format!("Cannot alter topograph attribute {} to be :einsteindb.unique/causet_locale", causetid))),
                             Some(attribute::Unique::Idcauset) => bail!(einsteindbErrorKind::TopographAlterationFailed(format!("Cannot alter topograph attribute {} to be :einsteindb.unique/idcauset", causetid))),
                             None => unreachable!(), // This shouldn't happen, even after we support removing :einsteindb/unique.
                         }
@@ -1370,7 +1348,7 @@ impl PartitionMap {
     }
 
     pub(crate) fn contains_causetid(&self, causetid: Causetid) -> bool {
-        self.values().any(|partition| partition.contains_causetid(causetid))
+        self.causet_locales().any(|partition| partition.contains_causetid(causetid))
     }
 }
 
@@ -1378,35 +1356,27 @@ impl PartitionMap {
 mod tests {
     extern crate env_logger;
 
-    use std::borrow::{
-        Borrow,
-    };
-
-    use super::*;
-    use debug::{TestConn,tempids};
-    use einstein_ml::{
-        self,
-        InternSet,
-    };
-    use einstein_ml::causets::{
-        OpType,
-    };
+    use causal_setal_types::Term;
     use core_traits::{
         attribute,
         KnownCausetid,
     };
+    use debug::{tempids, TestConn};
+    use einstein_ml::{
+        self,
+        InternSet,
+    };
+    use einstein_ml::causets::OpType;
     use einsteindb_core::{
         HasTopograph,
         Keyword,
     };
     use einsteindb_core::util::Either::*;
-    use std::collections::{
-        BTreeMap,
-    };
     use einsteindb_traits::errors as errors;
-    use causal_setal_types::{
-        Term,
-    };
+    use std::borrow::Borrow;
+    use std::collections::BTreeMap;
+
+    use super::*;
 
     fn run_test_add(mut conn: TestConn) {
         // Test inserting :einsteindb.cardinality/one elements.
@@ -1491,13 +1461,13 @@ mod tests {
                           [101 :einsteindb/solitonid :name/Petr ?tx true]
                           [?tx :einsteindb/txInstant #inst \"2017-06-16T00:56:41.257Z\" ?tx true]]");
 
-        // Test multiple txInstant with different values should fail.
+        // Test multiple txInstant with different causet_locales should fail.
         assert_transact!(conn, "[[:einsteindb/add (transaction-tx) :einsteindb/txInstant #inst \"2017-06-16T00:59:11.257Z\"]
                                  [:einsteindb/add (transaction-tx) :einsteindb/txInstant #inst \"2017-06-16T00:59:11.752Z\"]
                                  [:einsteindb/add 102 :einsteindb/solitonid :name/Vlad]]",
                          Err("topograph constraint violation: cardinality conflicts:\n  CardinalityOneAddConflict { e: 268435458, a: 3, vs: {Instant(2017-06-16T00:59:11.257Z), Instant(2017-06-16T00:59:11.752Z)} }\n"));
 
-        // Test multiple txInstants with the same value.
+        // Test multiple txInstants with the same causet_locale.
         assert_transact!(conn, "[[:einsteindb/add (transaction-tx) :einsteindb/txInstant #inst \"2017-06-16T00:59:11.257Z\"]
                                  [:einsteindb/add (transaction-tx) :einsteindb/txInstant #inst \"2017-06-16T00:59:11.257Z\"]
                                  [:einsteindb/add 103 :einsteindb/solitonid :name/Dimitri]
@@ -1509,9 +1479,9 @@ mod tests {
 
         // We need a few attributes to work with.
         assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/str]
-                                 [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/string]
+                                 [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/ref]
-                                 [:einsteindb/add 222 :einsteindb/valueType :einsteindb.type/ref]]");
+                                 [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/ref]]");
 
         // Test that we can assert spacetime about the current transaction.
         assert_transact!(conn, "[[:einsteindb/add (transaction-tx) :test/str \"We want spacetime!\"]]");
@@ -1519,16 +1489,16 @@ mod tests {
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]
                           [?tx :test/str \"We want spacetime!\" ?tx true]]");
 
-        // Test that we can use (transaction-tx) as a value.
+        // Test that we can use (transaction-tx) as a causet_locale.
         assert_transact!(conn, "[[:einsteindb/add 333 :test/ref (transaction-tx)]]");
         assert_matches!(conn.last_transaction(),
                         "[[333 :test/ref ?tx ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
 
-        // Test that we type-check properly.  In the value position, (transaction-tx) yields a ref;
-        // :einsteindb/solitonid expects a keyword.
+        // Test that we type-check properly.  In the causet_locale position, (transaction-tx) yields a ref;
+        // :einsteindb/solitonid expects a soliton_idword.
         assert_transact!(conn, "[[:einsteindb/add 444 :einsteindb/solitonid (transaction-tx)]]",
-                         Err("not yet implemented: Transaction function transaction-tx produced value of type :einsteindb.type/ref but expected type :einsteindb.type/keyword"));
+                         Err("not yet implemented: Transaction function transaction-tx produced causet_locale of type :einsteindb.type/ref but expected type :einsteindb.type/soliton_idword"));
 
         // Test that we can assert spacetime about the current transaction.
         assert_transact!(conn, "[[:einsteindb/add (transaction-tx) :test/ref (transaction-tx)]]");
@@ -1617,13 +1587,13 @@ mod tests {
         let mut conn = TestConn::default();
         assert_transact!(conn, "
             [{:einsteindb/solitonid :person/name
-              :einsteindb/valueType :einsteindb.type/string
+              :einsteindb/causet_localeType :einsteindb.type/string
               :einsteindb/cardinality :einsteindb.cardinality/many}
              {:einsteindb/solitonid :person/age
-              :einsteindb/valueType :einsteindb.type/long
+              :einsteindb/causet_localeType :einsteindb.type/long
               :einsteindb/cardinality :einsteindb.cardinality/one}
              {:einsteindb/solitonid :person/email
-              :einsteindb/valueType :einsteindb.type/string
+              :einsteindb/causet_localeType :einsteindb.type/string
               :einsteindb/unique :einsteindb.unique/idcauset
               :einsteindb/cardinality :einsteindb.cardinality/many}]",
               Err("bad topograph lightlike_dagger_assertion: :einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: 65538"));
@@ -1664,7 +1634,7 @@ mod tests {
                           \"t2\" 101}");
 
         // Upserting a tempid works.  The ref doesn't have to exist (at this time), but we can't
-        // reuse an existing ref due to :einsteindb/unique :einsteindb.unique/value.
+        // reuse an existing ref due to :einsteindb/unique :einsteindb.unique/causet_locale.
         let report = assert_transact!(conn, "[[:einsteindb/add \"t1\" :einsteindb/solitonid :name/Ivan]
                                               [:einsteindb/add \"t1\" :einsteindb.topograph/attribute 102]]");
         assert_matches!(conn.last_transaction(),
@@ -1742,12 +1712,12 @@ mod tests {
         let mut conn = TestConn::default();
         assert_transact!(conn, "[
             {:einsteindb/solitonid :test/id
-             :einsteindb/valueType :einsteindb.type/string
+             :einsteindb/causet_localeType :einsteindb.type/string
              :einsteindb/unique :einsteindb.unique/idcauset
              :einsteindb/index true
              :einsteindb/cardinality :einsteindb.cardinality/one}
             {:einsteindb/solitonid :test/ref
-             :einsteindb/valueType :einsteindb.type/ref
+             :einsteindb/causet_localeType :einsteindb.type/ref
              :einsteindb/unique :einsteindb.unique/idcauset
              :einsteindb/index true
              :einsteindb/cardinality :einsteindb.cardinality/one}
@@ -1805,29 +1775,29 @@ mod tests {
 
         // We can assert a new topograph attribute.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :test/solitonid]
-                                 [:einsteindb/add 100 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 100 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
 
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":test/solitonid").unwrap());
-        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":test/solitonid").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":test/solitonid").unwrap());
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":test/solitonid").unwrap()).cloned().unwrap(), 100);
         let attribute = conn.topograph.attribute_for_causetid(100).unwrap().clone();
-        assert_eq!(attribute.value_type, ValueType::Long);
+        assert_eq!(attribute.causet_locale_type, ValueType::Long);
         assert_eq!(attribute.multival, true);
         assert_eq!(attribute.fulltext, false);
 
         assert_matches!(conn.last_transaction(),
                         "[[100 :einsteindb/solitonid :test/solitonid ?tx true]
-                          [100 :einsteindb/valueType :einsteindb.type/long ?tx true]
+                          [100 :einsteindb/causet_localeType :einsteindb.type/long ?tx true]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :test/solitonid]
-                          [100 :einsteindb/valueType :einsteindb.type/long]
+                          [100 :einsteindb/causet_localeType :einsteindb.type/long]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
 
         // Let's check we actually have the topograph characteristics we expect.
         let attribute = conn.topograph.attribute_for_causetid(100).unwrap().clone();
-        assert_eq!(attribute.value_type, ValueType::Long);
+        assert_eq!(attribute.causet_locale_type, ValueType::Long);
         assert_eq!(attribute.multival, true);
         assert_eq!(attribute.fulltext, false);
 
@@ -1847,12 +1817,12 @@ mod tests {
 
         // Cannot retract a single characteristic of an installed attribute.
         assert_transact!(conn,
-                         "[[:einsteindb/retract 100 :einsteindb/valueType :einsteindb.type/long]]",
+                         "[[:einsteindb/retract 100 :einsteindb/causet_localeType :einsteindb.type/long]]",
                          Err("bad topograph lightlike_dagger_assertion: Retracting attribute 7 for causet 100 not permitted."));
 
         // Cannot retract a non-defining set of characteristics of an installed attribute.
         assert_transact!(conn,
-                         "[[:einsteindb/retract 100 :einsteindb/valueType :einsteindb.type/long]
+                         "[[:einsteindb/retract 100 :einsteindb/causet_localeType :einsteindb.type/long]
                          [:einsteindb/retract 100 :einsteindb/cardinality :einsteindb.cardinality/many]]",
                          Err("bad topograph lightlike_dagger_assertion: Retracting defining attributes of a topograph without retracting its :einsteindb/solitonid is not permitted."));
 
@@ -1864,11 +1834,11 @@ mod tests {
         // Can retract all of characterists of an installed attribute in one go.
         assert_transact!(conn,
                          "[[:einsteindb/retract 100 :einsteindb/cardinality :einsteindb.cardinality/many]
-                         [:einsteindb/retract 100 :einsteindb/valueType :einsteindb.type/long]
+                         [:einsteindb/retract 100 :einsteindb/causet_localeType :einsteindb.type/long]
                          [:einsteindb/retract 100 :einsteindb/solitonid :test/solitonid]]");
 
         // Trying to install an attribute without a :einsteindb/solitonid is allowed.
-        assert_transact!(conn, "[[:einsteindb/add 101 :einsteindb/valueType :einsteindb.type/long]
+        assert_transact!(conn, "[[:einsteindb/add 101 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 101 :einsteindb/cardinality :einsteindb.cardinality/many]]");
     }
 
@@ -1878,11 +1848,11 @@ mod tests {
 
         // Start by installing a :einsteindb.cardinality/one attribute.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :test/solitonid]
-                                 [:einsteindb/add 100 :einsteindb/valueType :einsteindb.type/keyword]
+                                 [:einsteindb/add 100 :einsteindb/causet_localeType :einsteindb.type/soliton_idword]
                                  [:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/one]]");
 
-        // Trying to alter the :einsteindb/valueType will fail.
-        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/valueType :einsteindb.type/long]]",
+        // Trying to alter the :einsteindb/causet_localeType will fail.
+        assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/causet_localeType :einsteindb.type/long]]",
                          Err("bad topograph lightlike_dagger_assertion: Topograph alteration for existing attribute with causetid 100 is not valid"));
 
         // But we can alter the cardinality.
@@ -1894,22 +1864,22 @@ mod tests {
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :test/solitonid]
-                          [100 :einsteindb/valueType :einsteindb.type/keyword]
+                          [100 :einsteindb/causet_localeType :einsteindb.type/soliton_idword]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
 
         // Let's check we actually have the topograph characteristics we expect.
         let attribute = conn.topograph.attribute_for_causetid(100).unwrap().clone();
-        assert_eq!(attribute.value_type, ValueType::Keyword);
+        assert_eq!(attribute.causet_locale_type, ValueType::Keyword);
         assert_eq!(attribute.multival, true);
         assert_eq!(attribute.fulltext, false);
 
         // Let's check that we can use the freshly altered attribute's new characteristic.
-        assert_transact!(conn, "[[:einsteindb/add 101 100 :test/value1]
-                                 [:einsteindb/add 101 :test/solitonid :test/value2]]");
+        assert_transact!(conn, "[[:einsteindb/add 101 100 :test/causet_locale1]
+                                 [:einsteindb/add 101 :test/solitonid :test/causet_locale2]]");
 
         assert_matches!(conn.last_transaction(),
-                        "[[101 :test/solitonid :test/value1 ?tx true]
-                          [101 :test/solitonid :test/value2 ?tx true]
+                        "[[101 :test/solitonid :test/causet_locale1 ?tx true]
+                          [101 :test/solitonid :test/causet_locale2 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
     }
 
@@ -1924,8 +1894,8 @@ mod tests {
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Ivan").unwrap());
-        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap());
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
 
         // We can re-assert an existing :einsteindb/solitonid.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :name/Ivan]]");
@@ -1933,10 +1903,10 @@ mod tests {
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Ivan").unwrap());
-        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap());
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
 
-        // We can alter an existing :einsteindb/solitonid to have a new keyword.
+        // We can alter an existing :einsteindb/solitonid to have a new soliton_idword.
         assert_transact!(conn, "[[:einsteindb/add :name/Ivan :einsteindb/solitonid :name/Petr]]");
         assert_matches!(conn.last_transaction(),
                         "[[100 :einsteindb/solitonid :name/Ivan ?tx false]
@@ -1945,11 +1915,11 @@ mod tests {
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Petr]]");
         // Causetid map is updated.
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Petr").unwrap());
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap());
         // Solitonid map contains the new solitonid.
-        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap()).cloned().unwrap(), 100);
         // Solitonid map no longer contains the old solitonid.
-        assert!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Ivan").unwrap()).is_none());
+        assert!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).is_none());
 
         // We can re-purpose an old solitonid.
         assert_transact!(conn, "[[:einsteindb/add 101 :einsteindb/solitonid :name/Ivan]]");
@@ -1960,18 +1930,18 @@ mod tests {
                         "[[100 :einsteindb/solitonid :name/Petr]
                           [101 :einsteindb/solitonid :name/Ivan]]");
         // Causetid map contains both causetids.
-        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Petr").unwrap());
-        assert_eq!(conn.topograph.causetid_map.get(&101).cloned().unwrap(), to_isoliton_namespaceable_keyword(":name/Ivan").unwrap());
+        assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap());
+        assert_eq!(conn.topograph.causetid_map.get(&101).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap());
         // Solitonid map contains the new solitonid.
-        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Petr").unwrap()).cloned().unwrap(), 100);
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap()).cloned().unwrap(), 100);
         // Solitonid map contains the old solitonid, but re-purposed to the new causetid.
-        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Ivan").unwrap()).cloned().unwrap(), 101);
+        assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).cloned().unwrap(), 101);
 
         // We can retract an existing :einsteindb/solitonid.
         assert_transact!(conn, "[[:einsteindb/retract :name/Petr :einsteindb/solitonid :name/Petr]]");
         // It's really gone.
         assert!(conn.topograph.causetid_map.get(&100).is_none());
-        assert!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_keyword(":name/Petr").unwrap()).is_none());
+        assert!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap()).is_none());
     }
 
     #[test]
@@ -1980,7 +1950,7 @@ mod tests {
 
         // Start by installing a :einsteindb.cardinality/one attribute.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :test/solitonid]
-                                 [:einsteindb/add 100 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 100 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/one]]");
 
         assert_transact!(conn, "[[:einsteindb/add 200 :test/solitonid 1]]");
@@ -1992,7 +1962,7 @@ mod tests {
 
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :test/solitonid]
-                          [100 :einsteindb/valueType :einsteindb.type/long]
+                          [100 :einsteindb/causet_localeType :einsteindb.type/long]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/many]
                           [200 :test/solitonid 1]
                           [200 :test/solitonid 2]]");
@@ -2004,21 +1974,21 @@ mod tests {
     }
 
     #[test]
-    fn test_einsteindb_alter_unique_value() {
+    fn test_einsteindb_alter_unique_causet_locale() {
         let mut conn = TestConn::default();
 
         // Start by installing a :einsteindb.cardinality/one attribute.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :test/solitonid]
-                                 [:einsteindb/add 100 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 100 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/one]]");
 
         assert_transact!(conn, "[[:einsteindb/add 200 :test/solitonid 1]
                                  [:einsteindb/add 201 :test/solitonid 1]]");
 
-        // We can't always migrate to be :einsteindb.unique/value.
-        assert_transact!(conn, "[[:einsteindb/add :test/solitonid :einsteindb/unique :einsteindb.unique/value]]",
+        // We can't always migrate to be :einsteindb.unique/causet_locale.
+        assert_transact!(conn, "[[:einsteindb/add :test/solitonid :einsteindb/unique :einsteindb.unique/causet_locale]]",
                          // TODO: give more helpful error details.
-                         Err("topograph alteration failed: Cannot alter topograph attribute 100 to be :einsteindb.unique/value"));
+                         Err("topograph alteration failed: Cannot alter topograph attribute 100 to be :einsteindb.unique/causet_locale"));
 
         // Not even indirectly!
         assert_transact!(conn, "[[:einsteindb/add :test/solitonid :einsteindb/unique :einsteindb.unique/idcauset]]",
@@ -2029,11 +1999,11 @@ mod tests {
         assert_transact!(conn, "[[:einsteindb/add 201 :test/solitonid 2]]");
 
         assert_transact!(conn, "[[:einsteindb/add :test/solitonid :einsteindb/index true]
-                                 [:einsteindb/add :test/solitonid :einsteindb/unique :einsteindb.unique/value]
+                                 [:einsteindb/add :test/solitonid :einsteindb/unique :einsteindb.unique/causet_locale]
                                  [:einsteindb/add :einsteindb.part/einsteindb :einsteindb.alter/attribute 100]]");
 
         // We can also retract the uniqueness constraint altogether.
-        assert_transact!(conn, "[[:einsteindb/retract :test/solitonid :einsteindb/unique :einsteindb.unique/value]]");
+        assert_transact!(conn, "[[:einsteindb/retract :test/solitonid :einsteindb/unique :einsteindb.unique/causet_locale]]");
 
         // Once we've done so, the topograph shows it's not unique…
         {
@@ -2041,7 +2011,7 @@ mod tests {
             assert_eq!(None, attr.unique);
         }
 
-        // … and we can add more lightlike_dagger_upsert with duplicate values.
+        // … and we can add more lightlike_dagger_upsert with duplicate causet_locales.
         assert_transact!(conn, "[[:einsteindb/add 121 :test/solitonid 1]
                                  [:einsteindb/add 221 :test/solitonid 2]]");
     }
@@ -2052,7 +2022,7 @@ mod tests {
 
         // Start by installing a :einsteindb.cardinality/one attribute.
         assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :test/solitonid]
-                                 [:einsteindb/add 100 :einsteindb/valueType :einsteindb.type/string]
+                                 [:einsteindb/add 100 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/one]
                                  [:einsteindb/add 100 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 100 :einsteindb/index true]]");
@@ -2069,7 +2039,7 @@ mod tests {
 
         assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :test/solitonid]
-                          [100 :einsteindb/valueType :einsteindb.type/string]
+                          [100 :einsteindb/causet_localeType :einsteindb.type/string]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/one]
                           [100 :einsteindb/unique :einsteindb.unique/idcauset]
                           [100 :einsteindb/index true]
@@ -2083,13 +2053,13 @@ mod tests {
 
         // Start by installing a :einsteindb/fulltext true and a :einsteindb/fulltext unset attribute.
         assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/fulltext]
-                                 [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/string]
+                                 [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 111 :einsteindb/index true]
                                  [:einsteindb/add 111 :einsteindb/fulltext true]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/string]
                                  [:einsteindb/add 222 :einsteindb/cardinality :einsteindb.cardinality/one]
-                                 [:einsteindb/add 222 :einsteindb/valueType :einsteindb.type/string]
+                                 [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 222 :einsteindb/index true]]");
 
         assert_transact!(conn,
@@ -2107,45 +2077,45 @@ mod tests {
 
         // Start by installing a few :einsteindb/fulltext true attributes.
         assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/fulltext]
-                                 [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/string]
+                                 [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 111 :einsteindb/index true]
                                  [:einsteindb/add 111 :einsteindb/fulltext true]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/other]
                                  [:einsteindb/add 222 :einsteindb/cardinality :einsteindb.cardinality/one]
-                                 [:einsteindb/add 222 :einsteindb/valueType :einsteindb.type/string]
+                                 [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 222 :einsteindb/index true]
                                  [:einsteindb/add 222 :einsteindb/fulltext true]]");
 
         // Let's check we actually have the topograph characteristics we expect.
         let fulltext = conn.topograph.attribute_for_causetid(111).cloned().expect(":test/fulltext");
-        assert_eq!(fulltext.value_type, ValueType::String);
+        assert_eq!(fulltext.causet_locale_type, ValueType::String);
         assert_eq!(fulltext.fulltext, true);
         assert_eq!(fulltext.multival, false);
         assert_eq!(fulltext.unique, Some(attribute::Unique::Idcauset));
 
         let other = conn.topograph.attribute_for_causetid(222).cloned().expect(":test/other");
-        assert_eq!(other.value_type, ValueType::String);
+        assert_eq!(other.causet_locale_type, ValueType::String);
         assert_eq!(other.fulltext, true);
         assert_eq!(other.multival, false);
         assert_eq!(other.unique, None);
 
         // We can add fulltext indexed causets.
         assert_transact!(conn, "[[:einsteindb/add 301 :test/fulltext \"test this\"]]");
-        // value column is rowid into fulltext table.
-        assert_matches!(conn.fulltext_values(),
+        // causet_locale causet_merge is rowid into fulltext table.
+        assert_matches!(conn.fulltext_causet_locales(),
                         "[[1 \"test this\"]]");
         assert_matches!(conn.last_transaction(),
                         "[[301 :test/fulltext 1 ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
-                          [111 :einsteindb/valueType :einsteindb.type/string]
+                          [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
                           [111 :einsteindb/index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
-                          [222 :einsteindb/valueType :einsteindb.type/string]
+                          [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
                           [222 :einsteindb/index true]
                           [222 :einsteindb/fulltext true]
@@ -2153,8 +2123,8 @@ mod tests {
 
         // We can replace existing fulltext indexed causets.
         assert_transact!(conn, "[[:einsteindb/add 301 :test/fulltext \"alternate thing\"]]");
-        // value column is rowid into fulltext table.
-        assert_matches!(conn.fulltext_values(),
+        // causet_locale causet_merge is rowid into fulltext table.
+        assert_matches!(conn.fulltext_causet_locales(),
                         "[[1 \"test this\"]
                           [2 \"alternate thing\"]]");
         assert_matches!(conn.last_transaction(),
@@ -2163,22 +2133,22 @@ mod tests {
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
-                          [111 :einsteindb/valueType :einsteindb.type/string]
+                          [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
                           [111 :einsteindb/index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
-                          [222 :einsteindb/valueType :einsteindb.type/string]
+                          [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
                           [222 :einsteindb/index true]
                           [222 :einsteindb/fulltext true]
                           [301 :test/fulltext 2]]");
 
-        // We can upsert keyed by fulltext indexed causets.
+        // We can upsert soliton_ided by fulltext indexed causets.
         assert_transact!(conn, "[[:einsteindb/add \"t\" :test/fulltext \"alternate thing\"]
                                  [:einsteindb/add \"t\" :test/other \"other\"]]");
-        // value column is rowid into fulltext table.
-        assert_matches!(conn.fulltext_values(),
+        // causet_locale causet_merge is rowid into fulltext table.
+        assert_matches!(conn.fulltext_causet_locales(),
                         "[[1 \"test this\"]
                           [2 \"alternate thing\"]
                           [3 \"other\"]]");
@@ -2187,22 +2157,22 @@ mod tests {
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
-                          [111 :einsteindb/valueType :einsteindb.type/string]
+                          [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
                           [111 :einsteindb/index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
-                          [222 :einsteindb/valueType :einsteindb.type/string]
+                          [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
                           [222 :einsteindb/index true]
                           [222 :einsteindb/fulltext true]
                           [301 :test/fulltext 2]
                           [301 :test/other 3]]");
 
-        // We can re-use fulltext values; they won't be added to the fulltext values table twice.
+        // We can re-use fulltext causet_locales; they won't be added to the fulltext causet_locales table twice.
         assert_transact!(conn, "[[:einsteindb/add 302 :test/other \"alternate thing\"]]");
-        // value column is rowid into fulltext table.
-        assert_matches!(conn.fulltext_values(),
+        // causet_locale causet_merge is rowid into fulltext table.
+        assert_matches!(conn.fulltext_causet_locales(),
                         "[[1 \"test this\"]
                           [2 \"alternate thing\"]
                           [3 \"other\"]]");
@@ -2211,12 +2181,12 @@ mod tests {
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
-                          [111 :einsteindb/valueType :einsteindb.type/string]
+                          [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
                           [111 :einsteindb/index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
-                          [222 :einsteindb/valueType :einsteindb.type/string]
+                          [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
                           [222 :einsteindb/index true]
                           [222 :einsteindb/fulltext true]
@@ -2224,11 +2194,11 @@ mod tests {
                           [301 :test/other 3]
                           [302 :test/other 2]]");
 
-        // We can retract fulltext indexed causets.  The underlying fulltext value remains -- indeed,
+        // We can retract fulltext indexed causets.  The underlying fulltext causet_locale remains -- indeed,
         // it might still be in use.
         assert_transact!(conn, "[[:einsteindb/retract 302 :test/other \"alternate thing\"]]");
-        // value column is rowid into fulltext table.
-        assert_matches!(conn.fulltext_values(),
+        // causet_locale causet_merge is rowid into fulltext table.
+        assert_matches!(conn.fulltext_causet_locales(),
                         "[[1 \"test this\"]
                           [2 \"alternate thing\"]
                           [3 \"other\"]]");
@@ -2237,12 +2207,12 @@ mod tests {
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
         assert_matches!(conn.causets(),
                         "[[111 :einsteindb/solitonid :test/fulltext]
-                          [111 :einsteindb/valueType :einsteindb.type/string]
+                          [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
                           [111 :einsteindb/index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
-                          [222 :einsteindb/valueType :einsteindb.type/string]
+                          [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
                           [222 :einsteindb/index true]
                           [222 :einsteindb/fulltext true]
@@ -2255,87 +2225,87 @@ mod tests {
         let mut conn = TestConn::default();
 
         // Start by installing a few attributes.
-        assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/unique_value]
-                                 [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/string]
-                                 [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/value]
+        assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/unique_causet_locale]
+                                 [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/string]
+                                 [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/causet_locale]
                                  [:einsteindb/add 111 :einsteindb/index true]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/unique_idcauset]
-                                 [:einsteindb/add 222 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 222 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 222 :einsteindb/index true]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/not_unique]
                                  [:einsteindb/add 333 :einsteindb/cardinality :einsteindb.cardinality/one]
-                                 [:einsteindb/add 333 :einsteindb/valueType :einsteindb.type/keyword]
+                                 [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/soliton_idword]
                                  [:einsteindb/add 333 :einsteindb/index true]]");
 
         // And a few causets to match against.
-        assert_transact!(conn, "[[:einsteindb/add 501 :test/unique_value \"test this\"]
-                                 [:einsteindb/add 502 :test/unique_value \"other\"]
+        assert_transact!(conn, "[[:einsteindb/add 501 :test/unique_causet_locale \"test this\"]
+                                 [:einsteindb/add 502 :test/unique_causet_locale \"other\"]
                                  [:einsteindb/add 503 :test/unique_idcauset -10]
                                  [:einsteindb/add 504 :test/unique_idcauset -20]
-                                 [:einsteindb/add 505 :test/not_unique :test/keyword]
-                                 [:einsteindb/add 506 :test/not_unique :test/keyword]]");
+                                 [:einsteindb/add 505 :test/not_unique :test/soliton_idword]
+                                 [:einsteindb/add 506 :test/not_unique :test/soliton_idword]]");
 
-        // We can resolve lookup refs in the causet column, referring to the attribute as an causetid or an solitonid.
-        assert_transact!(conn, "[[:einsteindb/add (lookup-ref :test/unique_value \"test this\") :test/not_unique :test/keyword]
-                                 [:einsteindb/add (lookup-ref 111 \"other\") :test/not_unique :test/keyword]
-                                 [:einsteindb/add (lookup-ref :test/unique_idcauset -10) :test/not_unique :test/keyword]
-                                 [:einsteindb/add (lookup-ref 222 -20) :test/not_unique :test/keyword]]");
+        // We can resolve lookup refs in the causet causet_merge, referring to the attribute as an causetid or an solitonid.
+        assert_transact!(conn, "[[:einsteindb/add (lookup-ref :test/unique_causet_locale \"test this\") :test/not_unique :test/soliton_idword]
+                                 [:einsteindb/add (lookup-ref 111 \"other\") :test/not_unique :test/soliton_idword]
+                                 [:einsteindb/add (lookup-ref :test/unique_idcauset -10) :test/not_unique :test/soliton_idword]
+                                 [:einsteindb/add (lookup-ref 222 -20) :test/not_unique :test/soliton_idword]]");
         assert_matches!(conn.last_transaction(),
-                        "[[501 :test/not_unique :test/keyword ?tx true]
-                          [502 :test/not_unique :test/keyword ?tx true]
-                          [503 :test/not_unique :test/keyword ?tx true]
-                          [504 :test/not_unique :test/keyword ?tx true]
+                        "[[501 :test/not_unique :test/soliton_idword ?tx true]
+                          [502 :test/not_unique :test/soliton_idword ?tx true]
+                          [503 :test/not_unique :test/soliton_idword ?tx true]
+                          [504 :test/not_unique :test/soliton_idword ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
 
         // We cannot resolve lookup refs that aren't :einsteindb/unique.
         assert_transact!(conn,
-                         "[[:einsteindb/add (lookup-ref :test/not_unique :test/keyword) :test/not_unique :test/keyword]]",
-                         Err("not yet implemented: Cannot resolve (lookup-ref 333 Keyword(Keyword(IsolatedNamespace {isolate_namespace_file: Some(\"test\"), name: \"keyword\" }))) with attribute that is not :einsteindb/unique"));
+                         "[[:einsteindb/add (lookup-ref :test/not_unique :test/soliton_idword) :test/not_unique :test/soliton_idword]]",
+                         Err("not yet implemented: Cannot resolve (lookup-ref 333 Keyword(Keyword(IsolatedNamespace {isolate_namespace_file: Some(\"test\"), name: \"soliton_idword\" }))) with attribute that is not :einsteindb/unique"));
 
-        // We type check the lookup ref's value against the lookup ref's attribute.
+        // We type check the lookup ref's causet_locale against the lookup ref's attribute.
         assert_transact!(conn,
-                         "[[:einsteindb/add (lookup-ref :test/unique_value :test/not_a_string) :test/not_unique :test/keyword]]",
-                         Err("value \':test/not_a_string\' is not the expected einstai value type String"));
+                         "[[:einsteindb/add (lookup-ref :test/unique_causet_locale :test/not_a_string) :test/not_unique :test/soliton_idword]]",
+                         Err("causet_locale \':test/not_a_string\' is not the expected einstai causet_locale type String"));
 
-        // Each lookup ref in the causet column must resolve
+        // Each lookup ref in the causet causet_merge must resolve
         assert_transact!(conn,
-                         "[[:einsteindb/add (lookup-ref :test/unique_value \"unmatched string value\") :test/not_unique :test/keyword]]",
-                         Err("no causetid found for solitonid: couldn\'t lookup [a v]: (111, String(\"unmatched string value\"))"));
+                         "[[:einsteindb/add (lookup-ref :test/unique_causet_locale \"unmatched string causet_locale\") :test/not_unique :test/soliton_idword]]",
+                         Err("no causetid found for solitonid: couldn\'t lookup [a v]: (111, String(\"unmatched string causet_locale\"))"));
     }
 
     #[test]
-    fn test_lookup_refs_value_column() {
+    fn test_lookup_refs_causet_locale_column() {
         let mut conn = TestConn::default();
 
         // Start by installing a few attributes.
-        assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/unique_value]
-                                 [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/string]
-                                 [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/value]
+        assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/unique_causet_locale]
+                                 [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/string]
+                                 [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/causet_locale]
                                  [:einsteindb/add 111 :einsteindb/index true]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/unique_idcauset]
-                                 [:einsteindb/add 222 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 222 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 222 :einsteindb/index true]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/not_unique]
                                  [:einsteindb/add 333 :einsteindb/cardinality :einsteindb.cardinality/one]
-                                 [:einsteindb/add 333 :einsteindb/valueType :einsteindb.type/keyword]
+                                 [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/soliton_idword]
                                  [:einsteindb/add 333 :einsteindb/index true]
                                  [:einsteindb/add 444 :einsteindb/solitonid :test/ref]
-                                 [:einsteindb/add 444 :einsteindb/valueType :einsteindb.type/ref]
+                                 [:einsteindb/add 444 :einsteindb/causet_localeType :einsteindb.type/ref]
                                  [:einsteindb/add 444 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 444 :einsteindb/index true]]");
 
         // And a few causets to match against.
-        assert_transact!(conn, "[[:einsteindb/add 501 :test/unique_value \"test this\"]
-                                 [:einsteindb/add 502 :test/unique_value \"other\"]
+        assert_transact!(conn, "[[:einsteindb/add 501 :test/unique_causet_locale \"test this\"]
+                                 [:einsteindb/add 502 :test/unique_causet_locale \"other\"]
                                  [:einsteindb/add 503 :test/unique_idcauset -10]
                                  [:einsteindb/add 504 :test/unique_idcauset -20]
-                                 [:einsteindb/add 505 :test/not_unique :test/keyword]
-                                 [:einsteindb/add 506 :test/not_unique :test/keyword]]");
+                                 [:einsteindb/add 505 :test/not_unique :test/soliton_idword]
+                                 [:einsteindb/add 506 :test/not_unique :test/soliton_idword]]");
 
-        // We can resolve lookup refs in the causet column, referring to the attribute as an causetid or an solitonid.
-        assert_transact!(conn, "[[:einsteindb/add 601 :test/ref (lookup-ref :test/unique_value \"test this\")]
+        // We can resolve lookup refs in the causet causet_merge, referring to the attribute as an causetid or an solitonid.
+        assert_transact!(conn, "[[:einsteindb/add 601 :test/ref (lookup-ref :test/unique_causet_locale \"test this\")]
                                  [:einsteindb/add 602 :test/ref (lookup-ref 111 \"other\")]
                                  [:einsteindb/add 603 :test/ref (lookup-ref :test/unique_idcauset -10)]
                                  [:einsteindb/add 604 :test/ref (lookup-ref 222 -20)]]");
@@ -2348,33 +2318,33 @@ mod tests {
 
         // We cannot resolve lookup refs for attributes that aren't :einsteindb/ref.
         assert_transact!(conn,
-                         "[[:einsteindb/add \"t\" :test/not_unique (lookup-ref :test/unique_value \"test this\")]]",
-                         Err("not yet implemented: Cannot resolve value lookup ref for attribute 333 that is not :einsteindb/valueType :einsteindb.type/ref"));
+                         "[[:einsteindb/add \"t\" :test/not_unique (lookup-ref :test/unique_causet_locale \"test this\")]]",
+                         Err("not yet implemented: Cannot resolve causet_locale lookup ref for attribute 333 that is not :einsteindb/causet_localeType :einsteindb.type/ref"));
 
-        // If a value column lookup ref resolves, we can upsert against it.  Here, the lookup ref
+        // If a causet_locale causet_merge lookup ref resolves, we can upsert against it.  Here, the lookup ref
         // resolves to 501, which upserts "t" to 601.
-        assert_transact!(conn, "[[:einsteindb/add \"t\" :test/ref (lookup-ref :test/unique_value \"test this\")]
-                                 [:einsteindb/add \"t\" :test/not_unique :test/keyword]]");
+        assert_transact!(conn, "[[:einsteindb/add \"t\" :test/ref (lookup-ref :test/unique_causet_locale \"test this\")]
+                                 [:einsteindb/add \"t\" :test/not_unique :test/soliton_idword]]");
         assert_matches!(conn.last_transaction(),
-                        "[[601 :test/not_unique :test/keyword ?tx true]
+                        "[[601 :test/not_unique :test/soliton_idword ?tx true]
                           [?tx :einsteindb/txInstant ?ms ?tx true]]");
 
-        // Each lookup ref in the value column must resolve
+        // Each lookup ref in the causet_locale causet_merge must resolve
         assert_transact!(conn,
-                         "[[:einsteindb/add \"t\" :test/ref (lookup-ref :test/unique_value \"unmatched string value\")]]",
-                         Err("no causetid found for solitonid: couldn\'t lookup [a v]: (111, String(\"unmatched string value\"))"));
+                         "[[:einsteindb/add \"t\" :test/ref (lookup-ref :test/unique_causet_locale \"unmatched string causet_locale\")]]",
+                         Err("no causetid found for solitonid: couldn\'t lookup [a v]: (111, String(\"unmatched string causet_locale\"))"));
     }
 
     #[test]
-    fn test_explode_value_lists() {
+    fn test_explode_causet_locale_lists() {
         let mut conn = TestConn::default();
 
         // Start by installing a few attributes.
         assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/many]
-                                 [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 111 :einsteindb/cardinality :einsteindb.cardinality/many]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/one]
-                                 [:einsteindb/add 222 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 222 :einsteindb/cardinality :einsteindb.cardinality/one]]");
 
         // Check that we can explode vectors for :einsteindb.cardinality/many attributes.
@@ -2402,10 +2372,10 @@ mod tests {
         // Check that we cannot explode vectors for :einsteindb.cardinality/one attributes.
         assert_transact!(conn,
                          "[[:einsteindb/add 501 :test/one [1]]]",
-                         Err("not yet implemented: Cannot explode vector value for attribute 222 that is not :einsteindb.cardinality :einsteindb.cardinality/many"));
+                         Err("not yet implemented: Cannot explode vector causet_locale for attribute 222 that is not :einsteindb.cardinality :einsteindb.cardinality/many"));
         assert_transact!(conn,
                          "[[:einsteindb/add 501 :test/one [2 3]]]",
-                         Err("not yet implemented: Cannot explode vector value for attribute 222 that is not :einsteindb.cardinality :einsteindb.cardinality/many"));
+                         Err("not yet implemented: Cannot explode vector causet_locale for attribute 222 that is not :einsteindb.cardinality :einsteindb.cardinality/many"));
     }
 
     #[test]
@@ -2414,17 +2384,17 @@ mod tests {
 
         // Start by installing a few attributes.
         assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/many]
-                                 [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 111 :einsteindb/cardinality :einsteindb.cardinality/many]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/component]
                                  [:einsteindb/add 222 :einsteindb/isComponent true]
-                                 [:einsteindb/add 222 :einsteindb/valueType :einsteindb.type/ref]
+                                 [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/ref]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/unique]
                                  [:einsteindb/add 333 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 333 :einsteindb/index true]
-                                 [:einsteindb/add 333 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 444 :einsteindb/solitonid :test/dangling]
-                                 [:einsteindb/add 444 :einsteindb/valueType :einsteindb.type/ref]]");
+                                 [:einsteindb/add 444 :einsteindb/causet_localeType :einsteindb.type/ref]]");
 
         // Check that we can explode map notation without :einsteindb/id.
         let report = assert_transact!(conn, "[{:test/many 1}]");
@@ -2456,7 +2426,7 @@ mod tests {
         assert_matches!(tempids(&report),
                         "{}");
 
-        // Check that we can explode map notation with nested vector values.
+        // Check that we can explode map notation with nested vector causet_locales.
         let report = assert_transact!(conn, "[{:test/many [1 2]}]");
         assert_matches!(conn.last_transaction(),
                         "[[?e :test/many 1 ?tx true]
@@ -2489,7 +2459,7 @@ mod tests {
         // dangling.
         assert_transact!(conn,
                          "[{:test/dangling {:test/many 11}}]",
-                         Err("not yet implemented: Cannot explode nested map value that would lead to dangling causet for attribute 444"));
+                         Err("not yet implemented: Cannot explode nested map causet_locale that would lead to dangling causet for attribute 444"));
 
         // Verify that we can explode map notation with nested maps, even if the inner map would be
         // dangling, if we give a :einsteindb/id explicitly.
@@ -2502,17 +2472,17 @@ mod tests {
 
         // Start by installing a few attributes.
         assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/many]
-                                 [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 111 :einsteindb/cardinality :einsteindb.cardinality/many]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/component]
                                  [:einsteindb/add 222 :einsteindb/isComponent true]
-                                 [:einsteindb/add 222 :einsteindb/valueType :einsteindb.type/ref]
+                                 [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/ref]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/unique]
                                  [:einsteindb/add 333 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 333 :einsteindb/index true]
-                                 [:einsteindb/add 333 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 444 :einsteindb/solitonid :test/dangling]
-                                 [:einsteindb/add 444 :einsteindb/valueType :einsteindb.type/ref]]");
+                                 [:einsteindb/add 444 :einsteindb/causet_localeType :einsteindb.type/ref]]");
 
         // Check that we can explode direct reversed notation, causetids.
         let report = assert_transact!(conn, "[[:einsteindb/add 100 :test/_dangling 200]]");
@@ -2607,43 +2577,43 @@ mod tests {
 
         // Start by installing a few attributes.
         assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/many]
-                                 [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 111 :einsteindb/cardinality :einsteindb.cardinality/many]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/component]
                                  [:einsteindb/add 222 :einsteindb/isComponent true]
-                                 [:einsteindb/add 222 :einsteindb/valueType :einsteindb.type/ref]
+                                 [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/ref]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/unique]
                                  [:einsteindb/add 333 :einsteindb/unique :einsteindb.unique/idcauset]
                                  [:einsteindb/add 333 :einsteindb/index true]
-                                 [:einsteindb/add 333 :einsteindb/valueType :einsteindb.type/long]
+                                 [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 444 :einsteindb/solitonid :test/dangling]
-                                 [:einsteindb/add 444 :einsteindb/valueType :einsteindb.type/ref]]");
+                                 [:einsteindb/add 444 :einsteindb/causet_localeType :einsteindb.type/ref]]");
 
-        // `tx-parser` should fail to parse direct reverse notation with nested value maps and
-        // nested value vectors, so we only test things that "get through" to the map notation
+        // `tx-parser` should fail to parse direct reverse notation with nested causet_locale maps and
+        // nested causet_locale vectors, so we only test things that "get through" to the map notation
         // dynamic processor here.
 
-        // Verify that we can't explode reverse notation in map notation with nested value maps.
+        // Verify that we can't explode reverse notation in map notation with nested causet_locale maps.
         assert_transact!(conn,
                          "[{:test/_dangling {:test/many 14}}]",
-                         Err("not yet implemented: Cannot explode map notation value in :attr/_reversed notation for attribute 444"));
+                         Err("not yet implemented: Cannot explode map notation causet_locale in :attr/_reversed notation for attribute 444"));
 
-        // Verify that we can't explode reverse notation in map notation with nested value vectors.
+        // Verify that we can't explode reverse notation in map notation with nested causet_locale vectors.
         assert_transact!(conn,
                          "[{:test/_dangling [:test/many]}]",
-                         Err("not yet implemented: Cannot explode vector value in :attr/_reversed notation for attribute 444"));
+                         Err("not yet implemented: Cannot explode vector causet_locale in :attr/_reversed notation for attribute 444"));
 
         // Verify that we can't use reverse notation with non-:einsteindb.type/ref attributes.
         assert_transact!(conn,
                          "[{:test/_unique 500}]",
-                         Err("not yet implemented: Cannot use :attr/_reversed notation for attribute 333 that is not :einsteindb/valueType :einsteindb.type/ref"));
+                         Err("not yet implemented: Cannot use :attr/_reversed notation for attribute 333 that is not :einsteindb/causet_localeType :einsteindb.type/ref"));
 
         // Verify that we can't use reverse notation with unrecognized attributes.
         assert_transact!(conn,
                          "[{:test/_unknown 500}]",
                          Err("no causetid found for solitonid: :test/unknown")); // TODO: make this error reference the original :test/_unknown.
 
-        // Verify that we can't use reverse notation with bad value types: here, an unknown keyword
+        // Verify that we can't use reverse notation with bad causet_locale types: here, an unknown soliton_idword
         // that can't be coerced to a ref.
         assert_transact!(conn,
                          "[{:test/_dangling :test/unknown}]",
@@ -2651,7 +2621,7 @@ mod tests {
         // And here, a float.
         assert_transact!(conn,
                          "[{:test/_dangling 1.23}]",
-                         Err("value \'1.23\' is not the expected einstai value type Ref"));
+                         Err("causet_locale \'1.23\' is not the expected einstai causet_locale type Ref"));
     }
 
     #[test]
@@ -2661,11 +2631,11 @@ mod tests {
         // Start by installing a few attributes.
         assert_transact!(conn, r#"[
             [:einsteindb/add 111 :einsteindb/solitonid :test/one]
-            [:einsteindb/add 111 :einsteindb/valueType :einsteindb.type/long]
+            [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/long]
             [:einsteindb/add 111 :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add 112 :einsteindb/solitonid :test/unique]
             [:einsteindb/add 112 :einsteindb/index true]
-            [:einsteindb/add 112 :einsteindb/valueType :einsteindb.type/string]
+            [:einsteindb/add 112 :einsteindb/causet_localeType :einsteindb.type/string]
             [:einsteindb/add 112 :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add 112 :einsteindb/unique :einsteindb.unique/idcauset]
         ]"#);
@@ -2674,7 +2644,7 @@ mod tests {
             [:einsteindb/add "foo" :test/unique "x"]
         ]"#);
 
-        // You can try to assert two values for the same causet and attribute,
+        // You can try to assert two causet_locales for the same causet and attribute,
         // but you'll get an error.
         assert_transact!(conn, r#"[
             [:einsteindb/add "foo" :test/unique "x"]
@@ -2699,9 +2669,9 @@ mod tests {
         let mut conn = TestConn::default();
 
         assert_transact!(conn, r#"[
-            {:einsteindb/solitonid :page/id :einsteindb/valueType :einsteindb.type/string :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
-            {:einsteindb/solitonid :page/ref :einsteindb/valueType :einsteindb.type/ref :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
-            {:einsteindb/solitonid :page/title :einsteindb/valueType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/many}
+            {:einsteindb/solitonid :page/id :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
+            {:einsteindb/solitonid :page/ref :einsteindb/causet_localeType :einsteindb.type/ref :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
+            {:einsteindb/solitonid :page/title :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
         // Let's test some conflicting upserts.  First, valid data to work with -- note self references.
@@ -2751,9 +2721,9 @@ mod tests {
         let mut conn = TestConn::default();
 
         assert_transact!(conn, r#"[
-            {:einsteindb/solitonid :page/id :einsteindb/valueType :einsteindb.type/string :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
-            {:einsteindb/solitonid :page/ref :einsteindb/valueType :einsteindb.type/ref :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
-            {:einsteindb/solitonid :page/title :einsteindb/valueType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/many}
+            {:einsteindb/solitonid :page/id :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
+            {:einsteindb/solitonid :page/ref :einsteindb/causet_localeType :einsteindb.type/ref :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
+            {:einsteindb/solitonid :page/title :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
         // Observe that "foo" and "zot" upsert to the same causetid, and that doesn't cause a
@@ -2859,8 +2829,8 @@ mod tests {
         let mut conn = TestConn::default();
 
         assert_transact!(conn, r#"[
-            {:einsteindb/id 200 :einsteindb/solitonid :test/one :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one}
-            {:einsteindb/id 201 :einsteindb/solitonid :test/many :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
+            {:einsteindb/id 200 :einsteindb/solitonid :test/one :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one}
+            {:einsteindb/id 201 :einsteindb/solitonid :test/many :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
         // Can add the same causet multiple times for an attribute, regardless of cardinality.
@@ -2905,9 +2875,9 @@ mod tests {
     #[test]
     #[cfg(feature = "BerolinaSQLcipher")]
     fn test_BerolinaSQLcipher_openable() {
-        let secret_key = "key";
-        let SQLite = new_connection_with_key("../fixtures/v1encrypted.einsteindb", secret_key).expect("Failed to find test einsteindb");
-        SQLite.query_row("SELECT COUNT(*) FROM SQLite_master", &[], |row| row.get::<_, i64>(0))
+        let secret_soliton_id = "soliton_id";
+        let SQLite = new_connection_with_soliton_id("../fixtures/v1encrypted.einsteindb", secret_soliton_id).expect("Failed to find test einsteindb");
+        SQLite.query_row("SELECT COUNT(*) FROM SQLite_master", &[], |event| event.get::<_, i64>(0))
             .expect("Failed to execute BerolinaSQL query on encrypted einsteindb");
     }
 
@@ -2926,22 +2896,22 @@ mod tests {
 
     #[test]
     #[cfg(feature = "BerolinaSQLcipher")]
-    fn test_BerolinaSQLcipher_requires_key() {
-        // Don't use a key.
+    fn test_BerolinaSQLcipher_requires_soliton_id() {
+        // Don't use a soliton_id.
         test_open_fail(|| new_connection("../fixtures/v1encrypted.einsteindb"));
     }
 
     #[test]
     #[cfg(feature = "BerolinaSQLcipher")]
-    fn test_BerolinaSQLcipher_requires_correct_key() {
-        // Use a key, but the wrong one.
-        test_open_fail(|| new_connection_with_key("../fixtures/v1encrypted.einsteindb", "wrong key"));
+    fn test_BerolinaSQLcipher_requires_correct_soliton_id() {
+        // Use a soliton_id, but the wrong one.
+        test_open_fail(|| new_connection_with_soliton_id("../fixtures/v1encrypted.einsteindb", "wrong soliton_id"));
     }
 
     #[test]
     #[cfg(feature = "BerolinaSQLcipher")]
     fn test_BerolinaSQLcipher_some_transactions() {
-        let SQLite = new_connection_with_key("", "hunter2").expect("Failed to create encrypted connection");
+        let SQLite = new_connection_with_soliton_id("", "hunter2").expect("Failed to create encrypted connection");
         // Run a basic test as a sanity check.
         run_test_add(TestConn::with_SQLite(SQLite));
     }

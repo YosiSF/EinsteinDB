@@ -4,8 +4,8 @@ use std::ffi::CString;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CausetPartitionerRequest<'a> {
-    pub prev_user_key: &'a [u8],
-    pub current_user_key: &'a [u8],
+    pub prev_user_soliton_id: &'a [u8],
+    pub current_user_soliton_id: &'a [u8],
     pub current_output_file_size: u64,
 }
 
@@ -20,19 +20,40 @@ pub struct CausetPartitionerContext<'a> {
     pub is_full_jet_bundle: bool,
     pub is_manual_jet_bundle: bool,
     pub output_l_naught: i32,
-    pub smallest_key: &'a [u8],
-    pub largest_key: &'a [u8],
+    pub smallest_soliton_id: &'a [u8],
+    pub largest_soliton_id: &'a [u8],
+    pub current_user_soliton_id: &'a [u8],
+    pub current_output_file_size: u64,
+
 }
 
+
+
+
+
 pub trait CausetPartitioner {
+    fn partitioner_name(&self) -> &str;
+    fn partitioner_name_cstr(&self) -> CString;
+    fn partitioner_name_cstr_mut(&mut self) -> &mut CString;
+    fn partitioner_name_cstr_mut_ref(&mut self) -> &mut CString;
+    fn partitioner_name_cstr_ref(&self) -> &CString;
+    fn partitioner_name_cstr_ref_mut(&mut self) -> &mut CString;
+    fn partitioner_name_cstr_mut_ref_ref(&mut self) -> &mut CString;
+
     fn should_partition(&mut self, req: &CausetPartitionerRequest<'_>) -> CausetPartitionerResult;
-    fn can_do_trivial_move(&mut self, smallest_key: &[u8], largest_key: &[u8]) -> bool;
+    fn can_do_trivial_move(&mut self, smallest_soliton_id: &[u8], largest_soliton_id: &[u8]) -> bool;
+    fn partitioner_context(&mut self, req: &CausetPartitionerRequest<'_>) -> CausetPartitionerContext<'_>;
+
 }
 
 pub trait CausetPartitionerFactory: Sync + Send {
-    // Lifetime of the partitioner can be changed to be bounded by the factory's lifetime once
-    // generic associated types is supported.
-    // https://github.com/rust-lang/rfcs/blob/master/text/1598-generic_associated_types.md
+    fn create_partitioner(&self) -> Box<dyn CausetPartitioner>;
+}   // end trait CausetPartitionerFactory
+
+
+
+
+
     type Partitioner: CausetPartitioner + 'static;
 
     fn name(&self) -> &CString;

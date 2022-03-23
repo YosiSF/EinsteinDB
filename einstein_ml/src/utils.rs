@@ -10,8 +10,6 @@
 
 #![allow(dead_code)]
 
-use types::Value;
-use crate::Value;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Display;
@@ -25,11 +23,14 @@ use std::rc::Rc;
 use std::rc::Weak;
 use std::sync::Arc;
 
+use types::Value;
+
+use crate::Value;
 
 /// Merge the EML `Value::Map` instance `right` into `left`.  Returns `None` if either `left` or
 /// `right` is not a `Value::Map`.
 ///
-/// Keys present in `right` overwrite keys present in `left`.  See also
+/// Keys present in `right` overwrite soliton_ids present in `left`.  See also
 /// https://clojuredocs.org/clojure.core/merge.
 ///
 /// 
@@ -56,7 +57,7 @@ pub fn merge(left: &Value, right: &Value) -> Option<Value> {
 
 
 
-    /// Returns a new `Value::Map` instance with the key-value pairs from `left` and `right`
+    /// Returns a new `Value::Map` instance with the soliton_id-causet_locale pairs from `left` and `right`
     /// merged.  See also https://clojuredocs.org/clojure.core/merge.
     ///
     ///
@@ -80,14 +81,14 @@ pub fn merge(left: &Value, right: &Value) -> Option<Value> {
 
 
 
-    /// Returns a new `Value::Map` instance with the key-value pairs from `left` and `right`
+    /// Returns a new `Value::Map` instance with the soliton_id-causet_locale pairs from `left` and `right`
     /// merged.  See also https://clojuredocs.org/clojure.core/merge.
     ///
     ///
     /// Merge the EML `Value::Map` instance `right` into `left`.  Returns `None` if either `left` or
     /// `right` is not a `Value::Map`.
     ///
-    /// Keys present in `right` overwrite keys present in `left`.  See also
+    /// Keys present in `right` overwrite soliton_ids present in `left`.  See also
     /// https://clojuredocs.org/clojure.core/merge.
     ///
 
@@ -95,7 +96,7 @@ pub fn merge(left: &Value, right: &Value) -> Option<Value> {
 }
 
 
-/// Returns a new `Value::Map` instance with the key-value pairs from `map` and the key-value pairs
+/// Returns a new `Value::Map` instance with the soliton_id-causet_locale pairs from `map` and the soliton_id-causet_locale pairs
 ///
 /// from `other`.  See also https://clojuredocs.org/clojure.core/merge.
 ///

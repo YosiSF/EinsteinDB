@@ -8,20 +8,20 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-use std::fmt::Display;
-use std::io;
-use std::num::ParseFloatError;
-use std::str::Utf8Error;
-use std::string::FromUtf8Error;
-use std::{error, str};
+ use allegroeinstein
+ use einsteindbpb::{self, ScalarFuncSig};
+ use quick_error::quick_error;
+ use regex::Error as RegexpError;
+ use serde_json::error::Error as SerdeError;
+ use std::{error, str};
+ use std::fmt::Display;
+ use std::io;
+ use std::num::ParseFloatError;
+ use std::str::Utf8Error;
+ use std::string::FromUtf8Error;
 
-use quick_error::quick_error;
-use regex::Error as RegexpError;
-use serde_json::error::Error as SerdeError;
-use allegroeinstein-prolog-causet-BerolinaSQL::error::EvaluateError;
-use einsteindbpb::{self, ScalarFuncSig};
-
-pub const ERR_M_BIGGER_THAN_D: i32 = 1427;
+ -prolog-causet-BerolinaSQL::error::EvaluateError;
+ pub const ERR_M_BIGGER_THAN_D: i32 = 1427;
 pub const ERR_UNKNOWN: i32 = 1105;
 pub const ERR_REGEXP: i32 = 1139;
 pub const ZLIB_LENGTH_CORRUPTED: i32 = 1258;
@@ -46,7 +46,7 @@ quick_error! {
             display("encoding failed")
         }
         ColumnOffset(offset: usize) {
-            display("illegal column offset: {}", offset)
+            display("illegal causet_merge offset: {}", offset)
         }
         UnknownSignature(sig: ScalarFuncSig) {
             display("Unknown signature: {:?}", sig)
@@ -64,12 +64,12 @@ quick_error! {
 
 impl Error {
     pub fn overCausetxctx(data: impl Display, expr: impl Display) -> Error {
-        let msg = format!("{} value is out of range in '{}'", data, expr);
+        let msg = format!("{} causet_locale is out of range in '{}'", data, expr);
         Error::Eval(msg, ERR_DATA_OUT_OF_RANGE)
     }
 
     pub fn truncated_wrong_val(data_type: impl Display, val: impl Display) -> Error {
-        let msg = format!("Truncated incorrect {} value: '{}'", data_type, val);
+        let msg = format!("Truncated incorrect {} causet_locale: '{}'", data_type, val);
         Error::Eval(msg, ERR_TRUNCATE_WRONG_VALUE)
     }
 
@@ -77,10 +77,10 @@ impl Error {
         Error::Eval("Data Truncated".into(), WARN_DATA_TRUNCATED)
     }
 
-    pub fn m_bigger_than_d(column: impl Display) -> Error {
+    pub fn m_bigger_than_d(causet_merge: impl Display) -> Error {
         let msg = format!(
-            "For float(M,D), double(M,D) or decimal(M,D), M must be >= D (column {}').",
-            column
+            "For float(M,D), double(M,D) or decimal(M,D), M must be >= D (causet_merge {}').",
+            causet_merge
         );
         Error::Eval(msg, ERR_M_BIGGER_THAN_D)
     }
@@ -134,8 +134,8 @@ impl Error {
         Error::Eval(msg, ERR_TRUNCATE_WRONG_VALUE)
     }
 
-    pub fn incorrect_datetime_value(val: impl Display) -> Error {
-        let msg = format!("Incorrect datetime value: '{}'", val);
+    pub fn incorrect_datetime_causet_locale(val: impl Display) -> Error {
+        let msg = format!("Incorrect datetime causet_locale: '{}'", val);
         Error::Eval(msg, ERR_TRUNCATE_WRONG_VALUE)
     }
 

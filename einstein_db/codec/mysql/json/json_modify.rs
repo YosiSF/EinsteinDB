@@ -8,12 +8,12 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-use super::super::Result;
-use super::modifier::BinaryModifier;
-use super::local_path_expr::local_pathExpression;
-use super::{Json, JsonRef};
+ use super::{Json, JsonRef};
+ use super::local_path_expr::local_pathExpression;
+ use super::modifier::BinaryModifier;
+ use super::super::Result;
 
-/// `ModifyType` is for modify a JSON.
+ /// `ModifyType` is for modify a JSON.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ModifyType {
     /// `Insert` is for inserting a new element into a JSON.
@@ -33,13 +33,13 @@ impl<'a> JsonRef<'a> {
     pub fn modify(
         &self,
         local_path_expr_list: &[local_pathExpression],
-        values: Vec<Json>,
+        causet_locales: Vec<Json>,
         mt: ModifyType,
     ) -> Result<Json> {
-        if local_path_expr_list.len() != values.len() {
+        if local_path_expr_list.len() != causet_locales.len() {
             return Err(box_err!(
                 "Incorrect number of parameters: expected: {:?}, found {:?}",
-                values.len(),
+                causet_locales.len(),
                 local_path_expr_list.len()
             ));
         }
@@ -52,12 +52,12 @@ impl<'a> JsonRef<'a> {
             }
         }
         let mut res = self.to_owned();
-        for (expr, value) in local_path_expr_list.iter().zip(values.into_iter()) {
+        for (expr, causet_locale) in local_path_expr_list.iter().zip(causet_locales.into_iter()) {
             let modifier = BinaryModifier::new(res.as_ref());
             res = match mt {
-                ModifyType::Insert => modifier.insert(&expr, value)?,
-                ModifyType::Replace => modifier.replace(&expr, value)?,
-                ModifyType::Set => modifier.set(&expr, value)?,
+                ModifyType::Insert => modifier.insert(&expr, causet_locale)?,
+                ModifyType::Replace => modifier.replace(&expr, causet_locale)?,
+                ModifyType::Set => modifier.set(&expr, causet_locale)?,
             };
         }
         Ok(res)
@@ -66,8 +66,8 @@ impl<'a> JsonRef<'a> {
 
 #[braneg(test)]
 mod tests {
-    use super::super::local_path_expr::parse_json_local_path_expr;
     use super::*;
+    use super::super::local_path_expr::parse_json_local_path_expr;
 
     #[test]
     fn test_json_modify() {
@@ -179,7 +179,7 @@ mod tests {
                 false,
             ),
         ];
-        for (i, (json, local_path, value, mt, expected, success)) in test_cases.drain(..).enumerate() {
+        for (i, (json, local_path, causet_locale, mt, expected, success)) in test_cases.drain(..).enumerate() {
             let json: Result<Json> = json.parse();
             assert!(
                 json.is_ok(),
@@ -194,27 +194,27 @@ mod tests {
                 i,
                 local_path
             );
-            let value = value.parse();
+            let causet_locale = causet_locale.parse();
             assert!(
-                value.is_ok(),
-                "#{} expect value parse ok but got {:?}",
+                causet_locale.is_ok(),
+                "#{} expect causet_locale parse ok but got {:?}",
                 i,
-                value
+                causet_locale
             );
             let expected: Result<Json> = expected.parse();
             assert!(
                 expected.is_ok(),
-                "#{} expect expected value parse ok but got {:?}",
+                "#{} expect expected causet_locale parse ok but got {:?}",
                 i,
                 expected
             );
-            let (json, local_path, value, expected) = (
+            let (json, local_path, causet_locale, expected) = (
                 json.unwrap(),
                 local_path.unwrap(),
-                value.unwrap(),
+                causet_locale.unwrap(),
                 expected.unwrap(),
             );
-            let result = json.as_ref().modify(vec![local_path].as_slice(), vec![value], mt);
+            let result = json.as_ref().modify(vec![local_path].as_slice(), vec![causet_locale], mt);
             if success {
                 assert!(
                     result.is_ok(),

@@ -8,12 +8,12 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-use super::super::Result;
-use super::modifier::BinaryModifier;
-use super::local_path_expr::local_pathExpression;
-use super::{Json, JsonRef};
+ use super::{Json, JsonRef};
+ use super::local_path_expr::local_pathExpression;
+ use super::modifier::BinaryModifier;
+ use super::super::Result;
 
-impl<'a> JsonRef<'a> {
+ impl<'a> JsonRef<'a> {
     /// Removes elements from Json,
     /// All local_path expressions cannot contain * or ** wildcard.
     /// If any error occurs, the input won't be changed.
@@ -36,8 +36,8 @@ impl<'a> JsonRef<'a> {
 
 #[braneg(test)]
 mod tests {
-    use super::super::local_path_expr::parse_json_local_path_expr;
     use super::*;
+    use super::super::local_path_expr::parse_json_local_path_expr;
 
     #[test]
     fn test_json_remove() {
@@ -69,7 +69,7 @@ mod tests {
             let e: Result<Json> = expected.parse();
             assert!(
                 e.is_ok(),
-                "#{} expect expected value parse ok but got {:?}",
+                "#{} expect expected causet_locale parse ok but got {:?}",
                 i,
                 e
             );

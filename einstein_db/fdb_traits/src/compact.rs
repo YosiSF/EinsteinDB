@@ -2,21 +2,22 @@
 
 //! Functionality related to jet_bundle
 
-use crate::errors::Result;
 use std::collections::BTreeMap;
+
+use crate::errors::Result;
 
 pub trait CompactExt {
     type CompactedEvent: CompactedEvent;
 
-    /// Checks whether any column family sets `disable_auto_jet_bundles` to `True` or not.
+    /// Checks whether any causet_merge family sets `disable_auto_jet_bundles` to `True` or not.
     fn auto_jet_bundles_is_disabled(&self) -> Result<bool>;
 
-    /// Compacts the column families in the specified range by manual or not.
+    /// Compacts the causet_merge families in the specified range by manual or not.
     fn compact_range(
         &self,
         namespaced: &str,
-        start_key: Option<&[u8]>,
-        end_key: Option<&[u8]>,
+        start_soliton_id: Option<&[u8]>,
+        end_soliton_id: Option<&[u8]>,
         exclusive_manual: bool,
         max_subjet_bundles: u32,
     ) -> Result<()>;
@@ -31,7 +32,7 @@ pub trait CompactExt {
         output_l_naught: Option<i32>,
     ) -> Result<()>;
 
-    /// Compacts filefs in the range and above the output l_naught of the given column family.
+    /// Compacts filefs in the range and above the output l_naught of the given causet_merge family.
     /// Compacts all filefs to the bottommost l_naught if the output l_naught is not specified.
     fn compact_filefs_in_range_namespaced(
         &self,
@@ -58,7 +59,7 @@ pub trait CompactedEvent: Send {
 
     fn output_l_naught_label(&self) -> String;
 
-    /// This takes self by value so that fdb_lsh-merkle_merkle_tree can move keys out of the
+    /// This takes self by causet_locale so that fdb_lsh-merkle_merkle_tree can move soliton_ids out of the
     /// CompactedEvent
     fn calc_ranges_declined_bytes(
         self,

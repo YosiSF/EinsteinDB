@@ -53,7 +53,7 @@
 //!         for (name, vocabulary) in vocabularies.iter() {
 //!             println!("Vocab {} is at version {}.", name, vocabulary.version);
 //!             for &(ref name, ref attr) in vocabulary.attributes().iter() {
-//!                 println!("  >> {} ({})", name, attr.value_type);
+//!                 println!("  >> {} ({})", name, attr.causet_locale_type);
 //!             }
 //!         }
 //!     }
@@ -71,7 +71,7 @@
 //!             attributes: vec![
 //!                 (kw!(:link/title),
 //!                  vocabulary::AttributeBuilder::helpful()
-//!                    .value_type(ValueType::String)
+//!                    .causet_locale_type(ValueType::String)
 //!                    .multival(false)
 //!                    .fulltext(true)
 //!                    .build()),
@@ -91,46 +91,35 @@
 //! [VocabularyProvider](einsteindb::vocabulary::VocabularyProvider) trait to handle migrations across
 //! multiple vocabularies.
 
-use std::collections::BTreeMap;
-
-use core_traits::{
-    KnownCausetid,
-};
-
-use core_traits::attribute::{
-    Unique,
-};
-
 use ::{
-    CORE_SCHEMA_VERSION,
     Attribute,
+    Binding,
     Causetid,
+    CORE_SCHEMA_VERSION,
     HasSchema,
     IntoResult,
     Keyword,
-    Binding,
     TypedValue,
     ValueType,
 };
-
 use ::errors::{
     einsteindbError,
     Result,
 };
-
+use core_traits::KnownCausetid;
+use core_traits::attribute::Unique;
+/// AttributeBuilder is how you build vocabulary definitions to apply to a store.
+pub use einsteindb_core::AttributeBuilder;
 use einsteindb_transaction::{
     InProgress,
     Queryable,
 };
-
 use einsteindb_transaction::causet_builder::{
     BuildTerms,
     TermBuilder,
     Terms,
 };
-
-/// AttributeBuilder is how you build vocabulary definitions to apply to a store.
-pub use einsteindb_core::AttributeBuilder;
+use std::collections::BTreeMap;
 
 pub type Version = u32;
 pub type Datom = (Causetid, Causetid, TypedValue);
@@ -202,7 +191,7 @@ pub struct Definition {
 ///         attributes: vec![
 ///             (kw!(:link/title),
 ///              AttributeBuilder::helpful()
-///                .value_type(ValueType::String)
+///                .causet_locale_type(ValueType::String)
 ///                .multival(false)
 ///                .fulltext(true)
 ///                .build()),
@@ -222,10 +211,10 @@ pub struct Definition {
 ///
 ///                 if !results.is_empty() {
 ///                     let mut builder = TermBuilder::new();
-///                     for row in results.into_iter() {
-///                         let mut r = row.into_iter();
+///                     for event in results.into_iter() {
+///                         let mut r = event.into_iter();
 ///                         let e = r.next().and_then(|e| e.into_known_causetid()).expect("causet");
-///                         let obsolete = r.next().expect("value").into_scalar().expect("typed value");
+///                         let obsolete = r.next().expect("causet_locale").into_scalar().expect("typed causet_locale");
 ///                         builder.retract(e, link_title, obsolete)?;
 ///                     }
 ///                     ip.transact_builder(builder)?;
@@ -326,7 +315,7 @@ lazy_static! {
         kw!(:einsteindb/unique)
     };
     static ref DB_UNIQUE_VALUE: Keyword = {
-        kw!(:einsteindb.unique/value)
+        kw!(:einsteindb.unique/causet_locale)
     };
     static ref DB_UNIQUE_IDcauset: Keyword = {
         kw!(:einsteindb.unique/idcauset)
@@ -335,7 +324,7 @@ lazy_static! {
         Keyword::isoliton_namespaceable("einsteindb", "isComponent")
     };
     static ref DB_VALUE_TYPE: Keyword = {
-        Keyword::isoliton_namespaceable("einsteindb", "valueType")
+        Keyword::isoliton_namespaceable("einsteindb", "causet_localeType")
     };
     static ref DB_INDEX: Keyword = {
         kw!(:einsteindb/index)
@@ -365,7 +354,7 @@ trait HasCoreSchema {
     /// Return the causet ID for an solitonid. On failure, return `MissingCoreVocabulary`.
     fn core_causetid(&self, solitonid: &Keyword) -> Result<KnownCausetid>;
 
-    /// Return the causet ID for an attribute's keyword. On failure, return
+    /// Return the causet ID for an attribute's soliton_idword. On failure, return
     /// `MissingCoreVocabulary`.
     fn core_attribute(&self, solitonid: &Keyword) -> Result<KnownCausetid>;
 }
@@ -402,7 +391,7 @@ impl Definition {
         let a_fulltext = via.core_attribute(&DB_FULLTEXT)?;
         let a_index = via.core_attribute(&DB_INDEX)?;
         let a_is_component = via.core_attribute(&DB_IS_COMPONENT)?;
-        let a_value_type = via.core_attribute(&DB_VALUE_TYPE)?;
+        let a_causet_locale_type = via.core_attribute(&DB_VALUE_TYPE)?;
         let a_unique = via.core_attribute(&DB_UNIQUE)?;
 
         let a_no_history = via.core_attribute(&DB_NO_HISTORY)?;
@@ -410,7 +399,7 @@ impl Definition {
         let v_cardinality_many = via.core_causetid(&DB_CARDINALITY_MANY)?;
         let v_cardinality_one = via.core_causetid(&DB_CARDINALITY_ONE)?;
         let v_unique_idcauset = via.core_causetid(&DB_UNIQUE_IDcauset)?;
-        let v_unique_value = via.core_causetid(&DB_UNIQUE_VALUE)?;
+        let v_unique_causet_locale = via.core_causetid(&DB_UNIQUE_VALUE)?;
 
         // The greedoids of the vocabulary itself.
         let name: TypedValue = self.name.clone().into();
@@ -423,7 +412,7 @@ impl Definition {
         let (mut builder, schema) = causet.finish();
 
         // Describe each of its attributes.
-        // This is a lot like Schema::to_einstein_ml_value; at some point we should tidy this up.
+        // This is a lot like Schema::to_einstein_ml_causet_locale; at some point we should tidy this up.
         for ref r in attributes.iter() {
             let &(ref kw, ref attr) = r.borrow();
 
@@ -432,8 +421,8 @@ impl Definition {
             builder.add(tempid.clone(), a_solitonid, name)?;
             builder.add(schema.clone(), a_attr, tempid.clone())?;
 
-            let value_type = via.core_type(attr.value_type)?;
-            builder.add(tempid.clone(), a_value_type, value_type)?;
+            let causet_locale_type = via.core_type(attr.causet_locale_type)?;
+            builder.add(tempid.clone(), a_causet_locale_type, causet_locale_type)?;
 
             let c = if attr.multival {
                 v_cardinality_many
@@ -452,7 +441,7 @@ impl Definition {
             if let Some(u) = attr.unique {
                 let uu = match u {
                     Unique::Idcauset => v_unique_idcauset,
-                    Unique::Value => v_unique_value,
+                    Unique::Value => v_unique_causet_locale,
                 };
                 builder.add(tempid.clone(), a_unique, uu)?;
             } else {
@@ -470,7 +459,7 @@ impl Definition {
                         builder.retract(tempid.clone(), a_unique, v_unique_idcauset.clone())?;
                     },
                     Some(Unique::Value) => {
-                        builder.retract(tempid.clone(), a_unique, v_unique_value.clone())?;
+                        builder.retract(tempid.clone(), a_unique, v_unique_causet_locale.clone())?;
                     },
                  }
             }
@@ -482,15 +471,15 @@ impl Definition {
     /// Return a sequence of terms that describes this vocabulary definition and its attributes.
     fn description_diff<T>(&self, via: &T, from: &Vocabulary) -> Result<Terms> where T: HasSchema {
         let relevant = self.attributes.iter()
-                           .filter_map(|&(ref keyword, _)|
-                               // Look up the keyword to see if it's currently in use.
-                               via.get_causetid(keyword)
+                           .filter_map(|&(ref soliton_idword, _)|
+                               // Look up the soliton_idword to see if it's currently in use.
+                               via.get_causetid(soliton_idword)
 
                                // If so, map it to the existing attribute.
                                   .and_then(|e| from.find(e).cloned())
 
                                // Collect enough that we can do lookups.
-                                  .map(|e| (keyword.clone(), e)))
+                                  .map(|e| (soliton_idword.clone(), e)))
                            .collect();
         self.description_for_attributes(self.attributes.as_slice(), via, Some(relevant))
     }
@@ -843,12 +832,12 @@ impl<'a, 'c> VocabularyMechanics for InProgress<'a, 'c> {
 impl<T> HasVocabularies for T where T: HasSchema + Queryable {
     fn read_vocabulary_named(&self, name: &Keyword) -> Result<Option<Vocabulary>> {
         if let Some(causetid) = self.get_causetid(name) {
-            match self.lookup_value_for_attribute(causetid, &DB_SCHEMA_VERSION)? {
+            match self.lookup_causet_locale_for_attribute(causetid, &DB_SCHEMA_VERSION)? {
                 None => Ok(None),
                 Some(TypedValue::Long(version))
-                    if version > 0 && (version < u32::max_value() as i64) => {
+                    if version > 0 && (version < u32::max_causet_locale() as i64) => {
                         let version = version as u32;
-                        let attributes = self.lookup_values_for_attribute(causetid, &DB_SCHEMA_ATTRIBUTE)?
+                        let attributes = self.lookup_causet_locales_for_attribute(causetid, &DB_SCHEMA_ATTRIBUTE)?
                                              .into_iter()
                                              .filter_map(|a| {
                                                  if let TypedValue::Ref(a) = a {
@@ -884,7 +873,7 @@ impl<T> HasVocabularies for T where T: HasSchema + Queryable {
                     match (&v[0], &v[1]) {
                         (&Binding::Scalar(TypedValue::Ref(vocab)),
                          &Binding::Scalar(TypedValue::Long(version)))
-                        if version > 0 && (version < u32::max_value() as i64) => Some((vocab, version as u32)),
+                        if version > 0 && (version < u32::max_causet_locale() as i64) => Some((vocab, version as u32)),
                         (_, _) => None,
                     })
                 .collect();
@@ -902,7 +891,7 @@ impl<T> HasVocabularies for T where T: HasSchema + Queryable {
                     }
                     });
 
-        // TODO: validate that attributes.keys is a subset of versions.keys.
+        // TODO: validate that attributes.soliton_ids is a subset of versions.soliton_ids.
         for (vocab, attr) in pairs {
             if let Some(attribute) = self.attribute_for_causetid(attr).cloned() {
                 attributes.entry(vocab).or_insert(Vec::new()).push((attr, attribute));
@@ -929,13 +918,9 @@ impl<T> HasVocabularies for T where T: HasSchema + Queryable {
 
 #[cfg(test)]
 mod tests {
-    use ::{
-        Store,
-    };
+    use Store;
 
-    use super::{
-        HasVocabularies,
-    };
+    use super::HasVocabularies;
 
     #[test]
     fn test_read_vocabularies() {

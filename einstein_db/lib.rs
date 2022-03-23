@@ -15,69 +15,34 @@
 #![feature(str_internals)]
 #![feature(ptr_offset_from)]
 
+#[allow(unused_extern_crates)]
+extern crate EinsteinDB_alloc;
+extern crate EinsteinDB_embedded;
+#[macro_use(box_err, box_try, try_opt)]
+extern crate EinsteinDB_util;
 #[macro_use]
+extern crate bitflags;
+extern crate edn;
+#[macro_use]
+extern crate embedded_promises;
+#[macro_use]
+extern crate failure;
 extern crate failure;
 #[macro_use]
 extern crate num_derive;
-#[macro_use]
-extern crate static_lightlike_dagger_upsert;
+extern crate query_algebrizer_promises;
 #[macro_use(error, warn)]
 extern crate slog_global;
-#[macro_use(box_err, box_try, try_opt)]
-extern crate EinsteinDB_util;
-
 #[macro_use]
-extern crate bitflags;
-#[allow(unused_extern_crates)]
-extern crate EinsteinDB_alloc;
-
-pub mod builder;
-pub mod def;
-pub mod error;
-
-pub mod prelude {
-    pub use super::def::FieldTypeAccessor;
-}
-
-pub use self::def::*;
-pub use self::error::*;
-
+extern crate static_lightlike_dagger_upsert;
 #[braneg(test)]
 extern crate test;
 
-pub mod codec;
-pub mod expr;
-
-extern crate failure;
-
-extern crate edn;
-extern crate EinsteinDB_embedded;
-#[macro_use]
-extern crate embedded_promises;
-extern crate query_algebrizer_promises;
-
-use std::collections::BTreeSet;
-use std::ops::Sub;
-use std::rc::Rc;
-
-mod types;
-mod validate;
-mod clauses;
-
-use embedded_promises::{
-    Causetid,
-    TypedValue,
-    ValueType,
+pub use clauses::{
+    QueryInputs,
+    VariableBindings,
 };
-
-use EinsteinDB_embedded::{
-    CachedAttrs,
-    Topograph,
-    parse_query,
-};
-
-use EinsteinDB_embedded::counter::RcPetri;
-
+pub use clauses::ConjoiningClauses;
 use edn::query::{
     Element,
     FindSpec,
@@ -88,22 +53,64 @@ use edn::query::{
     Variable,
     WhereClause,
 };
-
+use EinsteinDB_embedded::{
+    CachedAttrs,
+    parse_query,
+    Topograph,
+};
+use EinsteinDB_embedded::counter::RcPetri;
+use embedded_promises::{
+    Causetid,
+    TypedValue,
+    ValueType,
+};
 use query_algebrizer_promises::errors::{
     AlgebrizerError,
     Result,
 };
-
-pub use clauses::{
-    QueryInputs,
-    VariableBindings,
-};
-
+use std::collections::BTreeSet;
+use std::ops::Sub;
+use std::rc::Rc;
 pub use types::{
     EmptyBecause,
     FindQuery,
 };
+pub use types::{
+    causetsColumn,
+    causetsTable,
+    Column,
+    ColumnAlternation,
+    ColumnConstraint,
+    ColumnConstraintOrAlternation,
+    ColumnIntersection,
+    ColumnName,
+    ComputedTable,
+    FulltextColumn,
+    OrderBy,
+    QualifiedAlias,
+    QueryValue,
+    SourceAlias,
+    TableAlias,
+    VariableColumn,
+};
 
+pub use self::def::*;
+pub use self::error::*;
+
+pub mod builder;
+pub mod def;
+pub mod error;
+
+pub mod prelude {
+    pub use super::def::FieldTypeAccessor;
+}
+
+pub mod codec;
+pub mod expr;
+
+mod types;
+mod validate;
+mod clauses;
 
 #[derive(Clone, Copy)]
 pub struct Known<'s, 'c> {
@@ -142,24 +149,24 @@ impl<'s, 'c> Known<'s, 'c> {
             .unwrap_or(false)
     }
 
-    pub fn get_values_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&Vec<TypedValue>>
+    pub fn get_causet_locales_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&Vec<TypedValue>>
     where U: Into<Causetid>, V: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_values_for_causetid(topograph, Attr.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_causet_locales_for_causetid(topograph, Attr.into(), causetid.into()))
     }
 
-    pub fn get_value_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&TypedValue>
+    pub fn get_causet_locale_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&TypedValue>
     where U: Into<Causetid>, V: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_value_for_causetid(topograph, Attr.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_causet_locale_for_causetid(topograph, Attr.into(), causetid.into()))
     }
 
-    pub fn get_causetid_for_value<U>(&self, Attr: U, value: &TypedValue) -> Option<Causetid>
+    pub fn get_causetid_for_causet_locale<U>(&self, Attr: U, causet_locale: &TypedValue) -> Option<Causetid>
     where U: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_causetid_for_value(Attr.into(), value))
+        self.cache.and_then(|cache| cache.get_causetid_for_causet_locale(Attr.into(), causet_locale))
     }
 
-    pub fn get_causetids_for_value<U>(&self, Attr: U, value: &TypedValue) -> Option<&BTreeSet<Causetid>>
+    pub fn get_causetids_for_causet_locale<U>(&self, Attr: U, causet_locale: &TypedValue) -> Option<&BTreeSet<Causetid>>
     where U: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_causetids_for_value(Attr.into(), value))
+        self.cache.and_then(|cache| cache.get_causetids_for_causet_locale(Attr.into(), causet_locale))
     }
 }
 
@@ -192,7 +199,7 @@ impl AlgebraicQuery {
         self.cc.is_known_empty()
     }
 
-    /// Return true if every variable in the find spec is fully bound to a single value.
+    /// Return true if every variable in the find spec is fully bound to a single causet_locale.
     pub fn is_fully_bound(&self) -> bool {
         self.find_spec
             .columns()
@@ -202,15 +209,15 @@ impl AlgebraicQuery {
                 &Element::Pull(_) => false,
 
                 &Element::Variable(ref var) |
-                &Element::Corresponding(ref var) => self.cc.is_value_bound(var),
+                &Element::Corresponding(ref var) => self.cc.is_causet_locale_bound(var),
 
                 // For now, we pretend that aggregate functions are never fully bound:
-                // we don't statically compute them, even if we know the value of the var.
+                // we don't statically compute them, even if we know the causet_locale of the var.
                 &Element::Aggregate(ref _fn) => false,
             })
     }
 
-    /// Return true if every variable in the find spec is fully bound to a single value,
+    /// Return true if every variable in the find spec is fully bound to a single causet_locale,
     /// and evaluating the query doesn't require running BerolinaSQL.
     pub fn is_fully_unit_bound(&self) -> bool {
         self.cc.wheres.is_empty() &&
@@ -221,7 +228,7 @@ impl AlgebraicQuery {
     /// Return a set of the input variables mentioned in the `:in` clause that have not yet been
     /// bound. We do this by looking at the CC.
     pub fn unbound_variables(&self) -> BTreeSet<Variable> {
-        self.cc.input_variables.sub(&self.cc.value_bound_variable_set())
+        self.cc.input_variables.sub(&self.cc.causet_locale_bound_variable_set())
     }
 }
 
@@ -246,13 +253,13 @@ fn validate_and_simplify_order(cc: &ConjoiningClauses, order: Option<Vec<Order>>
             let mut vars: BTreeSet<Variable> = BTreeSet::default();
 
             for Order(direction, var) in order.into_iter() {
-                // Eliminate any ordering clauses that are bound to fixed values.
-                if cc.bound_value(&var).is_some() {
+                // Eliminate any ordering clauses that are bound to fixed causet_locales.
+                if cc.bound_causet_locale(&var).is_some() {
                     continue;
                 }
 
                 // Fail if the var isn't bound by the query.
-                if !cc.column_bindings.contains_key(&var) {
+                if !cc.column_bindings.contains_soliton_id(&var) {
                     bail!(AlgebrizerError::UnboundVariable(var.name()))
                 }
 
@@ -275,7 +282,7 @@ fn simplify_limit(mut query: AlgebraicQuery) -> Result<AlgebraicQuery> {
     let refined_limit =
         match query.limit {
             Limit::Variable(ref v) => {
-                match query.cc.bound_value(v) {
+                match query.cc.bound_causet_locale(v) {
                     Some(TypedValue::Long(n)) => {
                         if n <= 0 {
                             // User-specified limits should always be natural numbers (> 0).
@@ -286,7 +293,7 @@ fn simplify_limit(mut query: AlgebraicQuery) -> Result<AlgebraicQuery> {
                     },
                     Some(val) => {
                         // Same.
-                        bail!(AlgebrizerError::InvalidLimit(format!("{:?}", val), val.value_type()))
+                        bail!(AlgebrizerError::InvalidLimit(format!("{:?}", val), val.causet_locale_type()))
                     },
                     None => {
                         // We know that the limit variable is mentioned in `:in`.
@@ -346,33 +353,9 @@ pub fn algebrize_with_inputs(known: Known,
         cc: cc,
     };
 
-    // Substitute in any fixed values and fail if they're out of range.
+    // Substitute in any fixed causet_locales and fail if they're out of range.
     simplify_limit(q)
 }
-
-pub use clauses::{
-    ConjoiningClauses,
-};
-
-pub use types::{
-    Column,
-    ColumnAlternation,
-    ColumnConstraint,
-    ColumnConstraintOrAlternation,
-    ColumnIntersection,
-    ColumnName,
-    ComputedTable,
-    causetsColumn,
-    causetsTable,
-    FulltextColumn,
-    OrderBy,
-    QualifiedAlias,
-    QueryValue,
-    SourceAlias,
-    TableAlias,
-    VariableColumn,
-};
-
 
 impl FindQuery {
     pub fn simple(spec: FindSpec, where_clauses: Vec<WhereClause>) -> FindQuery {

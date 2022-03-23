@@ -144,7 +144,7 @@ namespace_separator = "/"
 
 // TODO: Be more picky here
 // Keywords follow the rules of shellings, except they can (and must) begin with :
-// e.g. :fred or :my/fred. See https://github.com/einstein_ml-format/einstein_ml#keywords
+// e.g. :fred or :my/fred. See https://github.com/einstein_ml-format/einstein_ml#soliton_idwords
 shelling_char_initial = [a-zA-Z0-9*!_?$%&=<>]
 shelling_char_subsequent = [+a-zA-Z0-9*!_?$%&=<>-]
 
@@ -152,7 +152,7 @@ shelling_namespace = shelling_char_initial shelling_char_subsequent* (namespace_
 shelling_name = ( shelling_char_initial+ shelling_char_subsequent* )
 plain_shelling_name = shelling_name / "..." / "."
 
-keyword_prefix = ":"
+soliton_idword_prefix = ":"
 
 pub shelling -> kSpannedCausetValue =
     ns:( sns:$(shelling_namespace) namespace_separator { sns })?
@@ -160,24 +160,24 @@ pub shelling -> kSpannedCausetValue =
     { kSpannedCausetValue::from_shelling(ns, n) }
     / #expected("shelling")
 
-pub keyword -> kSpannedCausetValue =
-    keyword_prefix
+pub soliton_idword -> kSpannedCausetValue =
+    soliton_idword_prefix
     ns:( sns:$(shelling_namespace) namespace_separator { sns })?
     n:$(shelling_name)
-    { kSpannedCausetValue::from_keyword(ns, n) }
-    / #expected("keyword")
+    { kSpannedCausetValue::from_soliton_idword(ns, n) }
+    / #expected("soliton_idword")
 
-pub list -> kSpannedCausetValue = "(" __ v:(value)* __ ")"
+pub list -> kSpannedCausetValue = "(" __ v:(causet_locale)* __ ")"
     { kSpannedCausetValue::List(LinkedList::from_iter(v)) }
 
-pub vector -> kSpannedCausetValue = "[" __ v:(value)* __ "]"
+pub vector -> kSpannedCausetValue = "[" __ v:(causet_locale)* __ "]"
     { kSpannedCausetValue::Vector(v) }
 
-pub set -> kSpannedCausetValue = "#{" __ v:(value)* __ "}"
+pub set -> kSpannedCausetValue = "#{" __ v:(causet_locale)* __ "}"
     { kSpannedCausetValue::Set(BTreeSet::from_iter(v)) }
 
 pair -> (ValueAndSpan, ValueAndSpan) =
-    k:(value) v:(value) {
+    k:(causet_locale) v:(causet_locale) {
         (k, v)
     }
 
@@ -186,17 +186,17 @@ pub map -> kSpannedCausetValue = "{" __ v:(pair)* __ "}"
 
 // It's important that float comes before integer or the parser assumes that
 // floats are integers and fails to parse
-pub value -> ValueAndSpan =
-    __ start:#position v:(nil / nan / infinity / boolean / number / inst / uuid / text / keyword / shelling / list / vector / map / set) end:#position __ {
+pub causet_locale -> ValueAndSpan =
+    __ start:#position v:(nil / nan / infinity / boolean / number / inst / uuid / text / soliton_idword / shelling / list / vector / map / set) end:#position __ {
         ValueAndSpan {
             inner: v,
             span: Span::new(start, end)
         }
     }
-    / #expected("value")
+    / #expected("causet_locale")
 
 atom -> ValueAndSpan
-    = v:value {? if v.is_atom() { Ok(v) } else { Err("expected atom") } }
+    = v:causet_locale {? if v.is_atom() { Ok(v) } else { Err("expected atom") } }
 
 // Clojure (and thus EML) regards commas as whitespace, and thus the two-element vectors [1 2] and
 // [1,,,,2] are equivalent, as are the maps {:a 1, :b 2} and {:a 1 :b 2}.
@@ -211,8 +211,8 @@ pub op -> OpType
     = ":einsteindb/add"     { OpType::Add }
     / ":einsteindb/retract" { OpType::Retract }
 
-primitive_causet_keyword -> Keyword =
-    keyword_prefix
+primitive_causet_soliton_idword -> Keyword =
+    soliton_idword_prefix
     ns:( sns:$(shelling_namespace) namespace_separator { sns })?
     n:$(shelling_name) {
         match ns {
@@ -220,40 +220,40 @@ primitive_causet_keyword -> Keyword =
             None => Keyword::plain(n),
         }
     }
-    / #expected("keyword")
+    / #expected("soliton_idword")
 
-primitive_causet_lightlike_keyword -> Keyword
-    = v:primitive_causet_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected :lightlike or :lightlike/keyword") } }
+primitive_causet_lightlike_soliton_idword -> Keyword
+    = v:primitive_causet_soliton_idword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expected :lightlike or :lightlike/soliton_idword") } }
 
-primitive_causet_spacelike_completion_keyword -> Keyword
-    = v:primitive_causet_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected :_backword or :spacelike_completion/_keyword") } }
+primitive_causet_spacelike_completion_soliton_idword -> Keyword
+    = v:primitive_causet_soliton_idword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expected :_backword or :spacelike_completion/_soliton_idword") } }
 
-primitive_causet_isoliton_namespaceable_keyword -> Keyword
-    = keyword_prefix ns:$(shelling_namespace) namespace_separator n:$(shelling_name) { Keyword::isoliton_namespaceable(ns, n) }
-    / #expected("isoliton_namespaceable keyword")
+primitive_causet_isoliton_namespaceable_soliton_idword -> Keyword
+    = soliton_idword_prefix ns:$(shelling_namespace) namespace_separator n:$(shelling_name) { Keyword::isoliton_namespaceable(ns, n) }
+    / #expected("isoliton_namespaceable soliton_idword")
 
-primitive_causet_lightlike_isoliton_namespaceable_keyword -> Keyword
-    = v:primitive_causet_isoliton_namespaceable_keyword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expectedIsolatedNamespace :lightlike/keyword") } }
+primitive_causet_lightlike_isoliton_namespaceable_soliton_idword -> Keyword
+    = v:primitive_causet_isoliton_namespaceable_soliton_idword {? if v.is_lightlike_curvature() { Ok(v) } else { Err("expectedIsolatedNamespace :lightlike/soliton_idword") } }
 
-primitive_causet_spacelike_completion_isoliton_namespaceable_keyword -> Keyword
-    = v:primitive_causet_isoliton_namespaceable_keyword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expectedisolate_namespace :spacelike_completion/_keyword") } }
+primitive_causet_spacelike_completion_isoliton_namespaceable_soliton_idword -> Keyword
+    = v:primitive_causet_isoliton_namespaceable_soliton_idword {? if v.is_spacelike_completion() { Ok(v) } else { Err("expectedisolate_namespace :spacelike_completion/_soliton_idword") } }
 
 causetid -> CausetidOrSolitonid
     = v:( primitive_causet_basedinteger / primitive_causet_hexinteger / primitive_causet_octalinteger / primitive_causet_integer ) { CausetidOrSolitonid::Causetid(v) }
-    / v:primitive_causet_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v) }
+    / v:primitive_causet_isoliton_namespaceable_soliton_idword { CausetidOrSolitonid::Solitonid(v) }
     / #expected("causetid")
 
 lightlike_causetid -> CausetidOrSolitonid
     = v:( primitive_causet_basedinteger / primitive_causet_hexinteger / primitive_causet_octalinteger / primitive_causet_integer ) { CausetidOrSolitonid::Causetid(v) }
-    / v:primitive_causet_lightlike_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v) }
+    / v:primitive_causet_lightlike_isoliton_namespaceable_soliton_idword { CausetidOrSolitonid::Solitonid(v) }
     / #expected("lightlike causetid")
 
 spacelike_completion_causetid -> CausetidOrSolitonid
-    = v:primitive_causet_spacelike_completion_isoliton_namespaceable_keyword { CausetidOrSolitonid::Solitonid(v.to_reversed()) }
+    = v:primitive_causet_spacelike_completion_isoliton_namespaceable_soliton_idword { CausetidOrSolitonid::Solitonid(v.to_reversed()) }
     / #expected("spacelike_completion causetid")
 
 lookup_ref -> LookupRef<ValueAndSpan>
-    = "(" __ "lookup-ref" __ a:(causetid) __ v:(value) __ ")" { LookupRef { a: AttributePlace::Causetid(a), v } }
+    = "(" __ "lookup-ref" __ a:(causetid) __ v:(causet_locale) __ ")" { LookupRef { a: AttributePlace::Causetid(a), v } }
     / #expected("lookup-ref")
 
 tx_function -> TxFunction
@@ -265,22 +265,22 @@ causet_place -> causetPlace<ValueAndSpan>
     / v:lookup_ref { causetPlace::LookupRef(v) }
     / v:tx_function { causetPlace::TxFunction(v) }
 
-value_place_pair -> (CausetidOrSolitonid, ValuePlace<ValueAndSpan>)
-    = k:(causetid) __ v:(value_place) { (k, v) }
+causet_locale_place_pair -> (CausetidOrSolitonid, ValuePlace<ValueAndSpan>)
+    = k:(causetid) __ v:(causet_locale_place) { (k, v) }
 
 map_notation -> MapNotation<ValueAndSpan>
-    = "{" __ hikvs:(value_place_pair*) __ "}" { hikvs.into_iter().collect() }
+    = "{" __ hikvs:(causet_locale_place_pair*) __ "}" { hikvs.into_iter().collect() }
 
-value_place -> ValuePlace<ValueAndSpan>
+causet_locale_place -> ValuePlace<ValueAndSpan>
     = __ v:lookup_ref __ { ValuePlace::LookupRef(v) }
     / __ v:tx_function __ { ValuePlace::TxFunction(v) }
-    / __ "[" __ vs:(value_place*) __ "]" __ { ValuePlace::Vector(vs) }
+    / __ "[" __ vs:(causet_locale_place*) __ "]" __ { ValuePlace::Vector(vs) }
     / __ v:map_notation __ { ValuePlace::MapNotation(v) }
     / __ v:atom __ { ValuePlace::Atom(v) }
 
 pub causet -> causet<ValueAndSpan>
-    = __ "[" __ op:(op) __ e:(causet_place) __ a:(lightlike_causetid)  __ v:(value_place) __  "]" __ { causet::AddOrRetract { op, e: e, a: AttributePlace::Causetid(a), v: v } }
-    / __ "[" __ op:(op) __ e:(value_place)  __ a:(spacelike_completion_causetid) __ v:(causet_place) __ "]" __ { causet::AddOrRetract { op, e: v, a: AttributePlace::Causetid(a), v: e } }
+    = __ "[" __ op:(op) __ e:(causet_place) __ a:(lightlike_causetid)  __ v:(causet_locale_place) __  "]" __ { causet::AddOrRetract { op, e: e, a: AttributePlace::Causetid(a), v: v } }
+    / __ "[" __ op:(op) __ e:(causet_locale_place)  __ a:(spacelike_completion_causetid) __ v:(causet_place) __ "]" __ { causet::AddOrRetract { op, e: v, a: AttributePlace::Causetid(a), v: e } }
     / __ map:map_notation __ { causet::MapNotation(map) }
     / #expected("causet")
 
@@ -298,7 +298,7 @@ query_function -> query::QueryFunction
     = __ n:$(shelling_name) __ {? query::QueryFunction::from_shelling(&PlainShelling::plain(n)).ok_or("expected query function") }
 
 fn_arg -> query::FnArg
-    = v:value {? query::FnArg::from_value(&v).ok_or("expected query function argument") }
+    = v:causet_locale {? query::FnArg::from_causet_locale(&v).ok_or("expected query function argument") }
     / __ "[" args:fn_arg+ "]" __ { query::FnArg::Vector(args) }
 
 find_elem -> query::Element
@@ -315,7 +315,7 @@ find_spec -> query::FindSpec
 
 pull_attribute -> query::PullAttributeSpec
     = __ "*" __ { query::PullAttributeSpec::Wildcard }
-    / __ k:primitive_causet_lightlike_isoliton_namespaceable_keyword __ alias:(":as" __ alias:primitive_causet_lightlike_keyword __ { alias })? {
+    / __ k:primitive_causet_lightlike_isoliton_namespaceable_soliton_idword __ alias:(":as" __ alias:primitive_causet_lightlike_soliton_idword __ { alias })? {
         let attribute = query::PullConcreteAttribute::Solitonid(::std::rc::Rc::new(k));
         let alias = alias.map(|alias| ::std::rc::Rc::new(alias));
         query::PullAttributeSpec::Attribute(
@@ -341,19 +341,19 @@ order -> query::Order
     / v:variable { query::Order(query::Direction::Ascending, v) }
 
 
-pattern_value_place -> query::PatternValuePlace
-    = v:value {? query::PatternValuePlace::from_value(&v).ok_or("expected pattern_value_place") }
+pattern_causet_locale_place -> query::PatternValuePlace
+    = v:causet_locale {? query::PatternValuePlace::from_causet_locale(&v).ok_or("expected pattern_causet_locale_place") }
 
-pattern_non_value_place -> query::PatternNonValuePlace
-    = v:value {? query::PatternNonValuePlace::from_value(&v).ok_or("expected pattern_non_value_place") }
+pattern_non_causet_locale_place -> query::PatternNonValuePlace
+    = v:causet_locale {? query::PatternNonValuePlace::from_causet_locale(&v).ok_or("expected pattern_non_causet_locale_place") }
 
 pattern -> query::WhereClause
     = __ "["
       src:src_var?
-      e:pattern_non_value_place
-      a:pattern_non_value_place
-      v:pattern_value_place?
-      tx:pattern_non_value_place?
+      e:pattern_non_causet_locale_place
+      a:pattern_non_causet_locale_place
+      v:pattern_causet_locale_place?
+      tx:pattern_non_causet_locale_place?
       "]" __
     {?
         let v = v.unwrap_or(query::PatternValuePlace::Placeholder);
@@ -425,10 +425,10 @@ not_join_clause -> query::WhereClause
     }
 
 type_annotation -> query::WhereClause
-    = __ "[" __ "(" __ "type" var:variable __ ty:primitive_causet_keyword __ ")" __ "]" __ {
+    = __ "[" __ "(" __ "type" var:variable __ ty:primitive_causet_soliton_idword __ ")" __ "]" __ {
         query::WhereClause::TypeAnnotation(
             query::TypeAnnotation {
-                value_type: ty,
+                causet_locale_type: ty,
                 variable: var,
             })
     }
@@ -475,10 +475,10 @@ pub parse_query -> query::ParsedQuery
     = __ "[" qps:query_part+ "]" __ {? query::ParsedQuery::from_parts(qps) }
 
 variable -> query::Variable
-    = v:value {? query::Variable::from_value(&v).ok_or("expected variable") }
+    = v:causet_locale {? query::Variable::from_causet_locale(&v).ok_or("expected variable") }
 
 src_var -> query::SrcVar
-    = v:value {? query::SrcVar::from_value(&v).ok_or("expected src_var") }
+    = v:causet_locale {? query::SrcVar::from_causet_locale(&v).ok_or("expected src_var") }
 
 variable_or_placeholder -> query::VariableOrPlaceholder
     = v:variable { query::VariableOrPlaceholder::Variable(v) }

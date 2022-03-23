@@ -1,7 +1,8 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{Mutable, Result, WriteBatch, WriteBatchExt, WriteOptions};
+
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 
 impl WriteBatchExt for Paniceinstein_merkle_tree {
     type WriteBatch = PanicWriteBatch;
@@ -63,23 +64,23 @@ impl WriteBatch<Paniceinstein_merkle_tree> for PanicWriteBatch {
 }
 
 impl Mutable for PanicWriteBatch {
-    fn put(&mut self, key: &[u8], value: &[u8]) -> Result<()> {
+    fn put(&mut self, soliton_id: &[u8], causet_locale: &[u8]) -> Result<()> {
         panic!()
     }
-    fn put_namespaced(&mut self, namespaced: &str, key: &[u8], value: &[u8]) -> Result<()> {
+    fn put_namespaced(&mut self, namespaced: &str, soliton_id: &[u8], causet_locale: &[u8]) -> Result<()> {
         panic!()
     }
 
-    fn delete(&mut self, key: &[u8]) -> Result<()> {
+    fn delete(&mut self, soliton_id: &[u8]) -> Result<()> {
         panic!()
     }
-    fn delete_namespaced(&mut self, namespaced: &str, key: &[u8]) -> Result<()> {
+    fn delete_namespaced(&mut self, namespaced: &str, soliton_id: &[u8]) -> Result<()> {
         panic!()
     }
-    fn delete_range(&mut self, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
+    fn delete_range(&mut self, begin_soliton_id: &[u8], end_soliton_id: &[u8]) -> Result<()> {
         panic!()
     }
-    fn delete_range_namespaced(&mut self, namespaced: &str, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
+    fn delete_range_namespaced(&mut self, namespaced: &str, begin_soliton_id: &[u8], end_soliton_id: &[u8]) -> Result<()> {
         panic!()
     }
 }

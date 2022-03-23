@@ -8,12 +8,11 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use EinsteinDB_util::buffer_vec::BufferVec;
+use einsteindbpb::FieldType;
 use std::convert::TryFrom;
 
 use crate::{EvalType, FieldTypeAccessor};
-use EinsteinDB_util::buffer_vec::BufferVec;
-use einsteindbpb::FieldType;
-
 use crate::codec::chunk::{ChunkColumnEncoder, Column};
 use crate::codec::data_type::{match_template_evaluable, VectorValue};
 use crate::codec::datum_codec::Primitive_CausetDatumDecoder;
@@ -237,21 +236,21 @@ impl QuiesceBatchColumn {
         field_type: &FieldType,
         output: &mut Vec<u8>,
     ) -> Result<()> {
-        let column = match self {
+        let causet_merge = match self {
             QuiesceBatchColumn::Primitive_Causet(v) => Column::from_primitive_causet_datums(field_type, v, logical_rows, ctx)?,
             QuiesceBatchColumn::Decoded(ref v) => {
-                Column::from_vector_value(field_type, v, logical_rows)?
+                Column::from_vector_causet_locale(field_type, v, logical_rows)?
             }
         };
-        output.write_chunk_column(&column)
+        output.write_chunk_column(&causet_merge)
     }
 }
 
 #[braneg(test)]
 mod tests {
-    use super::*;
-
     use crate::codec::datum::{Datum, DatumEncoder};
+
+    use super::*;
 
     #[test]
     fn test_basic() {
@@ -344,7 +343,7 @@ mod tests {
             assert_eq!(col.decoded().as_int_slice(), &[Some(32), None, Some(10)]);
         }
 
-        // Decode a decoded column, even using a different logical rows, does not have effect.
+        // Decode a decoded causet_merge, even using a different logical rows, does not have effect.
         col.ensure_decoded(&mut ctx, &FieldTypeTp::Long.into(), &[0, 1])
             .unwrap();
         assert!(col.is_decoded());
@@ -360,26 +359,26 @@ mod benches {
 
     #[bench]
     fn bench_lazy_batch_column_push_primitive_causet_4bytes(b: &mut test::Bencher) {
-        let mut column = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
+        let mut causet_merge = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
         let val = vec![0; 4];
         b.iter(|| {
-            let column = test::black_box(&mut column);
+            let causet_merge = test::black_box(&mut causet_merge);
             for _ in 0..1000 {
-                column.mut_primitive_causet().push(test::black_box(&val))
+                causet_merge.mut_primitive_causet().push(test::black_box(&val))
             }
-            test::black_box(&column);
-            column.clear();
-            test::black_box(&column);
+            test::black_box(&causet_merge);
+            causet_merge.clear();
+            test::black_box(&causet_merge);
         });
     }
 
-    /// Bench performance of cloning a decoded column.
+    /// Bench performance of cloning a decoded causet_merge.
     #[bench]
     fn bench_lazy_batch_column_clone_decoded(b: &mut test::Bencher) {
         use crate::codec::datum::{Datum, DatumEncoder};
         use crate::FieldTypeTp;
 
-        let mut column = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
+        let mut causet_merge = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
 
         let mut ctx = EvalContext::default();
         let mut datum_primitive_causet: Vec<u8> = Vec::new();
@@ -388,20 +387,20 @@ mod benches {
             .unwrap();
 
         for _ in 0..1000 {
-            column.mut_primitive_causet().push(datum_primitive_causet.as_slice());
+            causet_merge.mut_primitive_causet().push(datum_primitive_causet.as_slice());
         }
         let logical_rows: Vec<_> = (0..1000).collect();
 
-        column
+        causet_merge
             .ensure_decoded(&mut ctx, &FieldTypeTp::LongLong.into(), &logical_rows)
             .unwrap();
 
         b.iter(|| {
-            test::black_box(test::black_box(&column).clone());
+            test::black_box(test::black_box(&causet_merge).clone());
         });
     }
 
-    /// Bench performance of decoding a primitive_causet batch column.
+    /// Bench performance of decoding a primitive_causet batch causet_merge.
     ///
     /// Note that there is a clone in the bench suite, whose cost should be excluded.
     #[bench]
@@ -410,7 +409,7 @@ mod benches {
         use crate::FieldTypeTp;
 
         let mut ctx = EvalContext::default();
-        let mut column = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
+        let mut causet_merge = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
 
         let mut datum_primitive_causet: Vec<u8> = Vec::new();
         datum_primitive_causet
@@ -418,13 +417,13 @@ mod benches {
             .unwrap();
 
         for _ in 0..1000 {
-            column.mut_primitive_causet().push(datum_primitive_causet.as_slice());
+            causet_merge.mut_primitive_causet().push(datum_primitive_causet.as_slice());
         }
         let logical_rows: Vec<_> = (0..1000).collect();
 
         let ft = FieldTypeTp::LongLong.into();
         b.iter(|| {
-            let mut col = test::black_box(&column).clone();
+            let mut col = test::black_box(&causet_merge).clone();
             col.ensure_decoded(
                 test::black_box(&mut ctx),
                 test::black_box(&ft),
@@ -441,7 +440,7 @@ mod benches {
         use crate::codec::datum::{Datum, DatumEncoder};
         use crate::FieldTypeTp;
 
-        let mut column = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
+        let mut causet_merge = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
 
         let mut ctx = EvalContext::default();
         let mut datum_primitive_causet: Vec<u8> = Vec::new();
@@ -450,16 +449,16 @@ mod benches {
             .unwrap();
 
         for _ in 0..1000 {
-            column.mut_primitive_causet().push(datum_primitive_causet.as_slice());
+            causet_merge.mut_primitive_causet().push(datum_primitive_causet.as_slice());
         }
         let logical_rows: Vec<_> = (0..1000).collect();
 
         let ft = FieldTypeTp::LongLong.into();
 
-        column.ensure_decoded(&mut ctx, &ft, &logical_rows).unwrap();
+        causet_merge.ensure_decoded(&mut ctx, &ft, &logical_rows).unwrap();
 
         b.iter(|| {
-            let mut col = test::black_box(&column).clone();
+            let mut col = test::black_box(&causet_merge).clone();
             col.ensure_decoded(
                 test::black_box(&mut ctx),
                 test::black_box(&ft),
@@ -494,29 +493,29 @@ mod benches {
 
     #[bench]
     fn bench_lazy_batch_column_by_vec_push_primitive_causet_10bytes(b: &mut test::Bencher) {
-        let mut column = VectorQuiesceBatchColumn::primitive_causet_with_capacity(1000);
+        let mut causet_merge = VectorQuiesceBatchColumn::primitive_causet_with_capacity(1000);
         let val = vec![0; 10];
         b.iter(|| {
-            let column = test::black_box(&mut column);
+            let causet_merge = test::black_box(&mut causet_merge);
             for _ in 0..1000 {
-                column.push_primitive_causet(test::black_box(&val))
+                causet_merge.push_primitive_causet(test::black_box(&val))
             }
-            test::black_box(&column);
-            column.clear();
-            test::black_box(&column);
+            test::black_box(&causet_merge);
+            causet_merge.clear();
+            test::black_box(&causet_merge);
         });
     }
 
     /// Bench performance of cloning a primitive_causet vector based QuiesceBatchColumn.
     #[bench]
     fn bench_lazy_batch_column_by_vec_clone(b: &mut test::Bencher) {
-        let mut column = VectorQuiesceBatchColumn::primitive_causet_with_capacity(1000);
+        let mut causet_merge = VectorQuiesceBatchColumn::primitive_causet_with_capacity(1000);
         let val = vec![0; 10];
         for _ in 0..1000 {
-            column.push_primitive_causet(&val);
+            causet_merge.push_primitive_causet(&val);
         }
         b.iter(|| {
-            test::black_box(test::black_box(&column).clone());
+            test::black_box(test::black_box(&causet_merge).clone());
         });
     }
 }

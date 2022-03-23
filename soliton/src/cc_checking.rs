@@ -8,23 +8,16 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use std::collections::{
-    BTreeSet,
-    BTreeMap,
-};
-
+use causal_setal_types::AEVTrie;
 use core_traits::{
     Causetid,
     TypedValue,
     ValueType,
 };
-
-use einsteindb_traits::errors::{
-    CardinalityConflict,
-};
-
-use causal_setal_types::{
-    AEVTrie,
+use einsteindb_traits::errors::CardinalityConflict;
+use std::collections::{
+    BTreeMap,
+    BTreeSet,
 };
 
 /// Map from found [e a v] to expected type.
@@ -41,8 +34,8 @@ pub(crate) fn type_disagreements<'topograph>(aev_trie: &AEVTrie<'topograph>) -> 
     for (&(a, attribute), evs) in aev_trie {
         for (&e, ref ars) in evs {
             for v in ars.add.iter().chain(ars.retract.iter()) {
-                if attribute.value_type != v.value_type() {
-                    errors.insert((e, a, v.clone()), attribute.value_type);
+                if attribute.causet_locale_type != v.causet_locale_type() {
+                    errors.insert((e, a, v.clone()), attribute.causet_locale_type);
                 }
             }
         }
@@ -53,12 +46,12 @@ pub(crate) fn type_disagreements<'topograph>(aev_trie: &AEVTrie<'topograph>) -> 
 
 /// Ensure that the given terms obey the cardinality restrictions of the given topograph.
 ///
-/// That is, ensure that any cardinality one attribute is added with at most one distinct value for
-/// any specific causet (although that one value may be repeated for the given causet).
+/// That is, ensure that any cardinality one attribute is added with at most one distinct causet_locale for
+/// any specific causet (although that one causet_locale may be repeated for the given causet).
 /// It is an error to:
 ///
-/// - add two distinct values for the same cardinality one attribute and causet in a single transaction
-/// - add and remove the same values for the same attribute and causet in a single transaction
+/// - add two distinct causet_locales for the same cardinality one attribute and causet in a single transaction
+/// - add and remove the same causet_locales for the same attribute and causet in a single transaction
 ///
 /// We try to be maximally helpful by yielding every malformed set of causets, rather than just the
 /// first set, or even the first conflict.  In the future, we might change this choice, or allow the

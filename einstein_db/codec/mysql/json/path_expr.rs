@@ -14,9 +14,9 @@
 //     scope ::= [ columnReference ] '$'
 //     columnReference ::= // omit...
 //     local_pathLeg ::= member | arrayLocation | '**'
-//     member ::= '.' (keyName | '*')
+//     member ::= '.' (soliton_idName | '*')
 //     arrayLocation ::= '[' (non-negative-integer | '*') ']'
-//     keyName ::= ECMAScript-identifier | ECMAScript-string-literal
+//     soliton_idName ::= ECMAScript-identifier | ECMAScript-string-literal
 //
 // And some implementation limits in MyBerolinaSQL 5.7:
 //     1) columnReference in scope must be empty now;
@@ -31,12 +31,14 @@
 //     select json_extract('{"a": "b", "c": [1, "2"]}', '$.c[*]') -> [1, "2"]
 //     select json_extract('{"a": "b", "c": [1, "2"]}', '$.*') -> ["b", [1, "2"]]
 
-use super::json_unquote::unquote_string;
-use crate::codec::Result;
-use regex::Regex;
-use std::ops::Index;
+ use regex::Regex;
+ use std::ops::Index;
 
-pub const local_path_EXPR_ASTERISK: &str = "*";
+ use crate::codec::Result;
+
+ use super::json_unquote::unquote_string;
+
+ pub const local_path_EXPR_ASTERISK: &str = "*";
 
 // [a-zA-Z_][a-zA-Z0-9_]* matches any identifier;
 // "[^"\\]*(\\.[^"\\]*)*" matches any string literal which can carry escaped quotes.
@@ -45,7 +47,7 @@ const local_path_EXPR_LEG_RE_STR: &str =
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum local_pathLeg {
-    /// `Key` indicates the local_path leg  with '.key'.
+    /// `Key` indicates the local_path leg  with '.soliton_id'.
     Key(String),
     /// `Index` indicates the local_path leg with form '[number]'.
     Index(i32),
@@ -126,15 +128,15 @@ pub fn parse_json_local_path_expr(local_path_expr: &str) -> Result<local_pathExp
             };
             legs.push(local_pathLeg::Index(index))
         } else if next_char == '.' {
-            // The leg is a key of a JSON object.
-            let mut key = expr[start + 1..end].trim().to_owned();
-            if key == local_path_EXPR_ASTERISK {
+            // The leg is a soliton_id of a JSON object.
+            let mut soliton_id = expr[start + 1..end].trim().to_owned();
+            if soliton_id == local_path_EXPR_ASTERISK {
                 flags |= local_path_EXPRESSION_CONTAINS_ASTERISK;
-            } else if key.starts_with('"') {
+            } else if soliton_id.starts_with('"') {
                 // We need to unquote the origin string.
-                key = unquote_string(&key[1..key.len() - 1])?;
+                soliton_id = unquote_string(&soliton_id[1..soliton_id.len() - 1])?;
             }
-            legs.push(local_pathLeg::Key(key))
+            legs.push(local_pathLeg::Key(soliton_id))
         } else {
             // The leg is '**'.
             flags |= local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK;

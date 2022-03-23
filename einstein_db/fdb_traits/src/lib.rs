@@ -16,7 +16,7 @@
 //!
 //! ## Capabilities of a EinsteinDB einstein_merkle_tree
 //!
-//! EinsteinDB einstein_merkle_trees timelike_store binary keys and values.
+//! EinsteinDB einstein_merkle_trees timelike_store binary soliton_ids and causet_locales.
 //!
 //! Every pair lives in a [_column family_], which can be thought of as being
 //! independent data timelike_stores.
@@ -37,9 +37,9 @@
 //! This crate is almost entirely traits, plus a few "plain-old-data" types that
 //! are shared between einstein_merkle_trees.
 //!
-//! Some key types include:
+//! Some soliton_id types include:
 //!
-//! - [`KV`] - a key-value einstein_merkle_tree, and the primary type defined by this
+//! - [`KV`] - a soliton_id-causet_locale einstein_merkle_tree, and the primary type defined by this
 //!   crate. Most code that uses generic einstein_merkle_trees will be bounded over a generic
 //!   type implementing `KV`. `KV` itself is bounded by many other
 //!   traits that provide collections of functionality, with the intent that as
@@ -50,17 +50,17 @@
 //! - [`LightlikePersistence`] - a view into the state of the database at a moment in time.
 //!   For reading sets of consistent data.
 //!
-//! - [`Peekable`] - types that can read single values. This includes einstein_merkle_trees
+//! - [`Peekable`] - types that can read single causet_locales. This includes einstein_merkle_trees
 //!   and lightlike_persistences.
 //!
-//! - [`Iterable`] - types that can iterate over the values of a range of keys,
+//! - [`Iterable`] - types that can iterate over the causet_locales of a range of soliton_ids,
 //!   by creating instances of the EinsteinDB-specific [`Iterator`] trait. This
 //!   includes einstein_merkle_trees and lightlike_persistences.
 //!
-//! - [`SyncMutable`] and [`Mutable`] - types to which single key/value pairs
+//! - [`SyncMutable`] and [`Mutable`] - types to which single soliton_id/causet_locale pairs
 //!   can be written. This includes einstein_merkle_trees and write alexandroes.
 //!
-//! - [`WriteBatch`] - types that can commit multiple key/value pairs in alexandroes.
+//! - [`WriteBatch`] - types that can commit multiple soliton_id/causet_locale pairs in alexandroes.
 //!   A `WriteBatchExt::WriteBtach` commits all pairs in one atomic transaction.
 //!   A `WriteBatchExt::WriteBatchVec` does not (FIXME: is this correct?).
 //!
@@ -263,79 +263,79 @@ extern crate fail;
 //
 // Many of these define "extension" traits, that end in `Ext`.
 
-mod namespaced_names;
-pub use crate::namespaced_names::*;
-mod namespaced_options;
-pub use crate::namespaced_options::*;
-mod compact;
-pub use crate::compact::*;
-mod db_options;
-pub use crate::db_options::*;
-mod db_vector;
-pub use crate::db_vector::*;
-mod einstein_merkle_tree;
-pub use crate::fdb_lsh_tree*;
-mod file;
-pub use crate::file::*;
-mod import;
+pub use einstein_merkle_trees::*;
 pub use import::*;
-mod misc;
+pub use jet_bundle_job::*;
 pub use misc::*;
-mod lightlike_persistence;
-pub use crate::lightlike_persistence::*;
-mod Causet;
+pub use violetabft_einstein_merkle_tree::{CacheStats, VioletaBFTeinstein_merkle_tree, VioletaBFTeinstein_merkle_treeReadOnly, VioletaBFTLogBatch, VioletaBFTLogGCTask};
+
 pub use crate::Causet::*;
-mod write_alexandro;
-pub use crate::write_alexandro::*;
-mod encryption;
+pub use crate::Causet_partitioner::*;
+pub use crate::compact::*;
+pub use crate::db_options::*;
+pub use crate::db_vector::*;
 pub use crate::encryption::*;
+pub use crate::errors::*;
+pub use crate::fdb_lsh_tree
+pub use crate::file::*;
+pub use crate::iterable::*;
+pub use crate::lightlike_persistence::*;
+pub use crate::mutable::*;
+pub use crate::mvcc_greedoids::*;
+pub use crate::namespaced_defs::*;
+pub use crate::namespaced_names::*;
+pub use crate::namespaced_options::*;
+pub use crate::options::*;
+pub use crate::peekable::*;
+pub use crate::perf_context::*;
+pub use crate::range::*;
+pub use crate::range_greedoids::*;
+pub use crate::symplectic_control_factors::*;
+pub use crate::table_greedoids::*;
+pub use crate::ttl_greedoids::*;
+pub use crate::write_alexandro::*;
+
+mod namespaced_names;
+mod namespaced_options;
+mod compact;
+mod db_options;
+mod db_vector;
+mod einstein_merkle_tree;
+*;
+mod file;
+mod import;
+mod misc;
+mod lightlike_persistence;
+mod Causet;
+mod write_alexandro;
+mod encryption;
 mod mvcc_greedoids;
 mod Causet_partitioner;
-pub use crate::Causet_partitioner::*;
 mod range_greedoids;
-pub use crate::mvcc_greedoids::*;
-pub use crate::range_greedoids::*;
 mod ttl_greedoids;
-pub use crate::ttl_greedoids::*;
 mod perf_context;
-pub use crate::perf_context::*;
 mod symplectic_control_factors;
-pub use crate::symplectic_control_factors::*;
 mod table_greedoids;
-pub use crate::table_greedoids::*;
-
 // These modules contain more general traits, some of which may be implemented
 // by multiple types.
 
 mod iterable;
-pub use crate::iterable::*;
 mod mutable;
-pub use crate::mutable::*;
 mod peekable;
-pub use crate::peekable::*;
-
 // These modules contain concrete types and support code that do not need to
 // be implemented by einstein_merkle_trees.
 
 mod namespaced_defs;
-pub use crate::namespaced_defs::*;
 mod einstein_merkle_trees;
-pub use einstein_merkle_trees::*;
 mod errors;
-pub use crate::errors::*;
 mod options;
-pub use crate::options::*;
 pub mod range;
-pub use crate::range::*;
 mod violetabft_einstein_merkle_tree;
-pub use violetabft_einstein_merkle_tree::{CacheStats, VioletaBFTeinstein_merkle_tree, VioletaBFTeinstein_merkle_treeReadOnly, VioletaBFTLogBatch, VioletaBFTLogGCTask};
-
 // These modules need further scrutiny
 
 pub mod jet_bundle_job;
 pub mod primitive_causet_ttl;
 pub mod util;
-pub use jet_bundle_job::*;
 
 // FIXME: This should live somewhere else
 pub const FILE_CAUSET_PREFIX_LEN_FLUSH: usize = 1;

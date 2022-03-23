@@ -5,66 +5,65 @@
 //! EinsteinDB is configured through the `EinsteinDbConfig` type, which is in turn
 //! made up of many other configuration types.
 
-use std::cmp;
-use std::collections::HashMap;
-use std::error::Error;
-use std::fs;
-use std::i32;
-use std::io::Write;
-use std::io::{Error as IoError, ErrorKind};
-use std::path::Path;
-use std::sync::{Arc, RwDagger};
-use std::usize;
-
-use api_version::match_template_api_version;
 use api_version::APIVersion;
+use api_version::match_template_api_version;
+use einsteindb_util::config::{
+    self, GIB, LogFormat, MIB, OptionReadableSize, ReadableDuration, ReadableSize, TomlWriter,
+};
+use einsteindb_util::sys::SysQuota;
+use einsteindb_util::time::duration_to_sec;
+use einsteindb_util::yatp_pool;
+use ekvproto::kvrpcpb::ApiVersion;
 use encryption_export::DataKeyManager;
+use engine_traits::{ColumnFamilyOptions as ColumnFamilyOptionsTrait, DBOptionsExt, NAMESPACEDOptionsExt};
+use engine_traits::{NAMESPACED_DEFAULT, NAMESPACED_LOCK, NAMESPACED_VIOLETABFT, NAMESPACED_WRITE};
+use fdb_engine::{
+    DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE, DEFAULT_PROP_SIZE_INDEX_DISTANCE, FdbdbLogger, FdbEngine,
+    FdbEventListener, FdbSstPartitionerFactory, RangePropertiesCollectorFactory,
+    TtlPropertiesCollectorFactory, VioletaBFTDBLogger,
+};
 use fdb_engine::config::{self as rocks_config, BlobRunMode, CompressionType, LogLevel};
 use fdb_engine::get_env;
-use fdb_engine::properties::MvccPropertiesCollectorFactory;
 use fdb_engine::primitive_causet::{
     BlockBasedOptions, Cache, ColumnFamilyOptions, CompactionPriority, DBCompactionStyle,
     DBCompressionType, DBOptions, DBRateLimiterMode, DBRecoveryMode, Env, LRUCacheOptions,
     TitanDBOptions,
 };
 use fdb_engine::primitive_causet_util::NAMESPACEDOptions;
+use fdb_engine::properties::MvccPropertiesCollectorFactory;
 use fdb_engine::util::{
     FixedPrefixSliceTransform, FixedSuffixSliceTransform, NoopSliceTransform,
 };
-use fdb_engine::{
-    VioletaBFTDBLogger, RangePropertiesCollectorFactory, FdbEngine, FdbEventListener,
-    FdbSstPartitionerFactory, FdbdbLogger, TtlPropertiesCollectorFactory,
-    DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE, DEFAULT_PROP_SIZE_INDEX_DISTANCE,
-};
-use engine_traits::{NAMESPACEDOptionsExt, ColumnFamilyOptions as ColumnFamilyOptionsTrait, DBOptionsExt};
-use engine_traits::{NAMESPACED_DEFAULT, NAMESPACED_LOCK, NAMESPACED_VIOLETABFT, NAMESPACED_WRITE};
-use file_system::{IOPriority, IORateLimiter};
-use keys::region_violetabft_prefix_len;
-use ekvproto::kvrpcpb::ApiVersion;
-use online_config::{ConfigChange, ConfigManager, ConfigValue, OnlineConfig, Result as NamespacedgResult};
 use fidel_client::Config as PdConfig;
+use file_system::{IOPriority, IORateLimiter};
+use online_config::{ConfigChange, ConfigManager, ConfigValue, OnlineConfig, Result as NamespacedgResult};
+use resource_metering::Config as ResourceMeteringConfig;
+use security::SecurityConfig;
+use soliton_ids::region_violetabft_prefix_len;
+use std::cmp;
+use std::collections::HashMap;
+use std::error::Error;
+use std::fs;
+use std::i32;
+use std::io::{Error as IoError, ErrorKind};
+use std::io::Write;
+use std::path::Path;
+use std::sync::{Arc, RwDagger};
+use std::usize;
 use violetabft_log_engine::VioletaBFTEngineConfig as Primitive_CausetVioletaBFTEngineConfig;
 use violetabft_log_engine::VioletaBFTLogEngine;
 use violetabfttimelike_store::InterDagger::{Config as CopConfig, RegionInfoAccessor};
-use violetabfttimelike_store::timelike_store::Config as VioletaBFTtimelike_storeConfig;
 use violetabfttimelike_store::timelike_store::{CompactionGuardGeneratorFactory, SplitConfig};
-use resource_metering::Config as ResourceMeteringConfig;
-use security::SecurityConfig;
-use einsteindb_util::config::{
-    self, LogFormat, OptionReadableSize, ReadableDuration, ReadableSize, TomlWriter, GIB, MIB,
-};
-use einsteindb_util::sys::SysQuota;
-use einsteindb_util::time::duration_to_sec;
-use einsteindb_util::yatp_pool;
+use violetabfttimelike_store::timelike_store::Config as VioletaBFTtimelike_storeConfig;
 
-use crate::InterDagger_v2::Config as InterDaggerV2Config;
 use crate::import::Config as ImportConfig;
+use crate::InterDagger_causet_record::Config as InterDaggerV2Config;
+use crate::server::Config as ServerConfig;
+use crate::server::CONFIG_FDBDB_GAUGE;
 use crate::server::gc_worker::GcConfig;
 use crate::server::gc_worker::WriteCompactionFilterFactory;
 use crate::server::lock_manager::Config as PessimisticCausetchaindConfig;
 use crate::server::ttl::TTLCompactionFilterFactory;
-use crate::server::Config as ServerConfig;
-use crate::server::CONFIG_FDBDB_GAUGE;
 use crate::timelike_storage::config::{Config as StorageConfig, DEFAULT_DATA_DIR};
 
 pub const DEFAULT_FDBDB_SUB_DIR: &str = "einsteindb";
@@ -248,9 +247,9 @@ macro_rules! namespaced_config {
             #[online_config(skip)]
             pub optimize_filters_for_hits: bool,
             #[online_config(skip)]
-            pub whole_key_filtering: bool,
+            pub whole_soliton_id_filtering: bool,
             #[online_config(skip)]
-            pub bloom_filter_bits_per_key: i32,
+            pub bloom_filter_bits_per_soliton_id: i32,
             #[online_config(skip)]
             pub block_based_bloom_filter: bool,
             #[online_config(skip)]
@@ -288,7 +287,7 @@ macro_rules! namespaced_config {
             #[online_config(skip)]
             pub prop_size_index_distance: u64,
             #[online_config(skip)]
-            pub prop_keys_index_distance: u64,
+            pub prop_soliton_ids_index_distance: u64,
             #[online_config(skip)]
             pub enable_doubly_skiplist: bool,
             #[online_config(skip)]
@@ -328,116 +327,116 @@ macro_rules! namespaced_config {
 macro_rules! write_into_metrics {
     ($namespaced:expr, $tag:expr, $metrics:expr) => {{
         $metrics
-            .with_label_values(&[$tag, "block_size"])
+            .with_label_causet_locales(&[$tag, "block_size"])
             .set($namespaced.block_size.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "block_cache_size"])
+            .with_label_causet_locales(&[$tag, "block_cache_size"])
             .set($namespaced.block_cache_size.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "disable_block_cache"])
+            .with_label_causet_locales(&[$tag, "disable_block_cache"])
             .set(($namespaced.disable_block_cache as i32).into());
 
         $metrics
-            .with_label_values(&[$tag, "cache_index_and_filter_blocks"])
+            .with_label_causet_locales(&[$tag, "cache_index_and_filter_blocks"])
             .set(($namespaced.cache_index_and_filter_blocks as i32).into());
         $metrics
-            .with_label_values(&[$tag, "pin_l0_filter_and_index_blocks"])
+            .with_label_causet_locales(&[$tag, "pin_l0_filter_and_index_blocks"])
             .set(($namespaced.pin_l0_filter_and_index_blocks as i32).into());
 
         $metrics
-            .with_label_values(&[$tag, "use_bloom_filter"])
+            .with_label_causet_locales(&[$tag, "use_bloom_filter"])
             .set(($namespaced.use_bloom_filter as i32).into());
         $metrics
-            .with_label_values(&[$tag, "optimize_filters_for_hits"])
+            .with_label_causet_locales(&[$tag, "optimize_filters_for_hits"])
             .set(($namespaced.optimize_filters_for_hits as i32).into());
         $metrics
-            .with_label_values(&[$tag, "whole_key_filtering"])
-            .set(($namespaced.whole_key_filtering as i32).into());
+            .with_label_causet_locales(&[$tag, "whole_soliton_id_filtering"])
+            .set(($namespaced.whole_soliton_id_filtering as i32).into());
         $metrics
-            .with_label_values(&[$tag, "bloom_filter_bits_per_key"])
-            .set($namespaced.bloom_filter_bits_per_key.into());
+            .with_label_causet_locales(&[$tag, "bloom_filter_bits_per_soliton_id"])
+            .set($namespaced.bloom_filter_bits_per_soliton_id.into());
         $metrics
-            .with_label_values(&[$tag, "block_based_bloom_filter"])
+            .with_label_causet_locales(&[$tag, "block_based_bloom_filter"])
             .set(($namespaced.block_based_bloom_filter as i32).into());
 
         $metrics
-            .with_label_values(&[$tag, "read_amp_bytes_per_bit"])
+            .with_label_causet_locales(&[$tag, "read_amp_bytes_per_bit"])
             .set($namespaced.read_amp_bytes_per_bit.into());
         $metrics
-            .with_label_values(&[$tag, "write_buffer_size"])
+            .with_label_causet_locales(&[$tag, "write_buffer_size"])
             .set($namespaced.write_buffer_size.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "max_write_buffer_number"])
+            .with_label_causet_locales(&[$tag, "max_write_buffer_number"])
             .set($namespaced.max_write_buffer_number.into());
         $metrics
-            .with_label_values(&[$tag, "min_write_buffer_number_to_merge"])
+            .with_label_causet_locales(&[$tag, "min_write_buffer_number_to_merge"])
             .set($namespaced.min_write_buffer_number_to_merge.into());
         $metrics
-            .with_label_values(&[$tag, "max_bytes_for_l_naught_base"])
+            .with_label_causet_locales(&[$tag, "max_bytes_for_l_naught_base"])
             .set($namespaced.max_bytes_for_l_naught_base.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "target_file_size_base"])
+            .with_label_causet_locales(&[$tag, "target_file_size_base"])
             .set($namespaced.target_file_size_base.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "l_naught0_file_num_jet_bundle_trigger"])
+            .with_label_causet_locales(&[$tag, "l_naught0_file_num_jet_bundle_trigger"])
             .set($namespaced.l_naught0_file_num_jet_bundle_trigger.into());
         $metrics
-            .with_label_values(&[$tag, "l_naught0_slowdown_writes_trigger"])
+            .with_label_causet_locales(&[$tag, "l_naught0_slowdown_writes_trigger"])
             .set($namespaced.l_naught0_slowdown_writes_trigger.into());
         $metrics
-            .with_label_values(&[$tag, "l_naught0_stop_writes_trigger"])
+            .with_label_causet_locales(&[$tag, "l_naught0_stop_writes_trigger"])
             .set($namespaced.l_naught0_stop_writes_trigger.into());
         $metrics
-            .with_label_values(&[$tag, "max_jet_bundle_bytes"])
+            .with_label_causet_locales(&[$tag, "max_jet_bundle_bytes"])
             .set($namespaced.max_jet_bundle_bytes.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "dynamic_l_naught_bytes"])
+            .with_label_causet_locales(&[$tag, "dynamic_l_naught_bytes"])
             .set(($namespaced.dynamic_l_naught_bytes as i32).into());
         $metrics
-            .with_label_values(&[$tag, "num_l_naughts"])
+            .with_label_causet_locales(&[$tag, "num_l_naughts"])
             .set($namespaced.num_l_naughts.into());
         $metrics
-            .with_label_values(&[$tag, "max_bytes_for_l_naught_multiplier"])
+            .with_label_causet_locales(&[$tag, "max_bytes_for_l_naught_multiplier"])
             .set($namespaced.max_bytes_for_l_naught_multiplier.into());
 
         $metrics
-            .with_label_values(&[$tag, "disable_auto_jet_bundles"])
+            .with_label_causet_locales(&[$tag, "disable_auto_jet_bundles"])
             .set(($namespaced.disable_auto_jet_bundles as i32).into());
         $metrics
-            .with_label_values(&[$tag, "disable_write_stall"])
+            .with_label_causet_locales(&[$tag, "disable_write_stall"])
             .set(($namespaced.disable_write_stall as i32).into());
         $metrics
-            .with_label_values(&[$tag, "soft_pending_jet_bundle_bytes_limit"])
+            .with_label_causet_locales(&[$tag, "soft_pending_jet_bundle_bytes_limit"])
             .set($namespaced.soft_pending_jet_bundle_bytes_limit.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "hard_pending_jet_bundle_bytes_limit"])
+            .with_label_causet_locales(&[$tag, "hard_pending_jet_bundle_bytes_limit"])
             .set($namespaced.hard_pending_jet_bundle_bytes_limit.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "force_consistency_checks"])
+            .with_label_causet_locales(&[$tag, "force_consistency_checks"])
             .set(($namespaced.force_consistency_checks as i32).into());
         $metrics
-            .with_label_values(&[$tag, "enable_doubly_skiplist"])
+            .with_label_causet_locales(&[$tag, "enable_doubly_skiplist"])
             .set(($namespaced.enable_doubly_skiplist as i32).into());
         $metrics
-            .with_label_values(&[$tag, "titan_min_blob_size"])
+            .with_label_causet_locales(&[$tag, "titan_min_blob_size"])
             .set($namespaced.titan.min_blob_size.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "titan_blob_cache_size"])
+            .with_label_causet_locales(&[$tag, "titan_blob_cache_size"])
             .set($namespaced.titan.blob_cache_size.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "titan_min_gc_alexandro_size"])
+            .with_label_causet_locales(&[$tag, "titan_min_gc_alexandro_size"])
             .set($namespaced.titan.min_gc_alexandro_size.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "titan_max_gc_alexandro_size"])
+            .with_label_causet_locales(&[$tag, "titan_max_gc_alexandro_size"])
             .set($namespaced.titan.max_gc_alexandro_size.0 as f64);
         $metrics
-            .with_label_values(&[$tag, "titan_discardable_ratio"])
+            .with_label_causet_locales(&[$tag, "titan_discardable_ratio"])
             .set($namespaced.titan.discardable_ratio);
         $metrics
-            .with_label_values(&[$tag, "titan_sample_ratio"])
+            .with_label_causet_locales(&[$tag, "titan_sample_ratio"])
             .set($namespaced.titan.sample_ratio);
         $metrics
-            .with_label_values(&[$tag, "titan_merge_small_file_threshold"])
+            .with_label_causet_locales(&[$tag, "titan_merge_small_file_threshold"])
             .set($namespaced.titan.merge_small_file_threshold.0 as f64);
     }};
 }
@@ -459,10 +458,10 @@ macro_rules! build_namespaced_opt {
             .set_pin_l0_filter_and_index_blocks_in_cache($opt.pin_l0_filter_and_index_blocks);
         if $opt.use_bloom_filter {
             block_base_opts.set_bloom_filter(
-                $opt.bloom_filter_bits_per_key,
+                $opt.bloom_filter_bits_per_soliton_id,
                 $opt.block_based_bloom_filter,
             );
-            block_base_opts.set_whole_key_filtering($opt.whole_key_filtering);
+            block_base_opts.set_whole_soliton_id_filtering($opt.whole_soliton_id_filtering);
         }
         block_base_opts.set_read_amp_bytes_per_bit($opt.read_amp_bytes_per_bit);
         let mut namespaced_opts = ColumnFamilyOptions::new();
@@ -473,7 +472,7 @@ macro_rules! build_namespaced_opt {
         namespaced_opts.compression_per_l_naught(compression_per_l_naught.as_slice());
         namespaced_opts.bottommost_compression($opt.bottommost_l_naught_compression);
         // To set for bottommost l_naught sst compression. The first 3 parameters refer to the
-        // default value in `CompressionOptions` in `foundationdb/include/foundationdb/advanced_options.h`.
+        // default causet_locale in `CompressionOptions` in `foundationdb/include/foundationdb/advanced_options.h`.
         namespaced_opts.set_bottommost_l_naught_compression_options(
             -14,   /* window_bits */
             32767, /* l_naught */
@@ -535,8 +534,8 @@ impl Default for DefaultNamespacedConfig {
             pin_l0_filter_and_index_blocks: true,
             use_bloom_filter: true,
             optimize_filters_for_hits: true,
-            whole_key_filtering: true,
-            bloom_filter_bits_per_key: 10,
+            whole_soliton_id_filtering: true,
+            bloom_filter_bits_per_soliton_id: 10,
             block_based_bloom_filter: false,
             read_amp_bytes_per_bit: 0,
             compression_per_l_naught: [
@@ -568,7 +567,7 @@ impl Default for DefaultNamespacedConfig {
             hard_pending_jet_bundle_bytes_limit: ReadableSize::gb(256),
             force_consistency_checks: false,
             prop_size_index_distance: DEFAULT_PROP_SIZE_INDEX_DISTANCE,
-            prop_keys_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
+            prop_soliton_ids_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
             enable_doubly_skiplist: true,
             enable_jet_bundle_guard: true,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
@@ -591,7 +590,7 @@ impl DefaultNamespacedConfig {
         let mut namespaced_opts = build_namespaced_opt!(self, NAMESPACED_DEFAULT, cache, region_info_accessor);
         let f = RangePropertiesCollectorFactory {
             prop_size_index_distance: self.prop_size_index_distance,
-            prop_keys_index_distance: self.prop_keys_index_distance,
+            prop_soliton_ids_index_distance: self.prop_soliton_ids_index_distance,
         };
         namespaced_opts.add_table_properties_collector_factory("einsteindb.range-properties-collector", f);
         match_template_api_version!(
@@ -638,8 +637,8 @@ impl Default for WriteNamespacedConfig {
             pin_l0_filter_and_index_blocks: true,
             use_bloom_filter: true,
             optimize_filters_for_hits: false,
-            whole_key_filtering: false,
-            bloom_filter_bits_per_key: 10,
+            whole_soliton_id_filtering: false,
+            bloom_filter_bits_per_soliton_id: 10,
             block_based_bloom_filter: false,
             read_amp_bytes_per_bit: 0,
             compression_per_l_naught: [
@@ -671,7 +670,7 @@ impl Default for WriteNamespacedConfig {
             hard_pending_jet_bundle_bytes_limit: ReadableSize::gb(256),
             force_consistency_checks: false,
             prop_size_index_distance: DEFAULT_PROP_SIZE_INDEX_DISTANCE,
-            prop_keys_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
+            prop_soliton_ids_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
             enable_doubly_skiplist: true,
             enable_jet_bundle_guard: true,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
@@ -707,7 +706,7 @@ impl WriteNamespacedConfig {
         );
         let f = RangePropertiesCollectorFactory {
             prop_size_index_distance: self.prop_size_index_distance,
-            prop_keys_index_distance: self.prop_keys_index_distance,
+            prop_soliton_ids_index_distance: self.prop_soliton_ids_index_distance,
         };
         namespaced_opts.add_table_properties_collector_factory("einsteindb.range-properties-collector", f);
         namespaced_opts
@@ -741,8 +740,8 @@ impl Default for DaggerNamespacedConfig {
             pin_l0_filter_and_index_blocks: true,
             use_bloom_filter: true,
             optimize_filters_for_hits: false,
-            whole_key_filtering: true,
-            bloom_filter_bits_per_key: 10,
+            whole_soliton_id_filtering: true,
+            bloom_filter_bits_per_soliton_id: 10,
             block_based_bloom_filter: false,
             read_amp_bytes_per_bit: 0,
             compression_per_l_naught: [DBCompressionType::No; 7],
@@ -766,7 +765,7 @@ impl Default for DaggerNamespacedConfig {
             hard_pending_jet_bundle_bytes_limit: ReadableSize::gb(256),
             force_consistency_checks: false,
             prop_size_index_distance: DEFAULT_PROP_SIZE_INDEX_DISTANCE,
-            prop_keys_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
+            prop_soliton_ids_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
             enable_doubly_skiplist: true,
             enable_jet_bundle_guard: false,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
@@ -788,7 +787,7 @@ impl DaggerNamespacedConfig {
             .unwrap();
         let f = RangePropertiesCollectorFactory {
             prop_size_index_distance: self.prop_size_index_distance,
-            prop_keys_index_distance: self.prop_keys_index_distance,
+            prop_soliton_ids_index_distance: self.prop_soliton_ids_index_distance,
         };
         namespaced_opts.add_table_properties_collector_factory("einsteindb.range-properties-collector", f);
         namespaced_opts.set_memtable_prefix_bloom_size_ratio(0.1);
@@ -814,8 +813,8 @@ impl Default for VioletaBFTNamespacedConfig {
             pin_l0_filter_and_index_blocks: true,
             use_bloom_filter: true,
             optimize_filters_for_hits: true,
-            whole_key_filtering: true,
-            bloom_filter_bits_per_key: 10,
+            whole_soliton_id_filtering: true,
+            bloom_filter_bits_per_soliton_id: 10,
             block_based_bloom_filter: false,
             read_amp_bytes_per_bit: 0,
             compression_per_l_naught: [DBCompressionType::No; 7],
@@ -839,7 +838,7 @@ impl Default for VioletaBFTNamespacedConfig {
             hard_pending_jet_bundle_bytes_limit: ReadableSize::gb(256),
             force_consistency_checks: false,
             prop_size_index_distance: DEFAULT_PROP_SIZE_INDEX_DISTANCE,
-            prop_keys_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
+            prop_soliton_ids_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
             enable_doubly_skiplist: true,
             enable_jet_bundle_guard: false,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
@@ -875,7 +874,7 @@ pub struct TitanDBConfig {
     pub dirname: String,
     pub disable_gc: bool,
     pub max_background_gc: i32,
-    // The value of this field will be truncated to seconds.
+    // The causet_locale of this field will be truncated to seconds.
     pub purge_obsolete_files_period: ReadableDuration,
 }
 
@@ -1128,9 +1127,9 @@ impl DbConfig {
         }
 
         // Since the following configuration supports online fidelate, in order to
-        // prevent mistakenly inputting too large values, the max limit is made
+        // prevent mistakenly inputting too large causet_locales, the max limit is made
         // according to the cpu quota * 10. Notice 10 is only an estimate, not an
-        // empirical value.
+        // empirical causet_locale.
         let limit = SysQuota::cpu_cores_quota() as i32 * 10;
         if self.max_background_jobs <= 0 || self.max_background_jobs > limit {
             return Err(format!(
@@ -1171,8 +1170,8 @@ impl Default for VioletaBFTDefaultNamespacedConfig {
             pin_l0_filter_and_index_blocks: true,
             use_bloom_filter: false,
             optimize_filters_for_hits: true,
-            whole_key_filtering: true,
-            bloom_filter_bits_per_key: 10,
+            whole_soliton_id_filtering: true,
+            bloom_filter_bits_per_soliton_id: 10,
             block_based_bloom_filter: false,
             read_amp_bytes_per_bit: 0,
             compression_per_l_naught: [
@@ -1204,7 +1203,7 @@ impl Default for VioletaBFTDefaultNamespacedConfig {
             hard_pending_jet_bundle_bytes_limit: ReadableSize::gb(256),
             force_consistency_checks: false,
             prop_size_index_distance: DEFAULT_PROP_SIZE_INDEX_DISTANCE,
-            prop_keys_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
+            prop_soliton_ids_index_distance: DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE,
             enable_doubly_skiplist: true,
             enable_jet_bundle_guard: false,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
@@ -1447,15 +1446,15 @@ impl DBConfigManger {
         self.validate_namespaced(namespaced)?;
         self.einsteindb.set_options_namespaced(namespaced, opts)?;
         // Write config to metric
-        for (cfg_name, cfg_value) in opts {
-            let cfg_value = match cfg_value {
+        for (cfg_name, cfg_causet_locale) in opts {
+            let cfg_causet_locale = match cfg_causet_locale {
                 v if *v == "true" => Ok(1f64),
                 v if *v == "false" => Ok(0f64),
                 v => v.parse::<f64>(),
             };
-            if let Ok(v) = cfg_value {
+            if let Ok(v) = cfg_causet_locale {
                 CONFIG_FDBDB_GAUGE
-                    .with_label_values(&[namespaced, cfg_name])
+                    .with_label_causet_locales(&[namespaced, cfg_name])
                     .set(v);
             }
         }
@@ -1473,7 +1472,7 @@ impl DBConfigManger {
         opt.set_block_cache_capacity(size.0)?;
         // Write config to metric
         CONFIG_FDBDB_GAUGE
-            .with_label_values(&[namespaced, "block_cache_size"])
+            .with_label_causet_locales(&[namespaced, "block_cache_size"])
             .set(size.0 as f64);
         Ok(())
     }
@@ -1540,12 +1539,12 @@ impl ConfigManager for DBConfigManger {
                     self.set_block_cache_size(namespaced_name, v.into())?;
                 }
                 if let Some(ConfigValue::Module(titan_change)) = namespaced_change.remove("titan") {
-                    for (name, value) in titan_change {
-                        namespaced_change.insert(name, value);
+                    for (name, causet_locale) in titan_change {
+                        namespaced_change.insert(name, causet_locale);
                     }
                 }
                 if !namespaced_change.is_empty() {
-                    let namespaced_change = config_value_to_string(namespaced_change.into_iter().collect());
+                    let namespaced_change = config_causet_locale_to_string(namespaced_change.into_iter().collect());
                     let namespaced_change_slice = config_to_slice(&namespaced_change);
                     self.set_namespaced_config(namespaced_name, &namespaced_change_slice)?;
                 }
@@ -1585,7 +1584,7 @@ impl ConfigManager for DBConfigManger {
         }
 
         if !change.is_empty() {
-            let change = config_value_to_string(change);
+            let change = config_causet_locale_to_string(change);
             let change_slice = config_to_slice(&change);
             self.set_db_config(&change_slice)?;
         }
@@ -1601,16 +1600,16 @@ impl ConfigManager for DBConfigManger {
 fn config_to_slice(config_change: &[(String, String)]) -> Vec<(&str, &str)> {
     config_change
         .iter()
-        .map(|(name, value)| (name.as_str(), value.as_str()))
+        .map(|(name, causet_locale)| (name.as_str(), causet_locale.as_str()))
         .collect()
 }
 
 // Convert `ConfigValue` to formatted String that can pass to `DB::set_db_options`
-fn config_value_to_string(config_change: Vec<(String, ConfigValue)>) -> Vec<(String, String)> {
+fn config_causet_locale_to_string(config_change: Vec<(String, ConfigValue)>) -> Vec<(String, String)> {
     config_change
         .into_iter()
-        .filter_map(|(name, value)| {
-            let v = match value {
+        .filter_map(|(name, causet_locale)| {
+            let v = match causet_locale {
                 d @ ConfigValue::Duration(_) => {
                     let d: ReadableDuration = d.into();
                     Some(d.as_secs().to_string())
@@ -1658,12 +1657,12 @@ impl Default for MetricConfig {
 }
 
 pub mod log_l_naught_serde {
+    use einsteindb_util::logger::{get_l_naught_by_string, get_string_by_l_naught};
     use serde::{
         de::{Error, Unexpected},
         Deserialize, Deserializer, Serialize, Serializer,
-    };
+        };
     use slog::Level;
-    use einsteindb_util::logger::{get_l_naught_by_string, get_string_by_l_naught};
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Level, D::Error>
     where
@@ -1671,15 +1670,15 @@ pub mod log_l_naught_serde {
     {
         let string = String::deserialize(deserializer)?;
         get_l_naught_by_string(&string)
-            .ok_or_else(|| D::Error::invalid_value(Unexpected::Str(&string), &"a valid log l_naught"))
+            .ok_or_else(|| D::Error::invalid_causet_locale(Unexpected::Str(&string), &"a valid log l_naught"))
     }
 
     #[allow(clippy::trivially_copy_pass_by_ref)]
-    pub fn serialize<S>(value: &Level, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize<S>(causet_locale: &Level, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        get_string_by_l_naught(*value).serialize(serializer)
+        get_string_by_l_naught(*causet_locale).serialize(serializer)
     }
 }
 
@@ -2278,18 +2277,18 @@ pub struct CdcConfig {
     pub incremental_scan_speed_limit: ReadableSize,
     /// `TsFilter` can increase speed and decrease resource usage when incremental content is much
     /// less than total content. However in other cases, `TsFilter` can make performance worse
-    /// because it needs to re-fetch old row values if they are required.
+    /// because it needs to re-fetch old event causet_locales if they are required.
     ///
     /// `TsFilter` will be enabled if `incremental/total <= incremental_scan_ts_filter_ratio`.
     /// Set `incremental_scan_ts_filter_ratio` to 0 will disable it.
     pub incremental_scan_ts_filter_ratio: f64,
     pub sink_memory_quota: ReadableSize,
-    pub old_value_cache_memory_quota: ReadableSize,
+    pub old_causet_locale_cache_memory_quota: ReadableSize,
     // Deprecated! preserved for compatibility check.
     #[online_config(skip)]
     #[doc(hidden)]
     #[serde(skip_serializing)]
-    pub old_value_cache_size: usize,
+    pub old_causet_locale_cache_size: usize,
 }
 
 impl Default for CdcConfig {
@@ -2307,10 +2306,10 @@ impl Default for CdcConfig {
             incremental_scan_ts_filter_ratio: 0.2,
             // 512MB memory for CDC sink.
             sink_memory_quota: ReadableSize::mb(512),
-            // 512MB memory for old value cache.
-            old_value_cache_memory_quota: ReadableSize::mb(512),
+            // 512MB memory for old causet_locale cache.
+            old_causet_locale_cache_memory_quota: ReadableSize::mb(512),
             // Deprecated! preserved for compatibility check.
-            old_value_cache_size: 0,
+            old_causet_locale_cache_size: 0,
         }
     }
 }
@@ -2462,7 +2461,7 @@ pub struct EinsteinDbConfig {
     pub slow_log_threshold: ReadableDuration,
 
     #[online_config(hidden)]
-    pub panic_when_unexpected_key_or_data: bool,
+    pub panic_when_unexpected_soliton_id_or_data: bool,
 
     #[doc(hidden)]
     #[serde(skip_serializing)]
@@ -2506,7 +2505,7 @@ pub struct EinsteinDbConfig {
     pub InterDagger: CopConfig,
 
     #[online_config(skip)]
-    pub InterDagger_v2: InterDaggerV2Config,
+    pub InterDagger_causet_record: InterDaggerV2Config,
 
     #[online_config(submodule)]
     pub foundationdb: DbConfig,
@@ -2556,7 +2555,7 @@ impl Default for EinsteinDbConfig {
             log_rotation_size: ReadableSize::mb(300),
             slow_log_file: "".to_owned(),
             slow_log_threshold: ReadableDuration::secs(1),
-            panic_when_unexpected_key_or_data: false,
+            panic_when_unexpected_soliton_id_or_data: false,
             enable_io_snoop: true,
             abort_on_panic: false,
             memory_usage_limit: OptionReadableSize(None),
@@ -2567,7 +2566,7 @@ impl Default for EinsteinDbConfig {
             metric: MetricConfig::default(),
             violetabft_timelike_store: VioletaBFTtimelike_storeConfig::default(),
             InterDagger: CopConfig::default(),
-            InterDagger_v2: InterDaggerV2Config::default(),
+            InterDagger_causet_record: InterDaggerV2Config::default(),
             fidel: PdConfig::default(),
             foundationdb: DbConfig::default(),
             violetabftdb: VioletaBFTDbConfig::default(),
@@ -2943,7 +2942,7 @@ impl EinsteinDbConfig {
             );
             // Note:
             // Our `end_point_max_tasks` is mostly mistakenly configured, so we don't override
-            // new configuration using old values.
+            // new configuration using old causet_locales.
             self.server.end_point_max_tasks = None;
         }
         if self.violetabft_timelike_store.clean_stale_peer_delay.as_secs() > 0 {
@@ -2960,7 +2959,7 @@ impl EinsteinDbConfig {
             self.foundationdb.auto_tuned = None;
         }
         // When shared block cache is enabled, if its capacity is set, it overrides individual
-        // block cache sizes. Otherwise use the sum of block cache size of all column families
+        // block cache sizes. Otherwise use the sum of block cache size of all causet_merge families
         // as the shared cache size.
         let cache_cfg = &mut self.timelike_storage.block_cache;
         if cache_cfg.shared && cache_cfg.capacity.0.is_none() {
@@ -3008,7 +3007,7 @@ impl EinsteinDbConfig {
         }
 
         if last_cfg.timelike_storage.data_dir != self.timelike_storage.data_dir {
-            // In einsteindb 3.0 the default value of timelike_storage.data-dir changed
+            // In einsteindb 3.0 the default causet_locale of timelike_storage.data-dir changed
             // from "" to "./"
             let using_default_after_upgrade =
                 last_cfg.timelike_storage.data_dir.is_empty() && self.timelike_storage.data_dir == DEFAULT_DATA_DIR;
@@ -3058,12 +3057,12 @@ impl EinsteinDbConfig {
 
     pub fn from_file(
         path: &Path,
-        unrecognized_keys: Option<&mut Vec<String>>,
+        unrecognized_soliton_ids: Option<&mut Vec<String>>,
     ) -> Result<Self, Box<dyn Error>> {
         let s = fs::read_to_string(path)?;
         let mut deserializer = toml::Deserializer::new(&s);
-        let mut cfg = if let Some(keys) = unrecognized_keys {
-            serde_ignored::deserialize(&mut deserializer, |key| keys.push(key.to_string()))
+        let mut cfg = if let Some(soliton_ids) = unrecognized_soliton_ids {
+            serde_ignored::deserialize(&mut deserializer, |soliton_id| soliton_ids.push(soliton_id.to_string()))
         } else {
             <EinsteinDbConfig as serde::Deserialize>::deserialize(&mut deserializer)
         }?;
@@ -3102,10 +3101,10 @@ impl EinsteinDbConfig {
 
     pub fn build_shared_rocks_env(
         &self,
-        key_manager: Option<Arc<DataKeyManager>>,
+        soliton_id_manager: Option<Arc<DataKeyManager>>,
         limiter: Option<Arc<IORateLimiter>>,
     ) -> Result<Arc<Env>, String> {
-        let env = get_env(key_manager, limiter)?;
+        let env = get_env(soliton_id_manager, limiter)?;
         if !self.violetabft_engine.enable {
             // FdbDB makes sure there are at least `max_background_flushes`
             // high-priority workers in env. That is not enough when multiple
@@ -3122,7 +3121,7 @@ impl EinsteinDbConfig {
 /// Prevents launching with an incompatible configuration
 ///
 /// Loads the previously-loaded configuration from `last_einsteindb.toml`,
-/// compares key configuration items and fails if they are not
+/// compares soliton_id configuration items and fails if they are not
 /// identical.
 pub fn check_critical_config(config: &EinsteinDbConfig) -> Result<(), String> {
     // Check current critical configurations with last time, if there are some
@@ -3249,7 +3248,7 @@ fn to_config_change(change: HashMap<String, String>) -> NamespacedgResult<Config
         mut fields: Vec<String>,
         dst: &mut ConfigChange,
         typed: &ConfigChange,
-        value: String,
+        causet_locale: String,
     ) -> NamespacedgResult<()> {
         if let Some(field) = fields.pop() {
             return match typed.get(&field) {
@@ -3262,14 +3261,14 @@ fn to_config_change(change: HashMap<String, String>) -> NamespacedgResult<Config
                         .entry(field)
                         .or_insert_with(|| ConfigValue::Module(HashMap::new()))
                     {
-                        return helper(fields, n_dst, m, value);
+                        return helper(fields, n_dst, m, causet_locale);
                     }
-                    panic!("unexpect config value");
+                    panic!("unexpect config causet_locale");
                 }
                 Some(v) => {
                     if fields.is_empty() {
-                        return match to_change_value(&value, v) {
-                            Err(_) => Err(format!("failed to parse: {}", value).into()),
+                        return match to_change_causet_locale(&causet_locale, v) {
+                            Err(_) => Err(format!("failed to parse: {}", causet_locale).into()),
                             Ok(v) => {
                                 dst.insert(field, v);
                                 Ok(())
@@ -3284,7 +3283,7 @@ fn to_config_change(change: HashMap<String, String>) -> NamespacedgResult<Config
         Ok(())
     }
     let mut res = HashMap::new();
-    for (mut name, value) in change {
+    for (mut name, causet_locale) in change {
         name = serde_to_online_config(name);
         let fields: Vec<_> = name
             .as_str()
@@ -3292,12 +3291,12 @@ fn to_config_change(change: HashMap<String, String>) -> NamespacedgResult<Config
             .map(|s| s.to_owned())
             .rev()
             .collect();
-        helper(fields, &mut res, &EINSTEINDBCONFIG_TYPED, value)?;
+        helper(fields, &mut res, &EINSTEINDBCONFIG_TYPED, causet_locale)?;
     }
     Ok(res)
 }
 
-fn to_change_value(v: &str, typed: &ConfigValue) -> NamespacedgResult<ConfigValue> {
+fn to_change_causet_locale(v: &str, typed: &ConfigValue) -> NamespacedgResult<ConfigValue> {
     let v = v.trim_matches('\"');
     let res = match typed {
         ConfigValue::Duration(_) => ConfigValue::from(v.parse::<ReadableDuration>()?),
@@ -3354,7 +3353,7 @@ fn to_toml_encode(change: HashMap<String, String>) -> NamespacedgResult<HashMap<
         }
     }
     let mut dst = HashMap::new();
-    for (name, value) in change {
+    for (name, causet_locale) in change {
         let online_config_name = serde_to_online_config(name.clone());
         let fields: Vec<_> = online_config_name
             .as_str()
@@ -3363,9 +3362,9 @@ fn to_toml_encode(change: HashMap<String, String>) -> NamespacedgResult<HashMap<
             .rev()
             .collect();
         if helper(fields, &EINSTEINDBCONFIG_TYPED)? {
-            dst.insert(name.replace('_', "-"), format!("\"{}\"", value));
+            dst.insert(name.replace('_', "-"), format!("\"{}\"", causet_locale));
         } else {
-            dst.insert(name.replace('_', "-"), value);
+            dst.insert(name.replace('_', "-"), causet_locale);
         }
     }
     Ok(dst)
@@ -3513,9 +3512,9 @@ impl ConfigController {
         Ok(())
     }
 
-    pub fn fidelate_config(&self, name: &str, value: &str) -> NamespacedgResult<()> {
+    pub fn fidelate_config(&self, name: &str, causet_locale: &str) -> NamespacedgResult<()> {
         let mut m = HashMap::new();
-        m.insert(name.to_owned(), value.to_owned());
+        m.insert(name.to_owned(), causet_locale.to_owned());
         self.fidelate(m)
     }
 
@@ -3533,21 +3532,22 @@ impl ConfigController {
 
 #[cfg(test)]
 mod tests {
-    use itertools::Itertools;
-    use tempfile::Builder;
-
-    use super::*;
-    use crate::server::ttl::TTLCheckerTask;
-    use crate::timelike_storage::config::StorageConfigManger;
-    use crate::timelike_storage::causet_chains::symplectic_controller::SymplecticController;
     use case_macros::*;
-    use fdb_engine::primitive_causet_util::new_engine_opt;
+    use einsteindb_util::worker::{dummy_scheduler, ReceiverWrapper};
     use engine_traits::DBOptions as DBOptionsTrait;
-    use violetabfttimelike_store::InterDagger::region_info_accessor::MockRegionInfoProvider;
+    use fdb_engine::primitive_causet_util::new_engine_opt;
+    use itertools::Itertools;
     use slog::Level;
     use std::sync::Arc;
     use std::time::Duration;
-    use einsteindb_util::worker::{dummy_scheduler, ReceiverWrapper};
+    use tempfile::Builder;
+    use violetabfttimelike_store::InterDagger::region_info_accessor::MockRegionInfoProvider;
+
+    use crate::server::ttl::TTLCheckerTask;
+    use crate::timelike_storage::causet_chains::symplectic_controller::SymplecticController;
+    use crate::timelike_storage::config::StorageConfigManger;
+
+    use super::*;
 
     #[test]
     fn test_case_macro() {
@@ -3718,15 +3718,15 @@ mod tests {
             let res_string = toml::to_string(&holder).unwrap();
             let exp_string = format!("v = \"{}\"\n", serialized);
             assert_eq!(res_string, exp_string);
-            let res_value: LevelHolder = toml::from_str(&exp_string).unwrap();
-            assert_eq!(res_value.v, deserialized);
+            let res_causet_locale: LevelHolder = toml::from_str(&exp_string).unwrap();
+            assert_eq!(res_causet_locale.v, deserialized);
         }
 
         let compatibility_cases = vec![("warning", Level::Warning), ("critical", Level::Critical)];
         for (serialized, deserialized) in compatibility_cases {
             let variant_string = format!("v = \"{}\"\n", serialized);
-            let res_value: LevelHolder = toml::from_str(&variant_string).unwrap();
-            assert_eq!(res_value.v, deserialized);
+            let res_causet_locale: LevelHolder = toml::from_str(&variant_string).unwrap();
+            assert_eq!(res_causet_locale.v, deserialized);
         }
 
         let illegal_cases = vec!["foobar", ""];
@@ -3739,28 +3739,28 @@ mod tests {
     #[test]
     fn test_to_config_change() {
         assert_eq!(
-            to_change_value("10h", &ConfigValue::Duration(0)).unwrap(),
+            to_change_causet_locale("10h", &ConfigValue::Duration(0)).unwrap(),
             ConfigValue::from(ReadableDuration::hours(10))
         );
         assert_eq!(
-            to_change_value("100MB", &ConfigValue::Size(0)).unwrap(),
+            to_change_causet_locale("100MB", &ConfigValue::Size(0)).unwrap(),
             ConfigValue::from(ReadableSize::mb(100))
         );
         assert_eq!(
-            to_change_value("10000", &ConfigValue::U64(0)).unwrap(),
+            to_change_causet_locale("10000", &ConfigValue::U64(0)).unwrap(),
             ConfigValue::from(10000u64)
         );
 
         let old = EinsteinDbConfig::default();
         let mut incoming = EinsteinDbConfig::default();
-        incoming.InterDagger.region_split_keys = 10000;
+        incoming.InterDagger.region_split_soliton_ids = 10000;
         incoming.gc.max_write_bytes_per_sec = ReadableSize::mb(100);
         incoming.foundationdb.defaultnamespaced.block_cache_size = ReadableSize::mb(500);
         incoming.timelike_storage.io_rate_limit.import_priority = file_system::IOPriority::High;
         let diff = old.diff(&incoming);
         let mut change = HashMap::new();
         change.insert(
-            "InterDagger.region-split-keys".to_owned(),
+            "InterDagger.region-split-soliton_ids".to_owned(),
             "10000".to_owned(),
         );
         change.insert("gc.max-write-bytes-per-sec".to_owned(), "100MB".to_owned());
@@ -3777,7 +3777,7 @@ mod tests {
 
         // illegal cases
         let cases = vec![
-            // wrong value type
+            // wrong causet_locale type
             ("gc.max-write-bytes-per-sec".to_owned(), "10s".to_owned()),
             (
                 "pessimistic-causet_chains.wait-for-lock-timeout".to_owned(),
@@ -3798,9 +3798,9 @@ mod tests {
             ),
             ("violetabfttimelike_store.prevote".to_owned(), "false".to_owned()),
         ];
-        for (name, value) in cases {
+        for (name, causet_locale) in cases {
             let mut change = HashMap::new();
-            change.insert(name, value);
+            change.insert(name, causet_locale);
             assert!(to_config_change(change).is_err());
         }
     }
@@ -3813,7 +3813,7 @@ mod tests {
             "1h".to_owned(),
         );
         change.insert(
-            "InterDagger.region-split-keys".to_owned(),
+            "InterDagger.region-split-soliton_ids".to_owned(),
             "10000".to_owned(),
         );
         change.insert("gc.max-write-bytes-per-sec".to_owned(), "100MB".to_owned());
@@ -3829,7 +3829,7 @@ mod tests {
             Some(&"\"1h\"".to_owned())
         );
         assert_eq!(
-            res.get("InterDagger.region-split-keys"),
+            res.get("InterDagger.region-split-soliton_ids"),
             Some(&"10000".to_owned())
         );
         assert_eq!(
@@ -3973,7 +3973,7 @@ mod tests {
         );
 
         let mut resolved_ts_cfg = cfg_controller.get_current().resolved_ts;
-        // Default value
+        // Default causet_locale
         assert_eq!(
             resolved_ts_cfg.advance_ts_interval,
             ReadableDuration::secs(1)
@@ -3989,7 +3989,7 @@ mod tests {
             ReadableDuration::millis(100)
         );
 
-        // Return error if try to fidelate `advance-ts-interval` to an invalid value
+        // Return error if try to fidelate `advance-ts-interval` to an invalid causet_locale
         assert!(
             cfg_controller
                 .fidelate_config("resolved-ts.advance-ts-interval", "0m")
@@ -4033,7 +4033,7 @@ mod tests {
             .unwrap();
         assert_eq!(einsteindb.get_db_options().get_max_background_jobs(), 8);
 
-        // fidelate max_background_flushes, set to a bigger value
+        // fidelate max_background_flushes, set to a bigger causet_locale
         assert_eq!(einsteindb.get_db_options().get_max_background_flushes(), 2);
 
         cfg_controller
@@ -4152,7 +4152,7 @@ mod tests {
             .diff(&incoming.foundationdb.defaultnamespaced.titan);
         assert_eq!(diff.len(), 1);
 
-        let diff = config_value_to_string(diff.into_iter().collect());
+        let diff = config_causet_locale_to_string(diff.into_iter().collect());
         assert_eq!(diff.len(), 1);
         assert_eq!(diff[0].0.as_str(), "blob_run_mode");
         assert_eq!(diff[0].1.as_str(), "kFallback");
@@ -4215,7 +4215,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unrecognized_config_keys() {
+    fn test_unrecognized_config_soliton_ids() {
         let mut temp_config_file = tempfile::NamedTempFile::new().unwrap();
         let temp_config_writer = temp_config_file.as_file_mut();
         temp_config_writer
@@ -4229,25 +4229,25 @@ mod tests {
                     [import]
                     num_threads = 4
                     [gcc]
-                    alexandro-keys = 1024
-                    [[security.encryption.master-keys]]
+                    alexandro-soliton_ids = 1024
+                    [[security.encryption.master-soliton_ids]]
                     type = "file"
                 "#,
             )
             .unwrap();
         temp_config_writer.sync_data().unwrap();
 
-        let mut unrecognized_keys = Vec::new();
-        let _ = EinsteinDbConfig::from_file(temp_config_file.path(), Some(&mut unrecognized_keys));
+        let mut unrecognized_soliton_ids = Vec::new();
+        let _ = EinsteinDbConfig::from_file(temp_config_file.path(), Some(&mut unrecognized_soliton_ids));
 
         assert_eq!(
-            unrecognized_keys,
+            unrecognized_soliton_ids,
             vec![
                 "log-fmt".to_owned(),
                 "readpool.unified.min-threads-count".to_owned(),
                 "import.num_threads".to_owned(),
                 "gcc".to_owned(),
-                "security.encryption.master-keys".to_owned(),
+                "security.encryption.master-soliton_ids".to_owned(),
             ],
         );
     }
@@ -4518,21 +4518,21 @@ mod tests {
     }
 
     #[test]
-    fn test_config_template_no_superfluous_keys() {
+    fn test_config_template_no_superfluous_soliton_ids() {
         let template_config = std::include_str!("../etc/config-template.toml")
             .lines()
             .map(|l| l.strip_prefix('#').unwrap_or(l))
             .join("\n");
 
         let mut deserializer = toml::Deserializer::new(&template_config);
-        let mut unrecognized_keys = Vec::new();
-        let _: EinsteinDbConfig = serde_ignored::deserialize(&mut deserializer, |key| {
-            unrecognized_keys.push(key.to_string())
+        let mut unrecognized_soliton_ids = Vec::new();
+        let _: EinsteinDbConfig = serde_ignored::deserialize(&mut deserializer, |soliton_id| {
+            unrecognized_soliton_ids.push(soliton_id.to_string())
         })
         .unwrap();
 
-        // Don't use `is_empty()` so we see which keys are superfluous on failure.
-        assert_eq!(unrecognized_keys, Vec::<String>::new());
+        // Don't use `is_empty()` so we see which soliton_ids are superfluous on failure.
+        assert_eq!(unrecognized_soliton_ids, Vec::<String>::new());
     }
 
     #[test]
@@ -4545,8 +4545,8 @@ mod tests {
         let mut cfg: EinsteinDbConfig = toml::from_str(&template_config).unwrap();
         let mut default_cfg = EinsteinDbConfig::default();
 
-        // Some default values are computed based on the environment.
-        // Because we can't set config values for these in `config-template.toml`, we will handle
+        // Some default causet_locales are computed based on the environment.
+        // Because we can't set config causet_locales for these in `config-template.toml`, we will handle
         // them manually.
         cfg.readpool.unified.max_thread_count = default_cfg.readpool.unified.max_thread_count;
         cfg.readpool.timelike_storage.high_concurrency = default_cfg.readpool.timelike_storage.high_concurrency;
@@ -4571,17 +4571,17 @@ mod tests {
         cfg.violetabftdb.titan.max_background_gc = default_cfg.violetabftdb.titan.max_background_gc;
         cfg.backup.num_threads = default_cfg.backup.num_threads;
 
-        // There is another set of config values that we can't directly compare:
-        // When the default values are `None`, but are then resolved to `Some(_)` later on.
+        // There is another set of config causet_locales that we can't directly compare:
+        // When the default causet_locales are `None`, but are then resolved to `Some(_)` later on.
         default_cfg.readpool.timelike_storage.adjust_use_unified_pool();
         default_cfg.readpool.InterDagger.adjust_use_unified_pool();
         default_cfg.security.redact_info_log = Some(false);
 
         // Other special cases.
         cfg.fidel.retry_max_count = default_cfg.fidel.retry_max_count; // Both -1 and isize::MAX are the same.
-        cfg.timelike_storage.block_cache.capacity = OptionReadableSize(None); // Either `None` and a value is computed or `Some(_)` fixed value.
+        cfg.timelike_storage.block_cache.capacity = OptionReadableSize(None); // Either `None` and a causet_locale is computed or `Some(_)` fixed causet_locale.
         cfg.memory_usage_limit = OptionReadableSize(None);
-        cfg.InterDagger_v2.InterDagger_plugin_directory = None; // Default is `None`, which is represented by not setting the key.
+        cfg.InterDagger_causet_record.InterDagger_plugin_directory = None; // Default is `None`, which is represented by not setting the soliton_id.
 
         assert_eq!(cfg, default_cfg);
     }
@@ -4620,10 +4620,10 @@ mod tests {
         let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
         cfg.validate().unwrap();
 
-        // old-value-cache-size is deprecated, 0 must not report error.
+        // old-causet_locale-cache-size is deprecated, 0 must not report error.
         let content = r#"
             [cdc]
-            old-value-cache-size = 0
+            old-causet_locale-cache-size = 0
         "#;
         let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
         cfg.validate().unwrap();
@@ -4694,7 +4694,7 @@ mod tests {
         let config: DefaultNamespacedConfig = toml::from_str(normal_string_config).unwrap();
         assert_eq!(config.jet_bundle_style, DBCompactionStyle::Universal);
 
-        // Test if we support string value
+        // Test if we support string causet_locale
         let normal_string_config = r#"
             jet_bundle-style = "universal"
         "#;
@@ -4722,7 +4722,7 @@ mod tests {
         });
         assert!(r.is_err());
 
-        // rate-limiter-mode default values is 2
+        // rate-limiter-mode default causet_locales is 2
         let config_str = r#"
             rate-limiter-mode = 1
         "#;

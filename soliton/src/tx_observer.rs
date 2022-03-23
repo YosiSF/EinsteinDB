@@ -8,45 +8,26 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use core_traits::{
+    Causetid,
+    TypedValue,
+};
+use einstein_ml::causets::OpType;
+use einsteindb_core::Topograph;
+use einsteindb_traits::errors::Result;
+use indexmap::IndexMap;
 use std::sync::{
     Arc,
     Weak,
 };
-
 use std::sync::mpsc::{
     channel,
     Receiver,
     RecvError,
     Sender,
 };
-
 use std::thread;
-
-use indexmap::{
-    IndexMap,
-};
-
-use core_traits::{
-    Causetid,
-    TypedValue,
-};
-
-use einsteindb_core::{
-    Topograph,
-};
-
-use einstein_ml::causets::{
-    OpType,
-};
-
-use einsteindb_traits::errors::{
-    Result,
-};
-
-use types::{
-    AttributeSet,
-};
-
+use types::AttributeSet;
 use watcher::TransactWatcher;
 
 pub struct TxObserver {
@@ -68,8 +49,8 @@ impl TxObserver {
                .collect()
     }
 
-    fn notify(&self, key: &str, reports: IndexMap<&Causetid, &AttributeSet>) {
-        (*self.notify_fn)(key, reports);
+    fn notify(&self, soliton_id: &str, reports: IndexMap<&Causetid, &AttributeSet>) {
+        (*self.notify_fn)(soliton_id, reports);
     }
 }
 
@@ -94,10 +75,10 @@ impl TxCommand {
 impl Command for TxCommand {
     fn execute(&mut self) {
         self.observers.upgrade().map(|observers| {
-            for (key, observer) in observers.iter() {
+            for (soliton_id, observer) in observers.iter() {
                 let applicable_reports = observer.applicable_reports(&self.reports);
                 if !applicable_reports.is_empty() {
-                    observer.notify(&key, applicable_reports);
+                    observer.notify(&soliton_id, applicable_reports);
                 }
             }
         });
@@ -118,16 +99,16 @@ impl TxObservationService {
     }
 
     // For testing purposes
-    pub fn is_registered(&self, key: &String) -> bool {
-        self.observers.contains_key(key)
+    pub fn is_registered(&self, soliton_id: &String) -> bool {
+        self.observers.contains_soliton_id(soliton_id)
     }
 
-    pub fn register(&mut self, key: String, observer: Arc<TxObserver>) {
-        Arc::make_mut(&mut self.observers).insert(key, observer);
+    pub fn register(&mut self, soliton_id: String, observer: Arc<TxObserver>) {
+        Arc::make_mut(&mut self.observers).insert(soliton_id, observer);
     }
 
-    pub fn deregister(&mut self, key: &String) {
-        Arc::make_mut(&mut self.observers).remove(key);
+    pub fn deregister(&mut self, soliton_id: &String) {
+        Arc::make_mut(&mut self.observers).remove(soliton_id);
     }
 
     pub fn has_observers(&self) -> bool {

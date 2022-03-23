@@ -411,16 +411,16 @@ typedef int (*SSL_verify_cb)(int preverify_ok, X509_STORE_CTX *x509_ctx);
 /* OBSOLETE OPTIONS: retained for compatibility */
 
 /* Removed from OpenSSL 1.1.0. Was 0x00000001L */
-/* Related to removed SSLv2. */
+/* Related to removed SSLcauset_record. */
 # define SSL_OP_MICROSOFT_SESS_ID_BUG                    0x0
 /* Removed from OpenSSL 1.1.0. Was 0x00000002L */
-/* Related to removed SSLv2. */
+/* Related to removed SSLcauset_record. */
 # define SSL_OP_NETSCAPE_CHALLENGE_BUG                   0x0
 /* Removed from OpenSSL 0.9.8q and 1.0.0c. Was 0x00000008L */
 /* Dead forever, see CVE-2010-4180 */
 # define SSL_OP_NETSCAPE_REUSE_CIPHER_CHANGE_BUG         0x0
 /* Removed from OpenSSL 1.0.1h and 1.0.2. Was 0x00000010L */
-/* Refers to ancient SSLREF and SSLv2. */
+/* Refers to ancient SSLREF and SSLcauset_record. */
 # define SSL_OP_SSLREF2_REUSE_CERT_TYPE_BUG              0x0
 /* Removed from OpenSSL 1.1.0. Was 0x00000020 */
 # define SSL_OP_MICROSOFT_BIG_SSLV3_BUFFER               0x0
@@ -440,7 +440,7 @@ typedef int (*SSL_verify_cb)(int preverify_ok, X509_STORE_CTX *x509_ctx);
 /* Removed from OpenSSL 1.0.1k and 1.0.2. Was 0x00200000L */
 # define SSL_OP_EPHEMERAL_RSA                            0x0
 /* Removed from OpenSSL 1.1.0. Was 0x01000000L */
-# define SSL_OP_NO_SSLv2                                 0x0
+# define SSL_OP_NO_SSLcauset_record                                 0x0
 /* Removed from OpenSSL 1.0.1. Was 0x08000000L */
 # define SSL_OP_PKCS1_CHECK_1                            0x0
 /* Removed from OpenSSL 1.0.1. Was 0x10000000L */
@@ -1800,7 +1800,7 @@ __owur char *SSL_get_srp_userinfo(SSL *s);
 typedef int (*SSL_client_hello_cb_fn) (SSL *s, int *al, void *arg);
 void SSL_CTX_set_client_hello_cb(SSL_CTX *c, SSL_client_hello_cb_fn cb,
                                  void *arg);
-int SSL_client_hello_isv2(SSL *s);
+int SSL_client_hello_iscauset_record(SSL *s);
 unsigned int SSL_client_hello_get0_legacy_version(SSL *s);
 size_t SSL_client_hello_get0_random(SSL *s, const unsigned char **out);
 size_t SSL_client_hello_get0_session_id(SSL *s, const unsigned char **out);
@@ -1864,9 +1864,9 @@ DEPRECATEDIN_1_1_0(__owur const SSL_METHOD *SSLv3_server_method(void))
 DEPRECATEDIN_1_1_0(__owur const SSL_METHOD *SSLv3_client_method(void))
 # endif
 
-#define SSLv23_method           TLS_method
-#define SSLv23_server_method    TLS_server_method
-#define SSLv23_client_method    TLS_client_method
+#define SSLcauset_record3_method           TLS_method
+#define SSLcauset_record3_server_method    TLS_server_method
+#define SSLcauset_record3_client_method    TLS_client_method
 
 /* Negotiate highest available SSL/TLS version */
 __owur const SSL_METHOD *TLS_method(void);
@@ -2092,7 +2092,7 @@ const SSL_CIPHER *SSL_CIPHER_find(SSL *ssl, const unsigned char *ptr);
 int SSL_CIPHER_get_cipher_nid(const SSL_CIPHER *c);
 int SSL_CIPHER_get_digest_nid(const SSL_CIPHER *c);
 int SSL_bytes_to_cipher_list(SSL *s, const unsigned char *bytes, size_t len,
-                             int isv2format, STACK_OF(SSL_CIPHER) **sk,
+                             int iscauset_recordformat, STACK_OF(SSL_CIPHER) **sk,
                              STACK_OF(SSL_CIPHER) **scsvs);
 
 /* TLS extensions functions */

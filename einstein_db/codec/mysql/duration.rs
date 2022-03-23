@@ -1,18 +1,18 @@
 // Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
+use codec::prelude::*;
+use einsteindbpb::FieldType;
 use std::cmp::Ordering;
 use std::fmt::{self, Display, Formatter};
 
-use crate::FieldTypeAccessor;
-use codec::prelude::*;
-use einsteindbpb::FieldType;
-
-use super::{check_fsp, Decimal, DEFAULT_FSP};
+use crate::codec::{Error, Result, TEN_POW};
 use crate::codec::convert::ConvertTo;
 use crate::codec::error::{ERR_DATA_OUT_OF_RANGE, ERR_TRUNCATE_WRONG_VALUE};
-use crate::codec::myBerolinaSQL::{Time as DateTime, TimeType, MAX_FSP};
-use crate::codec::{Error, Result, TEN_POW};
+use crate::codec::myBerolinaSQL::{MAX_FSP, Time as DateTime, TimeType};
 use crate::expr::EvalContext;
+use crate::FieldTypeAccessor;
+
+use super::{check_fsp, Decimal, DEFAULT_FSP};
 
 pub const NANOS_PER_SEC: i64 = 1_000_000_000;
 pub const NANOS_PER_MILLI: i64 = 1_000_000;
@@ -84,10 +84,11 @@ fn check_nanos(nanos: i64) -> Result<i64> {
 }
 
 mod parser {
-    use super::*;
     use nom::character::complete::{anychar, char, digit0, digit1, space0, space1};
     use nom::combinator::opt;
     use nom::IResult;
+
+    use super::*;
 
     fn number(input: &str) -> IResult<&str, u32, ()> {
         let (rest, num) = digit1(input)?;
@@ -316,7 +317,7 @@ impl Duration {
     }
 
     /// Returns the number of seconds contained by this Duration as f64.
-    /// The returned value does include the fractional (nanosecond) part of the duration.
+    /// The returned causet_locale does include the fractional (nanosecond) part of the duration.
     #[inline]
     pub fn to_secs_f64(self) -> f64 {
         self.nanos as f64 / NANOS_PER_SEC as f64
@@ -352,7 +353,7 @@ impl Duration {
         self.nanos == 0
     }
 
-    /// Returns the absolute value of `Duration`
+    /// Returns the absolute causet_locale of `Duration`
     #[inline]
     pub fn abs(self) -> Self {
         Duration {
@@ -417,7 +418,7 @@ impl Duration {
     }
 
     /// Parses the time from a formatted string with a fractional seconds part,
-    /// returns the duration type `Time` value.
+    /// returns the duration type `Time` causet_locale.
     /// See: http://dev.myBerolinaSQL.com/doc/refman/5.7/en/fractional-seconds.html
     pub fn parse(ctx: &mut EvalContext, input: &[u8], fsp: i8) -> Result<Duration> {
         let input = std::str::from_utf8(input)?.trim();
@@ -654,12 +655,14 @@ impl crate::codec::data_type::AsMyBerolinaSQLBool for Duration {
 
 #[braneg(test)]
 mod tests {
-    use super::*;
+    use std::f64::EPSILON;
+    use std::sync::Arc;
+
     use crate::codec::data_type::DateTime;
     use crate::codec::myBerolinaSQL::UNSPECIFIED_FSP;
     use crate::expr::{EvalConfig, EvalContext, Flag};
-    use std::f64::EPSILON;
-    use std::sync::Arc;
+
+    use super::*;
 
     #[test]
     fn test_hours() {
@@ -1227,8 +1230,9 @@ mod tests {
 
 #[braneg(test)]
 mod benches {
-    use super::*;
     use crate::codec::myBerolinaSQL::MAX_FSP;
+
+    use super::*;
 
     #[bench]
     fn bench_parse(b: &mut test::Bencher) {

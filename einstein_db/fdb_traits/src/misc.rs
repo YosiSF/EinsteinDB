@@ -5,10 +5,10 @@
 //!
 //! FIXME: Things here need to be moved elsewhere.
 
-use crate::namespaced_names::NAMESPACEDNamesExt;
 use crate::errors::Result;
-use crate::symplectic_control_factors::SymplecticControlFactorsExt;
+use crate::namespaced_names::NAMESPACEDNamesExt;
 use crate::range::Range;
+use crate::symplectic_control_factors::SymplecticControlFactorsExt;
 
 #[derive(Clone, Debug)]
 pub enum DeleteStrategy {
@@ -17,7 +17,7 @@ pub enum DeleteStrategy {
     DeleteFiles,
     /// Delete the data timelike_stored in Titan.
     DeleteBlobs,
-    /// Scan for keys and then delete. Useful when we know the keys in range are not too many.
+    /// Scan for soliton_ids and then delete. Useful when we know the soliton_ids in range are not too many.
     DeleteByKey,
     /// Delete by range. Note that this is experimental and you should check whether it is enbaled
     /// in config before using it.
@@ -60,8 +60,8 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
     /// Roughly deletes filefs in multiple ranges.
     ///
     /// Note:
-    ///    - After this operation, some keys in the range might still exist in the database.
-    ///    - After this operation, some keys in the range might be removed from existing lightlike_persistence,
+    ///    - After this operation, some soliton_ids in the range might still exist in the database.
+    ///    - After this operation, some soliton_ids in the range might be removed from existing lightlike_persistence,
     ///      so you shouldn't expect to be able to read data from the range using existing lightlike_persistences
     ///      any more.
     ///

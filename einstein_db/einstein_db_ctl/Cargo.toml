@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 einstein_db = "0.1.0"
 
+
 # Language: toml
 # Path: einstein_db/einstein_db/Cargo.toml
 [package]

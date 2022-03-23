@@ -1,9 +1,9 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
+use crate::{Causet_partitioner::CausetPartitionerFactory, db_options::TitanDBOptions};
 use crate::Result;
-use crate::{db_options::TitanDBOptions, Causet_partitioner::CausetPartitionerFactory};
 
-/// Trait for einstein_merkle_trees with column family options
+/// Trait for einstein_merkle_trees with causet_merge family options
 pub trait NAMESPACEDOptionsExt {
     type ColumnFamilyOptions: ColumnFamilyOptions;
 

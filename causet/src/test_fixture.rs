@@ -24,7 +24,7 @@ pub struct FixtureStorage {
     data: Arc<BTreeMap<Vec<u8>, FixtureValue>>,
     data_view_unsafe: Option<btree_map::Range<'static, Vec<u8>, FixtureValue>>,
     is_spacelike_completion_mutant_search: bool,
-    is_key_only: bool,
+    is_soliton_id_only: bool,
 }
 
 impl FixtureStorage {
@@ -33,7 +33,7 @@ impl FixtureStorage {
             data: Arc::new(data),
             data_view_unsafe: None,
             is_spacelike_completion_mutant_search: false,
-            is_key_only: false,
+            is_soliton_id_only: false,
         }
     }
 }
@@ -61,7 +61,7 @@ impl super::Storage for FixtureStorage {
     fn begin_mutant_search(
         &mut self,
         is_spacelike_completion_mutant_search: bool,
-        is_key_only: bool,
+        is_soliton_id_only: bool,
         range: IntervalRange,
     ) -> Result<()> {
         let data_view = self
@@ -70,22 +70,22 @@ impl super::Storage for FixtureStorage {
         // Erase the lifetime to be 'static.
         self.data_view_unsafe = unsafe { Some(std::mem::transmute(data_view)) };
         self.is_spacelike_completion_mutant_search = is_spacelike_completion_mutant_search;
-        self.is_key_only = is_key_only;
+        self.is_soliton_id_only = is_soliton_id_only;
         Ok(())
     }
 
     fn mutant_search_next(&mut self) -> Result<Option<super::OwnedHikvPair>> {
-        let value = if !self.is_spacelike_completion_mutant_search {
+        let causet_locale = if !self.is_spacelike_completion_mutant_search {
             // During the call of this function, `data` must be valid and we are only returning
             // data clones to outside, so this access is safe.
             self.data_view_unsafe.as_mut().unwrap().next()
         } else {
             self.data_view_unsafe.as_mut().unwrap().next_back()
         };
-        match value {
+        match causet_locale {
             None => Ok(None),
             Some((k, Ok(v))) => {
-                if !self.is_key_only {
+                if !self.is_soliton_id_only {
                     Ok(Some((k.clone(), v.clone())))
                 } else {
                     Ok(Some((k.clone(), Vec::new())))
@@ -95,12 +95,12 @@ impl super::Storage for FixtureStorage {
         }
     }
 
-    fn get(&mut self, is_key_only: bool, range: PointRange) -> Result<Option<super::OwnedHikvPair>> {
+    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<super::OwnedHikvPair>> {
         let r = self.data.get(&range.0);
         match r {
             None => Ok(None),
             Some(Ok(v)) => {
-                if !is_key_only {
+                if !is_soliton_id_only {
                     Ok(Some((range.0, v.clone())))
                 } else {
                     Ok(Some((range.0, Vec::new())))
@@ -119,8 +119,9 @@ impl super::Storage for FixtureStorage {
 
 #[braneg(test)]
 mod tests {
-    use super::*;
     use crate::einsteindb::storage::Storage;
+
+    use super::*;
 
     #[test]
     fn test_basic() {

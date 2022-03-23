@@ -57,12 +57,12 @@ impl<T: Sized + Clone> NotChunkedVec<T> {
         }
     }
 
-    pub fn push(&mut self, value: Option<T>) {
-        self.data.push(value)
+    pub fn push(&mut self, causet_locale: Option<T>) {
+        self.data.push(causet_locale)
     }
 
-    pub fn replace(&mut self, idx: usize, value: Option<T>) {
-        self.data[idx] = value
+    pub fn replace(&mut self, idx: usize, causet_locale: Option<T>) {
+        self.data[idx] = causet_locale
     }
 
     pub fn len(&self) -> usize {

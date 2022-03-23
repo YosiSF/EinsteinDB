@@ -1,10 +1,9 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use std::{error, result};
-
 use error_code::{self, ErrorCode, ErrorCodeExt};
-use violetabft::{Error as VioletaBFTError, StorageError};
+use std::{error, result};
 use thiserror::Error;
+use violetabft::{Error as VioletaBFTError, StorageError};
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -14,10 +13,10 @@ pub enum Error {
     // FIXME: It should not know Region.
     #[error(
         "Key {} is out of [region {}] [{}, {})",
-        log_wrappers::Value::key(.key), .region_id, log_wrappers::Value::key(.start), log_wrappers::Value::key(.end)
+        log_wrappers::Value::soliton_id(.soliton_id), .region_id, log_wrappers::Value::soliton_id(.start), log_wrappers::Value::soliton_id(.end)
     )]
     NotInRange {
-        key: Vec<u8>,
+        soliton_id: Vec<u8>,
         region_id: u64,
         start: Vec<u8>,
         end: Vec<u8>,

@@ -10,33 +10,25 @@
 
 #![allow(dead_code)]
 
-use std::collections::{
-    BTreeMap,
-};
-
-use std::sync::{
-    Arc,
-};
-
-use rusqlite;
-
-use einstein_ml;
-
+use conn::Conn;
 use core_traits::{
     Causetid,
     StructuredMap,
     TypedValue,
 };
-
+use einstein_ml;
 use einsteindb_core::{
     Keyword,
     TxReport,
     ValueRc,
 };
-use einsteindb_core::{
-    TxObserver,
+use einsteindb_core::TxObserver;
+#[cfg(feature = "syncable")]
+use einsteindb_tolstoy::{
+    SyncFollowup,
+    SyncReport,
+    SyncResult,
 };
-
 use einsteindb_transaction::{
     CacheAction,
     CacheDirection,
@@ -45,33 +37,18 @@ use einsteindb_transaction::{
     Pullable,
     Queryable,
 };
-
-use conn::{
-    Conn,
-};
-
-use public_traits::errors::{
-    Result,
-};
-
 use einsteindb_transaction::query::{
     PreparedResult,
     QueryExplanation,
     QueryInputs,
     QueryOutput,
 };
-
+use public_traits::errors::Result;
+use rusqlite;
+use std::collections::BTreeMap;
+use std::sync::Arc;
 #[cfg(feature = "syncable")]
-use einsteindb_tolstoy::{
-    SyncReport,
-    SyncResult,
-    SyncFollowup,
-};
-
-#[cfg(feature = "syncable")]
-use sync::{
-    Syncable,
-};
+use sync::Syncable;
 
 /// A convenience wrapper around a single SQLite connection and a Conn. This is suitable
 /// for applications that don't require complex connection management.
@@ -127,11 +104,11 @@ impl Store {
 
 #[cfg(feature = "BerolinaSQLcipher")]
 impl Store {
-    /// Variant of `open` that allows a key (for encryption/decryption) to be
+    /// Variant of `open` that allows a soliton_id (for encryption/decryption) to be
     /// supplied. Fails unless linked against BerolinaSQLcipher (or something else that
     /// supports the SQLite Encryption Extension).
-    pub fn open_with_key(local_path: &str, encryption_key: &str) -> Result<Store> {
-        let mut connection = ::new_connection_with_key(local_path, encryption_key)?;
+    pub fn open_with_soliton_id(local_path: &str, encryption_soliton_id: &str) -> Result<Store> {
+        let mut connection = ::new_connection_with_soliton_id(local_path, encryption_soliton_id)?;
         let conn = Conn::connect(&mut connection)?;
         Ok(Store {
             conn: conn,
@@ -139,11 +116,11 @@ impl Store {
         })
     }
 
-    /// Change the key for a database that was opened using `open_with_key` (using `PRAGMA
-    /// rekey`). Fails unless linked against BerolinaSQLcipher (or something else that supports the SQLite
+    /// Change the soliton_id for a database that was opened using `open_with_soliton_id` (using `PRAGMA
+    /// resoliton_id`). Fails unless linked against BerolinaSQLcipher (or something else that supports the SQLite
     /// Encryption Extension).
-    pub fn change_encryption_key(&mut self, new_encryption_key: &str) -> Result<()> {
-        ::change_encryption_key(&self.SQLite, new_encryption_key)?;
+    pub fn change_encryption_soliton_id(&mut self, new_encryption_soliton_id: &str) -> Result<()> {
+        ::change_encryption_soliton_id(&self.SQLite, new_encryption_soliton_id)?;
         Ok(())
     }
 }
@@ -155,8 +132,8 @@ impl Store {
     }
 
     #[cfg(test)]
-    pub fn is_registered_as_observer(&self, key: &String) -> bool {
-        self.conn.tx_observer_service.lock().unwrap().is_registered(key)
+    pub fn is_registered_as_observer(&self, soliton_id: &String) -> bool {
+        self.conn.tx_observer_service.lock().unwrap().is_registered(soliton_id)
     }
 }
 
@@ -186,12 +163,12 @@ impl Store {
                         CacheAction::Register)
     }
 
-    pub fn register_observer(&mut self, key: String, observer: Arc<TxObserver>) {
-        self.conn.register_observer(key, observer);
+    pub fn register_observer(&mut self, soliton_id: String, observer: Arc<TxObserver>) {
+        self.conn.register_observer(soliton_id, observer);
     }
 
-    pub fn unregister_observer(&mut self, key: &String) {
-        self.conn.unregister_observer(key);
+    pub fn unregister_observer(&mut self, soliton_id: &String) {
+        self.conn.unregister_observer(soliton_id);
     }
 
     pub fn last_tx_id(&self) -> Causetid {
@@ -215,14 +192,14 @@ impl Queryable for Store {
         self.conn.q_explain(&self.SQLite, query, inputs)
     }
 
-    fn lookup_values_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Vec<TypedValue>>
+    fn lookup_causet_locales_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Vec<TypedValue>>
         where E: Into<Causetid> {
-        self.conn.lookup_values_for_attribute(&self.SQLite, causet.into(), attribute)
+        self.conn.lookup_causet_locales_for_attribute(&self.SQLite, causet.into(), attribute)
     }
 
-    fn lookup_value_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Option<TypedValue>>
+    fn lookup_causet_locale_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Option<TypedValue>>
         where E: Into<Causetid> {
-        self.conn.lookup_value_for_attribute(&self.SQLite, causet.into(), attribute)
+        self.conn.lookup_causet_locale_for_attribute(&self.SQLite, causet.into(), attribute)
     }
 }
 
@@ -241,62 +218,37 @@ impl Pullable for Store {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    extern crate time;
-
-    use uuid::Uuid;
-
-    use std::collections::{
-        BTreeSet,
-    };
-    use std::local_path::{
-        local_path,
-        local_pathBuf,
-    };
-    use std::sync::mpsc;
-    use std::sync::{
-        Mutex,
-    };
-    use std::time::{
-        Duration,
-    };
-
-    use einsteindb_core::cache::{
-        SQLiteAttributeCache,
-    };
-
-    use core_traits::{
-        TypedValue,
-        ValueType,
-    };
-
-    use einsteindb_core::{
-        CachedAttributes,
-        HasSchema,
-    };
-
-    use einsteindb_transaction::causet_builder::{
-        BuildTerms,
-    };
-
-    use einsteindb_transaction::query::{
-        PreparedQuery,
-    };
-
-    use ::{
-        QueryInputs,
-    };
-
+    use QueryInputs;
     use ::vocabulary::{
         AttributeBuilder,
         Definition,
         VersionedStore,
     };
-
-    use core_traits::attribute::{
-        Unique,
+    use core_traits::{
+        TypedValue,
+        ValueType,
     };
+    use core_traits::attribute::Unique;
+    use einsteindb_core::{
+        CachedAttributes,
+        HasSchema,
+    };
+    use einsteindb_core::cache::SQLiteAttributeCache;
+    use einsteindb_transaction::causet_builder::BuildTerms;
+    use einsteindb_transaction::query::PreparedQuery;
+    use std::collections::BTreeSet;
+    use std::local_path::{
+        local_path,
+        local_pathBuf,
+    };
+    use std::sync::Mutex;
+    use std::sync::mpsc;
+    use std::time::Duration;
+    use uuid::Uuid;
+
+    use super::*;
+
+    extern crate time;
 
     fn fixture_local_path(rest: &str) -> local_pathBuf {
         let fixtures = local_path::new("fixtures/");
@@ -320,7 +272,7 @@ mod tests {
                         [?neighborhood :neighborhood/district ?d]
                         [?d :district/name ?district]]"#;
         let hood = "Beacon Hill";
-        let inputs = QueryInputs::with_value_sequence(vec![(var!(?hood), TypedValue::typed_string(hood).into())]);
+        let inputs = QueryInputs::with_causet_locale_sequence(vec![(var!(?hood), TypedValue::typed_string(hood).into())]);
         let mut prepared = in_progress.q_prepare(query, inputs)
                                       .expect("prepared");
         match &prepared {
@@ -338,15 +290,15 @@ mod tests {
     }
 
     trait StoreCache {
-        fn get_causetid_for_value(&self, attr: Causetid, val: &TypedValue) -> Option<Causetid>;
+        fn get_causetid_for_causet_locale(&self, attr: Causetid, val: &TypedValue) -> Option<Causetid>;
         fn is_attribute_cached_reverse(&self, attr: Causetid) -> bool;
         fn is_attribute_cached_lightlike(&self, attr: Causetid) -> bool;
     }
 
     impl StoreCache for Store {
-        fn get_causetid_for_value(&self, attr: Causetid, val: &TypedValue) -> Option<Causetid> {
+        fn get_causetid_for_causet_locale(&self, attr: Causetid, val: &TypedValue) -> Option<Causetid> {
             let cache = self.conn.current_cache();
-            cache.get_causetid_for_value(attr, val)
+            cache.get_causetid_for_causet_locale(attr, val)
         }
 
         fn is_attribute_cached_lightlike(&self, attr: Causetid) -> bool {
@@ -369,13 +321,13 @@ mod tests {
                    :einsteindb/cardinality :einsteindb.cardinality/one
                    :einsteindb/index       true
                    :einsteindb/unique      :einsteindb.unique/idcauset
-                   :einsteindb/valueType   :einsteindb.type/long },
+                   :einsteindb/causet_localeType   :einsteindb.type/long },
                 {  :einsteindb/solitonid       :foo/baz
                    :einsteindb/cardinality :einsteindb.cardinality/one
-                   :einsteindb/valueType   :einsteindb.type/boolean }
+                   :einsteindb/causet_localeType   :einsteindb.type/boolean }
                 {  :einsteindb/solitonid       :foo/x
                    :einsteindb/cardinality :einsteindb.cardinality/many
-                   :einsteindb/valueType   :einsteindb.type/long }]"#).expect("transact");
+                   :einsteindb/causet_localeType   :einsteindb.type/long }]"#).expect("transact");
 
             // Cache one….
             in_progress.cache(&kw!(:foo/bar), CacheDirection::Reverse, CacheAction::Register).expect("cache done");
@@ -419,12 +371,12 @@ mod tests {
                 ]"#).expect("transact");
 
             // Data is in the cache.
-            let first = in_progress.cache.get_causetid_for_value(foo_bar, &TypedValue::Long(15)).expect("id");
-            assert_eq!(in_progress.cache.get_value_for_causetid(&in_progress.schema, foo_baz, first).expect("val"), &TypedValue::Boolean(false));
+            let first = in_progress.cache.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
+            assert_eq!(in_progress.cache.get_causet_locale_for_causetid(&in_progress.schema, foo_baz, first).expect("val"), &TypedValue::Boolean(false));
 
-            // All three values for :foo/x.
+            // All three causet_locales for :foo/x.
             let all_three: BTreeSet<TypedValue> = in_progress.cache
-                                                             .get_values_for_causetid(&in_progress.schema, foo_x, first)
+                                                             .get_causet_locales_for_causetid(&in_progress.schema, foo_x, first)
                                                              .expect("val")
                                                              .iter().cloned().collect();
             assert_eq!(all_three, vec![1, 2, 3].into_iter().map(TypedValue::Long).collect());
@@ -434,11 +386,11 @@ mod tests {
 
         // Data is still in the cache.
         {
-            let first = store.get_causetid_for_value(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = store.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
             let cache: SQLiteAttributeCache = store.conn.current_cache();
-            assert_eq!(cache.get_value_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
+            assert_eq!(cache.get_causet_locale_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
 
-            let all_three: BTreeSet<TypedValue> = cache.get_values_for_causetid(&store.conn.current_schema(), foo_x, first)
+            let all_three: BTreeSet<TypedValue> = cache.get_causet_locales_for_causetid(&store.conn.current_schema(), foo_x, first)
                                                        .expect("val")
                                                        .iter().cloned().collect();
             assert_eq!(all_three, vec![1, 2, 3].into_iter().map(TypedValue::Long).collect());
@@ -447,11 +399,11 @@ mod tests {
         // We can remove data and the cache reflects it, immediately and after commit.
         {
             let mut in_progress = store.begin_transaction().expect("began");
-            let first = in_progress.cache.get_causetid_for_value(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = in_progress.cache.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
             in_progress.transact(format!("[[:einsteindb/retract {} :foo/x 2]]", first).as_str()).expect("transact");
 
             let only_two: BTreeSet<TypedValue> = in_progress.cache
-                                                            .get_values_for_causetid(&in_progress.schema, foo_x, first)
+                                                            .get_causet_locales_for_causetid(&in_progress.schema, foo_x, first)
                                                             .expect("val")
                                                             .iter().cloned().collect();
             assert_eq!(only_two, vec![1, 3].into_iter().map(TypedValue::Long).collect());
@@ -459,11 +411,11 @@ mod tests {
             // Rollback: unchanged.
         }
         {
-            let first = store.get_causetid_for_value(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = store.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
             let cache: SQLiteAttributeCache = store.conn.current_cache();
-            assert_eq!(cache.get_value_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
+            assert_eq!(cache.get_causet_locale_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
 
-            let all_three: BTreeSet<TypedValue> = cache.get_values_for_causetid(&store.conn.current_schema(), foo_x, first)
+            let all_three: BTreeSet<TypedValue> = cache.get_causet_locales_for_causetid(&store.conn.current_schema(), foo_x, first)
                                                        .expect("val")
                                                        .iter().cloned().collect();
             assert_eq!(all_three, vec![1, 2, 3].into_iter().map(TypedValue::Long).collect());
@@ -472,16 +424,16 @@ mod tests {
         // Try again, but this time commit.
         {
             let mut in_progress = store.begin_transaction().expect("began");
-            let first = in_progress.cache.get_causetid_for_value(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = in_progress.cache.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
             in_progress.transact(format!("[[:einsteindb/retract {} :foo/x 2]]", first).as_str()).expect("transact");
             in_progress.commit().expect("committed");
         }
         {
-            let first = store.get_causetid_for_value(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = store.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
             let cache: SQLiteAttributeCache = store.conn.current_cache();
-            assert_eq!(cache.get_value_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
+            assert_eq!(cache.get_causet_locale_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
 
-            let only_two: BTreeSet<TypedValue> = cache.get_values_for_causetid(&store.conn.current_schema(), foo_x, first)
+            let only_two: BTreeSet<TypedValue> = cache.get_causet_locales_for_causetid(&store.conn.current_schema(), foo_x, first)
                                                       .expect("val")
                                                       .iter().cloned().collect();
             assert_eq!(only_two, vec![1, 3].into_iter().map(TypedValue::Long).collect());
@@ -491,27 +443,27 @@ mod tests {
     fn test_register_observer() {
         let mut conn = Store::open("").unwrap();
 
-        let key = "Test Observer".to_string();
-        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_key, _alexandro| {});
+        let soliton_id = "Test Observer".to_string();
+        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_soliton_id, _alexandro| {});
 
-        conn.register_observer(key.clone(), Arc::new(tx_observer));
-        assert!(conn.is_registered_as_observer(&key));
+        conn.register_observer(soliton_id.clone(), Arc::new(tx_observer));
+        assert!(conn.is_registered_as_observer(&soliton_id));
     }
 
     #[test]
     fn test_deregister_observer() {
         let mut conn = Store::open("").unwrap();
 
-        let key = "Test Observer".to_string();
+        let soliton_id = "Test Observer".to_string();
 
-        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_key, _alexandro| {});
+        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_soliton_id, _alexandro| {});
 
-        conn.register_observer(key.clone(), Arc::new(tx_observer));
-        assert!(conn.is_registered_as_observer(&key));
+        conn.register_observer(soliton_id.clone(), Arc::new(tx_observer));
+        assert!(conn.is_registered_as_observer(&soliton_id));
 
-        conn.unregister_observer(&key);
+        conn.unregister_observer(&soliton_id);
 
-        assert!(!conn.is_registered_as_observer(&key));
+        assert!(!conn.is_registered_as_observer(&soliton_id));
     }
 
     fn add_schema(conn: &mut Store) {
@@ -523,25 +475,25 @@ mod tests {
             vec![
                 (kw!(:todo/uuid),
                 AttributeBuilder::helpful()
-                    .value_type(ValueType::Uuid)
+                    .causet_locale_type(ValueType::Uuid)
                     .multival(false)
                     .unique(Unique::Value)
                     .index(true)
                     .build()),
                 (kw!(:todo/name),
                 AttributeBuilder::helpful()
-                    .value_type(ValueType::String)
+                    .causet_locale_type(ValueType::String)
                     .multival(false)
                     .fulltext(true)
                     .build()),
                 (kw!(:todo/completion_date),
                 AttributeBuilder::helpful()
-                    .value_type(ValueType::Instant)
+                    .causet_locale_type(ValueType::Instant)
                     .multival(false)
                     .build()),
                 (kw!(:label/name),
                 AttributeBuilder::helpful()
-                    .value_type(ValueType::String)
+                    .causet_locale_type(ValueType::String)
                     .multival(false)
                     .unique(Unique::Value)
                     .fulltext(true)
@@ -549,7 +501,7 @@ mod tests {
                     .build()),
                 (kw!(:label/color),
                 AttributeBuilder::helpful()
-                    .value_type(ValueType::String)
+                    .causet_locale_type(ValueType::String)
                     .multival(false)
                     .build()),
             ],
@@ -561,7 +513,7 @@ mod tests {
     struct ObserverOutput {
         txids: Vec<i64>,
         changes: Vec<BTreeSet<i64>>,
-        called_key: Option<String>,
+        called_soliton_id: Option<String>,
     }
 
     #[test]
@@ -575,7 +527,7 @@ mod tests {
         registered_attrs.insert(name_causetid.clone());
         registered_attrs.insert(date_causetid.clone());
 
-        let key = "Test Observing".to_string();
+        let soliton_id = "Test Observing".to_string();
 
         let output = Arc::new(Mutex::new(ObserverOutput::default()));
 
@@ -584,10 +536,10 @@ mod tests {
         // because the TxObserver is in an Arc and is therefore Sync, we have to wrap the Sender in a Mutex to also
         // make it Sync.
         let thread_tx = Mutex::new(tx);
-        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_key, alexandro| {
+        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_soliton_id, alexandro| {
             if let Some(out) = mut_output.upgrade() {
                 let mut o = out.lock().unwrap();
-                o.called_key = Some(obs_key.to_string());
+                o.called_soliton_id = Some(obs_soliton_id.to_string());
                 for (tx_id, changes) in alexandro.into_iter() {
                     o.txids.push(*tx_id);
                     o.changes.push(changes.clone());
@@ -597,8 +549,8 @@ mod tests {
             thread_tx.lock().unwrap().send(()).unwrap();
         }));
 
-        conn.register_observer(key.clone(), Arc::clone(&tx_observer));
-        assert!(conn.is_registered_as_observer(&key));
+        conn.register_observer(soliton_id.clone(), Arc::clone(&tx_observer));
+        assert!(conn.is_registered_as_observer(&soliton_id));
 
         let mut tx_ids = Vec::new();
         let mut changesets = Vec::new();
@@ -637,7 +589,7 @@ mod tests {
 
         let out = Arc::try_unwrap(output).expect("unwrapped");
         let o = out.into_inner().expect("Expected an Output");
-        assert_eq!(o.called_key, Some(key.clone()));
+        assert_eq!(o.called_soliton_id, Some(soliton_id.clone()));
         assert_eq!(o.txids, tx_ids);
         assert_eq!(o.changes, changesets);
     }
@@ -653,17 +605,17 @@ mod tests {
         registered_attrs.insert(name_causetid.clone());
         registered_attrs.insert(date_causetid.clone());
 
-        let key = "Test Observing".to_string();
+        let soliton_id = "Test Observing".to_string();
 
         let output = Arc::new(Mutex::new(ObserverOutput::default()));
 
         let mut_output = Arc::downgrade(&output);
         let (tx, rx): (mpsc::Sender<()>, mpsc::Receiver<()>) = mpsc::channel();
         let thread_tx = Mutex::new(tx);
-        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_key, alexandro| {
+        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_soliton_id, alexandro| {
             if let Some(out) = mut_output.upgrade() {
                 let mut o = out.lock().unwrap();
-                o.called_key = Some(obs_key.to_string());
+                o.called_soliton_id = Some(obs_soliton_id.to_string());
                 for (tx_id, changes) in alexandro.into_iter() {
                     o.txids.push(*tx_id);
                     o.changes.push(changes.clone());
@@ -673,8 +625,8 @@ mod tests {
             thread_tx.lock().unwrap().send(()).unwrap();
         }));
 
-        conn.register_observer(key.clone(), Arc::clone(&tx_observer));
-        assert!(conn.is_registered_as_observer(&key));
+        conn.register_observer(soliton_id.clone(), Arc::clone(&tx_observer));
+        assert!(conn.is_registered_as_observer(&soliton_id));
 
         let tx_ids = Vec::<Causetid>::new();
         let changesets = Vec::<BTreeSet<Causetid>>::new();
@@ -695,7 +647,7 @@ mod tests {
 
         let out = Arc::try_unwrap(output).expect("unwrapped");
         let o = out.into_inner().expect("Expected an Output");
-        assert_eq!(o.called_key, None);
+        assert_eq!(o.called_soliton_id, None);
         assert_eq!(o.txids, tx_ids);
         assert_eq!(o.changes, changesets);
     }

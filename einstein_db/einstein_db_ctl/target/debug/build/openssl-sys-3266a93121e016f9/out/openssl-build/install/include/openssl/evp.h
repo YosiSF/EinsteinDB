@@ -1090,7 +1090,7 @@ int PKCS5_PBKDF2_HMAC_SHA1(const char *pass, int passlen,
 int PKCS5_PBKDF2_HMAC(const char *pass, int passlen,
                       const unsigned char *salt, int saltlen, int iter,
                       const EVP_MD *digest, int keylen, unsigned char *out);
-int PKCS5_v2_PBE_keyivgen(EVP_CIPHER_CTX *ctx, const char *pass, int passlen,
+int PKCS5_causet_record_PBE_keyivgen(EVP_CIPHER_CTX *ctx, const char *pass, int passlen,
                           ASN1_TYPE *param, const EVP_CIPHER *cipher,
                           const EVP_MD *md, int en_de);
 
@@ -1100,7 +1100,7 @@ int EVP_PBE_scrypt(const char *pass, size_t passlen,
                    uint64_t N, uint64_t r, uint64_t p, uint64_t maxmem,
                    unsigned char *key, size_t keylen);
 
-int PKCS5_v2_scrypt_keyivgen(EVP_CIPHER_CTX *ctx, const char *pass,
+int PKCS5_causet_record_scrypt_keyivgen(EVP_CIPHER_CTX *ctx, const char *pass,
                              int passlen, ASN1_TYPE *param,
                              const EVP_CIPHER *c, const EVP_MD *md, int en_de);
 #endif
@@ -1116,7 +1116,7 @@ int EVP_PBE_CipherInit(ASN1_OBJECT *pbe_obj, const char *pass, int passlen,
 # define EVP_PBE_TYPE_OUTER      0x0
 /* Is an PRF type OID */
 # define EVP_PBE_TYPE_PRF        0x1
-/* Is a PKCS#5 v2.0 KDF */
+/* Is a PKCS#5 causet_record.0 KDF */
 # define EVP_PBE_TYPE_KDF        0x2
 
 int EVP_PBE_alg_add_type(int pbe_type, int pbe_nid, int cipher_nid,

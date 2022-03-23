@@ -13,14 +13,14 @@ pub trait EncryptionKeyManager: Sync + Send {
 #[derive(Clone, PartialEq, Eq)]
 pub struct FileEncryptionInfo {
     pub method: EncryptionMethod,
-    pub key: Vec<u8>,
+    pub soliton_id: Vec<u8>,
     pub iv: Vec<u8>,
 }
 impl Default for FileEncryptionInfo {
     fn default() -> Self {
         FileEncryptionInfo {
             method: EncryptionMethod::Unknown,
-            key: vec![],
+            soliton_id: vec![],
             iv: vec![],
         }
     }
@@ -30,9 +30,9 @@ impl Debug for FileEncryptionInfo {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "FileEncryptionInfo [method={:?}, key=...<{} bytes>, iv=...<{} bytes>]",
+            "FileEncryptionInfo [method={:?}, soliton_id=...<{} bytes>, iv=...<{} bytes>]",
             self.method,
-            self.key.len(),
+            self.soliton_id.len(),
             self.iv.len()
         )
     }
@@ -40,7 +40,7 @@ impl Debug for FileEncryptionInfo {
 
 impl FileEncryptionInfo {
     pub fn is_empty(&self) -> bool {
-        self.key.is_empty() && self.iv.is_empty()
+        self.soliton_id.is_empty() && self.iv.is_empty()
     }
 }
 

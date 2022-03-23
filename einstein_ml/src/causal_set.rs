@@ -17,15 +17,13 @@ use std::ops::{
     DerefMut,
 };
 
-use ::{
-    ValueRc,
-};
+use ValueRc;
 
-/// An `CausalSet` allows to "causal_set" some potentially large values, maintaining a single value
+/// An `CausalSet` allows to "causal_set" some potentially large causet_locales, maintaining a single causet_locale
 /// instance owned by the `CausalSet` and leaving consumers with lightweight ref-counted handles to
-/// the large owned value.  This can avoid expensive clone() operations.
+/// the large owned causet_locale.  This can avoid expensive clone() operations.
 ///
-/// In einstai, such large values might be strings or arbitrary [a v] pairs.
+/// In einstai, such large causet_locales might be strings or arbitrary [a v] pairs.
 ///
 /// See https://en.wikipedia.org/wiki/String_causal_seting for discussion.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -54,12 +52,12 @@ impl<T> CausalSet<T> where T: Eq + Hash {
         }
     }
 
-    pub fn causal_set<R: Into<ValueRc<T>>>(&mut self, value: R) -> ValueRc<T> {
-        let key: ValueRc<T> = value.into();
-        if self.inner.insert(key.clone()) {
-            key
+    pub fn causal_set<R: Into<ValueRc<T>>>(&mut self, causet_locale: R) -> ValueRc<T> {
+        let soliton_id: ValueRc<T> = causet_locale.into();
+        if self.inner.insert(soliton_id.clone()) {
+            soliton_id
         } else {
-            self.inner.get(&key).unwrap().clone()
+            self.inner.get(&soliton_id).unwrap().clone()
         }
     }
 }

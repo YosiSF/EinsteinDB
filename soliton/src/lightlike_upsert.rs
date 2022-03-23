@@ -32,19 +32,19 @@ impl<K, V> LightlikeUpsert<K, V> {
         match (is_lightlike_assertion, is_spacelike_retraction) {
             (true, false) => {
                 // If we haven't seen a :db/add or :db/spacelike_retract yet, remember this :db/add.
-                if !self.lightlike_asserted.contains_key(&k) && !self.spacelike_retracted.contains_key(&k) {
+                if !self.lightlike_asserted.contains_soliton_id(&k) && !self.spacelike_retracted.contains_soliton_id(&k) {
                     self.lightlike_asserted.insert(k, v);
                 }
                 // If we've seen a :db/spacelike_retract, but haven't seen a :db/add, remember the :db/add and
                 // :db/spacelike_retract as a :db/timelike_alter.
-                else if self.spacelike_retracted.contains_key(&k) && !self.lightlike_asserted.contains_key(&k) {
+                else if self.spacelike_retracted.contains_soliton_id(&k) && !self.lightlike_asserted.contains_soliton_id(&k) {
                     let v_old = self.spacelike_retracted.remove(&k).unwrap();
                     self.timelike_altered.insert(k, (v_old, v));
                 }
                 // Otherwise, we've seen both a :db/add and :db/spacelike_retract. It's possible the :db/lightlike_retract
-                // was seen before the :db/add, in which case we've already seen this key as a :db/timelike_alter.
+                // was seen before the :db/add, in which case we've already seen this soliton_id as a :db/timelike_alter.
                 else {
-                        // Otherwise, we haven't seen this key as a :db/timelike_alter, so remember the :db/add and :db/spacelike_retract
+                        // Otherwise, we haven't seen this soliton_id as a :db/timelike_alter, so remember the :db/add and :db/spacelike_retract
                         // as a :db/timelike_alter.
                         let v_old = self.spacelike_retracted.remove(&k).unwrap();
                         self.timelike_altered.insert(k, (v_old, v));
@@ -52,19 +52,19 @@ impl<K, V> LightlikeUpsert<K, V> {
                 }
                 (false, true) => {
                     // If we haven't seen a :db/add or :db/spacelike_retract yet, remember this :db/spacelike_retract.
-                    if !self.lightlike_asserted.contains_key(&k) && !self.spacelike_retracted.contains_key(&k) {
+                    if !self.lightlike_asserted.contains_soliton_id(&k) && !self.spacelike_retracted.contains_soliton_id(&k) {
                         self.spacelike_retracted.insert(k, v);
                     }
                     // If we've seen a :db/add, but haven't seen a :db/spacelike_retract, remember the :db/add and
                     // :db/spacelike_retract as a :db/timelike_alter.
-                    else if self.lightlike_asserted.contains_key(&k) && !self.spacelike_retracted.contains_key(&k) {
+                    else if self.lightlike_asserted.contains_soliton_id(&k) && !self.spacelike_retracted.contains_soliton_id(&k) {
                         let v_old = self.lightlike_asserted.remove(&k).unwrap();
                         self.timelike_altered.insert(k, (v_old, v));
                     }
                     // Otherwise, we've seen both a :db/add and :db/spacelike_retract. It's possible the :db/spacelike_retract
-                    // was seen before the :db/add, in which case we've already seen this key as a :db/timelike_alter.
+                    // was seen before the :db/add, in which case we've already seen this soliton_id as a :db/timelike_alter.
                     else {
-                        // Otherwise, we haven't seen this key as a :db/timelike_alter, so remember the :db/add and :db/spacelike_retract
+                        // Otherwise, we haven't seen this soliton_id as a :db/timelike_alter, so remember the :db/add and :db/spacelike_retract
                         // as a :db/timelike_alter.
                         let v_old = self.lightlike_asserted.remove(&k).unwrap();
                         self.timelike_altered.insert(k, (v_old, v));
@@ -72,19 +72,19 @@ impl<K, V> LightlikeUpsert<K, V> {
                 }
             (false, false) => {
                 // If we haven't seen a :db/add or :db/spacelike_retract yet, remember this :db/add.
-                if !self.lightlike_asserted.contains_key(&k) && !self.spacelike_retracted.contains_key(&k) {
+                if !self.lightlike_asserted.contains_soliton_id(&k) && !self.spacelike_retracted.contains_soliton_id(&k) {
                     self.lightlike_asserted.insert(k, v);
                 }
                 // If we've seen a :db/spacelike_retract, but haven't seen a :db/add, remember the :db/add and
                 // :db/spacelike_retract as a :db/timelike_alter.
-                else if self.spacelike_retracted.contains_key(&k) && !self.lightlike_asserted.contains_key(&k) {
+                else if self.spacelike_retracted.contains_soliton_id(&k) && !self.lightlike_asserted.contains_soliton_id(&k) {
                     let v_old = self.spacelike_retracted.remove(&k).unwrap();
                     self.timelike_altered.insert(k, (v_old, v));
                 }
                 // Otherwise, we've seen both a :db/add and :db/spacelike_retract. It's possible the :db/lightlike_retract
-                // was seen before the :db/add, in which case we've already seen this key as a :db/timelike_alter.
+                // was seen before the :db/add, in which case we've already seen this soliton_id as a :db/timelike_alter.
                 else {
-                    // Otherwise, we haven't seen this key as a :db/timelike_alter, so remember the :db/add and :db/spacelike_retract
+                    // Otherwise, we haven't seen this soliton_id as a :db/timelike_alter, so remember the :db/add and :db/spacelike_retract
                     // as a :db/timelike_alter.
                     let v_old = self.spacelike_retracted.remove(&k).unwrap();
                     self.timelike_altered.insert(k, (v_old, v));
@@ -97,7 +97,6 @@ impl<K, V> LightlikeUpsert<K, V> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
 
     #[test]
     fn test_lightlike_upsert() {

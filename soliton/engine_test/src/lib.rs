@@ -55,20 +55,19 @@
 
 /// Types and constructors for the "violetabft" einstein_merkle_tree
 pub mod violetabft {
-    use crate::ctor::{NAMESPACEDOptions, DBOptions, einstein_merkle_treeConstructorExt};
-    use fdb_traits::Result;
-
     #[cfg(feature = "test-einstein_merkle_tree-violetabft-panic")]
     pub use einstein_merkle_tree_panic::{
         Paniceinstein_merkle_tree as VioletaBFTTesteinstein_merkle_tree, Paniceinstein_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
         PanicLightlikePersistence as VioletaBFTTestLightlikePersistence, PanicWriteBatch as VioletaBFTTestWriteBatch,
     };
-
     #[cfg(feature = "test-einstein_merkle_tree-violetabft-foundationdb")]
     pub use fdb_einstein_merkle_tree::{
         Fdbeinstein_merkle_tree as VioletaBFTTesteinstein_merkle_tree, Fdbeinstein_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
         FdbLightlikePersistence as VioletaBFTTestLightlikePersistence, FdbWriteBatch as VioletaBFTTestWriteBatch,
     };
+    use fdb_traits::Result;
+
+    use crate::ctor::{DBOptions, einstein_merkle_treeConstructorExt, NAMESPACEDOptions};
 
     pub fn new_einstein_merkle_tree(
         local_path: &str,
@@ -93,20 +92,19 @@ pub mod violetabft {
 
 /// Types and constructors for the "kv" einstein_merkle_tree
 pub mod kv {
-    use crate::ctor::{NAMESPACEDOptions, DBOptions, einstein_merkle_treeConstructorExt};
-    use fdb_traits::Result;
-
     #[cfg(feature = "test-einstein_merkle_tree-kv-panic")]
     pub use einstein_merkle_tree_panic::{
         Paniceinstein_merkle_tree as KvTesteinstein_merkle_tree, Paniceinstein_merkle_treeIterator as KvTesteinstein_merkle_treeIterator,
         PanicLightlikePersistence as KvTestLightlikePersistence, PanicWriteBatch as KvTestWriteBatch,
     };
-
     #[cfg(feature = "test-einstein_merkle_tree-kv-foundationdb")]
     pub use fdb_einstein_merkle_tree::{
         Fdbeinstein_merkle_tree as KvTesteinstein_merkle_tree, Fdbeinstein_merkle_treeIterator as KvTesteinstein_merkle_treeIterator,
         FdbLightlikePersistence as KvTestLightlikePersistence, FdbWriteBatch as KvTestWriteBatch,
     };
+    use fdb_traits::Result;
+
+    use crate::ctor::{DBOptions, einstein_merkle_treeConstructorExt, NAMESPACEDOptions};
 
     pub fn new_einstein_merkle_tree(
         local_path: &str,
@@ -143,15 +141,15 @@ pub mod ctor {
     ///
     /// For simplicity, all einstein_merkle_tree constructors are expected to configure every
     /// einstein_merkle_tree such that all of EinsteinDB and its tests work correctly, for the
-    /// constructed column families.
+    /// constructed causet_merge families.
     ///
     /// Specifically, this means that FdbDB constructors should set up
     /// all greedoids collectors, always.
     pub trait einstein_merkle_treeConstructorExt: Sized {
         /// Create a new einstein_merkle_tree with either:
         ///
-        /// - The column families specified as `namespaceds`, with default options, or
-        /// - The column families specified as `opts`, with options.
+        /// - The causet_merge families specified as `namespaceds`, with default options, or
+        /// - The causet_merge families specified as `opts`, with options.
         ///
         /// Note that if `opts` is not `None` then the `namespaceds` argument is completely ignored.
         ///
@@ -164,7 +162,7 @@ pub mod ctor {
             opts: Option<Vec<NAMESPACEDOptions<'_>>>,
         ) -> Result<Self>;
 
-        /// Create a new einstein_merkle_tree with specified column families and options
+        /// Create a new einstein_merkle_tree with specified causet_merge families and options
         ///
         /// The einstein_merkle_tree timelike_stores its data in the `local_path` directory.
         /// If that directory does not exist, then it is created.
@@ -215,13 +213,13 @@ pub mod ctor {
         }
     }
 
-    /// Greedoids for a single column family
+    /// Greedoids for a single causet_merge family
     ///
-    /// All einstein_merkle_trees must emulate column families, but at present it is not clear
+    /// All einstein_merkle_trees must emulate causet_merge families, but at present it is not clear
     /// how non-FdbDB einstein_merkle_trees should deal with the wide variety of options for
-    /// column families.
+    /// causet_merge families.
     ///
-    /// At present this very closely mirrors the column family options
+    /// At present this very closely mirrors the causet_merge family options
     /// for FdbDB, with the exception that it provides no capacity for
     /// installing table property collectors, which have little hope of being
     /// emulated on arbitrary einstein_merkle_trees.
@@ -308,9 +306,10 @@ pub mod ctor {
     }
 
     mod panic {
-        use super::{NAMESPACEDOptions, DBOptions, einstein_merkle_treeConstructorExt};
         use einstein_merkle_tree_panic::Paniceinstein_merkle_tree;
         use fdb_traits::Result;
+
+        use super::{DBOptions, einstein_merkle_treeConstructorExt, NAMESPACEDOptions};
 
         impl einstein_merkle_treeConstructorExt for einstein_merkle_tree_panic::Paniceinstein_merkle_tree {
             fn new_einstein_merkle_tree(
@@ -333,22 +332,21 @@ pub mod ctor {
     }
 
     mod foundationdb {
-        use super::{
-            NAMESPACEDOptions, ColumnFamilyOptions, CryptoOptions, DBOptions, einstein_merkle_treeConstructorExt,
-        };
-
-        use fdb_traits::{ColumnFamilyOptions as ColumnFamilyOptionsTrait, Result};
-
+        use fdb_einstein_merkle_tree::{FdbColumnFamilyOptions, FdbDBOptions};
         use fdb_einstein_merkle_tree::greedoids::{
             MvccGreedoidsCollectorFactory, RangeGreedoidsCollectorFactory,
         };
-        use fdb_einstein_merkle_tree::primitive_causet::ColumnFamilyOptions as Primitive_CausetFdbColumnFamilyOptions;
         use fdb_einstein_merkle_tree::primitive_causet::{DBOptions as Primitive_CausetFdbDBOptions, Env};
+        use fdb_einstein_merkle_tree::primitive_causet::ColumnFamilyOptions as Primitive_CausetFdbColumnFamilyOptions;
         use fdb_einstein_merkle_tree::util::{
-            new_einstein_merkle_tree as rocks_new_einstein_merkle_tree, new_einstein_merkle_tree_opt as rocks_new_einstein_merkle_tree_opt, FdbNAMESPACEDOptions,
+            FdbNAMESPACEDOptions, new_einstein_merkle_tree as rocks_new_einstein_merkle_tree, new_einstein_merkle_tree_opt as rocks_new_einstein_merkle_tree_opt,
         };
-        use fdb_einstein_merkle_tree::{FdbColumnFamilyOptions, FdbDBOptions};
+        use fdb_traits::{ColumnFamilyOptions as ColumnFamilyOptionsTrait, Result};
         use std::sync::Arc;
+
+        use super::{
+            ColumnFamilyOptions, CryptoOptions, DBOptions, einstein_merkle_treeConstructorExt, NAMESPACEDOptions,
+                };
 
         impl einstein_merkle_treeConstructorExt for fdb_einstein_merkle_tree::Fdbeinstein_merkle_tree {
             // FIXME this is duplicating behavior from fdb_lsh-merkle_merkle_tree::primitive_causet_util in order to

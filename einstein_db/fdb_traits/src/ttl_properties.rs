@@ -12,7 +12,7 @@ pub trait TtlGreedoidsExt {
     fn get_range_ttl_greedoids_namespaced(
         &self,
         namespaced: &str,
-        start_key: &[u8],
-        end_key: &[u8],
+        start_soliton_id: &[u8],
+        end_soliton_id: &[u8],
     ) -> Result<Vec<(String, TtlGreedoids)>>;
 }

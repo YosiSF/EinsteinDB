@@ -1,17 +1,16 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use std::fmt;
-
 use einsteindbpb::ColumnInfo;
 use einsteindbpb::FieldType;
+use std::fmt;
 
 use crate::error::DataTypeError;
 
-/// Valid values of `einsteindbpb::FieldType::tp` and `einsteindbpb::ColumnInfo::tp`.
+/// Valid causet_locales of `einsteindbpb::FieldType::tp` and `einsteindbpb::ColumnInfo::tp`.
 ///
-/// `FieldType` is the field type of a column defined by topograph.
+/// `FieldType` is the field type of a causet_merge defined by topograph.
 ///
-/// `ColumnInfo` describes a column. It contains `FieldType` and some other column specific
+/// `ColumnInfo` describes a causet_merge. It contains `FieldType` and some other causet_merge specific
 /// information. However for historical reasons, fields in `FieldType` (for example, `tp`)
 /// are flattened into `ColumnInfo`. Semantically these fields are identical.
 ///
@@ -95,7 +94,7 @@ impl From<FieldTypeTp> for ColumnInfo {
     }
 }
 
-/// Valid values of `einsteindbpb::FieldType::collate` and
+/// Valid causet_locales of `einsteindbpb::FieldType::collate` and
 /// `einsteindbpb::ColumnInfo::collation`.
 ///
 /// Legacy Utf8Bin collator (was the default) does not pad. For compatibility,
@@ -190,7 +189,7 @@ pub trait FieldTypeAccessor {
         self as &mut dyn FieldTypeAccessor
     }
 
-    /// Whether this type is a hybrid type, which can represent different types of value in
+    /// Whether this type is a hybrid type, which can represent different types of causet_locale in
     /// specific context.
     ///
     /// Please refer to `Hybrid` in MEDB.

@@ -8,13 +8,8 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use ::std::rc::{
-    Rc,
-};
-
-use ::std::sync::{
-    Arc,
-};
+use ::std::rc::Rc;
+use ::std::sync::Arc;
 
 pub trait FromRc<T> {
     fn from_rc(val: Rc<T>) -> Self;
@@ -66,7 +61,7 @@ impl<T> FromRc<T> for Box<T> where T: Sized + Clone {
 // We do this a lot for errors.
 pub trait Cloned<T> {
     fn cloned(&self) -> T;
-    fn to_value_rc(&self) -> ValueRc<T>;
+    fn to_causet_locale_rc(&self) -> ValueRc<T>;
 }
 
 impl<T: Clone> Cloned<T> for Rc<T> where T: Sized + Clone {
@@ -74,7 +69,7 @@ impl<T: Clone> Cloned<T> for Rc<T> where T: Sized + Clone {
         (*self.as_ref()).clone()
     }
 
-    fn to_value_rc(&self) -> ValueRc<T> {
+    fn to_causet_locale_rc(&self) -> ValueRc<T> {
         ValueRc::from_rc(self.clone())
     }
 }
@@ -84,7 +79,7 @@ impl<T: Clone> Cloned<T> for Arc<T> where T: Sized + Clone {
         (*self.as_ref()).clone()
     }
 
-    fn to_value_rc(&self) -> ValueRc<T> {
+    fn to_causet_locale_rc(&self) -> ValueRc<T> {
         ValueRc::from_arc(self.clone())
     }
 }
@@ -94,13 +89,13 @@ impl<T: Clone> Cloned<T> for Box<T> where T: Sized + Clone {
         self.as_ref().clone()
     }
 
-    fn to_value_rc(&self) -> ValueRc<T> {
+    fn to_causet_locale_rc(&self) -> ValueRc<T> {
         ValueRc::new(self.cloned())
     }
 }
 
 ///
-/// This type alias exists to allow us to use different boxing mechanisms for values.
+/// This type alias exists to allow us to use different boxing mechanisms for causet_locales.
 /// This type must implement `FromRc` and `Cloned`, and a `From` impleeinstaiion must exist for
 /// `TypedValue`.
 ///

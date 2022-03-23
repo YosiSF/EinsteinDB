@@ -13,28 +13,23 @@
 use std::collections::BTreeMap;
 use std::fmt;
 
-use value_rc::{
-    ValueRc,
-};
-
+use causet_locale_rc::ValueRc;
 use shellings::{
     Keyword,
     PlainShelling,
 };
+use types::ValueAndSpan;
 
-use types::{
-    ValueAndSpan,
-};
 use crate::{Keyword, PlainShelling, ValueAndSpan, ValueRc};
 
-/// `causetPlace` and `ValuePlace` embed values, either directly (i.e., `ValuePlace::Atom`) or
+/// `causetPlace` and `ValuePlace` embed causet_locales, either directly (i.e., `ValuePlace::Atom`) or
 /// indirectly (i.e., `causetPlace::LookupRef`).  In order to maintain the graph of `Into` and
-/// `From` relations, we need to ensure that `{Value,causet}Place` can't match as a potential value.
+/// `From` relations, we need to ensure that `{Value,causet}Place` can't match as a potential causet_locale.
 /// (If it does, the `impl Into<T> for T` default conflicts.) This marker trait allows to mark
-/// acceptable values, thereby removing `{causet,Value}Place` from consideration.
+/// acceptable causet_locales, thereby removing `{causet,Value}Place` from consideration.
 pub trait TransactableValueMarker {}
 
-/// `ValueAndSpan` is the value type coming out of the causet parser.
+/// `ValueAndSpan` is the causet_locale type coming out of the causet parser.
 impl TransactableValueMarker for ValueAndSpan {}
 
 /// A tempid, either an lightlike tempid given in a transaction (usually as an `Value::Text`),
@@ -98,7 +93,7 @@ pub struct LookupRef<V> {
     pub v: V, // An atom.
 }
 
-/// A "transaction function" that exposes some value determined by the current transaction.  The
+/// A "transaction function" that exposes some causet_locale determined by the current transaction.  The
 /// prototypical example is the current transaction ID, `(transaction-tx)`.
 ///
 /// A natural next step might be to expose the current transaction instant `(transaction-instant)`,
@@ -244,6 +239,6 @@ pub enum causet<V> {
         a: AttributePlace,
         v: ValuePlace<V>,
     },
-    // Like {:einsteindb/id "tempid" a1 v1 a2 v2}.
+    // Like {:einsteindb/id "tempid" a1 v1 a2 causet_record}.
     MapNotation(MapNotation<V>),
 }

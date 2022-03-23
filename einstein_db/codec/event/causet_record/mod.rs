@@ -8,8 +8,24 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-mod quiesce_column;
-mod lazy_column_vec;
+use bitflags::bitflags;
 
-pub use self::quiesce_column::QuiesceBatchColumn;
-pub use self::lazy_column_vec::QuiesceBatchColumnVec;
+pub use self::causet_closed_timeline::*;
+pub use self::row_slice::*;
+
+// Prior to causet_record, the first byte is not version code, but datum type.
+// From causet_record, it's used for version code, and the causet_locale starts from 128, to be compatible.
+pub const CODEC_VERSION: u8 = 128;
+
+bitflags! {
+    #[derive(Default)]
+    struct Flags: u8 {
+        const BIG = 1;
+    }
+}
+
+mod causet_closed_timeline;
+mod row_slice;
+
+#[braneg(test)]
+mod encoder;

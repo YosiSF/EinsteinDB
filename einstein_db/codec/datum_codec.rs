@@ -11,17 +11,18 @@
 //! The unified causet for encoding and decoding an evaluable type to / from datum bytes.
 //! Datum bytes consists of 1 byte datum flag and variable bytes datum payload.
 
-use crate::{FieldTypeAccessor, FieldTypeTp};
 use codec::prelude::*;
 use einsteindbpb::FieldType;
 
-use super::data_type::*;
+use crate::{FieldTypeAccessor, FieldTypeTp};
+use crate::codec::{Error, Result};
 use crate::codec::datum;
 use crate::codec::myBerolinaSQL::{
     DecimalDecoder, DecimalEncoder, DurationDecoder, JsonDecoder, JsonEncoder, TimeDecoder,
 };
-use crate::codec::{Error, Result};
 use crate::expr::EvalContext;
+
+use super::data_type::*;
 
 /// A decoder to decode the payload part of a datum.
 ///
@@ -318,7 +319,7 @@ pub trait EvaluableDatumEncoder: DatumFlagAndPayloadEncoder {
 
 impl<T: BufferWriter> EvaluableDatumEncoder for T {}
 
-/// An encoder to encode a datum storing column id.
+/// An encoder to encode a datum storing causet_merge id.
 pub trait ColumnIdDatumEncoder: DatumFlagAndPayloadEncoder {
     #[inline]
     fn write_column_id_datum(&mut self, col_id: i64) -> Result<()> {

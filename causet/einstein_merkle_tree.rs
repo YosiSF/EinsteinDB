@@ -9,7 +9,7 @@ use crate::*;
 // Consider moving everything into other traits and making KV essentially
 // a trait typedef.
 
-/// A EinsteinDB key-value timelike_store
+/// A EinsteinDB soliton_id-causet_locale timelike_store
 pub trait KV:
     Peekable
     + SyncMutable

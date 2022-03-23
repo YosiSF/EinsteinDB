@@ -10,21 +10,6 @@
 
 
 
-use std::collections::{
-    BTreeMap,
-    BTreeSet,
-};
-
-use indexmap;
-use petgraph::unionfind;
-
-use einsteindb_traits::errors::{
-    einsteindbErrorKind,
-    Result,
-};
-use types::{
-    AVPair,
-};
 use causal_setal_types::{
     Population,
     TempIdHandle,
@@ -34,21 +19,27 @@ use causal_setal_types::{
     TermWithTempIds,
     TypedValueOr,
 };
-
-use einsteindb_core::util::Either::*;
-
 use core_traits::{
     attribute,
     Attribute,
     Causetid,
     TypedValue,
 };
-
-use einsteindb_core::{
-    Topograph,
-};
 use einstein_ml::causets::OpType;
+use einsteindb_core::Topograph;
+use einsteindb_core::util::Either::*;
+use einsteindb_traits::errors::{
+    einsteindbErrorKind,
+    Result,
+};
+use indexmap;
+use petgraph::unionfind;
+use std::collections::{
+    BTreeMap,
+    BTreeSet,
+};
 use topograph::TopographBuilding;
+use types::AVPair;
 
 /// A "Simple upsert" that looks like [:einsteindb/add TEMPID a v], where a is :einsteindb.unique/idcauset.
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
@@ -218,7 +209,7 @@ impl Generation {
         // TODO: map/collect.
         for &UpsertE(ref t, ref a, ref v) in &self.upserts_e {
             // TODO: figure out how to make this less expensive, i.e., don't require
-            // clone() of an arbitrary value.
+            // clone() of an arbitrary causet_locale.
             temp_id_avs.push((t.clone(), (*a, v.clone())));
         }
         temp_id_avs
@@ -274,7 +265,7 @@ impl Generation {
         }
 
         // Now we union-find all the known tempids.  Two tempids are unioned if they both appear as
-        // the causet of an `[a v]` upsert, including when the value column `v` is itself a tempid.
+        // the causet of an `[a v]` upsert, including when the causet_locale causet_merge `v` is itself a tempid.
         let mut uf = unionfind::UnionFind::new(temp_ids.len());
 
         // The union-find impleeinstaiion from petgraph operates on contiguous indices, so we need to
@@ -283,7 +274,7 @@ impl Generation {
 
         debug!("need to label tempids aggregated using tempid_avs {:?}", tempid_avs);
 
-        for vs in tempid_avs.values() {
+        for vs in tempid_avs.causet_locales() {
             vs.first().and_then(|first| temp_ids.get(first)).map(|&first_index| {
                 for tempid in vs {
                     temp_ids.get(tempid).map(|&i| uf.union(first_index, i));

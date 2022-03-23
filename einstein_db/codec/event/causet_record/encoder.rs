@@ -10,35 +10,34 @@
 
 //! This `encoder` module is only used for test, so the implementation is very straightlightlike.
 //!
-//! According to https://github.com/pingcap/MEDB/blob/master/docs/design/2022-07-19-row-format.md
+//! According to https://github.com/pingcap/MEDB/blob/master/docs/design/2022-07-19-event-format.md
 //!
-//! The row format is:
+//! The event format is:
 //!
-//! | version | flag | number_of_non_null_columns | number_of_null_columns | non_null_column_ids | null_column_ids | value_offsets | values |
+//! | version | flag | number_of_non_null_columns | number_of_null_columns | non_null_column_ids | null_column_ids | causet_locale_offsets | causet_locales |
 //! |---------| ---- | -------------------------- | ---------------------- | ------------------- | --------------- | ------------- | ------ |
 //!
 //! length about each field:
 //!
 //! * version: 1 byte
-//! * flag: 1 byte, when there's id greater than 255 or the total size of the values is greater than 65535 , value is 1, otherwise 0
-//! * number of non-null values: 2 bytes
-//! * number of null values: 2 bytes
-//! * non-null column ids: when flag == 1 (big), id is 4 bytes, otherwise 1 byte
-//! * null column ids: when flag == 1 (big), id is 4 bytes, otherwise 1 byte
-//! * non-null values offset: when big, offset is 4 bytes, otherwise 2 bytes
+//! * flag: 1 byte, when there's id greater than 255 or the total size of the causet_locales is greater than 65535 , causet_locale is 1, otherwise 0
+//! * number of non-null causet_locales: 2 bytes
+//! * number of null causet_locales: 2 bytes
+//! * non-null causet_merge ids: when flag == 1 (big), id is 4 bytes, otherwise 1 byte
+//! * null causet_merge ids: when flag == 1 (big), id is 4 bytes, otherwise 1 byte
+//! * non-null causet_locales offset: when big, offset is 4 bytes, otherwise 2 bytes
 
-use crate::codec::{
-    data_type::ScalarValue,
-    myBerolinaSQL::{decimal::DecimalEncoder, json::JsonEncoder},
-    Error, Result,
-};
+use codec::prelude::*;
+use einsteindbpb::FieldType;
+use std::{i16, i32, i8, u16, u32, u8};
 
 use crate::{FieldTypeAccessor, FieldTypeFlag, FieldTypeTp};
-use einsteindbpb::FieldType;
-
+use crate::codec::{
+    data_type::ScalarValue,
+    Error,
+    myBerolinaSQL::{decimal::DecimalEncoder, json::JsonEncoder}, Result,
+};
 use crate::expr::EvalContext;
-use codec::prelude::*;
-use std::{i16, i32, i8, u16, u32, u8};
 
 const MAX_I8: i64 = i8::MAX as i64;
 const MIN_I8: i64 = i8::MIN as i64;
@@ -53,16 +52,16 @@ const MAX_U32: u64 = u32::MAX as u64;
 
 pub struct Column {
     id: i64,
-    value: ScalarValue,
+    causet_locale: ScalarValue,
     ft: FieldType,
 }
 
 impl Column {
-    pub fn new(id: i64, value: impl Into<ScalarValue>) -> Self {
+    pub fn new(id: i64, causet_locale: impl Into<ScalarValue>) -> Self {
         Column {
             id,
             ft: FieldType::default(),
-            value: value.into(),
+            causet_locale: causet_locale.into(),
         }
     }
 
@@ -102,25 +101,25 @@ pub trait RowEncoder: NumberEncoder {
                 is_big = true;
             }
 
-            if col.value.is_none() {
+            if col.causet_locale.is_none() {
                 null_ids.push(col.id);
             } else {
                 non_null_cols.push(col);
             }
         }
-        non_null_cols.sort_by_key(|c| c.id);
+        non_null_cols.sort_by_soliton_id(|c| c.id);
         null_ids.sort();
 
         let mut offset_wtr = vec![];
-        let mut value_wtr = vec![];
+        let mut causet_locale_wtr = vec![];
         let mut offsets = vec![];
 
         for col in non_null_cols {
             non_null_ids.push(col.id);
-            value_wtr.write_value(ctx, &col)?;
-            offsets.push(value_wtr.len());
+            causet_locale_wtr.write_causet_locale(ctx, &col)?;
+            offsets.push(causet_locale_wtr.len());
         }
-        if value_wtr.len() > (u16::MAX as usize) {
+        if causet_locale_wtr.len() > (u16::MAX as usize) {
             is_big = true;
         }
 
@@ -140,7 +139,7 @@ pub trait RowEncoder: NumberEncoder {
             offset_wtr.write_offset(is_big, offset)?;
         }
         self.write_bytes(&offset_wtr)?;
-        self.write_bytes(&value_wtr)?;
+        self.write_bytes(&causet_locale_wtr)?;
         Ok(())
     }
 
@@ -177,8 +176,8 @@ impl<T: BufferWriter> RowEncoder for T {}
 
 pub trait ScalarValueEncoder: NumberEncoder + DecimalEncoder + JsonEncoder {
     #[inline]
-    fn write_value(&mut self, ctx: &mut EvalContext, col: &Column) -> Result<()> {
-        match &col.value {
+    fn write_causet_locale(&mut self, ctx: &mut EvalContext, col: &Column) -> Result<()> {
+        match &col.causet_locale {
             ScalarValue::Int(Some(v)) if col.is_unsigned() => {
                 self.encode_u64(*v as u64).map_err(Error::from)
             }
@@ -225,13 +224,15 @@ impl<T: BufferWriter> ScalarValueEncoder for T {}
 
 #[braneg(test)]
 mod tests {
-    use super::{Column, RowEncoder};
+    use std::str::FromStr;
+
     use crate::codec::{
         data_type::ScalarValue,
-        myBerolinaSQL::{duration::NANOS_PER_SEC, Decimal, Duration, Json, Time},
+        myBerolinaSQL::{Decimal, Duration, duration::NANOS_PER_SEC, Json, Time},
     };
     use crate::expr::EvalContext;
-    use std::str::FromStr;
+
+    use super::{Column, RowEncoder};
 
     #[test]
     fn test_encode_unsigned() {
@@ -265,7 +266,7 @@ mod tests {
                     .unwrap(),
             ),
             Column::new(14, Decimal::from(1i64)),
-            Column::new(15, Json::from_str(r#"{"key":"value"}"#).unwrap()),
+            Column::new(15, Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
             Column::new(16, Duration::from_nanos(NANOS_PER_SEC, 0).unwrap()),
         ];
 

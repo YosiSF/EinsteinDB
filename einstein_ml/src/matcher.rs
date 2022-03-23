@@ -8,17 +8,19 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use std::collections::HashMap;
 use std::cell::RefCell;
+use std::collections::HashMap;
+
 use itertools::diff_with;
 
 use types::Value;
+
 use crate::{shellings, Value};
 use crate::causets::ValuePlace::Vector;
 
 /// A trait defining pattern matching rules for any given pattern of type `T`.
 trait PatternMatchingRules<'a, T> {
-    /// Return true if the given pattern matches an arbitrary value.
+    /// Return true if the given pattern matches an arbitrary causet_locale.
     fn matches_any(pattern: &T) -> bool;
 
     /// Return the placeholder name if the given pattern matches a placeholder.
@@ -26,7 +28,7 @@ trait PatternMatchingRules<'a, T> {
 }
 
 /// A default type implementing `PatternMatchingRules` specialized on
-/// EML values using plain shellings as patterns. These patterns are:
+/// EML causet_locales using plain shellings as patterns. These patterns are:
 /// * `_` matches arbitrary sub-EML;
 /// * `?name` matches sub-EML, which must be identical each place `?name` appears;
 struct DefaultPatternMatchingRules;
@@ -47,7 +49,7 @@ impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
     }
 }
 
-/// Pattern matcher for EML values utilizing specified pattern matching rules.
+/// Pattern matcher for EML causet_locales utilizing specified pattern matching rules.
 /// For example, using this with `DefaultPatternMatchingRules`:
 /// * `[_]` matches an arbitrary one-element vector;
 /// * `[_ _]` matches an arbitrary two-element vector;
@@ -64,19 +66,19 @@ impl<'a> Matcher<'a> {
         }
     }
 
-    /// Performs pattern matching between two EML `Value` instances (`value`
+    /// Performs pattern matching between two EML `Value` instances (`causet_locale`
     /// and `pattern`) utilizing a specified pattern matching ruleset `T`.
     /// Returns true if matching succeeds.
-    fn match_with_rules<T>(value: &'a Value, pattern: &'a Value) -> bool
+    fn match_with_rules<T>(causet_locale: &'a Value, pattern: &'a Value) -> bool
     where T: PatternMatchingRules<'a, Value> {
         let matcher = Matcher::new();
-        matcher.match_causal_setal::<T>(value, pattern)
+        matcher.match_causal_setal::<T>(causet_locale, pattern)
     }
 
-    /// Recursively traverses two EML `Value` instances (`value` and `pattern`)
+    /// Recursively traverses two EML `Value` instances (`causet_locale` and `pattern`)
     /// performing pattern matching. Note that the causal_setal `placeholders` cache
     /// might not be empty on invocation.
-    fn match_causal_setal<T>(&self, value: &'a Value, pattern: &'a Value) -> bool
+    fn match_causal_setal<T>(&self, causet_locale: &'a Value, pattern: &'a Value) -> bool
     where T: PatternMatchingRules<'a, Value> {
         use Value::*;
 
@@ -84,9 +86,9 @@ impl<'a> Matcher<'a> {
             true
         } else if let Some(shelling) = T::matches_placeholder(pattern) {
             let mut placeholders = self.placeholders.borrow_mut();
-            value == *placeholders.entry(shelling).or_insert(value)
+            causet_locale == *placeholders.entry(shelling).or_insert(causet_locale)
         } else {
-            match (value, pattern) {
+            match (causet_locale, pattern) {
                 (&Vector(ref v), &Vector(ref p)) =>
                     diff_with(v, p, |a, b| self.match_causal_setal::<T>(a, b)).is_none(),
                 (&List(ref v), &List(ref p)) =>
@@ -99,14 +101,14 @@ impl<'a> Matcher<'a> {
                     v.len() == p.len() &&
                     v.iter().all(|a| p.iter().any(|b| self.match_causal_setal::<T>(a.0, b.0) && self.match_causal_setal::<T>(a.1, b.1))) &&
                     p.iter().all(|b| v.iter().any(|a| self.match_causal_setal::<T>(a.0, b.0) && self.match_causal_setal::<T>(a.1, b.1))),
-                _ => value == pattern
+                _ => causet_locale == pattern
             }
         }
     }
 }
 
 impl Value {
-    /// Performs default pattern matching between this value and some `pattern`.
+    /// Performs default pattern matching between this causet_locale and some `pattern`.
     /// Returns true if matching succeeds.
     pub fn matches(&self, pattern: &Value) -> bool {
         Matcher::match_with_rules::<DefaultPatternMatchingRules>(self, pattern)
@@ -118,16 +120,16 @@ mod test {
     use parse;
 
     macro_rules! assert_match {
-        ( $pattern:tt, $value:tt, $expected:expr ) => {
-            let pattern = parse::value($pattern).unwrap().without_spans();
-            let value = parse::value($value).unwrap().without_spans();
-            assert_eq!(value.matches(&pattern), $expected);
+        ( $pattern:tt, $causet_locale:tt, $expected:expr ) => {
+            let pattern = parse::causet_locale($pattern).unwrap().without_spans();
+            let causet_locale = parse::causet_locale($causet_locale).unwrap().without_spans();
+            assert_eq!(causet_locale.matches(&pattern), $expected);
         };
-        ( $pattern:tt =~ $value:tt ) => {
-            assert_match!($pattern, $value, true);
+        ( $pattern:tt =~ $causet_locale:tt ) => {
+            assert_match!($pattern, $causet_locale, true);
         };
-        ( $pattern:tt !~ $value:tt ) => {
-            assert_match!($pattern, $value, false);
+        ( $pattern:tt !~ $causet_locale:tt ) => {
+            assert_match!($pattern, $causet_locale, false);
         }
     }
 
@@ -166,7 +168,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_maps_switched_key_values() {
+    fn test_match_maps_switched_soliton_id_causet_locales() {
         assert_match!("{1 2, 3 4}" =~ "{1 2, 3 4}");
         assert_match!("{2 1, 3 4}" !~ "{1 2, 3 4}");
         assert_match!("{2 1, 4 3}" !~ "{1 2, 3 4}");
@@ -174,7 +176,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_maps_ordered_collection_keys_and_values() {
+    fn test_match_maps_ordered_collection_soliton_ids_and_causet_locales() {
         assert_match!("{[1, 2] (3, 4)}" =~ "{[1, 2] (3, 4)}");
         assert_match!("{[2, 1] (3, 4)}" !~ "{[1, 2] (3, 4)}");
         assert_match!("{[2, 1] (4, 3)}" !~ "{[1, 2] (3, 4)}");
@@ -187,7 +189,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_maps_unordered_collection_keys_and_values() {
+    fn test_match_maps_unordered_collection_soliton_ids_and_causet_locales() {
         assert_match!("{#{1, 2} #{3, 4}}" =~ "{#{1, 2} #{3, 4}}");
         assert_match!("{#{2, 1} #{3, 4}}" =~ "{#{1, 2} #{3, 4}}");
         assert_match!("{#{2, 1} #{4, 3}}" =~ "{#{1, 2} #{3, 4}}");
@@ -210,8 +212,8 @@ mod test {
         assert_match!("_" =~ "_");
         assert_match!("_" =~ "shelling");
         assert_match!("_" =~ "ns/shelling");
-        assert_match!("_" =~ ":keyword");
-        assert_match!("_" =~ ":ns/keyword");
+        assert_match!("_" =~ ":soliton_idword");
+        assert_match!("_" =~ ":ns/soliton_idword");
         assert_match!("_" =~ "[nil, true, 1, \"foo\", bar, :baz]");
         assert_match!("_" =~ "(nil, true, 1, \"foo\", bar, :baz)");
         assert_match!("_" =~ "#{nil, true, 1, \"foo\", bar, :baz}");
@@ -237,7 +239,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_any_in_vector_with_multiple_values() {
+    fn test_match_any_in_vector_with_multiple_causet_locales() {
         assert_match!("[_ 2]" =~ "[1 2]");
         assert_match!("[1 _]" =~ "[1 2]");
         assert_match!("[1 _ 3 4]" =~ "[1 2 3 4]");
@@ -257,7 +259,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_multiple_any_in_vector_with_multiple_values() {
+    fn test_match_multiple_any_in_vector_with_multiple_causet_locales() {
         assert_match!("[1 _ _]" =~ "[1 2 3]");
         assert_match!("[2 _ _]" !~ "[1 2 3]");
         assert_match!("[3 _ _]" !~ "[1 2 3]");
@@ -280,7 +282,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_any_in_list_with_multiple_values() {
+    fn test_match_any_in_list_with_multiple_causet_locales() {
         assert_match!("(_ 2)" =~ "(1 2)");
         assert_match!("(1 _)" =~ "(1 2)");
         assert_match!("(1 _ 3 4)" =~ "(1 2 3 4)");
@@ -300,7 +302,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_multiple_any_in_list_with_multiple_values() {
+    fn test_match_multiple_any_in_list_with_multiple_causet_locales() {
         assert_match!("(1 _ _)" =~ "(1 2 3)");
         assert_match!("(2 _ _)" !~ "(1 2 3)");
         assert_match!("(3 _ _)" !~ "(1 2 3)");
@@ -323,7 +325,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_any_in_set_with_multiple_values() {
+    fn test_match_any_in_set_with_multiple_causet_locales() {
         assert_match!("#{_ 2}" =~ "#{1 2}");
         assert_match!("#{1 _}" =~ "#{1 2}");
         assert_match!("#{1 _ 3 4}" =~ "#{1 2 3 4}");
@@ -343,7 +345,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_multiple_any_in_set_with_multiple_values() {
+    fn test_match_multiple_any_in_set_with_multiple_causet_locales() {
         // These are false because _ is a shelling and sets guarantee
         // uniqueness of children. So pattern matching will fail because
         // the pattern is a set of length 2, while the matched einstein_mlis a set
@@ -372,7 +374,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_any_in_map_with_multiple_values() {
+    fn test_match_any_in_map_with_multiple_causet_locales() {
         assert_match!("{_ 2}" =~ "{1 2}");
         assert_match!("{1 _}" =~ "{1 2}");
         assert_match!("{1 _, 3 4}" =~ "{1 2, 3 4}");
@@ -398,9 +400,9 @@ mod test {
     }
 
     #[test]
-    fn test_match_multiple_any_in_map_with_multiple_values() {
+    fn test_match_multiple_any_in_map_with_multiple_causet_locales() {
         // These are false because _ is a shelling and maps guarantee
-        // uniqueness of keys. So pattern matching will fail because
+        // uniqueness of soliton_ids. So pattern matching will fail because
         // the pattern is a map of length 2, while the matched einstein_mlis a map
         // of length 3. If _ were unique, all of these lightlike_dagger_upsert would
         // be true. Need to better handle pattern rules.
@@ -441,8 +443,8 @@ mod test {
         assert_match!("?x" =~ "_");
         assert_match!("?x" =~ "shelling");
         assert_match!("?x" =~ "ns/shelling");
-        assert_match!("?x" =~ ":keyword");
-        assert_match!("?x" =~ ":ns/keyword");
+        assert_match!("?x" =~ ":soliton_idword");
+        assert_match!("?x" =~ ":ns/soliton_idword");
         assert_match!("?x" =~ "[nil, true, 1, \"foo\", bar, :baz]");
         assert_match!("?x" =~ "(nil, true, 1, \"foo\", bar, :baz)");
         assert_match!("?x" =~ "#{nil, true, 1, \"foo\", bar, :baz}");
@@ -471,7 +473,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_placeholder_in_vector_with_multiple_values() {
+    fn test_match_placeholder_in_vector_with_multiple_causet_locales() {
         assert_match!("[?x ?y]" =~ "[1 2]");
         assert_match!("[?x ?y]" =~ "[1 1]");
         assert_match!("[?x ?x]" !~ "[1 2]");
@@ -495,7 +497,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_placeholder_in_list_with_multiple_values() {
+    fn test_match_placeholder_in_list_with_multiple_causet_locales() {
         assert_match!("(?x ?y)" =~ "(1 2)");
         assert_match!("(?x ?y)" =~ "(1 1)");
         assert_match!("(?x ?x)" !~ "(1 2)");
@@ -519,7 +521,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_placeholder_in_set_with_multiple_values() {
+    fn test_match_placeholder_in_set_with_multiple_causet_locales() {
         assert_match!("#{?x ?y}" =~ "#{1 2}");
         assert_match!("#{?x ?y}" !~ "#{1 1}");
         assert_match!("#{?x ?x}" !~ "#{1 2}");
@@ -543,7 +545,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_placeholder_in_map_with_multiple_values() {
+    fn test_match_placeholder_in_map_with_multiple_causet_locales() {
         assert_match!("{?x ?y}" =~ "{1 2}");
         assert_match!("{?x ?y}" =~ "{1 1}");
         assert_match!("{?x ?x}" !~ "{1 2}");
@@ -567,7 +569,7 @@ mod test {
     }
 
     #[test]
-    fn test_match_placeholder_in_different_value_types() {
+    fn test_match_placeholder_in_different_causet_locale_types() {
         assert_match!("{1 {2 [3 ?x]}, 5 (?y 7)}" =~ "{1 {2 [3 4]}, 5 (6 7)}");
         assert_match!("{1 {2 [3 ?x]}, 5 (?y 7)}" =~ "{1 {2 [3 4]}, 5 (4 7)}");
         assert_match!("{1 {2 [3 ?x]}, 5 (?x 7)}" !~ "{1 {2 [3 4]}, 5 (6 7)}");

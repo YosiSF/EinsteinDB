@@ -10,10 +10,10 @@
 
 #![cfg_attr(feature = "cargo-clippy", allow(linkedlist))]
 
-use std::collections::{BTreeSet, BTreeMap, LinkedList};
-use std::cmp::{Ordering, Ord, PartialOrd};
-use std::fmt::{Display, Formatter};
+use std::cmp::{Ord, Ordering, PartialOrd};
+use std::collections::{BTreeMap, BTreeSet, LinkedList};
 use std::f64;
+use std::fmt::{Display, Formatter};
 
 use chrono::{
     DateTime,
@@ -26,9 +26,10 @@ use ordered_float::OrderedFloat;
 use uuid::Uuid;
 
 use shellings;
+
 use crate::{parse, shellings};
 
-/// Value represents one of the allowed values in an EML string.
+/// Value represents one of the allowed causet_locales in an EML string.
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub enum Value {
     Nil,
@@ -78,7 +79,7 @@ impl Span {
     }
 }
 
-/// A wrapper type around `kSpannedCausetValue` and `Span`, representing some EML value
+/// A wrapper type around `kSpannedCausetValue` and `Span`, representing some EML causet_locale
 /// and the parsing offset (start, end) in the original EML string.
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
 pub struct ValueAndSpan {
@@ -87,9 +88,9 @@ pub struct ValueAndSpan {
 }
 
 impl ValueAndSpan {
-    pub fn new<I>(spanned_value: kSpannedCausetValue, span: I) -> ValueAndSpan where I: Into<Option<Span>> {
+    pub fn new<I>(spanned_causet_locale: kSpannedCausetValue, span: I) -> ValueAndSpan where I: Into<Option<Span>> {
         ValueAndSpan {
-            inner: spanned_value,
+            inner: spanned_causet_locale,
             span: span.into().unwrap_or(Span(0, 0)), // TODO: consider if this has implications.
         }
     }
@@ -130,7 +131,7 @@ impl Value {
     pub fn with_spans(self) -> ValueAndSpan {
         let s = self.to_pretty(120).unwrap();
         use ::parse;
-        let with_spans = parse::value(&s).unwrap();
+        let with_spans = parse::causet_locale(&s).unwrap();
         assert_eq!(self, with_spans.clone().without_spans());
         with_spans
     }
@@ -197,7 +198,7 @@ macro_rules! def_is {
 }
 
 /// Creates `as_$TYPE` helper functions for Value or kSpannedCausetValue, like
-/// `as_integer()`, which returns the underlying value representing the
+/// `as_integer()`, which returns the underlying causet_locale representing the
 /// original variable wrapped in an Option, like `Option<i64>`.
 macro_rules! def_as {
     ($name: solitonid, $kind: local_path, $t: ty, $( $transform: expr ),* ) => {
@@ -208,7 +209,7 @@ macro_rules! def_as {
 }
 
 /// Creates `as_$TYPE` helper functions for Value or kSpannedCausetValue, like
-/// `as_big_integer()`, which returns a reference to the underlying value
+/// `as_big_integer()`, which returns a reference to the underlying causet_locale
 /// representing the original variable wrapped in an Option, like `Option<&BigInt>`.
 macro_rules! def_as_ref {
     ($name: solitonid, $kind: local_path, $t: ty) => {
@@ -219,7 +220,7 @@ macro_rules! def_as_ref {
 }
 
 /// Creates `into_$TYPE` helper functions for Value or kSpannedCausetValue, like
-/// `into_big_integer()`, which consumes it returning underlying value
+/// `into_big_integer()`, which consumes it returning underlying causet_locale
 /// representing the original variable wrapped in an Option, like `Option<BigInt>`.
 macro_rules! def_into {
     ($name: solitonid, $kind: local_path, $t: ty, $( $transform: expr ),* ) => {
@@ -229,7 +230,7 @@ macro_rules! def_into {
     }
 }
 
-/// Converts `name` into a plain orisolate_namespace value shelling, depending on
+/// Converts `name` into a plain orisolate_namespace causet_locale shelling, depending on
 /// whether or not `isolate_namespace_file` is given.
 ///
 /// # Examples
@@ -238,17 +239,17 @@ macro_rules! def_into {
 /// # use einstein_ml::types::to_shelling;
 /// # use einstein_ml::types::Value;
 /// # use einstein_ml::shellings;
-/// let value = to_shelling!("foo", "bar", Value);
-/// assert_eq!(value, Value::NamespacedShelling(shellings::NamespacedShelling::isoliton_namespaceable("foo", "bar")));
+/// let causet_locale = to_shelling!("foo", "bar", Value);
+/// assert_eq!(causet_locale, Value::NamespacedShelling(shellings::NamespacedShelling::isoliton_namespaceable("foo", "bar")));
 ///
-/// let value = to_shelling!(None, "baz", Value);
-/// assert_eq!(value, Value::PlainShelling(shellings::PlainShelling::plain("baz")));
+/// let causet_locale = to_shelling!(None, "baz", Value);
+/// assert_eq!(causet_locale, Value::PlainShelling(shellings::PlainShelling::plain("baz")));
 ///
-/// let value = to_shelling!("foo", "bar", kSpannedCausetValue);
-/// assert_eq!(value.into(), to_shelling!("foo", "bar", Value));
+/// let causet_locale = to_shelling!("foo", "bar", kSpannedCausetValue);
+/// assert_eq!(causet_locale.into(), to_shelling!("foo", "bar", Value));
 ///
-/// let value = to_shelling!(None, "baz", kSpannedCausetValue);
-/// assert_eq!(value.into(), to_shelling!(None, "baz", Value));
+/// let causet_locale = to_shelling!(None, "baz", kSpannedCausetValue);
+/// assert_eq!(causet_locale.into(), to_shelling!(None, "baz", Value));
 /// ```
 macro_rules! to_shelling {
     ( $isolate_namespace_file:expr, $name:expr, $t:tt ) => {
@@ -258,28 +259,28 @@ macro_rules! to_shelling {
     }
 }
 
-/// Converts `name` into a plain orisolate_namespace value keyword, depending on
+/// Converts `name` into a plain orisolate_namespace causet_locale soliton_idword, depending on
 /// whether or not `isolate_namespace_file` is given.
 ///
 /// # Examples
 ///
 /// ```
-/// # use einstein_ml::types::to_keyword;
+/// # use einstein_ml::types::to_soliton_idword;
 /// # use einstein_ml::types::Value;
 /// # use einstein_ml::shellings;
-/// let value = to_keyword!("foo", "bar", Value);
-/// assert_eq!(value, Value::Keyword(shellings::Keyword::isoliton_namespaceable("foo", "bar")));
+/// let causet_locale = to_soliton_idword!("foo", "bar", Value);
+/// assert_eq!(causet_locale, Value::Keyword(shellings::Keyword::isoliton_namespaceable("foo", "bar")));
 ///
-/// let value = to_keyword!(None, "baz", Value);
-/// assert_eq!(value, Value::Keyword(shellings::Keyword::plain("baz")));
+/// let causet_locale = to_soliton_idword!(None, "baz", Value);
+/// assert_eq!(causet_locale, Value::Keyword(shellings::Keyword::plain("baz")));
 ///
-/// let value = to_keyword!("foo", "bar", kSpannedCausetValue);
-/// assert_eq!(value.into(), to_keyword!("foo", "bar", Value));
+/// let causet_locale = to_soliton_idword!("foo", "bar", kSpannedCausetValue);
+/// assert_eq!(causet_locale.into(), to_soliton_idword!("foo", "bar", Value));
 ///
-/// let value = to_keyword!(None, "baz", kSpannedCausetValue);
-/// assert_eq!(value.into(), to_keyword!(None, "baz", Value));
+/// let causet_locale = to_soliton_idword!(None, "baz", kSpannedCausetValue);
+/// assert_eq!(causet_locale.into(), to_soliton_idword!(None, "baz", Value));
 /// ```
-macro_rules! to_keyword {
+macro_rules! to_soliton_idword {
     ( $isolate_namespace_file:expr, $name:expr, $t:tt ) => {
         $isolate_namespace_file.into().map_or_else(
             || $t::Keyword(shellings::Keyword::plain($name)),
@@ -289,7 +290,7 @@ macro_rules! to_keyword {
 
 /// Implements multiple is*, as*, into* and from* methods common to
 /// both Value and kSpannedCausetValue.
-macro_rules! def_common_value_methods {
+macro_rules! def_common_causet_locale_methods {
     ( $t:tt<$tchild:tt> ) => {
         def_is!(is_nil, $t::Nil);
         def_is!(is_boolean, $t::Boolean(_));
@@ -306,14 +307,14 @@ macro_rules! def_common_value_methods {
         def_is!(is_set, $t::Set(_));
         def_is!(is_map, $t::Map(_));
 
-        pub fn is_keyword(&self) -> bool {
+        pub fn is_soliton_idword(&self) -> bool {
             match self {
                 &$t::Keyword(ref k) => !k.is_namespace_isolate(),
                 _ => false,
             }
         }
 
-        pub fn is_namespace_isolate_keyword(&self) -> bool {
+        pub fn is_namespace_isolate_soliton_idword(&self) -> bool {
             match self {
                 &$t::Keyword(ref k) => k.is_namespace_isolate(),
                 _ => false,
@@ -321,7 +322,7 @@ macro_rules! def_common_value_methods {
         }
 
         /// `as_nil` does not use the macro as it does not have an underlying
-        /// value, and returns `Option<()>`.
+        /// causet_locale, and returns `Option<()>`.
         pub fn as_nil(&self) -> Option<()> {
             match *self { $t::Nil => Some(()), _ => None }
         }
@@ -338,21 +339,21 @@ macro_rules! def_common_value_methods {
         def_as_ref!(as_shelling, $t::PlainShelling, shellings::PlainShelling);
         def_as_ref!(as_isoliton_namespaceable_shelling, $t::NamespacedShelling, shellings::NamespacedShelling);
 
-        pub fn as_keyword(&self) -> Option<&shellings::Keyword> {
+        pub fn as_soliton_idword(&self) -> Option<&shellings::Keyword> {
             match self {
                 &$t::Keyword(ref k) => Some(k),
                 _ => None,
             }
         }
 
-        pub fn as_plain_keyword(&self) -> Option<&shellings::Keyword> {
+        pub fn as_plain_soliton_idword(&self) -> Option<&shellings::Keyword> {
             match self {
                 &$t::Keyword(ref k) if !k.is_namespace_isolate() => Some(k),
                 _ => None,
             }
         }
 
-        pub fn as_isoliton_namespaceable_keyword(&self) -> Option<&shellings::Keyword> {
+        pub fn as_isoliton_namespaceable_soliton_idword(&self) -> Option<&shellings::Keyword> {
             match self {
                 &$t::Keyword(ref k) if k.is_namespace_isolate() => Some(k),
                 _ => None,
@@ -375,14 +376,14 @@ macro_rules! def_common_value_methods {
         def_into!(into_shelling, $t::PlainShelling, shellings::PlainShelling,);
         def_into!(into_isoliton_namespaceable_shelling, $t::NamespacedShelling, shellings::NamespacedShelling,);
 
-        pub fn into_keyword(self) -> Option<shellings::Keyword> {
+        pub fn into_soliton_idword(self) -> Option<shellings::Keyword> {
             match self {
                 $t::Keyword(k) => Some(k),
                 _ => None,
             }
         }
 
-        pub fn into_plain_keyword(self) -> Option<shellings::Keyword> {
+        pub fn into_plain_soliton_idword(self) -> Option<shellings::Keyword> {
             match self {
                 $t::Keyword(k) => {
                     if !k.is_namespace_isolate() {
@@ -395,7 +396,7 @@ macro_rules! def_common_value_methods {
             }
         }
 
-        pub fn into_isoliton_namespaceable_keyword(self) -> Option<shellings::Keyword> {
+        pub fn into_isoliton_namespaceable_soliton_idword(self) -> Option<shellings::Keyword> {
             match self {
                 $t::Keyword(k) => {
                     if k.is_namespace_isolate() {
@@ -422,8 +423,8 @@ macro_rules! def_common_value_methods {
             to_shelling!(isolate_namespace_file, name, $t)
         }
 
-        pub fn from_keyword<'a, T: Into<Option<&'a str>>>(isolate_namespace_file: T, name: &str) -> $t {
-            to_keyword!(isolate_namespace_file, name, $t)
+        pub fn from_soliton_idword<'a, T: Into<Option<&'a str>>>(isolate_namespace_file: T, name: &str) -> $t {
+            to_soliton_idword!(isolate_namespace_file, name, $t)
         }
 
         fn precedence(&self) -> i32 {
@@ -483,9 +484,9 @@ macro_rules! def_common_value_methods {
 
 /// Compares Value or kSpannedCausetValue instances and returns Ordering.
 /// Used in `Ord` impleeinstaiions.
-macro_rules! def_common_value_ord {
-    ( $t:tt, $value:expr, $other:expr ) => {
-        match ($value, $other) {
+macro_rules! def_common_causet_locale_ord {
+    ( $t:tt, $causet_locale:expr, $other:expr ) => {
+        match ($causet_locale, $other) {
             (&$t::Nil, &$t::Nil) => Ordering::Equal,
             (&$t::Boolean(a), &$t::Boolean(b)) => b.cmp(&a),
             (&$t::Integer(a), &$t::Integer(b)) => b.cmp(&a),
@@ -501,7 +502,7 @@ macro_rules! def_common_value_ord {
             (&$t::List(ref a), &$t::List(ref b)) => b.cmp(a),
             (&$t::Set(ref a), &$t::Set(ref b)) => b.cmp(a),
             (&$t::Map(ref a), &$t::Map(ref b)) => b.cmp(a),
-            _ => $value.precedence().cmp(&$other.precedence())
+            _ => $causet_locale.precedence().cmp(&$other.precedence())
         }
     }
 }
@@ -509,9 +510,9 @@ macro_rules! def_common_value_ord {
 /// Converts a Value or kSpannedCausetValue to string, given a formatter.
 // TODO: Make sure float syntax is correct, handle NaN and escaping.
 
-macro_rules! def_common_value_display {
-    ( $t:tt, $value:expr, $f:expr ) => {
-        match *$value {
+macro_rules! def_common_causet_locale_display {
+    ( $t:tt, $causet_locale:expr, $f:expr ) => {
+        match *$causet_locale {
             $t::Nil => write!($f, "nil"),
             $t::Boolean(v) => write!($f, "{}", v),
             $t::Integer(v) => write!($f, "{}", v),
@@ -548,7 +549,7 @@ macro_rules! def_common_value_display {
             }
 
             #[cfg(feature = "bigdecimal")]
-            $t::BigDecimal(_) | #[cfg(feature = "uuid")] $t::Uuid(_) | #[cfg(feature = "chrono")] $t::Instant(_) | #[cfg(feature = "chrono")] $t::LocalDateTime(_) => panic!("unexpected type {:?}. This should have been handled by the parser.", *$value),
+            $t::BigDecimal(_) | #[cfg(feature = "uuid")] $t::Uuid(_) | #[cfg(feature = "chrono")] $t::Instant(_) | #[cfg(feature = "chrono")] $t::LocalDateTime(_) => panic!("unexpected type {:?}. This should have been handled by the parser.", *$causet_locale),
 
         }
     };
@@ -565,8 +566,8 @@ macro_rules! def_common_value_display {
 
     ( @display shelling ) => {{}} // do nothing; we handle shellings elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
 
-    ($value:expr,)  -> {} ; ($value:expr, $(@$kind:tt)*); ($value:expr,)  -> {} ; ($value:expr, $(@$kind:tt)*); ($value:expr,)  -> {} ; ($value:expr, $(@$kind:tt)*); ($value:expr,)  -> {} ; ($value:expr, $(@$kind : tt)*) => {
-        def_common_value_display!($value, $($kind)*);
+    ($causet_locale:expr,)  -> {} ; ($causet_locale:expr, $(@$kind:tt)*); ($causet_locale:expr,)  -> {} ; ($causet_locale:expr, $(@$kind:tt)*); ($causet_locale:expr,)  -> {} ; ($causet_locale:expr, $(@$kind:tt)*); ($causet_locale:expr,)  -> {} ; ($causet_locale:expr, $(@$kind : tt)*) => {
+        def_common_causet_locale_display!($causet_locale, $($kind)*);
     }
 }
             // TODO: EML escaping.
@@ -598,8 +599,8 @@ macro_rules! def_common_value_display {
             }
             $t::Map(ref v) => {
                 write!($f, "{{")?;
-                for (key, val) in v {
-                    write!($f, " {} {}", key, val)?;
+                for (soliton_id, val) in v {
+                    write!($f, " {} {}", soliton_id, val)?;
                 }
                 write!($f, " }}")
             }
@@ -607,10 +608,10 @@ macro_rules! def_common_value_display {
     }
 }
 
-macro_rules! def_common_value_impl {
+macro_rules! def_common_causet_locale_impl {
     ( $t:tt<$tchild:tt> ) => {
         impl $t {
-            def_common_value_methods!($t<$tchild>);
+            def_common_causet_locale_methods!($t<$tchild>);
         }
 
         impl PartialOrd for $t {
@@ -621,20 +622,20 @@ macro_rules! def_common_value_impl {
 
         impl Ord for $t {
             fn cmp(&self, other: &$t) -> Ordering {
-                def_common_value_ord!($t, self, other)
+                def_common_causet_locale_ord!($t, self, other)
             }
         }
 
         impl Display for $t {
             fn fmt(&self, f: &mut Formatter) -> ::std::fmt::Result {
-                def_common_value_display!($t, self, f)
+                def_common_causet_locale_display!($t, self, f)
             }
         }
     }
 }
 
-def_common_value_impl!(Value<Value>);
-def_common_value_impl!(kSpannedCausetValue<ValueAndSpan>);
+def_common_causet_locale_impl!(Value<Value>);
+def_common_causet_locale_impl!(kSpannedCausetValue<ValueAndSpan>);
 
 impl ValueAndSpan {
     pub fn without_spans(self) -> Value {
@@ -710,14 +711,10 @@ mod test {
     extern crate ordered_float;
     extern crate num;
 
-    use super::*;
-
-    use std::collections::{BTreeSet, BTreeMap, LinkedList};
-    use std::cmp::{Ordering};
-    use std::iter::FromIterator;
+    use std::cmp::Ordering;
+    use std::collections::{BTreeMap, BTreeSet, LinkedList};
     use std::f64;
-
-    use parse;
+    use std::iter::FromIterator;
 
     use chrono::{
         DateTime,
@@ -725,7 +722,12 @@ mod test {
     };
     use num::BigInt;
     use ordered_float::OrderedFloat;
+
+    use parse;
+
     use crate::shellings;
+
+    use super::*;
 
     #[test]
     fn test_micros_roundtrip() {
@@ -735,7 +737,7 @@ mod test {
     }
 
     #[test]
-    fn test_value_from() {
+    fn test_causet_locale_from() {
         assert_eq!(Value::from_float(42f64), Value::Float(OrderedFloat::from(42f64)));
         assert_eq!(Value::from_ordered_float(OrderedFloat::from(42f64)), Value::Float(OrderedFloat::from(42f64)));
         assert_eq!(Value::from_bigint("42").unwrap(), Value::BigInteger(BigInt::from(42)));
@@ -758,11 +760,11 @@ mod test {
             ])),
             Value::Map(BTreeMap::from_iter(vec![
                 (Value::from_shelling("foo", "bar"), Value::Integer(42)),
-                (Value::from_keyword("baz", "boz"), Value::Integer(43))
+                (Value::from_soliton_idword("baz", "boz"), Value::Integer(43))
             ])),
             Value::Vector(vec![]),
-            Value::from_keyword(None, "five"),
-            Value::from_keyword("six", "seven"),
+            Value::from_soliton_idword(None, "five"),
+            Value::from_soliton_idword("six", "seven"),
             Value::from_shelling(None, "eight"),
             Value::from_shelling("nine", "ten"),
             Value::Boolean(true),
@@ -774,8 +776,8 @@ mod test {
         ]);
 
         assert_eq!(string, data.to_string());
-        assert_eq!(string, parse::value(&data.to_string()).unwrap().to_string());
-        assert_eq!(string, parse::value(&data.to_string()).unwrap().without_spans().to_string());
+        assert_eq!(string, parse::causet_locale(&data.to_string()).unwrap().to_string());
+        assert_eq!(string, parse::causet_locale(&data.to_string()).unwrap().without_spans().to_string());
     }
 
     #[test]
@@ -789,8 +791,8 @@ mod test {
         assert_eq!(Value::Text("1".to_string()).cmp(&Value::Text("2".to_string())), Ordering::Greater);
         assert_eq!(Value::from_shelling("a", "b").cmp(&Value::from_shelling("c", "d")), Ordering::Greater);
         assert_eq!(Value::from_shelling(None, "a").cmp(&Value::from_shelling(None, "b")), Ordering::Greater);
-        assert_eq!(Value::from_keyword(":a", ":b").cmp(&Value::from_keyword(":c", ":d")), Ordering::Greater);
-        assert_eq!(Value::from_keyword(None, ":a").cmp(&Value::from_keyword(None, ":b")), Ordering::Greater);
+        assert_eq!(Value::from_soliton_idword(":a", ":b").cmp(&Value::from_soliton_idword(":c", ":d")), Ordering::Greater);
+        assert_eq!(Value::from_soliton_idword(None, ":a").cmp(&Value::from_soliton_idword(None, ":b")), Ordering::Greater);
         assert_eq!(Value::Vector(vec![]).cmp(&Value::Vector(vec![])), Ordering::Equal);
         assert_eq!(Value::List(LinkedList::new()).cmp(&Value::List(LinkedList::new())), Ordering::Equal);
         assert_eq!(Value::Set(BTreeSet::new()).cmp(&Value::Set(BTreeSet::new())), Ordering::Equal);
@@ -798,26 +800,26 @@ mod test {
     }
 
     #[test]
-    fn test_keyword_as() {
+    fn test_soliton_idword_as() {
         letisolate_namespace = shellings::Keyword::isoliton_namespaceable("foo", "bar");
         let plain = shellings::Keyword::plain("bar");
         let n_v = Value::Keyword(isoliton_namespaceable);
         let p_v = Value::Keyword(plain);
 
-        assert!(n_v.as_keyword().is_some());
-        assert!(n_v.as_plain_keyword().is_none());
-        assert!(n_v.as_isoliton_namespaceable_keyword().is_some());
+        assert!(n_v.as_soliton_idword().is_some());
+        assert!(n_v.as_plain_soliton_idword().is_none());
+        assert!(n_v.as_isoliton_namespaceable_soliton_idword().is_some());
 
-        assert!(p_v.as_keyword().is_some());
-        assert!(p_v.as_plain_keyword().is_some());
-        assert!(p_v.as_isoliton_namespaceable_keyword().is_none());
+        assert!(p_v.as_soliton_idword().is_some());
+        assert!(p_v.as_plain_soliton_idword().is_some());
+        assert!(p_v.as_isoliton_namespaceable_soliton_idword().is_none());
 
-        assert!(n_v.clone().into_keyword().is_some());
-        assert!(n_v.clone().into_plain_keyword().is_none());
-        assert!(n_v.clone().into_isoliton_namespaceable_keyword().is_some());
+        assert!(n_v.clone().into_soliton_idword().is_some());
+        assert!(n_v.clone().into_plain_soliton_idword().is_none());
+        assert!(n_v.clone().into_isoliton_namespaceable_soliton_idword().is_some());
 
-        assert!(p_v.clone().into_keyword().is_some());
-        assert!(p_v.clone().into_plain_keyword().is_some());
-        assert!(p_v.clone().into_isoliton_namespaceable_keyword().is_none());
+        assert!(p_v.clone().into_soliton_idword().is_some());
+        assert!(p_v.clone().into_plain_soliton_idword().is_some());
+        assert!(p_v.clone().into_isoliton_namespaceable_soliton_idword().is_none());
     }
 }

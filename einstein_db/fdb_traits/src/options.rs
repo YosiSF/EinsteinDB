@@ -1,6 +1,6 @@
+use einsteindb_util::soliton_idbuilder::KeyBuilder;
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 use std::ops::{Bound, RangeBounds};
-use einsteindb_util::keybuilder::KeyBuilder;
 
 #[derive(Clone)]
 pub struct ReadOptions {
@@ -77,13 +77,13 @@ pub struct IterOptions {
     // hint for we will only scan data with commit ts <= hint_max_ts
     hint_max_ts: Option<u64>,
     // only supported when Titan enabled, otherwise it doesn't take effect.
-    key_only: bool,
+    soliton_id_only: bool,
     seek_mode: SeekMode,
-    // A threshold for the number of keys that can be skipped before failing an
-    // iterator seek as incomplete. The default value of 0 should be used to
-    // never fail a request as incomplete, even on skipping too many keys.
+    // A threshold for the number of soliton_ids that can be skipped before failing an
+    // iterator seek as incomplete. The default causet_locale of 0 should be used to
+    // never fail a request as incomplete, even on skipping too many soliton_ids.
     // It's used to avoid encountering too many tombstones when seeking.
-    max_skippable_internal_keys: u64,
+    max_skippable_internal_soliton_ids: u64,
 }
 
 impl IterOptions {
@@ -99,9 +99,9 @@ impl IterOptions {
             fill_cache,
             hint_min_ts: None,
             hint_max_ts: None,
-            key_only: false,
+            soliton_id_only: false,
             seek_mode: SeekMode::TotalOrder,
-            max_skippable_internal_keys: 0,
+            max_skippable_internal_soliton_ids: 0,
         }
     }
 
@@ -159,13 +159,13 @@ impl IterOptions {
     }
 
     #[inline]
-    pub fn key_only(&self) -> bool {
-        self.key_only
+    pub fn soliton_id_only(&self) -> bool {
+        self.soliton_id_only
     }
 
     #[inline]
-    pub fn set_key_only(&mut self, v: bool) {
-        self.key_only = v;
+    pub fn set_soliton_id_only(&mut self, v: bool) {
+        self.soliton_id_only = v;
     }
 
     #[inline]
@@ -228,13 +228,13 @@ impl IterOptions {
     }
 
     #[inline]
-    pub fn max_skippable_internal_keys(&self) -> u64 {
-        self.max_skippable_internal_keys
+    pub fn max_skippable_internal_soliton_ids(&self) -> u64 {
+        self.max_skippable_internal_soliton_ids
     }
 
     #[inline]
-    pub fn set_max_skippable_internal_keys(&mut self, threshold: u64) {
-        self.max_skippable_internal_keys = threshold;
+    pub fn set_max_skippable_internal_soliton_ids(&mut self, threshold: u64) {
+        self.max_skippable_internal_soliton_ids = threshold;
     }
 }
 
@@ -247,17 +247,18 @@ impl Default for IterOptions {
             fill_cache: true,
             hint_min_ts: None,
             hint_max_ts: None,
-            key_only: false,
+            soliton_id_only: false,
             seek_mode: SeekMode::TotalOrder,
-            max_skippable_internal_keys: 0,
+            max_skippable_internal_soliton_ids: 0,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::ops::Bound;
+
+    use super::*;
 
     #[test]
     fn test_hint_ts() {

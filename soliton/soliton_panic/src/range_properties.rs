@@ -1,14 +1,15 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{Range, RangeGreedoidsExt, Result};
 
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
+
 impl RangeGreedoidsExt for Paniceinstein_merkle_tree {
-    fn get_range_approximate_keys(&self, range: Range<'_>, large_threshold: u64) -> Result<u64> {
+    fn get_range_approximate_soliton_ids(&self, range: Range<'_>, large_threshold: u64) -> Result<u64> {
         panic!()
     }
 
-    fn get_range_approximate_keys_namespaced(
+    fn get_range_approximate_soliton_ids_namespaced(
         &self,
         namespacedname: &str,
         range: Range<'_>,
@@ -30,19 +31,19 @@ impl RangeGreedoidsExt for Paniceinstein_merkle_tree {
         panic!()
     }
 
-    fn get_range_approximate_split_keys(
+    fn get_range_approximate_split_soliton_ids(
         &self,
         range: Range<'_>,
-        key_count: usize,
+        soliton_id_count: usize,
     ) -> Result<Vec<Vec<u8>>> {
         panic!()
     }
 
-    fn get_range_approximate_split_keys_namespaced(
+    fn get_range_approximate_split_soliton_ids_namespaced(
         &self,
         namespacedname: &str,
         range: Range<'_>,
-        key_count: usize,
+        soliton_id_count: usize,
     ) -> Result<Vec<Vec<u8>>> {
         panic!()
     }

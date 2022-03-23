@@ -2,7 +2,7 @@
 
 //! Iteration over einstein_merkle_trees and lightlike_persistences.
 //!
-//! For the purpose of key/value iteration, EinsteinDB defines its own `Iterator`
+//! For the purpose of soliton_id/causet_locale iteration, EinsteinDB defines its own `Iterator`
 //! trait, and `Iterable` types that can create iterators.
 //!
 //! Both `KV`s and `LightlikePersistence`s are `Iterable`.
@@ -13,8 +13,8 @@
 //! the iteration is being performed on the lightlike_persistence.
 //!
 //! Iterators can be in an _invalid_ state, in which they are not positioned at
-//! a key/value pair. This can occur when attempting to move before the first
-//! pair, past the last pair, or when seeking to a key that does not exist.
+//! a soliton_id/causet_locale pair. This can occur when attempting to move before the first
+//! pair, past the last pair, or when seeking to a soliton_id that does not exist.
 //! There may be other conditions that invalidate iterators (TODO: I don't
 //! know).
 //!
@@ -27,7 +27,7 @@
 //! - [FdbDB iterator API](https://github.com/facebook/foundationdb/blob/master/include/foundationdb/iterator.h).
 //! - [FdbDB wiki on iterators](https://github.com/facebook/foundationdb/wiki/Iterator)
 
-use einsteindb_util::keybuilder::KeyBuilder;
+use einsteindb_util::soliton_idbuilder::KeyBuilder;
 
 use crate::*;
 
@@ -38,7 +38,7 @@ pub enum SeekKey<'a> {
     Key(&'a [u8]),
 }
 
-/// An iterator over a consistent set of keys and values.
+/// An iterator over a consistent set of soliton_ids and causet_locales.
 ///
 /// Iterators are implemented for `KV`s and for `LightlikePersistence`s. They see a
 /// consistent view of the database; an iterator created by an einstein_merkle_tree behaves as
@@ -46,7 +46,7 @@ pub enum SeekKey<'a> {
 ///
 /// Most methods on iterators will panic if they are not "valid",
 /// as determined by the `valid` method.
-/// An iterator is valid if it is currently "pointing" to a key/value pair.
+/// An iterator is valid if it is currently "pointing" to a soliton_id/causet_locale pair.
 ///
 /// Iterators begin in an invalid state; one of the `seek` methods
 /// must be called before beginning iteration.
@@ -54,27 +54,27 @@ pub enum SeekKey<'a> {
 /// or after iteration has ended after calling `next` or `prev`,
 /// and they return `false`.
 pub trait Iterator: Send {
-    /// Move the iterator to a specific key.
+    /// Move the iterator to a specific soliton_id.
     ///
-    /// When `key` is `SeekKey::Start` or `SeekKey::End`,
+    /// When `soliton_id` is `SeekKey::Start` or `SeekKey::End`,
     /// `seek` and `seek_for_prev` behave identically.
     /// The difference between the two functions is how they
     /// behave for `SeekKey::Key`, and only when an exactly
-    /// matching keys is not found:
+    /// matching soliton_ids is not found:
     ///
     /// When seeking with `SeekKey::Key`, and an exact match is not found,
-    /// `seek` sets the iterator to the next key greater than that
-    /// specified as `key`, if such a key exists;
-    /// `seek_for_prev` sets the iterator to the previous key less than
-    /// that specified as `key`, if such a key exists.
+    /// `seek` sets the iterator to the next soliton_id greater than that
+    /// specified as `soliton_id`, if such a soliton_id exists;
+    /// `seek_for_prev` sets the iterator to the previous soliton_id less than
+    /// that specified as `soliton_id`, if such a soliton_id exists.
     ///
     /// # Returns
     ///
     /// `true` if seeking succeeded and the iterator is valid,
     /// `false` if seeking failed and the iterator is invalid.
-    fn seek(&mut self, key: SeekKey<'_>) -> Result<bool>;
+    fn seek(&mut self, soliton_id: SeekKey<'_>) -> Result<bool>;
 
-    /// Move the iterator to a specific key.
+    /// Move the iterator to a specific soliton_id.
     ///
     /// For the difference between this method and `seek`,
     /// see the documentation for `seek`.
@@ -83,7 +83,7 @@ pub trait Iterator: Send {
     ///
     /// `true` if seeking succeeded and the iterator is valid,
     /// `false` if seeking failed and the iterator is invalid.
-    fn seek_for_prev(&mut self, key: SeekKey<'_>) -> Result<bool>;
+    fn seek_for_prev(&mut self, soliton_id: SeekKey<'_>) -> Result<bool>;
 
     /// Short for `seek(SeekKey::Start)`.
     fn seek_to_first(&mut self) -> Result<bool> {
@@ -95,35 +95,35 @@ pub trait Iterator: Send {
         self.seek(SeekKey::End)
     }
 
-    /// Move a valid iterator to the previous key.
+    /// Move a valid iterator to the previous soliton_id.
     ///
     /// # Panics
     ///
     /// If the iterator is invalid
     fn prev(&mut self) -> Result<bool>;
 
-    /// Move a valid iterator to the next key.
+    /// Move a valid iterator to the next soliton_id.
     ///
     /// # Panics
     ///
     /// If the iterator is invalid
     fn next(&mut self) -> Result<bool>;
 
-    /// Retrieve the current key.
+    /// Retrieve the current soliton_id.
     ///
     /// # Panics
     ///
     /// If the iterator is invalid
-    fn key(&self) -> &[u8];
+    fn soliton_id(&self) -> &[u8];
 
-    /// Retrieve the current value.
+    /// Retrieve the current causet_locale.
     ///
     /// # Panics
     ///
     /// If the iterator is invalid
-    fn value(&self) -> &[u8];
+    fn causet_locale(&self) -> &[u8];
 
-    /// Returns `true` if the iterator points to a `key`/`value` pair.
+    /// Returns `true` if the iterator points to a `soliton_id`/`causet_locale` pair.
     fn valid(&self) -> Result<bool>;
 }
 
@@ -141,66 +141,66 @@ pub trait Iterable {
         self.iterator_namespaced_opt(namespaced, IterOptions::default())
     }
 
-    /// scan the key between start_key(inclusive) and end_key(exclusive),
-    /// the upper bound is omitted if end_key is empty
-    fn scan<F>(&self, start_key: &[u8], end_key: &[u8], fill_cache: bool, f: F) -> Result<()>
+    /// scan the soliton_id between start_soliton_id(inclusive) and end_soliton_id(exclusive),
+    /// the upper bound is omitted if end_soliton_id is empty
+    fn scan<F>(&self, start_soliton_id: &[u8], end_soliton_id: &[u8], fill_cache: bool, f: F) -> Result<()>
     where
         F: FnMut(&[u8], &[u8]) -> Result<bool>,
     {
-        let start = KeyBuilder::from_slice(start_key, FILE_CAUSET_PREFIX_LEN_FLUSH, 0);
+        let start = KeyBuilder::from_slice(start_soliton_id, FILE_CAUSET_PREFIX_LEN_FLUSH, 0);
         let end =
-            (!end_key.is_empty()).then(|| KeyBuilder::from_slice(end_key, FILE_CAUSET_PREFIX_LEN_FLUSH, 0));
+            (!end_soliton_id.is_empty()).then(|| KeyBuilder::from_slice(end_soliton_id, FILE_CAUSET_PREFIX_LEN_FLUSH, 0));
         let iter_opt = IterOptions::new(Some(start), end, fill_cache);
-        scan_impl(self.iterator_opt(iter_opt)?, start_key, f)
+        scan_impl(self.iterator_opt(iter_opt)?, start_soliton_id, f)
     }
 
-    // like `scan`, only on a specific column family.
+    // like `scan`, only on a specific causet_merge family.
     fn scan_namespaced<F>(
         &self,
         namespaced: &str,
-        start_key: &[u8],
-        end_key: &[u8],
+        start_soliton_id: &[u8],
+        end_soliton_id: &[u8],
         fill_cache: bool,
         f: F,
     ) -> Result<()>
     where
         F: FnMut(&[u8], &[u8]) -> Result<bool>,
     {
-        let start = KeyBuilder::from_slice(start_key, FILE_CAUSET_PREFIX_LEN_FLUSH, 0);
+        let start = KeyBuilder::from_slice(start_soliton_id, FILE_CAUSET_PREFIX_LEN_FLUSH, 0);
         let end =
-            (!end_key.is_empty()).then(|| KeyBuilder::from_slice(end_key, FILE_CAUSET_PREFIX_LEN_FLUSH, 0));
+            (!end_soliton_id.is_empty()).then(|| KeyBuilder::from_slice(end_soliton_id, FILE_CAUSET_PREFIX_LEN_FLUSH, 0));
         let iter_opt = IterOptions::new(Some(start), end, fill_cache);
-        scan_impl(self.iterator_namespaced_opt(namespaced, iter_opt)?, start_key, f)
+        scan_impl(self.iterator_namespaced_opt(namespaced, iter_opt)?, start_soliton_id, f)
     }
 
-    // Seek the first key >= given key, if not found, return None.
-    fn seek(&self, key: &[u8]) -> Result<Option<(Vec<u8>, Vec<u8>)>> {
+    // Seek the first soliton_id >= given soliton_id, if not found, return None.
+    fn seek(&self, soliton_id: &[u8]) -> Result<Option<(Vec<u8>, Vec<u8>)>> {
         let mut iter = self.iterator()?;
-        if iter.seek(SeekKey::Key(key))? {
-            let (k, v) = (iter.key().to_vec(), iter.value().to_vec());
+        if iter.seek(SeekKey::Key(soliton_id))? {
+            let (k, v) = (iter.soliton_id().to_vec(), iter.causet_locale().to_vec());
             return Ok(Some((k, v)));
         }
         Ok(None)
     }
 
-    // Seek the first key >= given key, if not found, return None.
-    fn seek_namespaced(&self, namespaced: &str, key: &[u8]) -> Result<Option<(Vec<u8>, Vec<u8>)>> {
+    // Seek the first soliton_id >= given soliton_id, if not found, return None.
+    fn seek_namespaced(&self, namespaced: &str, soliton_id: &[u8]) -> Result<Option<(Vec<u8>, Vec<u8>)>> {
         let mut iter = self.iterator_namespaced(namespaced)?;
-        if iter.seek(SeekKey::Key(key))? {
-            return Ok(Some((iter.key().to_vec(), iter.value().to_vec())));
+        if iter.seek(SeekKey::Key(soliton_id))? {
+            return Ok(Some((iter.soliton_id().to_vec(), iter.causet_locale().to_vec())));
         }
         Ok(None)
     }
 }
 
-fn scan_impl<Iter, F>(mut it: Iter, start_key: &[u8], mut f: F) -> Result<()>
+fn scan_impl<Iter, F>(mut it: Iter, start_soliton_id: &[u8], mut f: F) -> Result<()>
 where
     Iter: Iterator,
     F: FnMut(&[u8], &[u8]) -> Result<bool>,
 {
-    let mut remained = it.seek(SeekKey::Key(start_key))?;
+    let mut remained = it.seek(SeekKey::Key(start_soliton_id))?;
     while remained {
-        remained = f(it.key(), it.value())? && it.next()?;
+        remained = f(it.soliton_id(), it.causet_locale())? && it.next()?;
     }
     Ok(())
 }
@@ -220,7 +220,7 @@ pub fn collect<I: Iterator>(mut it: I) -> Vec<(Vec<u8>, Vec<u8>)> {
     let mut v = Vec::new();
     let mut it_valid = it.valid().unwrap();
     while it_valid {
-        let kv = (it.key().to_vec(), it.value().to_vec());
+        let kv = (it.soliton_id().to_vec(), it.causet_locale().to_vec());
         v.push(kv);
         it_valid = it.next().unwrap();
     }

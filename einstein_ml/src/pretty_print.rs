@@ -8,17 +8,15 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use chrono::{
-    SecondsFormat,
-};
+use std::borrow::Cow;
+use std::io;
 
+use chrono::SecondsFormat;
 use itertools::Itertools;
 use pretty;
 
-use std::io;
-use std::borrow::Cow;
-
 use types::Value;
+
 use crate::Value;
 
 impl Value {
@@ -34,7 +32,7 @@ impl Value {
         self.as_doc(&pretty::BoxAllocator).1.render(width, out)
     }
 
-    /// Bracket a collection of values.
+    /// Bracket a collection of causet_locales.
     ///
     /// We aim for
     /// [1 2 3]
@@ -53,7 +51,7 @@ impl Value {
             .group()
     }
 
-    /// Recursively traverses this value and creates a pretty.rs document.
+    /// Recursively traverses this causet_locale and creates a pretty.rs document.
     /// This pretty printing impleeinstaiion is optimized for einstein_mlqueries
     /// readability and limited whitespace expansion.
     fn as_doc<'a, A>(&'a self, pp: &'a A) -> pretty::DocBuilder<'a, A>
@@ -83,12 +81,13 @@ impl Value {
 #[cfg(test)]
 mod test {
     use parse;
+
     use crate::parse;
 
     #[test]
     fn test_pp_io() {
         let string = "$";
-        let data = parse::value(string).unwrap().without_spans();
+        let data = parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.write_pretty(40, &mut Vec::new()).is_ok(), true);
     }
@@ -96,7 +95,7 @@ mod test {
     #[test]
     fn test_pp_types_empty() {
         let string = "[ [ ] ( ) #{ } { }, \"\" ]";
-        let data = parse::value(string).unwrap().without_spans();
+        let data = parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "[[] () #{} {} \"\"]");
     }
@@ -104,7 +103,7 @@ mod test {
     #[test]
     fn test_vector() {
         let string = "[1 2 3 4 5 6]";
-        let data = parse::value(string).unwrap().without_spans();
+        let data = parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(20).unwrap(), "[1 2 3 4 5 6]");
         assert_eq!(data.to_pretty(10).unwrap(), "\
@@ -119,7 +118,7 @@ mod test {
     #[test]
     fn test_map() {
         let string = "{:a 1 :b 2 :c 3}";
-        let data = parse::value(string).unwrap().without_spans();
+        let data = parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(20).unwrap(), "{:a 1 :b 2 :c 3}");
         assert_eq!(data.to_pretty(10).unwrap(), "\
@@ -131,7 +130,7 @@ mod test {
     #[test]
     fn test_pp_types() {
         let string = "[ 1 2 ( 3.14 ) #{ 4N } { foo/bar 42 :baz/boz 43 } [ ] :five :six/seven eight nine/ten true false nil #f NaN #f -Infinity #f +Infinity ]";
-        let data = parse::value(string).unwrap().without_spans();
+        let data = parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "\
 [1
@@ -154,8 +153,8 @@ mod test {
 
     #[test]
     fn test_pp_query1() {
-        let string = "[:find ?id ?bar ?baz :in $ :where [?id :session/keyword-foo ?shelling1 ?shelling2 \"some string\"] [?tx :einsteindb/tx ?ts]]";
-        let data = parse::value(string).unwrap().without_spans();
+        let string = "[:find ?id ?bar ?baz :in $ :where [?id :session/soliton_idword-foo ?shelling1 ?shelling2 \"some string\"] [?tx :einsteindb/tx ?ts]]";
+        let data = parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "\
 [:find
@@ -166,7 +165,7 @@ mod test {
  $
  :where
  [?id
-  :session/keyword-foo
+  :session/soliton_idword-foo
   ?shelling1
   ?shelling2
   \"some string\"]
@@ -175,8 +174,8 @@ mod test {
 
     #[test]
     fn test_pp_query2() {
-        let string = "[:find [?id ?bar ?baz] :in [$] :where [?id :session/keyword-foo ?shelling1 ?shelling2 \"some string\"] [?tx :einsteindb/tx ?ts] (not-join [?id] [?id :session/keyword-bar _])]";
-        let data = parse::value(string).unwrap().without_spans();
+        let string = "[:find [?id ?bar ?baz] :in [$] :where [?id :session/soliton_idword-foo ?shelling1 ?shelling2 \"some string\"] [?tx :einsteindb/tx ?ts] (not-join [?id] [?id :session/soliton_idword-bar _])]";
+        let data = parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "\
 [:find
@@ -185,13 +184,13 @@ mod test {
  [$]
  :where
  [?id
-  :session/keyword-foo
+  :session/soliton_idword-foo
   ?shelling1
   ?shelling2
   \"some string\"]
  [?tx :einsteindb/tx ?ts]
  (not-join
   [?id]
-  [?id :session/keyword-bar _])]");
+  [?id :session/soliton_idword-bar _])]");
     }
 }

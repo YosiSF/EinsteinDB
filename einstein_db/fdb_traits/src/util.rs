@@ -2,22 +2,22 @@
 
 use super::{Error, Result};
 
-/// Check if key in range [`start_key`, `end_key`).
+/// Check if soliton_id in range [`start_soliton_id`, `end_soliton_id`).
 #[allow(dead_code)]
-pub fn check_key_in_range(
-    key: &[u8],
+pub fn check_soliton_id_in_range(
+    soliton_id: &[u8],
     region_id: u64,
-    start_key: &[u8],
-    end_key: &[u8],
+    start_soliton_id: &[u8],
+    end_soliton_id: &[u8],
 ) -> Result<()> {
-    if key >= start_key && (end_key.is_empty() || key < end_key) {
+    if soliton_id >= start_soliton_id && (end_soliton_id.is_empty() || soliton_id < end_soliton_id) {
         Ok(())
     } else {
         Err(Error::NotInRange {
-            key: key.to_vec(),
+            soliton_id: soliton_id.to_vec(),
             region_id,
-            start: start_key.to_vec(),
-            end: end_key.to_vec(),
+            start: start_soliton_id.to_vec(),
+            end: end_soliton_id.to_vec(),
         })
     }
 }

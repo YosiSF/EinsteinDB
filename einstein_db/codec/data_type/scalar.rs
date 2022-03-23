@@ -8,24 +8,24 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use einsteindbpb::FieldType;
+use match_template::match_template;
 use std::cmp::Ordering;
 
-use crate::codec::collation::{match_template_collator, Collator};
 use crate::{Collation, EvalType, FieldTypeAccessor};
-use match_template::match_template;
-use einsteindbpb::FieldType;
+use crate::codec::collation::{Collator, match_template_collator};
 
 use super::*;
 
-/// A scalar value container, a.k.a. datum, for all concrete eval types.
+/// A scalar causet_locale container, a.k.a. datum, for all concrete eval types.
 ///
 /// In many cases, for example, at the framework level, the concrete eval type is unknown at compile
 /// time. So we use this enum container to represent types dynamically. It is similar to trait
 /// object `Box<T>` where `T` is a concrete eval type but faster.
 ///
-/// Like `VectorValue`, the inner concrete value is immutable.
+/// Like `VectorValue`, the inner concrete causet_locale is immutable.
 ///
-/// Compared to `VectorValue`, it only contains a single concrete value.
+/// Compared to `VectorValue`, it only contains a single concrete causet_locale.
 /// Compared to `Datum`, it is a newer encapsulation that naturally wraps `Option<..>`.
 ///
 /// TODO: Once we removed the `Option<..>` wrapper, it will be much like `Datum`. At that time,
@@ -52,7 +52,7 @@ impl ScalarValue {
     }
 
     #[inline]
-    pub fn as_scalar_value_ref(&self) -> ScalarValueRef<'_> {
+    pub fn as_scalar_causet_locale_ref(&self) -> ScalarValueRef<'_> {
         match self {
             ScalarValue::Int(x) => ScalarValueRef::Int(x.as_ref()),
             ScalarValue::Duration(x) => ScalarValueRef::Duration(x.as_ref()),
@@ -116,7 +116,7 @@ macro_rules! impl_from {
                 match s {
                     ScalarValue::$ty(v) => v,
                     _ => panic!(
-                        "Cannot cast {} scalar value into {}",
+                        "Cannot cast {} scalar causet_locale into {}",
                         s.eval_type(),
                         stringify!($ty),
                     ),
@@ -167,12 +167,12 @@ impl From<ScalarValue> for Option<f64> {
     fn from(s: ScalarValue) -> Option<f64> {
         match s {
             ScalarValue::Real(v) => v.map(|v| v.into_inner()),
-            _ => panic!("Cannot cast {} scalar value into f64", s.eval_type()),
+            _ => panic!("Cannot cast {} scalar causet_locale into f64", s.eval_type()),
         }
     }
 }
 
-/// A scalar value reference container. Can be created from `ScalarValue` or `VectorValue`.
+/// A scalar causet_locale reference container. Can be created from `ScalarValue` or `VectorValue`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScalarValueRef<'a> {
     Int(Option<&'a super::Int>),
@@ -300,7 +300,7 @@ impl<'a> ScalarValueRef<'a> {
         }
     }
 
-    pub fn encode_sort_key(
+    pub fn encode_sort_soliton_id(
         &self,
         field_type: &FieldType,
         ctx: &mut EvalContext,
@@ -315,12 +315,12 @@ impl<'a> ScalarValueRef<'a> {
                         output.write_evaluable_datum_null()?;
                     }
                     Some(val) => {
-                        let sort_key = match_template_collator! {
+                        let sort_soliton_id = match_template_collator! {
                             TT, match field_type.collation().map_err(crate::codec::Error::from)? {
-                                Collation::TT => TT::sort_key(val)?
+                                Collation::TT => TT::sort_soliton_id(val)?
                             }
                         };
-                        output.write_evaluable_datum_bytes(&sort_key)?;
+                        output.write_evaluable_datum_bytes(&sort_soliton_id)?;
                     }
                 }
                 Ok(())
@@ -330,7 +330,7 @@ impl<'a> ScalarValueRef<'a> {
     }
 
     #[inline]
-    pub fn cmp_sort_key(
+    pub fn cmp_sort_soliton_id(
         &self,
         other: &ScalarValueRef,
         field_type: &FieldType,
@@ -338,15 +338,15 @@ impl<'a> ScalarValueRef<'a> {
         Ok(match_template! {
             TT = [Real, Decimal, DateTime, Duration, Json],
             match (self, other) {
-                (ScalarValueRef::TT(v1), ScalarValueRef::TT(v2)) => v1.cmp(v2),
-                (ScalarValueRef::Int(v1), ScalarValueRef::Int(v2)) => compare_int(&v1.cloned(), &v2.cloned(), &field_type),
+                (ScalarValueRef::TT(v1), ScalarValueRef::TT(causet_record)) => v1.cmp(causet_record),
+                (ScalarValueRef::Int(v1), ScalarValueRef::Int(causet_record)) => compare_int(&v1.cloned(), &causet_record.cloned(), &field_type),
                 (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => Ordering::Equal,
                 (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => Ordering::Greater,
                 (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => Ordering::Less,
-                (ScalarValueRef::Bytes(Some(v1)), ScalarValueRef::Bytes(Some(v2))) => {
+                (ScalarValueRef::Bytes(Some(v1)), ScalarValueRef::Bytes(Some(causet_record))) => {
                     match_template_collator! {
                         TT, match field_type.collation()? {
-                            Collation::TT => TT::sort_compare(v1, v2)?
+                            Collation::TT => TT::sort_compare(v1, causet_record)?
                         }
                     }
                 }
@@ -377,7 +377,7 @@ macro_rules! impl_as_ref {
                 match self {
                     ScalarValue::$ty(v) => v.as_ref(),
                     other => panic!(
-                        "Cannot cast {} scalar value into {}",
+                        "Cannot cast {} scalar causet_locale into {}",
                         other.eval_type(),
                         stringify!($ty),
                     ),
@@ -391,7 +391,7 @@ macro_rules! impl_as_ref {
                 match self {
                     ScalarValueRef::$ty(v) => v.clone(),
                     other => panic!(
-                        "Cannot cast {} scalar value into {}",
+                        "Cannot cast {} scalar causet_locale into {}",
                         other.eval_type(),
                         stringify!($ty),
                     ),
@@ -413,7 +413,7 @@ impl ScalarValue {
         match self {
             ScalarValue::Json(v) => v.as_ref().map(|x| x.as_ref()),
             other => panic!(
-                "Cannot cast {} scalar value into {}",
+                "Cannot cast {} scalar causet_locale into {}",
                 other.eval_type(),
                 stringify!(Json),
             ),
@@ -427,7 +427,7 @@ impl<'a> ScalarValueRef<'a> {
         match self {
             ScalarValueRef::Json(v) => *v,
             other => panic!(
-                "Cannot cast {} scalar value into {}",
+                "Cannot cast {} scalar causet_locale into {}",
                 other.eval_type(),
                 stringify!(Json),
             ),
@@ -441,7 +441,7 @@ impl ScalarValue {
         match self {
             ScalarValue::Bytes(v) => v.as_ref().map(|x| x.as_slice()),
             other => panic!(
-                "Cannot cast {} scalar value into {}",
+                "Cannot cast {} scalar causet_locale into {}",
                 other.eval_type(),
                 stringify!(Bytes),
             ),
@@ -455,7 +455,7 @@ impl<'a> ScalarValueRef<'a> {
         match self {
             ScalarValueRef::Bytes(v) => *v,
             other => panic!(
-                "Cannot cast {} scalar value into {}",
+                "Cannot cast {} scalar causet_locale into {}",
                 other.eval_type(),
                 stringify!(Bytes),
             ),
@@ -474,9 +474,9 @@ impl<'a> PartialOrd for ScalarValueRef<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match_template_evaluable! {
             TT, match (self, other) {
-                // v1 and v2 are `Option<T>`. However, in MyBerolinaSQL NULL values are considered lower
-                // than any non-NULL value, so using `Option::PartialOrd` directly is fine.
-                (ScalarValueRef::TT(v1), ScalarValueRef::TT(v2)) => Some(v1.cmp(v2)),
+                // v1 and causet_record are `Option<T>`. However, in MyBerolinaSQL NULL causet_locales are considered lower
+                // than any non-NULL causet_locale, so using `Option::PartialOrd` directly is fine.
+                (ScalarValueRef::TT(v1), ScalarValueRef::TT(causet_record)) => Some(v1.cmp(causet_record)),
                 _ => None,
             }
         }
@@ -485,7 +485,7 @@ impl<'a> PartialOrd for ScalarValueRef<'a> {
 
 impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'a> {
     fn eq(&self, other: &ScalarValue) -> bool {
-        self == &other.as_scalar_value_ref()
+        self == &other.as_scalar_causet_locale_ref()
     }
 }
 

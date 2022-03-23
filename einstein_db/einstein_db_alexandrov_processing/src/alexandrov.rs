@@ -2,16 +2,17 @@
 
 
 
+use crossbeam::channel::{self, SendError};
+use EinsteinDB_util::mpsc;
+use EinsteinDB_util::time::Instant;
+use std::borrow::Cow;
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
+
 use crate::config::Config;
 use crate::fsm::{Fsm, FsmScheduler};
 use crate::mailbox::BasicMailbox;
 use crate::router::Router;
-use crossbeam::channel::{self, SendError};
-use std::borrow::Cow;
-use std::thread::{self, JoinHandle};
-use std::time::Duration;
-use EinsteinDB_util::mpsc;
-use EinsteinDB_util::time::Instant;
 
 /// A unify type for FSMs so that they can be sent to channel easily.
 enum FsmTypes<N, C> {
@@ -202,16 +203,16 @@ pub trait PollHandler<N, C> {
 
     /// This function is called when handling readiness for control FSM.
     ///
-    /// If returned value is Some, then it represents a length of channel. This
+    /// If returned causet_locale is Some, then it represents a length of channel. This
     /// function will only be called for the same fsm after channel's lengh is
-    /// larger than the value. If it returns None, then this function will
+    /// larger than the causet_locale. If it returns None, then this function will
     /// still be called for the same FSM in the next loop unless the FSM is
     /// stopped.
     fn handle_control(&mut self, control: &mut C) -> Option<usize>;
 
     /// This function is called when handling readiness for normal FSM.
     ///
-    /// The returned value is handled in the same way as `handle_control`.
+    /// The returned causet_locale is handled in the same way as `handle_control`.
     fn handle_normal(&mut self, normal: &mut N) -> Option<usize>;
 
     /// This function is called at the end of every round.
@@ -262,7 +263,7 @@ impl<N: Fsm, C: Fsm, Handler: PollHandler<N, C>> Poller<N, C, Handler> {
 
         // Fetch alexandro after every round is finished. It's helpful to protect regions
         // from becoming hungry if some regions are hot points. Since we fetch new fsm every time
-        // calling `poll`, we do not need to configure a large value for `self.max_alexandro_size`.
+        // calling `poll`, we do not need to configure a large causet_locale for `self.max_alexandro_size`.
         let mut run = true;
         while run && self.fetch_fsm(&mut alexandro) {
             // If there is some region wait to be deal, we must deal with it even if it has overhead

@@ -1,5 +1,5 @@
 [package]
-name = "einsteindb_util_fuse"
+name = "fdb_traits"
 version = "0.0.1"
 edition = "2018"
 publish = false
@@ -8,7 +8,6 @@ publish = false
 failpoints = ["fail/failpoints"]
 
 [dependencies]
-
 file = { local_path = "../file", default-features = false }
 protobuf = "2"
 thiserror = "1.0"

@@ -1,10 +1,10 @@
+use std::{str, u64};
 use std::borrow::ToOwned;
 use std::lazy::SyncLazy;
 use std::string::ToString;
-use std::{str, u64};
 use structopt::StructOpt;
 
-const BI_KEY_HINT: &str = "Bimap keys(generally starts with \"einst\") in delimiter";
+const BI_KEY_HINT: &str = "Bimap soliton_ids(generally starts with \"einst\") in delimiter";
 static VERSION_INFO: SyncLazy<String> = SyncLazy::new(|| {
     let build_timestamp = option_env!("EINSTEINDB_BUILD_TIME");
     einstein_db::einstein_db_version_info(build_timestamp)
@@ -24,7 +24,7 @@ pub struct Opt {
     /// Set the address of pd
     pub fidel: Option<String>,
 
-    #[structopt(long, default_value = "warn")]
+    #[structopt(long, default_causet_locale = "warn")]
     /// Set the log level
     pub log_level: String,
 
@@ -41,8 +41,8 @@ pub struct Opt {
     pub cert_path: Option<String>,
 
     #[structopt(long)]
-    /// Set the private key path
-    pub key_path: Option<String>,
+    /// Set the private soliton_id path
+    pub soliton_id_path: Option<String>,
 
     #[structopt(long)]
     /// TiKV config path, by default it's <deploy-dir>/conf/tikv.toml
@@ -73,25 +73,25 @@ pub struct Opt {
     pub violetabftdb: Option<String>,
 
     #[structopt(conflicts_with = "escaped-to-hex", long = "to-escaped")]
-    /// Convert a hex key to escaped key
+    /// Convert a hex soliton_id to escaped soliton_id
     pub hex_to_escaped: Option<String>,
 
     #[structopt(conflicts_with = "hex-to-escaped", long = "to-hex")]
-    /// Convert an escaped key to hex key
+    /// Convert an escaped soliton_id to hex soliton_id
     pub escaped_to_hex: Option<String>,
 
     #[structopt(
     conflicts_with_all = &["hex-to-escaped", "escaped-to-hex"],
     long,
     )]
-    /// Decode a key in escaped format
+    /// Decode a soliton_id in escaped format
     pub decode: Option<String>,
 
     #[structopt(
     conflicts_with_all = &["hex-to-escaped", "escaped-to-hex"],
     long,
     )]
-    /// Encode a key in escaped format
+    /// Encode a soliton_id in escaped format
     pub encode: Option<String>,
 
     #[structopt(subcommand)]
@@ -115,8 +115,8 @@ pub enum Cmd {
         short = "c",
         use_delimiter = true,
         require_delimiter = true,
-        value_delimiter = ",",
-        default_value = "default,write,lock"
+        causet_locale_delimiter = ",",
+        default_causet_locale = "default,write,lock"
         )]
         /// Set the cf name, if not specified, print all cf
         cf: Vec<String>,
@@ -153,10 +153,10 @@ pub enum Cmd {
         long,
         use_delimiter = true,
         require_delimiter = true,
-        value_delimiter = ",",
-        default_value = CF_DEFAULT,
+        causet_locale_delimiter = ",",
+        default_causet_locale = CF_DEFAULT,
         )]
         /// Column family names, combined from default/lock/write
         show_cf: Vec<String>,
     },
-/// Print all raw keys in the range
+/// Print all raw soliton_ids in the range

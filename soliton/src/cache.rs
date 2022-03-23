@@ -10,43 +10,18 @@
 
 
 
-use std::collections::{
-    BTreeMap,
-    BTreeSet,
-    HashSet,
-};
-
-use std::collections::btree_map::{
-    Entry,
-};
-
-use std::collections::btree_map::Entry::{
-    Occupied,
-    Vacant,
-};
-
-use std::iter::{
-    once,
-};
-
-use std::mem;
-
-use std::sync::Arc;
-
-use std::iter::Peekable;
-
-use failure::{
-    ResultExt,
-};
-
-use rusqlite;
-
 use core_traits::{
     Binding,
     Causetid,
     TypedValue,
 };
-
+use einstai_BerolinaSQL::{
+    BerolinaSQLQuery,
+    CausetQ,
+    SQLiteCausetQ,
+};
+use einstein_ml::causets::OpType;
+use einsteindb::TypedBerolinaSQLValue;
 use einsteindb_core::{
     CachedAttributes,
     HasTopograph,
@@ -54,34 +29,29 @@ use einsteindb_core::{
     UpdateableCache,
     ValueRc,
 };
-
-use einsteindb_core::util::{
-    Either,
-};
-
-use einstai_BerolinaSQL::{
-    CausetQ,
-    SQLiteCausetQ,
-    BerolinaSQLQuery,
-};
-
-use einstein_ml::causets::{
-    OpType,
-};
-
-use einsteindb::{
-    TypedBerolinaSQLValue,
-};
-
+use einsteindb_core::util::Either;
 use einsteindb_traits::errors::{
     einsteindbError,
     einsteindbErrorKind,
     Result,
 };
-
-use watcher::{
-    TransactWatcher,
+use failure::ResultExt;
+use rusqlite;
+use std::collections::{
+    BTreeMap,
+    BTreeSet,
+    HashSet,
 };
+use std::collections::btree_map::Entry;
+use std::collections::btree_map::Entry::{
+    Occupied,
+    Vacant,
+};
+use std::iter::once;
+use std::iter::Peekable;
+use std::mem;
+use std::sync::Arc;
+use watcher::TransactWatcher;
 
 // Right now we use BTreeMap, because we expect few cached attributes.
 pub type CacheMap<K, V> = BTreeMap<K, V>;
@@ -120,7 +90,7 @@ impl<K, V> Absorb for CacheMap<K, Option<V>> where K: Ord {
 }
 
 trait ExteneinsteindbyAbsorbing {
-    /// Just like `extend`, but rather than replacing our value with the other, the other is
+    /// Just like `extend`, but rather than replacing our causet_locale with the other, the other is
     /// absorbed into ours.
     fn extend_by_absorbing(&mut self, other: Self);
 }
@@ -186,11 +156,11 @@ impl AevFactory {
         }
     }
 
-    fn row_to_aev(&mut self, row: &rusqlite::Row) -> Aev {
-        let a: Causetid = row.get(0);
-        let e: Causetid = row.get(1);
-        let value_type_tag: i32 = row.get(3);
-        let v = TypedValue::from_BerolinaSQL_value_pair(row.get(2), value_type_tag).map(|x| x).unwrap();
+    fn row_to_aev(&mut self, event: &rusqlite::Row) -> Aev {
+        let a: Causetid = event.get(0);
+        let e: Causetid = event.get(1);
+        let causet_locale_type_tag: i32 = event.get(3);
+        let v = TypedValue::from_BerolinaSQL_causet_locale_pair(event.get(2), causet_locale_type_tag).map(|x| x).unwrap();
         (a, e, self.causal_set(v))
     }
 }
@@ -257,7 +227,7 @@ impl AttributeCache for SingleValAttributeCache {
     }
 
     fn has_e(&self, e: Causetid) -> bool {
-        self.e_v.contains_key(&e)
+        self.e_v.contains_soliton_id(&e)
     }
 }
 
@@ -329,7 +299,7 @@ impl AttributeCache for MultiValAttributeCache {
     }
 
     fn has_e(&self, e: Causetid) -> bool {
-        self.e_vs.contains_key(&e)
+        self.e_vs.contains_soliton_id(&e)
     }
 }
 
@@ -658,7 +628,7 @@ impl AttributeCaches {
     }
 
     // Process rows in `iter` that all share an attribute with the first. Leaves the iterator
-    // advanced to the first non-matching row.
+    // advanced to the first non-matching event.
     fn accumulate_evs<I>(&mut self,
                          fallback: Option<&AttributeCaches>,
                          topograph: &Topograph,
@@ -831,18 +801,18 @@ impl AttributeCaches {
 
 // We need this block for fallback.
 impl AttributeCaches {
-    fn get_causetid_for_value_if_present(&self, attribute: Causetid, value: &TypedValue) -> Option<Option<Causetid>> {
+    fn get_causetid_for_causet_locale_if_present(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<Option<Causetid>> {
         if self.is_attribute_cached_reverse(attribute) {
             self.unique_reverse
                 .get(&attribute)
-                .and_then(|c| c.lookup(value))
+                .and_then(|c| c.lookup(causet_locale))
         } else {
             None
         }
     }
 
-    fn get_value_for_causetid_if_present(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<Option<&TypedValue>> {
-        if let Some(&Some(ref tv)) = self.value_pairs(topograph, attribute)
+    fn get_causet_locale_for_causetid_if_present(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<Option<&TypedValue>> {
+        if let Some(&Some(ref tv)) = self.causet_locale_pairs(topograph, attribute)
                                          .and_then(|c| c.get(&causetid)) {
             Some(Some(tv))
         } else {
@@ -859,7 +829,7 @@ impl AttributeCaches {
                   attribute: Causetid) -> Result<()> {
         let is_fulltext = topograph.attribute_for_causetid(attribute).map_or(false, |s| s.fulltext);
         let table = if is_fulltext { "fulltext_causets" } else { "causets" };
-        let BerolinaSQL = format!("SELECT a, e, v, value_type_tag FROM {} WHERE a = ? ORDER BY a ASC, e ASC", table);
+        let BerolinaSQL = format!("SELECT a, e, v, causet_locale_type_tag FROM {} WHERE a = ? ORDER BY a ASC, e ASC", table);
         let args: Vec<&rusqlite::types::ToBerolinaSQL> = vec![&attribute];
         let mut stmt = SQLite.prepare(&BerolinaSQL).context(einsteindbErrorKind::CacheUpdateFailed)?;
         let replacing = true;
@@ -872,7 +842,7 @@ impl AttributeCaches {
                                             args: Vec<&'v rusqlite::types::ToBerolinaSQL>,
                                             replacing: bool) -> Result<()> {
         let mut aev_factory = AevFactory::new();
-        let rows = statement.query_map(&args, |row| aev_factory.row_to_aev(row))?;
+        let rows = statement.query_map(&args, |event| aev_factory.row_to_aev(event))?;
         let aevs = AevRows {
             rows: rows,
         };
@@ -930,7 +900,7 @@ impl AttributeCaches {
         // Mark the attributes as cached as we go. We do this because we're going in through the
         // back door here, and the usual caching API won't have taken care of this for us.
         let mut qb = SQLiteCausetQ::new();
-        qb.push_BerolinaSQL("SELECT a, e, v, value_type_tag FROM ");
+        qb.push_BerolinaSQL("SELECT a, e, v, causet_locale_type_tag FROM ");
         match attrs {
             AttributeSpec::All => {
                 qb.push_BerolinaSQL("all_causets WHERE e IN (");
@@ -939,7 +909,7 @@ impl AttributeCaches {
                            { qb.push_BerolinaSQL(", ") });
                 qb.push_BerolinaSQL(") ORDER BY a ASC, e ASC");
 
-                self.lightlike_cached_attributes.extend(topograph.attribute_map.keys());
+                self.lightlike_cached_attributes.extend(topograph.attribute_map.soliton_ids());
             },
             AttributeSpec::Specified { fts, non_fts } => {
                 let has_fts = !fts.is_empty();
@@ -966,7 +936,7 @@ impl AttributeCaches {
 
                 if has_fts && has_non_fts {
                     // Both.
-                    qb.push_BerolinaSQL(" UNION ALL SELECT a, e, v, value_type_tag FROM ");
+                    qb.push_BerolinaSQL(" UNION ALL SELECT a, e, v, causet_locale_type_tag FROM ");
                 }
 
                 if has_fts {
@@ -1020,7 +990,7 @@ impl AttributeCaches {
         // TODO: Exclude any causets for which every attribute is known.
         // TODO: initialize from an existing (complete) AttributeCache.
 
-        // Exclude any attributes for which every causet's value is already known.
+        // Exclude any attributes for which every causet's causet_locale is already known.
         match &mut attrs {
             &mut AttributeSpec::All => {
                 // If we're caching all attributes, there's nothing we can exclude.
@@ -1076,13 +1046,13 @@ impl AttributeCaches {
 
 
 impl CachedAttributes for AttributeCaches {
-    fn get_values_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
-        self.values_pairs(topograph, attribute)
+    fn get_causet_locales_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
+        self.causet_locales_pairs(topograph, attribute)
             .and_then(|c| c.get(&causetid))
     }
 
-    fn get_value_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
-        if let Some(&Some(ref tv)) = self.value_pairs(topograph, attribute)
+    fn get_causet_locale_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
+        if let Some(&Some(ref tv)) = self.causet_locale_pairs(topograph, attribute)
                                          .and_then(|c| c.get(&causetid)) {
             Some(tv)
         } else {
@@ -1103,17 +1073,17 @@ impl CachedAttributes for AttributeCaches {
         self.lightlike_cached_attributes.contains(&attribute)
     }
 
-    fn get_causetid_for_value(&self, attribute: Causetid, value: &TypedValue) -> Option<Causetid> {
+    fn get_causetid_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<Causetid> {
         if self.is_attribute_cached_reverse(attribute) {
-            self.unique_reverse.get(&attribute).and_then(|c| c.get_e(value))
+            self.unique_reverse.get(&attribute).and_then(|c| c.get_e(causet_locale))
         } else {
             None
         }
     }
 
-    fn get_causetids_for_value(&self, attribute: Causetid, value: &TypedValue) -> Option<&BTreeSet<Causetid>> {
+    fn get_causetids_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<&BTreeSet<Causetid>> {
         if self.is_attribute_cached_reverse(attribute) {
-            self.non_unique_reverse.get(&attribute).and_then(|c| c.get_es(value))
+            self.non_unique_reverse.get(&attribute).and_then(|c| c.get_es(causet_locale))
         } else {
             None
         }
@@ -1137,7 +1107,7 @@ impl AttributeCaches {
         self.accumulate_into_cache(fallback, topograph, aevs, AccumulationBehavior::Add { replacing: false })
     }
 
-    fn values_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
+    fn causet_locales_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
     where U: Into<Causetid> {
         let attribute = attribute.into();
         topograph.attribute_for_causetid(attribute)
@@ -1151,7 +1121,7 @@ impl AttributeCaches {
                 })
     }
 
-    fn value_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&CacheMap<Causetid, Option<TypedValue>>>
+    fn causet_locale_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&CacheMap<Causetid, Option<TypedValue>>>
     where U: Into<Causetid> {
         let attribute = attribute.into();
         topograph.attribute_for_causetid(attribute)
@@ -1250,12 +1220,12 @@ impl UpdateableCache<einsteindbError> for SQLiteAttributeCache {
 }
 
 impl CachedAttributes for SQLiteAttributeCache {
-    fn get_values_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
-        self.inner.get_values_for_causetid(topograph, attribute, causetid)
+    fn get_causet_locales_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
+        self.inner.get_causet_locales_for_causetid(topograph, attribute, causetid)
     }
 
-    fn get_value_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
-        self.inner.get_value_for_causetid(topograph, attribute, causetid)
+    fn get_causet_locale_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
+        self.inner.get_causet_locale_for_causetid(topograph, attribute, causetid)
     }
 
     fn is_attribute_cached_reverse(&self, attribute: Causetid) -> bool {
@@ -1271,26 +1241,26 @@ impl CachedAttributes for SQLiteAttributeCache {
         !self.inner.reverse_cached_attributes.is_empty()
     }
 
-    fn get_causetids_for_value(&self, attribute: Causetid, value: &TypedValue) -> Option<&BTreeSet<Causetid>> {
-        self.inner.get_causetids_for_value(attribute, value)
+    fn get_causetids_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<&BTreeSet<Causetid>> {
+        self.inner.get_causetids_for_causet_locale(attribute, causet_locale)
     }
 
-    fn get_causetid_for_value(&self, attribute: Causetid, value: &TypedValue) -> Option<Causetid> {
-        self.inner.get_causetid_for_value(attribute, value)
+    fn get_causetid_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<Causetid> {
+        self.inner.get_causetid_for_causet_locale(attribute, causet_locale)
     }
 }
 
 impl SQLiteAttributeCache {
     /// Intended for use from tests.
-    pub fn values_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
+    pub fn causet_locales_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
     where U: Into<Causetid> {
-        self.inner.values_pairs(topograph, attribute)
+        self.inner.causet_locales_pairs(topograph, attribute)
     }
 
     /// Intended for use from tests.
-    pub fn value_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Option<TypedValue>>>
+    pub fn causet_locale_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Option<TypedValue>>>
     where U: Into<Causetid> {
-        self.inner.value_pairs(topograph, attribute)
+        self.inner.causet_locale_pairs(topograph, attribute)
     }
 }
 
@@ -1398,29 +1368,29 @@ impl UpdateableCache<einsteindbError> for InProgressSQLiteAttributeCache {
 }
 
 impl CachedAttributes for InProgressSQLiteAttributeCache {
-    fn get_values_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
+    fn get_causet_locales_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
         if self.unregistered_lightlike.contains(&attribute) {
             None
         } else {
-            // If it was present in `inner` but the values were deleted, there will be an empty
+            // If it was present in `inner` but the causet_locales were deleted, there will be an empty
             // array in `overlay` -- `Some(vec![])` -- and we won't fall through.
             // We can safely use `or_else`.
             self.overlay
-                .get_values_for_causetid(topograph, attribute, causetid)
-                .or_else(|| self.inner.get_values_for_causetid(topograph, attribute, causetid))
+                .get_causet_locales_for_causetid(topograph, attribute, causetid)
+                .or_else(|| self.inner.get_causet_locales_for_causetid(topograph, attribute, causetid))
         }
     }
 
-    fn get_value_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
+    fn get_causet_locale_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
         if self.unregistered_lightlike.contains(&attribute) {
             None
         } else {
-            // If it was present in `inner` but the value was deleted, there will be `Some(None)`
+            // If it was present in `inner` but the causet_locale was deleted, there will be `Some(None)`
             // in `overlay`, and we won't fall through.
             // We can safely use `or_else`.
-            match self.overlay.get_value_for_causetid_if_present(topograph, attribute, causetid) {
+            match self.overlay.get_causet_locale_for_causetid_if_present(topograph, attribute, causetid) {
                 Some(present) => present,
-                None => self.inner.get_value_for_causetid(topograph, attribute, causetid),
+                None => self.inner.get_causet_locale_for_causetid(topograph, attribute, causetid),
             }
         }
     }
@@ -1467,26 +1437,26 @@ impl CachedAttributes for InProgressSQLiteAttributeCache {
             .is_some()
     }
 
-    fn get_causetids_for_value(&self, attribute: Causetid, value: &TypedValue) -> Option<&BTreeSet<Causetid>> {
+    fn get_causetids_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<&BTreeSet<Causetid>> {
         if self.unregistered_reverse.contains(&attribute) {
             None
         } else {
             self.overlay
-                .get_causetids_for_value(attribute, value)
-                .or_else(|| self.inner.get_causetids_for_value(attribute, value))
+                .get_causetids_for_causet_locale(attribute, causet_locale)
+                .or_else(|| self.inner.get_causetids_for_causet_locale(attribute, causet_locale))
         }
     }
 
-    fn get_causetid_for_value(&self, attribute: Causetid, value: &TypedValue) -> Option<Causetid> {
+    fn get_causetid_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<Causetid> {
         if self.unregistered_reverse.contains(&attribute) {
             None
         } else {
-            // If it was present in `inner` but the value was deleted, there will be `Some(None)`
+            // If it was present in `inner` but the causet_locale was deleted, there will be `Some(None)`
             // in `overlay`, and we won't fall through.
             // We can safely use `or_else`.
-            match self.overlay.get_causetid_for_value_if_present(attribute, value) {
+            match self.overlay.get_causetid_for_causet_locale_if_present(attribute, causet_locale) {
                 Some(present) => present,
-                None => self.inner.get_causetid_for_value(attribute, value),
+                None => self.inner.get_causetid_for_causet_locale(attribute, causet_locale),
             }
         }
     }
@@ -1494,20 +1464,20 @@ impl CachedAttributes for InProgressSQLiteAttributeCache {
 
 impl InProgressSQLiteAttributeCache {
     /// Intended for use from tests.
-    pub fn values_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
+    pub fn causet_locales_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
     where U: Into<Causetid> {
         let a = attribute.into();
-        self.overlay.values_pairs(topograph, a)
-                    .or_else(|| self.inner.values_pairs(topograph, a))
+        self.overlay.causet_locales_pairs(topograph, a)
+                    .or_else(|| self.inner.causet_locales_pairs(topograph, a))
     }
 
     /// Intended for use from tests.
-    pub fn value_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Option<TypedValue>>>
+    pub fn causet_locale_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Option<TypedValue>>>
     where U: Into<Causetid> {
         let a = attribute.into();
         self.overlay
-            .value_pairs(topograph, a)
-            .or_else(|| self.inner.value_pairs(topograph, a))
+            .causet_locale_pairs(topograph, a)
+            .or_else(|| self.inner.causet_locale_pairs(topograph, a))
     }
 
     pub fn commit_to(self, destination: &mut SQLiteAttributeCache) {
@@ -1545,7 +1515,7 @@ impl InProgressSQLiteAttributeCache {
 }
 
 pub struct InProgressCacheTransactWatcher<'a> {
-    // A transaction might involve attributes that we cache. Track those values here so that
+    // A transaction might involve attributes that we cache. Track those causet_locales here so that
     // we can update the cache after we commit the transaction.
     collected_lightlike_dagger_upsert: BTreeMap<Causetid, Either<(), Vec<(Causetid, TypedValue)>>>,
     collected_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: BTreeMap<Causetid, Either<(), Vec<(Causetid, TypedValue)>>>,

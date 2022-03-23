@@ -45,67 +45,35 @@
 //! names -- `TermWithTempIdsAndLookupRefs`, anyone? -- and strongly typed stage functions will help
 //! keep everything straight.
 
-use std::borrow::{
-    Cow,
-};
-use std::collections::{
-    BTreeMap,
-    BTreeSet,
-    VecDeque,
-};
-use std::iter::{
-    once,
-};
-
-use einsteindb;
-use einsteindb::{
-    einstaiStoring,
-};
-use einstein_ml::{
-    InternSet,
-    Keyword,
-};
-use causetids;
-use einsteindb_traits::errors as errors;
-use einsteindb_traits::errors::{
-    einsteindbErrorKind,
-    Result,
-};
 use causal_setal_types::{
     AddAndRetract,
     AEVTrie,
     KnownCausetidOr,
     LookupRef,
     LookupRefOrTempId,
+    replace_lookup_ref,
     TempIdHandle,
     TempIdMap,
     Term,
+    TermWithoutTempIds,
     TermWithTempIds,
     TermWithTempIdsAndLookupRefs,
-    TermWithoutTempIds,
     TypedValueOr,
-    replace_lookup_ref,
 };
-
-use einsteindb_core::util::Either;
-
+use causetids;
 use core_traits::{
     attribute,
     Attribute,
     Causetid,
     KnownCausetid,
+    now,
     TypedValue,
     ValueType,
-    now,
 };
-
-use einsteindb_core::{
-    DateTime,
-    Topograph,
-    TxReport,
-    Utc,
+use einstein_ml::{
+    InternSet,
+    Keyword,
 };
-
 use einstein_ml::causets as entmod;
 use einstein_ml::causets::{
     AttributePlace,
@@ -113,11 +81,30 @@ use einstein_ml::causets::{
     OpType,
     TempId,
 };
-use spacetime;
-use rusqlite;
-use topograph::{
-    TopographBuilding,
+use einsteindb;
+use einsteindb::einstaiStoring;
+use einsteindb_core::{
+    DateTime,
+    Topograph,
+    TxReport,
+    Utc,
 };
+use einsteindb_core::util::Either;
+use einsteindb_traits::errors as errors;
+use einsteindb_traits::errors::{
+    einsteindbErrorKind,
+    Result,
+};
+use rusqlite;
+use spacetime;
+use std::borrow::Cow;
+use std::collections::{
+    BTreeMap,
+    BTreeSet,
+    VecDeque,
+};
+use std::iter::once;
+use topograph::TopographBuilding;
 use tx_checking;
 use types::{
     AVMap,
@@ -129,9 +116,7 @@ use upsert_resolution::{
     FinalPopulations,
     Generation,
 };
-use watcher::{
-    TransactWatcher,
-};
+use watcher::TransactWatcher;
 
 /// Defines transactor's high level behaviour.
 pub(crate) enum TransactorAction {
@@ -177,13 +162,13 @@ pub struct Tx<'conn, 'a, W> where W: TransactWatcher {
     tx_id: Causetid,
 }
 
-/// Remove any :einsteindb/id value from the given map notation, converting the returned value into
-/// something suitable for the causet position rather than something suitable for a value position.
+/// Remove any :einsteindb/id causet_locale from the given map notation, converting the returned causet_locale into
+/// something suitable for the causet position rather than something suitable for a causet_locale position.
 pub fn remove_einsteindb_id<V: TransactableValue>(map: &mut entmod::MapNotation<V>) -> Result<Option<entmod::causetPlace<V>>> {
     // TODO: extract lazy defined constant.
-    let einsteindb_id_key = entmod::CausetidOrSolitonid::Solitonid(Keyword::isoliton_namespaceable("einsteindb", "id"));
+    let einsteindb_id_soliton_id = entmod::CausetidOrSolitonid::Solitonid(Keyword::isoliton_namespaceable("einsteindb", "id"));
 
-    let einsteindb_id: Option<entmod::causetPlace<V>> = if let Some(id) = map.remove(&einsteindb_id_key) {
+    let einsteindb_id: Option<entmod::causetPlace<V>> = if let Some(id) = map.remove(&einsteindb_id_soliton_id) {
         match id {
             entmod::ValuePlace::Causetid(e) => Some(entmod::causetPlace::Causetid(e)),
             entmod::ValuePlace::LookupRef(e) => Some(entmod::causetPlace::LookupRef(e)),
@@ -222,7 +207,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
     /// Given a collection of tempids and the [a v] pairs that they might upsert to, resolve exactly
     /// which [a v] pairs do upsert to causetids, and map each tempid that upserts to the upserted
-    /// causetid.  The keys of the resulting map are exactly those tempids that upserted.
+    /// causetid.  The soliton_ids of the resulting map are exactly those tempids that upserted.
     pub(crate) fn resolve_temp_id_avs<'b>(&self, temp_id_avs: &'b [(TempIdHandle, AVPair)]) -> Result<TempIdMap> {
         if temp_id_avs.is_empty() {
             return Ok(TempIdMap::default());
@@ -309,12 +294,12 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                 };
                 let lr_attribute: &Attribute = self.topograph.require_attribute_for_causetid(lr_a)?;
 
-                let lr_typed_value: TypedValue = lookup_ref.v.clone().into_typed_value(&self.topograph, lr_attribute.value_type)?;
+                let lr_typed_causet_locale: TypedValue = lookup_ref.v.clone().into_typed_causet_locale(&self.topograph, lr_attribute.causet_locale_type)?;
                 if lr_attribute.unique.is_none() {
-                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve (lookup-ref {} {:?}) with attribute that is not :einsteindb/unique", lr_a, lr_typed_value)))
+                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve (lookup-ref {} {:?}) with attribute that is not :einsteindb/unique", lr_a, lr_typed_causet_locale)))
                 }
 
-                Ok(self.lookup_refs.causal_set((lr_a, lr_typed_value)))
+                Ok(self.lookup_refs.causal_set((lr_a, lr_typed_causet_locale)))
             }
 
             /// Allocate private causal_setal tempids reserved for einstai.  Internal tempids just need to be
@@ -366,28 +351,28 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             fn causet_v_into_term_e<W: TransactableValue>(&mut self, x: entmod::ValuePlace<W>, spacelike_completion_a: &entmod::CausetidOrSolitonid) -> Result<KnownCausetidOr<LookupRefOrTempId>> {
                 match spacelike_completion_a.unreversed() {
                     None => {
-                        bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode map notation value in :attr/_reversed notation for lightlike attribute")));
+                        bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode map notation causet_locale in :attr/_reversed notation for lightlike attribute")));
                     },
                     Some(lightlike_a) => {
                         let lightlike_a = self.causet_a_into_term_a(lightlike_a)?;
                         let lightlike_attribute = self.topograph.require_attribute_for_causetid(lightlike_a)?;
-                        if lightlike_attribute.value_type != ValueType::Ref {
-                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", lightlike_a)))
+                        if lightlike_attribute.causet_locale_type != ValueType::Ref {
+                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} that is not :einsteindb/causet_localeType :einsteindb.type/ref", lightlike_a)))
                         }
 
                         match x {
                             entmod::ValuePlace::Atom(v) => {
                                 // Here is where we do topograph-aware typechecking: we either assert
-                                // that the given value is in the attribute's value set, or (in
-                                // limited cases) coerce the value into the attribute's value set.
+                                // that the given causet_locale is in the attribute's causet_locale set, or (in
+                                // limited cases) coerce the causet_locale into the attribute's causet_locale set.
                                 match v.as_tempid() {
                                     Some(tempid) => Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.causal_set(tempid)))),
                                     None => {
-                                        if let TypedValue::Ref(causetid) = v.into_typed_value(&self.topograph, ValueType::Ref)? {
+                                        if let TypedValue::Ref(causetid) = v.into_typed_causet_locale(&self.topograph, ValueType::Ref)? {
                                             Ok(Either::Left(KnownCausetid(causetid)))
                                         } else {
-                                            // The given value is expected to be :einsteindb.type/ref, so this shouldn't happen.
-                                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} with value that is not :einsteindb.valueType :einsteindb.type/ref", lightlike_a)))
+                                            // The given causet_locale is expected to be :einsteindb.type/ref, so this shouldn't happen.
+                                            bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot use :attr/_reversed notation for attribute {} with causet_locale that is not :einsteindb.causet_localeType :einsteindb.type/ref", lightlike_a)))
                                         }
                                     }
                                 }
@@ -410,10 +395,10 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                             },
 
                             entmod::ValuePlace::Vector(_) =>
-                                bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode vector value in :attr/_reversed notation for attribute {}", lightlike_a))),
+                                bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode vector causet_locale in :attr/_reversed notation for attribute {}", lightlike_a))),
 
                             entmod::ValuePlace::MapNotation(_) =>
-                                bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode map notation value in :attr/_reversed notation for attribute {}", lightlike_a))),
+                                bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode map notation causet_locale in :attr/_reversed notation for attribute {}", lightlike_a))),
                         }
                     },
                 }
@@ -464,15 +449,15 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                         let v = match v {
                             entmod::ValuePlace::Atom(v) => {
                                 // Here is where we do topograph-aware typechecking: we either assert
-                                // that the given value is in the attribute's value set, or (in
-                                // limited cases) coerce the value into the attribute's value set.
-                                if attribute.value_type == ValueType::Ref {
+                                // that the given causet_locale is in the attribute's causet_locale set, or (in
+                                // limited cases) coerce the causet_locale into the attribute's causet_locale set.
+                                if attribute.causet_locale_type == ValueType::Ref {
                                     match v.as_tempid() {
                                         Some(tempid) => Either::Right(LookupRefOrTempId::TempId(in_process.temp_ids.causal_set(tempid))),
-                                        None => v.into_typed_value(&self.topograph, attribute.value_type).map(Either::Left)?,
+                                        None => v.into_typed_causet_locale(&self.topograph, attribute.causet_locale_type).map(Either::Left)?,
                                     }
                                 } else {
-                                    v.into_typed_value(&self.topograph, attribute.value_type).map(Either::Left)?
+                                    v.into_typed_causet_locale(&self.topograph, attribute.causet_locale_type).map(Either::Left)?
                                 }
                             },
 
@@ -483,36 +468,36 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 Either::Right(LookupRefOrTempId::TempId(in_process.temp_ids.causal_set(tempid))),
 
                             entmod::ValuePlace::LookupRef(ref lookup_ref) => {
-                                if attribute.value_type != ValueType::Ref {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve value lookup ref for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", a)))
+                                if attribute.causet_locale_type != ValueType::Ref {
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve causet_locale lookup ref for attribute {} that is not :einsteindb/causet_localeType :einsteindb.type/ref", a)))
                                 }
 
                                 Either::Right(LookupRefOrTempId::LookupRef(in_process.causal_set_lookup_ref(lookup_ref)?))
                             },
 
                             entmod::ValuePlace::TxFunction(ref tx_function) => {
-                                let typed_value = match tx_function.op.0.as_str() {
+                                let typed_causet_locale = match tx_function.op.0.as_str() {
                                     "transaction-tx" => TypedValue::Ref(self.tx_id),
                                     unknown @ _ => bail!(einsteindbErrorKind::NotYetImplemented(format!("Unknown transaction function {}", unknown))),
                                 };
 
                                 // Here we do topograph-aware typechecking: we assert that the computed
-                                // value is in the attribute's value set.  If and when we have
-                                // transaction functions that produce numeric values, we'll have to
+                                // causet_locale is in the attribute's causet_locale set.  If and when we have
+                                // transaction functions that produce numeric causet_locales, we'll have to
                                 // be more careful here, because a function that produces an integer
-                                // value can be used where a double is expected.  See also
-                                // `TopographTypeChecking.to_typed_value(...)`.
-                                if attribute.value_type != typed_value.value_type() {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Transaction function {} produced value of type {} but expected type {}",
-                                                                               tx_function.op.0.as_str(), typed_value.value_type(), attribute.value_type)));
+                                // causet_locale can be used where a double is expected.  See also
+                                // `TopographTypeChecking.to_typed_causet_locale(...)`.
+                                if attribute.causet_locale_type != typed_causet_locale.causet_locale_type() {
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Transaction function {} produced causet_locale of type {} but expected type {}",
+                                                                               tx_function.op.0.as_str(), typed_causet_locale.causet_locale_type(), attribute.causet_locale_type)));
                                 }
 
-                                Either::Left(typed_value)
+                                Either::Left(typed_causet_locale)
                             },
 
                             entmod::ValuePlace::Vector(vs) => {
                                 if !attribute.multival {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode vector value for attribute {} that is not :einsteindb.cardinality :einsteindb.cardinality/many", a)));
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode vector causet_locale for attribute {} that is not :einsteindb.cardinality :einsteindb.cardinality/many", a)));
                                 }
 
                                 for vv in vs {
@@ -530,13 +515,13 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 // TODO: consider handling this at the tx-parser level.  That would be
                                 // more strict and expressive, but it would lead to splitting
                                 // AddOrRetract, which proliferates types and code, or only handling
-                                // nested maps rather than map values, like Datomic does.
+                                // nested maps rather than map causet_locales, like Datomic does.
                                 if op != OpType::Add {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map value in :einsteindb/retract for attribute {}", a)));
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map causet_locale in :einsteindb/retract for attribute {}", a)));
                                 }
 
-                                if attribute.value_type != ValueType::Ref {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map value for attribute {} that is not :einsteindb/valueType :einsteindb.type/ref", a)))
+                                if attribute.causet_locale_type != ValueType::Ref {
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map causet_locale for attribute {} that is not :einsteindb/causet_localeType :einsteindb.type/ref", a)))
                                 }
 
                                 // :einsteindb/id is optional; if it's not given, we generate a special causal_setal tempid
@@ -589,7 +574,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 }
 
                                 if dangling {
-                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map value that would lead to dangling causet for attribute {}", a)));
+                                    bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot explode nested map causet_locale that would lead to dangling causet for attribute {}", a)));
                                 }
 
                                 in_process.causet_e_into_term_v(einsteindb_id)?
@@ -712,14 +697,14 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         // Report each tempid that is allocated.
         for (tempid, &causetid) in &temp_id_allocations {
             // Every tempid should be allocated at most once.
-            assert!(!tempids.contains_key(&**tempid));
+            assert!(!tempids.contains_soliton_id(&**tempid));
             tempids.insert((**tempid).clone(), causetid);
         }
 
         // Verify that every tempid we causal_seted either resolved or has been allocated.
         assert_eq!(tempids.len(), tempid_set.len());
         for tempid in tempid_set.iter() {
-            assert!(tempids.contains_key(&**tempid));
+            assert!(tempids.contains_soliton_id(&**tempid));
         }
 
         // Any causal_setal tempid has been allocated by the system and is a private impleeinstaiion

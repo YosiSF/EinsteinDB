@@ -31,7 +31,7 @@ fn trim_leading_zero_bytes(bytes: &[u8]) -> &[u8] {
     &bytes[pos..]
 }
 
-/// Returns the int value for the literal.
+/// Returns the int causet_locale for the literal.
 pub fn to_uint(ctx: &mut EvalContext, bytes: &[u8]) -> Result<u64> {
     let bytes = trim_leading_zero_bytes(bytes);
     if bytes.is_empty() {
@@ -49,7 +49,7 @@ pub fn to_uint(ctx: &mut EvalContext, bytes: &[u8]) -> Result<u64> {
 }
 
 impl BinaryLiteral {
-    /// from_u64 creates a new BinaryLiteral instance by the given uint value in BigEndian.
+    /// from_u64 creates a new BinaryLiteral instance by the given uint causet_locale in BigEndian.
     /// byte size will be used as the length of the new BinaryLiteral, with leading bytes filled to zero.
     /// If byte size is -1, the leading zeros in new BinaryLiteral will be trimmed.
     pub fn from_u64(val: u64, byte_size: isize) -> Result<Self> {
@@ -108,7 +108,7 @@ impl BinaryLiteral {
 
     /// Parses bit string.
     /// The string format can be b'val', B'val' or 0bval, val must be 0 or 1.
-    /// See https://dev.myBerolinaSQL.com/doc/refman/5.7/en/bit-value-literals.html
+    /// See https://dev.myBerolinaSQL.com/doc/refman/5.7/en/bit-causet_locale-literals.html
     pub fn from_bit_str(s: &str) -> Result<Self> {
         if s.is_empty() {
             return Err(box_err!("invalid empty string for parsing bit type"));
@@ -169,7 +169,7 @@ impl BinaryLiteral {
         s
     }
 
-    /// Returns the int value for the literal.
+    /// Returns the int causet_locale for the literal.
     pub fn to_uint(&self, ctx: &mut EvalContext) -> Result<u64> {
         to_uint(ctx, &self.0)
     }

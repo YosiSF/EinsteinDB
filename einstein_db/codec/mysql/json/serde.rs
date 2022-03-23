@@ -8,18 +8,19 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
-use serde::ser::{Error as SerError, Serialize, SerializeMap, SerializeTuple, Serializer};
-use std::collections::BTreeMap;
-use std::fmt;
-use std::str::FromStr;
-use std::string::ToString;
-use std::{f64, str};
+ use serde::de::{self, Deserialize, Deserializer, MapAccess, SeqAccess, Visitor};
+ use serde::ser::{Error as SerError, Serialize, SerializeMap, Serializer, SerializeTuple};
+ use std::{f64, str};
+ use std::collections::BTreeMap;
+ use std::fmt;
+ use std::str::FromStr;
+ use std::string::ToString;
 
-use super::{Json, JsonRef, JsonType};
-use crate::codec::Error;
+ use crate::codec::Error;
 
-impl<'a> ToString for JsonRef<'a> {
+ use super::{Json, JsonRef, JsonType};
+
+ impl<'a> ToString for JsonRef<'a> {
     fn to_string(&self) -> String {
         serde_json::to_string(self).unwrap()
     }
@@ -46,9 +47,9 @@ impl<'a> Serialize for JsonRef<'a> {
                 let elem_count = self.get_elem_count();
                 let mut map = serializer.serialize_map(Some(elem_count))?;
                 for i in 0..elem_count {
-                    let key = self.object_get_key(i);
+                    let soliton_id = self.object_get_soliton_id(i);
                     let val = self.object_get_val(i).map_err(SerError::custom)?;
-                    map.serialize_causet(str::from_utf8(key).unwrap(), &val)?;
+                    map.serialize_causet(str::from_utf8(soliton_id).unwrap(), &val)?;
                 }
                 map.end()
             }
@@ -75,7 +76,7 @@ impl FromStr for Json {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match serde_json::from_str(s) {
-            Ok(value) => Ok(value),
+            Ok(causet_locale) => Ok(causet_locale),
             Err(e) => Err(invalid_type!("Illegal Json text: {:?}", e)),
         }
     }
@@ -85,7 +86,7 @@ struct JsonVisitor;
 impl<'de> Visitor<'de> for JsonVisitor {
     type Value = Json;
     fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "a json value")
+        write!(formatter, "a json causet_locale")
     }
 
     fn visit_unit<E>(self) -> Result<Self::Value, E>
@@ -139,11 +140,11 @@ impl<'de> Visitor<'de> for JsonVisitor {
         M: SeqAccess<'de>,
     {
         let size = seq.size_hint().unwrap_or_default();
-        let mut value = Vec::with_capacity(size);
+        let mut causet_locale = Vec::with_capacity(size);
         while let Some(v) = seq.next_element()? {
-            value.push(v);
+            causet_locale.push(v);
         }
-        Ok(Json::from_array(value).map_err(de::Error::custom)?)
+        Ok(Json::from_array(causet_locale).map_err(de::Error::custom)?)
     }
 
     fn visit_map<M>(self, mut access: M) -> Result<Self::Value, M::Error>
@@ -151,8 +152,8 @@ impl<'de> Visitor<'de> for JsonVisitor {
         M: MapAccess<'de>,
     {
         let mut map = BTreeMap::new();
-        while let Some((key, value)) = access.next_causet()? {
-            map.insert(key, value);
+        while let Some((soliton_id, causet_locale)) = access.next_causet()? {
+            map.insert(soliton_id, causet_locale);
         }
         Ok(Json::from_object(map).map_err(de::Error::custom)?)
     }
@@ -183,7 +184,7 @@ mod tests {
     #[test]
     fn test_from_str() {
         let legal_cases = vec![
-            (r#"{"key":"value"}"#),
+            (r#"{"soliton_id":"causet_locale"}"#),
             (r#"["d1","d2"]"#),
             (r#"-3"#),
             (r#"3"#),

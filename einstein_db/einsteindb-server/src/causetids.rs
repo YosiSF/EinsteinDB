@@ -10,13 +10,11 @@
 
 #![allow(dead_code)]
 
-/// Literal `Causetid` values in the the "einsteindb"isolate_namespace_file.
+/// Literal `Causetid` causet_locales in the the "einsteindb"isolate_namespace_file.
 ///
 /// Used through-out the transactor to match core EINSTEINDB constructs.
 
-use einstein_db::{
-    Causetid,
-};
+use einstein_db::Causetid;
 
 // Added in BerolinaSQL topograph v1.
 pub const EINSTEINDB_IDENT: Causetid = 1;

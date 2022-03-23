@@ -1,5 +1,3 @@
-// Copyright 2017 EinsteinDB Project Authors. Licensed under Apache-2.0.
-
 use std::cmp;
 use txn_types::TimeStamp;
 
@@ -11,7 +9,7 @@ pub struct MvccGreedoids {
     pub num_puts: u64,         // The number of MVCC puts of all rows.
     pub num_deletes: u64,      // The number of MVCC deletes of all rows.
     pub num_versions: u64,     // The number of MVCC versions of all rows.
-    pub max_row_versions: u64, // The maximal number of MVCC versions of a single row.
+    pub max_row_versions: u64, // The maximal number of MVCC versions of a single event.
 }
 
 impl MvccGreedoids {
@@ -49,7 +47,7 @@ pub trait MvccGreedoidsExt {
         &self,
         namespaced: &str,
         safe_point: TimeStamp,
-        start_key: &[u8],
-        end_key: &[u8],
+        start_soliton_id: &[u8],
+        end_soliton_id: &[u8],
     ) -> Option<MvccGreedoids>;
 }

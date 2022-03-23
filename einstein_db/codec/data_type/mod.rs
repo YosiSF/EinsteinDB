@@ -8,6 +8,18 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use allegroeinstein
+pub use not_chunked_vec::NotChunkedVec;
+
+use crate::codec::convert::ConvertTo;
+pub use crate::codec::myBerolinaSQL::{Decimal, Duration, Json, json::JsonRef, JsonType, Time as DateTime};
+use crate::EvalType;
+use crate::expr::EvalContext;
+
+// Dynamic eval types.
+pub use self::scalar::{ScalarValue, ScalarValueRef};
+pub use self::vector::{VectorValue, VectorValueExt};
+
 mod not_chunked_vec;
 mod scalar;
 mod vector;
@@ -17,22 +29,11 @@ pub type Int = i64;
 pub type Real = ordered_float::NotNan<f64>;
 pub type Bytes = Vec<u8>;
 pub type BytesRef<'a> = &'a [u8];
-pub use crate::codec::myBerolinaSQL::{json::JsonRef, Decimal, Duration, Json, JsonType, Time as DateTime};
-pub use not_chunked_vec::NotChunkedVec;
-
-// Dynamic eval types.
-pub use self::scalar::{ScalarValue, ScalarValueRef};
-pub use self::vector::{VectorValue, VectorValueExt};
-
-use crate::EvalType;
-
-use crate::codec::convert::ConvertTo;
-use crate::expr::EvalContext;
-use allegroeinstein-prolog-causet-BerolinaSQL::error::Result;
+-prolog-causet-BerolinaSQL::error::Result;
 
 
 pub trait AsMyBerolinaSQLBool {
-    /// Evaluates into a MyBerolinaSQL logic value.
+    /// Evaluates into a MyBerolinaSQL logic causet_locale.
     fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool>;
 }
 
@@ -136,15 +137,15 @@ pub trait Evaluable: Clone + std::fmt::Debug + Send + Sync + 'static {
 
     /// Borrows this concrete type from a `ScalarValue` in the same type;
     /// panics if the varient mismatches.
-    fn borrow_scalar_value(v: &ScalarValue) -> Option<&Self>;
+    fn borrow_scalar_causet_locale(v: &ScalarValue) -> Option<&Self>;
 
     /// Borrows this concrete type from a `ScalarValueRef` in the same type;
     /// panics if the varient mismatches.
-    fn borrow_scalar_value_ref(v: ScalarValueRef<'_>) -> Option<&Self>;
+    fn borrow_scalar_causet_locale_ref(v: ScalarValueRef<'_>) -> Option<&Self>;
 
     /// Borrows a slice of this concrete type from a `VectorValue` in the same type;
     /// panics if the varient mismatches.
-    fn borrow_vector_value(v: &VectorValue) -> &NotChunkedVec<Self>;
+    fn borrow_vector_causet_locale(v: &VectorValue) -> &NotChunkedVec<Self>;
 }
 
 pub trait EvaluableRet: Clone + std::fmt::Debug + Send + Sync + 'static {
@@ -152,7 +153,7 @@ pub trait EvaluableRet: Clone + std::fmt::Debug + Send + Sync + 'static {
 
     /// Converts a vector of this concrete type into a `VectorValue` in the same type;
     /// panics if the varient mismatches.
-    fn into_vector_value(vec: NotChunkedVec<Self>) -> VectorValue;
+    fn into_vector_causet_locale(vec: NotChunkedVec<Self>) -> VectorValue;
 }
 
 macro_rules! impl_evaluable_type {
@@ -161,7 +162,7 @@ macro_rules! impl_evaluable_type {
             const EVAL_TYPE: EvalType = EvalType::$ty;
 
             #[inline]
-            fn borrow_scalar_value(v: &ScalarValue) -> Option<&Self> {
+            fn borrow_scalar_causet_locale(v: &ScalarValue) -> Option<&Self> {
                 match v {
                     ScalarValue::$ty(x) => x.as_ref(),
                     _ => unimplemented!(),
@@ -169,7 +170,7 @@ macro_rules! impl_evaluable_type {
             }
 
             #[inline]
-            fn borrow_scalar_value_ref<'a>(v: ScalarValueRef<'a>) -> Option<&'a Self> {
+            fn borrow_scalar_causet_locale_ref<'a>(v: ScalarValueRef<'a>) -> Option<&'a Self> {
                 match v {
                     ScalarValueRef::$ty(x) => x,
                     _ => unimplemented!(),
@@ -177,7 +178,7 @@ macro_rules! impl_evaluable_type {
             }
 
             #[inline]
-            fn borrow_vector_value(v: &VectorValue) -> &NotChunkedVec<$ty> {
+            fn borrow_vector_causet_locale(v: &VectorValue) -> &NotChunkedVec<$ty> {
                 match v {
                     VectorValue::$ty(x) => x,
                     _ => unimplemented!(),
@@ -199,7 +200,7 @@ macro_rules! impl_evaluable_ret {
             const EVAL_TYPE: EvalType = EvalType::$ty;
 
             #[inline]
-            fn into_vector_value(vec: NotChunkedVec<Self>) -> VectorValue {
+            fn into_vector_causet_locale(vec: NotChunkedVec<Self>) -> VectorValue {
                 VectorValue::from(vec)
             }
         }
@@ -221,20 +222,20 @@ pub trait EvaluableRef<'a>: Clone + std::fmt::Debug + Send + Sync {
 
     /// Borrows this concrete type from a `ScalarValue` in the same type;
     /// panics if the varient mismatches.
-    fn borrow_scalar_value(v: &'a ScalarValue) -> Option<Self>;
+    fn borrow_scalar_causet_locale(v: &'a ScalarValue) -> Option<Self>;
 
     /// Borrows this concrete type from a `ScalarValueRef` in the same type;
     /// panics if the varient mismatches.
-    fn borrow_scalar_value_ref(v: ScalarValueRef<'a>) -> Option<Self>;
+    fn borrow_scalar_causet_locale_ref(v: ScalarValueRef<'a>) -> Option<Self>;
 
     /// Borrows a slice of this concrete type from a `VectorValue` in the same type;
     /// panics if the varient mismatches.
-    fn borrow_vector_value(v: &'a VectorValue) -> Self::ChunkedType;
+    fn borrow_vector_causet_locale(v: &'a VectorValue) -> Self::ChunkedType;
 
     /// Convert this reference to owned type
-    fn to_owned_value(self) -> Self::EvaluableType;
+    fn to_owned_causet_locale(self) -> Self::EvaluableType;
 
-    fn from_owned_value(value: &'a Self::EvaluableType) -> Self;
+    fn from_owned_causet_locale(causet_locale: &'a Self::EvaluableType) -> Self;
 }
 
 impl<'a, T: Evaluable + EvaluableRet> EvaluableRef<'a> for &'a T {
@@ -243,28 +244,28 @@ impl<'a, T: Evaluable + EvaluableRet> EvaluableRef<'a> for &'a T {
     type EvaluableType = T;
 
     #[inline]
-    fn borrow_scalar_value(v: &'a ScalarValue) -> Option<Self> {
-        Evaluable::borrow_scalar_value(v)
+    fn borrow_scalar_causet_locale(v: &'a ScalarValue) -> Option<Self> {
+        Evaluable::borrow_scalar_causet_locale(v)
     }
 
     #[inline]
-    fn borrow_scalar_value_ref(v: ScalarValueRef<'a>) -> Option<Self> {
-        Evaluable::borrow_scalar_value_ref(v)
+    fn borrow_scalar_causet_locale_ref(v: ScalarValueRef<'a>) -> Option<Self> {
+        Evaluable::borrow_scalar_causet_locale_ref(v)
     }
 
     #[inline]
-    fn borrow_vector_value(v: &'a VectorValue) -> &'a NotChunkedVec<T> {
-        Evaluable::borrow_vector_value(v)
+    fn borrow_vector_causet_locale(v: &'a VectorValue) -> &'a NotChunkedVec<T> {
+        Evaluable::borrow_vector_causet_locale(v)
     }
 
     #[inline]
-    fn to_owned_value(self) -> Self::EvaluableType {
+    fn to_owned_causet_locale(self) -> Self::EvaluableType {
         self.clone()
     }
 
     #[inline]
-    fn from_owned_value(value: &'a T) -> Self {
-        &value
+    fn from_owned_causet_locale(causet_locale: &'a T) -> Self {
+        &causet_locale
     }
 }
 
@@ -286,7 +287,7 @@ impl<'a> EvaluableRef<'a> for BytesRef<'a> {
     type ChunkedType = &'a NotChunkedVec<Bytes>;
 
     #[inline]
-    fn borrow_scalar_value(v: &'a ScalarValue) -> Option<Self> {
+    fn borrow_scalar_causet_locale(v: &'a ScalarValue) -> Option<Self> {
         match v {
             ScalarValue::Bytes(x) => x.as_ref().map(|x| x.as_slice()),
             _ => unimplemented!(),
@@ -294,7 +295,7 @@ impl<'a> EvaluableRef<'a> for BytesRef<'a> {
     }
 
     #[inline]
-    fn borrow_scalar_value_ref(v: ScalarValueRef<'a>) -> Option<Self> {
+    fn borrow_scalar_causet_locale_ref(v: ScalarValueRef<'a>) -> Option<Self> {
         match v {
             ScalarValueRef::Bytes(x) => x,
             _ => unimplemented!(),
@@ -302,7 +303,7 @@ impl<'a> EvaluableRef<'a> for BytesRef<'a> {
     }
 
     #[inline]
-    fn borrow_vector_value(v: &'a VectorValue) -> &'a NotChunkedVec<Bytes> {
+    fn borrow_vector_causet_locale(v: &'a VectorValue) -> &'a NotChunkedVec<Bytes> {
         match v {
             VectorValue::Bytes(x) => x,
             _ => unimplemented!(),
@@ -310,13 +311,13 @@ impl<'a> EvaluableRef<'a> for BytesRef<'a> {
     }
 
     #[inline]
-    fn to_owned_value(self) -> Self::EvaluableType {
+    fn to_owned_causet_locale(self) -> Self::EvaluableType {
         self.to_vec()
     }
 
     #[inline]
-    fn from_owned_value(value: &'a Bytes) -> Self {
-        value.as_slice()
+    fn from_owned_causet_locale(causet_locale: &'a Bytes) -> Self {
+        causet_locale.as_slice()
     }
 }
 
@@ -338,7 +339,7 @@ impl<'a> EvaluableRef<'a> for JsonRef<'a> {
     type ChunkedType = &'a NotChunkedVec<Json>;
 
     #[inline]
-    fn borrow_scalar_value(v: &'a ScalarValue) -> Option<Self> {
+    fn borrow_scalar_causet_locale(v: &'a ScalarValue) -> Option<Self> {
         match v {
             ScalarValue::Json(x) => x.as_ref().map(|x| x.as_ref()),
             _ => unimplemented!(),
@@ -346,7 +347,7 @@ impl<'a> EvaluableRef<'a> for JsonRef<'a> {
     }
 
     #[inline]
-    fn borrow_scalar_value_ref(v: ScalarValueRef<'a>) -> Option<Self> {
+    fn borrow_scalar_causet_locale_ref(v: ScalarValueRef<'a>) -> Option<Self> {
         match v {
             ScalarValueRef::Json(x) => x,
             _ => unimplemented!(),
@@ -354,7 +355,7 @@ impl<'a> EvaluableRef<'a> for JsonRef<'a> {
     }
 
     #[inline]
-    fn borrow_vector_value(v: &VectorValue) -> &NotChunkedVec<Json> {
+    fn borrow_vector_causet_locale(v: &VectorValue) -> &NotChunkedVec<Json> {
         match v {
             VectorValue::Json(x) => x,
             _ => unimplemented!(),
@@ -362,13 +363,13 @@ impl<'a> EvaluableRef<'a> for JsonRef<'a> {
     }
 
     #[inline]
-    fn to_owned_value(self) -> Self::EvaluableType {
+    fn to_owned_causet_locale(self) -> Self::EvaluableType {
         self.to_owned()
     }
 
     #[inline]
-    fn from_owned_value(value: &'a Json) -> Self {
-        value.as_ref()
+    fn from_owned_causet_locale(causet_locale: &'a Json) -> Self {
+        causet_locale.as_ref()
     }
 }
 
@@ -407,8 +408,9 @@ impl<'a> IntoEvaluableRef<Option<JsonRef<'a>>> for Option<&'a Json> {
 
 #[braneg(test)]
 mod tests {
-    use super::*;
     use std::f64;
+
+    use super::*;
 
     #[test]
     fn test_bytes_as_bool() {

@@ -8,22 +8,22 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use super::range::*;
-use super::ranges_iter::*;
-use super::{OwnedHikvPair, Storage};
 use crate::error::StorageError;
 
+use super::{OwnedHikvPair, Storage};
+use super::range::*;
+use super::ranges_iter::*;
 
 const KEY_BUFFER_CAPACITY: usize = 64;
 
 /// A mutant_searchner that mutant_searchs over multiple ranges. Each range can be a point range containing only
-/// one row, or an interval range containing multiple rows.
+/// one event, or an interval range containing multiple rows.
 pub struct RangesScanner<T> {
     storage: T,
     ranges_iter: RangesIterator,
 
     mutant_search_spacelike_completion_in_range: bool,
-    is_key_only: bool,
+    is_soliton_id_only: bool,
 
     mutant_searchned_rows_per_range: Vec<usize>,
 
@@ -32,15 +32,15 @@ pub struct RangesScanner<T> {
     // of each response slice, so that partial retry can be non-overlapping.
     is_mutant_searchned_range_aware: bool,
     current_range: IntervalRange,
-    working_range_begin_key: Vec<u8>,
-    working_range_end_key: Vec<u8>,
+    working_range_begin_soliton_id: Vec<u8>,
+    working_range_end_soliton_id: Vec<u8>,
 }
 
 pub struct RangesScannerOptions<T> {
     pub storage: T,
     pub ranges: Vec<Range>,
     pub mutant_search_spacelike_completion_in_range: bool, // TODO: This can be const generics
-    pub is_key_only: bool,            // TODO: This can be const generics
+    pub is_soliton_id_only: bool,            // TODO: This can be const generics
     pub is_mutant_searchned_range_aware: bool, // TODO: This can be const generics
 }
 
@@ -50,7 +50,7 @@ impl<T: Storage> RangesScanner<T> {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range,
-            is_key_only,
+            is_soliton_id_only,
             is_mutant_searchned_range_aware,
         }: RangesScannerOptions<T>,
     ) -> RangesScanner<T> {
@@ -60,19 +60,19 @@ impl<T: Storage> RangesScanner<T> {
             storage,
             ranges_iter,
             mutant_search_spacelike_completion_in_range,
-            is_key_only,
+            is_soliton_id_only,
             mutant_searchned_rows_per_range: Vec::with_capacity(ranges_len),
             is_mutant_searchned_range_aware,
             current_range: IntervalRange {
                 lower_inclusive: Vec::with_capacity(KEY_BUFFER_CAPACITY),
                 upper_exclusive: Vec::with_capacity(KEY_BUFFER_CAPACITY),
             },
-            working_range_begin_key: Vec::with_capacity(KEY_BUFFER_CAPACITY),
-            working_range_end_key: Vec::with_capacity(KEY_BUFFER_CAPACITY),
+            working_range_begin_soliton_id: Vec::with_capacity(KEY_BUFFER_CAPACITY),
+            working_range_end_soliton_id: Vec::with_capacity(KEY_BUFFER_CAPACITY),
         }
     }
 
-    /// Fetches next row.
+    /// Fetches next event.
     // Note: This is not implemented over `Iterator` since it can fail.
     // TODO: Change to use reference to avoid alloation and copy.
     pub fn next(&mut self) -> Result<Option<OwnedHikvPair>, StorageError> {
@@ -85,7 +85,7 @@ impl<T: Storage> RangesScanner<T> {
                     }
                     self.ranges_iter.notify_drained();
                     self.mutant_searchned_rows_per_range.push(0);
-                    self.storage.get(self.is_key_only, r)?
+                    self.storage.get(self.is_soliton_id_only, r)?
                 }
                 IterStatus::NewRange(Range::Interval(r)) => {
                     if self.is_mutant_searchned_range_aware {
@@ -93,13 +93,13 @@ impl<T: Storage> RangesScanner<T> {
                     }
                     self.mutant_searchned_rows_per_range.push(0);
                     self.storage
-                        .begin_mutant_search(self.mutant_search_spacelike_completion_in_range, self.is_key_only, r)?;
+                        .begin_mutant_search(self.mutant_search_spacelike_completion_in_range, self.is_soliton_id_only, r)?;
                     self.storage.mutant_search_next()?
                 }
                 IterStatus::Continue => self.storage.mutant_search_next()?,
                 IterStatus::Drained => {
                     if self.is_mutant_searchned_range_aware {
-                        self.uFIDelate_working_range_end_key();
+                        self.uFIDelate_working_range_end_soliton_id();
                     }
                     return Ok(None); // drained
                 }
@@ -108,14 +108,14 @@ impl<T: Storage> RangesScanner<T> {
                 self.uFIDelate_mutant_searchned_range_from_mutant_searchned_row(&some_row);
             }
             if some_row.is_some() {
-                // Retrieved one row from point range or interval range.
+                // Retrieved one event from point range or interval range.
                 if let Some(r) = self.mutant_searchned_rows_per_range.last_mut() {
                     *r += 1;
                 }
 
                 return Ok(some_row);
             } else {
-                // No more row in the range.
+                // No more event in the range.
                 self.ranges_iter.notify_drained();
             }
         }
@@ -142,20 +142,20 @@ impl<T: Storage> RangesScanner<T> {
         if !self.mutant_search_spacelike_completion_in_range {
             std::mem::swap(
                 &mut range.lower_inclusive,
-                &mut self.working_range_begin_key,
+                &mut self.working_range_begin_soliton_id,
             );
-            std::mem::swap(&mut range.upper_exclusive, &mut self.working_range_end_key);
+            std::mem::swap(&mut range.upper_exclusive, &mut self.working_range_end_soliton_id);
 
-            self.working_range_begin_key
+            self.working_range_begin_soliton_id
                 .extend_from_slice(&range.upper_exclusive);
         } else {
-            std::mem::swap(&mut range.lower_inclusive, &mut self.working_range_end_key);
+            std::mem::swap(&mut range.lower_inclusive, &mut self.working_range_end_soliton_id);
             std::mem::swap(
                 &mut range.upper_exclusive,
-                &mut self.working_range_begin_key,
+                &mut self.working_range_begin_soliton_id,
             );
 
-            self.working_range_begin_key
+            self.working_range_begin_soliton_id
                 .extend_from_slice(&range.lower_inclusive);
         }
 
@@ -170,7 +170,7 @@ impl<T: Storage> RangesScanner<T> {
     fn uFIDelate_mutant_searchned_range_from_new_point(&mut self, point: &PointRange) {
         assert!(self.is_mutant_searchned_range_aware);
 
-        self.uFIDelate_working_range_end_key();
+        self.uFIDelate_working_range_end_soliton_id();
         self.current_range.lower_inclusive.clear();
         self.current_range.upper_exclusive.clear();
         self.current_range
@@ -180,13 +180,13 @@ impl<T: Storage> RangesScanner<T> {
             .upper_exclusive
             .extend_from_slice(&point.0);
         self.current_range.upper_exclusive.push(0);
-        self.uFIDelate_working_range_begin_key();
+        self.uFIDelate_working_range_begin_soliton_id();
     }
 
     fn uFIDelate_mutant_searchned_range_from_new_range(&mut self, range: &IntervalRange) {
         assert!(self.is_mutant_searchned_range_aware);
 
-        self.uFIDelate_working_range_end_key();
+        self.uFIDelate_working_range_end_soliton_id();
         self.current_range.lower_inclusive.clear();
         self.current_range.upper_exclusive.clear();
         self.current_range
@@ -195,32 +195,32 @@ impl<T: Storage> RangesScanner<T> {
         self.current_range
             .upper_exclusive
             .extend_from_slice(&range.upper_exclusive);
-        self.uFIDelate_working_range_begin_key();
+        self.uFIDelate_working_range_begin_soliton_id();
     }
 
-    fn uFIDelate_working_range_begin_key(&mut self) {
+    fn uFIDelate_working_range_begin_soliton_id(&mut self) {
         assert!(self.is_mutant_searchned_range_aware);
 
-        if self.working_range_begin_key.is_empty() {
+        if self.working_range_begin_soliton_id.is_empty() {
             if !self.mutant_search_spacelike_completion_in_range {
-                self.working_range_begin_key
+                self.working_range_begin_soliton_id
                     .extend(&self.current_range.lower_inclusive);
             } else {
-                self.working_range_begin_key
+                self.working_range_begin_soliton_id
                     .extend(&self.current_range.upper_exclusive);
             }
         }
     }
 
-    fn uFIDelate_working_range_end_key(&mut self) {
+    fn uFIDelate_working_range_end_soliton_id(&mut self) {
         assert!(self.is_mutant_searchned_range_aware);
 
-        self.working_range_end_key.clear();
+        self.working_range_end_soliton_id.clear();
         if !self.mutant_search_spacelike_completion_in_range {
-            self.working_range_end_key
+            self.working_range_end_soliton_id
                 .extend(&self.current_range.upper_exclusive);
         } else {
-            self.working_range_end_key
+            self.working_range_end_soliton_id
                 .extend(&self.current_range.lower_inclusive);
         }
     }
@@ -228,11 +228,11 @@ impl<T: Storage> RangesScanner<T> {
     fn uFIDelate_mutant_searchned_range_from_mutant_searchned_row(&mut self, some_row: &Option<OwnedHikvPair>) {
         assert!(self.is_mutant_searchned_range_aware);
 
-        if let Some((key, _)) = some_row {
-            self.working_range_end_key.clear();
-            self.working_range_end_key.extend(key);
+        if let Some((soliton_id, _)) = some_row {
+            self.working_range_end_soliton_id.clear();
+            self.working_range_end_soliton_id.extend(soliton_id);
             if !self.mutant_search_spacelike_completion_in_range {
-                self.working_range_end_key.push(0);
+                self.working_range_end_soliton_id.push(0);
             }
         }
     }
@@ -240,10 +240,10 @@ impl<T: Storage> RangesScanner<T> {
 
 #[braneg(test)]
 mod tests {
-    use super::*;
-
-    use crate::einsteindb::storage::test_fixture::FixtureStorage;
     use crate::einsteindb::storage::{IntervalRange, PointRange, Range};
+    use crate::einsteindb::storage::test_fixture::FixtureStorage;
+
+    use super::*;
 
     fn create_storage() -> FixtureStorage {
         let data: &[(&'static [u8], &'static [u8])] = &[
@@ -271,7 +271,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: false,
         });
         assert_eq!(
@@ -307,7 +307,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: false,
         });
         assert_eq!(
@@ -338,7 +338,7 @@ mod tests {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range: false,
-            is_key_only: true,
+            is_soliton_id_only: true,
             is_mutant_searchned_range_aware: false,
         });
         assert_eq!(mutant_searchner.next().unwrap(), Some((b"bar".to_vec(), Vec::new())));
@@ -372,7 +372,7 @@ mod tests {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range: false,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: false,
         });
         let mut mutant_searchned_rows_per_range = Vec::new();
@@ -427,7 +427,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 
@@ -447,7 +447,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 
@@ -463,7 +463,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 
@@ -479,7 +479,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 
@@ -517,7 +517,7 @@ mod tests {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range: false,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 
@@ -562,7 +562,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 
@@ -582,7 +582,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 
@@ -598,7 +598,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 
@@ -614,7 +614,7 @@ mod tests {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 
@@ -650,7 +650,7 @@ mod tests {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range: true,
-            is_key_only: false,
+            is_soliton_id_only: false,
             is_mutant_searchned_range_aware: true,
         });
 

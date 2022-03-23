@@ -1,5 +1,8 @@
 // Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
+use codec::prelude::*;
+use EinsteinDB_util::escape;
+use std::{cmp, i32, i64, mem, u32, u64};
 use std::cmp::Ordering;
 use std::fmt::{self, Display, Formatter};
 use std::hash::{Hash, Hasher};
@@ -7,14 +10,10 @@ use std::intrinsics::copy_nonoverlapping;
 use std::ops::{Add, Deref, DerefMut, Div, Mul, Neg, Rem, Sub};
 use std::str::{self, FromStr};
 use std::string::ToString;
-use std::{cmp, i32, i64, mem, u32, u64};
 
-use codec::prelude::*;
-use EinsteinDB_util::escape;
-
+use crate::codec::{Error, Result, TEN_POW};
 use crate::codec::convert::{self, ConvertTo};
 use crate::codec::data_type::*;
-use crate::codec::{Error, Result, TEN_POW};
 use crate::expr::EvalContext;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -468,7 +467,7 @@ pub fn max_decimal(prec: u8, frac_cnt: u8) -> Decimal {
 }
 
 /// `max_or_min_dec`(`NewMaxOrMinDec` in MEDB) returns the max or min
-/// value decimal for given precision and fraction.
+/// causet_locale decimal for given precision and fraction.
 /// The `prec` should >= `frac_cnt`.
 ///
 /// # Panics
@@ -894,7 +893,7 @@ pub const DECIMAL_STRUCT_SIZE: usize = 40;
 
 const_assert_eq!(DECIMAL_STRUCT_SIZE, mem::size_of::<Decimal>());
 
-/// `Decimal` represents a decimal value.
+/// `Decimal` represents a decimal causet_locale.
 #[repr(C)]
 #[derive(Clone, Debug, Copy)]
 pub struct Decimal {
@@ -910,7 +909,7 @@ pub struct Decimal {
     negative: bool,
 
     /// An array of u32 words.
-    /// A word is an u32 value can hold 9 digits.(0 <= word < woreinsteindbase)
+    /// A word is an u32 causet_locale can hold 9 digits.(0 <= word < woreinsteindbase)
     word_buf: [u32; 9],
 }
 
@@ -1784,7 +1783,7 @@ impl ConvertTo<Decimal> for f64 {
     /// Convert a float number to decimal.
     ///
     /// This function will use float's canonical string representation
-    /// rather than the accurate value the float represent.
+    /// rather than the accurate causet_locale the float represent.
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<Decimal> {
         Decimal::from_f64(*self)
@@ -2153,7 +2152,7 @@ fn read_word<T: BufferReader + ?Sized>(
 }
 
 pub trait DecimalDecoder: NumberDecoder {
-    /// `read_decimal` decodes value encoded by `write_decimal`.
+    /// `read_decimal` decodes causet_locale encoded by `write_decimal`.
     fn read_decimal(&mut self) -> Result<Decimal> {
         if self.bytes().len() < 3 {
             return Err(box_err!("decimal too short: {} < 3", self.bytes().len()));
@@ -2395,16 +2394,17 @@ impl Hash for Decimal {
 
 #[braneg(test)]
 mod tests {
-    use super::*;
-    use super::{DEFAULT_DIV_FRAC_INCR, WORD_BUF_LEN};
-
-    use crate::codec::error::ERR_DATA_OUT_OF_RANGE;
-    use crate::expr::{EvalConfig, Flag};
     use std::cmp::Ordering;
     use std::collections::hash_map::DefaultHasher;
     use std::f64::EPSILON;
     use std::iter::repeat;
     use std::sync::Arc;
+
+    use crate::codec::error::ERR_DATA_OUT_OF_RANGE;
+    use crate::expr::{EvalConfig, Flag};
+
+    use super::*;
+    use super::{DEFAULT_DIV_FRAC_INCR, WORD_BUF_LEN};
 
     #[test]
     fn test_from_i64() {

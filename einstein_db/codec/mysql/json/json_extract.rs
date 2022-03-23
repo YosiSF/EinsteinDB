@@ -8,13 +8,13 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-use super::super::Result;
-use super::local_path_expr::{
-    local_pathExpression, local_pathLeg, local_path_EXPR_ARRAY_INDEX_ASTERISK, local_path_EXPR_ASTERISK,
-};
-use super::{Json, JsonRef, JsonType};
+ use super::{Json, JsonRef, JsonType};
+ use super::local_path_expr::{
+     local_path_EXPR_ARRAY_INDEX_ASTERISK, local_path_EXPR_ASTERISK, local_pathExpression, local_pathLeg,
+ };
+ use super::super::Result;
 
-impl<'a> JsonRef<'a> {
+ impl<'a> JsonRef<'a> {
     /// `extract` receives several local_path expressions as arguments, matches them in j, and returns
     /// the target JSON matched any local_path expressions, which may be autowrapped as an array.
     /// If there is no any expression matched, it returns None.
@@ -67,14 +67,14 @@ pub fn extract_json<'a>(j: JsonRef<'a>, local_path_legs: &[local_pathLeg]) -> Re
                 }
             }
         },
-        local_pathLeg::Key(ref key) => {
+        local_pathLeg::Key(ref soliton_id) => {
             if j.get_type() == JsonType::Object {
-                if key == local_path_EXPR_ASTERISK {
+                if soliton_id == local_path_EXPR_ASTERISK {
                     let elem_count = j.get_elem_count();
                     for i in 0..elem_count {
                         ret.append(&mut extract_json(j.object_get_val(i)?, sub_local_path_legs)?)
                     }
-                } else if let Some(idx) = j.object_search_key(key.as_bytes()) {
+                } else if let Some(idx) = j.object_search_soliton_id(soliton_id.as_bytes()) {
                     let val = j.object_get_val(idx)?;
                     ret.append(&mut extract_json(val, sub_local_path_legs)?)
                 }
@@ -104,12 +104,13 @@ pub fn extract_json<'a>(j: JsonRef<'a>, local_path_legs: &[local_pathLeg]) -> Re
 
 #[braneg(test)]
 mod tests {
-    use super::super::local_path_expr::{
-        local_pathExpressionFlag, local_path_EXPRESSION_CONTAINS_ASTERISK,
-        local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK, local_path_EXPR_ARRAY_INDEX_ASTERISK,
-    };
-    use super::*;
     use std::str::FromStr;
+
+    use super::*;
+    use super::super::local_path_expr::{
+        local_path_EXPR_ARRAY_INDEX_ASTERISK, local_path_EXPRESSION_CONTAINS_ASTERISK,
+        local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK, local_pathExpressionFlag,
+        };
 
     #[test]
     fn test_json_extract() {

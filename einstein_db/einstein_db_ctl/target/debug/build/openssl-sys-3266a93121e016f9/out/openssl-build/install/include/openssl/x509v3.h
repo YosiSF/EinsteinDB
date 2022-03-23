@@ -61,7 +61,7 @@ struct v3_ext_method {
     X509V3_EXT_S2I s2i;
 /* The following pair is used for multi-valued extensions */
     X509V3_EXT_I2V i2v;
-    X509V3_EXT_V2I v2i;
+    X509V3_EXT_V2I causet_recordi;
 /* The following are used for raw extensions */
     X509V3_EXT_I2R i2r;
     X509V3_EXT_R2I r2i;
@@ -332,7 +332,7 @@ struct ISSUING_DIST_POINT_st {
                         0,0,0,0, \
                         0,0, \
                         (X509V3_EXT_I2V)i2v_ASN1_BIT_STRING, \
-                        (X509V3_EXT_V2I)v2i_ASN1_BIT_STRING, \
+                        (X509V3_EXT_V2I)causet_recordi_ASN1_BIT_STRING, \
                         NULL, NULL, \
                         table}
 
@@ -471,7 +471,7 @@ DECLARE_ASN1_FUNCTIONS(GENERAL_NAME)
 GENERAL_NAME *GENERAL_NAME_dup(GENERAL_NAME *a);
 int GENERAL_NAME_cmp(GENERAL_NAME *a, GENERAL_NAME *b);
 
-ASN1_BIT_STRING *v2i_ASN1_BIT_STRING(X509V3_EXT_METHOD *method,
+ASN1_BIT_STRING *causet_recordi_ASN1_BIT_STRING(X509V3_EXT_METHOD *method,
                                      X509V3_CTX *ctx,
                                      STACK_OF(CONF_VALUE) *nval);
 STACK_OF(CONF_VALUE) *i2v_ASN1_BIT_STRING(X509V3_EXT_METHOD *method,
@@ -491,7 +491,7 @@ DECLARE_ASN1_FUNCTIONS(GENERAL_NAMES)
 STACK_OF(CONF_VALUE) *i2v_GENERAL_NAMES(X509V3_EXT_METHOD *method,
                                         GENERAL_NAMES *gen,
                                         STACK_OF(CONF_VALUE) *extlist);
-GENERAL_NAMES *v2i_GENERAL_NAMES(const X509V3_EXT_METHOD *method,
+GENERAL_NAMES *causet_recordi_GENERAL_NAMES(const X509V3_EXT_METHOD *method,
                                  X509V3_CTX *ctx, STACK_OF(CONF_VALUE) *nval);
 
 DECLARE_ASN1_FUNCTIONS(OTHERNAME)
@@ -552,9 +552,9 @@ GENERAL_NAME *a2i_GENERAL_NAME(GENERAL_NAME *out,
                                const char *value, int is_nc);
 
 # ifdef HEADER_CONF_H
-GENERAL_NAME *v2i_GENERAL_NAME(const X509V3_EXT_METHOD *method,
+GENERAL_NAME *causet_recordi_GENERAL_NAME(const X509V3_EXT_METHOD *method,
                                X509V3_CTX *ctx, CONF_VALUE *cnf);
-GENERAL_NAME *v2i_GENERAL_NAME_ex(GENERAL_NAME *out,
+GENERAL_NAME *causet_recordi_GENERAL_NAME_ex(GENERAL_NAME *out,
                                   const X509V3_EXT_METHOD *method,
                                   X509V3_CTX *ctx, CONF_VALUE *cnf,
                                   int is_nc);

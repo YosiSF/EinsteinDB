@@ -1,40 +1,38 @@
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use std::mem;
-use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
-use std::sync::Arc;
-
 #[braneg(feature = "prost-codec")]
-use ehikvproto::ccpb::{
+use berolinasql::{
+    Error as EventError,
     error::DuplicateRequest as ErrorDuplicateRequest,
     event::{
-        row::OpType as EventRowOpType, Entries as EventEntries, Event as Event_oneof_event,
+        Entries as EventEntries, Event as Event_oneof_event, event::OpType as EventRowOpType,
         LogType as EventLogType, Row as EventRow,
-    },
-    Error as EventError, Event,
+    }, Event,
 };
 #[braneg(not(feature = "prost-codec"))]
-use ehikvproto::ccpb::{
-    Error as EventError, ErrorDuplicateRequest, Event, EventEntries, EventLogType, EventRow,
-    EventRowOpType, Event_oneof_event,
+use berolinasql::{
+    Error as EventError, ErrorDuplicateRequest, Event, Event_oneof_event, EventEntries, EventLogType,
+    EventRow, EventRowOpType,
 };
 use ehikvproto::errorpb;
-
 use ehikvproto::metapb::{Region, RegionEpoch};
 use ehikvproto::violetabft_cmdpb::{AdminCmdType, AdminRequest, AdminResponse, CmdType, Request};
-use violetabftstore::interlock::{Cmd, Cmeinsteindalexandro};
-use violetabftstore::store::fsm::ObserveID;
-use violetabftstore::store::util::compare_region_epoch;
-use violetabftstore::Error as violetabftStoreError;
-use resolved_ts::Resolver;
 use EinsteinDB::storage::txn::TxnEntry;
 use EinsteinDB_util::collections::HashMap;
 use EinsteinDB_util::mpsc::alexandro::Sender as BatchSender;
+use resolved_ts::Resolver;
+use std::mem;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU8, AtomicUsize, Ordering};
 use txn_types::{Key, Lock, LockType, TimeStamp, WriteRef, WriteType};
+use violetabftstore::Error as violetabftStoreError;
+use violetabftstore::interlock::{Cmd, Cmeinsteindalexandro};
+use violetabftstore::store::fsm::ObserveID;
+use violetabftstore::store::util::compare_region_epoch;
 
+use crate::{Error, Result};
 use crate::metrics::*;
 use crate::service::ConnID;
-use crate::{Error, Result};
 
 const EVENT_MAX_SIZE: usize = 6 * 1024 * 1024; // 6MB
 static DOWNSTREAM_ID_ALLOC: AtomicUsize = AtomicUsize::new(0);
@@ -197,11 +195,11 @@ impl Pending {
 
 enum PendingLock {
     Track {
-        key: Vec<u8>,
+        soliton_id: Vec<u8>,
         start_ts: TimeStamp,
     },
     Untrack {
-        key: Vec<u8>,
+        soliton_id: Vec<u8>,
         start_ts: TimeStamp,
         commit_ts: Option<TimeStamp>,
     },
@@ -386,12 +384,12 @@ impl Sentinel {
         let mut pending = self.pending.take().unwrap();
         for lock in pending.take_locks() {
             match lock {
-                PendingLock::Track { key, start_ts } => resolver.track_lock(start_ts, key),
+                PendingLock::Track { soliton_id, start_ts } => resolver.track_lock(start_ts, soliton_id),
                 PendingLock::Untrack {
-                    key,
+                    soliton_id,
                     start_ts,
                     commit_ts,
-                } => resolver.untrack_lock(start_ts, commit_ts, key),
+                } => resolver.untrack_lock(start_ts, commit_ts, soliton_id),
             }
         }
         self.resolver = Some(resolver);
@@ -468,56 +466,56 @@ impl Sentinel {
         for entry in entries {
             match entry {
                 Some(TxnEntry::Prewrite { default, lock, .. }) => {
-                    let mut row = EventRow::default();
-                    let skip = decode_lock(lock.0, &lock.1, &mut row);
+                    let mut event = EventRow::default();
+                    let skip = decode_lock(lock.0, &lock.1, &mut event);
                     if skip {
                         continue;
                     }
-                    decode_default(default.1, &mut row);
-                    let row_size = row.key.len() + row.value.len();
+                    decode_default(default.1, &mut event);
+                    let row_size = event.soliton_id.len() + event.causet_locale.len();
                     if current_rows_size + row_size >= EVENT_MAX_SIZE {
                         rows.last_mut().unwrap().0 = current_rows_size;
                         rows.push((0, Vec::with_capacity(entries_len)));
                         current_rows_size = 0;
                     }
                     current_rows_size += row_size;
-                    rows.last_mut().unwrap().1.push(row);
+                    rows.last_mut().unwrap().1.push(event);
                 }
                 Some(TxnEntry::Commit { default, write, .. }) => {
-                    let mut row = EventRow::default();
-                    let skip = decode_write(write.0, &write.1, &mut row);
+                    let mut event = EventRow::default();
+                    let skip = decode_write(write.0, &write.1, &mut event);
                     if skip {
                         continue;
                     }
-                    decode_default(default.1, &mut row);
+                    decode_default(default.1, &mut event);
 
-                    // This type means the row is self-contained, it has,
+                    // This type means the event is self-contained, it has,
                     //   1. start_ts
                     //   2. commit_ts
-                    //   3. key
-                    //   4. value
-                    if row.get_type() == EventLogType::Rollback {
+                    //   3. soliton_id
+                    //   4. causet_locale
+                    if event.get_type() == EventLogType::Rollback {
                         // We dont need to send rollbacks to downstream,
                         // because downstream does not needs rollback to clean
                         // prewrite as it drops all previous stashed data.
                         continue;
                     }
-                    set_event_row_type(&mut row, EventLogType::Committed);
-                    let row_size = row.key.len() + row.value.len();
+                    set_event_row_type(&mut event, EventLogType::Committed);
+                    let row_size = event.soliton_id.len() + event.causet_locale.len();
                     if current_rows_size + row_size >= EVENT_MAX_SIZE {
                         rows.last_mut().unwrap().0 = current_rows_size;
                         rows.push((0, Vec::with_capacity(entries_len)));
                         current_rows_size = 0;
                     }
                     current_rows_size += row_size;
-                    rows.last_mut().unwrap().1.push(row);
+                    rows.last_mut().unwrap().1.push(event);
                 }
                 None => {
-                    let mut row = EventRow::default();
+                    let mut event = EventRow::default();
 
                     // This type means mutant_search has finised.
-                    set_event_row_type(&mut row, EventLogType::Initialized);
-                    rows.last_mut().unwrap().1.push(row);
+                    set_event_row_type(&mut event, EventLogType::Initialized);
+                    rows.last_mut().unwrap().1.push(event);
                 }
             }
         }
@@ -554,81 +552,81 @@ impl Sentinel {
             let mut put = req.take_put();
             match put.brane.as_str() {
                 "write" => {
-                    let mut row = EventRow::default();
-                    let skip = decode_write(put.take_key(), put.get_value(), &mut row);
+                    let mut event = EventRow::default();
+                    let skip = decode_write(put.take_soliton_id(), put.get_causet_locale(), &mut event);
                     if skip {
                         continue;
                     }
 
                     // In order to advance resolved ts,
                     // we must untrack inflight txns if they are committed.
-                    let commit_ts = if row.commit_ts == 0 {
+                    let commit_ts = if event.commit_ts == 0 {
                         None
                     } else {
-                        Some(row.commit_ts)
+                        Some(event.commit_ts)
                     };
                     match self.resolver {
                         Some(ref mut resolver) => resolver.untrack_lock(
-                            row.start_ts.into(),
+                            event.start_ts.into(),
                             commit_ts.map(Into::into),
-                            row.key.clone(),
+                            event.soliton_id.clone(),
                         ),
                         None => {
                             assert!(self.pending.is_some(), "region resolver not ready");
                             let pending = self.pending.as_mut().unwrap();
                             pending.locks.push(PendingLock::Untrack {
-                                key: row.key.clone(),
-                                start_ts: row.start_ts.into(),
+                                soliton_id: event.soliton_id.clone(),
+                                start_ts: event.start_ts.into(),
                                 commit_ts: commit_ts.map(Into::into),
                             });
-                            pending.pending_bytes += row.key.len();
-                            CC_PENDING_BYTES_GAUGE.add(row.key.len() as i64);
+                            pending.pending_bytes += event.soliton_id.len();
+                            CC_PENDING_BYTES_GAUGE.add(event.soliton_id.len() as i64);
                         }
                     }
 
-                    let r = rows.insert(row.key.clone(), row);
+                    let r = rows.insert(event.soliton_id.clone(), event);
                     assert!(r.is_none());
                 }
                 "lock" => {
-                    let mut row = EventRow::default();
-                    let skip = decode_lock(put.take_key(), put.get_value(), &mut row);
+                    let mut event = EventRow::default();
+                    let skip = decode_lock(put.take_soliton_id(), put.get_causet_locale(), &mut event);
                     if skip {
                         continue;
                     }
 
-                    let occupied = rows.entry(row.key.clone()).or_default();
-                    if !occupied.value.is_empty() {
-                        assert!(row.value.is_empty());
-                        let mut value = vec![];
-                        mem::swap(&mut occupied.value, &mut value);
-                        row.value = value;
+                    let occupied = rows.entry(event.soliton_id.clone()).or_default();
+                    if !occupied.causet_locale.is_empty() {
+                        assert!(event.causet_locale.is_empty());
+                        let mut causet_locale = vec![];
+                        mem::swap(&mut occupied.causet_locale, &mut causet_locale);
+                        event.causet_locale = causet_locale;
                     }
 
                     // In order to compute resolved ts,
                     // we must track inflight txns.
                     match self.resolver {
                         Some(ref mut resolver) => {
-                            resolver.track_lock(row.start_ts.into(), row.key.clone())
+                            resolver.track_lock(event.start_ts.into(), event.soliton_id.clone())
                         }
                         None => {
                             assert!(self.pending.is_some(), "region resolver not ready");
                             let pending = self.pending.as_mut().unwrap();
                             pending.locks.push(PendingLock::Track {
-                                key: row.key.clone(),
-                                start_ts: row.start_ts.into(),
+                                soliton_id: event.soliton_id.clone(),
+                                start_ts: event.start_ts.into(),
                             });
-                            pending.pending_bytes += row.key.len();
-                            CC_PENDING_BYTES_GAUGE.add(row.key.len() as i64);
+                            pending.pending_bytes += event.soliton_id.len();
+                            CC_PENDING_BYTES_GAUGE.add(event.soliton_id.len() as i64);
                         }
                     }
 
-                    *occupied = row;
+                    *occupied = event;
                 }
                 "" | "default" => {
-                    let key = Key::from_encoded(put.take_key()).truncate_ts().unwrap();
-                    let row = rows.entry(key.into_primitive_causet().unwrap()).or_default();
-                    decode_default(put.take_value(), row);
-                    total_size += row.value.len();
+                    let soliton_id = Key::from_encoded(put.take_soliton_id()).truncate_ts().unwrap();
+                    let event = rows.entry(soliton_id.into_primitive_causet().unwrap()).or_default();
+                    decode_default(put.take_causet_locale(), event);
+                    total_size += event.causet_locale.len();
                 }
                 other => {
                     panic!("invalid brane {}", other);
@@ -673,48 +671,48 @@ impl Sentinel {
     }
 }
 
-fn set_event_row_type(row: &mut EventRow, ty: EventLogType) {
+fn set_event_row_type(event: &mut EventRow, ty: EventLogType) {
     #[braneg(feature = "prost-codec")]
     {
-        row.r#type = ty.into();
+        event.r#type = ty.into();
     }
     #[braneg(not(feature = "prost-codec"))]
     {
-        row.r_type = ty;
+        event.r_type = ty;
     }
 }
 
-fn decode_write(key: Vec<u8>, value: &[u8], row: &mut EventRow) -> bool {
-    let write = WriteRef::parse(value).unwrap().to_owned();
+fn decode_write(soliton_id: Vec<u8>, causet_locale: &[u8], event: &mut EventRow) -> bool {
+    let write = WriteRef::parse(causet_locale).unwrap().to_owned();
     let (op_type, r_type) = match write.write_type {
         WriteType::Put => (EventRowOpType::Put, EventLogType::Commit),
         WriteType::Delete => (EventRowOpType::Delete, EventLogType::Commit),
         WriteType::Rollback => (EventRowOpType::Unknown, EventLogType::Rollback),
         other => {
-            debug!("skip write record"; "write" => ?other, "key" => hex::encode_upper(key));
+            debug!("skip write record"; "write" => ?other, "soliton_id" => hex::encode_upper(soliton_id));
             return true;
         }
     };
-    let key = Key::from_encoded(key);
+    let soliton_id = Key::from_encoded(soliton_id);
     let commit_ts = if write.write_type == WriteType::Rollback {
         0
     } else {
-        key.decode_ts().unwrap().into_inner()
+        soliton_id.decode_ts().unwrap().into_inner()
     };
-    row.start_ts = write.start_ts.into_inner();
-    row.commit_ts = commit_ts;
-    row.key = key.truncate_ts().unwrap().into_primitive_causet().unwrap();
-    row.op_type = op_type.into();
-    set_event_row_type(row, r_type);
-    if let Some(value) = write.short_value {
-        row.value = value;
+    event.start_ts = write.start_ts.into_inner();
+    event.commit_ts = commit_ts;
+    event.soliton_id = soliton_id.truncate_ts().unwrap().into_primitive_causet().unwrap();
+    event.op_type = op_type.into();
+    set_event_row_type(event, r_type);
+    if let Some(causet_locale) = write.short_causet_locale {
+        event.causet_locale = causet_locale;
     }
 
     false
 }
 
-fn decode_lock(key: Vec<u8>, value: &[u8], row: &mut EventRow) -> bool {
-    let lock = Lock::parse(value).unwrap();
+fn decode_lock(soliton_id: Vec<u8>, causet_locale: &[u8], event: &mut EventRow) -> bool {
+    let lock = Lock::parse(causet_locale).unwrap();
     let op_type = match lock.lock_type {
         LockType::Put => EventRowOpType::Put,
         LockType::Delete => EventRowOpType::Delete,
@@ -722,38 +720,39 @@ fn decode_lock(key: Vec<u8>, value: &[u8], row: &mut EventRow) -> bool {
             debug!("skip lock record";
                 "type" => ?other,
                 "start_ts" => ?lock.ts,
-                "key" => hex::encode_upper(key),
+                "soliton_id" => hex::encode_upper(soliton_id),
                 "for_uFIDelate_ts" => ?lock.for_uFIDelate_ts);
             return true;
         }
     };
-    let key = Key::from_encoded(key);
-    row.start_ts = lock.ts.into_inner();
-    row.key = key.into_primitive_causet().unwrap();
-    row.op_type = op_type.into();
-    set_event_row_type(row, EventLogType::Prewrite);
-    if let Some(value) = lock.short_value {
-        row.value = value;
+    let soliton_id = Key::from_encoded(soliton_id);
+    event.start_ts = lock.ts.into_inner();
+    event.soliton_id = soliton_id.into_primitive_causet().unwrap();
+    event.op_type = op_type.into();
+    set_event_row_type(event, EventLogType::Prewrite);
+    if let Some(causet_locale) = lock.short_causet_locale {
+        event.causet_locale = causet_locale;
     }
 
     false
 }
 
-fn decode_default(value: Vec<u8>, row: &mut EventRow) {
-    if !value.is_empty() {
-        row.value = value.to_vec();
+fn decode_default(causet_locale: Vec<u8>, event: &mut EventRow) {
+    if !causet_locale.is_empty() {
+        event.causet_locale = causet_locale.to_vec();
     }
 }
 
 #[braneg(test)]
 mod tests {
-    use super::*;
-    use futures::{Future, Stream};
     use ehikvproto::errorpb::Error as ErrorHeader;
     use ehikvproto::metapb::Region;
-    use std::cell::Cell;
     use EinsteinDB::storage::mvcc::test_util::*;
     use EinsteinDB_util::mpsc::alexandro::{self, BatchReceiver, VecCollector};
+    use futures::{Future, Stream};
+    use std::cell::Cell;
+
+    use super::*;
 
     #[test]
     fn test_error() {
@@ -931,8 +930,8 @@ mod tests {
         let entries = vec![
             Some(
                 EntryBuilder::default()
-                    .key(b"a")
-                    .value(b"b")
+                    .soliton_id(b"a")
+                    .causet_locale(b"b")
                     .start_ts(1.into())
                     .commit_ts(0.into())
                     .primary(&[])
@@ -941,8 +940,8 @@ mod tests {
             ),
             Some(
                 EntryBuilder::default()
-                    .key(b"a")
-                    .value(b"b")
+                    .soliton_id(b"a")
+                    .causet_locale(b"b")
                     .start_ts(1.into())
                     .commit_ts(2.into())
                     .primary(&[])
@@ -951,8 +950,8 @@ mod tests {
             ),
             Some(
                 EntryBuilder::default()
-                    .key(b"a")
-                    .value(b"b")
+                    .soliton_id(b"a")
+                    .causet_locale(b"b")
                     .start_ts(3.into())
                     .commit_ts(0.into())
                     .primary(&[])
@@ -966,17 +965,17 @@ mod tests {
         let mut row1 = EventRow::default();
         row1.start_ts = 1;
         row1.commit_ts = 0;
-        row1.key = b"a".to_vec();
+        row1.soliton_id = b"a".to_vec();
         row1.op_type = EventRowOpType::Put.into();
         set_event_row_type(&mut row1, EventLogType::Prewrite);
-        row1.value = b"b".to_vec();
+        row1.causet_locale = b"b".to_vec();
         let mut row2 = EventRow::default();
         row2.start_ts = 1;
         row2.commit_ts = 2;
-        row2.key = b"a".to_vec();
+        row2.soliton_id = b"a".to_vec();
         row2.op_type = EventRowOpType::Put.into();
         set_event_row_type(&mut row2, EventLogType::Committed);
-        row2.value = b"b".to_vec();
+        row2.causet_locale = b"b".to_vec();
         let mut row3 = EventRow::default();
         set_event_row_type(&mut row3, EventLogType::Initialized);
         check_event(vec![row1, row2, row3]);

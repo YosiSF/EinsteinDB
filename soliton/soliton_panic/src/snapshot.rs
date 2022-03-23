@@ -1,11 +1,12 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::db_vector::PanicCauset;
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{
-    IterOptions, Iterable, Iterator, Peekable, ReadOptions, Result, SeekKey, LightlikePersistence,
+    Iterable, Iterator, IterOptions, LightlikePersistence, Peekable, ReadOptions, Result, SeekKey,
 };
 use std::ops::Deref;
+
+use crate::db_vector::PanicCauset;
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 
 #[derive(Clone, Debug)]
 pub struct PanicLightlikePersistence;
@@ -19,14 +20,14 @@ impl LightlikePersistence for PanicLightlikePersistence {
 impl Peekable for PanicLightlikePersistence {
     type Causet = PanicCauset;
 
-    fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<Self::Causet>> {
+    fn get_causet_locale_opt(&self, opts: &ReadOptions, soliton_id: &[u8]) -> Result<Option<Self::Causet>> {
         panic!()
     }
-    fn get_value_namespaced_opt(
+    fn get_causet_locale_namespaced_opt(
         &self,
         opts: &ReadOptions,
         namespaced: &str,
-        key: &[u8],
+        soliton_id: &[u8],
     ) -> Result<Option<Self::Causet>> {
         panic!()
     }
@@ -46,10 +47,10 @@ impl Iterable for PanicLightlikePersistence {
 pub struct PanicLightlikePersistenceIterator;
 
 impl Iterator for PanicLightlikePersistenceIterator {
-    fn seek(&mut self, key: SeekKey<'_>) -> Result<bool> {
+    fn seek(&mut self, soliton_id: SeekKey<'_>) -> Result<bool> {
         panic!()
     }
-    fn seek_for_prev(&mut self, key: SeekKey<'_>) -> Result<bool> {
+    fn seek_for_prev(&mut self, soliton_id: SeekKey<'_>) -> Result<bool> {
         panic!()
     }
 
@@ -60,10 +61,10 @@ impl Iterator for PanicLightlikePersistenceIterator {
         panic!()
     }
 
-    fn key(&self) -> &[u8] {
+    fn soliton_id(&self) -> &[u8] {
         panic!()
     }
-    fn value(&self) -> &[u8] {
+    fn causet_locale(&self) -> &[u8] {
         panic!()
     }
 

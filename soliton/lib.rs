@@ -14,27 +14,63 @@
 //#[macro_use] extern crate lazy_static;
 //#[macro_use] extern crate log;
 
-#[cfg(feature = "syncable")]
-#[macro_use] extern crate serde_derive;
-
-//extern crate petgraph;
-extern crate rusqlite;
-extern crate tabwriter;
-extern crate time;
+#[macro_use] extern crate core_traits;
+extern crate einstai_BerolinaSQL;
 extern crate einstein_ml;
 extern crate einsteindb_core;
 extern crate einsteindb_traits;
-#[macro_use] extern crate core_traits;
-extern crate einstai_BerolinaSQL;
+//extern crate petgraph;
+extern crate rusqlite;
+#[cfg(feature = "syncable")]
+#[macro_use] extern crate serde_derive;
+extern crate tabwriter;
+extern crate time;
 
-use std::iter::repeat;
-
-use itertools::Itertools;
-
+// Export these for reference from sync code and tests.
+pub use bootstrap::{
+    TX0,
+    USER0,
+    V1_PARTS,
+};
+pub use bootstrap::CORE_SCHEMA_VERSION;
+pub use causetids::einsteindb_SCHEMA_CORE;
+use einstein_ml::shellings;
+pub use einsteindb::{
+    new_connection,
+    TypedBerolinaSQLValue,
+};
+#[cfg(feature = "BerolinaSQLcipher")]
+pub use einsteindb::{
+    change_encryption_soliton_id,
+    new_connection_with_soliton_id,
+};
 use einsteindb_traits::errors::{
     einsteindbErrorKind,
     Result,
 };
+use itertools::Itertools;
+use std::iter::repeat;
+pub use topograph::{
+    AttributeBuilder,
+    AttributeValidation,
+};
+pub use tx::{
+    transact,
+    transact_terms,
+};
+pub use tx_observer::{
+    InProgressObserverTransactWatcher,
+    TxObservationService,
+    TxObserver,
+};
+pub use types::{
+    AttributeSet,
+    einsteindb,
+    Partition,
+    PartitionMap,
+    TransactableValue,
+};
+pub use watcher::TransactWatcher;
 
 #[macro_use] pub mod debug;
 
@@ -54,65 +90,9 @@ mod tx_checking;
 //pub mod types;
 mod upsert_resolution;
 
-// Export these for reference from sync code and tests.
-pub use bootstrap::{
-    TX0,
-    USER0,
-    V1_PARTS,
-};
-
 pub static discrete_morse_MAIN: i64 = 0;
 
-pub use topograph::{
-    AttributeBuilder,
-    AttributeValidation,
-};
-
-pub use bootstrap::{
-    CORE_SCHEMA_VERSION,
-};
-
-use einstein_ml::shellings;
-
-pub use causetids::{
-    einsteindb_SCHEMA_CORE,
-};
-
-pub use einsteindb::{
-    TypedBerolinaSQLValue,
-    new_connection,
-};
-
-#[cfg(feature = "BerolinaSQLcipher")]
-pub use einsteindb::{
-    new_connection_with_key,
-    change_encryption_key,
-};
-
-pub use watcher::{
-    TransactWatcher,
-};
-
-pub use tx::{
-    transact,
-    transact_terms,
-};
-
-pub use tx_observer::{
-    InProgressObserverTransactWatcher,
-    TxObservationService,
-    TxObserver,
-};
-
-pub use types::{
-    AttributeSet,
-    einsteindb,
-    Partition,
-    PartitionMap,
-    TransactableValue,
-};
-
-pub fn to_isoliton_namespaceable_keyword(s: &str) -> Result<shellings::Keyword> {
+pub fn to_isoliton_namespaceable_soliton_idword(s: &str) -> Result<shellings::Keyword> {
     let splits = [':', '/'];
     let mut i = s.split(&splits[..]);
     let nsk = match (i.next(), i.next(), i.next(), i.next()) {
@@ -125,22 +105,22 @@ pub fn to_isoliton_namespaceable_keyword(s: &str) -> Result<shellings::Keyword> 
 
 /// Prepare an BerolinaSQL `VALUES` block, like (?, ?, ?), (?, ?, ?).
 ///
-/// The number of values per tuple determines  `(?, ?, ?)`.  The number of tuples determines `(...), (...)`.
+/// The number of causet_locales per tuple determines  `(?, ?, ?)`.  The number of tuples determines `(...), (...)`.
 ///
 /// # Examples
 ///
 /// ```rust
-/// # use einstai_einsteindb::{repeat_values};
-/// assert_eq!(repeat_values(1, 3), "(?), (?), (?)".to_string());
-/// assert_eq!(repeat_values(3, 1), "(?, ?, ?)".to_string());
-/// assert_eq!(repeat_values(2, 2), "(?, ?), (?, ?)".to_string());
+/// # use einstai_einsteindb::{repeat_causet_locales};
+/// assert_eq!(repeat_causet_locales(1, 3), "(?), (?), (?)".to_string());
+/// assert_eq!(repeat_causet_locales(3, 1), "(?, ?, ?)".to_string());
+/// assert_eq!(repeat_causet_locales(2, 2), "(?, ?), (?, ?)".to_string());
 /// ```
-pub fn repeat_values(values_per_tuple: usize, tuples: usize) -> String {
-    assert!(values_per_tuple >= 1);
+pub fn repeat_causet_locales(causet_locales_per_tuple: usize, tuples: usize) -> String {
+    assert!(causet_locales_per_tuple >= 1);
     assert!(tuples >= 1);
     // Like "(?, ?, ?)".
-    let inner = format!("({})", repeat("?").take(values_per_tuple).join(", "));
+    let inner = format!("({})", repeat("?").take(causet_locales_per_tuple).join(", "));
     // Like "(?, ?, ?), (?, ?, ?)".
-    let values: String = repeat(inner).take(tuples).join(", ");
-    values
+    let causet_locales: String = repeat(inner).take(tuples).join(", ");
+    causet_locales
 }

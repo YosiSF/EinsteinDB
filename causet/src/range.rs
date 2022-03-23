@@ -10,7 +10,7 @@
 
 use ehikvproto::interlock::KeyRange;
 
-// TODO: Remove this module after switching to POSETDAG v2.
+// TODO: Remove this module after switching to POSETDAG causet_record.
 
 #[derive(PartialEq, Eq, Clone)]
 pub enum Range {

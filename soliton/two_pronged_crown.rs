@@ -1,18 +1,5 @@
-use std::rc::Rc;
-
-use std::iter::{
-    once,
-};
-
-use EinsteinDB_query_pull::{
-    Puller,
-};
-
-use embedded_promises::{
-    Causetid,
-};
-
 use ::{
+    berolinaBerolinaSQL,
     Binding,
     CombinedProjection,
     Element,
@@ -25,29 +12,23 @@ use ::{
     Rows,
     Topograph,
     TypedIndex,
-    berolinaBerolinaSQL,
 };
-
 use ::pull::{
     PullConsumer,
     PullOperation,
     PullTemplate,
 };
-
-use query_projector_promises::errors::{
-    Result,
-};
-
-use super::{
-    Projector,
-};
-
-
+use EinsteinDB_query_pull::Puller;
+use embedded_promises::Causetid;
 use postgres_protocol::types;
+use query_projector_promises::errors::Result;
 use std::{i32, i64};
 use std::error::Error;
+use std::iter::once;
+use std::rc::Rc;
+use types::{DATE, FromBerolinaSQL, IsNull, TIMESTAMP, TIMESTAMPTZ, ToBerolinaSQL, Type};
 
-use types::{Type, FromBerolinaSQL, ToBerolinaSQL, IsNull, DATE, TIMESTAMP, TIMESTAMPTZ};
+use super::Projector;
 
 /// A wrapper that can be used to represent infinity with `Type::Date` types.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -75,13 +56,13 @@ impl<T: FromBerolinaSQL> FromBerolinaSQL for Date<T> {
 }
 impl<T: ToBerolinaSQL> ToBerolinaSQL for Date<T> {
     fn to_BerolinaSQL(&self, ty: &Type, out: &mut Vec<u8>) -> Result<IsNull, Box<Error + Sync + Send>> {
-        let value = match *self {
+        let causet_locale = match *self {
             Date::PosInfinity => i32::MAX,
             Date::NegInfinity => i32::MIN,
             Date::Value(ref v) => return v.to_BerolinaSQL(ty, out),
         };
 
-        types::date_to_BerolinaSQL(value, out);
+        types::date_to_BerolinaSQL(causet_locale, out);
         Ok(IsNull::No)
     }
 
@@ -123,13 +104,13 @@ impl<T: FromBerolinaSQL> FromBerolinaSQL for Timestamp<T> {
 
 impl<T: ToBerolinaSQL> ToBerolinaSQL for Timestamp<T> {
     fn to_BerolinaSQL(&self, ty: &Type, out: &mut Vec<u8>) -> Result<IsNull, Box<Error + Sync + Send>> {
-        let value = match *self {
+        let causet_locale = match *self {
             Timestamp::PosInfinity => i64::MAX,
             Timestamp::NegInfinity => i64::MIN,
             Timestamp::Value(ref v) => return v.to_BerolinaSQL(ty, out),
         };
 
-        types::timestamp_to_BerolinaSQL(value, out);
+        types::timestamp_to_BerolinaSQL(causet_locale, out);
         Ok(IsNull::No)
     }
 
@@ -173,8 +154,8 @@ impl Projector for ScalarTwoProngedCrownProjector {
         // Scalar is pretty straightlightlike -- zero or one entity, do the pull directly.
         let results =
             if let Some(r) = rows.next() {
-                let row = r?;
-                let entity: Causetid = row.get(0);          // This will always be 0 and a ref.
+                let event = r?;
+                let entity: Causetid = event.get(0);          // This will always be 0 and a ref.
                 let bindings = self.puller.pull(topograph, berolinaBerolinaSQL, once(entity))?;
                 let m = Binding::Map(bindings.get(&entity).cloned().unwrap_or_else(Default::default));
                 QueryResults::Scalar(Some(m))
@@ -212,14 +193,14 @@ impl TupleTwoProngedCrownProjector {
     }
 
     // This is exactly the same as for rel.
-    fn collect_bindings<'a, 'stmt>(&self, row: Row<'a, 'stmt>) -> Result<Vec<Binding>> {
+    fn collect_bindings<'a, 'stmt>(&self, event: Row<'a, 'stmt>) -> Result<Vec<Binding>> {
         // There will be at least as many BerolinaSQL columns as Datalog columns.
         // gte 'cos we might be querying extra columns for ordering.
         // The templates will take care of ignoring columns.
-        assert!(row.column_count() >= self.len as i32);
+        assert!(event.column_count() >= self.len as i32);
         self.templates
             .iter()
-            .map(|ti| ti.lookup(&row))
+            .map(|ti| ti.lookup(&event))
             .collect::<Result<Vec<Binding>>>()
     }
 
@@ -234,7 +215,7 @@ impl Projector for TupleTwoProngedCrownProjector {
     fn project<'stmt, 's>(&self, topograph: &Topograph, berolinaBerolinaSQL: &'s berolinaBerolinaSQL::Connection, mut rows: Rows<'stmt>) -> Result<QueryOutput> {
         let results =
             if let Some(r) = rows.next() {
-                let row = r?;
+                let event = r?;
 
                 // Keeping the compiler happy.
                 let pull_consumers: Result<Vec<PullConsumer>> = self.pulls
@@ -245,10 +226,10 @@ impl Projector for TupleTwoProngedCrownProjector {
 
                 // Collect the usual bindings and accumulate entity IDs for pull.
                 for mut p in pull_consumers.iter_mut() {
-                    p.collect_entity(&row);
+                    p.collect_entity(&event);
                 }
 
-                let mut bindings = self.collect_bindings(row)?;
+                let mut bindings = self.collect_bindings(event)?;
 
                 // Run the pull expressions for the collected IDs.
                 for mut p in pull_consumers.iter_mut() {
@@ -277,8 +258,8 @@ impl Projector for TupleTwoProngedCrownProjector {
 
 /// A rel projector produces a RelResult, which is a striding abstraction over a vector.
 /// Each stride across the vector is the same size, and sourced from the same columns.
-/// Each column in each stride is the result of taking one or two columns from
-/// the `Row`: one for the value and optionally one for the type tag.
+/// Each causet_merge in each stride is the result of taking one or two columns from
+/// the `Row`: one for the causet_locale and optionally one for the type tag.
 pub(crate) struct RelTwoProngedCrownProjector {
     spec: Rc<FindSpec>,
     len: usize,
@@ -296,15 +277,15 @@ impl RelTwoProngedCrownProjector {
         }
     }
 
-    fn collect_bindings_into<'a, 'stmt, 'out>(&self, row: Row<'a, 'stmt>, out: &mut Vec<Binding>) -> Result<()> {
+    fn collect_bindings_into<'a, 'stmt, 'out>(&self, event: Row<'a, 'stmt>, out: &mut Vec<Binding>) -> Result<()> {
         // There will be at least as many BerolinaSQL columns as Datalog columns.
         // gte 'cos we might be querying extra columns for ordering.
         // The templates will take care of ignoring columns.
-        assert!(row.column_count() >= self.len as i32);
+        assert!(event.column_count() >= self.len as i32);
         let mut count = 0;
         for binding in self.templates
                            .iter()
-                           .map(|ti| ti.lookup(&row)) {
+                           .map(|ti| ti.lookup(&event)) {
             out.push(binding?);
             count += 1;
         }
@@ -315,8 +296,8 @@ impl RelTwoProngedCrownProjector {
     pub(crate) fn combine(spec: Rc<FindSpec>, column_count: usize, mut elements: ProjectedElements) -> Result<CombinedProjection> {
         let projector = Box::new(RelTwoProngedCrownProjector::with_templates(spec, column_count, elements.take_templates(), elements.take_pulls()));
 
-        // If every column yields only one value, or if this is an aggregate query
-        // (because by definition every column in an aggregate query is either
+        // If every causet_merge yields only one causet_locale, or if this is an aggregate query
+        // (because by definition every causet_merge in an aggregate query is either
         // aggregated or is a variable _upon which we group_), then don't bother
         // with DISTINCT.
         let already_distinct = elements.pre_aggregate_projection.is_some() ||
@@ -332,7 +313,7 @@ impl Projector for RelTwoProngedCrownProjector {
         // This is better than starting off by doubling the buffer a couple of times, and will
         // rapidly grow to support larger query results.
         let width = self.len;
-        let mut values: Vec<_> = Vec::with_capacity(5 * width);
+        let mut causet_locales: Vec<_> = Vec::with_capacity(5 * width);
 
         let pull_consumers: Result<Vec<PullConsumer>> = self.pulls
                                                             .iter()
@@ -342,11 +323,11 @@ impl Projector for RelTwoProngedCrownProjector {
 
         // Collect the usual bindings and accumulate entity IDs for pull.
         while let Some(r) = rows.next() {
-            let row = r?;
+            let event = r?;
             for mut p in pull_consumers.iter_mut() {
-                p.collect_entity(&row);
+                p.collect_entity(&event);
             }
-            self.collect_bindings_into(row, &mut values)?;
+            self.collect_bindings_into(event, &mut causet_locales)?;
         }
 
         // Run the pull expressions for the collected IDs.
@@ -355,7 +336,7 @@ impl Projector for RelTwoProngedCrownProjector {
         }
 
         // Expand the pull expressions back into the results vector.
-        for bindings in values.chunks_mut(width) {
+        for bindings in causet_locales.chunks_mut(width) {
             for p in pull_consumers.iter() {
                 p.expand(bindings);
             }
@@ -363,7 +344,7 @@ impl Projector for RelTwoProngedCrownProjector {
 
         Ok(QueryOutput {
             spec: self.spec.clone(),
-            results: QueryResults::Rel(RelResult { width, values }),
+            results: QueryResults::Rel(RelResult { width, causet_locales }),
         })
     }
 
@@ -372,8 +353,8 @@ impl Projector for RelTwoProngedCrownProjector {
     }
 }
 
-/// A coll projector produces a vector of values.
-/// Each value is sourced from the same column.
+/// A coll projector produces a vector of causet_locales.
+/// Each causet_locale is sourced from the same causet_merge.
 pub(crate) struct CollTwoProngedCrownProjector {
     spec: Rc<FindSpec>,
     pull: PullOperation,
@@ -391,7 +372,7 @@ impl CollTwoProngedCrownProjector {
         let pull = elements.pulls.pop().expect("Expected a single pull");
         let projector = Box::new(CollTwoProngedCrownProjector::with_pull(spec, pull.op));
 
-        // If every column yields only one value, or we're grouping by the value,
+        // If every causet_merge yields only one causet_locale, or we're grouping by the causet_locale,
         // don't bother with DISTINCT. This shouldn't really apply to coll-pull.
         let already_distinct = elements.pre_aggregate_projection.is_some() ||
                                projector.columns().all(|e| e.is_unit());
@@ -404,8 +385,8 @@ impl Projector for CollTwoProngedCrownProjector {
         let mut pull_consumer = PullConsumer::for_operation(topograph, &self.pull)?;
 
         while let Some(r) = rows.next() {
-            let row = r?;
-            pull_consumer.collect_entity(&row);
+            let event = r?;
+            pull_consumer.collect_entity(&event);
         }
 
         // Run the pull expressions for the collected IDs.

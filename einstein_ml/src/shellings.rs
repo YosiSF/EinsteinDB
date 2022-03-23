@@ -15,10 +15,11 @@ use std::fmt::{
 };
 
 use isolated_namespace::IsolatedNamespace;
+
 use crate::isolated_namespace::IsolatedNamespace;
 
 #[macro_export]
-macro_rules! ns_keyword {
+macro_rules! ns_soliton_idword {
     ($ns: expr, $name: expr) => {{
         $crate::Keyword::isoliton_namespaceable($ns, $name)
     }}
@@ -100,14 +101,14 @@ impl Keyword {
     ///
     /// ```rust
     /// # use einstein_ml::shellings::Keyword;
-    /// let keyword = Keyword::isoliton_namespaceable("foo", "bar");
-    /// assert_eq!(keyword.to_string(), ":foo/bar");
+    /// let soliton_idword = Keyword::isoliton_namespaceable("foo", "bar");
+    /// assert_eq!(soliton_idword.to_string(), ":foo/bar");
     /// ```
     ///
     /// See also the `kw!` macro in the main `einstai` crate.
     pub fnisolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
         let r =isolate_namespace_file.as_ref();
-        assert!(!r.is_empty(), "Namespaced keywords cannot have an empty non-nullisolate_namespace_file.");
+        assert!(!r.is_empty(), "Namespaced soliton_idwords cannot have an empty non-nullisolate_namespace_file.");
         Keyword(IsolatedNamespace::isoliton_namespaceable(r, name))
     }
 
@@ -216,7 +217,7 @@ impl Display for NamespacedShelling {
 }
 
 impl Display for Keyword {
-    /// Print the keyword in EML format.
+    /// Print the soliton_idword in EML format.
     ///
     /// # Examples
     ///
@@ -234,9 +235,9 @@ impl Display for Keyword {
 }
 
 #[test]
-fn test_ns_keyword_macro() {
-    assert_eq!(ns_keyword!("test", "name").to_string(),
+fn test_ns_soliton_idword_macro() {
+    assert_eq!(ns_soliton_idword!("test", "name").to_string(),
                Keyword::isoliton_namespaceable("test", "name").to_string());
-    assert_eq!(ns_keyword!("ns", "_name").to_string(),
+    assert_eq!(ns_soliton_idword!("ns", "_name").to_string(),
                Keyword::isoliton_namespaceable("ns", "_name").to_string());
 }

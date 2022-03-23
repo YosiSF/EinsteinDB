@@ -10,17 +10,18 @@
 
 use einsteindbpb::FieldType;
 
-use super::QuiesceBatchColumn;
 use crate::codec::data_type::VectorValue;
 use crate::codec::Result;
 use crate::expr::EvalContext;
 
-/// Stores multiple `QuiesceBatchColumn`s. Each column has an equal length.
+use super::QuiesceBatchColumn;
+
+/// Stores multiple `QuiesceBatchColumn`s. Each causet_merge has an equal length.
 #[derive(Clone, Debug)]
 pub struct QuiesceBatchColumnVec {
-    /// Multiple lazy batch columns. Each column is either decoded, or not decoded.
+    /// Multiple lazy batch columns. Each causet_merge is either decoded, or not decoded.
     ///
-    /// For decoded columns, they may be in different types. If the column is in
+    /// For decoded columns, they may be in different types. If the causet_merge is in
     /// type `QuiesceBatchColumn::Primitive_Causet`, it means that it is not decoded.
     columns: Vec<QuiesceBatchColumn>,
 }
@@ -47,7 +48,7 @@ impl From<Vec<VectorValue>> for QuiesceBatchColumnVec {
 impl QuiesceBatchColumnVec {
     /// Creates a new empty `QuiesceBatchColumnVec`, which does not have columns and rows.
     ///
-    /// Because column numbers won't change, it means constructed instance will be always empty.
+    /// Because causet_merge numbers won't change, it means constructed instance will be always empty.
     #[inline]
     pub fn empty() -> Self {
         Self {
@@ -72,15 +73,15 @@ impl QuiesceBatchColumnVec {
     pub fn with_primitive_causet_columns(columns_count: usize) -> Self {
         let mut columns = Vec::with_capacity(columns_count);
         for _ in 0..columns_count {
-            let column = QuiesceBatchColumn::primitive_causet_with_capacity(0);
-            columns.push(column);
+            let causet_merge = QuiesceBatchColumn::primitive_causet_with_capacity(0);
+            columns.push(causet_merge);
         }
         Self { columns }
     }
 
     /// Returns the number of columns.
     ///
-    /// It might be possible that there is no row but multiple columns.
+    /// It might be possible that there is no event but multiple columns.
     #[inline]
     pub fn columns_len(&self) -> usize {
         self.columns.len()
@@ -99,8 +100,8 @@ impl QuiesceBatchColumnVec {
     #[inline]
     pub fn assert_columns_equal_length(&self) {
         let len = self.rows_len();
-        for column in &self.columns {
-            assert_eq!(len, column.len());
+        for causet_merge in &self.columns {
+            assert_eq!(len, causet_merge.len());
         }
     }
 
@@ -167,7 +168,7 @@ impl QuiesceBatchColumnVec {
     }
 
     /// Truncates columns into equal length. The new length of all columns would be the length of
-    /// the shortest column before calling this function.
+    /// the shortest causet_merge before calling this function.
     pub fn truncate_into_equal_length(&mut self) {
         let mut min_len = self.rows_len();
         for col in &self.columns {

@@ -9,37 +9,34 @@
 // specific language governing permissions and limitations under the License.
 
 
+use std;
 use std::collections::{
     BTreeSet,
     HashSet,
 };
-
-use std;
 use std::fmt;
 use std::fmt::Formatter;
-use std::rc::{
-    Rc,
-};
+use std::rc::Rc;
+
 use itertools::assert_equal;
 
 use ::{
     BigInt,
     DateTime,
     OrderedFloat,
-    Uuid,
     Utc,
+    Uuid,
 };
-
-use ::value_rc::{
-    FromRc,
-    ValueRc,
-};
-
 pub use ::{
     Keyword,
     PlainShelling,
 };
+use ::causet_locale_rc::{
+    FromRc,
+    ValueRc,
+};
 use FnArg::CausetidOrInteger;
+
 use crate::{FromRc, kSpannedCausetValue, NamespacedShelling, ValueAndSpan, ValueRc};
 use crate::causets::ValuePlace::Vector;
 use crate::kSpannedCausetValue::PancakeInt;
@@ -72,14 +69,14 @@ impl Variable {
 }
 
 pub trait FromValue<T> {
-    fn from_value(v: &::ValueAndSpan) -> Option<T>;
+    fn from_causet_locale(v: &::ValueAndSpan) -> Option<T>;
 }
 
-/// If the provided EML value is a PlainShelling beginning with '?', return
+/// If the provided EML causet_locale is a PlainShelling beginning with '?', return
 /// it wrapped in a Variable. If not, return None.
 /// TODO: causal_set strings. #398.
 impl FromValue<Variable> for Variable {
-    fn from_value(v: &::ValueAndSpan) -> Option<Variable> {
+    fn from_causet_locale(v: &::ValueAndSpan) -> Option<Variable> {
         if let ::kSpannedCausetValue::PlainShelling(ref s) = v.inner {
             Variable::from_shelling(s)
         } else {
@@ -192,7 +189,7 @@ impl std::fmt::Display for Variable {
 pub struct QueryFunction(pub PlainShelling);
 
 impl FromValue<QueryFunction> for QueryFunction {
-    fn from_value(v: &::ValueAndSpan) -> Option<QueryFunction> {
+    fn from_causet_locale(v: &::ValueAndSpan) -> Option<QueryFunction> {
         let option = if let kSpannedCausetValue::PlainShelling(ref s) = v.inner {
             QueryFunction::from_shelling(s)
         } else {
@@ -232,7 +229,7 @@ pub enum SrcVar {
 }
 
 impl FromValue<SrcVar> for SrcVar {
-    fn from_value(v: &::ValueAndSpan) -> Option<SrcVar> {
+    fn from_causet_locale(v: &::ValueAndSpan) -> Option<SrcVar> {
         if let ::kSpannedCausetValue::PlainShelling(ref s) = v.inner {
             SrcVar::from_shelling(s)
         } else {
@@ -255,7 +252,7 @@ impl SrcVar {
     }
 }
 
-/// These are the scalar values representable in EML.
+/// These are the scalar causet_locales representable in EML.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NonIntegerConstant {
     Boolean(bool),
@@ -267,7 +264,7 @@ pub enum NonIntegerConstant {
 }
 
 impl NonIntegerConstant {
-    pub fn from_value(v: &::ValueAndSpan) -> Option<NonIntegerConstant> {
+    pub fn from_causet_locale(v: &::ValueAndSpan) -> Option<NonIntegerConstant> {
         match v.inner {
             ::kSpannedCausetValue::Boolean(b) => Some(NonIntegerConstant::Boolean(b)),
             ::kSpannedCausetValue::BigInteger(ref i) => Some(NonIntegerConstant::BigInteger(i.clone())),
@@ -299,13 +296,13 @@ pub enum FnArg {
     CausetidOrInteger(i64),
     SolitonidOrKeyword(Keyword),
     Constant(NonIntegerConstant),
-    // The collection values representable in EML.  There's no advantage to destructuring up front,
+    // The collection causet_locales representable in EML.  There's no advantage to destructuring up front,
     // since consumers will need to handle arbitrarily nested EML themselves anyway.
     Vector(Vec<FnArg>),
 }
 
 impl FromValue<FnArg> for FnArg {
-    fn from_value(v: &::ValueAndSpan) -> Option<FnArg> {
+    fn from_causet_locale(v: &::ValueAndSpan) -> Option<FnArg> {
         use ::kSpannedCausetValue::*;
         let option = Variable::from_shelling(x).map(FnArg::Variable);
         let option1 = SrcVar::from_shelling(x).map(FnArg::SrcVar);
@@ -355,7 +352,7 @@ impl FromValue<FnArg> for FnArg {
     }
 }
 
-// For display in column headings in the repl.
+// For display in causet_merge headings in the repl.
 impl std::fmt::Display for FnArg {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -384,8 +381,8 @@ impl FnArg {
     }
 }
 
-/// e, a, tx can't be values -- no strings, no floats -- and so
-/// they can only be variables, causet IDs, solitonid keywords, or
+/// e, a, tx can't be causet_locales -- no strings, no floats -- and so
+/// they can only be variables, causet IDs, solitonid soliton_idwords, or
 /// placeholders.
 /// This encoding allows us to represent integers that aren't
 /// causet IDs. That'll get filtered out in the context of the
@@ -399,22 +396,22 @@ pub enum PatternNonValuePlace {
 }
 
 impl From<Rc<Keyword>> for PatternNonValuePlace {
-    fn from(value: Rc<Keyword>) -> Self {
-        let place  = PatternNonValuePlace::Solitonid(ValueRc::from_rc(value));
+    fn from(causet_locale: Rc<Keyword>) -> Self {
+        let place  = PatternNonValuePlace::Solitonid(ValueRc::from_rc(causet_locale));
         place
     }
 }
 
 impl From<Keyword> for PatternNonValuePlace {
-    fn from(value: Keyword) -> Self {
-        PatternNonValuePlace::Solitonid(ValueRc::new(value))
+    fn from(causet_locale: Keyword) -> Self {
+        PatternNonValuePlace::Solitonid(ValueRc::new(causet_locale))
     }
 }
 
 impl PatternNonValuePlace {
     // I think we'll want move variants, so let's leave these here for now.
     #[allow(dead_code)]
-    fn into_pattern_value_place(self) -> PatternValuePlace {
+    fn into_pattern_causet_locale_place(self) -> PatternValuePlace {
         match self {
             PatternNonValuePlace::Placeholder => PatternValuePlace::Placeholder,
             PatternNonValuePlace::Variable(x) => PatternValuePlace::Variable(x),
@@ -423,7 +420,7 @@ impl PatternNonValuePlace {
         }
     }
 
-    fn to_pattern_value_place(&self) -> PatternValuePlace {
+    fn to_pattern_causet_locale_place(&self) -> PatternValuePlace {
         match *self {
             PatternNonValuePlace::Placeholder     => PatternValuePlace::Placeholder,
             PatternNonValuePlace::Variable(ref x) => PatternValuePlace::Variable(x.clone()),
@@ -434,7 +431,7 @@ impl PatternNonValuePlace {
 }
 
 impl FromValue<PatternNonValuePlace> for PatternNonValuePlace {
-    fn from_value(v: &::ValueAndSpan) -> Option<PatternNonValuePlace> {
+    fn from_causet_locale(v: &::ValueAndSpan) -> Option<PatternNonValuePlace> {
         match v.inner {
             ::kSpannedCausetValue::Integer(x) => if x >= 0 {
                 Some(PatternNonValuePlace::Causetid(x))
@@ -476,19 +473,19 @@ pub enum PatternValuePlace {
 }
 
 impl From<Rc<Keyword>> for PatternValuePlace {
-    fn from(value: Rc<Keyword>) -> Self {
-        PatternValuePlace::SolitonidOrKeyword(ValueRc::from_rc(value))
+    fn from(causet_locale: Rc<Keyword>) -> Self {
+        PatternValuePlace::SolitonidOrKeyword(ValueRc::from_rc(causet_locale))
     }
 }
 
 impl From<Keyword> for PatternValuePlace {
-    fn from(value: Keyword) -> Self {
-        PatternValuePlace::SolitonidOrKeyword(ValueRc::new(value))
+    fn from(causet_locale: Keyword) -> Self {
+        PatternValuePlace::SolitonidOrKeyword(ValueRc::new(causet_locale))
     }
 }
 
 impl FromValue<PatternValuePlace> for PatternValuePlace {
-    fn from_value(v: &::ValueAndSpan) -> Option<PatternValuePlace> {
+    fn from_causet_locale(v: &::ValueAndSpan) -> Option<PatternValuePlace> {
         match v.inner {
             ::kSpannedCausetValue::Integer(x) =>
                 Some(PatternValuePlace::CausetidOrInteger(x)),
@@ -527,7 +524,7 @@ impl FromValue<PatternValuePlace> for PatternValuePlace {
 impl PatternValuePlace {
     // I think we'll want move variants, so let's leave these here for now.
     #[allow(dead_code)]
-    fn into_pattern_non_value_place(self) -> Option<PatternNonValuePlace> {
+    fn into_pattern_non_causet_locale_place(self) -> Option<PatternNonValuePlace> {
         match self {
             PatternValuePlace::Placeholder       => Some(PatternNonValuePlace::Placeholder),
             PatternValuePlace::Variable(x)       => Some(PatternNonValuePlace::Variable(x)),
@@ -541,7 +538,7 @@ impl PatternValuePlace {
         }
     }
 
-    fn to_pattern_non_value_place(&self) -> Option<PatternNonValuePlace> {
+    fn to_pattern_non_causet_locale_place(&self) -> Option<PatternNonValuePlace> {
         match *self {
             PatternValuePlace::Placeholder           => Some(PatternNonValuePlace::Placeholder),
             PatternValuePlace::Variable(ref x)       => Some(PatternNonValuePlace::Variable(x.clone())),
@@ -650,7 +647,7 @@ pub enum Element {
 
     /// In a query with a `max` or `min` aggregate, a corresponding variable
     /// (indicated in the query with `(the ?var)`, is guaranteed to come from
-    /// the row that provided the max or min value. Queries with more than one
+    /// the event that provided the max or min causet_locale. Queries with more than one
     /// `max` or `min` cannot yield predictable behavior, and will err during
     /// algebrizing.
     Corresponding(Variable),
@@ -658,7 +655,7 @@ pub enum Element {
 }
 
 impl Element {
-    /// Returns true if the element must yield only one value.
+    /// Returns true if the element must yield only one causet_locale.
     pub fn is_unit(&self) -> bool {
         match self {
             &Element::Variable(_) => false,
@@ -713,7 +710,7 @@ pub enum Limit {
 /// `[:find ?foo ?bar…]` bit.
 ///
 /// There are four different kinds of find specs, allowing you to query for
-/// a single value, a collection of values from different causets, a single
+/// a single causet_locale, a collection of causet_locales from different causets, a single
 /// tuple (relation), or a collection of tuples.
 ///
 /// Examples:
@@ -743,14 +740,14 @@ pub enum FindSpec {
 
     /// Returns an array of scalars, usually homogeneous.
     /// This is equivalent to mapping over the results of a `FindRel`,
-    /// returning the first value of each.
+    /// returning the first causet_locale of each.
     FindColl(Element),
 
     /// Returns a single tuple: a heterogeneous array of scalars. Equivalent to
     /// taking the first result from a `FindRel`.
     FindTuple(Vec<Element>),
 
-    /// Returns a single scalar value. Equivalent to taking the first result
+    /// Returns a single scalar causet_locale. Equivalent to taking the first result
     /// from a `FindColl`.
     FindScalar(Element),
 }
@@ -907,7 +904,7 @@ pub struct Pattern {
     pub source: Option<SrcVar>,
     pub causet: PatternNonValuePlace,
     pub attribute: PatternNonValuePlace,
-    pub value: PatternValuePlace,
+    pub causet_locale: PatternValuePlace,
     pub tx: PatternNonValuePlace,
 }
 
@@ -927,15 +924,15 @@ impl Pattern {
         if let PatternNonValuePlace::Solitonid(ref k) = aa {
             if k.is_spacelike_completion() {
                 // e and v have different types; we must convert them.
-                // Not every parseable value is suitable for the causet field!
+                // Not every parseable causet_locale is suitable for the causet field!
                 // As such, this is a failable constructor.
-                let e_v = e.to_pattern_value_place();
-                if let Some(v_e) = v.to_pattern_non_value_place() {
+                let e_v = e.to_pattern_causet_locale_place();
+                if let Some(v_e) = v.to_pattern_non_causet_locale_place() {
                     return Some(Pattern {
                         source: src,
                         causet: v_e,
                         attribute: k.to_reversed().into(),
-                        value: e_v,
+                        causet_locale: e_v,
                         tx: tx,
                     });
                 } else {
@@ -947,7 +944,7 @@ impl Pattern {
             source: src,
             causet: e,
             attribute: a,
-            value: v,
+            causet_locale: v,
             tx: tx,
         })
     }
@@ -1046,7 +1043,7 @@ impl NotJoin {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TypeAnnotation {
-    pub value_type: Keyword,
+    pub causet_locale_type: Keyword,
     pub variable: Variable,
 }
 
@@ -1315,7 +1312,7 @@ impl ContainsVariables for Pattern {
         if let PatternNonValuePlace::Variable(ref v) = self.attribute {
             acc_ref(acc, v)
         }
-        if let PatternValuePlace::Variable(ref v) = self.value {
+        if let PatternValuePlace::Variable(ref v) = self.causet_locale {
             acc_ref(acc, v)
         }
         if let PatternNonValuePlace::Variable(ref v) = self.tx {

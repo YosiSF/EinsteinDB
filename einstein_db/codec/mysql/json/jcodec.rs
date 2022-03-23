@@ -1,22 +1,23 @@
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use std::collections::BTreeMap;
-use std::convert::TryInto;
-use std::{f64, str};
-
-use super::constants::*;
-use super::{Json, JsonRef, JsonType};
-use crate::codec::{Error, Result};
 use codec::number::NumberCodec;
 use codec::prelude::*;
+use std::{f64, str};
+use std::collections::BTreeMap;
+use std::convert::TryInto;
+
+use crate::codec::{Error, Result};
+
+use super::{Json, JsonRef, JsonType};
+use super::constants::*;
 
 impl<'a> JsonRef<'a> {
     fn encoded_len(&self) -> usize {
         match self.type_code {
-            // Literal is encoded inline with value-causet, so nothing will be
-            // appended in value part
+            // Literal is encoded inline with causet_locale-causet, so nothing will be
+            // appended in causet_locale part
             JsonType::Literal => 0,
-            _ => self.value.len(),
+            _ => self.causet_locale.len(),
         }
     }
 }
@@ -24,53 +25,53 @@ impl<'a> JsonRef<'a> {
 pub trait JsonEncoder: NumberEncoder {
     fn write_json<'a>(&mut self, data: JsonRef<'a>) -> Result<()> {
         self.write_u8(data.get_type() as u8)?;
-        self.write_bytes(data.value()).map_err(Error::from)
+        self.write_bytes(data.causet_locale()).map_err(Error::from)
     }
 
     // See `appeneinsteindbinaryObject` in MEDB `types/json/binary.go`
-    fn write_json_obj_from_keys_values<'a>(
+    fn write_json_obj_from_soliton_ids_causet_locales<'a>(
         &mut self,
         mut entries: Vec<(&[u8], JsonRef<'a>)>,
     ) -> Result<()> {
         entries.sort_by(|a, b| a.0.cmp(b.0));
-        // object: element-count size key-causet* value-causet* key* value*
+        // object: element-count size soliton_id-causet* causet_locale-causet* soliton_id* causet_locale*
         let element_count = entries.len();
-        // key-causet ::= key-offset(uint32) key-length(uint16)
-        let key_entries_len = KEY_ENTRY_LEN * element_count;
-        // value-causet ::= type(byte) offset-or-inlined-value(uint32)
-        let value_entries_len = VALUE_ENTRY_LEN * element_count;
+        // soliton_id-causet ::= soliton_id-offset(uint32) soliton_id-length(uint16)
+        let soliton_id_entries_len = KEY_ENTRY_LEN * element_count;
+        // causet_locale-causet ::= type(byte) offset-or-inlined-causet_locale(uint32)
+        let causet_locale_entries_len = VALUE_ENTRY_LEN * element_count;
         let ehikv_encoded_len = entries
             .iter()
             .fold(0, |acc, (k, v)| acc + k.len() + v.encoded_len());
         let size =
-            ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len + ehikv_encoded_len;
+            ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len + ehikv_encoded_len;
         self.write_u32_le(element_count as u32)?;
         self.write_u32_le(size as u32)?;
-        let mut key_offset = ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len;
+        let mut soliton_id_offset = ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len;
 
-        // Write key entries
-        for (key, _) in entries.iter() {
-            let key_len = key.len();
-            self.write_u32_le(key_offset as u32)?;
-            self.write_u16_le(key_len as u16)?;
-            key_offset += key_len;
+        // Write soliton_id entries
+        for (soliton_id, _) in entries.iter() {
+            let soliton_id_len = soliton_id.len();
+            self.write_u32_le(soliton_id_offset as u32)?;
+            self.write_u16_le(soliton_id_len as u16)?;
+            soliton_id_offset += soliton_id_len;
         }
 
-        let mut value_offset = key_offset as u32;
-        // Write value entries
+        let mut causet_locale_offset = soliton_id_offset as u32;
+        // Write causet_locale entries
         for (_, v) in entries.iter() {
-            self.write_value_causet(&mut value_offset, v)?;
+            self.write_causet_locale_causet(&mut causet_locale_offset, v)?;
         }
 
-        // Write keys
-        for (key, _) in entries.iter() {
-            self.write_bytes(key)?;
+        // Write soliton_ids
+        for (soliton_id, _) in entries.iter() {
+            self.write_bytes(soliton_id)?;
         }
 
-        // Write values
+        // Write causet_locales
         for (_, v) in entries.iter() {
             if v.get_type() != JsonType::Literal {
-                self.write_bytes(v.value)?;
+                self.write_bytes(v.causet_locale)?;
             }
         }
         Ok(())
@@ -78,44 +79,44 @@ pub trait JsonEncoder: NumberEncoder {
 
     // See `appeneinsteindbinaryObject` in MEDB `types/json/binary.go`
     fn write_json_obj(&mut self, data: &BTreeMap<String, Json>) -> Result<()> {
-        // object: element-count size key-causet* value-causet* key* value*
+        // object: element-count size soliton_id-causet* causet_locale-causet* soliton_id* causet_locale*
         let element_count = data.len();
-        // key-causet ::= key-offset(uint32) key-length(uint16)
-        let key_entries_len = KEY_ENTRY_LEN * element_count;
-        // value-causet ::= type(byte) offset-or-inlined-value(uint32)
-        let value_entries_len = VALUE_ENTRY_LEN * element_count;
+        // soliton_id-causet ::= soliton_id-offset(uint32) soliton_id-length(uint16)
+        let soliton_id_entries_len = KEY_ENTRY_LEN * element_count;
+        // causet_locale-causet ::= type(byte) offset-or-inlined-causet_locale(uint32)
+        let causet_locale_entries_len = VALUE_ENTRY_LEN * element_count;
         let ehikv_encoded_len = data
             .iter()
             .fold(0, |acc, (k, v)| acc + k.len() + v.as_ref().encoded_len());
         let size =
-            ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len + ehikv_encoded_len;
+            ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len + ehikv_encoded_len;
         self.write_u32_le(element_count as u32)?;
         self.write_u32_le(size as u32)?;
-        let mut key_offset = ELEMENT_COUNT_LEN + SIZE_LEN + key_entries_len + value_entries_len;
+        let mut soliton_id_offset = ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len;
 
-        // Write key entries
-        for key in data.keys() {
-            let key_len = key.len();
-            self.write_u32_le(key_offset as u32)?;
-            self.write_u16_le(key_len as u16)?;
-            key_offset += key_len;
+        // Write soliton_id entries
+        for soliton_id in data.soliton_ids() {
+            let soliton_id_len = soliton_id.len();
+            self.write_u32_le(soliton_id_offset as u32)?;
+            self.write_u16_le(soliton_id_len as u16)?;
+            soliton_id_offset += soliton_id_len;
         }
 
-        let mut value_offset = key_offset as u32;
-        // Write value entries
-        for v in data.values() {
-            self.write_value_causet(&mut value_offset, &v.as_ref())?;
+        let mut causet_locale_offset = soliton_id_offset as u32;
+        // Write causet_locale entries
+        for v in data.causet_locales() {
+            self.write_causet_locale_causet(&mut causet_locale_offset, &v.as_ref())?;
         }
 
-        // Write keys
-        for key in data.keys() {
-            self.write_bytes(key.as_bytes())?;
+        // Write soliton_ids
+        for soliton_id in data.soliton_ids() {
+            self.write_bytes(soliton_id.as_bytes())?;
         }
 
-        // Write values
-        for v in data.values() {
+        // Write causet_locales
+        for v in data.causet_locales() {
             if v.as_ref().get_type() != JsonType::Literal {
-                self.write_bytes(v.as_ref().value())?;
+                self.write_bytes(v.as_ref().causet_locale())?;
             }
         }
         Ok(())
@@ -124,20 +125,20 @@ pub trait JsonEncoder: NumberEncoder {
     // See `appeneinsteindbinaryArray` in MEDB `types/json/binary.go`
     fn write_json_ref_array<'a>(&mut self, data: &[JsonRef<'a>]) -> Result<()> {
         let element_count = data.len();
-        let value_entries_len = VALUE_ENTRY_LEN * element_count;
-        let values_len = data.iter().fold(0, |acc, v| acc + v.encoded_len());
-        let total_size = ELEMENT_COUNT_LEN + SIZE_LEN + value_entries_len + values_len;
+        let causet_locale_entries_len = VALUE_ENTRY_LEN * element_count;
+        let causet_locales_len = data.iter().fold(0, |acc, v| acc + v.encoded_len());
+        let total_size = ELEMENT_COUNT_LEN + SIZE_LEN + causet_locale_entries_len + causet_locales_len;
         self.write_u32_le(element_count as u32)?;
         self.write_u32_le(total_size as u32)?;
-        let mut value_offset = (ELEMENT_COUNT_LEN + SIZE_LEN + value_entries_len) as u32;
-        // Write value entries
+        let mut causet_locale_offset = (ELEMENT_COUNT_LEN + SIZE_LEN + causet_locale_entries_len) as u32;
+        // Write causet_locale entries
         for v in data {
-            self.write_value_causet(&mut value_offset, v)?;
+            self.write_causet_locale_causet(&mut causet_locale_offset, v)?;
         }
-        // Write value data
+        // Write causet_locale data
         for v in data {
             if v.get_type() != JsonType::Literal {
-                self.write_bytes(v.value())?;
+                self.write_bytes(v.causet_locale())?;
             }
         }
         Ok(())
@@ -145,42 +146,42 @@ pub trait JsonEncoder: NumberEncoder {
 
     // See `appeneinsteindbinaryArray` in MEDB `types/json/binary.go`
     fn write_json_array(&mut self, data: &[Json]) -> Result<()> {
-        // array ::= element-count size value-causet* value*
+        // array ::= element-count size causet_locale-causet* causet_locale*
         let element_count = data.len();
-        let value_entries_len = VALUE_ENTRY_LEN * element_count;
-        let values_len = data.iter().fold(0, |acc, v| acc + v.as_ref().encoded_len());
-        let total_size = ELEMENT_COUNT_LEN + SIZE_LEN + value_entries_len + values_len;
+        let causet_locale_entries_len = VALUE_ENTRY_LEN * element_count;
+        let causet_locales_len = data.iter().fold(0, |acc, v| acc + v.as_ref().encoded_len());
+        let total_size = ELEMENT_COUNT_LEN + SIZE_LEN + causet_locale_entries_len + causet_locales_len;
         self.write_u32_le(element_count as u32)?;
         self.write_u32_le(total_size as u32)?;
-        let mut value_offset = (ELEMENT_COUNT_LEN + SIZE_LEN + value_entries_len) as u32;
-        // Write value entries
+        let mut causet_locale_offset = (ELEMENT_COUNT_LEN + SIZE_LEN + causet_locale_entries_len) as u32;
+        // Write causet_locale entries
         for v in data {
-            self.write_value_causet(&mut value_offset, &v.as_ref())?;
+            self.write_causet_locale_causet(&mut causet_locale_offset, &v.as_ref())?;
         }
-        // Write value data
+        // Write causet_locale data
         for v in data {
             if v.as_ref().get_type() != JsonType::Literal {
-                self.write_bytes(v.as_ref().value())?;
+                self.write_bytes(v.as_ref().causet_locale())?;
             }
         }
         Ok(())
     }
 
     // See `appeneinsteindbinaryValElem` in MEDB `types/json/binary.go`
-    fn write_value_causet<'a>(&mut self, value_offset: &mut u32, v: &JsonRef<'a>) -> Result<()> {
+    fn write_causet_locale_causet<'a>(&mut self, causet_locale_offset: &mut u32, v: &JsonRef<'a>) -> Result<()> {
         let tp = v.get_type();
         self.write_u8(tp as u8)?;
         match tp {
             JsonType::Literal => {
-                self.write_u8(v.value()[0])?;
+                self.write_u8(v.causet_locale()[0])?;
                 let left = U32_LEN - LITERAL_LEN;
                 for _ in 0..left {
                     self.write_u8(JSON_LITERAL_NIL)?;
                 }
             }
             _ => {
-                self.write_u32_le(*value_offset)?;
-                *value_offset += v.value().len() as u32;
+                self.write_u32_le(*causet_locale_offset)?;
+                *causet_locale_offset += v.causet_locale().len() as u32;
             }
         }
         Ok(())
@@ -227,27 +228,27 @@ impl<T: BufferWriter> JsonDatumPayloadChunkEncoder for T {}
 impl<T: BufferWriter> JsonEncoder for T {}
 
 pub trait JsonDecoder: NumberDecoder {
-    // `read_json` decodes value encoded by `write_json` before.
+    // `read_json` decodes causet_locale encoded by `write_json` before.
     fn read_json(&mut self) -> Result<Json> {
         if self.bytes().is_empty() {
             return Err(box_err!("Cant read json from empty bytes"));
         }
         let tp: JsonType = self.read_u8()?.try_into()?;
-        let value = match tp {
+        let causet_locale = match tp {
             JsonType::Object | JsonType::Array => {
-                let value = self.bytes();
-                let data_size = NumberCodec::decode_u32_le(&value[ELEMENT_COUNT_LEN..]) as usize;
+                let causet_locale = self.bytes();
+                let data_size = NumberCodec::decode_u32_le(&causet_locale[ELEMENT_COUNT_LEN..]) as usize;
                 self.read_bytes(data_size)?
             }
             JsonType::String => {
-                let value = self.bytes();
-                let (str_len, len_len) = NumberCodec::try_decode_var_u64(&value)?;
+                let causet_locale = self.bytes();
+                let (str_len, len_len) = NumberCodec::try_decode_var_u64(&causet_locale)?;
                 self.read_bytes(str_len as usize + len_len)?
             }
             JsonType::I64 | JsonType::U64 | JsonType::Double => self.read_bytes(NUMBER_LEN)?,
             JsonType::Literal => self.read_bytes(LITERAL_LEN)?,
         };
-        Ok(Json::new(tp, Vec::from(value)))
+        Ok(Json::new(tp, Vec::from(causet_locale)))
     }
 }
 

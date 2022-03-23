@@ -8,17 +8,18 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use crate::{EvalType, FieldTypeAccessor};
 use einsteindbpb::FieldType;
 
-use super::scalar::ScalarValueRef;
-use super::*;
+use crate::{EvalType, FieldTypeAccessor};
 use crate::codec::myBerolinaSQL::decimal::DECIMAL_STRUCT_SIZE;
 use crate::codec::Result;
 
-/// A vector value container, a.k.a. column, for all concrete eval types.
+use super::*;
+use super::scalar::ScalarValueRef;
+
+/// A vector causet_locale container, a.k.a. causet_merge, for all concrete eval types.
 ///
-/// The inner concrete value is immutable. However it is allowed to push and remove values from
+/// The inner concrete causet_locale is immutable. However it is allowed to push and remove causet_locales from
 /// this vector container.
 #[derive(Debug, PartialEq, Clone)]
 pub enum VectorValue {
@@ -54,7 +55,7 @@ impl VectorValue {
         }
     }
 
-    /// Returns the `EvalType` used to construct current column.
+    /// Returns the `EvalType` used to construct current causet_merge.
     #[inline]
     pub fn eval_type(&self) -> EvalType {
         match_template_evaluable! {
@@ -64,7 +65,7 @@ impl VectorValue {
         }
     }
 
-    /// Returns the number of datums contained in this column.
+    /// Returns the number of datums contained in this causet_merge.
     #[inline]
     pub fn len(&self) -> usize {
         match_template_evaluable! {
@@ -74,7 +75,7 @@ impl VectorValue {
         }
     }
 
-    /// Returns whether this column is empty.
+    /// Returns whether this causet_merge is empty.
     ///
     /// Equals to `len() == 0`.
     #[inline]
@@ -82,9 +83,9 @@ impl VectorValue {
         self.len() == 0
     }
 
-    /// Shortens the column, keeping the first `len` datums and dropping the rest.
+    /// Shortens the causet_merge, keeping the first `len` datums and dropping the rest.
     ///
-    /// If `len` is greater than the column's current length, this has no effect.
+    /// If `len` is greater than the causet_merge's current length, this has no effect.
     #[inline]
     pub fn truncate(&mut self, len: usize) {
         match_template_evaluable! {
@@ -94,13 +95,13 @@ impl VectorValue {
         }
     }
 
-    /// Clears the column, removing all datums.
+    /// Clears the causet_merge, removing all datums.
     #[inline]
     pub fn clear(&mut self) {
         self.truncate(0);
     }
 
-    /// Returns the number of elements this column can hold without reallocating.
+    /// Returns the number of elements this causet_merge can hold without reallocating.
     #[inline]
     pub fn capacity(&self) -> usize {
         match_template_evaluable! {
@@ -129,9 +130,9 @@ impl VectorValue {
         }
     }
 
-    /// Evaluates values into MyBerolinaSQL logic values.
+    /// Evaluates causet_locales into MyBerolinaSQL logic causet_locales.
     ///
-    /// The caller must provide an output buffer which is large enough for holding values.
+    /// The caller must provide an output buffer which is large enough for holding causet_locales.
     pub fn eval_as_myBerolinaSQL_bools(
         &self,
         ctx: &mut EvalContext,
@@ -181,7 +182,7 @@ impl VectorValue {
                     match el {
                         Some(v) => {
                             // FIXME: We don't need approximate size. Maximum size is enough (so
-                            // that we don't need to iterate each value).
+                            // that we don't need to iterate each causet_locale).
                             size += 1 /* FLAG */ + v.approximate_encoded_size();
                         }
                         None => {
@@ -360,7 +361,7 @@ impl VectorValue {
         }
     }
 
-    pub fn encode_sort_key(
+    pub fn encode_sort_soliton_id(
         &self,
         row_index: usize,
         field_type: &FieldType,
@@ -378,12 +379,12 @@ impl VectorValue {
                         output.write_evaluable_datum_null()?;
                     }
                     Some(ref val) => {
-                        let sort_key = match_template_collator! {
+                        let sort_soliton_id = match_template_collator! {
                             TT, match field_type.collation()? {
-                                Collation::TT => TT::sort_key(val)?
+                                Collation::TT => TT::sort_soliton_id(val)?
                             }
                         };
-                        output.write_evaluable_datum_bytes(&sort_key)?;
+                        output.write_evaluable_datum_bytes(&sort_soliton_id)?;
                     }
                 }
                 Ok(())
@@ -396,17 +397,17 @@ impl VectorValue {
 macro_rules! impl_as_slice {
     ($ty:tt, $name:solitonid) => {
         impl VectorValue {
-            /// Extracts a slice of values in specified concrete type from current column.
+            /// Extracts a slice of causet_locales in specified concrete type from current causet_merge.
             ///
             /// # Panics
             ///
-            /// Panics if the current column does not match the type.
+            /// Panics if the current causet_merge does not match the type.
             #[inline]
             pub fn $name(&self) -> &[Option<$ty>] {
                 match self {
                     VectorValue::$ty(vec) => vec.as_slice(),
                     other => panic!(
-                        "Cannot call `{}` over a {} column",
+                        "Cannot call `{}` over a {} causet_merge",
                         stringify!($name),
                         other.eval_type()
                     ),
@@ -443,17 +444,17 @@ macro_rules! impl_ext {
         // Explicit version
 
         impl VectorValue {
-            /// Pushes a value in specified concrete type into current column.
+            /// Pushes a causet_locale in specified concrete type into current causet_merge.
             ///
             /// # Panics
             ///
-            /// Panics if the current column does not match the type.
+            /// Panics if the current causet_merge does not match the type.
             #[inline]
             pub fn $push_name(&mut self, v: Option<$ty>) {
                 match self {
                     VectorValue::$ty(ref mut vec) => vec.push(v),
                     other => panic!(
-                        "Cannot call `{}` over a {} column",
+                        "Cannot call `{}` over a {} causet_merge",
                         stringify!($push_name),
                         other.eval_type()
                     ),
@@ -505,91 +506,91 @@ mod tests {
 
     #[test]
     fn test_basic() {
-        let mut column = VectorValue::with_capacity(0, EvalType::Bytes);
-        assert_eq!(column.eval_type(), EvalType::Bytes);
-        assert_eq!(column.len(), 0);
-        assert_eq!(column.capacity(), 0);
-        assert!(column.is_empty());
-        assert_eq!(column.as_bytes_slice(), &[]);
+        let mut causet_merge = VectorValue::with_capacity(0, EvalType::Bytes);
+        assert_eq!(causet_merge.eval_type(), EvalType::Bytes);
+        assert_eq!(causet_merge.len(), 0);
+        assert_eq!(causet_merge.capacity(), 0);
+        assert!(causet_merge.is_empty());
+        assert_eq!(causet_merge.as_bytes_slice(), &[]);
 
-        column.push_bytes(None);
-        assert_eq!(column.len(), 1);
-        assert!(column.capacity() > 0);
-        assert!(!column.is_empty());
-        assert_eq!(column.as_bytes_slice(), &[None]);
+        causet_merge.push_bytes(None);
+        assert_eq!(causet_merge.len(), 1);
+        assert!(causet_merge.capacity() > 0);
+        assert!(!causet_merge.is_empty());
+        assert_eq!(causet_merge.as_bytes_slice(), &[None]);
 
-        column.push_bytes(Some(vec![1, 2, 3]));
-        assert_eq!(column.len(), 2);
-        assert!(column.capacity() > 0);
-        assert!(!column.is_empty());
-        assert_eq!(column.as_bytes_slice(), &[None, Some(vec![1, 2, 3])]);
+        causet_merge.push_bytes(Some(vec![1, 2, 3]));
+        assert_eq!(causet_merge.len(), 2);
+        assert!(causet_merge.capacity() > 0);
+        assert!(!causet_merge.is_empty());
+        assert_eq!(causet_merge.as_bytes_slice(), &[None, Some(vec![1, 2, 3])]);
 
-        let mut column = VectorValue::with_capacity(3, EvalType::Real);
-        assert_eq!(column.eval_type(), EvalType::Real);
-        assert_eq!(column.len(), 0);
-        assert_eq!(column.capacity(), 3);
-        assert!(column.is_empty());
-        assert_eq!(column.as_real_slice(), &[]);
-        let column_cloned = column.clone();
+        let mut causet_merge = VectorValue::with_capacity(3, EvalType::Real);
+        assert_eq!(causet_merge.eval_type(), EvalType::Real);
+        assert_eq!(causet_merge.len(), 0);
+        assert_eq!(causet_merge.capacity(), 3);
+        assert!(causet_merge.is_empty());
+        assert_eq!(causet_merge.as_real_slice(), &[]);
+        let column_cloned = causet_merge.clone();
         assert_eq!(column_cloned.capacity(), 0);
-        assert_eq!(column_cloned.as_real_slice(), column.as_real_slice());
+        assert_eq!(column_cloned.as_real_slice(), causet_merge.as_real_slice());
 
-        column.push_real(Real::new(1.0).ok());
-        assert_eq!(column.len(), 1);
-        assert_eq!(column.capacity(), 3);
-        assert!(!column.is_empty());
-        assert_eq!(column.as_real_slice(), &[Real::new(1.0).ok()]);
-        let column_cloned = column.clone();
+        causet_merge.push_real(Real::new(1.0).ok());
+        assert_eq!(causet_merge.len(), 1);
+        assert_eq!(causet_merge.capacity(), 3);
+        assert!(!causet_merge.is_empty());
+        assert_eq!(causet_merge.as_real_slice(), &[Real::new(1.0).ok()]);
+        let column_cloned = causet_merge.clone();
         assert_eq!(column_cloned.capacity(), 1);
-        assert_eq!(column_cloned.as_real_slice(), column.as_real_slice());
+        assert_eq!(column_cloned.as_real_slice(), causet_merge.as_real_slice());
 
-        column.push_real(None);
-        assert_eq!(column.len(), 2);
-        assert_eq!(column.capacity(), 3);
-        assert!(!column.is_empty());
-        assert_eq!(column.as_real_slice(), &[Real::new(1.0).ok(), None]);
-        let column_cloned = column.clone();
+        causet_merge.push_real(None);
+        assert_eq!(causet_merge.len(), 2);
+        assert_eq!(causet_merge.capacity(), 3);
+        assert!(!causet_merge.is_empty());
+        assert_eq!(causet_merge.as_real_slice(), &[Real::new(1.0).ok(), None]);
+        let column_cloned = causet_merge.clone();
         assert_eq!(column_cloned.capacity(), 2);
-        assert_eq!(column_cloned.as_real_slice(), column.as_real_slice());
+        assert_eq!(column_cloned.as_real_slice(), causet_merge.as_real_slice());
 
-        column.push_real(Real::new(4.5).ok());
-        assert_eq!(column.len(), 3);
-        assert_eq!(column.capacity(), 3);
-        assert!(!column.is_empty());
+        causet_merge.push_real(Real::new(4.5).ok());
+        assert_eq!(causet_merge.len(), 3);
+        assert_eq!(causet_merge.capacity(), 3);
+        assert!(!causet_merge.is_empty());
         assert_eq!(
-            column.as_real_slice(),
+            causet_merge.as_real_slice(),
             &[Real::new(1.0).ok(), None, Real::new(4.5).ok()]
         );
-        let column_cloned = column.clone();
+        let column_cloned = causet_merge.clone();
         assert_eq!(column_cloned.capacity(), 3);
-        assert_eq!(column_cloned.as_real_slice(), column.as_real_slice());
+        assert_eq!(column_cloned.as_real_slice(), causet_merge.as_real_slice());
 
-        column.push_real(None);
-        assert_eq!(column.len(), 4);
-        assert!(column.capacity() > 3);
-        assert!(!column.is_empty());
+        causet_merge.push_real(None);
+        assert_eq!(causet_merge.len(), 4);
+        assert!(causet_merge.capacity() > 3);
+        assert!(!causet_merge.is_empty());
         assert_eq!(
-            column.as_real_slice(),
+            causet_merge.as_real_slice(),
             &[Real::new(1.0).ok(), None, Real::new(4.5).ok(), None]
         );
-        assert_eq!(column.clone().as_real_slice(), column.as_real_slice());
+        assert_eq!(causet_merge.clone().as_real_slice(), causet_merge.as_real_slice());
 
-        column.truncate(2);
-        assert_eq!(column.len(), 2);
-        assert!(column.capacity() > 3);
-        assert!(!column.is_empty());
-        assert_eq!(column.as_real_slice(), &[Real::new(1.0).ok(), None]);
-        assert_eq!(column.clone().as_real_slice(), column.as_real_slice());
+        causet_merge.truncate(2);
+        assert_eq!(causet_merge.len(), 2);
+        assert!(causet_merge.capacity() > 3);
+        assert!(!causet_merge.is_empty());
+        assert_eq!(causet_merge.as_real_slice(), &[Real::new(1.0).ok(), None]);
+        assert_eq!(causet_merge.clone().as_real_slice(), causet_merge.as_real_slice());
 
-        let column = VectorValue::with_capacity(10, EvalType::DateTime);
-        assert_eq!(column.eval_type(), EvalType::DateTime);
-        assert_eq!(column.len(), 0);
-        assert_eq!(column.capacity(), 10);
-        assert!(column.is_empty());
-        assert_eq!(column.as_date_time_slice(), &[]);
+        let causet_merge = VectorValue::with_capacity(10, EvalType::DateTime);
+        assert_eq!(causet_merge.eval_type(), EvalType::DateTime);
+        assert_eq!(causet_merge.len(), 0);
+        assert_eq!(causet_merge.capacity(), 10);
+        assert!(causet_merge.is_empty());
+        assert_eq!(causet_merge.as_date_time_slice(), &[]);
         assert_eq!(
-            column.clone().as_date_time_slice(),
-            column.as_date_time_slice()
+            causet_merge.clone().as_date_time_slice(),
+            causet_merge.as_date_time_slice()
         );
     }
 
@@ -649,8 +650,8 @@ mod tests {
     fn test_from() {
         let slice: &[_] = &[None, Real::new(1.0).ok()];
         let chunked_vec = NotChunkedVec::from_slice(slice);
-        let column = VectorValue::from(chunked_vec);
-        assert_eq!(column.len(), 2);
-        assert_eq!(column.as_real_slice(), slice);
+        let causet_merge = VectorValue::from(chunked_vec);
+        assert_eq!(causet_merge.len(), 2);
+        assert_eq!(causet_merge.as_real_slice(), slice);
     }
 }

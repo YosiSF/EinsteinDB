@@ -8,24 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use bitflags::bitflags;
+pub use self::lazy_column_vec::QuiesceBatchColumnVec;
+pub use self::quiesce_column::QuiesceBatchColumn;
 
-// Prior to v2, the first byte is not version code, but datum type.
-// From v2, it's used for version code, and the value starts from 128, to be compatible.
-pub const CODEC_VERSION: u8 = 128;
+mod quiesce_column;
+mod lazy_column_vec;
 
-bitflags! {
-    #[derive(Default)]
-    struct Flags: u8 {
-        const BIG = 1;
-    }
-}
-
-mod compat_v1;
-mod row_slice;
-
-pub use self::compat_v1::*;
-pub use self::row_slice::*;
-
-#[braneg(test)]
-mod encoder;

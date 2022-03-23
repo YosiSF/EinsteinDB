@@ -9,23 +9,6 @@
 // specific language governing permissions and limitations under the License.
 
 #![macro_use]
-use std::collections::{
-    BTreeMap,
-};
-use chrono::{DateTime, Utc};
-
-pub use einstein_db::{
-    Causetid,
-    Binding,
-    TypedValue,
-    ValueType,
-};
-
-use einsteindb_core::{
-    DateTime,
-    Keyword,
-    Utc,
-};
 
 use ::{
     HasSchema,
@@ -36,65 +19,77 @@ use ::{
     Store,
     Variable,
 };
-
+use chrono::{DateTime, Utc};
+pub use einstein_db::{
+    Binding,
+    Causetid,
+    TypedValue,
+    ValueType,
+};
+use einsteindb_core::{
+    DateTime,
+    Keyword,
+    Utc,
+};
 use public_traits::errors::{
     einsteindbError,
     Result,
 };
+use std::collections::BTreeMap;
 
 pub struct CausetQ<'a> {
     query: String,
-    values: BTreeMap<Variable, TypedValue>,
+    causet_locales: BTreeMap<Variable, TypedValue>,
     types: BTreeMap<Variable, ValueType>,
     store: &'a mut Store,
 }
 
 impl<'a> CausetQ<'a> {
     pub fn new<T>(store: &'a mut Store, query: T) -> CausetQ where T: Into<String> {
-        CausetQ { query: query.into(), values: BTreeMap::new(), types: BTreeMap::new(), store }
+        CausetQ { query: query.into(), causet_locales: BTreeMap::new(), types: BTreeMap::new(), store }
     }
 
-    pub fn bind_value<T>(&mut self, var: &str, value: T) -> &mut Self where T: Into<TypedValue> {
-        self.values.insert(Variable::from_valid_name(var), value.into());
+    pub fn bind_causet_locale<T>(&mut self, var: &str, causet_locale: T) -> &mut Self where T: Into<TypedValue> {
+        self.causet_locales.insert(Variable::from_valid_name(var), causet_locale.into());
         self
     }
 
-    pub fn bind_ref_from_kw(&mut self, var: &str, value: Keyword) -> Result<&mut Self, E> {
-        let causetid = self.store.conn().current_schema().get_causetid(&value).ok_or(einsteindbError::UnknownAttribute(value.to_string()))?;
-        self.values.insert(Variable::from_valid_name(var), TypedValue::Ref(causetid.into()));
+    pub fn bind_ref_from_kw(&mut self, var: &str, causet_locale: Keyword) -> Result<&mut Self, E> {
+        let causetid = self.store.conn().current_schema().get_causetid(&causet_locale).ok_or(einsteindbError::UnknownAttribute(causet_locale.to_string()))?;
+        self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::Ref(causetid.into()));
         Ok(self)
     }
 
-    pub fn bind_ref<T>(&mut self, var: &str, value: T) -> &mut Self where T: Into<Causetid> {
-       self.values.insert(Variable::from_valid_name(var), TypedValue::Ref(value.into()));
+    pub fn bind_ref<T>(&mut self, var: &str, causet_locale: T) -> &mut Self where T: Into<Causetid> {
+       self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::Ref(causet_locale.into()));
        self
     }
 
-    pub fn bind_long(&mut self, var: &str, value: i64) -> &mut Self {
-       self.values.insert(Variable::from_valid_name(var), TypedValue::Long(value));
+    pub fn bind_long(&mut self, var: &str, causet_locale: i64) -> &mut Self {
+       self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::Long(causet_locale));
        self
     }
 
-    pub fn bind_instant(&mut self, var: &str, value: i64) -> &mut Self {
-       self.values.insert(Variable::from_valid_name(var), TypedValue::instant(value));
+    pub fn bind_instant(&mut self, var: &str, causet_locale: i64) -> &mut Self {
+       self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::instant(causet_locale));
 
        self
     }
 
-    pub fn bind_date_time(&mut self, var: &str, value: chrono::DateTime<chrono::Utc>) -> &mut Self {
-       self.values.insert(Variable::from_valid_name(var), TypedValue::Instant(value));
+    pub fn bind_date_time(&mut self, var: &str, causet_locale: chrono::DateTime<chrono::Utc>) -> &mut Self {
+       self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::Instant(causet_locale));
        self
     }
 
-    pub fn bind_type(&mut self, var: &str, value_type: ValueType) -> &mut Self {
-        self.types.insert(Variable::from_valid_name(var), value_type);
+    pub fn bind_type(&mut self, var: &str, causet_locale_type: ValueType) -> &mut Self {
+        self.types.insert(Variable::from_valid_name(var), causet_locale_type);
         self
     }
 
     pub fn execute(&mut self) -> Result<QueryOutput> {
-        let values = ::std::mem::replace(&mut self.values, Default::default());
+        let causet_locales = ::std::mem::replace(&mut self.causet_locales, Default::default());
         let types = ::std::mem::replace(&mut self.types, Default::default());
-        let query_inputs = QueryInputs::new(types, values)?;
+        let query_inputs = QueryInputs::new(types, causet_locales)?;
         let read = self.store.begin_read()?;
         read.q_once(&self.query, query_inputs).map_err(|e| e.into())
     }
@@ -124,8 +119,8 @@ impl<'a> CausetQ<'a> {
 mod test {
     use super::{
         CausetQ,
-        TypedValue,
         Store,
+        TypedValue,
     };
 
     #[test]
@@ -133,7 +128,7 @@ mod test {
         let mut store = Store::open("").expect("store connection");
         store.transact(r#"[
             [:einsteindb/add "s" :einsteindb/solitonid :foo/boolean]
-            [:einsteindb/add "s" :einsteindb/valueType :einsteindb.type/boolean]
+            [:einsteindb/add "s" :einsteindb/causet_localeType :einsteindb.type/boolean]
             [:einsteindb/add "s" :einsteindb/cardinality :einsteindb.cardinality/one]
         ]"#).expect("successful transaction");
 
@@ -147,7 +142,7 @@ mod test {
         let causetid = CausetQ::new(&mut store, r#"[:find ?x .
                                                       :in ?v
                                                       :where [?x :foo/boolean ?v]]"#)
-                              .bind_value("?v", true)
+                              .bind_causet_locale("?v", true)
                               .execute_scalar().expect("ScalarResult")
                               .map_or(None, |t| t.into_causetid());
         assert_eq!(causetid, Some(yes));
@@ -158,10 +153,10 @@ mod test {
         let mut store = Store::open("").expect("store connection");
         store.transact(r#"[
             [:einsteindb/add "s" :einsteindb/solitonid :foo/boolean]
-            [:einsteindb/add "s" :einsteindb/valueType :einsteindb.type/boolean]
+            [:einsteindb/add "s" :einsteindb/causet_localeType :einsteindb.type/boolean]
             [:einsteindb/add "s" :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add "t" :einsteindb/solitonid :foo/long]
-            [:einsteindb/add "t" :einsteindb/valueType :einsteindb.type/long]
+            [:einsteindb/add "t" :einsteindb/causet_localeType :einsteindb.type/long]
             [:einsteindb/add "t" :einsteindb/cardinality :einsteindb.cardinality/one]
         ]"#).expect("successful transaction");
 
@@ -185,7 +180,7 @@ mod test {
         let causetids: Vec<i64> = CausetQ::new(&mut store, r#"[:find [?x ...]
                                                                  :in ?v
                                                                  :where [?x :foo/boolean ?v]]"#)
-                              .bind_value("?v", true)
+                              .bind_causet_locale("?v", true)
                               .execute_coll().expect("CollResult")
                               .into_iter()
                               .map(|v| v.into_causetid().expect("val"))
@@ -199,10 +194,10 @@ mod test {
         let mut store = Store::open("").expect("store connection");
         store.transact(r#"[
             [:einsteindb/add "s" :einsteindb/solitonid :foo/boolean]
-            [:einsteindb/add "s" :einsteindb/valueType :einsteindb.type/boolean]
+            [:einsteindb/add "s" :einsteindb/causet_localeType :einsteindb.type/boolean]
             [:einsteindb/add "s" :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add "t" :einsteindb/solitonid :foo/long]
-            [:einsteindb/add "t" :einsteindb/valueType :einsteindb.type/long]
+            [:einsteindb/add "t" :einsteindb/causet_localeType :einsteindb.type/long]
             [:einsteindb/add "t" :einsteindb/cardinality :einsteindb.cardinality/one]
         ]"#).expect("successful transaction");
 
@@ -224,7 +219,7 @@ mod test {
         let results = CausetQ::new(&mut store, r#"[:find [?x ...]
                                                         :in ?v
                                                         :where [?x :foo/boolean ?v]]"#)
-                              .bind_value("?v", true)
+                              .bind_causet_locale("?v", true)
                               .execute_coll().expect("CollResult");
         let causetid = results.get(1).map_or(None, |t| t.to_owned().into_causetid()).expect("causetid");
 
@@ -236,10 +231,10 @@ mod test {
         let mut store = Store::open("").expect("store connection");
         store.transact(r#"[
             [:einsteindb/add "s" :einsteindb/solitonid :foo/boolean]
-            [:einsteindb/add "s" :einsteindb/valueType :einsteindb.type/boolean]
+            [:einsteindb/add "s" :einsteindb/causet_localeType :einsteindb.type/boolean]
             [:einsteindb/add "s" :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add "t" :einsteindb/solitonid :foo/long]
-            [:einsteindb/add "t" :einsteindb/valueType :einsteindb.type/long]
+            [:einsteindb/add "t" :einsteindb/causet_localeType :einsteindb.type/long]
             [:einsteindb/add "t" :einsteindb/cardinality :einsteindb.cardinality/one]
         ]"#).expect("successful transaction");
 
@@ -262,7 +257,7 @@ mod test {
                                                         :in ?v ?i
                                                         :where [?x :foo/boolean ?v]
                                                                [?x :foo/long ?i]]"#)
-                              .bind_value("?v", true)
+                              .bind_causet_locale("?v", true)
                               .bind_long("?i", 27)
                               .execute_tuple().expect("TupleResult").expect("Vec<TypedValue>");
         let causetid = results.get(0).map_or(None, |t| t.to_owned().into_causetid()).expect("causetid");
@@ -277,10 +272,10 @@ mod test {
         let mut store = Store::open("").expect("store connection");
         store.transact(r#"[
             [:einsteindb/add "s" :einsteindb/solitonid :foo/boolean]
-            [:einsteindb/add "s" :einsteindb/valueType :einsteindb.type/boolean]
+            [:einsteindb/add "s" :einsteindb/causet_localeType :einsteindb.type/boolean]
             [:einsteindb/add "s" :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add "t" :einsteindb/solitonid :foo/long]
-            [:einsteindb/add "t" :einsteindb/valueType :einsteindb.type/long]
+            [:einsteindb/add "t" :einsteindb/causet_localeType :einsteindb.type/long]
             [:einsteindb/add "t" :einsteindb/cardinality :einsteindb.cardinality/one]
         ]"#).expect("successful transaction");
 
@@ -303,7 +298,7 @@ mod test {
                                                                 :in ?v ?i
                                                                 :where [?x :foo/boolean ?v]
                                                                        [?x :foo/long ?i]]"#)
-                              .bind_value("?v", true)
+                              .bind_causet_locale("?v", true)
                               .bind_long("?i", 27)
                               .execute_tuple().expect("TupleResult").unwrap_or(vec![]);
         let causetid = TypedValue::Ref(n_yes.clone()).into();
@@ -317,10 +312,10 @@ mod test {
         let mut store = Store::open("").expect("store connection");
         store.transact(r#"[
             [:einsteindb/add "s" :einsteindb/solitonid :foo/boolean]
-            [:einsteindb/add "s" :einsteindb/valueType :einsteindb.type/boolean]
+            [:einsteindb/add "s" :einsteindb/causet_localeType :einsteindb.type/boolean]
             [:einsteindb/add "s" :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add "t" :einsteindb/solitonid :foo/long]
-            [:einsteindb/add "t" :einsteindb/valueType :einsteindb.type/long]
+            [:einsteindb/add "t" :einsteindb/causet_localeType :einsteindb.type/long]
             [:einsteindb/add "t" :einsteindb/cardinality :einsteindb.cardinality/one]
         ]"#).expect("successful transaction");
 
@@ -349,11 +344,11 @@ mod test {
                                                                              [?x :foo/long ?i]]"#)
                               .execute_rel().expect("RelResult")
                               .into_iter()
-                              .map(|row| {
+                              .map(|event| {
                                   Res {
-                                      causetid: row.get(0).map_or(None, |t| t.to_owned().into_causetid()).expect("causetid"),
-                                      boolean: row.get(1).map_or(None, |t| t.to_owned().into_boolean()).expect("boolean"),
-                                      long_val: row.get(2).map_or(None, |t| t.to_owned().into_long()).expect("long"),
+                                      causetid: event.get(0).map_or(None, |t| t.to_owned().into_causetid()).expect("causetid"),
+                                      boolean: event.get(1).map_or(None, |t| t.to_owned().into_boolean()).expect("boolean"),
+                                      long_val: event.get(2).map_or(None, |t| t.to_owned().into_long()).expect("long"),
                                   }
                               })
                               .collect();
@@ -372,10 +367,10 @@ mod test {
         let mut store = Store::open("").expect("store connection");
         store.transact(r#"[
             [:einsteindb/add "s" :einsteindb/solitonid :foo/boolean]
-            [:einsteindb/add "s" :einsteindb/valueType :einsteindb.type/boolean]
+            [:einsteindb/add "s" :einsteindb/causet_localeType :einsteindb.type/boolean]
             [:einsteindb/add "s" :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add "t" :einsteindb/solitonid :foo/long]
-            [:einsteindb/add "t" :einsteindb/valueType :einsteindb.type/long]
+            [:einsteindb/add "t" :einsteindb/causet_localeType :einsteindb.type/long]
             [:einsteindb/add "t" :einsteindb/cardinality :einsteindb.cardinality/one]
         ]"#).expect("successful transaction");
 

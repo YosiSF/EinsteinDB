@@ -8,14 +8,14 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-use std::cmp::{Ord, Ordering};
-use std::f64;
+ use std::cmp::{Ord, Ordering};
+ use std::f64;
 
-use super::super::Result;
-use super::constants::*;
-use super::{Json, JsonRef, JsonType, ERR_CONVERT_FAILED};
+ use super::{ERR_CONVERT_FAILED, Json, JsonRef, JsonType};
+ use super::constants::*;
+ use super::super::Result;
 
-fn compare<T: Ord>(x: T, y: T) -> Ordering {
+ fn compare<T: Ord>(x: T, y: T) -> Ordering {
     x.cmp(&y)
 }
 
@@ -119,7 +119,7 @@ impl<'a> PartialOrd for JsonRef<'a> {
                 JsonType::Object => {
                     // only equal is defined on two json objects.
                     // larger and smaller are not defined.
-                    self.value().partial_cmp(right.value())
+                    self.causet_locale().partial_cmp(right.causet_locale())
                 }
                 JsonType::String => {
                     if let (Ok(left), Ok(right)) = (self.get_str_bytes(), right.get_str_bytes()) {

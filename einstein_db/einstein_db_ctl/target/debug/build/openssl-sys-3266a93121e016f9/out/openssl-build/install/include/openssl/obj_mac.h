@@ -177,9 +177,9 @@
 #define NID_X9_62_c2pnb163v1            684
 #define OBJ_X9_62_c2pnb163v1            OBJ_X9_62_c_TwoCurve,1L
 
-#define SN_X9_62_c2pnb163v2             "c2pnb163v2"
-#define NID_X9_62_c2pnb163v2            685
-#define OBJ_X9_62_c2pnb163v2            OBJ_X9_62_c_TwoCurve,2L
+#define SN_X9_62_c2pnb163causet_record             "c2pnb163causet_record"
+#define NID_X9_62_c2pnb163causet_record            685
+#define OBJ_X9_62_c2pnb163causet_record            OBJ_X9_62_c_TwoCurve,2L
 
 #define SN_X9_62_c2pnb163v3             "c2pnb163v3"
 #define NID_X9_62_c2pnb163v3            686
@@ -193,9 +193,9 @@
 #define NID_X9_62_c2tnb191v1            688
 #define OBJ_X9_62_c2tnb191v1            OBJ_X9_62_c_TwoCurve,5L
 
-#define SN_X9_62_c2tnb191v2             "c2tnb191v2"
-#define NID_X9_62_c2tnb191v2            689
-#define OBJ_X9_62_c2tnb191v2            OBJ_X9_62_c_TwoCurve,6L
+#define SN_X9_62_c2tnb191causet_record             "c2tnb191causet_record"
+#define NID_X9_62_c2tnb191causet_record            689
+#define OBJ_X9_62_c2tnb191causet_record            OBJ_X9_62_c_TwoCurve,6L
 
 #define SN_X9_62_c2tnb191v3             "c2tnb191v3"
 #define NID_X9_62_c2tnb191v3            690
@@ -217,9 +217,9 @@
 #define NID_X9_62_c2tnb239v1            694
 #define OBJ_X9_62_c2tnb239v1            OBJ_X9_62_c_TwoCurve,11L
 
-#define SN_X9_62_c2tnb239v2             "c2tnb239v2"
-#define NID_X9_62_c2tnb239v2            695
-#define OBJ_X9_62_c2tnb239v2            OBJ_X9_62_c_TwoCurve,12L
+#define SN_X9_62_c2tnb239causet_record             "c2tnb239causet_record"
+#define NID_X9_62_c2tnb239causet_record            695
+#define OBJ_X9_62_c2tnb239causet_record            OBJ_X9_62_c_TwoCurve,12L
 
 #define SN_X9_62_c2tnb239v3             "c2tnb239v3"
 #define NID_X9_62_c2tnb239v3            696
@@ -259,9 +259,9 @@
 #define NID_X9_62_prime192v1            409
 #define OBJ_X9_62_prime192v1            OBJ_X9_62_primeCurve,1L
 
-#define SN_X9_62_prime192v2             "prime192v2"
-#define NID_X9_62_prime192v2            410
-#define OBJ_X9_62_prime192v2            OBJ_X9_62_primeCurve,2L
+#define SN_X9_62_prime192causet_record             "prime192causet_record"
+#define NID_X9_62_prime192causet_record            410
+#define OBJ_X9_62_prime192causet_record            OBJ_X9_62_primeCurve,2L
 
 #define SN_X9_62_prime192v3             "prime192v3"
 #define NID_X9_62_prime192v3            411
@@ -271,9 +271,9 @@
 #define NID_X9_62_prime239v1            412
 #define OBJ_X9_62_prime239v1            OBJ_X9_62_primeCurve,4L
 
-#define SN_X9_62_prime239v2             "prime239v2"
-#define NID_X9_62_prime239v2            413
-#define OBJ_X9_62_prime239v2            OBJ_X9_62_primeCurve,5L
+#define SN_X9_62_prime239causet_record             "prime239causet_record"
+#define NID_X9_62_prime239causet_record            413
+#define OBJ_X9_62_prime239causet_record            OBJ_X9_62_primeCurve,5L
 
 #define SN_X9_62_prime239v3             "prime239v3"
 #define NID_X9_62_prime239v3            414
@@ -2646,10 +2646,10 @@
 #define NID_Security            386
 #define OBJ_Security            OBJ_internet,5L
 
-#define SN_SNMPv2               "snmpv2"
-#define LN_SNMPv2               "SNMPv2"
-#define NID_SNMPv2              387
-#define OBJ_SNMPv2              OBJ_internet,6L
+#define SN_SNMPcauset_record               "snmpcauset_record"
+#define LN_SNMPcauset_record               "SNMPcauset_record"
+#define NID_SNMPcauset_record              387
+#define OBJ_SNMPcauset_record              OBJ_internet,6L
 
 #define LN_Mail         "Mail"
 #define NID_Mail                388

@@ -8,17 +8,17 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-//! A compatible layer for converting V2 row datum into V1 row datum.
+//! A compatible layer for converting V2 event datum into V1 event datum.
 
-use crate::{FieldTypeAccessor, FieldTypeTp};
 use codec::number::NumberCodec;
 use codec::prelude::BufferWriter;
 
-use crate::codec::datum_codec::DatumFlagAndPayloadEncoder;
+use crate::{FieldTypeAccessor, FieldTypeTp};
 use crate::codec::{datum, Error, Result};
+use crate::codec::datum_codec::DatumFlagAndPayloadEncoder;
 
 #[inline]
-fn decode_v2_u64(v: &[u8]) -> Result<u64> {
+fn decode_causet_record_u64(v: &[u8]) -> Result<u64> {
     // See `decodeInt` in MEDB.
     match v.len() {
         1 => Ok(u64::from(v[0])),
@@ -26,13 +26,13 @@ fn decode_v2_u64(v: &[u8]) -> Result<u64> {
         4 => Ok(u64::from(NumberCodec::decode_u32_le(v))),
         8 => Ok(u64::from(NumberCodec::decode_u64_le(v))),
         _ => Err(Error::InvalidDataType(
-            "Failed to decode row v2 data as u64".to_owned(),
+            "Failed to decode event causet_record data as u64".to_owned(),
         )),
     }
 }
 
 #[inline]
-fn decode_v2_i64(v: &[u8]) -> Result<i64> {
+fn decode_causet_record_i64(v: &[u8]) -> Result<i64> {
     // See `decodeUint` in MEDB.
     match v.len() {
         1 => Ok(i64::from(v[0] as i8)),
@@ -40,26 +40,26 @@ fn decode_v2_i64(v: &[u8]) -> Result<i64> {
         4 => Ok(i64::from(NumberCodec::decode_u32_le(v) as i32)),
         8 => Ok(NumberCodec::decode_u64_le(v) as i64),
         _ => Err(Error::InvalidDataType(
-            "Failed to decode row v2 data as i64".to_owned(),
+            "Failed to decode event causet_record data as i64".to_owned(),
         )),
     }
 }
 
 pub trait V1CompatibleEncoder: DatumFlagAndPayloadEncoder {
-    fn write_v2_as_datum_i64(&mut self, src: &[u8]) -> Result<()> {
-        self.write_datum_i64(decode_v2_i64(src)?)
+    fn write_causet_record_as_datum_i64(&mut self, src: &[u8]) -> Result<()> {
+        self.write_datum_i64(decode_causet_record_i64(src)?)
     }
 
-    fn write_v2_as_datum_u64(&mut self, src: &[u8]) -> Result<()> {
-        self.write_datum_u64(decode_v2_u64(src)?)
+    fn write_causet_record_as_datum_u64(&mut self, src: &[u8]) -> Result<()> {
+        self.write_datum_u64(decode_causet_record_u64(src)?)
     }
 
-    fn write_v2_as_datum_duration(&mut self, src: &[u8]) -> Result<()> {
+    fn write_causet_record_as_datum_duration(&mut self, src: &[u8]) -> Result<()> {
         self.write_u8(datum::DURATION_FLAG)?;
-        self.write_datum_payload_i64(decode_v2_i64(src)?)
+        self.write_datum_payload_i64(decode_causet_record_i64(src)?)
     }
 
-    fn write_v2_as_datum(&mut self, src: &[u8], ft: &dyn FieldTypeAccessor) -> Result<()> {
+    fn write_causet_record_as_datum(&mut self, src: &[u8], ft: &dyn FieldTypeAccessor) -> Result<()> {
         // See `fieldType2Flag.go` in MEDB.
         match ft.tp() {
             FieldTypeTp::Tiny
@@ -68,9 +68,9 @@ pub trait V1CompatibleEncoder: DatumFlagAndPayloadEncoder {
             | FieldTypeTp::Long
             | FieldTypeTp::LongLong => {
                 if ft.is_unsigned() {
-                    self.write_v2_as_datum_u64(src)?;
+                    self.write_causet_record_as_datum_u64(src)?;
                 } else {
-                    self.write_v2_as_datum_i64(src)?;
+                    self.write_causet_record_as_datum_i64(src)?;
                 }
             }
             FieldTypeTp::Float | FieldTypeTp::Double => {
@@ -93,17 +93,17 @@ pub trait V1CompatibleEncoder: DatumFlagAndPayloadEncoder {
             | FieldTypeTp::Enum
             | FieldTypeTp::Bit
             | FieldTypeTp::Set => {
-                self.write_v2_as_datum_u64(src)?;
+                self.write_causet_record_as_datum_u64(src)?;
             }
             FieldTypeTp::Year => {
-                self.write_v2_as_datum_i64(src)?;
+                self.write_causet_record_as_datum_i64(src)?;
             }
             FieldTypeTp::Duration => {
-                // This implementation is different from MEDB. MEDB encodes v2 duration into v1
+                // This implementation is different from MEDB. MEDB encodes causet_record duration into v1
                 // with datum flag VarInt, but we will encode with datum flag Duration, since
                 // Duration datum flag results in fixed-length datum payload, which is faster
                 // to encode and decode.
-                self.write_v2_as_datum_duration(src)?;
+                self.write_causet_record_as_datum_duration(src)?;
             }
             FieldTypeTp::NewDecimal => {
                 self.write_u8(datum::DECIMAL_FLAG)?;
@@ -131,31 +131,33 @@ pub trait V1CompatibleEncoder: DatumFlagAndPayloadEncoder {
 
 impl<T: BufferWriter> V1CompatibleEncoder for T {}
 
-/// These tests mainly focus on transfer the v2 encoding to v1-compatible encoding.
+/// These tests mainly focus on transfer the causet_record encoding to v1-compatible encoding.
 ///
 /// The test local_path is:
-/// 1. Encode value using v2
-/// 2. Use `V1CompatibleEncoder` to transfer the encoded bytes from v2 to v1-compatible
+/// 1. Encode causet_locale using causet_record
+/// 2. Use `V1CompatibleEncoder` to transfer the encoded bytes from causet_record to v1-compatible
 /// 3. Use `Primitive_CausetDatumDecoder` decode the encoded bytes, check the result.
 ///
-/// Note: a value encoded using v2 then transfer to v1-compatible encoding, is not always equals the
+/// Note: a causet_locale encoded using causet_record then transfer to v1-compatible encoding, is not always equals the
 /// encoded-bytes using v1 directly.
 #[braneg(test)]
 mod tests {
-    use super::super::encoder::{Column, ScalarValueEncoder};
-    use super::V1CompatibleEncoder;
-    use crate::FieldTypeTp;
+    use std::{f64, i16, i32, i64, i8, u16, u32, u64, u8};
+
     use crate::{
         codec::{data_type::*, datum_codec::Primitive_CausetDatumDecoder},
         expr::EvalContext,
     };
-    use std::{f64, i16, i32, i64, i8, u16, u32, u64, u8};
+    use crate::FieldTypeTp;
+
+    use super::super::encoder::{Column, ScalarValueEncoder};
+    use super::V1CompatibleEncoder;
 
     fn encode_to_v1_compatible(mut ctx: &mut EvalContext, col: &Column) -> Vec<u8> {
-        let mut buf_v2 = vec![];
-        buf_v2.write_value(&mut ctx, &col).unwrap();
+        let mut buf_causet_record = vec![];
+        buf_causet_record.write_causet_locale(&mut ctx, &col).unwrap();
         let mut buf_v1 = vec![];
-        buf_v1.write_v2_as_datum(&buf_v2, col.ft()).unwrap();
+        buf_v1.write_causet_record_as_datum(&buf_causet_record, col.ft()).unwrap();
         buf_v1
     }
 
@@ -176,11 +178,11 @@ mod tests {
             i64::MIN,
         ];
         let mut ctx = EvalContext::default();
-        for value in cases {
-            let col = Column::new(1, value).with_tp(FieldTypeTp::LongLong);
+        for causet_locale in cases {
+            let col = Column::new(1, causet_locale).with_tp(FieldTypeTp::LongLong);
             let buf = encode_to_v1_compatible(&mut ctx, &col);
             let got: Int = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(value, got);
+            assert_eq!(causet_locale, got);
         }
     }
 
@@ -198,13 +200,13 @@ mod tests {
             u64::MAX,
         ];
         let mut ctx = EvalContext::default();
-        for value in cases {
-            let col = Column::new(1, value as i64)
+        for causet_locale in cases {
+            let col = Column::new(1, causet_locale as i64)
                 .with_unsigned()
                 .with_tp(FieldTypeTp::LongLong);
             let buf = encode_to_v1_compatible(&mut ctx, &col);
             let got: Int = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(value, got as u64);
+            assert_eq!(causet_locale, got as u64);
         }
     }
 
@@ -221,11 +223,11 @@ mod tests {
             Real::new(f64::NEG_INFINITY).unwrap(),
         ];
         let mut ctx = EvalContext::default();
-        for value in cases {
-            let col = Column::new(1, value).with_tp(FieldTypeTp::Double);
+        for causet_locale in cases {
+            let col = Column::new(1, causet_locale).with_tp(FieldTypeTp::Double);
             let buf = encode_to_v1_compatible(&mut ctx, &col);
             let got: Real = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(value, got);
+            assert_eq!(causet_locale, got);
         }
     }
 
@@ -242,11 +244,11 @@ mod tests {
             Decimal::from_str("-10.111").unwrap(),
         ];
         let mut ctx = EvalContext::default();
-        for value in cases {
-            let col = Column::new(1, value).with_tp(FieldTypeTp::NewDecimal);
+        for causet_locale in cases {
+            let col = Column::new(1, causet_locale).with_tp(FieldTypeTp::NewDecimal);
             let buf = encode_to_v1_compatible(&mut ctx, &col);
             let got: Decimal = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(value, got);
+            assert_eq!(causet_locale, got);
         }
     }
 
@@ -255,11 +257,11 @@ mod tests {
         let cases = vec![b"".to_vec(), b"abc".to_vec(), "数据库".as_bytes().to_vec()];
         let mut ctx = EvalContext::default();
 
-        for value in cases {
-            let col = Column::new(1, value.clone()).with_tp(FieldTypeTp::String);
+        for causet_locale in cases {
+            let col = Column::new(1, causet_locale.clone()).with_tp(FieldTypeTp::String);
             let buf = encode_to_v1_compatible(&mut ctx, &col);
             let got: Bytes = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(value, got);
+            assert_eq!(causet_locale, got);
         }
     }
 
@@ -273,11 +275,11 @@ mod tests {
             DateTime::parse_timestamp(&mut ctx, "2019-09-16 10:11:12.67", 2, true).unwrap(),
         ];
 
-        for value in cases {
-            let col = Column::new(1, value).with_tp(FieldTypeTp::DateTime);
+        for causet_locale in cases {
+            let col = Column::new(1, causet_locale).with_tp(FieldTypeTp::DateTime);
             let buf = encode_to_v1_compatible(&mut ctx, &col);
             let got: DateTime = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(value, got);
+            assert_eq!(causet_locale, got);
         }
     }
 
@@ -290,11 +292,11 @@ mod tests {
         ];
 
         let mut ctx = EvalContext::default();
-        for value in cases {
-            let col = Column::new(1, value.clone()).with_tp(FieldTypeTp::JSON);
+        for causet_locale in cases {
+            let col = Column::new(1, causet_locale.clone()).with_tp(FieldTypeTp::JSON);
             let buf = encode_to_v1_compatible(&mut ctx, &col);
             let got: Json = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(value, got);
+            assert_eq!(causet_locale, got);
         }
     }
 
@@ -307,13 +309,13 @@ mod tests {
         ];
 
         let mut ctx = EvalContext::default();
-        for value in cases {
-            let col = Column::new(1, value)
+        for causet_locale in cases {
+            let col = Column::new(1, causet_locale)
                 .with_tp(FieldTypeTp::Duration)
                 .with_decimal(4);
             let buf = encode_to_v1_compatible(&mut ctx, &col);
             let got: Duration = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(value, got);
+            assert_eq!(causet_locale, got);
         }
     }
 }

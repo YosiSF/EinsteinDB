@@ -1,6 +1,6 @@
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-// Inlined json literal value
+// Inlined json literal causet_locale
 pub const JSON_LITERAL_NIL: u8 = 0x00;
 pub const JSON_LITERAL_TRUE: u8 = 0x01;
 pub const JSON_LITERAL_FALSE: u8 = 0x02;

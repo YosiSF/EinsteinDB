@@ -10,25 +10,23 @@
 
 #![allow(dead_code)]
 
-use ::{einstein_ml};
-use einsteindb_traits::errors::{
-    einsteindbErrorKind,
-    Result,
-};
-use einstein_ml::types::Value;
-use einstein_ml::shellings;
+use einstein_ml;
 use causetids;
-use einsteindb::TypedBerolinaSQLValue;
-use einstein_ml::causets::causet;
-
 use core_traits::{
+    causet_locales,
     TypedValue,
-    values,
 };
-
+use einstein_ml::causets::causet;
+use einstein_ml::shellings;
+use einstein_ml::types::Value;
+use einsteindb::TypedBerolinaSQLValue;
 use einsteindb_core::{
     solitonidMap,
     Topograph,
+};
+use einsteindb_traits::errors::{
+    einsteindbErrorKind,
+    Result,
 };
 use topograph::TopographBuilding;
 use types::{Partition, PartitionMap};
@@ -46,122 +44,122 @@ pub const CORE_SCHEMA_VERSION: u32 = 1;
 
 lazy_static! {
     static ref V1_solitonidS: [(shellings::Keyword, i64); 40] = {
-            [(ns_keyword!("einsteindb", "solitonid"),             causetids::EINSTEINDB_solitonid),
-             (ns_keyword!("einsteindb.part", "einsteindb"),           causetids::EINSTEINDB_PART_EINSTEINDB),
-             (ns_keyword!("einsteindb", "txInstant"),         causetids::EINSTEINDB_TX_INSTANT),
-             (ns_keyword!("einsteindb.install", "partition"), causetids::EINSTEINDB_INSTALL_PARTITION),
-             (ns_keyword!("einsteindb.install", "valueType"), causetids::EINSTEINDB_INSTALL_VALUE_TYPE),
-             (ns_keyword!("einsteindb.install", "attribute"), causetids::EINSTEINDB_INSTALL_ATTRIBUTE),
-             (ns_keyword!("einsteindb", "valueType"),         causetids::EINSTEINDB_VALUE_TYPE),
-             (ns_keyword!("einsteindb", "cardinality"),       causetids::EINSTEINDB_CARDINALITY),
-             (ns_keyword!("einsteindb", "unique"),            causetids::EINSTEINDB_UNIQUE),
-             (ns_keyword!("einsteindb", "isComponent"),       causetids::EINSTEINDB_IS_COMPONENT),
-             (ns_keyword!("einsteindb", "index"),             causetids::EINSTEINDB_INDEX),
-             (ns_keyword!("einsteindb", "fulltext"),          causetids::EINSTEINDB_FULLTEXT),
-             (ns_keyword!("einsteindb", "noHistory"),         causetids::EINSTEINDB_NO_HISTORY),
-             (ns_keyword!("einsteindb", "add"),               causetids::EINSTEINDB_ADD),
-             (ns_keyword!("einsteindb", "retract"),           causetids::EINSTEINDB_RETRACT),
-             (ns_keyword!("einsteindb.part", "user"),         causetids::EINSTEINDB_PART_USER),
-             (ns_keyword!("einsteindb.part", "tx"),           causetids::EINSTEINDB_PART_TX),
-             (ns_keyword!("einsteindb", "excise"),            causetids::EINSTEINDB_EXCISE),
-             (ns_keyword!("einsteindb.excise", "attrs"),      causetids::EINSTEINDB_EXCISE_ATTRS),
-             (ns_keyword!("einsteindb.excise", "beforeT"),    causetids::EINSTEINDB_EXCISE_BEFORE_T),
-             (ns_keyword!("einsteindb.excise", "before"),     causetids::EINSTEINDB_EXCISE_BEFORE),
-             (ns_keyword!("einsteindb.alter", "attribute"),   causetids::EINSTEINDB_ALTER_ATTRIBUTE),
-             (ns_keyword!("einsteindb.type", "ref"),          causetids::EINSTEINDB_TYPE_REF),
-             (ns_keyword!("einsteindb.type", "keyword"),      causetids::EINSTEINDB_TYPE_KEYWORD),
-             (ns_keyword!("einsteindb.type", "long"),         causetids::EINSTEINDB_TYPE_LONG),
-             (ns_keyword!("einsteindb.type", "double"),       causetids::EINSTEINDB_TYPE_DOUBLE),
-             (ns_keyword!("einsteindb.type", "string"),       causetids::EINSTEINDB_TYPE_STRING),
-             (ns_keyword!("einsteindb.type", "uuid"),         causetids::EINSTEINDB_TYPE_UUID),
-             (ns_keyword!("einsteindb.type", "uri"),          causetids::EINSTEINDB_TYPE_URI),
-             (ns_keyword!("einsteindb.type", "boolean"),      causetids::EINSTEINDB_TYPE_BOOLEAN),
-             (ns_keyword!("einsteindb.type", "instant"),      causetids::EINSTEINDB_TYPE_INSTANT),
-             (ns_keyword!("einsteindb.type", "bytes"),        causetids::EINSTEINDB_TYPE_BYTES),
-             (ns_keyword!("einsteindb.cardinality", "one"),   causetids::EINSTEINDB_CARDINALITY_ONE),
-             (ns_keyword!("einsteindb.cardinality", "many"),  causetids::EINSTEINDB_CARDINALITY_MANY),
-             (ns_keyword!("einsteindb.unique", "value"),      causetids::EINSTEINDB_UNIQUE_VALUE),
-             (ns_keyword!("einsteindb.unique", "idcauset"),   causetids::EINSTEINDB_UNIQUE_IDcauset),
-             (ns_keyword!("einsteindb", "doc"),               causetids::EINSTEINDB_DOC),
-             (ns_keyword!("einsteindb.topograph", "version"),    causetids::EINSTEINDB_SCHEMA_VERSION),
-             (ns_keyword!("einsteindb.topograph", "attribute"),  causetids::EINSTEINDB_SCHEMA_ATTRIBUTE),
-             (ns_keyword!("einsteindb.topograph", "core"),       causetids::EINSTEINDB_SCHEMA_CORE),
+            [(ns_soliton_idword!("einsteindb", "solitonid"),             causetids::EINSTEINDB_solitonid),
+             (ns_soliton_idword!("einsteindb.part", "einsteindb"),           causetids::EINSTEINDB_PART_EINSTEINDB),
+             (ns_soliton_idword!("einsteindb", "txInstant"),         causetids::EINSTEINDB_TX_INSTANT),
+             (ns_soliton_idword!("einsteindb.install", "partition"), causetids::EINSTEINDB_INSTALL_PARTITION),
+             (ns_soliton_idword!("einsteindb.install", "causet_localeType"), causetids::EINSTEINDB_INSTALL_VALUE_TYPE),
+             (ns_soliton_idword!("einsteindb.install", "attribute"), causetids::EINSTEINDB_INSTALL_ATTRIBUTE),
+             (ns_soliton_idword!("einsteindb", "causet_localeType"),         causetids::EINSTEINDB_VALUE_TYPE),
+             (ns_soliton_idword!("einsteindb", "cardinality"),       causetids::EINSTEINDB_CARDINALITY),
+             (ns_soliton_idword!("einsteindb", "unique"),            causetids::EINSTEINDB_UNIQUE),
+             (ns_soliton_idword!("einsteindb", "isComponent"),       causetids::EINSTEINDB_IS_COMPONENT),
+             (ns_soliton_idword!("einsteindb", "index"),             causetids::EINSTEINDB_INDEX),
+             (ns_soliton_idword!("einsteindb", "fulltext"),          causetids::EINSTEINDB_FULLTEXT),
+             (ns_soliton_idword!("einsteindb", "noHistory"),         causetids::EINSTEINDB_NO_HISTORY),
+             (ns_soliton_idword!("einsteindb", "add"),               causetids::EINSTEINDB_ADD),
+             (ns_soliton_idword!("einsteindb", "retract"),           causetids::EINSTEINDB_RETRACT),
+             (ns_soliton_idword!("einsteindb.part", "user"),         causetids::EINSTEINDB_PART_USER),
+             (ns_soliton_idword!("einsteindb.part", "tx"),           causetids::EINSTEINDB_PART_TX),
+             (ns_soliton_idword!("einsteindb", "excise"),            causetids::EINSTEINDB_EXCISE),
+             (ns_soliton_idword!("einsteindb.excise", "attrs"),      causetids::EINSTEINDB_EXCISE_ATTRS),
+             (ns_soliton_idword!("einsteindb.excise", "beforeT"),    causetids::EINSTEINDB_EXCISE_BEFORE_T),
+             (ns_soliton_idword!("einsteindb.excise", "before"),     causetids::EINSTEINDB_EXCISE_BEFORE),
+             (ns_soliton_idword!("einsteindb.alter", "attribute"),   causetids::EINSTEINDB_ALTER_ATTRIBUTE),
+             (ns_soliton_idword!("einsteindb.type", "ref"),          causetids::EINSTEINDB_TYPE_REF),
+             (ns_soliton_idword!("einsteindb.type", "soliton_idword"),      causetids::EINSTEINDB_TYPE_KEYWORD),
+             (ns_soliton_idword!("einsteindb.type", "long"),         causetids::EINSTEINDB_TYPE_LONG),
+             (ns_soliton_idword!("einsteindb.type", "double"),       causetids::EINSTEINDB_TYPE_DOUBLE),
+             (ns_soliton_idword!("einsteindb.type", "string"),       causetids::EINSTEINDB_TYPE_STRING),
+             (ns_soliton_idword!("einsteindb.type", "uuid"),         causetids::EINSTEINDB_TYPE_UUID),
+             (ns_soliton_idword!("einsteindb.type", "uri"),          causetids::EINSTEINDB_TYPE_URI),
+             (ns_soliton_idword!("einsteindb.type", "boolean"),      causetids::EINSTEINDB_TYPE_BOOLEAN),
+             (ns_soliton_idword!("einsteindb.type", "instant"),      causetids::EINSTEINDB_TYPE_INSTANT),
+             (ns_soliton_idword!("einsteindb.type", "bytes"),        causetids::EINSTEINDB_TYPE_BYTES),
+             (ns_soliton_idword!("einsteindb.cardinality", "one"),   causetids::EINSTEINDB_CARDINALITY_ONE),
+             (ns_soliton_idword!("einsteindb.cardinality", "many"),  causetids::EINSTEINDB_CARDINALITY_MANY),
+             (ns_soliton_idword!("einsteindb.unique", "causet_locale"),      causetids::EINSTEINDB_UNIQUE_VALUE),
+             (ns_soliton_idword!("einsteindb.unique", "idcauset"),   causetids::EINSTEINDB_UNIQUE_IDcauset),
+             (ns_soliton_idword!("einsteindb", "doc"),               causetids::EINSTEINDB_DOC),
+             (ns_soliton_idword!("einsteindb.topograph", "version"),    causetids::EINSTEINDB_SCHEMA_VERSION),
+             (ns_soliton_idword!("einsteindb.topograph", "attribute"),  causetids::EINSTEINDB_SCHEMA_ATTRIBUTE),
+             (ns_soliton_idword!("einsteindb.topograph", "core"),       causetids::EINSTEINDB_SCHEMA_CORE),
         ]
     };
 
     pub static ref V1_PARTS: [(shellings::Keyword, i64, i64, i64, bool); 3] = {
-            [(ns_keyword!("einsteindb.part", "einsteindb"), 0, USER0 - 1, (1 + V1_solitonidS.len()) as i64, false),
-             (ns_keyword!("einsteindb.part", "user"), USER0, TX0 - 1, USER0, true),
-             (ns_keyword!("einsteindb.part", "tx"), TX0, i64::max_value(), TX0, false),
+            [(ns_soliton_idword!("einsteindb.part", "einsteindb"), 0, USER0 - 1, (1 + V1_solitonidS.len()) as i64, false),
+             (ns_soliton_idword!("einsteindb.part", "user"), USER0, TX0 - 1, USER0, true),
+             (ns_soliton_idword!("einsteindb.part", "tx"), TX0, i64::max_causet_locale(), TX0, false),
         ]
     };
 
     static ref V1_CORE_SCHEMA: [(shellings::Keyword); 16] = {
-            [(ns_keyword!("einsteindb", "solitonid")),
-             (ns_keyword!("einsteindb.install", "partition")),
-             (ns_keyword!("einsteindb.install", "valueType")),
-             (ns_keyword!("einsteindb.install", "attribute")),
-             (ns_keyword!("einsteindb", "txInstant")),
-             (ns_keyword!("einsteindb", "valueType")),
-             (ns_keyword!("einsteindb", "cardinality")),
-             (ns_keyword!("einsteindb", "doc")),
-             (ns_keyword!("einsteindb", "unique")),
-             (ns_keyword!("einsteindb", "isComponent")),
-             (ns_keyword!("einsteindb", "index")),
-             (ns_keyword!("einsteindb", "fulltext")),
-             (ns_keyword!("einsteindb", "noHistory")),
-             (ns_keyword!("einsteindb.alter", "attribute")),
-             (ns_keyword!("einsteindb.topograph", "version")),
-             (ns_keyword!("einsteindb.topograph", "attribute")),
+            [(ns_soliton_idword!("einsteindb", "solitonid")),
+             (ns_soliton_idword!("einsteindb.install", "partition")),
+             (ns_soliton_idword!("einsteindb.install", "causet_localeType")),
+             (ns_soliton_idword!("einsteindb.install", "attribute")),
+             (ns_soliton_idword!("einsteindb", "txInstant")),
+             (ns_soliton_idword!("einsteindb", "causet_localeType")),
+             (ns_soliton_idword!("einsteindb", "cardinality")),
+             (ns_soliton_idword!("einsteindb", "doc")),
+             (ns_soliton_idword!("einsteindb", "unique")),
+             (ns_soliton_idword!("einsteindb", "isComponent")),
+             (ns_soliton_idword!("einsteindb", "index")),
+             (ns_soliton_idword!("einsteindb", "fulltext")),
+             (ns_soliton_idword!("einsteindb", "noHistory")),
+             (ns_soliton_idword!("einsteindb.alter", "attribute")),
+             (ns_soliton_idword!("einsteindb.topograph", "version")),
+             (ns_soliton_idword!("einsteindb.topograph", "attribute")),
         ]
     };
 
     static ref V1_SYMBOLIC_SCHEMA: Value = {
         let s = r#"
-{:einsteindb/solitonid             {:einsteindb/valueType   :einsteindb.type/keyword
+{:einsteindb/solitonid             {:einsteindb/causet_localeType   :einsteindb.type/soliton_idword
                         :einsteindb/cardinality :einsteindb.cardinality/one
                         :einsteindb/index       true
                         :einsteindb/unique      :einsteindb.unique/idcauset}
- :einsteindb.install/partition {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb.install/partition {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/many}
- :einsteindb.install/valueType {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb.install/causet_localeType {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/many}
- :einsteindb.install/attribute {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb.install/attribute {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/many}
  ;; TODO: support user-specified functions in the future.
- ;; :einsteindb.install/function {:einsteindb/valueType :einsteindb.type/ref
+ ;; :einsteindb.install/function {:einsteindb/causet_localeType :einsteindb.type/ref
  ;;                       :einsteindb/cardinality :einsteindb.cardinality/many}
- :einsteindb/txInstant         {:einsteindb/valueType   :einsteindb.type/instant
+ :einsteindb/txInstant         {:einsteindb/causet_localeType   :einsteindb.type/instant
                         :einsteindb/cardinality :einsteindb.cardinality/one
                         :einsteindb/index       true}
- :einsteindb/valueType         {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb/causet_localeType         {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb/cardinality       {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb/cardinality       {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb/doc               {:einsteindb/valueType   :einsteindb.type/string
+ :einsteindb/doc               {:einsteindb/causet_localeType   :einsteindb.type/string
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb/unique            {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb/unique            {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb/isComponent       {:einsteindb/valueType   :einsteindb.type/boolean
+ :einsteindb/isComponent       {:einsteindb/causet_localeType   :einsteindb.type/boolean
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb/index             {:einsteindb/valueType   :einsteindb.type/boolean
+ :einsteindb/index             {:einsteindb/causet_localeType   :einsteindb.type/boolean
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb/fulltext          {:einsteindb/valueType   :einsteindb.type/boolean
+ :einsteindb/fulltext          {:einsteindb/causet_localeType   :einsteindb.type/boolean
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb/noHistory         {:einsteindb/valueType   :einsteindb.type/boolean
+ :einsteindb/noHistory         {:einsteindb/causet_localeType   :einsteindb.type/boolean
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb.alter/attribute   {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb.alter/attribute   {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/many}
- :einsteindb.topograph/version    {:einsteindb/valueType   :einsteindb.type/long
+ :einsteindb.topograph/version    {:einsteindb/causet_localeType   :einsteindb.type/long
                         :einsteindb/cardinality :einsteindb.cardinality/one}
 
- ;; unique-value because an attribute can only belong to a single
+ ;; unique-causet_locale because an attribute can only belong to a single
  ;; topograph fragment.
- :einsteindb.topograph/attribute  {:einsteindb/valueType   :einsteindb.type/ref
+ :einsteindb.topograph/attribute  {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/index       true
-                        :einsteindb/unique      :einsteindb.unique/value
+                        :einsteindb/unique      :einsteindb.unique/causet_locale
                         :einsteindb/cardinality :einsteindb.cardinality/many}}"#;
-        einstein_ml::parse::value(s)
+        einstein_ml::parse::causet_locale(s)
             .map(|v| v.without_spans())
             .map_err(|_| einsteindbErrorKind::BaeinsteindbootstrapDefinition("Unable to parse V1_SYMBOLIC_SCHEMA".into()))
             .unwrap()
@@ -173,35 +171,35 @@ fn solitonids_to_lightlike_dagger_upsert(solitonids: &[(shellings::Keyword, i64)
     solitonids
         .into_iter()
         .map(|&(ref solitonid, _)| {
-            let value = Value::Keyword(solitonid.clone());
-            Value::Vector(vec![values::EINSTEINDB_ADD.clone(), value.clone(), values::EINSTEINDB_solitonid.clone(), value.clone()])
+            let causet_locale = Value::Keyword(solitonid.clone());
+            Value::Vector(vec![causet_locales::EINSTEINDB_ADD.clone(), causet_locale.clone(), causet_locales::EINSTEINDB_solitonid.clone(), causet_locale.clone()])
         })
         .collect()
 }
 
 /// Convert an solitonid list into [:einsteindb/add :einsteindb.topograph/core :einsteindb.topograph/attribute solitonid] `Value` instances.
 fn topograph_attrs_to_lightlike_dagger_upsert(version: u32, solitonids: &[shellings::Keyword]) -> Vec<Value> {
-    let topograph_core = Value::Keyword(ns_keyword!("einsteindb.topograph", "core"));
-    let topograph_attr = Value::Keyword(ns_keyword!("einsteindb.topograph", "attribute"));
-    let topograph_version = Value::Keyword(ns_keyword!("einsteindb.topograph", "version"));
+    let topograph_core = Value::Keyword(ns_soliton_idword!("einsteindb.topograph", "core"));
+    let topograph_attr = Value::Keyword(ns_soliton_idword!("einsteindb.topograph", "attribute"));
+    let topograph_version = Value::Keyword(ns_soliton_idword!("einsteindb.topograph", "version"));
     solitonids
         .into_iter()
         .map(|solitonid| {
-            let value = Value::Keyword(solitonid.clone());
-            Value::Vector(vec![values::EINSTEINDB_ADD.clone(),
+            let causet_locale = Value::Keyword(solitonid.clone());
+            Value::Vector(vec![causet_locales::EINSTEINDB_ADD.clone(),
                                topograph_core.clone(),
                                topograph_attr.clone(),
-                               value])
+                               causet_locale])
         })
-        .chain(::std::iter::once(Value::Vector(vec![values::EINSTEINDB_ADD.clone(),
+        .chain(::std::iter::once(Value::Vector(vec![causet_locales::EINSTEINDB_ADD.clone(),
                                              topograph_core.clone(),
                                              topograph_version,
                                              Value::Integer(version as i64)])))
         .collect()
 }
 
-/// Convert {:solitonid {:key :value ...} ...} to
-/// vec![(shellings::Keyword(:solitonid), shellings::Keyword(:key), TypedValue(:value)), ...].
+/// Convert {:solitonid {:soliton_id :causet_locale ...} ...} to
+/// vec![(shellings::Keyword(:solitonid), shellings::Keyword(:soliton_id), TypedValue(:causet_locale)), ...].
 ///
 /// Such triples are closer to what the transactor will produce when processing attribute
 /// lightlike_dagger_upsert.
@@ -214,38 +212,38 @@ fn shellingic_topograph_to_triples(solitonid_map: &solitonidMap, shellingic_topo
             for (solitonid, mp) in m {
                 let solitonid = match solitonid {
                     &Value::Keyword(ref solitonid) => solitonid,
-                    _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expectedisolate_namespace keyword for solitonid but got '{:?}'", solitonid))),
+                    _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expectedisolate_namespace soliton_idword for solitonid but got '{:?}'", solitonid))),
                 };
                 match *mp {
                     Value::Map(ref mpp) => {
-                        for (attr, value) in mpp {
+                        for (attr, causet_locale) in mpp {
                             let attr = match attr {
                                 &Value::Keyword(ref attr) => attr,
-                                _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expectedisolate_namespace keyword for attr but got '{:?}'", attr))),
+                                _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expectedisolate_namespace soliton_idword for attr but got '{:?}'", attr))),
                         };
 
                             // We have shellingic solitonids but the transactor handles causetids.  Ad-hoc
                             // convert right here.  This is a fundamental limitation on the
-                            // bootstrap shellingic topograph format; we can't represent "real" keywords
+                            // bootstrap shellingic topograph format; we can't represent "real" soliton_idwords
                             // at this time.
                             //
                             // TODO: remove this limitation, perhaps by including a type tag in the
                             // bootstrap shellingic topograph, or by representing the initial bootstrap
                             // topograph directly as Rust data.
-                            let typed_value = match TypedValue::from_einstein_ml_value(value) {
+                            let typed_causet_locale = match TypedValue::from_einstein_ml_causet_locale(causet_locale) {
                                 Some(TypedValue::Keyword(ref k)) => {
                                     solitonid_map.get(k)
                                         .map(|causetid| TypedValue::Ref(*causetid))
                                         .ok_or(einsteindbErrorKind::Unrecognizedsolitonid(k.to_string()))?
                                 },
                                 Some(v) => v,
-                                _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expected einstai typed value for value but got '{:?}'", value)))
+                                _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expected einstai typed causet_locale for causet_locale but got '{:?}'", causet_locale)))
                             };
 
-                            triples.push((solitonid.clone(), attr.clone(), typed_value));
+                            triples.push((solitonid.clone(), attr.clone(), typed_causet_locale));
                         }
                     },
-                    _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition("Expected {:einsteindb/solitonid {:einsteindb/attr value ...} ...}".into()))
+                    _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition("Expected {:einsteindb/solitonid {:einsteindb/attr causet_locale ...} ...}".into()))
                 }
             }
         },
@@ -254,7 +252,7 @@ fn shellingic_topograph_to_triples(solitonid_map: &solitonidMap, shellingic_topo
     Ok(triples)
 }
 
-/// Convert {solitonid {:key :value ...} ...} to [[:einsteindb/add solitonid :key :value] ...].
+/// Convert {solitonid {:soliton_id :causet_locale ...} ...} to [[:einsteindb/add solitonid :soliton_id :causet_locale] ...].
 fn shellingic_topograph_to_lightlike_dagger_upsert(shellingic_topograph: &Value) -> Result<Vec<Value>> {
     // Failure here is a coding error, not a runtime error.
     let mut lightlike_dagger_upsert: Vec<Value> = vec![];
@@ -263,14 +261,14 @@ fn shellingic_topograph_to_lightlike_dagger_upsert(shellingic_topograph: &Value)
             for (solitonid, mp) in m {
                 match *mp {
                     Value::Map(ref mpp) => {
-                        for (attr, value) in mpp {
-                            lightlike_dagger_upsert.push(Value::Vector(vec![values::EINSTEINDB_ADD.clone(),
+                        for (attr, causet_locale) in mpp {
+                            lightlike_dagger_upsert.push(Value::Vector(vec![causet_locales::EINSTEINDB_ADD.clone(),
                                                                solitonid.clone(),
                                                                attr.clone(),
-                                                               value.clone()]));
+                                                               causet_locale.clone()]));
                         }
                     },
-                    _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition("Expected {:einsteindb/solitonid {:einsteindb/attr value ...} ...}".into()))
+                    _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition("Expected {:einsteindb/solitonid {:einsteindb/attr causet_locale ...} ...}".into()))
                 }
             }
         },

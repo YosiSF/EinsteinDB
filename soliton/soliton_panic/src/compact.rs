@@ -1,8 +1,9 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
-use fdb_traits::{CompactExt, CompactedEvent, Result};
+use fdb_traits::{CompactedEvent, CompactExt, Result};
 use std::collections::BTreeMap;
+
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 
 impl CompactExt for Paniceinstein_merkle_tree {
     type CompactedEvent = PanicCompactedEvent;
@@ -14,8 +15,8 @@ impl CompactExt for Paniceinstein_merkle_tree {
     fn compact_range(
         &self,
         namespaced: &str,
-        start_key: Option<&[u8]>,
-        end_key: Option<&[u8]>,
+        start_soliton_id: Option<&[u8]>,
+        end_soliton_id: Option<&[u8]>,
         exclusive_manual: bool,
         max_subjet_bundles: u32,
     ) -> Result<()> {

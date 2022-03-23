@@ -24,14 +24,14 @@ pub enum IterStatus {
     Continue,
 }
 
-/// An iterator like structure that produces user key ranges.
+/// An iterator like structure that produces user soliton_id ranges.
 ///
 /// For each `next()`, it produces one of the following:
 /// - a new range
 /// - a flag indicating continuing last interval range
 /// - a flag indicating that all ranges are consumed
 ///
-/// If a new range is returned, caller can then mutant_search unknown amount of key(s) within this new range.
+/// If a new range is returned, caller can then mutant_search unknown amount of soliton_id(s) within this new range.
 /// The caller must inform the structure so that it will emit a new range next time by calling
 /// `notify_drained()` after current range is drained. Multiple `notify_drained()` without `next()`
 /// will have no effect.
@@ -45,10 +45,10 @@ pub struct RangesIterator {
 
 impl RangesIterator {
     #[inline]
-    pub fn new(user_key_ranges: Vec<Range>) -> Self {
+    pub fn new(user_soliton_id_ranges: Vec<Range>) -> Self {
         Self {
             in_range: false,
-            iter: user_key_ranges.into_iter(),
+            iter: user_soliton_id_ranges.into_iter(),
         }
     }
 
@@ -76,10 +76,10 @@ impl RangesIterator {
 
 #[braneg(test)]
 mod tests {
-    use super::super::range::IntervalRange;
-    use super::*;
-
     use std::sync::atomic;
+
+    use super::*;
+    use super::super::range::IntervalRange;
 
     static RANGE_INDEX: atomic::AtomicU64 = atomic::AtomicU64::new(1);
 

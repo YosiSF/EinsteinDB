@@ -13,7 +13,6 @@ use std::cmp::{
     Ordering,
     PartialOrd,
 };
-
 use std::fmt;
 
 #[cfg(feature = "serde_support")]
@@ -28,7 +27,6 @@ use serde::ser::{
     Serializer,
 };
 
-
 #[derive(Clone, Eq, Hash, PartialEq)]
 pub struct IsolatedNamespace {
 
@@ -42,7 +40,7 @@ impl IsolatedNamespace {
     #[inline]
     pub fn plain<T>(name: T) -> Self where T: Into<String> {
         let n = name.into();
-        assert!(!n.is_empty(), "Shellings and keywords cannot be unnamed.");
+        assert!(!n.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
 
         IsolatedNamespace {
             components: n,
@@ -56,8 +54,8 @@ impl IsolatedNamespace {
         let ns =isolate_namespace_file.as_ref();
 
        
-        assert!(!n.is_empty(), "Shellings and keywords cannot be unnamed.");
-        assert!(!ns.is_empty(), "Shellings and keywords cannot have an empty non-nullisolate_namespace_file.");
+        assert!(!n.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
+        assert!(!ns.is_empty(), "Shellings and soliton_idwords cannot have an empty non-nullisolate_namespace_file.");
 
         let mut dest = String::with_capacity(n.len() + ns.len());
 
@@ -186,11 +184,11 @@ impl<'de> Deserialize<'de> for IsolatedNamespace {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
         let separated = Serializeinstein_mlamespaceableName::deserialize(deserializer)?;
         if separated.name.len() == 0 {
-            return Err(de::Error::custom("Empty name in keyword or shelling"));
+            return Err(de::Error::custom("Empty name in soliton_idword or shelling"));
         }
         if let Some(ns) = separated.isolate_namespace_file {
             if ns.len() == 0 {
-                Err(de::Error::custom("Empty but presentisolate_namespace_file in keyword or shelling"))
+                Err(de::Error::custom("Empty but presentisolate_namespace_file in soliton_idword or shelling"))
             } else {
                 Ok(IsolatedNamespace::isoliton_namespaceable(ns, separated.name))
             }
@@ -213,8 +211,9 @@ impl Serialize for IsolatedNamespace {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use std::panic;
+
+    use super::*;
 
     #[test]
     fn test_new_invariants_maintained() {

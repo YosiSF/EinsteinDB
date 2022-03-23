@@ -1,8 +1,5 @@
-use std::mem;
+use std::fs::File;
+use std::io::prelude::*;
 
-use byteorder::{BigEndian, ByteOrder};
-use thiserror;
-
-
-
-
+#[derive(Default, Debug)]
+struct TestCase {  // This is the test case struct that will be used to store all of our data. Each test case will have a name (the first line), and then the actual input string for each query in alphabetical order by variable name. The output strings are also stored here in alphabetical order by variable name. Note that this format assumes no whitespace between variables and their values or between them and their names (e.g., "x=1"). Also note that if your program can handle multiple queries on one line, you should still put all of those queries on a single line with spaces separating them as well as within their values (e.g., "x = 1 y = 2 z = 3") -- even though it looks like there might be an extra space after x=1 but before y=2 because Rust's lexer thinks they're separate words due to how we write main() below...

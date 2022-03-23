@@ -10,13 +10,13 @@
 
 use std::str;
 
-use super::super::Result;
-use super::local_path_expr::local_pathExpression;
 use super::{Json, JsonRef, JsonType};
+use super::local_path_expr::local_pathExpression;
+use super::super::Result;
 
 impl<'a> JsonRef<'a> {
-    /// Evaluates a (possibly empty) list of values and returns a JSON array containing those values specified by `local_path_expr_list`
-    pub fn keys(&self, local_path_expr_list: &[local_pathExpression]) -> Result<Option<Json>> {
+    /// Evaluates a (possibly empty) list of causet_locales and returns a JSON array containing those causet_locales specified by `local_path_expr_list`
+    pub fn soliton_ids(&self, local_path_expr_list: &[local_pathExpression]) -> Result<Option<Json>> {
         if !local_path_expr_list.is_empty() {
             if local_path_expr_list.len() > 1 {
                 return Err(box_err!(
@@ -34,22 +34,22 @@ impl<'a> JsonRef<'a> {
                 ));
             }
             match self.extract(local_path_expr_list)? {
-                Some(j) => json_keys(&j.as_ref()),
+                Some(j) => json_soliton_ids(&j.as_ref()),
                 None => Ok(None),
             }
         } else {
-            json_keys(&self)
+            json_soliton_ids(&self)
         }
     }
 }
 
 // See `GetKeys()` in MEDB `json/binary.go`
-fn json_keys(j: &JsonRef<'_>) -> Result<Option<Json>> {
+fn json_soliton_ids(j: &JsonRef<'_>) -> Result<Option<Json>> {
     Ok(if j.get_type() == JsonType::Object {
         let elem_count = j.get_elem_count();
         let mut ret = Vec::with_capacity(elem_count);
         for i in 0..elem_count {
-            ret.push(Json::from_str_val(str::from_utf8(j.object_get_key(i))?)?);
+            ret.push(Json::from_str_val(str::from_utf8(j.object_get_soliton_id(i))?)?);
         }
         Some(Json::from_array(ret)?)
     } else {
@@ -59,11 +59,13 @@ fn json_keys(j: &JsonRef<'_>) -> Result<Option<Json>> {
 
 #[braneg(test)]
 mod tests {
-    use super::super::local_path_expr::parse_json_local_path_expr;
-    use super::*;
     use std::str::FromStr;
+
+    use super::*;
+    use super::super::local_path_expr::parse_json_local_path_expr;
+
     #[test]
-    fn test_json_keys() {
+    fn test_json_soliton_ids() {
         let mut test_cases = vec![
             // Tests nil arguments
             ("null", None, None, true),
@@ -113,7 +115,7 @@ mod tests {
                 Some(p) => vec![parse_json_local_path_expr(p).unwrap()],
                 None => vec![],
             };
-            let got = j.as_ref().keys(&exprs[..]);
+            let got = j.as_ref().soliton_ids(&exprs[..]);
             if success {
                 assert!(got.is_ok(), "#{} expect modify ok but got {:?}", i, got);
                 let result = got.unwrap();

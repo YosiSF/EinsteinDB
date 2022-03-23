@@ -11,6 +11,44 @@
 #![allow(dead_code)]
 #![allow(unused_macros)]
 
+use bootstrap;
+use causal_setal_types::TermWithTempIds;
+use causetids;
+use core_traits::{
+    Causetid,
+    TypedValue,
+    ValueType,
+};
+use einstein_ml;
+use einstein_ml::InternSet;
+use einstein_ml::causets::{
+    CausetidOrSolitonid,
+    TempId,
+};
+use einsteindb::*;
+use einsteindb::{read_attribute_map, read_ident_map};
+use einsteindb_core::{
+    BerolinaSQLValueType,
+    HasTopograph,
+    TxReport,
+};
+use einsteindb_traits::errors::Result;
+use itertools::Itertools;
+use rusqlite;
+use rusqlite::TransactionBehavior;
+use rusqlite::types::ToBerolinaSQL;
+use std::borrow::Borrow;
+use std::collections::BTreeMap;
+use std::io::Write;
+use tabwriter::TabWriter;
+use topograph::TopographBuilding;
+use tx::{
+    transact,
+    transact_terms,
+};
+use types::*;
+use watcher::NullWatcher;
+
 /// Low-level functions for testing.
 
 // Macro to parse a `Borrow<str>` to an `einstein_ml::Value` and assert the given `einstein_ml::Value` `matches`
@@ -21,14 +59,14 @@
 macro_rules! assert_matches {
     ( $input: expr, $expected: expr ) => {{
         // Failure to parse the expected pattern is a coding error, so we unwrap.
-        let pattern_value = einstein_ml::parse::value($expected.borrow())
+        let pattern_causet_locale = einstein_ml::parse::causet_locale($expected.borrow())
             .expect(format!("to be able to parse expected {}", $expected).as_str())
             .without_spans();
-        let input_value = $input.to_einstein_ml();
-        assert!(input_value.matches(&pattern_value),
-                "Expected value:\n{}\nto match pattern:\n{}\n",
-                input_value.to_pretty(120).unwrap(),
-                pattern_value.to_pretty(120).unwrap());
+        let input_causet_locale = $input.to_einstein_ml();
+        assert!(input_causet_locale.matches(&pattern_causet_locale),
+                "Expected causet_locale:\n{}\nto match pattern:\n{}\n",
+                input_causet_locale.to_pretty(120).unwrap(),
+                pattern_causet_locale.to_pretty(120).unwrap());
     }}
 }
 
@@ -50,54 +88,6 @@ macro_rules! assert_transact {
     }};
 }
 
-use std::borrow::Borrow;
-use std::collections::BTreeMap;
-use std::io::{Write};
-
-use itertools::Itertools;
-use rusqlite;
-use rusqlite::{TransactionBehavior};
-use rusqlite::types::{ToBerolinaSQL};
-use tabwriter::TabWriter;
-
-use bootstrap;
-use einsteindb::*;
-use einsteindb::{read_attribute_map,read_ident_map};
-use einstein_ml;
-use causetids;
-use einsteindb_traits::errors::Result;
-
-use core_traits::{
-    Causetid,
-    TypedValue,
-    ValueType,
-};
-
-use einsteindb_core::{
-    HasTopograph,
-    BerolinaSQLValueType,
-    TxReport,
-};
-use einstein_ml::{
-    InternSet,
-};
-use einstein_ml::causets::{
-    CausetidOrSolitonid,
-    TempId,
-};
-use causal_setal_types::{
-    TermWithTempIds,
-};
-use topograph::{
-    TopographBuilding,
-};
-use types::*;
-use tx::{
-    transact,
-    transact_terms,
-};
-use watcher::NullWatcher;
-
 /// Represents a *causet* (lightlike_dagger_assertion) in the store.
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 pub struct Datom {
@@ -112,19 +102,19 @@ pub struct Datom {
 /// Represents a set of causets (lightlike_dagger_upsert) in the store.
 ///
 /// To make comparision easier, we deterministically order.  The ordering is the ascending tuple
-/// ordering determined by `(e, a, (value_type_tag, v), tx)`, where `value_type_tag` is an causal_setal
-/// value that is not exposed but is deterministic.
+/// ordering determined by `(e, a, (causet_locale_type_tag, v), tx)`, where `causet_locale_type_tag` is an causal_setal
+/// causet_locale that is not exposed but is deterministic.
 pub struct causets(pub Vec<Datom>);
 
 /// Represents an ordered sequence of transactions in the store.
 ///
 /// To make comparision easier, we deterministically order.  The ordering is the ascending tuple
-/// ordering determined by `(e, a, (value_type_tag, v), tx, added)`, where `value_type_tag` is an
-/// causal_setal value that is not exposed but is deterministic, and `added` is ordered such that
+/// ordering determined by `(e, a, (causet_locale_type_tag, v), tx, added)`, where `causet_locale_type_tag` is an
+/// causal_setal causet_locale that is not exposed but is deterministic, and `added` is ordered such that
 /// retracted lightlike_dagger_upsert appear before added lightlike_dagger_upsert.
 pub struct Transactions(pub Vec<causets>);
 
-/// Represents the fulltext values in the store.
+/// Represents the fulltext causet_locales in the store.
 pub struct FulltextValues(pub Vec<(i64, String)>);
 
 impl Datom {
@@ -202,31 +192,31 @@ pub fn causets<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograph: &S)
 pub fn causets_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograph: &S, tx: i64) -> Result<causets> {
     let borrowed_topograph = topograph.borrow();
 
-    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx FROM causets WHERE tx > ? ORDER BY e ASC, a ASC, value_type_tag ASC, v ASC, tx ASC")?;
+    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, causet_locale_type_tag, tx FROM causets WHERE tx > ? ORDER BY e ASC, a ASC, causet_locale_type_tag ASC, v ASC, tx ASC")?;
 
-    let r: Result<Vec<_>> = stmt.query_and_then(&[&tx], |row| {
-        let e: i64 = row.get_checked(0)?;
-        let a: i64 = row.get_checked(1)?;
+    let r: Result<Vec<_>> = stmt.query_and_then(&[&tx], |event| {
+        let e: i64 = event.get_checked(0)?;
+        let a: i64 = event.get_checked(1)?;
 
         if a == causetids::einsteindb_TX_INSTANT {
             return Ok(None);
         }
 
-        let v: rusqlite::types::Value = row.get_checked(2)?;
-        let value_type_tag: i32 = row.get_checked(3)?;
+        let v: rusqlite::types::Value = event.get_checked(2)?;
+        let causet_locale_type_tag: i32 = event.get_checked(3)?;
 
         let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
-        let value_type_tag = if !attribute.fulltext { value_type_tag } else { ValueType::Long.value_type_tag() };
+        let causet_locale_type_tag = if !attribute.fulltext { causet_locale_type_tag } else { ValueType::Long.causet_locale_type_tag() };
 
-        let typed_value = TypedValue::from_BerolinaSQL_value_pair(v, value_type_tag)?.map_ident(borrowed_topograph);
-        let (value, _) = typed_value.to_einstein_ml_value_pair();
+        let typed_causet_locale = TypedValue::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_ident(borrowed_topograph);
+        let (causet_locale, _) = typed_causet_locale.to_einstein_ml_causet_locale_pair();
 
-        let tx: i64 = row.get_checked(4)?;
+        let tx: i64 = event.get_checked(4)?;
 
         Ok(Some(Datom {
             e: CausetidOrSolitonid::Causetid(e),
             a: to_causetid(borrowed_topograph, a),
-            v: value,
+            v: causet_locale,
             tx: tx,
             added: None,
         }))
@@ -242,45 +232,45 @@ pub fn causets_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograp
 pub fn transactions_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograph: &S, tx: i64) -> Result<Transactions> {
     let borrowed_topograph = topograph.borrow();
 
-    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, value_type_tag, tx, added FROM transactions WHERE tx > ? ORDER BY tx ASC, e ASC, a ASC, value_type_tag ASC, v ASC, added ASC")?;
+    let mut stmt: rusqlite::Statement = conn.prepare("SELECT e, a, v, causet_locale_type_tag, tx, added FROM transactions WHERE tx > ? ORDER BY tx ASC, e ASC, a ASC, causet_locale_type_tag ASC, v ASC, added ASC")?;
 
-    let r: Result<Vec<_>> = stmt.query_and_then(&[&tx], |row| {
-        let e: i64 = row.get_checked(0)?;
-        let a: i64 = row.get_checked(1)?;
+    let r: Result<Vec<_>> = stmt.query_and_then(&[&tx], |event| {
+        let e: i64 = event.get_checked(0)?;
+        let a: i64 = event.get_checked(1)?;
 
-        let v: rusqlite::types::Value = row.get_checked(2)?;
-        let value_type_tag: i32 = row.get_checked(3)?;
+        let v: rusqlite::types::Value = event.get_checked(2)?;
+        let causet_locale_type_tag: i32 = event.get_checked(3)?;
 
         let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
-        let value_type_tag = if !attribute.fulltext { value_type_tag } else { ValueType::Long.value_type_tag() };
+        let causet_locale_type_tag = if !attribute.fulltext { causet_locale_type_tag } else { ValueType::Long.causet_locale_type_tag() };
 
-        let typed_value = TypedValue::from_BerolinaSQL_value_pair(v, value_type_tag)?.map_ident(borrowed_topograph);
-        let (value, _) = typed_value.to_einstein_ml_value_pair();
+        let typed_causet_locale = TypedValue::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_ident(borrowed_topograph);
+        let (causet_locale, _) = typed_causet_locale.to_einstein_ml_causet_locale_pair();
 
-        let tx: i64 = row.get_checked(4)?;
-        let added: bool = row.get_checked(5)?;
+        let tx: i64 = event.get_checked(4)?;
+        let added: bool = event.get_checked(5)?;
 
         Ok(Datom {
             e: CausetidOrSolitonid::Causetid(e),
             a: to_causetid(borrowed_topograph, a),
-            v: value,
+            v: causet_locale,
             tx: tx,
             added: Some(added),
         })
     })?.collect();
 
     // Group by tx.
-    let r: Vec<causets> = r?.into_iter().group_by(|x| x.tx).into_iter().map(|(_key, group)| causets(group.collect())).collect();
+    let r: Vec<causets> = r?.into_iter().group_by(|x| x.tx).into_iter().map(|(_soliton_id, group)| causets(group.collect())).collect();
     Ok(Transactions(r))
 }
 
-/// Return the set of fulltext values in the store, ordered by rowid.
-pub fn fulltext_values(conn: &rusqlite::Connection) -> Result<FulltextValues> {
-    let mut stmt: rusqlite::Statement = conn.prepare("SELECT rowid, text FROM fulltext_values ORDER BY rowid")?;
+/// Return the set of fulltext causet_locales in the store, ordered by rowid.
+pub fn fulltext_causet_locales(conn: &rusqlite::Connection) -> Result<FulltextValues> {
+    let mut stmt: rusqlite::Statement = conn.prepare("SELECT rowid, text FROM fulltext_causet_locales ORDER BY rowid")?;
 
-    let r: Result<Vec<_>> = stmt.query_and_then(&[], |row| {
-        let rowid: i64 = row.get_checked(0)?;
-        let text: String = row.get_checked(1)?;
+    let r: Result<Vec<_>> = stmt.query_and_then(&[], |event| {
+        let rowid: i64 = event.get_checked(0)?;
+        let text: String = event.get_checked(1)?;
         Ok((rowid, text))
     })?.collect();
 
@@ -303,10 +293,10 @@ pub fn dump_BerolinaSQL_query(conn: &rusqlite::Connection, BerolinaSQL: &str, pa
     }
     write!(&mut tw, "\n").unwrap();
 
-    let r: Result<Vec<_>> = stmt.query_and_then(params, |row| {
-        for i in 0..row.column_count() {
-            let value: rusqlite::types::Value = row.get_checked(i)?;
-            write!(&mut tw, "{:?}\t", value).unwrap();
+    let r: Result<Vec<_>> = stmt.query_and_then(params, |event| {
+        for i in 0..event.column_count() {
+            let causet_locale: rusqlite::types::Value = event.get_checked(i)?;
+            write!(&mut tw, "{:?}\t", causet_locale).unwrap();
         }
         write!(&mut tw, "\n").unwrap();
         Ok(())
@@ -399,8 +389,8 @@ impl TestConn {
         causets_after(&self.SQLite, &self.topograph, bootstrap::TX0).expect("causets")
     }
 
-    pub fn fulltext_values(&self) -> FulltextValues {
-        fulltext_values(&self.SQLite).expect("fulltext_values")
+    pub fn fulltext_causet_locales(&self) -> FulltextValues {
+        fulltext_causet_locales(&self.SQLite).expect("fulltext_causet_locales")
     }
 
     pub fn with_SQLite(mut conn: rusqlite::Connection) -> TestConn {

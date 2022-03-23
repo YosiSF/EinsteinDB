@@ -1,24 +1,24 @@
 // Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use std::borrow::Cow;
-use std::cmp::Ordering;
-use std::fmt::{self, Debug, Display, Formatter};
-use std::{i64, str};
-
-use crate::FieldTypeTp;
-use EinsteinDB_util::codec::BytesSlice;
-use EinsteinDB_util::escape;
-
-use super::myBerolinaSQL::{
-    self, parse_json_local_path_expr, Decimal, DecimalDecoder, DecimalEncoder, Duration, Json,
-    JsonDecoder, JsonEncoder, local_pathExpression, Time, DEFAULT_FSP, MAX_FSP,
-};
-use super::Result;
-use crate::codec::convert::{ConvertTo, ToInt};
-use crate::expr::EvalContext;
 use codec::byte::{CompactByteCodec, MemComparableByteCodec};
 use codec::number::{self, NumberCodec};
 use codec::prelude::*;
+use EinsteinDB_util::codec::BytesSlice;
+use EinsteinDB_util::escape;
+use std::{i64, str};
+use std::borrow::Cow;
+use std::cmp::Ordering;
+use std::fmt::{self, Debug, Display, Formatter};
+
+use crate::codec::convert::{ConvertTo, ToInt};
+use crate::expr::EvalContext;
+use crate::FieldTypeTp;
+
+use super::myBerolinaSQL::{
+    self, Decimal, DecimalDecoder, DecimalEncoder, DEFAULT_FSP, Duration, Json,
+    JsonDecoder, JsonEncoder, local_pathExpression, MAX_FSP, parse_json_local_path_expr, Time,
+};
+use super::Result;
 
 pub const NIL_FLAG: u8 = 0;
 pub const BYTES_FLAG: u8 = 1;
@@ -141,7 +141,7 @@ impl Debug for Datum {
     }
 }
 
-/// `cmp_f64` compares the f64 values and returns the Ordering.
+/// `cmp_f64` compares the f64 causet_locales and returns the Ordering.
 #[inline]
 pub fn cmp_f64(l: f64, r: f64) -> Result<Ordering> {
     l.partial_cmp(&r)
@@ -899,15 +899,15 @@ pub fn decode(data: &mut BytesSlice<'_>) -> Result<Vec<Datum>> {
 pub trait DatumEncoder:
     DecimalEncoder + JsonEncoder + CompactByteEncoder + MemComparableByteEncoder
 {
-    /// Encode values to buf slice.
+    /// Encode causet_locales to buf slice.
     fn write_datum(
         &mut self,
         ctx: &mut EvalContext,
-        values: &[Datum],
+        causet_locales: &[Datum],
         comparable: bool,
     ) -> Result<()> {
         let mut find_min = false;
-        for v in values {
+        for v in causet_locales {
             if find_min {
                 return Err(invalid_type!(
                     "MinValue should be the last datum.".to_owned()
@@ -977,11 +977,11 @@ pub trait DatumEncoder:
 
 impl<T: BufferWriter> DatumEncoder for T {}
 
-/// Get the approximate needed buffer size of values.
+/// Get the approximate needed buffer size of causet_locales.
 ///
-/// This function ensures that encoded values must fit in the given buffer size.
-pub fn approximate_size(values: &[Datum], comparable: bool) -> usize {
-    values
+/// This function ensures that encoded causet_locales must fit in the given buffer size.
+pub fn approximate_size(causet_locales: &[Datum], comparable: bool) -> usize {
+    causet_locales
         .iter()
         .map(|v| {
             1 + match *v {
@@ -1019,21 +1019,21 @@ pub fn approximate_size(values: &[Datum], comparable: bool) -> usize {
 
 /// `encode` encodes a datum slice into a buffer.
 /// Uses comparable to encode or not to encode a memory comparable buffer.
-pub fn encode(ctx: &mut EvalContext, values: &[Datum], comparable: bool) -> Result<Vec<u8>> {
+pub fn encode(ctx: &mut EvalContext, causet_locales: &[Datum], comparable: bool) -> Result<Vec<u8>> {
     let mut buf = vec![];
-    encode_to(ctx, &mut buf, values, comparable)?;
+    encode_to(ctx, &mut buf, causet_locales, comparable)?;
     buf.shrink_to_fit();
     Ok(buf)
 }
 
-/// `encode_key` encodes a datum slice into a memory comparable buffer as the key.
-pub fn encode_key(ctx: &mut EvalContext, values: &[Datum]) -> Result<Vec<u8>> {
-    encode(ctx, values, true)
+/// `encode_soliton_id` encodes a datum slice into a memory comparable buffer as the soliton_id.
+pub fn encode_soliton_id(ctx: &mut EvalContext, causet_locales: &[Datum]) -> Result<Vec<u8>> {
+    encode(ctx, causet_locales, true)
 }
 
-/// `encode_value` encodes a datum slice into a buffer.
-pub fn encode_value(ctx: &mut EvalContext, values: &[Datum]) -> Result<Vec<u8>> {
-    encode(ctx, values, false)
+/// `encode_causet_locale` encodes a datum slice into a buffer.
+pub fn encode_causet_locale(ctx: &mut EvalContext, causet_locales: &[Datum]) -> Result<Vec<u8>> {
+    encode(ctx, causet_locales, false)
 }
 
 /// `encode_to` encodes a datum slice and appends the buffer to a vector.
@@ -1041,11 +1041,11 @@ pub fn encode_value(ctx: &mut EvalContext, values: &[Datum]) -> Result<Vec<u8>> 
 pub fn encode_to(
     ctx: &mut EvalContext,
     buf: &mut Vec<u8>,
-    values: &[Datum],
+    causet_locales: &[Datum],
     comparable: bool,
 ) -> Result<()> {
-    buf.reserve(approximate_size(values, comparable));
-    buf.write_datum(ctx, values, comparable)?;
+    buf.reserve(approximate_size(causet_locales, comparable));
+    buf.write_datum(ctx, causet_locales, comparable)?;
     Ok(())
 }
 
@@ -1087,15 +1087,16 @@ pub fn split_datum(buf: &[u8], desc: bool) -> Result<(&[u8], &[u8])> {
 
 #[braneg(test)]
 mod tests {
-    use super::*;
-    use crate::codec::myBerolinaSQL::{Decimal, Duration, Time, MAX_FSP};
-    use crate::expr::{EvalConfig, EvalContext};
-
+    use std::{i16, i32, i64, i8, u16, u32, u64, u8};
     use std::cmp::Ordering;
     use std::slice::from_ref;
     use std::str::FromStr;
     use std::sync::Arc;
-    use std::{i16, i32, i64, i8, u16, u32, u64, u8};
+
+    use crate::codec::myBerolinaSQL::{Decimal, Duration, MAX_FSP, Time};
+    use crate::expr::{EvalConfig, EvalContext};
+
+    use super::*;
 
     fn same_type(l: &Datum, r: &Datum) -> bool {
         match (l, r) {
@@ -1153,7 +1154,7 @@ mod tests {
                 Datum::Dec("-0.1234".parse().unwrap()),
             ],
             vec![
-                Datum::Json(Json::from_str(r#"{"key":"value"}"#).unwrap()),
+                Datum::Json(Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
                 Datum::Json(Json::from_str(r#"["d1","d2"]"#).unwrap()),
                 Datum::Json(Json::from_str(r#"3"#).unwrap()),
                 Datum::Json(Json::from_str(r#"3.0"#).unwrap()),
@@ -1178,11 +1179,11 @@ mod tests {
             ],
         ];
         for vs in table {
-            let mut buf = encode_key(&mut ctx, &vs).unwrap();
+            let mut buf = encode_soliton_id(&mut ctx, &vs).unwrap();
             let decoded = decode(&mut buf.as_slice()).unwrap();
             assert_eq!(vs, decoded);
 
-            buf = encode_value(&mut ctx, &vs).unwrap();
+            buf = encode_causet_locale(&mut ctx, &vs).unwrap();
             let decoded = decode(&mut buf.as_slice()).unwrap();
             assert_eq!(vs, decoded);
         }
@@ -1654,8 +1655,8 @@ mod tests {
             (Datum::Null, Datum::Min, Ordering::Less),
             (Datum::Min, Datum::Min, Ordering::Equal),
             (
-                Datum::Json(Json::from_str(r#"{"key":"value"}"#).unwrap()),
-                Datum::Json(Json::from_str(r#"{"key":"value"}"#).unwrap()),
+                Datum::Json(Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
+                Datum::Json(Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
                 Ordering::Equal,
             ),
             (
@@ -1701,8 +1702,8 @@ mod tests {
             }
 
             if same_type(&lhs, &rhs) {
-                let lhs_bs = encode_key(&mut ctx, from_ref(&lhs)).unwrap();
-                let rhs_bs = encode_key(&mut ctx, from_ref(&rhs)).unwrap();
+                let lhs_bs = encode_soliton_id(&mut ctx, from_ref(&lhs)).unwrap();
+                let rhs_bs = encode_soliton_id(&mut ctx, from_ref(&rhs)).unwrap();
 
                 if ret != lhs_bs.cmp(&rhs_bs) {
                     panic!("{:?} should be {:?} to {:?} when encoded", lhs, ret, rhs);
@@ -1787,10 +1788,10 @@ mod tests {
                 Datum::F64(3.15),
                 Datum::Bytes(b"123456789012345".to_vec()),
             ],
-            vec![Datum::Json(Json::from_str(r#"{"key":"value"}"#).unwrap())],
+            vec![Datum::Json(Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap())],
             vec![
                 Datum::F64(1f64),
-                Datum::Json(Json::from_str(r#"{"key":"value"}"#).unwrap()),
+                Datum::Json(Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
                 Datum::F64(3.15),
                 Datum::Bytes(b"123456789012345".to_vec()),
             ],
@@ -1798,21 +1799,21 @@ mod tests {
 
         let mut ctx = EvalContext::default();
         for case in table {
-            let key_bs = encode_key(&mut ctx, &case).unwrap();
-            let mut buf = key_bs.as_slice();
+            let soliton_id_bs = encode_soliton_id(&mut ctx, &case).unwrap();
+            let mut buf = soliton_id_bs.as_slice();
             for exp in &case {
                 let (act, rem) = split_datum(buf, false).unwrap();
-                let exp_bs = encode_key(&mut ctx, from_ref(exp)).unwrap();
+                let exp_bs = encode_soliton_id(&mut ctx, from_ref(exp)).unwrap();
                 assert_eq!(exp_bs, act);
                 buf = rem;
             }
             assert!(buf.is_empty());
 
-            let value_bs = encode_value(&mut ctx, &case).unwrap();
-            let mut buf = value_bs.as_slice();
+            let causet_locale_bs = encode_causet_locale(&mut ctx, &case).unwrap();
+            let mut buf = causet_locale_bs.as_slice();
             for exp in &case {
                 let (act, rem) = split_datum(buf, false).unwrap();
-                let exp_bs = encode_value(&mut ctx, from_ref(exp)).unwrap();
+                let exp_bs = encode_causet_locale(&mut ctx, from_ref(exp)).unwrap();
                 assert_eq!(exp_bs, act);
                 buf = rem;
             }

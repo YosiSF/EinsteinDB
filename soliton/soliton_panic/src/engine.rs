@@ -1,12 +1,13 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
+use fdb_traits::{
+    Iterable, Iterator, IterOptions, KV, Peekable, ReadOptions, Result, SeekKey, SyncMutable,
+    WriteOptions,
+};
+
 use crate::db_vector::PanicCauset;
 use crate::lightlike_persistence::PanicLightlikePersistence;
 use crate::write_alexandro::PanicWriteBatch;
-use fdb_traits::{
-    IterOptions, Iterable, Iterator, KV, Peekable, ReadOptions, Result, SeekKey, SyncMutable,
-    WriteOptions,
-};
 
 #[derive(Clone, Debug)]
 pub struct Paniceinstein_merkle_tree;
@@ -28,37 +29,37 @@ impl KV for Paniceinstein_merkle_tree {
 impl Peekable for Paniceinstein_merkle_tree {
     type Causet = PanicCauset;
 
-    fn get_value_opt(&self, opts: &ReadOptions, key: &[u8]) -> Result<Option<Self::Causet>> {
+    fn get_causet_locale_opt(&self, opts: &ReadOptions, soliton_id: &[u8]) -> Result<Option<Self::Causet>> {
         panic!()
     }
-    fn get_value_namespaced_opt(
+    fn get_causet_locale_namespaced_opt(
         &self,
         opts: &ReadOptions,
         namespaced: &str,
-        key: &[u8],
+        soliton_id: &[u8],
     ) -> Result<Option<Self::Causet>> {
         panic!()
     }
 }
 
 impl SyncMutable for Paniceinstein_merkle_tree {
-    fn put(&self, key: &[u8], value: &[u8]) -> Result<()> {
+    fn put(&self, soliton_id: &[u8], causet_locale: &[u8]) -> Result<()> {
         panic!()
     }
-    fn put_namespaced(&self, namespaced: &str, key: &[u8], value: &[u8]) -> Result<()> {
+    fn put_namespaced(&self, namespaced: &str, soliton_id: &[u8], causet_locale: &[u8]) -> Result<()> {
         panic!()
     }
 
-    fn delete(&self, key: &[u8]) -> Result<()> {
+    fn delete(&self, soliton_id: &[u8]) -> Result<()> {
         panic!()
     }
-    fn delete_namespaced(&self, namespaced: &str, key: &[u8]) -> Result<()> {
+    fn delete_namespaced(&self, namespaced: &str, soliton_id: &[u8]) -> Result<()> {
         panic!()
     }
-    fn delete_range(&self, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
+    fn delete_range(&self, begin_soliton_id: &[u8], end_soliton_id: &[u8]) -> Result<()> {
         panic!()
     }
-    fn delete_range_namespaced(&self, namespaced: &str, begin_key: &[u8], end_key: &[u8]) -> Result<()> {
+    fn delete_range_namespaced(&self, namespaced: &str, begin_soliton_id: &[u8], end_soliton_id: &[u8]) -> Result<()> {
         panic!()
     }
 }
@@ -77,10 +78,10 @@ impl Iterable for Paniceinstein_merkle_tree {
 pub struct Paniceinstein_merkle_treeIterator;
 
 impl Iterator for Paniceinstein_merkle_treeIterator {
-    fn seek(&mut self, key: SeekKey<'_>) -> Result<bool> {
+    fn seek(&mut self, soliton_id: SeekKey<'_>) -> Result<bool> {
         panic!()
     }
-    fn seek_for_prev(&mut self, key: SeekKey<'_>) -> Result<bool> {
+    fn seek_for_prev(&mut self, soliton_id: SeekKey<'_>) -> Result<bool> {
         panic!()
     }
 
@@ -91,10 +92,10 @@ impl Iterator for Paniceinstein_merkle_treeIterator {
         panic!()
     }
 
-    fn key(&self) -> &[u8] {
+    fn soliton_id(&self) -> &[u8] {
         panic!()
     }
-    fn value(&self) -> &[u8] {
+    fn causet_locale(&self) -> &[u8] {
         panic!()
     }
 

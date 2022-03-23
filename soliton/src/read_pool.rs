@@ -1,23 +1,22 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use std::future::Future;
-use std::sync::{Arc, Mutex};
-
+use einsteindb_util::yatp_pool::{self, FuturePool, PoolTicker, YatpPoolBuilder};
+use ekvproto::kvrpcpb::CommandPri;
+use file_system::{IOType, set_io_type};
 use futures::channel::oneshot;
 use futures::future::TryFutureExt;
-use ekvproto::kvrpcpb::CommandPri;
 use prometheus::IntGauge;
+use std::future::Future;
+use std::sync::{Arc, Mutex};
 use thiserror::Error;
 use yatp::pool::Remote;
 use yatp::queue::Extras;
 use yatp::task::future::TaskCell;
 
-use file_system::{set_io_type, IOType};
-use einsteindb_util::yatp_pool::{self, FuturePool, PoolTicker, YatpPoolBuilder};
+use crate::config::UnifiedReadPoolConfig;
+use crate::timelike_storage::kv::{destroy_tls_engine, Engine, set_tls_engine, SymplecticStatsReporter};
 
 use self::metrics::*;
-use crate::config::UnifiedReadPoolConfig;
-use crate::timelike_storage::kv::{destroy_tls_engine, set_tls_engine, Engine, SymplecticStatsReporter};
 
 pub enum ReadPool {
     FuturePools {
@@ -238,7 +237,7 @@ pub fn build_yatp_read_pool<E: Engine, R: SymplecticStatsReporter>(
     ReadPool::Yatp {
         pool,
         running_tasks: UNIFIED_READ_POOL_RUNNING_TASKS
-            .with_label_values(&[&unified_read_pool_name]),
+            .with_label_causet_locales(&[&unified_read_pool_name]),
         max_tasks: config
             .max_tasks_per_worker
             .saturating_mul(config.max_thread_count),
@@ -287,12 +286,14 @@ mod metrics {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::timelike_storage::TestEngineBuilder;
     use futures::channel::oneshot;
-    use violetabfttimelike_store::timelike_store::{ReadStats, WriteStats};
     use std::thread;
     use std::time::Duration;
+    use violetabfttimelike_store::timelike_store::{ReadStats, WriteStats};
+
+    use crate::timelike_storage::TestEngineBuilder;
+
+    use super::*;
 
     #[derive(Clone)]
     struct DummyReporter;

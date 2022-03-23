@@ -1,5 +1,9 @@
 // Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
+pub use self::datum::Datum;
+pub use self::error::{Error, Result};
+pub use self::overCausetxctx::{div_i64, div_i64_with_u64, div_u64_with_i64};
+
 // TODO: Replace by failure crate.
 /// A shortcut to box an error.
 macro_rules! invalid_type {
@@ -23,12 +27,8 @@ pub mod datum_codec;
 pub mod error;
 pub mod myBerolinaSQL;
 mod overCausetxctx;
-pub mod row;
+pub mod event;
 pub mod table;
-
-pub use self::datum::Datum;
-pub use self::error::{Error, Result};
-pub use self::overCausetxctx::{div_i64, div_i64_with_u64, div_u64_with_i64};
 
 const TEN_POW: &[u32] = &[
     1,

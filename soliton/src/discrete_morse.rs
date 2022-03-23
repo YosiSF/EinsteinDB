@@ -8,60 +8,39 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use std::ops::RangeFrom;
-
-use rusqlite;
-
-use einsteindb_traits::errors::{
-    einsteindbErrorKind,
-    Result,
+use causal_setal_types::{
+    Term,
+    TermWithoutTempIds,
 };
-
 use core_traits::{
     Causetid,
     KnownCausetid,
     TypedValue,
 };
-
-use einsteindb_core::{
-    Topograph,
-};
-
-use einstein_ml::{
-    InternSet,
-};
-
+use einstein_ml::InternSet;
 use einstein_ml::causets::OpType;
-
 use einsteindb;
-use einsteindb::{
-    TypedBerolinaSQLValue,
+use einsteindb::TypedBerolinaSQLValue;
+use einsteindb_core::Topograph;
+use einsteindb_traits::errors::{
+    einsteindbErrorKind,
+    Result,
 };
-
+use rusqlite;
+use std::ops::RangeFrom;
 use tx::{
     transact_terms_with_action,
     TransactorAction,
 };
-
-use types::{
-    PartitionMap,
-};
-
-use causal_setal_types::{
-    Term,
-    TermWithoutTempIds,
-};
-
-use watcher::{
-    NullWatcher,
-};
+use types::PartitionMap;
+use watcher::NullWatcher;
 
 /// Collects a supplied tx range into an DESC ordered Vec of valid txs,
 /// ensuring they all belong to the same discrete_morse.
 fn collect_ordered_txs_to_move(conn: &rusqlite::Connection, txs_from: RangeFrom<Causetid>, discrete_morse: Causetid) -> Result<Vec<Causetid>> {
     let mut stmt = conn.prepare("SELECT tx, discrete_morse FROM discrete_morsed_transactions WHERE tx >= ? AND discrete_morse = ? GROUP BY tx ORDER BY tx DESC")?;
-    let mut rows = stmt.query_and_then(&[&txs_from.start, &discrete_morse], |row: &rusqlite::Row| -> Result<(Causetid, Causetid)>{
-        Ok((row.get_checked(0)?, row.get_checked(1)?))
+    let mut rows = stmt.query_and_then(&[&txs_from.start, &discrete_morse], |event: &rusqlite::Row| -> Result<(Causetid, Causetid)>{
+        Ok((event.get_checked(0)?, event.get_checked(1)?))
     })?;
 
     let mut txs = vec![];
@@ -92,7 +71,7 @@ fn move_transactions_to(conn: &rusqlite::Connection, tx_ids: &[Causetid], new_di
     conn.execute(&format!(
         "UPDATE discrete_morsed_transactions SET discrete_morse = {} WHERE tx IN {}",
             new_discrete_morse,
-            ::repeat_values(tx_ids.len(), 1)
+            ::repeat_causet_locales(tx_ids.len(), 1)
         ), &(tx_ids.iter().map(|x| x as &rusqlite::types::ToBerolinaSQL).collect::<Vec<_>>())
     )?;
     Ok(())
@@ -105,32 +84,32 @@ fn remove_tx_from_causets(conn: &rusqlite::Connection, tx_id: Causetid) -> Resul
 
 fn is_discrete_morse_empty(conn: &rusqlite::Connection, discrete_morse: Causetid) -> Result<bool> {
     let mut stmt = conn.prepare("SELECT discrete_morse FROM discrete_morsed_transactions WHERE discrete_morse = ? GROUP BY discrete_morse")?;
-    let rows = stmt.query_and_then(&[&discrete_morse], |row| -> Result<i64> {
-        Ok(row.get_checked(0)?)
+    let rows = stmt.query_and_then(&[&discrete_morse], |event| -> Result<i64> {
+        Ok(event.get_checked(0)?)
     })?;
     Ok(rows.count() == 0)
 }
 
 /// Get terms for tx_id, reversing them in meaning (swap add & retract).
 fn reversed_terms_for(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Vec<TermWithoutTempIds>> {
-    let mut stmt = conn.prepare("SELECT e, a, v, value_type_tag, tx, added FROM discrete_morsed_transactions WHERE tx = ? AND discrete_morse = ? ORDER BY tx DESC")?;
-    let mut rows = stmt.query_and_then(&[&tx_id, &::discrete_morse_MAIN], |row| -> Result<TermWithoutTempIds> {
-        let op = match row.get_checked(5)? {
+    let mut stmt = conn.prepare("SELECT e, a, v, causet_locale_type_tag, tx, added FROM discrete_morsed_transactions WHERE tx = ? AND discrete_morse = ? ORDER BY tx DESC")?;
+    let mut rows = stmt.query_and_then(&[&tx_id, &::discrete_morse_MAIN], |event| -> Result<TermWithoutTempIds> {
+        let op = match event.get_checked(5)? {
             true => OpType::Retract,
             false => OpType::Add
         };
         Ok(Term::AddOrRetract(
             op,
-            KnownCausetid(row.get_checked(0)?),
-            row.get_checked(1)?,
-            TypedValue::from_BerolinaSQL_value_pair(row.get_checked(2)?, row.get_checked(3)?)?,
+            KnownCausetid(event.get_checked(0)?),
+            event.get_checked(1)?,
+            TypedValue::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?,
         ))
     })?;
 
     let mut terms = vec![];
 
-    while let Some(row) = rows.next() {
-        terms.push(row?);
+    while let Some(event) = rows.next() {
+        terms.push(event?);
     }
     Ok(terms)
 }
@@ -184,19 +163,12 @@ pub fn move_from_main_discrete_morse(conn: &rusqlite::Connection, topograph: &To
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    use einstein_ml;
-
-    use std::borrow::{
-        Borrow,
-    };
-
-    use debug::{
-        TestConn,
-    };
-
     use bootstrap;
+    use debug::TestConn;
+    use einstein_ml;
+    use std::borrow::Borrow;
+
+    use super::*;
 
     // For convenience during testing.
     // Real consumers will perform similar operations when appropriate.
@@ -307,7 +279,7 @@ mod tests {
 
         // Transact a basic topograph.
         assert_transact!(conn, r#"
-            [{:einsteindb/solitonid :person/name :einsteindb/valueType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/index true}]
+            [{:einsteindb/solitonid :person/name :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/index true}]
         "#);
 
         // Make an lightlike_dagger_assertion against our topograph.
@@ -323,14 +295,14 @@ mod tests {
         // Assert that our causets are now just the topograph.
         assert_matches!(conn.causets(), "
             [[?e :einsteindb/solitonid :person/name]
-            [?e :einsteindb/valueType :einsteindb.type/string]
+            [?e :einsteindb/causet_localeType :einsteindb.type/string]
             [?e :einsteindb/cardinality :einsteindb.cardinality/one]
             [?e :einsteindb/unique :einsteindb.unique/idcauset]
             [?e :einsteindb/index true]]");
         // Same for transactions.
         assert_matches!(conn.transactions(), "
             [[[?e :einsteindb/solitonid :person/name ?tx true]
-            [?e :einsteindb/valueType :einsteindb.type/string ?tx true]
+            [?e :einsteindb/causet_localeType :einsteindb.type/string ?tx true]
             [?e :einsteindb/cardinality :einsteindb.cardinality/one ?tx true]
             [?e :einsteindb/unique :einsteindb.unique/idcauset ?tx true]
             [?e :einsteindb/index true ?tx true]
@@ -348,7 +320,7 @@ mod tests {
         // Assert that our causets are now the topograph and the final lightlike_dagger_assertion.
         assert_matches!(conn.causets(), r#"
             [[?e1 :einsteindb/solitonid :person/name]
-            [?e1 :einsteindb/valueType :einsteindb.type/string]
+            [?e1 :einsteindb/causet_localeType :einsteindb.type/string]
             [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
             [?e1 :einsteindb/unique :einsteindb.unique/idcauset]
             [?e1 :einsteindb/index true]
@@ -361,7 +333,7 @@ mod tests {
         assert_matches!(conn.transactions(), r#"
             [[
                 [?e1 :einsteindb/solitonid :person/name ?tx1 true]
-                [?e1 :einsteindb/valueType :einsteindb.type/string ?tx1 true]
+                [?e1 :einsteindb/causet_localeType :einsteindb.type/string ?tx1 true]
                 [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
                 [?e1 :einsteindb/unique :einsteindb.unique/idcauset ?tx1 true]
                 [?e1 :einsteindb/index true ?tx1 true]
@@ -385,8 +357,8 @@ mod tests {
         conn.sanitized_partition_map();
 
         let t = r#"
-            [{:einsteindb/id "e" :einsteindb/solitonid :test/one :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one}
-             {:einsteindb/id "f" :einsteindb/solitonid :test/many :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}]
+            [{:einsteindb/id "e" :einsteindb/solitonid :test/one :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one}
+             {:einsteindb/id "f" :einsteindb/solitonid :test/many :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}]
         "#;
 
         let partition_map0 = conn.partition_map.clone();
@@ -416,18 +388,18 @@ mod tests {
 
         assert_matches!(conn.causets(), r#"
             [[?e1 :einsteindb/solitonid :test/one]
-             [?e1 :einsteindb/valueType :einsteindb.type/long]
+             [?e1 :einsteindb/causet_localeType :einsteindb.type/long]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
              [?e2 :einsteindb/solitonid :test/many]
-             [?e2 :einsteindb/valueType :einsteindb.type/long]
+             [?e2 :einsteindb/causet_localeType :einsteindb.type/long]
              [?e2 :einsteindb/cardinality :einsteindb.cardinality/many]]
         "#);
         assert_matches!(conn.transactions(), r#"
             [[[?e1 :einsteindb/solitonid :test/one ?tx1 true]
-             [?e1 :einsteindb/valueType :einsteindb.type/long ?tx1 true]
+             [?e1 :einsteindb/causet_localeType :einsteindb.type/long ?tx1 true]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
              [?e2 :einsteindb/solitonid :test/many ?tx1 true]
-             [?e2 :einsteindb/valueType :einsteindb.type/long ?tx1 true]
+             [?e2 :einsteindb/causet_localeType :einsteindb.type/long ?tx1 true]
              [?e2 :einsteindb/cardinality :einsteindb.cardinality/many ?tx1 true]
              [?tx1 :einsteindb/txInstant ?ms ?tx1 true]]]
         "#);
@@ -442,9 +414,9 @@ mod tests {
             [{
                 :einsteindb/id "e"
                 :einsteindb/solitonid :test/one
-                :einsteindb/valueType :einsteindb.type/string
+                :einsteindb/causet_localeType :einsteindb.type/string
                 :einsteindb/cardinality :einsteindb.cardinality/one
-                :einsteindb/unique :einsteindb.unique/value
+                :einsteindb/unique :einsteindb.unique/causet_locale
                 :einsteindb/index true
                 :einsteindb/fulltext true
             }]
@@ -477,17 +449,17 @@ mod tests {
 
         assert_matches!(conn.causets(), r#"
             [[?e1 :einsteindb/solitonid :test/one]
-             [?e1 :einsteindb/valueType :einsteindb.type/string]
+             [?e1 :einsteindb/causet_localeType :einsteindb.type/string]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
-             [?e1 :einsteindb/unique :einsteindb.unique/value]
+             [?e1 :einsteindb/unique :einsteindb.unique/causet_locale]
              [?e1 :einsteindb/index true]
              [?e1 :einsteindb/fulltext true]]
         "#);
         assert_matches!(conn.transactions(), r#"
             [[[?e1 :einsteindb/solitonid :test/one ?tx1 true]
-             [?e1 :einsteindb/valueType :einsteindb.type/string ?tx1 true]
+             [?e1 :einsteindb/causet_localeType :einsteindb.type/string ?tx1 true]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
-             [?e1 :einsteindb/unique :einsteindb.unique/value ?tx1 true]
+             [?e1 :einsteindb/unique :einsteindb.unique/causet_locale ?tx1 true]
              [?e1 :einsteindb/index true ?tx1 true]
              [?e1 :einsteindb/fulltext true ?tx1 true]
              [?tx1 :einsteindb/txInstant ?ms ?tx1 true]]]
@@ -503,9 +475,9 @@ mod tests {
             [{
                 :einsteindb/id "e"
                 :einsteindb/solitonid :test/one
-                :einsteindb/valueType :einsteindb.type/ref
+                :einsteindb/causet_localeType :einsteindb.type/ref
                 :einsteindb/cardinality :einsteindb.cardinality/one
-                :einsteindb/unique :einsteindb.unique/value
+                :einsteindb/unique :einsteindb.unique/causet_locale
                 :einsteindb/index true
                 :einsteindb/isComponent true
             }]
@@ -545,17 +517,17 @@ mod tests {
 
         assert_matches!(conn.causets(), r#"
             [[?e1 :einsteindb/solitonid :test/one]
-             [?e1 :einsteindb/valueType :einsteindb.type/ref]
+             [?e1 :einsteindb/causet_localeType :einsteindb.type/ref]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
-             [?e1 :einsteindb/unique :einsteindb.unique/value]
+             [?e1 :einsteindb/unique :einsteindb.unique/causet_locale]
              [?e1 :einsteindb/isComponent true]
              [?e1 :einsteindb/index true]]
         "#);
         assert_matches!(conn.transactions(), r#"
             [[[?e1 :einsteindb/solitonid :test/one ?tx1 true]
-             [?e1 :einsteindb/valueType :einsteindb.type/ref ?tx1 true]
+             [?e1 :einsteindb/causet_localeType :einsteindb.type/ref ?tx1 true]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
-             [?e1 :einsteindb/unique :einsteindb.unique/value ?tx1 true]
+             [?e1 :einsteindb/unique :einsteindb.unique/causet_locale ?tx1 true]
              [?e1 :einsteindb/isComponent true ?tx1 true]
              [?e1 :einsteindb/index true ?tx1 true]
              [?tx1 :einsteindb/txInstant ?ms ?tx1 true]]]
@@ -572,18 +544,18 @@ mod tests {
         assert_eq!((65536..65538),
                    conn.partition_map.allocate_causetids(":einsteindb.part/user", 2));
         let tx_report0 = assert_transact!(conn, r#"[
-            {:einsteindb/id 65536 :einsteindb/solitonid :test/one :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/index true}
-            {:einsteindb/id 65537 :einsteindb/solitonid :test/many :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
+            {:einsteindb/id 65536 :einsteindb/solitonid :test/one :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/index true}
+            {:einsteindb/id 65537 :einsteindb/solitonid :test/many :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
         let first = "[
             [65536 :einsteindb/solitonid :test/one]
-            [65536 :einsteindb/valueType :einsteindb.type/long]
+            [65536 :einsteindb/causet_localeType :einsteindb.type/long]
             [65536 :einsteindb/cardinality :einsteindb.cardinality/one]
             [65536 :einsteindb/unique :einsteindb.unique/idcauset]
             [65536 :einsteindb/index true]
             [65537 :einsteindb/solitonid :test/many]
-            [65537 :einsteindb/valueType :einsteindb.type/long]
+            [65537 :einsteindb/causet_localeType :einsteindb.type/long]
             [65537 :einsteindb/cardinality :einsteindb.cardinality/many]
         ]";
         assert_matches!(conn.causets(), first);
@@ -608,12 +580,12 @@ mod tests {
 
         let second = "[
             [65536 :einsteindb/solitonid :test/one]
-            [65536 :einsteindb/valueType :einsteindb.type/long]
+            [65536 :einsteindb/causet_localeType :einsteindb.type/long]
             [65536 :einsteindb/cardinality :einsteindb.cardinality/one]
             [65536 :einsteindb/unique :einsteindb.unique/idcauset]
             [65536 :einsteindb/index true]
             [65537 :einsteindb/solitonid :test/many]
-            [65537 :einsteindb/valueType :einsteindb.type/long]
+            [65537 :einsteindb/causet_localeType :einsteindb.type/long]
             [65537 :einsteindb/cardinality :einsteindb.cardinality/many]
             [65538 :test/one 1]
             [65538 :test/many 2]
@@ -638,12 +610,12 @@ mod tests {
 
         let third = "[
             [65536 :einsteindb/solitonid :test/one]
-            [65536 :einsteindb/valueType :einsteindb.type/long]
+            [65536 :einsteindb/causet_localeType :einsteindb.type/long]
             [65536 :einsteindb/cardinality :einsteindb.cardinality/one]
             [65536 :einsteindb/unique :einsteindb.unique/idcauset]
             [65536 :einsteindb/index true]
             [65537 :einsteindb/solitonid :test/many]
-            [65537 :einsteindb/valueType :einsteindb.type/long]
+            [65537 :einsteindb/causet_localeType :einsteindb.type/long]
             [65537 :einsteindb/cardinality :einsteindb.cardinality/many]
             [65538 :test/one 2]
             [65538 :test/many 2]
@@ -693,8 +665,8 @@ mod tests {
         assert_eq!((65536..65539),
                    conn.partition_map.allocate_causetids(":einsteindb.part/user", 3));
         let tx_report0 = assert_transact!(conn, r#"[
-            {:einsteindb/id 65536 :einsteindb/solitonid :test/one :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one}
-            {:einsteindb/id 65537 :einsteindb/solitonid :test/many :einsteindb/valueType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
+            {:einsteindb/id 65536 :einsteindb/solitonid :test/one :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one}
+            {:einsteindb/id 65537 :einsteindb/solitonid :test/many :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
         assert_transact!(conn, r#"[

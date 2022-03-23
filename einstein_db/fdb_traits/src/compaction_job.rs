@@ -1,6 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::local_path::local_path;
+
 pub trait CompactionJobInfo {
     type TableGreedoidsCollectionView;
     type CompactionReason;
@@ -14,7 +15,7 @@ pub trait CompactionJobInfo {
     fn table_greedoids(&self) -> &Self::TableGreedoidsCollectionView;
     fn base_input_l_naught(&self) -> i32;
     fn elapsed_micros(&self) -> u64;
-    fn num_corrupt_keys(&self) -> u64;
+    fn num_corrupt_soliton_ids(&self) -> u64;
     fn output_l_naught(&self) -> i32;
     fn input_records(&self) -> u64;
     fn output_records(&self) -> u64;

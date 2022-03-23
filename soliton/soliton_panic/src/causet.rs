@@ -1,11 +1,12 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{
-    NamespacedName, lightlikeCausetFileInfo, IterOptions, Iterable, Iterator, Result, SeekKey,
-    CausetCompressionType, CausetExt, CausetReader, CausetWriter, CausetWriterBuilder,
+    CausetCompressionType, CausetExt, CausetReader, CausetWriter, CausetWriterBuilder, Iterable, Iterator,
+    IterOptions, lightlikeCausetFileInfo, NamespacedName, Result, SeekKey,
 };
 use std::local_path::local_pathBuf;
+
+use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 
 impl CausetExt for Paniceinstein_merkle_tree {
     type CausetReader = PanicCausetReader;
@@ -41,10 +42,10 @@ impl Iterable for PanicCausetReader {
 pub struct PanicCausetReaderIterator;
 
 impl Iterator for PanicCausetReaderIterator {
-    fn seek(&mut self, key: SeekKey<'_>) -> Result<bool> {
+    fn seek(&mut self, soliton_id: SeekKey<'_>) -> Result<bool> {
         panic!()
     }
-    fn seek_for_prev(&mut self, key: SeekKey<'_>) -> Result<bool> {
+    fn seek_for_prev(&mut self, soliton_id: SeekKey<'_>) -> Result<bool> {
         panic!()
     }
 
@@ -55,10 +56,10 @@ impl Iterator for PanicCausetReaderIterator {
         panic!()
     }
 
-    fn key(&self) -> &[u8] {
+    fn soliton_id(&self) -> &[u8] {
         panic!()
     }
-    fn value(&self) -> &[u8] {
+    fn causet_locale(&self) -> &[u8] {
         panic!()
     }
 
@@ -73,10 +74,10 @@ impl CausetWriter for PanicCausetWriter {
     type lightlikeCausetFileInfo = PaniclightlikeCausetFileInfo;
     type lightlikeCausetFileReader = PaniclightlikeCausetFileReader;
 
-    fn put(&mut self, key: &[u8], val: &[u8]) -> Result<()> {
+    fn put(&mut self, soliton_id: &[u8], val: &[u8]) -> Result<()> {
         panic!()
     }
-    fn delete(&mut self, key: &[u8]) -> Result<()> {
+    fn delete(&mut self, soliton_id: &[u8]) -> Result<()> {
         panic!()
     }
     fn file_size(&mut self) -> u64 {
@@ -126,10 +127,10 @@ impl lightlikeCausetFileInfo for PaniclightlikeCausetFileInfo {
     fn file_local_path(&self) -> local_pathBuf {
         panic!()
     }
-    fn smallest_key(&self) -> &[u8] {
+    fn smallest_soliton_id(&self) -> &[u8] {
         panic!()
     }
-    fn largest_key(&self) -> &[u8] {
+    fn largest_soliton_id(&self) -> &[u8] {
         panic!()
     }
     fn sequence_number(&self) -> u64 {
