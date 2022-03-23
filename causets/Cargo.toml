@@ -4,10 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-###We use AllegroSQL tuples generated within allegro_poset to concatenate the coset of posets
-causets ="~0.1"
+causets-core = "0.1.0"
+causets-cli = "0.1.0"
 
 [build-dependencies]
 causets = "^0.1"
