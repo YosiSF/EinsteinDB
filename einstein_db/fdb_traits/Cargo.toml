@@ -10,10 +10,8 @@ failpoints = ["fail/failpoints"]
 [dependencies]
 error_code = { local_path = "../error_code", default-features = false }
 file = { local_path = "../file", default-features = false }
-log_wrappers = { local_path = "../log_wrappers" }
 protobuf = "2"
 thiserror = "1.0"
-einsteindb_alloc = { local_path = "../einsteindb_alloc" }
 einsteindb_util = { local_path = "../einsteindb_util", default-features = false }
 txn_types = { local_path = "../txn_types", default-features = false }
 serde = "1.0"
