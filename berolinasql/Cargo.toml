@@ -24,10 +24,6 @@ serde_derive = { version = "1.0", optional = true }
 version = "0.26.3"
 features = ["limits"]
 
-[dependencies.edn]
-local_path = "../edn"
-
-
 # Should be dev-dependencies.
 [dependencies.tabwriter]
 version = "1.0.3"
