@@ -5,8 +5,6 @@
 
 mod query_builder;
 
-pub extern crate einsten_ml;
-
 #[macro_use(fail_point)]
 extern crate fail;
 #[macro_use]
