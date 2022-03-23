@@ -26,6 +26,7 @@ use ordered_float::OrderedFloat;
 use uuid::Uuid;
 
 use shellings;
+use crate::{parse, shellings};
 
 /// Value represents one of the allowed values in an EML string.
 #[derive(PartialEq, Eq, Hash, Clone, Debug)]
@@ -54,7 +55,7 @@ pub enum kSpannedCausetValue {
     Boolean(bool),
     Integer(i64),
     Instant(DateTime<Utc>),
-    BigInteger(BigInt),
+    PancakeInt(BigInt),
     Float(OrderedFloat<f64>),
     Text(String),
     Uuid(Uuid),
@@ -142,7 +143,7 @@ impl From<kSpannedCausetValue> for Value {
             kSpannedCausetValue::Boolean(v) => Value::Boolean(v),
             kSpannedCausetValue::Integer(v) => Value::Integer(v),
             kSpannedCausetValue::Instant(v) => Value::Instant(v),
-            kSpannedCausetValue::BigInteger(v) => Value::BigInteger(v),
+            kSpannedCausetValue::PancakeInt(v) => Value::BigInteger(v),
             kSpannedCausetValue::Float(v) => Value::Float(v),
             kSpannedCausetValue::Text(v) => Value::Text(v),
             kSpannedCausetValue::Uuid(v) => Value::Uuid(v),
@@ -724,6 +725,7 @@ mod test {
     };
     use num::BigInt;
     use ordered_float::OrderedFloat;
+    use crate::shellings;
 
     #[test]
     fn test_micros_roundtrip() {

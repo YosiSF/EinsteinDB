@@ -15,6 +15,7 @@ use std::fmt::{
 };
 
 use isolated_namespace::IsolatedNamespace;
+use crate::isolated_namespace::IsolatedNamespace;
 
 #[macro_export]
 macro_rules! ns_keyword {

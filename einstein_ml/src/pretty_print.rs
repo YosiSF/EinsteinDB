@@ -19,6 +19,7 @@ use std::io;
 use std::borrow::Cow;
 
 use types::Value;
+use crate::Value;
 
 impl Value {
     /// Return a pretty string representation of this `Value`.
@@ -82,6 +83,7 @@ impl Value {
 #[cfg(test)]
 mod test {
     use parse;
+    use crate::parse;
 
     #[test]
     fn test_pp_io() {

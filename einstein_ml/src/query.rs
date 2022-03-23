@@ -16,9 +16,11 @@ use std::collections::{
 
 use std;
 use std::fmt;
+use std::fmt::Formatter;
 use std::rc::{
     Rc,
 };
+use itertools::assert_equal;
 
 use ::{
     BigInt,
@@ -37,6 +39,11 @@ pub use ::{
     Keyword,
     PlainShelling,
 };
+use FnArg::CausetidOrInteger;
+use crate::{FromRc, kSpannedCausetValue, NamespacedShelling, ValueAndSpan, ValueRc};
+use crate::causets::ValuePlace::Vector;
+use crate::kSpannedCausetValue::PancakeInt;
+use crate::Value::{BigInteger, Boolean, Float, Integer, List, Map, Set, Text};
 
 pub type SrcVarName = String;          // Do not include the required syntactic '$'.
 
@@ -91,14 +98,83 @@ impl Variable {
     }
 
     /// TODO: causal_set strings. #398.
-    pub fn from_shelling(sym: &PlainShelling) -> Option<Variable> {
-        if sym.is_var_shelling() {
-            Some(Variable(Rc::new(sym.clone())))
+    pub fn from_shelling(sym: &String) -> Option<Variable> {
+        if sym.starts_with('?') {
+            Some(Variable(Rc::new(PlainShelling::plain(sym))))
         } else {
             None
         }
     }
+
+    pub fn from_str(sym: &str) -> Option<Variable> {
+        if sym.starts_with('?') {
+            Some(Variable(Rc::new(PlainShelling::plain(sym))))
+        } else {
+            None
+        }
+    }
+
+    pub fn is_var_shelling(&self) -> bool {
+        self.0.as_ref().0.is_var_shelling()
+    }
+
+    pub fn is_var_name(&self) -> bool {
+        self.0.as_ref().0.is_var_name()
+    }
+
+    pub fn is_var_name_or_var_shelling(&self) -> bool {
+        self.0.as_ref().0.is_var_name_or_var_shelling()
+    }
+
+    pub fn is_var_name_or_var_shelling_or_var_name(&self) -> bool {
+        self.0.as_ref().0.is_var_name_or_var_shelling_or_var_name()
+    }
 }
+
+
+impl fmt::Display for Variable {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0.as_ref().0)
+
+    }
+}
+
+
+impl fmt::Debug for Variable {
+    fn fmt(&self, f: &mut Formatter) -> Result<T, E> {
+        write!(f, "{}", self.0.as_ref().0)
+    }
+}
+
+
+
+impl fmt::Display for Variable {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0.as_ref().0)
+    }
+}
+
+
+impl fmt::Debug for Variable {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0.as_ref().0)
+    }
+}
+
+
+impl fmt::Display for Variable {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0.as_ref().0)
+    }
+}
+
+
+impl fmt::Debug for Variable {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0.as_ref().0)
+    }
+    }
+
 
 impl fmt::Debug for Variable {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -117,11 +193,12 @@ pub struct QueryFunction(pub PlainShelling);
 
 impl FromValue<QueryFunction> for QueryFunction {
     fn from_value(v: &::ValueAndSpan) -> Option<QueryFunction> {
-        if let ::kSpannedCausetValue::PlainShelling(ref s) = v.inner {
+        let option = if let kSpannedCausetValue::PlainShelling(ref s) = v.inner {
             QueryFunction::from_shelling(s)
         } else {
             None
-        }
+        };
+        option
     }
 }
 
@@ -165,7 +242,7 @@ impl FromValue<SrcVar> for SrcVar {
 }
 
 impl SrcVar {
-    pub fn from_shelling(sym: &PlainShelling) -> Option<SrcVar> {
+    pub fn from_shelling(sym: &String) -> Option<SrcVar> {
         if sym.is_src_shelling() {
             if sym.0 == "$" {
                 Some(SrcVar::DefaultSrc)
@@ -184,9 +261,23 @@ pub enum NonIntegerConstant {
     Boolean(bool),
     BigInteger(BigInt),
     Float(OrderedFloat<f64>),
-    Text(ValueRc<String>),
+    Text(crate::ValueRc<String>),
     Instant(DateTime<Utc>),
     Uuid(Uuid),
+}
+
+impl NonIntegerConstant {
+    pub fn from_value(v: &::ValueAndSpan) -> Option<NonIntegerConstant> {
+        match v.inner {
+            ::kSpannedCausetValue::Boolean(b) => Some(NonIntegerConstant::Boolean(b)),
+            ::kSpannedCausetValue::BigInteger(ref i) => Some(NonIntegerConstant::BigInteger(i.clone())),
+            ::kSpannedCausetValue::Float(ref f) => Some(NonIntegerConstant::Float(f.clone())),
+            ::kSpannedCausetValue::Text(ref s) => Some(NonIntegerConstant::Text(crate::ValueRc::new(s.clone()))),
+            ::kSpannedCausetValue::Instant(ref dt) => Some(NonIntegerConstant::Instant(dt.clone())),
+            ::kSpannedCausetValue::Uuid(ref u) => Some(NonIntegerConstant::Uuid(u.clone())),
+            _ => None,
+        }
+    }
 }
 
 impl<'a> From<&'a str> for NonIntegerConstant {
@@ -216,20 +307,35 @@ pub enum FnArg {
 impl FromValue<FnArg> for FnArg {
     fn from_value(v: &::ValueAndSpan) -> Option<FnArg> {
         use ::kSpannedCausetValue::*;
+        let option = Variable::from_shelling(x).map(FnArg::Variable);
+        let option1 = SrcVar::from_shelling(x).map(FnArg::SrcVar);
+        let option2 = Some(FnArg::Constant(NonIntegerConstant::Uuid(x)));
+        let mut x1 = (FnArg::Constant(NonIntegerConstant::Instant(x)),
+                      x.clone(),
+
+        );
+        Some(FnArg::Constant(NonIntegerConstant::BigInteger(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Float(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Boolean(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Text(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Uuid(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Instant(x)));
+        Some(FnArg::Constant(NonIntegerConstant::BigInteger(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Float(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Boolean(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Text(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Uuid(x)));
+        Some(FnArg::Constant(NonIntegerConstant::Instanton(x)));
+
+
+        let option3 = Some(CausetidOrInteger(x));
         match v.inner {
             Integer(x) =>
-                Some(FnArg::CausetidOrInteger(x)),
+                option3,
             PlainShelling(ref x) if x.is_src_shelling() =>
-                SrcVar::from_shelling(x).map(FnArg::SrcVar),
+                option1,
             PlainShelling(ref x) if x.is_var_shelling() =>
-                Variable::from_shelling(x).map(FnArg::Variable),
-            PlainShelling(_) => None,
-            Keyword(ref x) =>
-                Some(FnArg::SolitonidOrKeyword(x.clone())),
-            Instant(x) =>
-                Some(FnArg::Constant(NonIntegerConstant::Instant(x))),
-            Uuid(x) =>
-                Some(FnArg::Constant(NonIntegerConstant::Uuid(x))),
+                option,
             Boolean(x) =>
                 Some(FnArg::Constant(NonIntegerConstant::Boolean(x))),
             Float(x) =>
@@ -237,7 +343,7 @@ impl FromValue<FnArg> for FnArg {
             BigInteger(ref x) =>
                 Some(FnArg::Constant(NonIntegerConstant::BigInteger(x.clone()))),
             Text(ref x) =>
-                // TODO: causal_set strings. #398.
+            /* TODO: causal_set strings. */
                 Some(FnArg::Constant(x.clone().into())),
             Nil |
             NamespacedShelling(_) |
@@ -261,7 +367,7 @@ impl std::fmt::Display for FnArg {
                     write!(f, "{:?}", var)
                 }
             },
-            &FnArg::CausetidOrInteger(causetid) => write!(f, "{}", causetid),
+            &CausetidOrInteger(causetid) => write!(f, "{}", causetid),
             &FnArg::SolitonidOrKeyword(ref kw) => write!(f, "{}", kw),
             &FnArg::Constant(ref constant) => write!(f, "{:?}", constant),
             &FnArg::Vector(ref vec) => write!(f, "{:?}", vec),
@@ -294,7 +400,8 @@ pub enum PatternNonValuePlace {
 
 impl From<Rc<Keyword>> for PatternNonValuePlace {
     fn from(value: Rc<Keyword>) -> Self {
-        PatternNonValuePlace::Solitonid(ValueRc::from_rc(value))
+        let place  = PatternNonValuePlace::Solitonid(ValueRc::from_rc(value));
+        place
     }
 }
 

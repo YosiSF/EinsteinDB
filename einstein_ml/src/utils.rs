@@ -11,6 +11,20 @@
 #![allow(dead_code)]
 
 use types::Value;
+use crate::Value;
+use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result;
+use std::hash::Hash;
+use std::hash::Hasher;
+use std::ops::Deref;
+use std::ops::DerefMut;
+use std::rc::Rc;
+use std::rc::Weak;
+use std::sync::Arc;
+
 
 /// Merge the EML `Value::Map` instance `right` into `left`.  Returns `None` if either `left` or
 /// `right` is not a `Value::Map`.
@@ -22,13 +36,72 @@ use types::Value;
 pub fn merge(left: &Value, right: &Value) -> Option<Value> {
     match (left, right) {
         (&Value::Map(ref l), &Value::Map(ref r)) => {
+            let mut result = HashMap::new();
+            for (k, v) in l.iter() {
+                result.insert(k.clone(), v.clone());
+            }
+            for (k, v) in r.iter() {
+                result.insert(k.clone(), v.clone());
+            }
+            let option = Some(Value::Map(CausetRcResult));
+            option
+        },
+        _ => None,
+    }
             let mut result = l.clone();
             result.extend(r.clone().into_iter());
             Some(Value::Map(result))
         }
-        _ => None
+
+
+
+
+    /// Returns a new `Value::Map` instance with the key-value pairs from `left` and `right`
+    /// merged.  See also https://clojuredocs.org/clojure.core/merge.
+    ///
+    ///
+    ///    (merge {:a 1 :b 2} {:b 3 :c 4})
+    ///   ;; => {:a 1 :b 3 :c 4}
+    ///
+    ///
+    ///   (merge {:a 1 :b 2} {:b 3 :c 4} {:d 5 :e 6})
+    ///  ;; => {:a 1 :b 3 :c 4 :d 5 :e 6}
+    ///
+    ///
+    ///
+    ///
+    ///
+    ///
+    ///
+
+
+} // end of module  einstein_ml::utils  utils.rs    1,1    0,0  1    0,0    Lint/E0102
+
+
+
+
+    /// Returns a new `Value::Map` instance with the key-value pairs from `left` and `right`
+    /// merged.  See also https://clojuredocs.org/clojure.core/merge.
+    ///
+    ///
+    /// Merge the EML `Value::Map` instance `right` into `left`.  Returns `None` if either `left` or
+    /// `right` is not a `Value::Map`.
+    ///
+    /// Keys present in `right` overwrite keys present in `left`.  See also
+    /// https://clojuredocs.org/clojure.core/merge.
+    ///
+
     }
 }
+
+
+/// Returns a new `Value::Map` instance with the key-value pairs from `map` and the key-value pairs
+///
+/// from `other`.  See also https://clojuredocs.org/clojure.core/merge.
+///
+///
+///
+
 
 pub fn merge_all(entries: Vec<Value>) -> Option<Value> {
     entries.into_iter().fold(None, |merged, entry| match merged {
