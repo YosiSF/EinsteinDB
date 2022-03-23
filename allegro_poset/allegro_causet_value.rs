@@ -8,7 +8,7 @@ extern crate env_logger;
 extern crate rustc_serialize;
 extern crate alga;
 extern crate rand;
-extern crate scoped_threadpool;
+extern crate quickersort;
 extern crate uuid;
 extern crate libc;
 extern crate bit_set;
