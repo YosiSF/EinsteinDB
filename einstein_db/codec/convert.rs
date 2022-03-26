@@ -760,7 +760,7 @@ pub fn pad_zero_for_binary_type(s: &mut Vec<u8>, ft: &FieldType) {
             .unwrap_or(false)
         && s.len() < flen
     {
-        // it seems MaxAllowedPacket has not push down to EinsteinDB, so we needn't to handle it
+        // it seems MaxAllowedPacket has not push down to EinsteinDB, so we neeinstein_ml't to handle it
         s.resize(flen, 0);
     }
 }

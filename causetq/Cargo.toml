@@ -5,4 +5,39 @@ edition = "2021"
 
 # See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies]
+[dependencies.causet]
+path = "../causet"
+
+[dependencies.berolinasql]
+path = "../berolinasql"
+
+[dependencies.EinsteinDB]
+path = "../EinsteinDB"
+
+
+[dependencies.serde]
+version = "1.0"
+features = ["derive"]
+
+
+[dependencies.serde_json]
+version = "1.0"
+features = ["derive"]
+
+
+[dependencies.serde_derive]
+version = "1.0"
+features = ["derive"]
+
+
+[dependencies.serde_yaml]
+version = "0.8.23"
+features = ["derive"]
+
+
+[dependencies.serde_urlencoded]
+version = "0.7.1"
+features = ["derive"]
+
+
+

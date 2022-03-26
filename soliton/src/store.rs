@@ -11,10 +11,10 @@
 #![allow(dead_code)]
 
 use conn::Conn;
-use core_traits::{
+use causetq::{
     Causetid,
     StructuredMap,
-    TypedValue,
+    causetq_TV,
 };
 use einstein_ml;
 use einsteindb_core::{
@@ -192,12 +192,12 @@ impl Queryable for Store {
         self.conn.q_explain(&self.SQLite, query, inputs)
     }
 
-    fn lookup_causet_locales_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Vec<TypedValue>>
+    fn lookup_causet_locales_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Vec<causetq_TV>>
         where E: Into<Causetid> {
         self.conn.lookup_causet_locales_for_attribute(&self.SQLite, causet.into(), attribute)
     }
 
-    fn lookup_causet_locale_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Option<TypedValue>>
+    fn lookup_causet_locale_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Option<causetq_TV>>
         where E: Into<Causetid> {
         self.conn.lookup_causet_locale_for_attribute(&self.SQLite, causet.into(), attribute)
     }
@@ -224,11 +224,11 @@ mod tests {
         Definition,
         VersionedStore,
     };
-    use core_traits::{
-        TypedValue,
-        ValueType,
+    use causetq::{
+        causetq_TV,
+    causetq_VT,
     };
-    use core_traits::attribute::Unique;
+    use causetq::attribute::Unique;
     use einsteindb_core::{
         CachedAttributes,
         HasSchema,
@@ -272,7 +272,7 @@ mod tests {
                         [?neighborhood :neighborhood/district ?d]
                         [?d :district/name ?district]]"#;
         let hood = "Beacon Hill";
-        let inputs = QueryInputs::with_causet_locale_sequence(vec![(var!(?hood), TypedValue::typed_string(hood).into())]);
+        let inputs = QueryInputs::with_causet_locale_sequence(vec![(var!(?hood), causetq_TV::typed_string(hood).into())]);
         let mut prepared = in_progress.q_prepare(query, inputs)
                                       .expect("prepared");
         match &prepared {
@@ -286,17 +286,17 @@ mod tests {
         let end = time::PreciseTime::now();
         println!("Prepared cache execution took {}µs", start.to(end).num_microseconds().unwrap());
         assert_eq!(results.into_rel().expect("result"),
-                   vec![vec![TypedValue::typed_string("Greater Duwamish")]].into());
+                   vec![vec![causetq_TV::typed_string("Greater Duwamish")]].into());
     }
 
     trait StoreCache {
-        fn get_causetid_for_causet_locale(&self, attr: Causetid, val: &TypedValue) -> Option<Causetid>;
+        fn get_causetid_for_causet_locale(&self, attr: Causetid, val: &causetq_TV) -> Option<Causetid>;
         fn is_attribute_cached_reverse(&self, attr: Causetid) -> bool;
         fn is_attribute_cached_lightlike(&self, attr: Causetid) -> bool;
     }
 
     impl StoreCache for Store {
-        fn get_causetid_for_causet_locale(&self, attr: Causetid, val: &TypedValue) -> Option<Causetid> {
+        fn get_causetid_for_causet_locale(&self, attr: Causetid, val: &causetq_TV) -> Option<Causetid> {
             let cache = self.conn.current_cache();
             cache.get_causetid_for_causet_locale(attr, val)
         }
@@ -371,72 +371,72 @@ mod tests {
                 ]"#).expect("transact");
 
             // Data is in the cache.
-            let first = in_progress.cache.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
-            assert_eq!(in_progress.cache.get_causet_locale_for_causetid(&in_progress.schema, foo_baz, first).expect("val"), &TypedValue::Boolean(false));
+            let first = in_progress.cache.get_causetid_for_causet_locale(foo_bar, &causetq_TV::Long(15)).expect("id");
+            assert_eq!(in_progress.cache.get_causet_locale_for_causetid(&in_progress.schema, foo_baz, first).expect("val"), &causetq_TV::Boolean(false));
 
             // All three causet_locales for :foo/x.
-            let all_three: BTreeSet<TypedValue> = in_progress.cache
+            let all_three: BTreeSet<causetq_TV> = in_progress.cache
                                                              .get_causet_locales_for_causetid(&in_progress.schema, foo_x, first)
                                                              .expect("val")
                                                              .iter().cloned().collect();
-            assert_eq!(all_three, vec![1, 2, 3].into_iter().map(TypedValue::Long).collect());
+            assert_eq!(all_three, vec![1, 2, 3].into_iter().map(causetq_TV::Long).collect());
 
             in_progress.commit().expect("commit");
         }
 
         // Data is still in the cache.
         {
-            let first = store.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = store.get_causetid_for_causet_locale(foo_bar, &causetq_TV::Long(15)).expect("id");
             let cache: SQLiteAttributeCache = store.conn.current_cache();
-            assert_eq!(cache.get_causet_locale_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
+            assert_eq!(cache.get_causet_locale_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &causetq_TV::Boolean(false));
 
-            let all_three: BTreeSet<TypedValue> = cache.get_causet_locales_for_causetid(&store.conn.current_schema(), foo_x, first)
+            let all_three: BTreeSet<causetq_TV> = cache.get_causet_locales_for_causetid(&store.conn.current_schema(), foo_x, first)
                                                        .expect("val")
                                                        .iter().cloned().collect();
-            assert_eq!(all_three, vec![1, 2, 3].into_iter().map(TypedValue::Long).collect());
+            assert_eq!(all_three, vec![1, 2, 3].into_iter().map(causetq_TV::Long).collect());
         }
 
         // We can remove data and the cache reflects it, immediately and after commit.
         {
             let mut in_progress = store.begin_transaction().expect("began");
-            let first = in_progress.cache.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = in_progress.cache.get_causetid_for_causet_locale(foo_bar, &causetq_TV::Long(15)).expect("id");
             in_progress.transact(format!("[[:einsteindb/retract {} :foo/x 2]]", first).as_str()).expect("transact");
 
-            let only_two: BTreeSet<TypedValue> = in_progress.cache
+            let only_two: BTreeSet<causetq_TV> = in_progress.cache
                                                             .get_causet_locales_for_causetid(&in_progress.schema, foo_x, first)
                                                             .expect("val")
                                                             .iter().cloned().collect();
-            assert_eq!(only_two, vec![1, 3].into_iter().map(TypedValue::Long).collect());
+            assert_eq!(only_two, vec![1, 3].into_iter().map(causetq_TV::Long).collect());
 
             // Rollback: unchanged.
         }
         {
-            let first = store.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = store.get_causetid_for_causet_locale(foo_bar, &causetq_TV::Long(15)).expect("id");
             let cache: SQLiteAttributeCache = store.conn.current_cache();
-            assert_eq!(cache.get_causet_locale_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
+            assert_eq!(cache.get_causet_locale_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &causetq_TV::Boolean(false));
 
-            let all_three: BTreeSet<TypedValue> = cache.get_causet_locales_for_causetid(&store.conn.current_schema(), foo_x, first)
+            let all_three: BTreeSet<causetq_TV> = cache.get_causet_locales_for_causetid(&store.conn.current_schema(), foo_x, first)
                                                        .expect("val")
                                                        .iter().cloned().collect();
-            assert_eq!(all_three, vec![1, 2, 3].into_iter().map(TypedValue::Long).collect());
+            assert_eq!(all_three, vec![1, 2, 3].into_iter().map(causetq_TV::Long).collect());
         }
 
         // Try again, but this time commit.
         {
             let mut in_progress = store.begin_transaction().expect("began");
-            let first = in_progress.cache.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = in_progress.cache.get_causetid_for_causet_locale(foo_bar, &causetq_TV::Long(15)).expect("id");
             in_progress.transact(format!("[[:einsteindb/retract {} :foo/x 2]]", first).as_str()).expect("transact");
             in_progress.commit().expect("committed");
         }
         {
-            let first = store.get_causetid_for_causet_locale(foo_bar, &TypedValue::Long(15)).expect("id");
+            let first = store.get_causetid_for_causet_locale(foo_bar, &causetq_TV::Long(15)).expect("id");
             let cache: SQLiteAttributeCache = store.conn.current_cache();
-            assert_eq!(cache.get_causet_locale_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &TypedValue::Boolean(false));
+            assert_eq!(cache.get_causet_locale_for_causetid(&store.conn.current_schema(), foo_baz, first).expect("val"), &causetq_TV::Boolean(false));
 
-            let only_two: BTreeSet<TypedValue> = cache.get_causet_locales_for_causetid(&store.conn.current_schema(), foo_x, first)
+            let only_two: BTreeSet<causetq_TV> = cache.get_causet_locales_for_causetid(&store.conn.current_schema(), foo_x, first)
                                                       .expect("val")
                                                       .iter().cloned().collect();
-            assert_eq!(only_two, vec![1, 3].into_iter().map(TypedValue::Long).collect());
+            assert_eq!(only_two, vec![1, 3].into_iter().map(causetq_TV::Long).collect());
         }
     }
 
@@ -564,12 +564,12 @@ mod tests {
                 let name = format!("todo{}", i);
                 let uuid = Uuid::new_v4();
                 let mut builder = in_progress.builder().describe_tempid(&name);
-                builder.add(kw!(:todo/uuid), TypedValue::Uuid(uuid)).expect("Expected added uuid");
+                builder.add(kw!(:todo/uuid), causetq_TV::Uuid(uuid)).expect("Expected added uuid");
                 changeset.insert(uuid_causetid.clone());
-                builder.add(kw!(:todo/name), TypedValue::typed_string(name)).expect("Expected added name");
+                builder.add(kw!(:todo/name), causetq_TV::typed_string(name)).expect("Expected added name");
                 changeset.insert(name_causetid.clone());
                 if i % 2 == 0 {
-                    builder.add(kw!(:todo/completion_date), TypedValue::current_instant()).expect("Expected added date");
+                    builder.add(kw!(:todo/completion_date), causetq_TV::current_instant()).expect("Expected added date");
                     changeset.insert(date_causetid.clone());
                 }
                 let (ip, r) = builder.transact();
@@ -579,8 +579,8 @@ mod tests {
                 in_progress = ip;
             }
             let mut builder = in_progress.builder().describe_tempid("Label");
-            builder.add(kw!(:label/name), TypedValue::typed_string("Label 1")).expect("Expected added name");
-            builder.add(kw!(:label/color), TypedValue::typed_string("blue")).expect("Expected added color");
+            builder.add(kw!(:label/name), causetq_TV::typed_string("Label 1")).expect("Expected added name");
+            builder.add(kw!(:label/color), causetq_TV::typed_string("blue")).expect("Expected added color");
             builder.commit().expect("expect transaction to occur");
         }
 
@@ -635,8 +635,8 @@ mod tests {
             for i in 0..3 {
                 let name = format!("label{}", i);
                 let mut builder = in_progress.builder().describe_tempid(&name);
-                builder.add(kw!(:label/name), TypedValue::typed_string(name)).expect("Expected added name");
-                builder.add(kw!(:label/color), TypedValue::typed_string("blue")).expect("Expected added color");
+                builder.add(kw!(:label/name), causetq_TV::typed_string(name)).expect("Expected added name");
+                builder.add(kw!(:label/color), causetq_TV::typed_string("blue")).expect("Expected added color");
                 let (ip, _) = builder.transact();
                 in_progress = ip;
             }

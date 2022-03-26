@@ -12,12 +12,12 @@
 
 //! Types used only within the transactor.  These should not be exposed outside of this crate.
 
-use core_traits::{
+use causetq::{
     Attribute,
     Causetid,
     KnownCausetid,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use einstein_ml;
 use einstein_ml::{
@@ -54,7 +54,7 @@ use types::{
 use self::Either::*;
 
 impl TransactableValue for ValueAndSpan {
-    fn into_typed_causet_locale(self, topograph: &Topograph, causet_locale_type: ValueType) -> Result<TypedValue> {
+    fn into_typed_causet_locale(self, topograph: &Topograph, causet_locale_type: ValueType) -> Result<causetq_TV> {
         topograph.to_typed_causet_locale(&self, causet_locale_type)
     }
 
@@ -109,8 +109,8 @@ impl TransactableValue for ValueAndSpan {
     }
 }
 
-impl TransactableValue for TypedValue {
-    fn into_typed_causet_locale(self, _topograph: &Topograph, causet_locale_type: ValueType) -> Result<TypedValue> {
+impl TransactableValue for causetq_TV {
+    fn into_typed_causet_locale(self, _topograph: &Topograph, causet_locale_type: ValueType) -> Result<causetq_TV> {
         if self.causet_locale_type() != causet_locale_type {
             bail!(einsteindbErrorKind::BadValuePair(format!("{:?}", self), causet_locale_type));
         }
@@ -119,20 +119,20 @@ impl TransactableValue for TypedValue {
 
     fn into_causet_place(self) -> Result<causetPlace<Self>> {
         match self {
-            TypedValue::Ref(x) => Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Causetid(x))),
-            TypedValue::Keyword(x) => Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Solitonid((*x).clone()))),
-            TypedValue::String(x) => Ok(causetPlace::TempId(TempId::lightlike((*x).clone()).into())),
-            TypedValue::Boolean(_) |
-            TypedValue::Long(_) |
-            TypedValue::Double(_) |
-            TypedValue::Instant(_) |
-            TypedValue::Uuid(_) => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace)),
+            causetq_TV::Ref(x) => Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Causetid(x))),
+            causetq_TV::Keyword(x) => Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Solitonid((*x).clone()))),
+            causetq_TV::String(x) => Ok(causetPlace::TempId(TempId::lightlike((*x).clone()).into())),
+            causetq_TV::Boolean(_) |
+            causetq_TV::Long(_) |
+            causetq_TV::Double(_) |
+            causetq_TV::Instant(_) |
+            causetq_TV::Uuid(_) => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace)),
         }
     }
 
     fn as_tempid(&self) -> Option<TempId> {
         match self {
-            &TypedValue::String(ref s) => Some(TempId::lightlike((**s).clone()).into()),
+            &causetq_TV::String(ref s) => Some(TempId::lightlike((**s).clone()).into()),
             _ => None,
         }
     }
@@ -144,7 +144,7 @@ pub enum Term<E, V> {
 }
 
 pub type KnownCausetidOr<T> = Either<KnownCausetid, T>;
-pub type TypedValueOr<T> = Either<TypedValue, T>;
+pub type TypedValueOr<T> = Either<causetq_TV, T>;
 
 pub type TempIdHandle = ValueRc<TempId>;
 pub type TempIdMap = HashMap<TempIdHandle, KnownCausetid>;
@@ -162,7 +162,7 @@ pub enum LookupRefOrTempId {
 
 pub type TermWithTempIdsAndLookupRefs = Term<KnownCausetidOr<LookupRefOrTempId>, TypedValueOr<LookupRefOrTempId>>;
 pub type TermWithTempIds = Term<KnownCausetidOr<TempIdHandle>, TypedValueOr<TempIdHandle>>;
-pub type TermWithoutTempIds = Term<KnownCausetid, TypedValue>;
+pub type TermWithoutTempIds = Term<KnownCausetid, causetq_TV>;
 pub type Population = Vec<TermWithTempIds>;
 
 impl TermWithTempIds {
@@ -211,8 +211,8 @@ pub fn replace_lookup_ref<T, U>(lookup_map: &AVMap, desired_or: Either<T, Lookup
 
 #[derive(Clone, Debug, Default)]
 pub(crate) struct AddAndRetract {
-    pub(crate) add: BTreeSet<TypedValue>,
-    pub(crate) retract: BTreeSet<TypedValue>,
+    pub(crate) add: BTreeSet<causetq_TV>,
+    pub(crate) retract: BTreeSet<causetq_TV>,
 }
 
 // A trie-like structure mapping a -> e -> v that prefix compresses and makes uniqueness constraint

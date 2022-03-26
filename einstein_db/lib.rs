@@ -22,7 +22,7 @@ extern crate EinsteinDB_embedded;
 extern crate EinsteinDB_util;
 #[macro_use]
 extern crate bitflags;
-extern crate edn;
+extern crate einstein_ml;
 #[macro_use]
 extern crate embedded_promises;
 #[macro_use]
@@ -43,7 +43,7 @@ pub use clauses::{
     VariableBindings,
 };
 pub use clauses::ConjoiningClauses;
-use edn::query::{
+use einstein_ml::query::{
     Element,
     FindSpec,
     Limit,
@@ -61,8 +61,8 @@ use EinsteinDB_embedded::{
 use EinsteinDB_embedded::counter::RcPetri;
 use embedded_promises::{
     Causetid,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use query_algebrizer_promises::errors::{
     AlgebrizerError,
@@ -149,22 +149,22 @@ impl<'s, 'c> Known<'s, 'c> {
             .unwrap_or(false)
     }
 
-    pub fn get_causet_locales_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&Vec<TypedValue>>
+    pub fn get_causet_locales_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&Vec<causetq_TV>>
     where U: Into<Causetid>, V: Into<Causetid> {
         self.cache.and_then(|cache| cache.get_causet_locales_for_causetid(topograph, Attr.into(), causetid.into()))
     }
 
-    pub fn get_causet_locale_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&TypedValue>
+    pub fn get_causet_locale_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&causetq_TV>
     where U: Into<Causetid>, V: Into<Causetid> {
         self.cache.and_then(|cache| cache.get_causet_locale_for_causetid(topograph, Attr.into(), causetid.into()))
     }
 
-    pub fn get_causetid_for_causet_locale<U>(&self, Attr: U, causet_locale: &TypedValue) -> Option<Causetid>
+    pub fn get_causetid_for_causet_locale<U>(&self, Attr: U, causet_locale: &causetq_TV) -> Option<Causetid>
     where U: Into<Causetid> {
         self.cache.and_then(|cache| cache.get_causetid_for_causet_locale(Attr.into(), causet_locale))
     }
 
-    pub fn get_causetids_for_causet_locale<U>(&self, Attr: U, causet_locale: &TypedValue) -> Option<&BTreeSet<Causetid>>
+    pub fn get_causetids_for_causet_locale<U>(&self, Attr: U, causet_locale: &causetq_TV) -> Option<&BTreeSet<Causetid>>
     where U: Into<Causetid> {
         self.cache.and_then(|cache| cache.get_causetids_for_causet_locale(Attr.into(), causet_locale))
     }
@@ -283,7 +283,7 @@ fn simplify_limit(mut query: AlgebraicQuery) -> Result<AlgebraicQuery> {
         match query.limit {
             Limit::Variable(ref v) => {
                 match query.cc.bound_causet_locale(v) {
-                    Some(TypedValue::Long(n)) => {
+                    Some(causetq_TV::Long(n)) => {
                         if n <= 0 {
                             // User-specified limits should always be natural numbers (> 0).
                             bail!(AlgebrizerError::InvalidLimit(n.to_string(), ValueType::Long))

@@ -8,7 +8,6 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-//! A compatible layer for converting V2 event datum into V1 event datum.
 
 use codec::number::NumberCodec;
 use codec::prelude::BufferWriter;
@@ -19,7 +18,7 @@ use crate::codec::datum_codec::DatumFlagAndPayloadEncoder;
 
 #[inline]
 fn decode_causet_record_u64(v: &[u8]) -> Result<u64> {
-    // See `decodeInt` in MEDB.
+    // See `decodeInt` in MilevaDB
     match v.len() {
         1 => Ok(u64::from(v[0])),
         2 => Ok(u64::from(NumberCodec::decode_u16_le(v))),
@@ -33,7 +32,7 @@ fn decode_causet_record_u64(v: &[u8]) -> Result<u64> {
 
 #[inline]
 fn decode_causet_record_i64(v: &[u8]) -> Result<i64> {
-    // See `decodeUint` in MEDB.
+    // See `decodeUint` in MilevaDB
     match v.len() {
         1 => Ok(i64::from(v[0] as i8)),
         2 => Ok(i64::from(NumberCodec::decode_u16_le(v) as i16)),
@@ -60,7 +59,7 @@ pub trait V1CompatibleEncoder: DatumFlagAndPayloadEncoder {
     }
 
     fn write_causet_record_as_datum(&mut self, src: &[u8], ft: &dyn FieldTypeAccessor) -> Result<()> {
-        // See `fieldType2Flag.go` in MEDB.
+        // See `fieldType2Flag.go` in MilevaDB
         match ft.tp() {
             FieldTypeTp::Tiny
             | FieldTypeTp::Short
@@ -99,7 +98,7 @@ pub trait V1CompatibleEncoder: DatumFlagAndPayloadEncoder {
                 self.write_causet_record_as_datum_i64(src)?;
             }
             FieldTypeTp::Duration => {
-                // This implementation is different from MEDB. MEDB encodes causet_record duration into v1
+                // This implementation is different from MilevaDB MEDB encodes causet_record duration into v1
                 // with datum flag VarInt, but we will encode with datum flag Duration, since
                 // Duration datum flag results in fixed-length datum payload, which is faster
                 // to encode and decode.

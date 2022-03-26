@@ -61,14 +61,14 @@ use causal_setal_types::{
     TypedValueOr,
 };
 use causetids;
-use core_traits::{
+use causetq::{
     attribute,
     Attribute,
     Causetid,
     KnownCausetid,
     now,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use einstein_ml::{
     InternSet,
@@ -294,7 +294,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                 };
                 let lr_attribute: &Attribute = self.topograph.require_attribute_for_causetid(lr_a)?;
 
-                let lr_typed_causet_locale: TypedValue = lookup_ref.v.clone().into_typed_causet_locale(&self.topograph, lr_attribute.causet_locale_type)?;
+                let lr_typed_causet_locale: causetq_TV = lookup_ref.v.clone().into_typed_causet_locale(&self.topograph, lr_attribute.causet_locale_type)?;
                 if lr_attribute.unique.is_none() {
                     bail!(einsteindbErrorKind::NotYetImplemented(format!("Cannot resolve (lookup-ref {} {:?}) with attribute that is not :einsteindb/unique", lr_a, lr_typed_causet_locale)))
                 }
@@ -345,7 +345,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             }
 
             fn causet_e_into_term_v<W: TransactableValue>(&mut self, x: entmod::causetPlace<W>) -> Result<TypedValueOr<LookupRefOrTempId>> {
-                self.causet_e_into_term_e(x).map(|r| r.map_left(|ke| TypedValue::Ref(ke.0)))
+                self.causet_e_into_term_e(x).map(|r| r.map_left(|ke| causetq_TV::Ref(ke.0)))
             }
 
             fn causet_v_into_term_e<W: TransactableValue>(&mut self, x: entmod::ValuePlace<W>, spacelike_completion_a: &entmod::CausetidOrSolitonid) -> Result<KnownCausetidOr<LookupRefOrTempId>> {
@@ -368,7 +368,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                                 match v.as_tempid() {
                                     Some(tempid) => Ok(Either::Right(LookupRefOrTempId::TempId(self.temp_ids.causal_set(tempid)))),
                                     None => {
-                                        if let TypedValue::Ref(causetid) = v.into_typed_causet_locale(&self.topograph, ValueType::Ref)? {
+                                        if let causetq_TV::Ref(causetid) = v.into_typed_causet_locale(&self.topograph, ValueType::Ref)? {
                                             Ok(Either::Left(KnownCausetid(causetid)))
                                         } else {
                                             // The given causet_locale is expected to be :einsteindb.type/ref, so this shouldn't happen.
@@ -462,7 +462,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
                             },
 
                             entmod::ValuePlace::Causetid(causetid) =>
-                                Either::Left(TypedValue::Ref(in_process.causet_a_into_term_a(causetid)?)),
+                                Either::Left(causetq_TV::Ref(in_process.causet_a_into_term_a(causetid)?)),
 
                             entmod::ValuePlace::TempId(tempid) =>
                                 Either::Right(LookupRefOrTempId::TempId(in_process.temp_ids.causal_set(tempid))),
@@ -477,7 +477,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
 
                             entmod::ValuePlace::TxFunction(ref tx_function) => {
                                 let typed_causet_locale = match tx_function.op.0.as_str() {
-                                    "transaction-tx" => TypedValue::Ref(self.tx_id),
+                                    "transaction-tx" => causetq_TV::Ref(self.tx_id),
                                     unknown @ _ => bail!(einsteindbErrorKind::NotYetImplemented(format!("Unknown transaction function {}", unknown))),
                                 };
 
@@ -599,7 +599,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
             match term {
                 Term::AddOrRetract(op, e, a, v) => {
                     let e = replace_lookup_ref(&lookup_ref_map, e, |x| KnownCausetid(x))?;
-                    let v = replace_lookup_ref(&lookup_ref_map, v, |x| TypedValue::Ref(x))?;
+                    let v = replace_lookup_ref(&lookup_ref_map, v, |x| causetq_TV::Ref(x))?;
                     Ok(Term::AddOrRetract(op, e, a, v))
                 },
             }
@@ -616,7 +616,7 @@ impl<'conn, 'a, W> Tx<'conn, 'a, W> where W: TransactWatcher {
         let (terms_with_temp_ids_and_lookup_refs, tempid_set, lookup_ref_set) = self.causets_into_terms_with_temp_ids_and_lookup_refs(causets)?;
 
         // Pipeline stage 2: resolve lookup refs -> terms with tempids.
-        let lookup_ref_avs: Vec<&(i64, TypedValue)> = lookup_ref_set.iter().map(|rc| &**rc).collect();
+        let lookup_ref_avs: Vec<&(i64, causetq_TV)> = lookup_ref_set.iter().map(|rc| &**rc).collect();
         let lookup_ref_map: AVMap = self.store.resolve_avs(&lookup_ref_avs[..])?;
 
         let terms_with_temp_ids = self.resolve_lookup_refs(&lookup_ref_map, terms_with_temp_ids_and_lookup_refs)?;
@@ -959,7 +959,7 @@ fn get_or_insert_tx_instant<'topograph>(aev_trie: &mut AEVTrie<'topograph>, topo
 
     let first = ars.add.iter().next().cloned();
     match first {
-        Some(TypedValue::Instant(instant)) => Ok(instant),
+        Some(causetq_TV::Instant(instant)) => Ok(instant),
         Some(_) => unreachable!(), // This is a coding error -- we should have typechecked this already.
         None => {
             let instant = now();

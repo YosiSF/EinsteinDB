@@ -19,11 +19,11 @@ use causal_setal_types::{
     TermWithTempIds,
     TypedValueOr,
 };
-use core_traits::{
+use causetq::{
     attribute,
     Attribute,
     Causetid,
-    TypedValue,
+    causetq_TV,
 };
 use einstein_ml::causets::OpType;
 use einsteindb_core::Topograph;
@@ -43,7 +43,7 @@ use types::AVPair;
 
 /// A "Simple upsert" that looks like [:einsteindb/add TEMPID a v], where a is :einsteindb.unique/idcauset.
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
-struct UpsertE(TempIdHandle, Causetid, TypedValue);
+struct UpsertE(TempIdHandle, Causetid, causetq_TV);
 
 /// A "Complex upsert" that looks like [:einsteindb/add TEMPID a OTHERID], where a is :einsteindb.unique/idcauset
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
@@ -162,9 +162,9 @@ impl Generation {
                     // Even though we can resolve entirely, it's possible that the remaining upsert
                     // could conflict.  Moving straight to resolved doesn't give us a chance to
                     // search the store for the conflict.
-                    next.upserts_e.push(UpsertE(t1, a, TypedValue::Ref(n2.0)))
+                    next.upserts_e.push(UpsertE(t1, a, causetq_TV::Ref(n2.0)))
                 },
-                (None, Some(&n2)) => next.upserts_e.push(UpsertE(t1, a, TypedValue::Ref(n2.0))),
+                (None, Some(&n2)) => next.upserts_e.push(UpsertE(t1, a, causetq_TV::Ref(n2.0))),
                 (Some(&n1), None) => next.allocations.push(Term::AddOrRetract(OpType::Add, Left(n1), a, Right(t2))),
                 (None, None) => next.upserts_ev.push(UpsertEV(t1, a, t2))
             }
@@ -178,8 +178,8 @@ impl Generation {
             match term {
                 Term::AddOrRetract(op, Right(t1), a, Right(t2)) => {
                     match (temp_id_map.get(&*t1), temp_id_map.get(&*t2)) {
-                        (Some(&n1), Some(&n2)) => next.resolved.push(Term::AddOrRetract(op, n1, a, TypedValue::Ref(n2.0))),
-                        (None, Some(&n2)) => next.allocations.push(Term::AddOrRetract(op, Right(t1), a, Left(TypedValue::Ref(n2.0)))),
+                        (Some(&n1), Some(&n2)) => next.resolved.push(Term::AddOrRetract(op, n1, a, causetq_TV::Ref(n2.0))),
+                        (None, Some(&n2)) => next.allocations.push(Term::AddOrRetract(op, Right(t1), a, Left(causetq_TV::Ref(n2.0)))),
                         (Some(&n1), None) => next.allocations.push(Term::AddOrRetract(op, Left(n1), a, Right(t2))),
                         (None, None) => next.allocations.push(Term::AddOrRetract(op, Right(t1), a, Right(t2))),
                     }
@@ -192,7 +192,7 @@ impl Generation {
                 },
                 Term::AddOrRetract(op, Left(e), a, Right(t)) => {
                     match temp_id_map.get(&*t) {
-                        Some(&n) => next.resolved.push(Term::AddOrRetract(op, e, a, TypedValue::Ref(n.0))),
+                        Some(&n) => next.resolved.push(Term::AddOrRetract(op, e, a, causetq_TV::Ref(n.0))),
                         None => next.allocations.push(Term::AddOrRetract(op, Left(e), a, Right(t))),
                     }
                 },
@@ -320,7 +320,7 @@ impl Generation {
                 // TODO: consider require implementing require on temp_id_map.
                 Term::AddOrRetract(op, Right(t1), a, Right(t2)) => {
                     match (op, temp_id_map.get(&*t1), temp_id_map.get(&*t2)) {
-                        (op, Some(&n1), Some(&n2)) => Term::AddOrRetract(op, n1, a, TypedValue::Ref(n2.0)),
+                        (op, Some(&n1), Some(&n2)) => Term::AddOrRetract(op, n1, a, causetq_TV::Ref(n2.0)),
                         (OpType::Add, _, _) => unreachable!(), // This is a coding error -- every tempid in a :einsteindb/add causet should resolve or be allocated.
                         (OpType::Retract, _, _) => bail!(einsteindbErrorKind::NotYetImplemented(format!("[:einsteindb/retract ...] causet referenced tempid that did not upsert: one of {}, {}", t1, t2))),
                     }
@@ -334,7 +334,7 @@ impl Generation {
                 },
                 Term::AddOrRetract(op, Left(e), a, Right(t)) => {
                     match (op, temp_id_map.get(&*t)) {
-                        (op, Some(&n)) => Term::AddOrRetract(op, e, a, TypedValue::Ref(n.0)),
+                        (op, Some(&n)) => Term::AddOrRetract(op, e, a, causetq_TV::Ref(n.0)),
                         (OpType::Add, _) => unreachable!(), // This is a coding error.
                         (OpType::Retract, _) => bail!(einsteindbErrorKind::NotYetImplemented(format!("[:einsteindb/retract ...] causet referenced tempid that did not upsert: {}", t))),
                     }

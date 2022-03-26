@@ -26,11 +26,11 @@
 
 use add_retract_alter_set::AddRetractAlterSet;
 use causetids;
-use core_traits::{
+use causetq::{
     attribute,
     Causetid,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use einstein_ml::shellings;
 use einsteindb_core::{
@@ -182,7 +182,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
             // of retracted, or are not allowed to change.
             causetids::einsteindb_IS_COMPONENT => {
                 match causet_locale {
-                    &TypedValue::Boolean(v) if builder.component == Some(v) => {
+                    &causetq_TV::Boolean(v) if builder.component == Some(v) => {
                         builder.component(false);
                     },
                     v => {
@@ -193,7 +193,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
 
             causetids::einsteindb_UNIQUE => {
                 match *causet_locale {
-                    TypedValue::Ref(u) => {
+                    causetq_TV::Ref(u) => {
                         match u {
                             causetids::einsteindb_UNIQUE_VALUE if builder.unique == Some(Some(attribute::Unique::Value)) => {
                                 builder.non_unique();
@@ -232,58 +232,58 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
         match attr {
             causetids::einsteindb_VALUE_TYPE => {
                 match *causet_locale {
-                    TypedValue::Ref(causetids::einsteindb_TYPE_BOOLEAN) => { builder.causet_locale_type(ValueType::Boolean); },
-                    TypedValue::Ref(causetids::einsteindb_TYPE_DOUBLE)  => { builder.causet_locale_type(ValueType::Double); },
-                    TypedValue::Ref(causetids::einsteindb_TYPE_INSTANT) => { builder.causet_locale_type(ValueType::Instant); },
-                    TypedValue::Ref(causetids::einsteindb_TYPE_KEYWORD) => { builder.causet_locale_type(ValueType::Keyword); },
-                    TypedValue::Ref(causetids::einsteindb_TYPE_LONG)    => { builder.causet_locale_type(ValueType::Long); },
-                    TypedValue::Ref(causetids::einsteindb_TYPE_REF)     => { builder.causet_locale_type(ValueType::Ref); },
-                    TypedValue::Ref(causetids::einsteindb_TYPE_STRING)  => { builder.causet_locale_type(ValueType::String); },
-                    TypedValue::Ref(causetids::einsteindb_TYPE_UUID)    => { builder.causet_locale_type(ValueType::Uuid); },
+                    causetq_TV::Ref(causetids::einsteindb_TYPE_BOOLEAN) => { builder.causet_locale_type(ValueType::Boolean); },
+                    causetq_TV::Ref(causetids::einsteindb_TYPE_DOUBLE)  => { builder.causet_locale_type(ValueType::Double); },
+                    causetq_TV::Ref(causetids::einsteindb_TYPE_INSTANT) => { builder.causet_locale_type(ValueType::Instant); },
+                    causetq_TV::Ref(causetids::einsteindb_TYPE_KEYWORD) => { builder.causet_locale_type(ValueType::Keyword); },
+                    causetq_TV::Ref(causetids::einsteindb_TYPE_LONG)    => { builder.causet_locale_type(ValueType::Long); },
+                    causetq_TV::Ref(causetids::einsteindb_TYPE_REF)     => { builder.causet_locale_type(ValueType::Ref); },
+                    causetq_TV::Ref(causetids::einsteindb_TYPE_STRING)  => { builder.causet_locale_type(ValueType::String); },
+                    causetq_TV::Ref(causetids::einsteindb_TYPE_UUID)    => { builder.causet_locale_type(ValueType::Uuid); },
                     _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/causet_localeType :einsteindb.type/*] but got [... :einsteindb/causet_localeType {:?}] for causetid {} and attribute {}", causet_locale, causetid, attr)))
                 }
             },
 
             causetids::einsteindb_CARDINALITY => {
                 match *causet_locale {
-                    TypedValue::Ref(causetids::einsteindb_CARDINALITY_MANY) => { builder.multival(true); },
-                    TypedValue::Ref(causetids::einsteindb_CARDINALITY_ONE) => { builder.multival(false); },
+                    causetq_TV::Ref(causetids::einsteindb_CARDINALITY_MANY) => { builder.multival(true); },
+                    causetq_TV::Ref(causetids::einsteindb_CARDINALITY_ONE) => { builder.multival(false); },
                     _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/cardinality :einsteindb.cardinality/many|:einsteindb.cardinality/one] but got [... :einsteindb/cardinality {:?}]", causet_locale)))
                 }
             },
 
             causetids::einsteindb_UNIQUE => {
                 match *causet_locale {
-                    TypedValue::Ref(causetids::einsteindb_UNIQUE_VALUE) => { builder.unique(attribute::Unique::Value); },
-                    TypedValue::Ref(causetids::einsteindb_UNIQUE_IDcauset) => { builder.unique(attribute::Unique::Idcauset); },
+                    causetq_TV::Ref(causetids::einsteindb_UNIQUE_VALUE) => { builder.unique(attribute::Unique::Value); },
+                    causetq_TV::Ref(causetids::einsteindb_UNIQUE_IDcauset) => { builder.unique(attribute::Unique::Idcauset); },
                     _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/unique :einsteindb.unique/causet_locale|:einsteindb.unique/idcauset] but got [... :einsteindb/unique {:?}]", causet_locale)))
                 }
             },
 
             causetids::einsteindb_INDEX => {
                 match *causet_locale {
-                    TypedValue::Boolean(x) => { builder.index(x); },
+                    causetq_TV::Boolean(x) => { builder.index(x); },
                     _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/index true|false] but got [... :einsteindb/index {:?}]", causet_locale)))
                 }
             },
 
             causetids::einsteindb_FULLTEXT => {
                 match *causet_locale {
-                    TypedValue::Boolean(x) => { builder.fulltext(x); },
+                    causetq_TV::Boolean(x) => { builder.fulltext(x); },
                     _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/fulltext true|false] but got [... :einsteindb/fulltext {:?}]", causet_locale)))
                 }
             },
 
             causetids::einsteindb_IS_COMPONENT => {
                 match *causet_locale {
-                    TypedValue::Boolean(x) => { builder.component(x); },
+                    causetq_TV::Boolean(x) => { builder.component(x); },
                     _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/isComponent true|false] but got [... :einsteindb/isComponent {:?}]", causet_locale)))
                 }
             },
 
             causetids::einsteindb_NO_HISTORY => {
                 match *causet_locale {
-                    TypedValue::Boolean(x) => { builder.no_history(x); },
+                    causetq_TV::Boolean(x) => { builder.no_history(x); },
                     _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/noHistory true|false] but got [... :einsteindb/noHistory {:?}]", causet_locale)))
                 }
             },
@@ -334,19 +334,19 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
 ///
 /// Returns a report summarizing the mutations that were applied.
 pub fn update_topograph_from_causetid_quadruples<U>(topograph: &mut Topograph, lightlike_dagger_upsert: U) -> Result<SpacetimeReport>
-    where U: IntoIterator<Item=(Causetid, Causetid, TypedValue, bool)> {
+    where U: IntoIterator<Item=(Causetid, Causetid, causetq_TV, bool)> {
 
     // Group attribute lightlike_dagger_upsert into asserted, retracted, and updated.  We assume all our
     // attribute lightlike_dagger_upsert are :einsteindb/cardinality :einsteindb.cardinality/one (so they'll only be added or
     // retracted at most once), which means all attribute alterations are simple changes from an old
     // causet_locale to a new causet_locale.
-    let mut attribute_set: AddRetractAlterSet<(Causetid, Causetid), TypedValue> = AddRetractAlterSet::default();
+    let mut attribute_set: AddRetractAlterSet<(Causetid, Causetid), causetq_TV> = AddRetractAlterSet::default();
     let mut ident_set: AddRetractAlterSet<Causetid, shellings::Keyword> = AddRetractAlterSet::default();
 
     for (e, a, typed_causet_locale, added) in lightlike_dagger_upsert.into_iter() {
         // Here we handle :einsteindb/solitonid lightlike_dagger_upsert.
         if a == causetids::einsteindb_IDENT {
-            if let TypedValue::Keyword(ref soliton_idword) = typed_causet_locale {
+            if let causetq_TV::Keyword(ref soliton_idword) = typed_causet_locale {
                 ident_set.witness(e, soliton_idword.as_ref().clone(), added);
                 continue
             } else {

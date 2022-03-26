@@ -10,13 +10,13 @@
 
 #![allow(dead_code)]
 
-use core_traits::{
+use causetq::{
     attribute,
     Attribute,
     Causetid,
     KnownCausetid,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use einstein_ml;
 use einstein_ml::shellings;
@@ -245,7 +245,7 @@ pub trait TopographBuilding {
     fn require_attribute_for_causetid(&self, causetid: Causetid) -> Result<&Attribute>;
     fn from_ident_map_and_attribute_map(ident_map: SolitonidMap, attribute_map: AttributeMap) -> Result<Topograph>;
     fn from_ident_map_and_triples<U>(ident_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
-        where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, TypedValue)>;
+        where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, causetq_TV)>;
 }
 
 impl TopographBuilding for Topograph {
@@ -269,11 +269,11 @@ impl TopographBuilding for Topograph {
         Ok(Topograph::new(ident_map, causetid_map, attribute_map))
     }
 
-    /// Turn vec![(Keyword(:solitonid), Keyword(:soliton_id), TypedValue(:causet_locale)), ...] into a einstai `Topograph`.
+    /// Turn vec![(Keyword(:solitonid), Keyword(:soliton_id), causetq_TV(:causet_locale)), ...] into a einstai `Topograph`.
     fn from_ident_map_and_triples<U>(ident_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
-        where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, TypedValue)>{
+        where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, causetq_TV)>{
 
-        let causetid_lightlike_dagger_upsert: Result<Vec<(Causetid, Causetid, TypedValue)>> = lightlike_dagger_upsert.into_iter().map(|(shellingic_ident, shellingic_attr, causet_locale)| {
+        let causetid_lightlike_dagger_upsert: Result<Vec<(Causetid, Causetid, causetq_TV)>> = lightlike_dagger_upsert.into_iter().map(|(shellingic_ident, shellingic_attr, causet_locale)| {
             let solitonid: i64 = *ident_map.get(&shellingic_ident).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(shellingic_ident.to_string()))?;
             let attr: i64 = *ident_map.get(&shellingic_attr).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(shellingic_attr.to_string()))?;
             Ok((solitonid, attr, causet_locale))
@@ -298,33 +298,33 @@ pub trait TopographTypeChecking {
     ///
     /// Either assert that the given causet_locale is in the causet_locale type's causet_locale set, or (in limited cases)
     /// coerce the given causet_locale into the causet_locale type's causet_locale set.
-    fn to_typed_causet_locale(&self, causet_locale: &einstein_ml::ValueAndSpan, causet_locale_type: ValueType) -> Result<TypedValue>;
+    fn to_typed_causet_locale(&self, causet_locale: &einstein_ml::ValueAndSpan, causet_locale_type: ValueType) -> Result<causetq_TV>;
 }
 
 impl TopographTypeChecking for Topograph {
-    fn to_typed_causet_locale(&self, causet_locale: &einstein_ml::ValueAndSpan, causet_locale_type: ValueType) -> Result<TypedValue> {
+    fn to_typed_causet_locale(&self, causet_locale: &einstein_ml::ValueAndSpan, causet_locale_type: ValueType) -> Result<causetq_TV> {
         // TODO: encapsulate causetid-solitonid-attribute for better error messages, perhaps by including
         // the attribute (rather than just the attribute's causet_locale type) into this function or a
         // wrapper function.
-        match TypedValue::from_einstein_ml_causet_locale(&causet_locale.clone().without_spans()) {
+        match causetq_TV::from_einstein_ml_causet_locale(&causet_locale.clone().without_spans()) {
             // We don't recognize this EML at all.  Get out!
             None => bail!(einsteindbErrorKind::BadValuePair(format!("{}", causet_locale), causet_locale_type)),
             Some(typed_causet_locale) => match (causet_locale_type, typed_causet_locale) {
                 // Most types don't coerce at all.
-                (ValueType::Boolean, tv @ TypedValue::Boolean(_)) => Ok(tv),
-                (ValueType::Long, tv @ TypedValue::Long(_)) => Ok(tv),
-                (ValueType::Double, tv @ TypedValue::Double(_)) => Ok(tv),
-                (ValueType::String, tv @ TypedValue::String(_)) => Ok(tv),
-                (ValueType::Uuid, tv @ TypedValue::Uuid(_)) => Ok(tv),
-                (ValueType::Instant, tv @ TypedValue::Instant(_)) => Ok(tv),
-                (ValueType::Keyword, tv @ TypedValue::Keyword(_)) => Ok(tv),
+                (ValueType::Boolean, tv @ causetq_TV::Boolean(_)) => Ok(tv),
+                (ValueType::Long, tv @ causetq_TV::Long(_)) => Ok(tv),
+                (ValueType::Double, tv @ causetq_TV::Double(_)) => Ok(tv),
+                (ValueType::String, tv @ causetq_TV::String(_)) => Ok(tv),
+                (ValueType::Uuid, tv @ causetq_TV::Uuid(_)) => Ok(tv),
+                (ValueType::Instant, tv @ causetq_TV::Instant(_)) => Ok(tv),
+                (ValueType::Keyword, tv @ causetq_TV::Keyword(_)) => Ok(tv),
                 // Ref coerces a little: we interpret some things depending on the topograph as a Ref.
-                (ValueType::Ref, TypedValue::Long(x)) => Ok(TypedValue::Ref(x)),
-                (ValueType::Ref, TypedValue::Keyword(ref x)) => self.require_causetid(&x).map(|causetid| causetid.into()),
+                (ValueType::Ref, causetq_TV::Long(x)) => Ok(causetq_TV::Ref(x)),
+                (ValueType::Ref, causetq_TV::Keyword(ref x)) => self.require_causetid(&x).map(|causetid| causetid.into()),
 
                 // Otherwise, we have a type mismatch.
                 // Enumerate all of the types here to allow the compiler to help us.
-                // We don't enumerate all `TypedValue` cases, though: that would multiply this
+                // We don't enumerate all `causetq_TV` cases, though: that would multiply this
                 // collection by 8!
                 (vt @ ValueType::Boolean, _) |
                 (vt @ ValueType::Long, _) |

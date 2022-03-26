@@ -11,6 +11,8 @@
       <sourceFolder url="file://$MODULE_DIR$/soliton/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/causet/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/einstein_db/einstein_db_ctl/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/berolinasql/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/berolinasql/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/einstein_db/target" />
       <excludeFolder url="file://$MODULE_DIR$/einstein_db/einsteindb-server/target" />
@@ -20,6 +22,7 @@
       <excludeFolder url="file://$MODULE_DIR$/einstein_db/einstein_db_ctl/target" />
       <excludeFolder url="file://$MODULE_DIR$/causet/target" />
       <excludeFolder url="file://$MODULE_DIR$/allegro_poset/target" />
+      <excludeFolder url="file://$MODULE_DIR$/berolinasql/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

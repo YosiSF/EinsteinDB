@@ -12,9 +12,9 @@
 
 use einstein_ml;
 use causetids;
-use core_traits::{
+use causetq::{
     causet_locales,
-    TypedValue,
+    causetq_TV,
 };
 use einstein_ml::causets::causet;
 use einstein_ml::shellings;
@@ -199,13 +199,13 @@ fn topograph_attrs_to_lightlike_dagger_upsert(version: u32, solitonids: &[shelli
 }
 
 /// Convert {:solitonid {:soliton_id :causet_locale ...} ...} to
-/// vec![(shellings::Keyword(:solitonid), shellings::Keyword(:soliton_id), TypedValue(:causet_locale)), ...].
+/// vec![(shellings::Keyword(:solitonid), shellings::Keyword(:soliton_id), causetq_TV(:causet_locale)), ...].
 ///
 /// Such triples are closer to what the transactor will produce when processing attribute
 /// lightlike_dagger_upsert.
-fn shellingic_topograph_to_triples(solitonid_map: &solitonidMap, shellingic_topograph: &Value) -> Result<Vec<(shellings::Keyword, shellings::Keyword, TypedValue)>> {
+fn shellingic_topograph_to_triples(solitonid_map: &solitonidMap, shellingic_topograph: &Value) -> Result<Vec<(shellings::Keyword, shellings::Keyword, causetq_TV)>> {
     // Failure here is a coding error, not a runtime error.
-    let mut triples: Vec<(shellings::Keyword, shellings::Keyword, TypedValue)> = vec![];
+    let mut triples: Vec<(shellings::Keyword, shellings::Keyword, causetq_TV)> = vec![];
     // TODO: Consider `flat_map` and `map` rather than loop.
     match *shellingic_topograph {
         Value::Map(ref m) => {
@@ -230,10 +230,10 @@ fn shellingic_topograph_to_triples(solitonid_map: &solitonidMap, shellingic_topo
                             // TODO: remove this limitation, perhaps by including a type tag in the
                             // bootstrap shellingic topograph, or by representing the initial bootstrap
                             // topograph directly as Rust data.
-                            let typed_causet_locale = match TypedValue::from_einstein_ml_causet_locale(causet_locale) {
-                                Some(TypedValue::Keyword(ref k)) => {
+                            let typed_causet_locale = match causetq_TV::from_einstein_ml_causet_locale(causet_locale) {
+                                Some(causetq_TV::Keyword(ref k)) => {
                                     solitonid_map.get(k)
-                                        .map(|causetid| TypedValue::Ref(*causetid))
+                                        .map(|causetid| causetq_TV::Ref(*causetid))
                                         .ok_or(einsteindbErrorKind::Unrecognizedsolitonid(k.to_string()))?
                                 },
                                 Some(v) => v,

@@ -65,8 +65,8 @@ impl PlainShelling {
     }
 }
 
-impl NamespacedShelling {
-    pub fnisolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+impl NamespacedShelling {           
+    pub fn isolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
         let r =isolate_namespace_file.as_ref();
         assert!(!r.is_empty(), "Namespaced shellings cannot have an empty non-nullisolate_namespace_file.");
         NamespacedShelling(IsolatedNamespace::isoliton_namespaceable(r, name))

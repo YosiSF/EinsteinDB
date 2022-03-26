@@ -12,10 +12,10 @@ use causal_setal_types::{
     Term,
     TermWithoutTempIds,
 };
-use core_traits::{
+use causetq::{
     Causetid,
     KnownCausetid,
-    TypedValue,
+    causetq_TV,
 };
 use einstein_ml::InternSet;
 use einstein_ml::causets::OpType;
@@ -102,7 +102,7 @@ fn reversed_terms_for(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Ve
             op,
             KnownCausetid(event.get_checked(0)?),
             event.get_checked(1)?,
-            TypedValue::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?,
+            causetq_TV::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?,
         ))
     })?;
 

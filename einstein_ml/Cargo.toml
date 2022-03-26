@@ -11,12 +11,7 @@ description = "AllegroCL wrapper for EinsteinDB Metalanguage (Einstien_ML)"
 
 
 [dependencies]
-#einstein_core = { version = "0.1.0", features = ["einstein_core"] }
-#einstein_db = { version = "0.1.0", features = ["einstein_db"] }
-#einstein_db_allegrocl = { version = "0.1.0", features = ["einstein_db_allegrocl"] }
-#einstein_db_allegrocl_runtime = { version = "0.1.0", features = ["einstein_db_allegrocl_runtime"] }
-#einstein_db_allegrocl_runtime_c = { version = "0.1.0", features = ["einstein_db_allegrocl_runtime_c"] }
-#einstein_db_allegrocl_runtime_c_cuda = { version = "0.1.0", features = ["einstein_db_allegrocl_runtime_c_cuda"] }
+
 chrono = "0.4.19"
 itertools = "0.10.3"
 num = "0.4.0"

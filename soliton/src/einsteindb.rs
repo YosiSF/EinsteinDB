@@ -10,13 +10,13 @@
 
 use bootstrap;
 use causetids;
-use core_traits::{
+use causetq::{
     attribute,
     Attribute,
     AttributeBitFlags,
     Causetid,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use einstein_ml::{
     DateTime,
@@ -513,26 +513,26 @@ pub fn ensure_current_version(conn: &mut rusqlite::Connection) -> Result<einstei
 }
 
 pub trait TypedBerolinaSQLValue {
-    fn from_BerolinaSQL_causet_locale_pair(causet_locale: rusqlite::types::Value, causet_locale_type_tag: i32) -> Result<TypedValue>;
+    fn from_BerolinaSQL_causet_locale_pair(causet_locale: rusqlite::types::Value, causet_locale_type_tag: i32) -> Result<causetq_TV>;
     fn to_BerolinaSQL_causet_locale_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32);
-    fn from_einstein_ml_causet_locale(causet_locale: &Value) -> Option<TypedValue>;
+    fn from_einstein_ml_causet_locale(causet_locale: &Value) -> Option<causetq_TV>;
     fn to_einstein_ml_causet_locale_pair(&self) -> (Value, ValueType);
 }
 
-impl TypedBerolinaSQLValue for TypedValue {
-    /// Given a SQLite `causet_locale` and a `causet_locale_type_tag`, return the corresponding `TypedValue`.
-    fn from_BerolinaSQL_causet_locale_pair(causet_locale: rusqlite::types::Value, causet_locale_type_tag: i32) -> Result<TypedValue> {
+impl TypedBerolinaSQLValue for causetq_TV {
+    /// Given a SQLite `causet_locale` and a `causet_locale_type_tag`, return the corresponding `causetq_TV`.
+    fn from_BerolinaSQL_causet_locale_pair(causet_locale: rusqlite::types::Value, causet_locale_type_tag: i32) -> Result<causetq_TV> {
         match (causet_locale_type_tag, causet_locale) {
-            (0, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Ref(x)),
-            (1, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Boolean(0 != x)),
+            (0, rusqlite::types::Value::Integer(x)) => Ok(causetq_TV::Ref(x)),
+            (1, rusqlite::types::Value::Integer(x)) => Ok(causetq_TV::Boolean(0 != x)),
 
             // Negative integers are simply times before 1970.
-            (4, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Instant(DateTime::<Utc>::from_micros(x))),
+            (4, rusqlite::types::Value::Integer(x)) => Ok(causetq_TV::Instant(DateTime::<Utc>::from_micros(x))),
 
             // SQLite distinguishes integral from decimal types, allowing long and double to
             // share a tag.
-            (5, rusqlite::types::Value::Integer(x)) => Ok(TypedValue::Long(x)),
-            (5, rusqlite::types::Value::Real(x)) => Ok(TypedValue::Double(x.into())),
+            (5, rusqlite::types::Value::Integer(x)) => Ok(causetq_TV::Long(x)),
+            (5, rusqlite::types::Value::Real(x)) => Ok(causetq_TV::Double(x.into())),
             (10, rusqlite::types::Value::Text(x)) => Ok(x.into()),
             (11, rusqlite::types::Value::Blob(x)) => {
                 let u = Uuid::from_bytes(x.as_slice());
@@ -541,7 +541,7 @@ impl TypedBerolinaSQLValue for TypedValue {
                     bail!(einsteindbErrorKind::BadBerolinaSQLValuePair(rusqlite::types::Value::Blob(x),
                                                      causet_locale_type_tag));
                 }
-                Ok(TypedValue::Uuid(u.unwrap()))
+                Ok(causetq_TV::Uuid(u.unwrap()))
             },
             (13, rusqlite::types::Value::Text(x)) => {
                 to_isoliton_namespaceable_soliton_idword(&x).map(|k| k.into())
@@ -550,20 +550,20 @@ impl TypedBerolinaSQLValue for TypedValue {
         }
     }
 
-    /// Given an EML `causet_locale`, return a corresponding einstai `TypedValue`.
+    /// Given an EML `causet_locale`, return a corresponding einstai `causetq_TV`.
     ///
     /// An EML `Value` does not encode a unique einstai `ValueType`, so the composition
     /// `from_einstein_ml_causet_locale(first(to_einstein_ml_causet_locale_pair(...)))` loses information.  Additionally, there are
     /// EML causet_locales which are not einstai typed causet_locales.
     ///
     /// This function is deterministic.
-    fn from_einstein_ml_causet_locale(causet_locale: &Value) -> Option<TypedValue> {
+    fn from_einstein_ml_causet_locale(causet_locale: &Value) -> Option<causetq_TV> {
         match causet_locale {
-            &Value::Boolean(x) => Some(TypedValue::Boolean(x)),
-            &Value::Instant(x) => Some(TypedValue::Instant(x)),
-            &Value::Integer(x) => Some(TypedValue::Long(x)),
-            &Value::Uuid(x) => Some(TypedValue::Uuid(x)),
-            &Value::Float(ref x) => Some(TypedValue::Double(x.clone())),
+            &Value::Boolean(x) => Some(causetq_TV::Boolean(x)),
+            &Value::Instant(x) => Some(causetq_TV::Instant(x)),
+            &Value::Integer(x) => Some(causetq_TV::Long(x)),
+            &Value::Uuid(x) => Some(causetq_TV::Uuid(x)),
+            &Value::Float(ref x) => Some(causetq_TV::Double(x.clone())),
             &Value::Text(ref x) => Some(x.clone().into()),
             &Value::Keyword(ref x) => Some(x.clone().into()),
             _ => None
@@ -573,36 +573,36 @@ impl TypedBerolinaSQLValue for TypedValue {
     /// Return the corresponding SQLite `causet_locale` and `causet_locale_type_tag` pair.
     fn to_BerolinaSQL_causet_locale_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32) {
         match self {
-            &TypedValue::Ref(x) => (rusqlite::types::Value::Integer(x).into(), 0),
-            &TypedValue::Boolean(x) => (rusqlite::types::Value::Integer(if x { 1 } else { 0 }).into(), 1),
-            &TypedValue::Instant(x) => (rusqlite::types::Value::Integer(x.to_micros()).into(), 4),
+            &causetq_TV::Ref(x) => (rusqlite::types::Value::Integer(x).into(), 0),
+            &causetq_TV::Boolean(x) => (rusqlite::types::Value::Integer(if x { 1 } else { 0 }).into(), 1),
+            &causetq_TV::Instant(x) => (rusqlite::types::Value::Integer(x.to_micros()).into(), 4),
             // SQLite distinguishes integral from decimal types, allowing long and double to share a tag.
-            &TypedValue::Long(x) => (rusqlite::types::Value::Integer(x).into(), 5),
-            &TypedValue::Double(x) => (rusqlite::types::Value::Real(x.into_inner()).into(), 5),
-            &TypedValue::String(ref x) => (rusqlite::types::ValueRef::Text(x.as_str()).into(), 10),
-            &TypedValue::Uuid(ref u) => (rusqlite::types::Value::Blob(u.as_bytes().to_vec()).into(), 11),
-            &TypedValue::Keyword(ref x) => (rusqlite::types::ValueRef::Text(&x.to_string()).into(), 13),
+            &causetq_TV::Long(x) => (rusqlite::types::Value::Integer(x).into(), 5),
+            &causetq_TV::Double(x) => (rusqlite::types::Value::Real(x.into_inner()).into(), 5),
+            &causetq_TV::String(ref x) => (rusqlite::types::ValueRef::Text(x.as_str()).into(), 10),
+            &causetq_TV::Uuid(ref u) => (rusqlite::types::Value::Blob(u.as_bytes().to_vec()).into(), 11),
+            &causetq_TV::Keyword(ref x) => (rusqlite::types::ValueRef::Text(&x.to_string()).into(), 13),
         }
     }
 
     /// Return the corresponding EML `causet_locale` and `causet_locale_type` pair.
     fn to_einstein_ml_causet_locale_pair(&self) -> (Value, ValueType) {
         match self {
-            &TypedValue::Ref(x) => (Value::Integer(x), ValueType::Ref),
-            &TypedValue::Boolean(x) => (Value::Boolean(x), ValueType::Boolean),
-            &TypedValue::Instant(x) => (Value::Instant(x), ValueType::Instant),
-            &TypedValue::Long(x) => (Value::Integer(x), ValueType::Long),
-            &TypedValue::Double(x) => (Value::Float(x), ValueType::Double),
-            &TypedValue::String(ref x) => (Value::Text(x.as_ref().clone()), ValueType::String),
-            &TypedValue::Uuid(ref u) => (Value::Uuid(u.clone()), ValueType::Uuid),
-            &TypedValue::Keyword(ref x) => (Value::Keyword(x.as_ref().clone()), ValueType::Keyword),
+            &causetq_TV::Ref(x) => (Value::Integer(x), ValueType::Ref),
+            &causetq_TV::Boolean(x) => (Value::Boolean(x), ValueType::Boolean),
+            &causetq_TV::Instant(x) => (Value::Instant(x), ValueType::Instant),
+            &causetq_TV::Long(x) => (Value::Integer(x), ValueType::Long),
+            &causetq_TV::Double(x) => (Value::Float(x), ValueType::Double),
+            &causetq_TV::String(ref x) => (Value::Text(x.as_ref().clone()), ValueType::String),
+            &causetq_TV::Uuid(ref u) => (Value::Uuid(u.clone()), ValueType::Uuid),
+            &causetq_TV::Keyword(ref x) => (Value::Keyword(x.as_ref().clone()), ValueType::Keyword),
         }
     }
 }
 
 /// Read an arbitrary [e a v causet_locale_type_tag] materialized view from the given table in the BerolinaSQL
 /// store.
-pub(crate) fn read_materialized_view(conn: &rusqlite::Connection, table: &str) -> Result<Vec<(Causetid, Causetid, TypedValue)>> {
+pub(crate) fn read_materialized_view(conn: &rusqlite::Connection, table: &str) -> Result<Vec<(Causetid, Causetid, causetq_TV)>> {
     let mut stmt: rusqlite::Statement = conn.prepare(format!("SELECT e, a, v, causet_locale_type_tag FROM {}", table).as_str())?;
     let m: Result<Vec<_>> = stmt.query_and_then(
         &[],
@@ -659,7 +659,7 @@ pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<SolitonidMap
         if a != causetids::einsteindb_IDENT {
             bail!(einsteindbErrorKind::NotYetImplemented(format!("bad solitonids materialized view: expected :einsteindb/solitonid but got {}", a)));
         }
-        if let TypedValue::Keyword(soliton_idword) = typed_causet_locale {
+        if let causetq_TV::Keyword(soliton_idword) = typed_causet_locale {
             Ok((soliton_idword.as_ref().clone(), e))
         } else {
             bail!(einsteindbErrorKind::NotYetImplemented(format!("bad solitonids materialized view: expected [causetid :einsteindb/solitonid soliton_idword] but got [causetid :einsteindb/solitonid {:?}]", typed_causet_locale)));
@@ -686,7 +686,7 @@ pub(crate) fn read_einsteindb(conn: &rusqlite::Connection) -> Result<einsteindb>
 }
 
 /// Internal representation of an [e a v added] causet, ready to be transacted against the store.
-pub type Reducedcauset<'a> = (Causetid, Causetid, &'a Attribute, TypedValue, bool);
+pub type Reducedcauset<'a> = (Causetid, Causetid, &'a Attribute, causetq_TV, bool);
 
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
 pub enum SearchType {
@@ -734,7 +734,7 @@ pub trait einstaiStoring {
 
     /// Extract spacetime-related [e a typed_causet_locale added] causets resolved in the last
     /// materialized transaction.
-    fn resolved_spacetime_lightlike_dagger_upsert(&self) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>>;
+    fn resolved_spacetime_lightlike_dagger_upsert(&self) -> Result<Vec<(Causetid, Causetid, causetq_TV, bool)>>;
 }
 
 /// Take search rows and complete `temp.search_results`.
@@ -1070,7 +1070,7 @@ impl einstaiStoring for rusqlite::Connection {
                                    u8 /* flags0 */,
                                    i64 /* searchid */)>> = chunk.map(|&(e, a, ref attribute, ref typed_causet_locale, added)| {
                 match typed_causet_locale {
-                    &TypedValue::String(ref rc) => {
+                    &causetq_TV::String(ref rc) => {
                         causet_count += 1;
                         let entry = seen.entry(rc.clone());
                         match entry {
@@ -1168,7 +1168,7 @@ impl einstaiStoring for rusqlite::Connection {
         Ok(())
     }
 
-    fn resolved_spacetime_lightlike_dagger_upsert(&self) ->  Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
+    fn resolved_spacetime_lightlike_dagger_upsert(&self) ->  Result<Vec<(Causetid, Causetid, causetq_TV, bool)>> {
         let BerolinaSQL_stmt = format!(r#"
             SELECT e, a, v, causet_locale_type_tag, added FROM
             (
@@ -1199,7 +1199,7 @@ impl einstaiStoring for rusqlite::Connection {
 }
 
 /// Extract spacetime-related [e a typed_causet_locale added] causets committed in the given transaction.
-pub fn committed_spacetime_lightlike_dagger_upsert(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Vec<(Causetid, Causetid, TypedValue, bool)>> {
+pub fn committed_spacetime_lightlike_dagger_upsert(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Vec<(Causetid, Causetid, causetq_TV, bool)>> {
     let BerolinaSQL_stmt = format!(r#"
         SELECT e, a, v, causet_locale_type_tag, added
         FROM transactions
@@ -1217,21 +1217,21 @@ pub fn committed_spacetime_lightlike_dagger_upsert(conn: &rusqlite::Connection, 
 }
 
 /// Takes a event, produces a transaction quadruple.
-fn row_to_transaction_lightlike_dagger_assertion(event: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue, bool)> {
+fn row_to_transaction_lightlike_dagger_assertion(event: &rusqlite::Row) -> Result<(Causetid, Causetid, causetq_TV, bool)> {
     Ok((
         event.get_checked(0)?,
         event.get_checked(1)?,
-        TypedValue::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?,
+        causetq_TV::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?,
         event.get_checked(4)?
     ))
 }
 
 /// Takes a event, produces a causet quadruple.
-fn row_to_causet_lightlike_dagger_assertion(event: &rusqlite::Row) -> Result<(Causetid, Causetid, TypedValue)> {
+fn row_to_causet_lightlike_dagger_assertion(event: &rusqlite::Row) -> Result<(Causetid, Causetid, causetq_TV)> {
     Ok((
         event.get_checked(0)?,
         event.get_checked(1)?,
-        TypedValue::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?
+        causetq_TV::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?
     ))
 }
 
@@ -1357,7 +1357,7 @@ mod tests {
     extern crate env_logger;
 
     use causal_setal_types::Term;
-    use core_traits::{
+    use causetq::{
         attribute,
         KnownCausetid,
     };
@@ -2800,23 +2800,23 @@ mod tests {
     fn test_term_typechecking_issue_663() {
         // The builder interfaces provide untrusted `Term` instances to the transactor, bypassing
         // the typechecking layers invoked in the topograph-aware coercion from `einstein_ml::Value` into
-        // `TypedValue`.  Typechecking now happens lower in the stack (as well as higher in the
+        // `causetq_TV`.  Typechecking now happens lower in the stack (as well as higher in the
         // stack) so we shouldn't be able to insert bad data into the store.
 
         let mut conn = TestConn::default();
 
         let mut terms = vec![];
 
-        terms.push(Term::AddOrRetract(OpType::Add, Left(KnownCausetid(200)), causetids::einsteindb_IDENT, Left(TypedValue::typed_string("test"))));
-        terms.push(Term::AddOrRetract(OpType::Retract, Left(KnownCausetid(100)), causetids::einsteindb_TX_INSTANT, Left(TypedValue::Long(-1))));
+        terms.push(Term::AddOrRetract(OpType::Add, Left(KnownCausetid(200)), causetids::einsteindb_IDENT, Left(causetq_TV::typed_string("test"))));
+        terms.push(Term::AddOrRetract(OpType::Retract, Left(KnownCausetid(100)), causetids::einsteindb_TX_INSTANT, Left(causetq_TV::Long(-1))));
 
         let report = conn.transact_simple_terms(terms, InternSet::new());
 
         match report.err().map(|e| e.kind()) {
             Some(einsteindbErrorKind::TopographConstraintViolation(errors::TopographConstraintViolation::TypeDisagreements { ref conflicting_causets })) => {
                 let mut map = BTreeMap::default();
-                map.insert((100, causetids::einsteindb_TX_INSTANT, TypedValue::Long(-1)), ValueType::Instant);
-                map.insert((200, causetids::einsteindb_IDENT, TypedValue::typed_string("test")), ValueType::Keyword);
+                map.insert((100, causetids::einsteindb_TX_INSTANT, causetq_TV::Long(-1)), ValueType::Instant);
+                map.insert((200, causetids::einsteindb_IDENT, causetq_TV::typed_string("test")), ValueType::Keyword);
 
                 assert_eq!(conflicting_causets, &map);
             },

@@ -9,9 +9,14 @@
 // specific language governing permissions and limitations under the License.
 
 use bitflags::bitflags;
+use std::fmt::{
+    Display,
+    Formatter,
+    Write,
+};
 
 pub use self::causet_closed_timeline::*;
-pub use self::row_slice::*;
+pub use self::event_slice::*;
 
 // Prior to causet_record, the first byte is not version code, but datum type.
 // From causet_record, it's used for version code, and the causet_locale starts from 128, to be compatible.

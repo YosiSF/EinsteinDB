@@ -9,10 +9,10 @@
 // specific language governing permissions and limitations under the License.
 
 use causal_setal_types::AEVTrie;
-use core_traits::{
+use causetq::{
     Causetid,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use einsteindb_traits::errors::CardinalityConflict;
 use std::collections::{
@@ -21,7 +21,7 @@ use std::collections::{
 };
 
 /// Map from found [e a v] to expected type.
-pub(crate) type TypeDisagreements = BTreeMap<(Causetid, Causetid, TypedValue), ValueType>;
+pub(crate) type TypeDisagreements = BTreeMap<(Causetid, Causetid, causetq_TV), ValueType>;
 
 /// Ensure that the given terms type check.
 ///

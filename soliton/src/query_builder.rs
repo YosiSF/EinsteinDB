@@ -23,8 +23,8 @@ use chrono::{DateTime, Utc};
 pub use einstein_db::{
     Binding,
     Causetid,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use einsteindb_core::{
     DateTime,
@@ -39,7 +39,7 @@ use std::collections::BTreeMap;
 
 pub struct CausetQ<'a> {
     query: String,
-    causet_locales: BTreeMap<Variable, TypedValue>,
+    causet_locales: BTreeMap<Variable, causetq_TV>,
     types: BTreeMap<Variable, ValueType>,
     store: &'a mut Store,
 }
@@ -49,35 +49,35 @@ impl<'a> CausetQ<'a> {
         CausetQ { query: query.into(), causet_locales: BTreeMap::new(), types: BTreeMap::new(), store }
     }
 
-    pub fn bind_causet_locale<T>(&mut self, var: &str, causet_locale: T) -> &mut Self where T: Into<TypedValue> {
+    pub fn bind_causet_locale<T>(&mut self, var: &str, causet_locale: T) -> &mut Self where T: Into<causetq_TV> {
         self.causet_locales.insert(Variable::from_valid_name(var), causet_locale.into());
         self
     }
 
     pub fn bind_ref_from_kw(&mut self, var: &str, causet_locale: Keyword) -> Result<&mut Self, E> {
         let causetid = self.store.conn().current_schema().get_causetid(&causet_locale).ok_or(einsteindbError::UnknownAttribute(causet_locale.to_string()))?;
-        self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::Ref(causetid.into()));
+        self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::Ref(causetid.into()));
         Ok(self)
     }
 
     pub fn bind_ref<T>(&mut self, var: &str, causet_locale: T) -> &mut Self where T: Into<Causetid> {
-       self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::Ref(causet_locale.into()));
+       self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::Ref(causet_locale.into()));
        self
     }
 
     pub fn bind_long(&mut self, var: &str, causet_locale: i64) -> &mut Self {
-       self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::Long(causet_locale));
+       self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::Long(causet_locale));
        self
     }
 
     pub fn bind_instant(&mut self, var: &str, causet_locale: i64) -> &mut Self {
-       self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::instant(causet_locale));
+       self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::instant(causet_locale));
 
        self
     }
 
     pub fn bind_date_time(&mut self, var: &str, causet_locale: chrono::DateTime<chrono::Utc>) -> &mut Self {
-       self.causet_locales.insert(Variable::from_valid_name(var), TypedValue::Instant(causet_locale));
+       self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::Instant(causet_locale));
        self
     }
 
@@ -120,7 +120,7 @@ mod test {
     use super::{
         CausetQ,
         Store,
-        TypedValue,
+        causetq_TV,
     };
 
     #[test]
@@ -259,7 +259,7 @@ mod test {
                                                                [?x :foo/long ?i]]"#)
                               .bind_causet_locale("?v", true)
                               .bind_long("?i", 27)
-                              .execute_tuple().expect("TupleResult").expect("Vec<TypedValue>");
+                              .execute_tuple().expect("TupleResult").expect("Vec<causetq_TV>");
         let causetid = results.get(0).map_or(None, |t| t.to_owned().into_causetid()).expect("causetid");
         let long_val = results.get(1).map_or(None, |t| t.to_owned().into_long()).expect("long");
 
@@ -301,8 +301,8 @@ mod test {
                               .bind_causet_locale("?v", true)
                               .bind_long("?i", 27)
                               .execute_tuple().expect("TupleResult").unwrap_or(vec![]);
-        let causetid = TypedValue::Ref(n_yes.clone()).into();
-        let long_val = TypedValue::Long(27).into();
+        let causetid = causetq_TV::Ref(n_yes.clone()).into();
+        let long_val = causetq_TV::Long(27).into();
 
         assert_eq!(results, vec![causetid, long_val]);
     }

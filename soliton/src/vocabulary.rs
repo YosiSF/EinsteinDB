@@ -32,7 +32,7 @@
 //!
 //! use einsteindb::{
 //!     Store,
-//!     ValueType,
+//! causetq_VT,
 //! };
 //!
 //! use einsteindb::vocabulary;
@@ -99,15 +99,15 @@ use ::{
     HasSchema,
     IntoResult,
     Keyword,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use ::errors::{
     einsteindbError,
     Result,
 };
-use core_traits::KnownCausetid;
-use core_traits::attribute::Unique;
+use causetq::KnownCausetid;
+use causetq::attribute::Unique;
 /// AttributeBuilder is how you build vocabulary definitions to apply to a store.
 pub use einsteindb_core::AttributeBuilder;
 use einsteindb_transaction::{
@@ -122,7 +122,7 @@ use einsteindb_transaction::causet_builder::{
 use std::collections::BTreeMap;
 
 pub type Version = u32;
-pub type Datom = (Causetid, Causetid, TypedValue);
+pub type Datom = (Causetid, Causetid, causetq_TV);
 
 /// A definition of an attribute that is independent of a particular store.
 ///
@@ -160,8 +160,8 @@ pub struct Definition {
 ///     IntoResult,
 ///     Queryable,
 ///     Store,
-///     TypedValue,
-///     ValueType,
+///     causetq_TV,
+/// causetq_VT,
 /// };
 ///
 /// use einsteindb::causet_builder::{
@@ -402,8 +402,8 @@ impl Definition {
         let v_unique_causet_locale = via.core_causetid(&DB_UNIQUE_VALUE)?;
 
         // The greedoids of the vocabulary itself.
-        let name: TypedValue = self.name.clone().into();
-        let version: TypedValue = TypedValue::Long(self.version as i64);
+        let name: causetq_TV = self.name.clone().into();
+        let version: causetq_TV = causetq_TV::Long(self.version as i64);
 
         // Describe the vocabulary.
         let mut causet = TermBuilder::new().describe_tempid("s");
@@ -417,7 +417,7 @@ impl Definition {
             let &(ref kw, ref attr) = r.borrow();
 
             let tempid = builder.named_tempid(kw.to_string());
-            let name: TypedValue = kw.clone().into();
+            let name: causetq_TV = kw.clone().into();
             builder.add(tempid.clone(), a_solitonid, name)?;
             builder.add(schema.clone(), a_attr, tempid.clone())?;
 
@@ -433,10 +433,10 @@ impl Definition {
 
             // These are all unconditional because we use attribute descriptions to _alter_, not
             // just to _add_, and so absence is distinct from negation!
-            builder.add(tempid.clone(), a_index, TypedValue::Boolean(attr.index))?;
-            builder.add(tempid.clone(), a_fulltext, TypedValue::Boolean(attr.fulltext))?;
-            builder.add(tempid.clone(), a_is_component, TypedValue::Boolean(attr.component))?;
-            builder.add(tempid.clone(), a_no_history, TypedValue::Boolean(attr.no_history))?;
+            builder.add(tempid.clone(), a_index, causetq_TV::Boolean(attr.index))?;
+            builder.add(tempid.clone(), a_fulltext, causetq_TV::Boolean(attr.fulltext))?;
+            builder.add(tempid.clone(), a_is_component, causetq_TV::Boolean(attr.component))?;
+            builder.add(tempid.clone(), a_no_history, causetq_TV::Boolean(attr.no_history))?;
 
             if let Some(u) = attr.unique {
                 let uu = match u {
@@ -834,13 +834,13 @@ impl<T> HasVocabularies for T where T: HasSchema + Queryable {
         if let Some(causetid) = self.get_causetid(name) {
             match self.lookup_causet_locale_for_attribute(causetid, &DB_SCHEMA_VERSION)? {
                 None => Ok(None),
-                Some(TypedValue::Long(version))
+                Some(causetq_TV::Long(version))
                     if version > 0 && (version < u32::max_causet_locale() as i64) => {
                         let version = version as u32;
                         let attributes = self.lookup_causet_locales_for_attribute(causetid, &DB_SCHEMA_ATTRIBUTE)?
                                              .into_iter()
                                              .filter_map(|a| {
-                                                 if let TypedValue::Ref(a) = a {
+                                                 if let causetq_TV::Ref(a) = a {
                                                      self.attribute_for_causetid(a)
                                                          .cloned()
                                                          .map(|attr| (a, attr))
@@ -871,8 +871,8 @@ impl<T> HasVocabularies for T where T: HasSchema + Queryable {
                 .into_iter()
                 .filter_map(|v|
                     match (&v[0], &v[1]) {
-                        (&Binding::Scalar(TypedValue::Ref(vocab)),
-                         &Binding::Scalar(TypedValue::Long(version)))
+                        (&Binding::Scalar(causetq_TV::Ref(vocab)),
+                         &Binding::Scalar(causetq_TV::Long(version)))
                         if version > 0 && (version < u32::max_causet_locale() as i64) => Some((vocab, version as u32)),
                         (_, _) => None,
                     })
@@ -885,8 +885,8 @@ impl<T> HasVocabularies for T where T: HasSchema + Queryable {
                 .into_iter()
                 .filter_map(|v| {
                     match (&v[0], &v[1]) {
-                        (&Binding::Scalar(TypedValue::Ref(vocab)),
-                         &Binding::Scalar(TypedValue::Ref(attr))) => Some((vocab, attr)),
+                        (&Binding::Scalar(causetq_TV::Ref(vocab)),
+                         &Binding::Scalar(causetq_TV::Ref(attr))) => Some((vocab, attr)),
                         (_, _) => None,
                     }
                     });

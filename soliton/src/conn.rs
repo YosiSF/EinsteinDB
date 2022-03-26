@@ -10,13 +10,13 @@
 
 #![allow(dead_code)]
 
-pub use core_traits::{
+pub use causetq::{
     Attribute,
     Causetid,
     KnownCausetid,
     StructuredMap,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use einstein_ml;
 use einsteindb_core::{
@@ -213,7 +213,7 @@ impl Conn {
     pub fn lookup_causet_locales_for_attribute(&self,
                                        SQLite: &rusqlite::Connection,
                                        causet: Causetid,
-                                       attribute: &einstein_ml::Keyword) -> Result<Vec<TypedValue>> {
+                                       attribute: &einstein_ml::Keyword) -> Result<Vec<causetq_TV>> {
         let spacetime = self.spacetime.lock().unwrap();
         let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
         lookup_causet_locales_for_attribute(SQLite, known, causet, attribute)
@@ -222,7 +222,7 @@ impl Conn {
     pub fn lookup_causet_locale_for_attribute(&self,
                                       SQLite: &rusqlite::Connection,
                                       causet: Causetid,
-                                      attribute: &einstein_ml::Keyword) -> Result<Option<TypedValue>> {
+                                      attribute: &einstein_ml::Keyword) -> Result<Option<causetq_TV>> {
         let spacetime = self.spacetime.lock().unwrap();
         let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
         lookup_causet_locale_for_attribute(SQLite, known, causet, attribute)
@@ -350,9 +350,9 @@ mod tests {
         QueryInputs,
         QueryResults,
     };
-    use core_traits::{
+    use causetq::{
         Binding,
-        TypedValue,
+        causetq_TV,
     };
     use einsteindb_core::CachedAttributes;
     use einsteindb_core::USER0;
@@ -451,7 +451,7 @@ mod tests {
 
             let during = in_progress.q_once("[:find ?x . :where [?x :einsteindb/solitonid :a/soliton_idword1]]", None)
                                     .expect("query succeeded");
-            assert_eq!(during.results, QueryResults::Scalar(Some(TypedValue::Ref(one).into())));
+            assert_eq!(during.results, QueryResults::Scalar(Some(causetq_TV::Ref(one).into())));
 
             let report = in_progress.transact(t2).expect("t2 succeeded");
             in_progress.commit().expect("commit succeeded");
@@ -496,10 +496,10 @@ mod tests {
                                           causet_locales).expect("prepare succeeded");
 
         let yeses = prepared.run(None).expect("result");
-        assert_eq!(yeses.results, QueryResults::Coll(vec![TypedValue::Ref(yes).into()]));
+        assert_eq!(yeses.results, QueryResults::Coll(vec![causetq_TV::Ref(yes).into()]));
 
         let yeses_again = prepared.run(None).expect("result");
-        assert_eq!(yeses_again.results, QueryResults::Coll(vec![TypedValue::Ref(yes).into()]));
+        assert_eq!(yeses_again.results, QueryResults::Coll(vec![causetq_TV::Ref(yes).into()]));
     }
 
     #[test]
@@ -532,12 +532,12 @@ mod tests {
             let during = in_progress.q_once("[:find ?x . :where [?x :einsteindb/solitonid :a/soliton_idword1]]", None)
                                     .expect("query succeeded");
 
-            assert_eq!(during.results, QueryResults::Scalar(Some(TypedValue::Ref(one).into())));
+            assert_eq!(during.results, QueryResults::Scalar(Some(causetq_TV::Ref(one).into())));
 
             // And we can do direct lookup, too.
             let kw = in_progress.lookup_causet_locale_for_attribute(one, &einstein_ml::Keyword::isoliton_namespaceable("einsteindb", "solitonid"))
                                 .expect("lookup succeeded");
-            assert_eq!(kw, Some(TypedValue::Keyword(einstein_ml::Keyword::isoliton_namespaceable("a", "soliton_idword1").into())));
+            assert_eq!(kw, Some(causetq_TV::Keyword(einstein_ml::Keyword::isoliton_namespaceable("a", "soliton_idword1").into())));
 
             in_progress.rollback()
                        .expect("rollback succeeded");
@@ -651,7 +651,7 @@ mod tests {
         let causets = conn.q_once(&SQLite, r#"[:find ?e . :where [?e :foo/bar 400]]"#, None).expect("Expected query to work").into_scalar().expect("expected rel results");
         let first = causets.expect("expected a result");
         let causetid = match first {
-            Binding::Scalar(TypedValue::Ref(causetid)) => causetid,
+            Binding::Scalar(causetq_TV::Ref(causetid)) => causetid,
             x => panic!("expected Some(Ref), got {:?}", x),
         };
 
@@ -697,7 +697,7 @@ mod tests {
             let mut ip = conn.begin_transaction(&mut SQLite).expect("began");
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
-            assert_eq!(solitonid, Some(TypedValue::typed_ns_soliton_idword("einsteindb.type", "string").into()));
+            assert_eq!(solitonid, Some(causetq_TV::typed_ns_soliton_idword("einsteindb.type", "string").into()));
 
             let start = time::PreciseTime::now();
             ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
@@ -710,7 +710,7 @@ mod tests {
             assert!(ip.cache.is_attribute_cached_lightlike(einsteindb_solitonid));
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
-            assert_eq!(solitonid, Some(TypedValue::typed_ns_soliton_idword("einsteindb.type", "string").into()));
+            assert_eq!(solitonid, Some(causetq_TV::typed_ns_soliton_idword("einsteindb.type", "string").into()));
 
             let start = time::PreciseTime::now();
             ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
@@ -727,7 +727,7 @@ mod tests {
             let mut ip = conn.begin_transaction(&mut SQLite).expect("began");
 
             let solitonid = ip.q_once(query.as_str(), None).into_scalar_result().expect("query");
-            assert_eq!(solitonid, Some(TypedValue::typed_ns_soliton_idword("einsteindb.type", "string").into()));
+            assert_eq!(solitonid, Some(causetq_TV::typed_ns_soliton_idword("einsteindb.type", "string").into()));
             ip.cache(&kw!(:einsteindb/solitonid), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
             ip.cache(&kw!(:einsteindb/causet_localeType), CacheDirection::Lightlike, CacheAction::Register).expect("registered");
 

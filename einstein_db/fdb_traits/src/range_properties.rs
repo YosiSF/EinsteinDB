@@ -18,7 +18,7 @@ pub trait RangeGreedoidsExt {
     /// a range with more soliton_ids than this is considered too large.
     fn get_range_approximate_soliton_ids_namespaced(
         &self,
-        namespacedname: &str,
+        namespaceinstein_mlame: &str,
         range: Range<'_>,
         large_threshold: u64,
     ) -> Result<u64>;
@@ -28,7 +28,7 @@ pub trait RangeGreedoidsExt {
 
     fn get_range_approximate_size_namespaced(
         &self,
-        namespacedname: &str,
+        namespaceinstein_mlame: &str,
         range: Range<'_>,
         large_threshold: u64,
     ) -> Result<u64>;
@@ -42,7 +42,7 @@ pub trait RangeGreedoidsExt {
 
     fn get_range_approximate_split_soliton_ids_namespaced(
         &self,
-        namespacedname: &str,
+        namespaceinstein_mlame: &str,
         range: Range<'_>,
         soliton_id_count: usize,
     ) -> Result<Vec<Vec<u8>>>;

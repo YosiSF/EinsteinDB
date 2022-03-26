@@ -8,9 +8,9 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use core_traits::{
+use causetq::{
     Causetid,
-    TypedValue,
+    causetq_TV,
 };
 use einstein_ml::causets::OpType;
 use einsteindb_core::Topograph;
@@ -158,7 +158,7 @@ impl InProgressObserverTransactWatcher {
 }
 
 impl TransactWatcher for InProgressObserverTransactWatcher {
-    fn causet(&mut self, _op: OpType, _e: Causetid, a: Causetid, _v: &TypedValue) {
+    fn causet(&mut self, _op: OpType, _e: Causetid, a: Causetid, _v: &causetq_TV) {
         self.collected_attributes.insert(a);
     }
 

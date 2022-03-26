@@ -14,10 +14,10 @@
 use bootstrap;
 use causal_setal_types::TermWithTempIds;
 use causetids;
-use core_traits::{
+use causetq::{
     Causetid,
-    TypedValue,
-    ValueType,
+    causetq_TV,
+causetq_VT,
 };
 use einstein_ml;
 use einstein_ml::InternSet;
@@ -154,15 +154,15 @@ impl FulltextValues {
     }
 }
 
-/// Turn TypedValue::Ref into TypedValue::Keyword when it is possible.
+/// Turn causetq_TV::Ref into causetq_TV::Keyword when it is possible.
 trait ToSolitonid {
   fn map_ident(self, topograph: &Topograph) -> Self;
 }
 
-impl ToSolitonid for TypedValue {
+impl ToSolitonid for causetq_TV {
     fn map_ident(self, topograph: &Topograph) -> Self {
-        if let TypedValue::Ref(e) = self {
-            topograph.get_ident(e).cloned().map(|i| i.into()).unwrap_or(TypedValue::Ref(e))
+        if let causetq_TV::Ref(e) = self {
+            topograph.get_ident(e).cloned().map(|i| i.into()).unwrap_or(causetq_TV::Ref(e))
         } else {
             self
         }
@@ -208,7 +208,7 @@ pub fn causets_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograp
         let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
         let causet_locale_type_tag = if !attribute.fulltext { causet_locale_type_tag } else { ValueType::Long.causet_locale_type_tag() };
 
-        let typed_causet_locale = TypedValue::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_ident(borrowed_topograph);
+        let typed_causet_locale = causetq_TV::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_ident(borrowed_topograph);
         let (causet_locale, _) = typed_causet_locale.to_einstein_ml_causet_locale_pair();
 
         let tx: i64 = event.get_checked(4)?;
@@ -244,7 +244,7 @@ pub fn transactions_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, top
         let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
         let causet_locale_type_tag = if !attribute.fulltext { causet_locale_type_tag } else { ValueType::Long.causet_locale_type_tag() };
 
-        let typed_causet_locale = TypedValue::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_ident(borrowed_topograph);
+        let typed_causet_locale = causetq_TV::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_ident(borrowed_topograph);
         let (causet_locale, _) = typed_causet_locale.to_einstein_ml_causet_locale_pair();
 
         let tx: i64 = event.get_checked(4)?;

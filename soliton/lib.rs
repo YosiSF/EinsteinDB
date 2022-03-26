@@ -14,7 +14,7 @@
 //#[macro_use] extern crate lazy_static;
 //#[macro_use] extern crate log;
 
-#[macro_use] extern crate core_traits;
+#[macro_use] extern crate causetq;
 extern crate einstai_BerolinaSQL;
 extern crate einstein_ml;
 extern crate einsteindb_core;
@@ -110,7 +110,7 @@ pub fn to_isoliton_namespaceable_soliton_idword(s: &str) -> Result<shellings::Ke
 /// # Examples
 ///
 /// ```rust
-/// # use einstai_einsteindb::{repeat_causet_locales};
+/// # use einstein_db::{repeat_causet_locales};
 /// assert_eq!(repeat_causet_locales(1, 3), "(?), (?), (?)".to_string());
 /// assert_eq!(repeat_causet_locales(3, 1), "(?, ?, ?)".to_string());
 /// assert_eq!(repeat_causet_locales(2, 2), "(?, ?), (?, ?)".to_string());

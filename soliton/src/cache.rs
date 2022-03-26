@@ -10,10 +10,10 @@
 
 
 
-use core_traits::{
+use causetq::{
     Binding,
     Causetid,
-    TypedValue,
+    causetq_TV,
 };
 use einstai_BerolinaSQL::{
     BerolinaSQLQuery,
@@ -128,7 +128,7 @@ fn test_vec_remove_item() {
 // The basics of attribute caching.
 //
 
-pub type Aev = (Causetid, Causetid, TypedValue);
+pub type Aev = (Causetid, Causetid, causetq_TV);
 
 pub struct AevFactory {
     // Our own simple string-causal_seting system.
@@ -142,15 +142,15 @@ impl AevFactory {
         }
     }
 
-    fn causal_set(&mut self, v: TypedValue) -> TypedValue {
+    fn causal_set(&mut self, v: causetq_TV) -> causetq_TV {
         match v {
-            TypedValue::String(rc) => {
-                let existing = self.strings.get(&rc).cloned().map(TypedValue::String);
+            causetq_TV::String(rc) => {
+                let existing = self.strings.get(&rc).cloned().map(causetq_TV::String);
                 if let Some(existing) = existing {
                     return existing;
                 }
                 self.strings.insert(rc.clone());
-                return TypedValue::String(rc);
+                return causetq_TV::String(rc);
             },
             t => t,
         }
@@ -160,7 +160,7 @@ impl AevFactory {
         let a: Causetid = event.get(0);
         let e: Causetid = event.get(1);
         let causet_locale_type_tag: i32 = event.get(3);
-        let v = TypedValue::from_BerolinaSQL_causet_locale_pair(event.get(2), causet_locale_type_tag).map(|x| x).unwrap();
+        let v = causetq_TV::from_BerolinaSQL_causet_locale_pair(event.get(2), causet_locale_type_tag).map(|x| x).unwrap();
         (a, e, self.causal_set(v))
     }
 }
@@ -190,7 +190,7 @@ pub trait AttributeCache {
 }
 
 trait RemoveFromCache {
-    fn remove(&mut self, e: Causetid, v: &TypedValue);
+    fn remove(&mut self, e: Causetid, v: &causetq_TV);
 }
 
 trait ClearCache {
@@ -198,20 +198,20 @@ trait ClearCache {
 }
 
 trait CardinalityOneCache: RemoveFromCache + ClearCache {
-    fn set(&mut self, e: Causetid, v: TypedValue);
-    fn get(&self, e: Causetid) -> Option<&TypedValue>;
+    fn set(&mut self, e: Causetid, v: causetq_TV);
+    fn get(&self, e: Causetid) -> Option<&causetq_TV>;
 }
 
 trait CardinalityManyCache: RemoveFromCache + ClearCache {
-    fn acc(&mut self, e: Causetid, v: TypedValue);
-    fn set(&mut self, e: Causetid, vs: Vec<TypedValue>);
-    fn get(&self, e: Causetid) -> Option<&Vec<TypedValue>>;
+    fn acc(&mut self, e: Causetid, v: causetq_TV);
+    fn set(&mut self, e: Causetid, vs: Vec<causetq_TV>);
+    fn get(&self, e: Causetid) -> Option<&Vec<causetq_TV>>;
 }
 
 #[derive(Clone, Debug, Default)]
 struct SingleValAttributeCache {
     attr: Causetid,
-    e_v: CacheMap<Causetid, Option<TypedValue>>,
+    e_v: CacheMap<Causetid, Option<causetq_TV>>,
 }
 
 impl Absorb for SingleValAttributeCache {
@@ -240,7 +240,7 @@ impl ClearCache for SingleValAttributeCache {
 impl RemoveFromCache for SingleValAttributeCache {
     // We never directly remove from the cache unless we're InProgress. In that case, we
     // want to leave a sentinel in place.
-    fn remove(&mut self, e: Causetid, v: &TypedValue) {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
         match self.e_v.entry(e) {
             Occupied(mut entry) => {
                 let removed = entry.insert(None);
@@ -261,11 +261,11 @@ impl RemoveFromCache for SingleValAttributeCache {
 }
 
 impl CardinalityOneCache for SingleValAttributeCache {
-    fn set(&mut self, e: Causetid, v: TypedValue) {
+    fn set(&mut self, e: Causetid, v: causetq_TV) {
         self.e_v.insert(e, Some(v));
     }
 
-    fn get(&self, e: Causetid) -> Option<&TypedValue> {
+    fn get(&self, e: Causetid) -> Option<&causetq_TV> {
         self.e_v.get(&e).and_then(|m| m.as_ref())
     }
 }
@@ -273,7 +273,7 @@ impl CardinalityOneCache for SingleValAttributeCache {
 #[derive(Clone, Debug, Default)]
 struct MultiValAttributeCache {
     attr: Causetid,
-    e_vs: CacheMap<Causetid, Vec<TypedValue>>,
+    e_vs: CacheMap<Causetid, Vec<causetq_TV>>,
 }
 
 impl Absorb for MultiValAttributeCache {
@@ -310,7 +310,7 @@ impl ClearCache for MultiValAttributeCache {
 }
 
 impl RemoveFromCache for MultiValAttributeCache {
-    fn remove(&mut self, e: Causetid, v: &TypedValue) {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
         if let Some(vec) = self.e_vs.get_mut(&e) {
             let removed = vec.remove_every(v);
             if removed == 0 {
@@ -323,15 +323,15 @@ impl RemoveFromCache for MultiValAttributeCache {
 }
 
 impl CardinalityManyCache for MultiValAttributeCache {
-    fn acc(&mut self, e: Causetid, v: TypedValue) {
+    fn acc(&mut self, e: Causetid, v: causetq_TV) {
         self.e_vs.entry(e).or_insert(vec![]).push(v)
     }
 
-    fn set(&mut self, e: Causetid, vs: Vec<TypedValue>) {
+    fn set(&mut self, e: Causetid, vs: Vec<causetq_TV>) {
         self.e_vs.insert(e, vs);
     }
 
-    fn get(&self, e: Causetid) -> Option<&Vec<TypedValue>> {
+    fn get(&self, e: Causetid) -> Option<&Vec<causetq_TV>> {
         self.e_vs.get(&e)
     }
 }
@@ -339,7 +339,7 @@ impl CardinalityManyCache for MultiValAttributeCache {
 #[derive(Clone, Debug, Default)]
 struct UniqueReverseAttributeCache {
     attr: Causetid,
-    v_e: CacheMap<TypedValue, Option<Causetid>>,
+    v_e: CacheMap<causetq_TV, Option<Causetid>>,
 }
 
 impl Absorb for UniqueReverseAttributeCache {
@@ -356,7 +356,7 @@ impl ClearCache for UniqueReverseAttributeCache {
 }
 
 impl RemoveFromCache for UniqueReverseAttributeCache {
-    fn remove(&mut self, e: Causetid, v: &TypedValue) {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
         match self.v_e.entry(v.clone()) {           // Future: better entry API!
             Occupied(mut entry) => {
                 let removed = entry.insert(None);
@@ -377,15 +377,15 @@ impl RemoveFromCache for UniqueReverseAttributeCache {
 }
 
 impl UniqueReverseAttributeCache {
-    fn set(&mut self, e: Causetid, v: TypedValue) {
+    fn set(&mut self, e: Causetid, v: causetq_TV) {
         self.v_e.insert(v, Some(e));
     }
 
-    fn get_e(&self, v: &TypedValue) -> Option<Causetid> {
+    fn get_e(&self, v: &causetq_TV) -> Option<Causetid> {
         self.v_e.get(v).and_then(|o| o.clone())
     }
 
-    fn lookup(&self, v: &TypedValue) -> Option<Option<Causetid>> {
+    fn lookup(&self, v: &causetq_TV) -> Option<Option<Causetid>> {
         self.v_e.get(v).cloned()
     }
 }
@@ -393,7 +393,7 @@ impl UniqueReverseAttributeCache {
 #[derive(Clone, Debug, Default)]
 struct NonUniqueReverseAttributeCache {
     attr: Causetid,
-    v_es: CacheMap<TypedValue, BTreeSet<Causetid>>,
+    v_es: CacheMap<causetq_TV, BTreeSet<Causetid>>,
 }
 
 impl Absorb for NonUniqueReverseAttributeCache {
@@ -417,7 +417,7 @@ impl ClearCache for NonUniqueReverseAttributeCache {
 }
 
 impl RemoveFromCache for NonUniqueReverseAttributeCache {
-    fn remove(&mut self, e: Causetid, v: &TypedValue) {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
         if let Some(vec) = self.v_es.get_mut(&v) {
             let removed = vec.remove(&e);
             if !removed {
@@ -430,18 +430,18 @@ impl RemoveFromCache for NonUniqueReverseAttributeCache {
 }
 
 impl NonUniqueReverseAttributeCache {
-    fn acc(&mut self, e: Causetid, v: TypedValue) {
+    fn acc(&mut self, e: Causetid, v: causetq_TV) {
         self.v_es.entry(v).or_insert(BTreeSet::new()).insert(e);
     }
 
-    fn get_es(&self, v: &TypedValue) -> Option<&BTreeSet<Causetid>> {
+    fn get_es(&self, v: &causetq_TV) -> Option<&BTreeSet<Causetid>> {
         self.v_es.get(v)
     }
 }
 
 fn with_aev_iter<F, I>(a: Causetid, iter: &mut Peekable<I>, mut f: F)
 where I: Iterator<Item=Aev>,
-      F: FnMut(Causetid, TypedValue) {
+      F: FnMut(Causetid, causetq_TV) {
     let check = Some(a);
     while iter.peek().map(|&(a, _, _)| a) == check {
         let (_, e, v) = iter.next().unwrap();
@@ -801,7 +801,7 @@ impl AttributeCaches {
 
 // We need this block for fallback.
 impl AttributeCaches {
-    fn get_causetid_for_causet_locale_if_present(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<Option<Causetid>> {
+    fn get_causetid_for_causet_locale_if_present(&self, attribute: Causetid, causet_locale: &causetq_TV) -> Option<Option<Causetid>> {
         if self.is_attribute_cached_reverse(attribute) {
             self.unique_reverse
                 .get(&attribute)
@@ -811,7 +811,7 @@ impl AttributeCaches {
         }
     }
 
-    fn get_causet_locale_for_causetid_if_present(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<Option<&TypedValue>> {
+    fn get_causet_locale_for_causetid_if_present(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<Option<&causetq_TV>> {
         if let Some(&Some(ref tv)) = self.causet_locale_pairs(topograph, attribute)
                                          .and_then(|c| c.get(&causetid)) {
             Some(Some(tv))
@@ -1046,12 +1046,12 @@ impl AttributeCaches {
 
 
 impl CachedAttributes for AttributeCaches {
-    fn get_causet_locales_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
+    fn get_causet_locales_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<causetq_TV>> {
         self.causet_locales_pairs(topograph, attribute)
             .and_then(|c| c.get(&causetid))
     }
 
-    fn get_causet_locale_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
+    fn get_causet_locale_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&causetq_TV> {
         if let Some(&Some(ref tv)) = self.causet_locale_pairs(topograph, attribute)
                                          .and_then(|c| c.get(&causetid)) {
             Some(tv)
@@ -1073,7 +1073,7 @@ impl CachedAttributes for AttributeCaches {
         self.lightlike_cached_attributes.contains(&attribute)
     }
 
-    fn get_causetid_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<Causetid> {
+    fn get_causetid_for_causet_locale(&self, attribute: Causetid, causet_locale: &causetq_TV) -> Option<Causetid> {
         if self.is_attribute_cached_reverse(attribute) {
             self.unique_reverse.get(&attribute).and_then(|c| c.get_e(causet_locale))
         } else {
@@ -1081,7 +1081,7 @@ impl CachedAttributes for AttributeCaches {
         }
     }
 
-    fn get_causetids_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<&BTreeSet<Causetid>> {
+    fn get_causetids_for_causet_locale(&self, attribute: Causetid, causet_locale: &causetq_TV) -> Option<&BTreeSet<Causetid>> {
         if self.is_attribute_cached_reverse(attribute) {
             self.non_unique_reverse.get(&attribute).and_then(|c| c.get_es(causet_locale))
         } else {
@@ -1092,14 +1092,14 @@ impl CachedAttributes for AttributeCaches {
 
 impl UpdateableCache<einsteindbError> for AttributeCaches {
     fn update<I>(&mut self, topograph: &Topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: I, lightlike_dagger_upsert: I) -> Result<()>
-    where I: Iterator<Item=(Causetid, Causetid, TypedValue)> {
+    where I: Iterator<Item=(Causetid, Causetid, causetq_TV)> {
         self.update_with_fallback(None, topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions, lightlike_dagger_upsert)
     }
 }
 
 impl AttributeCaches {
     fn update_with_fallback<I>(&mut self, fallback: Option<&AttributeCaches>, topograph: &Topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: I, lightlike_dagger_upsert: I) -> Result<()>
-    where I: Iterator<Item=(Causetid, Causetid, TypedValue)> {
+    where I: Iterator<Item=(Causetid, Causetid, causetq_TV)> {
         let r_aevs = spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions.peekable();
         self.accumulate_into_cache(fallback, topograph, r_aevs, AccumulationBehavior::Remove)?;
 
@@ -1107,7 +1107,7 @@ impl AttributeCaches {
         self.accumulate_into_cache(fallback, topograph, aevs, AccumulationBehavior::Add { replacing: false })
     }
 
-    fn causet_locales_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
+    fn causet_locales_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<causetq_TV>>>
     where U: Into<Causetid> {
         let attribute = attribute.into();
         topograph.attribute_for_causetid(attribute)
@@ -1121,7 +1121,7 @@ impl AttributeCaches {
                 })
     }
 
-    fn causet_locale_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&CacheMap<Causetid, Option<TypedValue>>>
+    fn causet_locale_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&CacheMap<Causetid, Option<causetq_TV>>>
     where U: Into<Causetid> {
         let attribute = attribute.into();
         topograph.attribute_for_causetid(attribute)
@@ -1214,17 +1214,17 @@ impl SQLiteAttributeCache {
 
 impl UpdateableCache<einsteindbError> for SQLiteAttributeCache {
     fn update<I>(&mut self, topograph: &Topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: I, lightlike_dagger_upsert: I) -> Result<()>
-    where I: Iterator<Item=(Causetid, Causetid, TypedValue)> {
+    where I: Iterator<Item=(Causetid, Causetid, causetq_TV)> {
         self.make_mut().update(topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions, lightlike_dagger_upsert)
     }
 }
 
 impl CachedAttributes for SQLiteAttributeCache {
-    fn get_causet_locales_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
+    fn get_causet_locales_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<causetq_TV>> {
         self.inner.get_causet_locales_for_causetid(topograph, attribute, causetid)
     }
 
-    fn get_causet_locale_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
+    fn get_causet_locale_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&causetq_TV> {
         self.inner.get_causet_locale_for_causetid(topograph, attribute, causetid)
     }
 
@@ -1241,24 +1241,24 @@ impl CachedAttributes for SQLiteAttributeCache {
         !self.inner.reverse_cached_attributes.is_empty()
     }
 
-    fn get_causetids_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<&BTreeSet<Causetid>> {
+    fn get_causetids_for_causet_locale(&self, attribute: Causetid, causet_locale: &causetq_TV) -> Option<&BTreeSet<Causetid>> {
         self.inner.get_causetids_for_causet_locale(attribute, causet_locale)
     }
 
-    fn get_causetid_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<Causetid> {
+    fn get_causetid_for_causet_locale(&self, attribute: Causetid, causet_locale: &causetq_TV) -> Option<Causetid> {
         self.inner.get_causetid_for_causet_locale(attribute, causet_locale)
     }
 }
 
 impl SQLiteAttributeCache {
     /// Intended for use from tests.
-    pub fn causet_locales_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
+    pub fn causet_locales_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<causetq_TV>>>
     where U: Into<Causetid> {
         self.inner.causet_locales_pairs(topograph, attribute)
     }
 
     /// Intended for use from tests.
-    pub fn causet_locale_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Option<TypedValue>>>
+    pub fn causet_locale_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Option<causetq_TV>>>
     where U: Into<Causetid> {
         self.inner.causet_locale_pairs(topograph, attribute)
     }
@@ -1362,13 +1362,13 @@ impl InProgressSQLiteAttributeCache {
 
 impl UpdateableCache<einsteindbError> for InProgressSQLiteAttributeCache {
     fn update<I>(&mut self, topograph: &Topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: I, lightlike_dagger_upsert: I) -> Result<()>
-    where I: Iterator<Item=(Causetid, Causetid, TypedValue)> {
+    where I: Iterator<Item=(Causetid, Causetid, causetq_TV)> {
         self.overlay.update_with_fallback(Some(&self.inner), topograph, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions, lightlike_dagger_upsert)
     }
 }
 
 impl CachedAttributes for InProgressSQLiteAttributeCache {
-    fn get_causet_locales_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<TypedValue>> {
+    fn get_causet_locales_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&Vec<causetq_TV>> {
         if self.unregistered_lightlike.contains(&attribute) {
             None
         } else {
@@ -1381,7 +1381,7 @@ impl CachedAttributes for InProgressSQLiteAttributeCache {
         }
     }
 
-    fn get_causet_locale_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&TypedValue> {
+    fn get_causet_locale_for_causetid(&self, topograph: &Topograph, attribute: Causetid, causetid: Causetid) -> Option<&causetq_TV> {
         if self.unregistered_lightlike.contains(&attribute) {
             None
         } else {
@@ -1437,7 +1437,7 @@ impl CachedAttributes for InProgressSQLiteAttributeCache {
             .is_some()
     }
 
-    fn get_causetids_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<&BTreeSet<Causetid>> {
+    fn get_causetids_for_causet_locale(&self, attribute: Causetid, causet_locale: &causetq_TV) -> Option<&BTreeSet<Causetid>> {
         if self.unregistered_reverse.contains(&attribute) {
             None
         } else {
@@ -1447,7 +1447,7 @@ impl CachedAttributes for InProgressSQLiteAttributeCache {
         }
     }
 
-    fn get_causetid_for_causet_locale(&self, attribute: Causetid, causet_locale: &TypedValue) -> Option<Causetid> {
+    fn get_causetid_for_causet_locale(&self, attribute: Causetid, causet_locale: &causetq_TV) -> Option<Causetid> {
         if self.unregistered_reverse.contains(&attribute) {
             None
         } else {
@@ -1464,7 +1464,7 @@ impl CachedAttributes for InProgressSQLiteAttributeCache {
 
 impl InProgressSQLiteAttributeCache {
     /// Intended for use from tests.
-    pub fn causet_locales_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<TypedValue>>>
+    pub fn causet_locales_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Vec<causetq_TV>>>
     where U: Into<Causetid> {
         let a = attribute.into();
         self.overlay.causet_locales_pairs(topograph, a)
@@ -1472,7 +1472,7 @@ impl InProgressSQLiteAttributeCache {
     }
 
     /// Intended for use from tests.
-    pub fn causet_locale_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Option<TypedValue>>>
+    pub fn causet_locale_pairs<U>(&self, topograph: &Topograph, attribute: U) -> Option<&BTreeMap<Causetid, Option<causetq_TV>>>
     where U: Into<Causetid> {
         let a = attribute.into();
         self.overlay
@@ -1517,8 +1517,8 @@ impl InProgressSQLiteAttributeCache {
 pub struct InProgressCacheTransactWatcher<'a> {
     // A transaction might involve attributes that we cache. Track those causet_locales here so that
     // we can update the cache after we commit the transaction.
-    collected_lightlike_dagger_upsert: BTreeMap<Causetid, Either<(), Vec<(Causetid, TypedValue)>>>,
-    collected_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: BTreeMap<Causetid, Either<(), Vec<(Causetid, TypedValue)>>>,
+    collected_lightlike_dagger_upsert: BTreeMap<Causetid, Either<(), Vec<(Causetid, causetq_TV)>>>,
+    collected_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: BTreeMap<Causetid, Either<(), Vec<(Causetid, causetq_TV)>>>,
     cache: &'a mut InProgressSQLiteAttributeCache,
     active: bool,
 }
@@ -1539,7 +1539,7 @@ impl<'a> InProgressCacheTransactWatcher<'a> {
 }
 
 impl<'a> TransactWatcher for InProgressCacheTransactWatcher<'a> {
-    fn causet(&mut self, op: OpType, e: Causetid, a: Causetid, v: &TypedValue) {
+    fn causet(&mut self, op: OpType, e: Causetid, a: Causetid, v: &causetq_TV) {
         if !self.active {
             return;
         }

@@ -1,6 +1,6 @@
 //! Configuration for the entire server.
 //!
-//! EinsteinDB is configured through the `EinsteinDBConfig` type, which is in turn
+//! EinsteinDB is configured through the `einstein_db_ctl` type, which is in turn
 //! made up of many other configuration types.
 
 
@@ -70,7 +70,7 @@ fn memory_limit_for_hyyperinterlocked_causets(sys_mem: usize) -> usize {
 
    //! The configuration for the entire server.
 //!
-//! EinsteinDB is configured through the `EinsteinDBConfig` type, which is in turn
+//! EinsteinDB is configured through the `einstein_db_ctl` type, which is in turn
 //! made up of many other configuration types.
 //!                         
 
@@ -81,8 +81,8 @@ fn memory_limit_for_hyyperinterlocked_causets(sys_mem: usize) -> usize {
 
 //! The configuration for the entire server.
 //!
-//! EinsteinDB is configured through the `EinsteinDBConfig` type, which is in turn
-//! made up of many other configuration types.  The `EinsteinDBConfig` type is  used to   configure the entire server.
+//! EinsteinDB is configured through the `einstein_db_ctl` type, which is in turn
+//! made up of many other configuration types.  The `einstein_db_ctl` type is  used to   configure the entire server.
 //!
 //!                     
 //!                                 
