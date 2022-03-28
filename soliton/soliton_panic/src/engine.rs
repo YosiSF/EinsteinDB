@@ -1,105 +1,143 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use fdb_traits::{
-    Iterable, Iterator, IterOptions, KV, Peekable, ReadOptions, Result, SeekKey, SyncMutable,
-    WriteOptions,
+
+use crate::{
+    error::{Error, Result},
+    storage::{
+        kv::{self, Key, Value},
+        mvcc::{MvccTxn, MvccTxnExtra},
+        txn::{TxnEntry, TxnExtra, TxnStatus},
+    },
+    util::{
+        collections::{HashMap, HashSet},
+        hash::{BuildHasherDefault, HasherBuilder},
+        time::{self, Duration, Instant},
+    },
 };
 
-use crate::db_vector::PanicCauset;
-use crate::lightlike_persistence::PanicLightlikePersistence;
-use crate::write_alexandro::PanicWriteBatch;
+pub const DEFAULT_MAX_TXN_WRITE_SIZE: usize = 1024 * 1024 * 1024;
+pub const DEFAULT_MAX_TXN_READ_SIZE: usize = 1024 * 1024 * 1024;
+pub const DEFAULT_MAX_TXN_SIZE: usize = 1024 * 1024 * 1024;
+pub const DEFAULT_MAX_TXN_WRITE_COUNT: usize = 1024 * 1024;
+pub const DEFAULT_MAX_TXN_READ_COUNT: usize = 1024 * 1024;
+pub const DEFAULT_MAX_TXN_COUNT: usize = 1024 * 1024;
+pub const DEFAULT_MAX_TXN_TIMEOUT: u64 = 60;
+pub const DEFAULT_MAX_READ_LOCK_TIME: u64 = 60;
+pub const DEFAULT_MAX_WRITE_LOCK_TIME: u64 = 60;
+pub const DEFAULT_MAX_LOCK_EXPIRE_TIME: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_TIMEOUT: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_TIMEOUT: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF_JITTER: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF_JITTER: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF_FACTOR: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF_FACTOR: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF_MAX: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF_MAX: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF_MIN: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF_MIN: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF_RESET: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF_RESET: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF_RESET_JITTER: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF_RESET_JITTER: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF_RESET_FACTOR: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF_RESET_FACTOR: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF_RESET_MAX: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF_RESET_MAX: u64 = 60;
+pub const DEFAULT_MAX_TXN_PROPOSAL_BACKOFF_RESET_MIN: u64 = 60;
+pub const DEFAULT_MAX_TXN_APPLY_BACKOFF_RESET_MIN: u64 = 60;
 
-#[derive(Clone, Debug)]
-pub struct Paniceinstein_merkle_tree;
 
-impl KV for Paniceinstein_merkle_tree {
-    type LightlikePersistence = PanicLightlikePersistence;
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TxnStatus {
+    Pending,
+    Committed,
+    RolledBack,
 
-    fn lightlike_persistence(&self) -> Self::LightlikePersistence {
-        panic!()
-    }
-    fn sync(&self) -> Result<()> {
-        panic!()
-    }
-    fn bad_downcast<T: 'static>(&self) -> &T {
-        panic!()
-    }
 }
 
-impl Peekable for Paniceinstein_merkle_tree {
-    type Causet = PanicCauset;
 
-    fn get_causet_locale_opt(&self, opts: &ReadOptions, soliton_id: &[u8]) -> Result<Option<Self::Causet>> {
-        panic!()
-    }
-    fn get_causet_locale_namespaced_opt(
-        &self,
-        opts: &ReadOptions,
-        namespaced: &str,
-        soliton_id: &[u8],
-    ) -> Result<Option<Self::Causet>> {
-        panic!()
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum LockType {
+    Read,
+    Write,
 }
 
-impl SyncMutable for Paniceinstein_merkle_tree {
-    fn put(&self, soliton_id: &[u8], causet_locale: &[u8]) -> Result<()> {
-        panic!()
-    }
-    fn put_namespaced(&self, namespaced: &str, soliton_id: &[u8], causet_locale: &[u8]) -> Result<()> {
-        panic!()
-    }
 
-    fn delete(&self, soliton_id: &[u8]) -> Result<()> {
-        panic!()
-    }
-    fn delete_namespaced(&self, namespaced: &str, soliton_id: &[u8]) -> Result<()> {
-        panic!()
-    }
-    fn delete_range(&self, begin_soliton_id: &[u8], end_soliton_id: &[u8]) -> Result<()> {
-        panic!()
-    }
-    fn delete_range_namespaced(&self, namespaced: &str, begin_soliton_id: &[u8], end_soliton_id: &[u8]) -> Result<()> {
-        panic!()
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum LockStatus {
+    Acquired,
+    Pending,
+    Released,
 }
 
-impl Iterable for Paniceinstein_merkle_tree {
-    type Iterator = Paniceinstein_merkle_treeIterator;
 
-    fn iterator_opt(&self, opts: IterOptions) -> Result<Self::Iterator> {
-        panic!()
-    }
-    fn iterator_namespaced_opt(&self, namespaced: &str, opts: IterOptions) -> Result<Self::Iterator> {
-        panic!()
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum LockMode {
+    Pessimistic,
+    Optimistic,
 }
 
-pub struct Paniceinstein_merkle_treeIterator;
 
-impl Iterator for Paniceinstein_merkle_treeIterator {
-    fn seek(&mut self, soliton_id: SeekKey<'_>) -> Result<bool> {
-        panic!()
-    }
-    fn seek_for_prev(&mut self, soliton_id: SeekKey<'_>) -> Result<bool> {
-        panic!()
-    }
-
-    fn prev(&mut self) -> Result<bool> {
-        panic!()
-    }
-    fn next(&mut self) -> Result<bool> {
-        panic!()
-    }
-
-    fn soliton_id(&self) -> &[u8] {
-        panic!()
-    }
-    fn causet_locale(&self) -> &[u8] {
-        panic!()
-    }
-
-    fn valid(&self) -> Result<bool> {
-        panic!()
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum LockTtl {
+    Forever,
+    Timestamp,
 }
+
+//lockfree
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum LockFree {
+    Yes,
+    No,
+}
+
+//foundationdb
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FoundationDb {
+    Yes,
+    No,
+}
+
+//leveldb
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum LevelDb {
+    Yes,
+    No,
+}
+
+//sqlite
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Sqlite {
+    Yes,
+    No,
+}
+
+//innodb
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum InnoDb {
+    Yes,
+    No,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TxnExtra {
+    FoundationDb(FoundationDb),
+    LevelDb(LevelDb),
+    Sqlite(Sqlite),
+    InnoDb(InnoDb),
+    LockFree(LockFree),
+
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TxnEntry {
+    Pending,
+    Committed,
+    RolledBack,
+}
+
+
