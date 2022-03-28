@@ -23,8 +23,8 @@
 //!
 //! The einstein_merkle_tree for each module is chosen at compile time with feature flags:
 //!
-//! - `--features test-einstein_merkle_tree-kv-foundationdb`
-//! - `--features test-einstein_merkle_tree-violetabft-foundationdb`
+//! - `--features test-einstein_merkle_tree-kv-foundation`
+//! - `--features test-einstein_merkle_tree-violetabft-foundation`
 //! - `--features test-einstein_merkle_tree-kv-panic`
 //! - `--features test-einstein_merkle_tree-violetabft-panic`
 //!
