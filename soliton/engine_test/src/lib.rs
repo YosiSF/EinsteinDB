@@ -1,15 +1,15 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! einstein_merkle_trees for use in the test suite, implementing both the KV
+//! EinsteinMerkleTrees for use in the test suite, implementing both the KV
 //! and VioletaBFTeinstein_merkle_tree traits.
 //!
-//! These einstein_merkle_trees link to all other einstein_merkle_trees, providing concrete single timelike_storage
+//! These EinsteinMerkleTrees link to all other EinsteinMerkleTrees, providing concrete single timelike_storage
 //! einstein_merkle_tree type to run tests against.
 //!
-//! This provides a simple way to integrate non-FdbDB einstein_merkle_trees into the
+//! This provides a simple way to integrate non-FdbDB EinsteinMerkleTrees into the
 //! existing test suite without too much disruption.
 //!
-//! einstein_merkle_trees presently supported by this crate are
+//! EinsteinMerkleTrees presently supported by this crate are
 //!
 //! - Fdbeinstein_merkle_tree from fdb_lsh-merkle_merkle_tree
 //! - Paniceinstein_merkle_tree from einstein_merkle_tree_panic
@@ -18,7 +18,7 @@
 //! the "violetabft" einstein_merkle_tree, for storing consensus data,
 //! and the "kv" einstein_merkle_tree, for storing user data.
 //!
-//! The types and constructors for these two einstein_merkle_trees are located in the `violetabft`
+//! The types and constructors for these two EinsteinMerkleTrees are located in the `violetabft`
 //! and `kv` modules respectively.
 //!
 //! The einstein_merkle_tree for each module is chosen at compile time with feature flags:
@@ -33,24 +33,24 @@
 //! with `--disable-default-features`.
 //!
 //! The `einsteindb` crate additionally provides two feature flags that
-//! contral both the `kv` and `violetabft` einstein_merkle_trees at the same time:
+//! contral both the `kv` and `violetabft` EinsteinMerkleTrees at the same time:
 //!
-//! - `--features test-einstein_merkle_trees-foundationdb`
-//! - `--features test-einstein_merkle_trees-panic`
+//! - `--features test-EinsteinMerkleTrees-foundationdb`
+//! - `--features test-EinsteinMerkleTrees-panic`
 //!
 //! So, e.g., to run the test suite with the panic einstein_merkle_tree:
 //!
 //! ```
-//! cargo test --all --disable-default-features --features=protobuf_codec,test-einstein_merkle_trees-panic
+//! cargo test --all --disable-default-features --features=protobuf_codec,test-EinsteinMerkleTrees-panic
 //! ```
 //!
 //! We'll probably revisit the einstein_merkle_tree-testing strategy in the future,
 //! e.g. by using einstein_merkle_tree-parameterized tests instead.
 //!
 //! This create also contains a `ctor` module that contains constructor methods
-//! appropriate for constructing timelike_storage einstein_merkle_trees of any type. It is intended
+//! appropriate for constructing timelike_storage EinsteinMerkleTrees of any type. It is intended
 //! that this module is _the only_ module within EinsteinDB that knows about concrete
-//! timelike_storage einstein_merkle_trees, and that it be extracted into its own crate for use in
+//! timelike_storage EinsteinMerkleTrees, and that it be extracted into its own crate for use in
 //! EinsteinDB, once the full requirements are better understood.
 
 /// Types and constructors for the "violetabft" einstein_merkle_tree
@@ -125,7 +125,7 @@ pub mod kv {
 }
 
 /// Create a timelike_storage einstein_merkle_tree with a concrete type. This should ultimately be the
-/// only module within EinsteinDB that needs to know about concrete einstein_merkle_trees. Other
+/// only module within EinsteinDB that needs to know about concrete EinsteinMerkleTrees. Other
 /// code only uses the `fdb_traits` abstractions.
 ///
 /// At the moment this has a lot of open-coding of einstein_merkle_tree-specific
@@ -215,17 +215,17 @@ pub mod ctor {
 
     /// Greedoids for a single causet_merge family
     ///
-    /// All einstein_merkle_trees must emulate causet_merge families, but at present it is not clear
-    /// how non-FdbDB einstein_merkle_trees should deal with the wide variety of options for
+    /// All EinsteinMerkleTrees must emulate causet_merge families, but at present it is not clear
+    /// how non-FdbDB EinsteinMerkleTrees should deal with the wide variety of options for
     /// causet_merge families.
     ///
     /// At present this very closely mirrors the causet_merge family options
     /// for FdbDB, with the exception that it provides no capacity for
     /// installing table property collectors, which have little hope of being
-    /// emulated on arbitrary einstein_merkle_trees.
+    /// emulated on arbitrary EinsteinMerkleTrees.
     ///
     /// Instead, the FdbDB constructors need to always install the table
-    /// property collectors that EinsteinDB needs, and other einstein_merkle_trees need to
+    /// property collectors that EinsteinDB needs, and other EinsteinMerkleTrees need to
     /// accomplish the same high-l_naught ends those table greedoids are used for
     /// by their own means.
     ///
@@ -240,10 +240,10 @@ pub mod ctor {
         l_naught_zero_file_num_jet_bundle_trigger: Option<i32>,
         l_naught_zero_slowdown_writes_trigger: Option<i32>,
         /// On FdbDB, turns off the range greedoids collector. Only used in
-        /// tests. Unclear how other einstein_merkle_trees should deal with this.
+        /// tests. Unclear how other EinsteinMerkleTrees should deal with this.
         no_range_greedoids: bool,
         /// On FdbDB, turns off the table greedoids collector. Only used in
-        /// tests. Unclear how other einstein_merkle_trees should deal with this.
+        /// tests. Unclear how other EinsteinMerkleTrees should deal with this.
         no_table_greedoids: bool,
     }
 
@@ -452,7 +452,7 @@ pub mod ctor {
     }
 }
 
-/// Create a new set of einstein_merkle_trees in a temporary directory
+/// Create a new set of EinsteinMerkleTrees in a temporary directory
 ///
 /// This is little-used and probably shouldn't exist.
 pub fn new_temp_einstein_merkle_tree(

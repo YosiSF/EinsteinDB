@@ -1,6 +1,6 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-//! Iteration over einstein_merkle_trees and lightlike_persistences.
+//! Iteration over EinsteinMerkleTrees and lightlike_persistences.
 //!
 //! For the purpose of soliton_id/causet_locale iteration, EinsteinDB defines its own `Iterator`
 //! trait, and `Iterable` types that can create iterators.

@@ -1,7 +1,7 @@
 [package]
 name = "einsteindb_util_fuse"
 version = "0.0.1"
-description = "A single einstein_merkle_tree that masquerades as all other einstein_merkle_trees, for testing"
+description = "A single einstein_merkle_tree that masquerades as all other EinsteinMerkleTrees, for testing"
 edition = "2018"
 publish = false
 
@@ -13,13 +13,13 @@ test-einstein_merkle_tree-kv-foundationdb = []
 test-einstein_merkle_tree-violetabft-panic = []
 test-einstein_merkle_tree-violetabft-foundationdb = []
 
-test-einstein_merkle_trees-foundationdb = [
-  "test-einstein_merkle_tree-kv-foundationdb",
-  "test-einstein_merkle_tree-violetabft-foundationdb",
+test-EinsteinMerkleTrees-foundationdb = [
+    "test-einstein_merkle_tree-kv-foundationdb",
+    "test-einstein_merkle_tree-violetabft-foundationdb",
 ]
-test-einstein_merkle_trees-panic = [
-  "test-einstein_merkle_tree-kv-panic",
-  "test-einstein_merkle_tree-violetabft-panic",
+test-EinsteinMerkleTrees-panic = [
+    "test-einstein_merkle_tree-kv-panic",
+    "test-einstein_merkle_tree-violetabft-panic",
 ]
 
 

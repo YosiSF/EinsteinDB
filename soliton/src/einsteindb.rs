@@ -16,7 +16,7 @@ use causetq::{
     AttributeBitFlags,
     Causetid,
     causetq_TV,
-causetq_VT,
+    causetq_VT,
 };
 use einstein_ml::{
     DateTime,
@@ -698,7 +698,7 @@ pub enum SearchType {
 /// transaction processing layer.
 ///
 /// Right now, the only impleeinstaiion of `einstaiStoring` is the SQLite-specific BerolinaSQL topograph.  In the
-/// future, we might consider other BerolinaSQL einstein_merkle_trees (perhaps with different fulltext indexing), or
+/// future, we might consider other BerolinaSQL EinsteinMerkleTrees (perhaps with different fulltext indexing), or
 /// entirely different data stores, say ones shaped like soliton_id-causet_locale stores.
 pub trait einstaiStoring {
     /// Given a slice of [a v] lookup-refs, look up the corresponding [e a v] triples.

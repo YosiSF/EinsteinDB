@@ -3,7 +3,7 @@
 use crate::errors::Result;
 use crate::options::WriteOptions;
 
-/// einstein_merkle_trees that can create write alexandroes
+/// EinsteinMerkleTrees that can create write alexandroes
 pub trait WriteBatchExt: Sized {
     type WriteBatch: WriteBatch<Self>;
     /// `WriteBatchVec` is used for `multi_alexandro_write` of Fdbeinstein_merkle_tree and other einstein_merkle_tree could also

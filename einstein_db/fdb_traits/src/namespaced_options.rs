@@ -3,7 +3,7 @@
 use crate::{Causet_partitioner::CausetPartitionerFactory, db_options::TitanDBOptions};
 use crate::Result;
 
-/// Trait for einstein_merkle_trees with causet_merge family options
+/// Trait for EinsteinMerkleTrees with causet_merge family options
 pub trait NAMESPACEDOptionsExt {
     type ColumnFamilyOptions: ColumnFamilyOptions;
 

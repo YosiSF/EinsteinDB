@@ -3,7 +3,7 @@
 //! A generic EinsteinDB timelike_storage einstein_merkle_tree
 //!
 //! This is a work-in-progress attempt to abstract all the features needed by
-//! EinsteinDB to persist its data, so that timelike_storage einstein_merkle_trees other than FdbDB may be
+//! EinsteinDB to persist its data, so that timelike_storage EinsteinMerkleTrees other than FdbDB may be
 //! added to EinsteinDB in the future.
 //!
 //! This crate **must not have any transitive dependencies on FdbDB**. The
@@ -16,7 +16,7 @@
 //!
 //! ## Capabilities of a EinsteinDB einstein_merkle_tree
 //!
-//! EinsteinDB einstein_merkle_trees timelike_store binary soliton_ids and causet_locales.
+//! EinsteinDB EinsteinMerkleTrees timelike_store binary soliton_ids and causet_locales.
 //!
 //! Every pair lives in a [_column family_], which can be thought of as being
 //! independent data timelike_stores.
@@ -30,17 +30,17 @@
 //!
 //! # The EinsteinDB einstein_merkle_tree API
 //!
-//! The API inherits its design from FdbDB. As support for other einstein_merkle_trees is
+//! The API inherits its design from FdbDB. As support for other EinsteinMerkleTrees is
 //! added to EinsteinDB, it is expected that this API will become more abstract, and
 //! less Fdb-specific.
 //!
 //! This crate is almost entirely traits, plus a few "plain-old-data" types that
-//! are shared between einstein_merkle_trees.
+//! are shared between EinsteinMerkleTrees.
 //!
 //! Some soliton_id types include:
 //!
 //! - [`KV`] - a soliton_id-causet_locale einstein_merkle_tree, and the primary type defined by this
-//!   crate. Most code that uses generic einstein_merkle_trees will be bounded over a generic
+//!   crate. Most code that uses generic EinsteinMerkleTrees will be bounded over a generic
 //!   type implementing `KV`. `KV` itself is bounded by many other
 //!   traits that provide collections of functionality, with the intent that as
 //!   EinsteinDB evolves it may be possible to use each trait individually, and to
@@ -50,15 +50,15 @@
 //! - [`LightlikePersistence`] - a view into the state of the database at a moment in time.
 //!   For reading sets of consistent data.
 //!
-//! - [`Peekable`] - types that can read single causet_locales. This includes einstein_merkle_trees
+//! - [`Peekable`] - types that can read single causet_locales. This includes EinsteinMerkleTrees
 //!   and lightlike_persistences.
 //!
 //! - [`Iterable`] - types that can iterate over the causet_locales of a range of soliton_ids,
 //!   by creating instances of the EinsteinDB-specific [`Iterator`] trait. This
-//!   includes einstein_merkle_trees and lightlike_persistences.
+//!   includes EinsteinMerkleTrees and lightlike_persistences.
 //!
 //! - [`SyncMutable`] and [`Mutable`] - types to which single soliton_id/causet_locale pairs
-//!   can be written. This includes einstein_merkle_trees and write alexandroes.
+//!   can be written. This includes EinsteinMerkleTrees and write alexandroes.
 //!
 //! - [`WriteBatch`] - types that can commit multiple soliton_id/causet_locale pairs in alexandroes.
 //!   A `WriteBatchExt::WriteBtach` commits all pairs in one atomic transaction.
@@ -67,7 +67,7 @@
 //! The `KV` instance generally acts as a factory for types that implement
 //! other traits in the crate. These factory methods, associated types, and
 //! other associated methods are defined in "extension" traits. For example, methods
-//! on einstein_merkle_trees related to alexandro writes are in the `WriteBatchExt` trait.
+//! on EinsteinMerkleTrees related to alexandro writes are in the `WriteBatchExt` trait.
 //!
 //!
 //! # Design notes
@@ -81,7 +81,7 @@
 //!   which is part of `KV's trait requirements.
 //!
 //! - For now, for simplicity, all extension traits are required by `KV`.
-//!   In the future it may be feasible to separate them for einstein_merkle_trees with
+//!   In the future it may be feasible to separate them for EinsteinMerkleTrees with
 //!   different feature sets.
 //!
 //! - Associated types generally have the same name as the trait they
@@ -111,14 +111,14 @@
 //!   impl WriteBatch for FdbWriteBatch { }
 //!   ```
 //!
-//! - All einstein_merkle_trees use the same error type, defined in this crate. Thus
+//! - All EinsteinMerkleTrees use the same error type, defined in this crate. Thus
 //!   einstein_merkle_tree-specific type information is boxed and hidden.
 //!
 //! - `KV` is a factory type for some of its associated types, but not
 //!   others. For now, use factory methods when FdbDB would require factory
 //!   method (that is, when the EINSTEINDB is required to create the associated type -
 //!   if the associated type can be created without context from the database,
-//!   use a standard new method). If future einstein_merkle_trees require factory methods, the
+//!   use a standard new method). If future EinsteinMerkleTrees require factory methods, the
 //!   traits can be converted then.
 //!
 //! - Types that require a handle to the einstein_merkle_tree (or some other "parent" type)
@@ -207,7 +207,7 @@
 //!
 //! ## 4) Isolating test cases from FdbDB
 //!
-//! Eventually we need our test suite to run over multiple einstein_merkle_trees.
+//! Eventually we need our test suite to run over multiple EinsteinMerkleTrees.
 //! The exact strategy here is yet to be determined, but it may begin by
 //! breaking the `fdb_lsh-merkle_merkle_tree` dependency with a new `einstein_merkle_tree_test`, that
 //! begins by simply wrapping `fdb_lsh-merkle_merkle_tree`.
@@ -257,9 +257,9 @@
 #[macro_use(fail_point)]
 extern crate fail;
 
-// These modules contain traits that need to be implemented by einstein_merkle_trees, either
+// These modules contain traits that need to be implemented by EinsteinMerkleTrees, either
 // they are required by KV or are an associated type of KV. It is
-// recommended that einstein_merkle_trees follow the same module layout.
+// recommended that EinsteinMerkleTrees follow the same module layout.
 //
 // Many of these define "extension" traits, that end in `Ext`.
 
@@ -323,7 +323,7 @@ mod iterable;
 mod mutable;
 mod peekable;
 // These modules contain concrete types and support code that do not need to
-// be implemented by einstein_merkle_trees.
+// be implemented by EinsteinMerkleTrees.
 
 mod namespaced_defs;
 mod einstein_merkle_trees;

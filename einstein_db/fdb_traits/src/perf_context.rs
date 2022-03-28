@@ -30,7 +30,7 @@ numeric_enum_serializing_mod! {perf_l_naught_serde PerfLevel {
 ///
 /// In foundationdb, `PerfContext` uses global state, and does not require
 /// access through an einstein_merkle_tree. Thus perf data is not per-einstein_merkle_tree.
-/// This doesn't seem like a reasonable assumption for einstein_merkle_trees generally,
+/// This doesn't seem like a reasonable assumption for EinsteinMerkleTrees generally,
 /// so this abstraction follows the existing pattern in this crate and
 /// requires `PerfContext` to be accessed through the einstein_merkle_tree.
 pub trait PerfContextExt {
@@ -51,7 +51,7 @@ pub enum PerfContextKind {
 
 /// Reports metrics to prometheus
 ///
-/// For alternate einstein_merkle_trees, it is reasonable to make `start_observe`
+/// For alternate EinsteinMerkleTrees, it is reasonable to make `start_observe`
 /// and `report_metrics` no-ops.
 pub trait PerfContext: Send {
     /// Reinitializes statistics and the perf l_naught

@@ -12,7 +12,7 @@ pub use self::range::*;
 
 mod range;
 pub mod ranges_iter;
-pub mod mutant_searchner;
+pub mod mutant_search;
 pub mod test_fixture;
 
 pub type Result<T> = std::result::Result<T, crate::error::StorageError>;

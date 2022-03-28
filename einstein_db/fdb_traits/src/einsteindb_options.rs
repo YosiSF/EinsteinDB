@@ -2,7 +2,7 @@
 
 use crate::errors::Result;
 
-/// A trait for einstein_merkle_trees that support setting global options
+/// A trait for EinsteinMerkleTrees that support setting global options
 pub trait DBOptionsExt {
     type DBOptions: DBOptions;
 

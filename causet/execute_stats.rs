@@ -113,34 +113,52 @@ pub struct WithSummaryCollector<C: ExecSummaryCollector, T> {
     pub inner: T,
 }
 
-/// Execution statistics to be Causetxctxed between parent and child executors at once during
+
 /// `collect_exec_stats()` invocation.
 pub struct ExecuteStats {
     /// The execution summary of each executor. If execution summary is not needed, it will
     /// be zero sized.
     pub summary_per_executor: Vec<ExecSummary>,
 
-    /// For each range given in the request, how many rows are mutant_searchned.
-    pub mutant_searchned_rows_per_range: Vec<usize>,
-}
-
-impl ExecuteStats {
-    /// Creates a new statistics instance.
+    /// For each range given in the request, how many rows are mutant_search_key_ranges[i] produces.
+    /// If the range is not mutated, it will be zero.
+    /// The length of this vector is the same as `mutant_search_key_ranges`.
     ///
-    /// If execution summary does not need to be collected, it is safe to pass 0 to the `executors`
-    /// argument, which will avoid one allocation.
-    pub fn new(executors_len: usize) -> Self {
-        Self {
-            summary_per_executor: vec![ExecSummary::default(); executors_len],
-            mutant_searchned_rows_per_range: Vec::new(),
-        }
-    }
+    pub mutant_searches_rows_per_range: Vec<usize>,
 
-    /// Clears the statistics instance.
-    pub fn clear(&mut self) {
-        for item in self.summary_per_executor.iter_mut() {
-            *item = ExecSummary::default();
-        }
-        self.mutant_searchned_rows_per_range.clear();
-    }
+    /// The total number of rows produced by all the mutant_search_key_ranges.
+    ///
+    ///     sum(mutant_searches_rows_per_range)
+    ///
+    ///     = sum(mutant_search_key_ranges.len())
+    ///
+    ///         if mutant_search_key_ranges.len() > 0
+    ///
+    ///         else
+    ///
+    ///        0
+    ///
+    ///
+    //
+
+    pub mutant_searches_total_rows: usize,
+
+    /// The total number of rows produced by all the executors.
+    ///
+    ///    sum(executor_summary.num_produced_rows)
+    ///
+    ///
+    ///
+    ///    if executor_summary.num_produced_rows > 0
+    ///     else
+    ///     0
+    ///     else
+    ///    0
+    ///
+    ///
+    ///
+    ///
+    ///
+    ///
 }
+
