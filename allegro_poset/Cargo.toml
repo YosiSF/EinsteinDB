@@ -7,6 +7,7 @@ edition = "2021"
 [lib]
 name = "allegro_poset"
 path = "lib.rs"
+crate-type = ["cdylib"]
 
 
 [dependencies]
@@ -14,6 +15,7 @@ chrono = {version = "0.4.19", features=["serde"] }
 enum-set = "0.0.8"
 lazy_static = "1.4.0"
 indexmap = "1.8.0"
+serde = {version = "1.0.99", features=["derive"] }
 uuid = "0.8.2"
 
 [dependencies.ordered-float]

@@ -410,7 +410,7 @@ impl Sentinel {
             Some(rts) => rts,
             None => return None,
         };
-        debug!("resolved ts uFIDelated";
+        debug!("resolved ts FIDeliod";
             "region_id" => self.region_id, "resolved_ts" => resolved_ts);
         let mut change_data_event = Event::default();
         change_data_event.region_id = self.region_id;
@@ -721,7 +721,7 @@ fn decode_lock(soliton_id: Vec<u8>, causet_locale: &[u8], event: &mut EventRow) 
                 "type" => ?other,
                 "start_ts" => ?lock.ts,
                 "soliton_id" => hex::encode_upper(soliton_id),
-                "for_uFIDelate_ts" => ?lock.for_uFIDelate_ts);
+                "for_FIDelio_ts" => ?lock.for_FIDelio_ts);
             return true;
         }
     };
@@ -935,7 +935,7 @@ mod tests {
                     .start_ts(1.into())
                     .commit_ts(0.into())
                     .primary(&[])
-                    .for_uFIDelate_ts(0.into())
+                    .for_FIDelio_ts(0.into())
                     .build_prewrite(LockType::Put, false),
             ),
             Some(
@@ -945,7 +945,7 @@ mod tests {
                     .start_ts(1.into())
                     .commit_ts(2.into())
                     .primary(&[])
-                    .for_uFIDelate_ts(0.into())
+                    .for_FIDelio_ts(0.into())
                     .build_commit(WriteType::Put, false),
             ),
             Some(
@@ -955,7 +955,7 @@ mod tests {
                     .start_ts(3.into())
                     .commit_ts(0.into())
                     .primary(&[])
-                    .for_uFIDelate_ts(0.into())
+                    .for_FIDelio_ts(0.into())
                     .build_rollback(),
             ),
             None,

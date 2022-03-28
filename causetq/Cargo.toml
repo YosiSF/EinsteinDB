@@ -12,7 +12,7 @@ path = "../causet"
 path = "../berolinasql"
 
 [dependencies.EinsteinDB]
-path = "../EinsteinDB"
+path = "../edb-crate"
 
 
 [dependencies.serde]
@@ -34,10 +34,6 @@ features = ["derive"]
 version = "0.8.23"
 features = ["derive"]
 
-
-[dependencies.serde_urlencoded]
-version = "0.7.1"
-features = ["derive"]
 
 
 

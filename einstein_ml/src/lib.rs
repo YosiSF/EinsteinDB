@@ -48,7 +48,7 @@ mod isolated_namespace;
 pub mod query;
 pub mod shellings;
 pub mod types;
-pub mod pretty_print;
+pub mod einstein_ml_stdout;
 pub mod utils;
 pub mod matcher;
 

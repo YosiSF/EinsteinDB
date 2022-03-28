@@ -9,13 +9,13 @@ file = { local_path = "../file", default-features = false }
 protobuf = "2"
 thiserror = "1.0"
 serde = "1.0"
-slog = { version = "2.3", features = ["max_l_naught_trace", "release_max_l_naught_debug"] }
+slog = "2.7.0 + nightly"
 slog-global = { version = "0.1", git = "https://github.com/breeswish/slog-global.git", rev = "d592f88e4dbba5eb439998463054f1a44fbf17b9" }
+
+
 
 [dependencies.fail]
 version = "0.5"
-
-
 
 [dev-dependencies]
 toml = "0.5"

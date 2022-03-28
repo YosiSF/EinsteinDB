@@ -37,8 +37,8 @@ bitflags! {
         const PAD_CHAR_TO_FULL_LENGTH = 1 << 2;
         /// `IN_INSERT_STMT` indicates if this is a INSERT statement.
         const IN_INSERT_STMT = 1 << 3;
-        /// `IN_UFIDelATE_OR_DELETE_STMT` indicates if this is a UFIDelATE statement or a DELETE statement.
-        const IN_UFIDelATE_OR_DELETE_STMT = 1 << 4;
+        /// `IN_FIDelio_OR_DELETE_STMT` indicates if this is a FIDelio statement or a DELETE statement.
+        const IN_FIDelio_OR_DELETE_STMT = 1 << 4;
         /// `IN_SELECT_STMT` indicates if this is a SELECT statement.
         const IN_SELECT_STMT = 1 << 5;
         /// `OVERCausetxctx_AS_WARNING` indicates if overCausetxctx error should be returned as warning.
@@ -252,7 +252,7 @@ impl EvalContext {
 
     pub fn handle_division_by_zero(&mut self) -> Result<()> {
         if self.braneg.flag.contains(Flag::IN_INSERT_STMT)
-            || self.braneg.flag.contains(Flag::IN_UFIDelATE_OR_DELETE_STMT)
+            || self.braneg.flag.contains(Flag::IN_FIDelio_OR_DELETE_STMT)
         {
             if !self
                 .braneg
@@ -277,7 +277,7 @@ impl EvalContext {
 
         if self.braneg.BerolinaSQL_mode.is_strict()
             && (self.braneg.flag.contains(Flag::IN_INSERT_STMT)
-                || self.braneg.flag.contains(Flag::IN_UFIDelATE_OR_DELETE_STMT))
+            || self.braneg.flag.contains(Flag::IN_FIDelio_OR_DELETE_STMT))
         {
             return Err(err);
         }
@@ -314,7 +314,7 @@ impl EvalContext {
     }
 
     /// Indicates whether causet_locales less than 0 should be clipped to 0 for unsigned
-    /// integer types. This is the case for `insert`, `uFIDelate`, `alter table` and
+    /// integer types. This is the case for `insert`, `FIDelio`, `alter table` and
     /// `load data infilef` statements, when not in strict BerolinaSQL mode.
     /// see https://dev.myBerolinaSQL.com/doc/refman/5.7/en/out-of-range-and-overCausetxctx.html
     pub fn should_clip_to_zero(&self) -> bool {
@@ -377,25 +377,25 @@ mod tests {
                 false,
             ), //warning
             (
-                Flag::IN_UFIDelATE_OR_DELETE_STMT,
+                Flag::IN_FIDelio_OR_DELETE_STMT,
                 BerolinaSQLMode::ERROR_FOR_DIVISION_BY_ZERO,
                 true,
                 false,
             ), //warning
             (
-                Flag::IN_UFIDelATE_OR_DELETE_STMT,
+                Flag::IN_FIDelio_OR_DELETE_STMT,
                 BerolinaSQLMode::ERROR_FOR_DIVISION_BY_ZERO | BerolinaSQLMode::STRICT_ALL_TABLES,
                 false,
                 true,
             ), //error
             (
-                Flag::IN_UFIDelATE_OR_DELETE_STMT,
+                Flag::IN_FIDelio_OR_DELETE_STMT,
                 BerolinaSQLMode::STRICT_ALL_TABLES,
                 true,
                 true,
             ), //ok
             (
-                Flag::IN_UFIDelATE_OR_DELETE_STMT | Flag::DIVIDED_BY_ZERO_AS_WARNING,
+                Flag::IN_FIDelio_OR_DELETE_STMT | Flag::DIVIDED_BY_ZERO_AS_WARNING,
                 BerolinaSQLMode::ERROR_FOR_DIVISION_BY_ZERO | BerolinaSQLMode::STRICT_ALL_TABLES,
                 true,
                 false,
@@ -417,8 +417,8 @@ mod tests {
             (Flag::empty(), false, true, false),        //warning
             (Flag::empty(), true, true, false),         //warning
             (Flag::IN_INSERT_STMT, false, true, false), //warning
-            (Flag::IN_UFIDelATE_OR_DELETE_STMT, false, true, false), //warning
-            (Flag::IN_UFIDelATE_OR_DELETE_STMT, true, false, true), //error
+            (Flag::IN_FIDelio_OR_DELETE_STMT, false, true, false), //warning
+            (Flag::IN_FIDelio_OR_DELETE_STMT, true, false, true), //error
             (Flag::IN_INSERT_STMT, true, false, true),  //error
         ];
         for (flag, strict_BerolinaSQL_mode, is_ok, is_empty) in cases {

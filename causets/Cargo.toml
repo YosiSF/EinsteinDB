@@ -3,3 +3,11 @@ name = "causets"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+causetq = { path = "../causetq" }
+causet = { path = "../causet" }
+einsteindb = { path = "../einstein_db" }
+berolinasql = { path = "../berolina_sql" }
+soliton = { path = "../soliton" }
+
+

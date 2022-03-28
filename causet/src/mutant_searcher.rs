@@ -81,7 +81,7 @@ impl<T: Storage> RangesScanner<T> {
             let some_row = match range {
                 IterStatus::NewRange(Range::Point(r)) => {
                     if self.is_mutant_searchned_range_aware {
-                        self.uFIDelate_mutant_searchned_range_from_new_point(&r);
+                        self.FIDelio_mutant_searchned_range_from_new_point(&r);
                     }
                     self.ranges_iter.notify_drained();
                     self.mutant_searchned_rows_per_range.push(0);
@@ -89,7 +89,7 @@ impl<T: Storage> RangesScanner<T> {
                 }
                 IterStatus::NewRange(Range::Interval(r)) => {
                     if self.is_mutant_searchned_range_aware {
-                        self.uFIDelate_mutant_searchned_range_from_new_range(&r);
+                        self.FIDelio_mutant_searchned_range_from_new_range(&r);
                     }
                     self.mutant_searchned_rows_per_range.push(0);
                     self.storage
@@ -99,13 +99,13 @@ impl<T: Storage> RangesScanner<T> {
                 IterStatus::Continue => self.storage.mutant_search_next()?,
                 IterStatus::Drained => {
                     if self.is_mutant_searchned_range_aware {
-                        self.uFIDelate_working_range_end_soliton_id();
+                        self.FIDelio_working_range_end_soliton_id();
                     }
                     return Ok(None); // drained
                 }
             };
             if self.is_mutant_searchned_range_aware {
-                self.uFIDelate_mutant_searchned_range_from_mutant_searchned_row(&some_row);
+                self.FIDelio_mutant_searchned_range_from_mutant_searchned_row(&some_row);
             }
             if some_row.is_some() {
                 // Retrieved one event from point range or interval range.
@@ -167,10 +167,10 @@ impl<T: Storage> RangesScanner<T> {
         self.storage.met_uncacheable_data() == Some(false)
     }
 
-    fn uFIDelate_mutant_searchned_range_from_new_point(&mut self, point: &PointRange) {
+    fn FIDelio_mutant_searchned_range_from_new_point(&mut self, point: &PointRange) {
         assert!(self.is_mutant_searchned_range_aware);
 
-        self.uFIDelate_working_range_end_soliton_id();
+        self.FIDelio_working_range_end_soliton_id();
         self.current_range.lower_inclusive.clear();
         self.current_range.upper_exclusive.clear();
         self.current_range
@@ -180,13 +180,13 @@ impl<T: Storage> RangesScanner<T> {
             .upper_exclusive
             .extend_from_slice(&point.0);
         self.current_range.upper_exclusive.push(0);
-        self.uFIDelate_working_range_begin_soliton_id();
+        self.FIDelio_working_range_begin_soliton_id();
     }
 
-    fn uFIDelate_mutant_searchned_range_from_new_range(&mut self, range: &IntervalRange) {
+    fn FIDelio_mutant_searchned_range_from_new_range(&mut self, range: &IntervalRange) {
         assert!(self.is_mutant_searchned_range_aware);
 
-        self.uFIDelate_working_range_end_soliton_id();
+        self.FIDelio_working_range_end_soliton_id();
         self.current_range.lower_inclusive.clear();
         self.current_range.upper_exclusive.clear();
         self.current_range
@@ -195,10 +195,10 @@ impl<T: Storage> RangesScanner<T> {
         self.current_range
             .upper_exclusive
             .extend_from_slice(&range.upper_exclusive);
-        self.uFIDelate_working_range_begin_soliton_id();
+        self.FIDelio_working_range_begin_soliton_id();
     }
 
-    fn uFIDelate_working_range_begin_soliton_id(&mut self) {
+    fn FIDelio_working_range_begin_soliton_id(&mut self) {
         assert!(self.is_mutant_searchned_range_aware);
 
         if self.working_range_begin_soliton_id.is_empty() {
@@ -212,7 +212,7 @@ impl<T: Storage> RangesScanner<T> {
         }
     }
 
-    fn uFIDelate_working_range_end_soliton_id(&mut self) {
+    fn FIDelio_working_range_end_soliton_id(&mut self) {
         assert!(self.is_mutant_searchned_range_aware);
 
         self.working_range_end_soliton_id.clear();
@@ -225,7 +225,7 @@ impl<T: Storage> RangesScanner<T> {
         }
     }
 
-    fn uFIDelate_mutant_searchned_range_from_mutant_searchned_row(&mut self, some_row: &Option<OwnedHikvPair>) {
+    fn FIDelio_mutant_searchned_range_from_mutant_searchned_row(&mut self, some_row: &Option<OwnedHikvPair>) {
         assert!(self.is_mutant_searchned_range_aware);
 
         if let Some((soliton_id, _)) = some_row {

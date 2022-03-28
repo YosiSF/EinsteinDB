@@ -17,6 +17,12 @@ use crate::codec::collation::{Collator, match_template_collator};
 
 use super::*;
 
+#[derive(Debug, Clone)]
+pub struct ScalarValueClone<T: Clone> {
+    pub value: Option<ScalarValueRef>,
+    pub field_type: FieldType,
+}
+
 /// A scalar causet_locale container, a.k.a. datum, for all concrete eval types.
 ///
 /// In many cases, for example, at the framework level, the concrete eval type is unknown at compile
@@ -39,9 +45,196 @@ pub enum ScalarValue {
     DateTime(Option<super::DateTime>),
     Duration(Option<super::Duration>),
     Json(Option<super::Json>),
+    Enum(Option<super::Enum>),
+    Set(Option<super::Set>),
+    //PostgresQL
+    Bit(Option<super::Bit>),
+    //PostgresQL
+    Uuid(Option<super::Uuid>),
+    //PostgresQL
+    Inet(Option<super::Inet>),
+    //PostgresQL
+    Time(Option<super::Time>),
+    //PostgresQL
+    TimeStamp(Option<super::TimeStamp>),
+    //PostgresQL
+    TimeStampTz(Option<super::TimeStampTz>),
+    //PostgresQL
+    Interval(Option<super::Interval>),
+    //PostgresQL
+    Null,
+    //PostgresQL
+    Jsonb(Option<super::Jsonb>),
+    //SQLite
+    Blob(Option<super::Blob>),
+    //SQLite
+    Text(Option<super::Text>),
+    //SQLite
+    Nullable(Option<ScalarValue>),
+    //RocksDB
+    Bool(Option<super::Bool>),
+    //RocksDB
+    Float(Option<super::Float>),
+    //RocksDB
+    Double(Option<super::Double>),
+    //RocksDB
+    FixedLenByteArray(Option<super::FixedLenByteArray>),
+    //RocksDB
+    VarLenByteArray(Option<super::VarLenByteArray>),
+    //RocksDB
+    TimeStampMicros(Option<super::TimeStampMicros>),
+    //RocksDB
+    TimeStampMillis(Option<super::TimeStampMillis>),
+    //RocksDB
+    TimeStampSeconds(Option<super::TimeStampSeconds>),
+    //RocksDB
+    TimeStampNanos(Option<super::TimeStampNanos>),
+    //RocksDB
+    DecimalVar(Option<super::DecimalVar>),
+    //RocksDB
+    DecimalFixed(Option<super::DecimalFixed>),
+    //RocksDB
+    DurationVar(Option<super::DurationVar>),
+    //Spanner
+    Int64(Option<super::Int64>),
+    //Spanner
+    Float64(Option<super::Float64>),
+    //Spanner
+    Date(Option<super::Date>),
+    //Spanner
 }
 
 impl ScalarValue {
+    pub fn new_int(v: Option<super::Int>) -> Self {
+        ScalarValue::Int(v)
+    }
+
+    pub fn new_real(v: Option<super::Real>) -> Self {
+        ScalarValue::Real(v)
+    }
+
+    pub fn new_decimal(v: Option<super::Decimal>) -> Self {
+        ScalarValue::Decimal(v)
+    }
+
+    pub fn new_bytes(v: Option<super::Bytes>) -> Self {
+        ScalarValue::Bytes(v)
+    }
+
+    pub fn new_date_time(v: Option<super::DateTime>) -> Self {
+        ScalarValue::DateTime(v)
+    }
+
+    pub fn new_duration(v: Option<super::Duration>) -> Self {
+        ScalarValue::Duration(v)
+    }
+
+    pub fn new_json(v: Option<super::Json>) -> Self {
+        ScalarValue::Json(v)
+    }
+
+    pub fn new_enum(v: Option<super::Enum>) -> Self {
+        ScalarValue::Enum(v)
+    }
+
+    pub fn new_set(v: Option<super::Set>) -> Self {
+        ScalarValue::Set(v)
+    }
+
+    pub fn new_bit(v: Option<super::Bit>) -> Self {
+        ScalarValue::Bit(v)
+    }
+
+    pub fn new_uuid(v: Option<super::Uuid>) -> Self {
+        ScalarValue::Uuid(v)
+    }
+
+    pub fn new_inet(v: Option<super::Inet>) -> Self {
+        ScalarValue::Inet(v)
+    }
+
+    pub fn new_time(v: Option<super::Time>) -> Self {
+        ScalarValue::Time(v)
+    }
+
+    pub fn new_time_stamp(v: Option<super::TimeStamp>) -> Self {
+        ScalarValue::TimeStamp(v)
+    }
+
+    pub fn new_time_stamp_tz(v: Option<super::TimeStampTz>) -> Self {
+        ScalarValue::TimeStampTz(v)
+    }
+
+    pub fn new_interval(v: Option<super::Interval>) -> Self {
+        ScalarValue::Interval(v)
+    }
+
+    pub fn new_null() -> Self {
+        ScalarValue::Null
+    }
+
+    pub fn new_jsonb(v: Option<super::Jsonb>) -> Self {
+        ScalarValue::Jsonb(v)
+    }
+
+    pub fn new_blob(v: Option<super::Blob>) -> Self {
+        ScalarValue::Blob(v)
+    }
+
+    pub fn new_text(v: Option<super::Text>) -> Self {
+        ScalarValue::Text(v)
+    }
+
+    pub fn new_nullable(v: Option<ScalarValue>) -> Self {
+        ScalarValue::Nullable(v)
+    }
+
+    pub fn new_bool(v: Option<super::Bool>) -> Self {
+        ScalarValue::Bool(v)
+    }
+
+    pub fn new_float(v: Option<super::Float>) -> Self {
+        ScalarValue::Float(v)
+    }
+
+    pub fn new_double(v: Option<super::Double>) -> Self {
+        ScalarValue::Double(v)
+    }
+
+    pub fn new_fixed_len_byte_array(v: Option<super::FixedLenByteArray>) -> Self {
+        ScalarValue::FixedLenByteArray(v)
+    }
+
+
+    pub fn new_var_len_byte_array(v: Option<super::VarLenByteArray>) -> Self {
+        ScalarValue::VarLenByteArray(v)
+    }
+
+    pub fn new_time_stamp_micros(v: Option<super::TimeStampMicros>) -> Self {
+        ScalarValue::TimeStampMicros(v)
+    }
+
+    pub fn new_time_stamp_millis(v: Option<super::TimeStampMillis>) -> Self {
+        ScalarValue::TimeStampMillis(v)
+    }
+
+    pub fn new_time_stamp_seconds(v: Option<super::TimeStampSeconds>) -> Self {
+        ScalarValue::TimeStampSeconds(v)
+    }
+
+    pub fn new_time_stamp_nanos(v: Option<super::TimeStampNanos>) -> Self {
+        ScalarValue::TimeStampNanos(v)
+    }
+
+    pub fn new_decimal_var(v: Option<super::DecimalVar>) -> Self {
+        ScalarValue::DecimalVar(v)
+    }
+
+    pub fn new_decimal_fixed(v: Option<super::DecimalFixed>) -> Self {
+        ScalarValue::DecimalFixed(v)
+    }
+
+
     #[inline]
     pub fn eval_type(&self) -> EvalType {
         match_template_evaluable! {
@@ -54,7 +247,7 @@ impl ScalarValue {
     #[inline]
     pub fn as_scalar_causet_locale_ref(&self) -> ScalarValueRef<'_> {
         match self {
-            ScalarValue::Int(x) => ScalarValueRef::Int(x.as_ref()),
+            ScalarValue::Int(v) => ScalarValueRef::Int(v),
             ScalarValue::Duration(x) => ScalarValueRef::Duration(x.as_ref()),
             ScalarValue::DateTime(x) => ScalarValueRef::DateTime(x.as_ref()),
             ScalarValue::Real(x) => ScalarValueRef::Real(x.as_ref()),
@@ -70,8 +263,8 @@ impl ScalarValue {
             TT, match self {
                 ScalarValue::TT(v) => v.is_none(),
             }
-        }
-    }
+
+
 
     #[inline]
     pub fn is_some(&self) -> bool {
@@ -83,18 +276,18 @@ impl ScalarValue {
     }
 }
 
-impl AsMyBerolinaSQLBool for ScalarValue {
-    #[inline]
-    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
-        match_template_evaluable! {
+        impl AsMyBerolinaSQLBool for ScalarValue {
+            #[inline]
+            fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
+                match_template_evaluable! {
             TT, match self {
                 ScalarValue::TT(v) => v.as_ref().as_myBerolinaSQL_bool(context),
             }
         }
-    }
-}
+            }
+        }
 
-macro_rules! impl_from {
+        macro_rules! impl_from {
     ($ty:tt) => {
         impl From<Option<$ty>> for ScalarValue {
             #[inline]
@@ -126,216 +319,216 @@ macro_rules! impl_from {
     };
 }
 
-impl_from! { Int }
-impl_from! { Real }
-impl_from! { Decimal }
-impl_from! { Bytes }
-impl_from! { DateTime }
-impl_from! { Duration }
-impl_from! { Json }
+        impl_from! { Int }
+        impl_from! { Real }
+        impl_from! { Decimal }
+        impl_from! { Bytes }
+        impl_from! { DateTime }
+        impl_from! { Duration }
+        impl_from! { Json }
 
-impl From<Option<f64>> for ScalarValue {
-    #[inline]
-    fn from(s: Option<f64>) -> ScalarValue {
-        ScalarValue::Real(s.and_then(|f| Real::new(f).ok()))
-    }
-}
-
-impl<'a> From<Option<JsonRef<'a>>> for ScalarValue {
-    #[inline]
-    fn from(s: Option<JsonRef<'a>>) -> ScalarValue {
-        ScalarValue::Json(s.map(|x| x.to_owned()))
-    }
-}
-
-impl<'a> From<Option<BytesRef<'a>>> for ScalarValue {
-    #[inline]
-    fn from(s: Option<BytesRef<'a>>) -> ScalarValue {
-        ScalarValue::Bytes(s.map(|x| x.to_vec()))
-    }
-}
-
-impl From<f64> for ScalarValue {
-    #[inline]
-    fn from(s: f64) -> ScalarValue {
-        ScalarValue::Real(Real::new(s).ok())
-    }
-}
-
-impl From<ScalarValue> for Option<f64> {
-    #[inline]
-    fn from(s: ScalarValue) -> Option<f64> {
-        match s {
-            ScalarValue::Real(v) => v.map(|v| v.into_inner()),
-            _ => panic!("Cannot cast {} scalar causet_locale into f64", s.eval_type()),
+        impl From<Option<f64>> for ScalarValue {
+            #[inline]
+            fn from(s: Option<f64>) -> ScalarValue {
+                ScalarValue::Real(s.and_then(|f| Real::new(f).ok()))
+            }
         }
-    }
-}
 
-/// A scalar causet_locale reference container. Can be created from `ScalarValue` or `VectorValue`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ScalarValueRef<'a> {
-    Int(Option<&'a super::Int>),
-    Real(Option<&'a super::Real>),
-    Decimal(Option<&'a super::Decimal>),
-    Bytes(Option<BytesRef<'a>>),
-    DateTime(Option<&'a super::DateTime>),
-    Duration(Option<&'a super::Duration>),
-    Json(Option<JsonRef<'a>>),
-}
-
-impl<'a> ScalarValueRef<'a> {
-    #[inline]
-    #[allow(clippy::clone_on_copy)]
-    pub fn to_owned(self) -> ScalarValue {
-        match self {
-            ScalarValueRef::Int(x) => ScalarValue::Int(x.cloned()),
-            ScalarValueRef::Duration(x) => ScalarValue::Duration(x.cloned()),
-            ScalarValueRef::DateTime(x) => ScalarValue::DateTime(x.cloned()),
-            ScalarValueRef::Real(x) => ScalarValue::Real(x.cloned()),
-            ScalarValueRef::Decimal(x) => ScalarValue::Decimal(x.cloned()),
-            ScalarValueRef::Bytes(x) => ScalarValue::Bytes(x.map(|x| x.to_vec())),
-            ScalarValueRef::Json(x) => ScalarValue::Json(x.map(|x| x.to_owned())),
+        impl<'a> From<Option<JsonRef<'a>>> for ScalarValue {
+            #[inline]
+            fn from(s: Option<JsonRef<'a>>) -> ScalarValue {
+                ScalarValue::Json(s.map(|x| x.to_owned()))
+            }
         }
-    }
 
-    #[inline]
-    pub fn eval_type(&self) -> EvalType {
-        match_template_evaluable! {
+        impl<'a> From<Option<BytesRef<'a>>> for ScalarValue {
+            #[inline]
+            fn from(s: Option<BytesRef<'a>>) -> ScalarValue {
+                ScalarValue::Bytes(s.map(|x| x.to_vec()))
+            }
+        }
+
+        impl From<f64> for ScalarValue {
+            #[inline]
+            fn from(s: f64) -> ScalarValue {
+                ScalarValue::Real(Real::new(s).ok())
+            }
+        }
+
+        impl From<ScalarValue> for Option<f64> {
+            #[inline]
+            fn from(s: ScalarValue) -> Option<f64> {
+                match s {
+                    ScalarValue::Real(v) => v.map(|v| v.into_inner()),
+                    _ => panic!("Cannot cast {} scalar causet_locale into f64", s.eval_type()),
+                }
+            }
+        }
+
+        /// A scalar causet_locale reference container. Can be created from `ScalarValue` or `VectorValue`.
+        #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+        pub enum ScalarValueRef<'a> {
+            Int(Option<&'a super::Int>),
+            Real(Option<&'a super::Real>),
+            Decimal(Option<&'a super::Decimal>),
+            Bytes(Option<BytesRef<'a>>),
+            DateTime(Option<&'a super::DateTime>),
+            Duration(Option<&'a super::Duration>),
+            Json(Option<JsonRef<'a>>),
+        }
+
+        impl<'a> ScalarValueRef<'a> {
+            #[inline]
+            #[allow(clippy::clone_on_copy)]
+            pub fn to_owned(self) -> ScalarValue {
+                match self {
+                    ScalarValueRef::Int(x) => ScalarValue::Int(x.cloned()),
+                    ScalarValueRef::Duration(x) => ScalarValue::Duration(x.cloned()),
+                    ScalarValueRef::DateTime(x) => ScalarValue::DateTime(x.cloned()),
+                    ScalarValueRef::Real(x) => ScalarValue::Real(x.cloned()),
+                    ScalarValueRef::Decimal(x) => ScalarValue::Decimal(x.cloned()),
+                    ScalarValueRef::Bytes(x) => ScalarValue::Bytes(x.map(|x| x.to_vec())),
+                    ScalarValueRef::Json(x) => ScalarValue::Json(x.map(|x| x.to_owned())),
+                }
+            }
+
+            #[inline]
+            pub fn eval_type(&self) -> EvalType {
+                match_template_evaluable! {
             TT, match self {
                 ScalarValueRef::TT(_) => EvalType::TT,
             }
         }
-    }
+            }
 
-    /// Encodes into binary format.
-    pub fn encode(
-        &self,
-        field_type: &FieldType,
-        ctx: &mut EvalContext,
-        output: &mut Vec<u8>,
-    ) -> Result<()> {
-        use crate::codec::datum_codec::EvaluableDatumEncoder;
+            /// Encodes into binary format.
+            pub fn encode(
+                &self,
+                field_type: &FieldType,
+                ctx: &mut EvalContext,
+                output: &mut Vec<u8>,
+            ) -> Result<()> {
+                use crate::codec::datum_codec::EvaluableDatumEncoder;
 
-        match self {
-            ScalarValueRef::Int(val) => {
-                match val {
-                    None => {
-                        output.write_evaluable_datum_null()?;
+                match self {
+                    ScalarValueRef::Int(val) => {
+                        match val {
+                            None => {
+                                output.write_evaluable_datum_null()?;
+                            }
+                            Some(val) => {
+                                // Always encode to INT / UINT instead of VAR INT to be efficient.
+                                let is_unsigned = field_type.is_unsigned();
+                                output.write_evaluable_datum_int(**val, is_unsigned)?;
+                            }
+                        }
+                        Ok(())
                     }
-                    Some(val) => {
-                        // Always encode to INT / UINT instead of VAR INT to be efficient.
-                        let is_unsigned = field_type.is_unsigned();
-                        output.write_evaluable_datum_int(**val, is_unsigned)?;
+                    ScalarValueRef::Real(val) => {
+                        match val {
+                            None => {
+                                output.write_evaluable_datum_null()?;
+                            }
+                            Some(val) => {
+                                output.write_evaluable_datum_real(val.into_inner())?;
+                            }
+                        }
+                        Ok(())
+                    }
+                    ScalarValueRef::Decimal(val) => {
+                        match val {
+                            None => {
+                                output.write_evaluable_datum_null()?;
+                            }
+                            Some(val) => {
+                                output.write_evaluable_datum_decimal(val)?;
+                            }
+                        }
+                        Ok(())
+                    }
+                    ScalarValueRef::Bytes(val) => {
+                        match val {
+                            None => {
+                                output.write_evaluable_datum_null()?;
+                            }
+                            Some(ref val) => {
+                                output.write_evaluable_datum_bytes(val)?;
+                            }
+                        }
+                        Ok(())
+                    }
+                    ScalarValueRef::DateTime(val) => {
+                        match val {
+                            None => {
+                                output.write_evaluable_datum_null()?;
+                            }
+                            Some(val) => {
+                                output.write_evaluable_datum_date_time(**val, ctx)?;
+                            }
+                        }
+                        Ok(())
+                    }
+                    ScalarValueRef::Duration(val) => {
+                        match val {
+                            None => {
+                                output.write_evaluable_datum_null()?;
+                            }
+                            Some(val) => {
+                                output.write_evaluable_datum_duration(**val)?;
+                            }
+                        }
+                        Ok(())
+                    }
+                    ScalarValueRef::Json(val) => {
+                        match val {
+                            None => {
+                                output.write_evaluable_datum_null()?;
+                            }
+                            Some(ref val) => {
+                                output.write_evaluable_datum_json(*val)?;
+                            }
+                        }
+                        Ok(())
                     }
                 }
-                Ok(())
             }
-            ScalarValueRef::Real(val) => {
-                match val {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        output.write_evaluable_datum_real(val.into_inner())?;
-                    }
-                }
-                Ok(())
-            }
-            ScalarValueRef::Decimal(val) => {
-                match val {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        output.write_evaluable_datum_decimal(val)?;
-                    }
-                }
-                Ok(())
-            }
-            ScalarValueRef::Bytes(val) => {
-                match val {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(ref val) => {
-                        output.write_evaluable_datum_bytes(val)?;
-                    }
-                }
-                Ok(())
-            }
-            ScalarValueRef::DateTime(val) => {
-                match val {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        output.write_evaluable_datum_date_time(**val, ctx)?;
-                    }
-                }
-                Ok(())
-            }
-            ScalarValueRef::Duration(val) => {
-                match val {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        output.write_evaluable_datum_duration(**val)?;
-                    }
-                }
-                Ok(())
-            }
-            ScalarValueRef::Json(val) => {
-                match val {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(ref val) => {
-                        output.write_evaluable_datum_json(*val)?;
-                    }
-                }
-                Ok(())
-            }
-        }
-    }
 
-    pub fn encode_sort_soliton_id(
-        &self,
-        field_type: &FieldType,
-        ctx: &mut EvalContext,
-        output: &mut Vec<u8>,
-    ) -> Result<()> {
-        use crate::codec::datum_codec::EvaluableDatumEncoder;
+            pub fn encode_sort_soliton_id(
+                &self,
+                field_type: &FieldType,
+                ctx: &mut EvalContext,
+                output: &mut Vec<u8>,
+            ) -> Result<()> {
+                use crate::codec::datum_codec::EvaluableDatumEncoder;
 
-        match self {
-            ScalarValueRef::Bytes(val) => {
-                match val {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        let sort_soliton_id = match_template_collator! {
+                match self {
+                    ScalarValueRef::Bytes(val) => {
+                        match val {
+                            None => {
+                                output.write_evaluable_datum_null()?;
+                            }
+                            Some(val) => {
+                                let sort_soliton_id = match_template_collator! {
                             TT, match field_type.collation().map_err(crate::codec::Error::from)? {
                                 Collation::TT => TT::sort_soliton_id(val)?
                             }
                         };
-                        output.write_evaluable_datum_bytes(&sort_soliton_id)?;
+                                output.write_evaluable_datum_bytes(&sort_soliton_id)?;
+                            }
+                        }
+                        Ok(())
                     }
+                    _ => self.encode(field_type, ctx, output),
                 }
-                Ok(())
             }
-            _ => self.encode(field_type, ctx, output),
-        }
-    }
 
-    #[inline]
-    pub fn cmp_sort_soliton_id(
-        &self,
-        other: &ScalarValueRef,
-        field_type: &FieldType,
-    ) -> crate::codec::Result<Ordering> {
-        Ok(match_template! {
+            #[inline]
+            pub fn cmp_sort_soliton_id(
+                &self,
+                other: &ScalarValueRef,
+                field_type: &FieldType,
+            ) -> crate::codec::Result<Ordering> {
+                Ok(match_template! {
             TT = [Real, Decimal, DateTime, Duration, Json],
             match (self, other) {
                 (ScalarValueRef::TT(v1), ScalarValueRef::TT(causet_record)) => v1.cmp(causet_record),
@@ -353,23 +546,23 @@ impl<'a> ScalarValueRef<'a> {
                 _ => panic!("Cannot compare two ScalarValueRef in different type"),
             }
         })
-    }
-}
+            }
+        }
 
-#[inline]
-fn compare_int(
-    lhs: &Option<super::Int>,
-    rhs: &Option<super::Int>,
-    field_type: &FieldType,
-) -> Ordering {
-    if field_type.is_unsigned() {
-        lhs.map(|i| i as u64).cmp(&rhs.map(|i| i as u64))
-    } else {
-        lhs.cmp(rhs)
-    }
-}
+        #[inline]
+        fn compare_int(
+            lhs: &Option<super::Int>,
+            rhs: &Option<super::Int>,
+            field_type: &FieldType,
+        ) -> Ordering {
+            if field_type.is_unsigned() {
+                lhs.map(|i| i as u64).cmp(&rhs.map(|i| i as u64))
+            } else {
+                lhs.cmp(rhs)
+            }
+        }
 
-macro_rules! impl_as_ref {
+        macro_rules! impl_as_ref {
     ($ty:tt, $name:solitonid) => {
         impl ScalarValue {
             #[inline]
@@ -401,78 +594,78 @@ macro_rules! impl_as_ref {
     };
 }
 
-impl_as_ref! { Int, as_int }
-impl_as_ref! { Real, as_real }
-impl_as_ref! { Decimal, as_decimal }
-impl_as_ref! { DateTime, as_date_time }
-impl_as_ref! { Duration, as_duration }
+        impl_as_ref! { Int, as_int }
+        impl_as_ref! { Real, as_real }
+        impl_as_ref! { Decimal, as_decimal }
+        impl_as_ref! { DateTime, as_date_time }
+        impl_as_ref! { Duration, as_duration }
 
-impl ScalarValue {
-    #[inline]
-    pub fn as_json(&self) -> Option<JsonRef> {
-        match self {
-            ScalarValue::Json(v) => v.as_ref().map(|x| x.as_ref()),
-            other => panic!(
-                "Cannot cast {} scalar causet_locale into {}",
-                other.eval_type(),
-                stringify!(Json),
-            ),
+        impl ScalarValue {
+            #[inline]
+            pub fn as_json(&self) -> Option<JsonRef> {
+                match self {
+                    ScalarValue::Json(v) => v.as_ref().map(|x| x.as_ref()),
+                    other => panic!(
+                        "Cannot cast {} scalar causet_locale into {}",
+                        other.eval_type(),
+                        stringify!(Json),
+                    ),
+                }
+            }
         }
-    }
-}
 
-impl<'a> ScalarValueRef<'a> {
-    #[inline]
-    pub fn as_json(&'a self) -> Option<JsonRef<'a>> {
-        match self {
-            ScalarValueRef::Json(v) => *v,
-            other => panic!(
-                "Cannot cast {} scalar causet_locale into {}",
-                other.eval_type(),
-                stringify!(Json),
-            ),
+        impl<'a> ScalarValueRef<'a> {
+            #[inline]
+            pub fn as_json(&'a self) -> Option<JsonRef<'a>> {
+                match self {
+                    ScalarValueRef::Json(v) => *v,
+                    other => panic!(
+                        "Cannot cast {} scalar causet_locale into {}",
+                        other.eval_type(),
+                        stringify!(Json),
+                    ),
+                }
+            }
         }
-    }
-}
 
-impl ScalarValue {
-    #[inline]
-    pub fn as_bytes(&self) -> Option<BytesRef> {
-        match self {
-            ScalarValue::Bytes(v) => v.as_ref().map(|x| x.as_slice()),
-            other => panic!(
-                "Cannot cast {} scalar causet_locale into {}",
-                other.eval_type(),
-                stringify!(Bytes),
-            ),
+        impl ScalarValue {
+            #[inline]
+            pub fn as_bytes(&self) -> Option<BytesRef> {
+                match self {
+                    ScalarValue::Bytes(v) => v.as_ref().map(|x| x.as_slice()),
+                    other => panic!(
+                        "Cannot cast {} scalar causet_locale into {}",
+                        other.eval_type(),
+                        stringify!(Bytes),
+                    ),
+                }
+            }
         }
-    }
-}
 
-impl<'a> ScalarValueRef<'a> {
-    #[inline]
-    pub fn as_bytes(&'a self) -> Option<BytesRef<'a>> {
-        match self {
-            ScalarValueRef::Bytes(v) => *v,
-            other => panic!(
-                "Cannot cast {} scalar causet_locale into {}",
-                other.eval_type(),
-                stringify!(Bytes),
-            ),
+        impl<'a> ScalarValueRef<'a> {
+            #[inline]
+            pub fn as_bytes(&'a self) -> Option<BytesRef<'a>> {
+                match self {
+                    ScalarValueRef::Bytes(v) => *v,
+                    other => panic!(
+                        "Cannot cast {} scalar causet_locale into {}",
+                        other.eval_type(),
+                        stringify!(Bytes),
+                    ),
+                }
+            }
         }
-    }
-}
 
-impl<'a> Ord for ScalarValueRef<'a> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other)
-            .expect("Cannot compare two ScalarValueRef in different type")
-    }
-}
+        impl<'a> Ord for ScalarValueRef<'a> {
+            fn cmp(&self, other: &Self) -> Ordering {
+                self.partial_cmp(other)
+                    .expect("Cannot compare two ScalarValueRef in different type")
+            }
+        }
 
-impl<'a> PartialOrd for ScalarValueRef<'a> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        match_template_evaluable! {
+        impl<'a> PartialOrd for ScalarValueRef<'a> {
+            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+                match_template_evaluable! {
             TT, match (self, other) {
                 // v1 and causet_record are `Option<T>`. However, in MyBerolinaSQL NULL causet_locales are considered lower
                 // than any non-NULL causet_locale, so using `Option::PartialOrd` directly is fine.
@@ -480,17 +673,144 @@ impl<'a> PartialOrd for ScalarValueRef<'a> {
                 _ => None,
             }
         }
-    }
-}
+            }
+        }
 
-impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'a> {
-    fn eq(&self, other: &ScalarValue) -> bool {
-        self == &other.as_scalar_causet_locale_ref()
-    }
-}
+        impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'a> {
+            fn eq(&self, other: &ScalarValue) -> bool {
+                self == &other.as_scalar_causet_locale_ref()
+            }
+        }
 
-impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValue {
-    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-        other == self
-    }
-}
+        impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValue {
+            fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                other == self
+            }
+        }
+
+        impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+            fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                match_template_evaluable! {
+            TT, match (self, other) {
+                (ScalarValueRef::TT(v1), ScalarValueRef::TT(causet_record)) => v1.eq(causet_record),
+                _ => false,
+            }
+        }
+
+                impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValue) -> bool {
+                        other == self
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValue) -> bool {
+                        other == self
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValue) -> bool {
+                        other == self
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValue {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValue> for ScalarValue {
+                    fn eq(&self, other: &ScalarValue) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValue) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValue {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+
+                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
+                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
+                        self == other
+                    }
+                }
+            }// mod scalar_value_ref
+        } // mod scalar_value
+    } // mod value
+} // mod types
+
+
+
+
+
+

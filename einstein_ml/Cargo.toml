@@ -4,19 +4,20 @@ license = "Apache-2.0"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/YosiSF/EinsteinDB/einstein_ml"
-description = "AllegroCL wrapper for EinsteinDB Metalanguage (Einstien_ML)"
-
-
+description = "AllegroCL wrapper for EinsteinDB Metalanguage (Einstein_ML)"
 
 
 
 [dependencies]
-
+einstein_db = { path = "../einstein_db" }
+causetq = { path = "../causetq" }
+allegro_poset = { path = "../allegro_poset" }
+causet = { path = "../causet" }
 chrono = "0.4.19"
 itertools = "0.10.3"
 num = "0.4.0"
 ordered-float = "2.10.0"
-pretty = "0.11.2"
+pretty = { version = "0.11.2" }
 serde = "^1.0"
 serde_json = "^1.0"
 serde_derive = "^1.0"
@@ -25,6 +26,10 @@ serde_cbor = "0.11.2"
 serde_urlencoded = "0.7.1"
 serde_bytes = "0.11.5"
 uuid = { version = "0.8.2", features = ["v4", "serde"] }
+
+[dependencies.cauusets]
+path = "../causets"
+
 
 
 

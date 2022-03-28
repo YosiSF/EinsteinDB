@@ -3979,7 +3979,7 @@ mod tests {
             ReadableDuration::secs(1)
         );
 
-        // Ufidelate `advance-ts-interval` to 100ms
+        // FIDelio `advance-ts-interval` to 100ms
         cfg_controller
             .fidelate_config("resolved-ts.advance-ts-interval", "100ms")
             .unwrap();
@@ -4000,7 +4000,7 @@ mod tests {
             ReadableDuration::millis(100)
         );
 
-        // Ufidelate `advance-ts-interval` to 3s
+        // FIDelio `advance-ts-interval` to 3s
         cfg_controller
             .fidelate_config("resolved-ts.advance-ts-interval", "3s")
             .unwrap();
@@ -4171,7 +4171,7 @@ mod tests {
             .unwrap();
         match rx.recv() {
             None => unreachable!(),
-            Some(TTLCheckerTask::UfidelatePollInterval(d)) => assert_eq!(d, Duration::from_secs(10)),
+            Some(TTLCheckerTask::FIDelioPollInterval(d)) => assert_eq!(d, Duration::from_secs(10)),
         }
     }
 

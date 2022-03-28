@@ -8,7 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use allegroeinstein
+
 pub use not_chunked_vec::NotChunkedVec;
 
 use crate::codec::convert::ConvertTo;
@@ -29,45 +29,85 @@ pub type Int = i64;
 pub type Real = ordered_float::NotNan<f64>;
 pub type Bytes = Vec<u8>;
 pub type BytesRef<'a> = &'a [u8];
--prolog-causet-BerolinaSQL::error::Result;
+pub type DecimalRef<'a> = &'a [u8];
+pub type DateTimeRef<'a> = &'a [u8];
+pub type DurationRef<'a> = &'a [u8];
+pub type JsonRef<'a> = &'a [u8];
+pub type Time = DateTime;
+pub type TimeRef<'a> = &'a [u8];
+
+
+/// A trait for types that can be converted to a `VectorValue`.
+/// This trait is implemented for all `VectorValue` types.
+/// It is implemented for `VectorValue` and `VectorValueRef`
+/// so that we can use `as_any` to convert them to `VectorValue`.
+/// It is also implemented for `ScalarValue` and `ScalarValueRef`
+/// so that we can use `as_any` to convert them to `VectorValue`.
+/// It is also implemented for `Option<T>` where `T` implements
+/// `VectorValueConvertible` so that we can use `as_any` to convert
+/// them to `VectorValue`.
+/// It is also implemented for `&T` where `T` implements
+/// `VectorValueConvertible` so that we can use `as_any` to convert
+/// them to `VectorValue`.
+/// It is also implemented for `&mut T` where `T` implements
+/// `VectorValueConvertible` so that we can use `as_any` to convert
+/// them to `VectorValue`.
+/// It is also implemented for `Box<T>` where `T` implements
+///
+/// `VectorValueConvertible` so that we can use `as_any` to convert
+/// them to `VectorValue`.
+/// It is also implemented for `&mut T` where `T` implements
+/// `VectorValueConvertible` so that we can use `as_any` to convert
+/// them to `VectorValue`.
+///
+/// It is also implemented for `Box<T>` where `T` implements
+/// `VectorValueConvertible` so that we can use `as_any` to convert
+/// them to `VectorValue`.
+/// It is also implemented for `&mut T` where `T` implements
+/// `VectorValueConvertible` so that we can use `as_any` to convert
+/// them to `VectorValue`.
+/// It is also implemented for `Box<T>` where `T` implements
+/// `VectorValueConvertible` so that we can use `as_any` to convert
+/// them to `VectorValue`.
+///
 
 
 pub trait AsMyBerolinaSQLBool {
     /// Evaluates into a MyBerolinaSQL logic causet_locale.
-    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool>;
+    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool>;
 }
 
 impl AsMyBerolinaSQLBool for Int {
     #[inline]
-    fn as_myBerolinaSQL_bool(&self, _context: &mut EvalContext) -> Result<bool> {
+    fn as_my_berolina_sql_bool(&self, _context: &mut EvalContext) -> Result<bool> {
         Ok(*self != 0)
     }
 }
 
 impl AsMyBerolinaSQLBool for Real {
     #[inline]
-    fn as_myBerolinaSQL_bool(&self, _context: &mut EvalContext) -> Result<bool> {
+    fn as_my_berolina_sql_bool(&self, _context: &mut EvalContext) -> Result<bool> {
         Ok(self.into_inner() != 0f64)
     }
 }
 
 impl<'a, T: AsMyBerolinaSQLBool> AsMyBerolinaSQLBool for &'a T {
     #[inline]
-    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
-        (&**self).as_myBerolinaSQL_bool(context)
+    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool> {
+        (&**self).as_my_berolina_sql_bool(context)
     }
 }
 
 impl AsMyBerolinaSQLBool for Bytes {
     #[inline]
-    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
+    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool> {
         self.as_slice().as_myBerolinaSQL_bool(context)
     }
 }
 
 impl<'a> AsMyBerolinaSQLBool for BytesRef<'a> {
     #[inline]
-    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
+    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool> {
         Ok(!self.is_empty() && ConvertTo::<f64>::convert(self, context)? != 0f64)
     }
 }
@@ -76,7 +116,7 @@ impl<'a, T> AsMyBerolinaSQLBool for Option<&'a T>
 where
     T: AsMyBerolinaSQLBool,
 {
-    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
+    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool> {
         match self {
             None => Ok(false),
             Some(ref v) => v.as_myBerolinaSQL_bool(context),
@@ -85,14 +125,14 @@ where
 }
 
 impl<'a> AsMyBerolinaSQLBool for JsonRef<'a> {
-    fn as_myBerolinaSQL_bool(&self, _context: &mut EvalContext) -> Result<bool> {
+    fn as_my_berolina_sql_bool(&self, _context: &mut EvalContext) -> Result<bool> {
         // TODO: This logic is not correct. See pingcap/MEDB#9593
         Ok(false)
     }
 }
 
 impl<'a> AsMyBerolinaSQLBool for Option<BytesRef<'a>> {
-    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
+    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool> {
         match self {
             None => Ok(false),
             Some(ref v) => v.as_myBerolinaSQL_bool(context),
@@ -101,7 +141,7 @@ impl<'a> AsMyBerolinaSQLBool for Option<BytesRef<'a>> {
 }
 
 impl<'a> AsMyBerolinaSQLBool for Option<JsonRef<'a>> {
-    fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
+    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool> {
         match self {
             None => Ok(false),
             Some(ref v) => v.as_myBerolinaSQL_bool(context),
@@ -126,21 +166,57 @@ pub trait UnsafeRefInto<T> {
     /// # Safety
     ///
     /// This function uses `std::mem::transmute`.
-    /// The only place that copr uses this function is in
-    /// `MEDB_query_vec_aggr`, together with a set of `uFIDelate` macros.
+    /// The only place that interlocking uses this function is in
+    /// `MEDB_query_vec_aggr`, together with a set of `FIDelio` macros.
     unsafe fn unsafe_into(self) -> T;
+
+    /// # Safety
+    ///
+    /// This function uses `std::mem::transmute`.
+    /// The only place that interlocking uses this function is in
+    ///
+    /// ```ignore
+    /// MEDB_query_vec_aggr! {
+    ///    #[aggr_name = "count"]
+    ///   #[aggr_field = "*"]
+    ///  #[aggr_type = "count"]
+    /// pub struct Count;
+    ///     impl<'a> UnsafeRefInto<usize> for &'a Count {
+    ///
+    ///         unsafe fn unsafe_into(self) -> usize {
+    ///             std::mem::transmute(self)
+    ///         }
+    ///    }
+    ///     impl<'a> UnsafeRefInto<usize> for &'a mut Count {
+    ///         unsafe fn unsafe_into(self) -> usize {
+    ///             std::mem::transmute(self)
+    ///         }
+    ///    }    // end of impl
+
+
+    /// ```
+    ///     impl<'a> UnsafeRefInto<usize> for &'a Count {
+    ///         unsafe fn unsafe_into(self) -> usize {
+    ///             std::mem::transmute(self)
+    ///         }
+    ///   }    // end of impl
 }
 
 /// A trait of all types that can be used during evaluation (eval type).
 pub trait Evaluable: Clone + std::fmt::Debug + Send + Sync + 'static {
     const EVAL_TYPE: EvalType;
 
+    /// Evaluates the expression.
+    ///     # Arguments
+    ///    ctx: EvalContext,
+    ///
+
     /// Borrows this concrete type from a `ScalarValue` in the same type;
-    /// panics if the varient mismatches.
+    /// panics if the variant mismatches.
     fn borrow_scalar_causet_locale(v: &ScalarValue) -> Option<&Self>;
 
     /// Borrows this concrete type from a `ScalarValueRef` in the same type;
-    /// panics if the varient mismatches.
+    /// panics if the variant mismatches.
     fn borrow_scalar_causet_locale_ref(v: ScalarValueRef<'_>) -> Option<&Self>;
 
     /// Borrows a slice of this concrete type from a `VectorValue` in the same type;
