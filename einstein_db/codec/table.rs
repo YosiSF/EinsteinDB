@@ -1,10 +1,7 @@
-// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use codec::prelude::*;
-use ehikvproto::interlock::KeyRange;
-use EinsteinDB_util::codec::BytesSlice;
-use EinsteinDB_util::collections::{HashMap, HashSet};
-use einsteindbpb::ColumnInfo;
+use einsteindbpb::{self, Table};
 use std::{cmp, u8};
 use std::convert::TryInto;
 use std::io::Write;
@@ -14,6 +11,7 @@ use crate::expr::EvalContext;
 use crate::FieldTypeTp;
 use crate::prelude::*;
 
+use super::{Error, Result};
 use super::{datum, Datum, datum::DatumDecoder, Error, Result};
 use super::myBerolinaSQL::{Duration, Time};
 
@@ -29,6 +27,28 @@ pub const TABLE_PREFIX_LEN: usize = 1;
 pub const TABLE_PREFIX_KEY_LEN: usize = TABLE_PREFIX_LEN + ID_LEN;
 // the maximum len of the old encoding of index causet_locale.
 pub const MAX_OLD_ENCODED_VALUE_LEN: usize = 9;
+
+
+pub fn encode_table(table: &Table) -> Result<Vec<u8>> {
+    let mut buf = Vec::with_capacity(table.encoded_len());
+    table.encode(&mut buf)?;
+    Ok(buf)
+}
+
+
+pub fn encode_row(table_id: i64, handle: i64, row: Vec<Datum>) -> Result<Vec<u8>> {
+    let mut buf = Vec::with_capacity(RECORD_ROW_KEY_LEN + row.len() * 8);
+    buf.write_all(table_id.to_string().as_bytes())?;
+    buf.write_all(RECORD_PREFIX_SEP)?;
+    buf.write_all(handle.to_string().as_bytes())?;
+    buf.write_all(b"\t")?;
+    for datum in row {
+        datum.encode(&mut buf)?;
+        buf.write_all(b"\t")?;
+    }
+    Ok(buf)
+}
+
 
 /// `TableEncoder` encodes the table record/index prefix.
 trait TableEncoder: NumberEncoder {
@@ -76,39 +96,157 @@ pub fn check_table_ranges(ranges: &[KeyRange]) -> Result<()> {
     Ok(())
 }
 
-#[inline]
-pub fn check_record_soliton_id(soliton_id: &[u8]) -> Result<()> {
-    check_soliton_id_type(soliton_id, RECORD_PREFIX_SEP)
-}
 
+/// `TableDecoder` decodes the table record/index prefix.
+/// It is used to decode the table record/index prefix from the table record/index key.
+/// For example, we have a table record/index key:
+///    t1_r1
+///   t1_r2
+///  t1_r3
+/// t2_r1
+/// t2_r2
+/// t2_r3
+///
+/// The TableDecoder will point to the first byte of the table record/index key:
+///   t1_r1
+///  t1_r2
+///
+/// The TableDecoder can be used to decode the table id:
+///  t1_r1 -> t1
+/// t1_r2 -> t1
+/// t1_r3 -> t1
+/// t2_r1 -> t2
+/// t2_r2 -> t2
+/// t2_r3 -> t2
+///
+/// The TableDecoder can be used to decode the record/index handle:
+/// t1_r1 -> 1
+/// t1_r2 -> 2
+/// t1_r3 -> 3
+/// t2_r1 -> 1
+/// t2_r2 -> 2
+/// t2_r3 -> 3
+///
+/// The TableDecoder can be used to decode the record/index key:
+/// t1_r1 -> t1_r1
+/// t1_r2 -> t1_r2
+/// t1_r3 -> t1_r3
+/// t2_r1 -> t2_r1
+/// t2_r2 -> t2_r2
+/// t2_r3 -> t2_r3
+///
+/// The TableDecoder can be used to decode the table prefix:
+/// t1_r1 -> t1
+/// t1_r2 -> t1
+/// t1_r3 -> t1
+///
+/// The TableDecoder can be used to decode the table prefix:
+/// t1_r1 -> t1
+/// t1_r2 -> t1
+/// t1_r3 -> t1
+///
+///
 #[inline]
-pub fn check_index_soliton_id(soliton_id: &[u8]) -> Result<()> {
-    check_soliton_id_type(soliton_id, INDEX_PREFIX_SEP)
-}
-
-/// `check_soliton_id_type` checks if the soliton_id is the type we want, `wanted_type` should be
-/// `table::RECORD_PREFIX_SEP` or `table::INDEX_PREFIX_SEP` .
-#[inline]
-fn check_soliton_id_type(soliton_id: &[u8], wanted_type: &[u8]) -> Result<()> {
-    let mut buf = soliton_id;
-    if buf.read_bytes(TABLE_PREFIX_LEN)? != TABLE_PREFIX {
-        return Err(invalid_type!(
-            "record or index soliton_id expected, but got {}",
-            hex::encode_upper(soliton_id)
-        ));
-    }
-
-    buf.read_bytes(ID_LEN)?;
-    if buf.read_bytes(SEP_LEN)? != wanted_type {
+fn check_soliton_id_type(soliton_id: &[u8], prefix_sep: u8) -> Result<()> {
+    if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
         Err(invalid_type!(
-            "expected soliton_id sep type {}, but got soliton_id {})",
-            hex::encode_upper(wanted_type),
-            hex::encode_upper(soliton_id)
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
+        ))
+    } else if soliton_id[TABLE_PREFIX_KEY_LEN] != prefix_sep {
+        Err(invalid_type!(
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
         ))
     } else {
         Ok(())
     }
+}   // check_soliton_id_type
+
+
+//no prefix
+#[inline]
+pub fn check_index_soliton_id(soliton_id: &[u8]) -> Result<()> {
+    //quicker check
+    //we just save ourselves a function call
+
+
+    if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
+        Err(invalid_type!(
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
+        ))
+    } else if soliton_id[TABLE_PREFIX_KEY_LEN] != INDEX_PREFIX_SEP {
+        Err(invalid_type!(
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
+        ))
+    } else {
+        //check the rest
+        Ok(())
+    }
+}   // check_index_soliton_id
+
+//no prefix
+//no handle
+//no key
+//no table prefix
+#[inline]
+pub fn check_record_soliton_id(soliton_id: &[u8]) -> Result<()> {
+    if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
+        Err(invalid_type!(
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
+        ))
+    } else if soliton_id[TABLE_PREFIX_KEY_LEN] != RECORD_PREFIX_SEP {
+        Err(invalid_type!(
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
+        ))
+    } else {
+        //check the rest
+        Ok(())
+    }
+
+    if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
+        Err(invalid_type!(
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
+        ))
+    } else if soliton_id[TABLE_PREFIX_KEY_LEN] != INDEX_PREFIX_SEP {
+        Err(invalid_type!(
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
+        ))
+    } else {
+        Ok(())
+    }
+}   // check_index_soliton_id
+
+
+#[inline]
+pub fn check_table_soliton_id(soliton_id: &[u8]) -> Result<()> {
+    if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
+        Err(invalid_type!(
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
+        ))
+    } else if soliton_id[TABLE_PREFIX_KEY_LEN] != TABLE_PREFIX_SEP {
+        Err(invalid_type!(
+            "record soliton_id or index soliton_id expected, but got {:?}",
+            soliton_id
+        ))
+    } else {
+        Ok(())
+    }
+}   // check_table_soliton_id
+
+
+#[inline]
+pub fn check_record_soliton_id_with_table_id(soliton_id: &[u8], table_id: &[u8]) -> Result<()> {
+    check_soliton_id_type(soliton_id, INDEX_PREFIX_SEP)
 }
+
 
 /// Decodes table ID from the soliton_id.
 pub fn decode_table_id(soliton_id: &[u8]) -> Result<i64> {
@@ -130,28 +268,6 @@ pub fn flatten(ctx: &mut EvalContext, data: Datum) -> Result<Datum> {
         Datum::Time(t) => Ok(Datum::U64(t.to_packed_u64(ctx)?)),
         _ => Ok(data),
     }
-}
-
-// `encode_row` encodes event data and causet_merge ids into a slice of byte.
-// Row layout: colID1, causet_locale1, colID2, causet_locale2, .....
-pub fn encode_row(ctx: &mut EvalContext, event: Vec<Datum>, col_ids: &[i64]) -> Result<Vec<u8>> {
-    if event.len() != col_ids.len() {
-        return Err(box_err!(
-            "data and columnID count not match {} vs {}",
-            event.len(),
-            col_ids.len()
-        ));
-    }
-    let mut causet_locales = Vec::with_capacity(cmp::max(event.len() * 2, 1));
-    for (&id, col) in col_ids.iter().zip(event) {
-        causet_locales.push(Datum::I64(id));
-        let fc = flatten(ctx, col)?;
-        causet_locales.push(fc);
-    }
-    if causet_locales.is_empty() {
-        causet_locales.push(Datum::Null);
-    }
-    datum::encode_causet_locale(ctx, &causet_locales)
 }
 
 /// `encode_row_soliton_id` encodes the table id and record handle into a byte array.

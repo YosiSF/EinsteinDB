@@ -12,7 +12,6 @@
 //! Datum bytes consists of 1 byte datum flag and variable bytes datum payload.
 
 use codec::prelude::*;
-use einsteindbpb::FieldType;
 
 use crate::{FieldTypeAccessor, FieldTypeTp};
 use crate::codec::{Error, Result};
@@ -265,7 +264,7 @@ pub trait DatumFlagAndPayloadEncoder: BufferWriter + DatumPayloadEncoder {
     }
 }
 
-impl<T: BufferWriter> DatumFlagAndPayloadEncoder for T {}
+
 
 /// An encoder to encode an evaluable type to datum bytes.
 pub trait EvaluableDatumEncoder: DatumFlagAndPayloadEncoder {
@@ -317,7 +316,24 @@ pub trait EvaluableDatumEncoder: DatumFlagAndPayloadEncoder {
     }
 }
 
-impl<T: BufferWriter> EvaluableDatumEncoder for T {}
+impl EvaluableDatumEncoder for T {}
+
+impl DatumFlagAndPayloadEncoder for T {}
+
+impl DatumPayloadEncoder for T {}
+
+impl EvaluableDatumEncoder for T {}
+
+impl DatumFlagAndPayloadEncoder for T {}
+
+impl DatumPayloadEncoder for T {}
+
+impl EvaluableDatumEncoder for T {}
+
+impl DatumFlagAndPayloadEncoder for T {}
+
+impl DatumPayloadEncoder for T {}
+
 
 /// An encoder to encode a datum storing causet_merge id.
 pub trait ColumnIdDatumEncoder: DatumFlagAndPayloadEncoder {
@@ -327,9 +343,6 @@ pub trait ColumnIdDatumEncoder: DatumFlagAndPayloadEncoder {
     }
 }
 
-impl<T: BufferWriter> ColumnIdDatumEncoder for T {}
-
-// TODO: Refactor the code below to be a EvaluableDatumDecoder.
 
 pub fn decode_int_datum(mut primitive_causet_datum: &[u8]) -> Result<Option<Int>> {
     if primitive_causet_datum.is_empty() {
@@ -341,6 +354,9 @@ pub fn decode_int_datum(mut primitive_causet_datum: &[u8]) -> Result<Option<Int>
     primitive_causet_datum = &primitive_causet_datum[1..];
     match flag {
         datum::NIL_FLAG => Ok(None),
+        datum::INT_FLAG => Ok(Some(Int::from_i64(
+            datum::decode_payload_i64(primitive_causet_datum)?,
+        )?)),
         datum::INT_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_i64()?)),
         datum::UINT_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_u64()? as i64)),
         datum::VAR_INT_FLAG => Ok(Some(primitive_causet_datum.read_datum_payload_var_i64()?)),

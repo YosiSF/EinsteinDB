@@ -30,7 +30,100 @@ bitflags! {
 }
 
 mod causet_closed_timeline;
-mod row_slice;
+mod event_slice;
 
-#[braneg(test)]
-mod encoder;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CausetRecord {
+    pub version: u8,
+    pub flags: Flags,
+    pub causet_locale: u8,
+    pub causet_timeline: u8,
+    pub causet_timestamp: u64,
+    pub causet_sequence: u64,
+    pub causet_data: Vec<u8>,
+}
+
+
+impl CausetRecord {
+    pub fn new(
+        causet_locale: u8,
+        causet_timeline: u8,
+        causet_timestamp: u64,
+        causet_sequence: u64,
+        causet_data: Vec<u8>,
+    ) -> Self {
+        CausetRecord {
+            version: CODEC_VERSION,
+            flags: Flags::default(),
+            causet_locale,
+            causet_timeline,
+            causet_timestamp,
+            causet_sequence,
+            causet_data,
+        }
+    }
+
+    pub fn new_big(
+        causet_locale: u8,
+        causet_timeline: u8,
+        causet_timestamp: u64,
+        causet_sequence: u64,
+        causet_data: Vec<u8>,
+    ) -> Self {
+        CausetRecord {
+            version: CODEC_VERSION,
+            flags: Flags::BIG,
+            causet_locale,
+            causet_timeline,
+            causet_timestamp,
+            causet_sequence,
+            causet_data,
+        }
+    }
+
+    pub fn new_from_slice(slice: &[u8]) -> Self {
+        let mut reader = &slice[1..];
+        let version = reader.read_u8().unwrap();
+        let flags = Flags::from_bits_truncate(reader.read_u8().unwrap());
+        let causet_locale = reader.read_u8().unwrap();
+        let causet_timeline = reader.read_u8().unwrap();
+        let causet_timestamp = reader.read_u64::<BigEndian>().unwrap();
+        let causet_sequence = reader.read_u64::<BigEndian>().unwrap();
+        let causet_data = reader.to_vec();
+        CausetRecord {
+            version,
+            flags,
+            causet_locale,
+            causet_timeline,
+            causet_timestamp,
+            causet_sequence,
+            causet_data,
+        }
+    }
+
+
+    pub fn to_slice(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(self.causet_data.len() + 16);
+        buf.push(self.version);
+        buf.push(self.flags.bits());
+        buf.push(self.causet_locale);
+        buf.push(self.causet_timeline);
+        buf.write_u64::<BigEndian>(self.causet_timestamp).unwrap();
+        buf.write_u64::<BigEndian>(self.causet_sequence).unwrap();
+        buf.extend_from_slice(&self.causet_data);
+        buf
+    }
+
+    pub fn to_big_slice(&self) -> Vec<u8> {
+        let mut buf = Vec::with_capacity(self.causet_data.len() + 16);
+        buf.push(self.version);
+        buf.push(self.flags.bits());
+        buf.push(self.causet_locale);
+        buf.push(self.causet_timeline);
+        buf.write_u64::<BigEndian>(self.causet_timestamp).unwrap();
+        buf.write_u64::<BigEndian>(self.causet_sequence).unwrap();
+        buf.extend_from_slice(&self.causet_data);
+        buf
+    }
+}

@@ -8,7 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use einsteindbpb::FieldType;
+
 
 use crate::{EvalType, FieldTypeAccessor};
 use crate::codec::myBerolinaSQL::decimal::DECIMAL_STRUCT_SIZE;
@@ -31,627 +31,323 @@ pub enum VectorValue {
     DateTime(NotChunkedVec<DateTime>),
     Duration(NotChunkedVec<Duration>),
     Json(NotChunkedVec<Json>),
+    Enum(NotChunkedVec<Enum>),
+    Set(NotChunkedVec<Set>),
+    BitSet(NotChunkedVec<BitSet>),
+
+    IntSet(ChunkedVec<Int>),
+    RealSet(ChunkedVec<Real>),
+    DecimalSet(ChunkedVec<Decimal>),
+    BytesSet(ChunkedVec<Bytes>),
+    DateTimeSet(ChunkedVec<DateTime>),
+    DurationSet(ChunkedVec<Duration>),
+    JsonSet(ChunkedVec<Json>),
+    EnumSet(ChunkedVec<Enum>),
+    SetSet(ChunkedVec<Set>),
+    BitSetSet(ChunkedVec<BitSet>),
+
+    IntVector(ChunkedVec<Int>),
+    RealVector(ChunkedVec<Real>),
+    DecimalVector(ChunkedVec<Decimal>),
+    BytesVector(ChunkedVec<Bytes>),
+    DateTimeVector(ChunkedVec<DateTime>),
+    DurationVector(ChunkedVec<Duration>),
+    JsonVector(ChunkedVec<Json>),
+    EnumVector(ChunkedVec<Enum>),
+    SetVector(ChunkedVec<Set>),
+    BitSetVector(ChunkedVec<BitSet>),
+
 }
 
 impl VectorValue {
-    /// Creates an empty `VectorValue` according to `eval_tp` and reserves capacity according
-    /// to `capacity`.
-    #[inline]
-    pub fn with_capacity(capacity: usize, eval_tp: EvalType) -> Self {
-        match_template_evaluable! {
-            TT, match eval_tp {
-                EvalType::TT => VectorValue::TT(NotChunkedVec::with_capacity(capacity)),
-            }
-        }
+    pub fn new_int(capacity: usize) -> Self {
+        VectorValue::Int(NotChunkedVec::new(capacity))
     }
 
-    /// Creates a new empty `VectorValue` with the same eval type.
-    #[inline]
-    pub fn clone_empty(&self, capacity: usize) -> Self {
-        match_template_evaluable! {
-            TT, match self {
-                VectorValue::TT(_) => VectorValue::TT(NotChunkedVec::with_capacity(capacity)),
-            }
-        }
+    pub fn new_real(capacity: usize) -> Self {
+        VectorValue::Real(NotChunkedVec::new(capacity))
     }
 
-    /// Returns the `EvalType` used to construct current causet_merge.
-    #[inline]
-    pub fn eval_type(&self) -> EvalType {
-        match_template_evaluable! {
-            TT, match self {
-                VectorValue::TT(_) => EvalType::TT,
-            }
-        }
+    pub fn new_decimal(capacity: usize) -> Self {
+        VectorValue::Decimal(NotChunkedVec::new(capacity))
     }
 
+    pub fn new_bytes(capacity: usize) -> Self {
+        VectorValue::Bytes(NotChunkedVec::new(capacity))
+    }
+
+    pub fn new_date_time(capacity: usize) -> Self {
+        VectorValue::DateTime(NotChunkedVec::new(capacity))
+    }
+
+    pub fn new_duration(capacity: usize) -> Self {
+        VectorValue::Duration(NotChunkedVec::new(capacity))
+    }
+
+    pub fn new_json(capacity: usize) -> Self {
+        VectorValue::Json(NotChunkedVec::new(capacity))
+    }
+
+    pub fn new_enum(capacity: usize) -> Self {
+        VectorValue::Enum(NotChunkedVec::new(capacity))
+    }
+
+    pub fn new_set(capacity: usize) -> Self {
+        VectorValue::Set(NotChunkedVec::new(capacity))
+    }
+
+    pub fn new_bit_set(capacity: usize) -> Self {
+        VectorValue::BitSet(NotChunkedVec::new(capacity))
+    }
+
+    pub fn new_int_set(capacity: usize) -> Self {
+        VectorValue::IntSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_real_set(capacity: usize) -> Self {
+        VectorValue::RealSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_decimal_set(capacity: usize) -> Self {
+        VectorValue::DecimalSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_bytes_set(capacity: usize) -> Self {
+        VectorValue::BytesSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_date_time_set(capacity: usize) -> Self {
+        VectorValue::DateTimeSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_duration_set(capacity: usize) -> Self {
+        VectorValue::DurationSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_json_set(capacity: usize) -> Self {
+        VectorValue::JsonSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_enum_set(capacity: usize) -> Self {
+        VectorValue::EnumSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_set_set(capacity: usize) -> Self {
+        VectorValue::SetSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_bit_set_set(capacity: usize) -> Self {
+        VectorValue::BitSetSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_int_vector(capacity: usize) -> Self {
+        VectorValue::IntVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_real_vector(capacity: usize) -> Self {
+        VectorValue::RealVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_decimal_vector(capacity: usize) -> Self {
+        VectorValue::DecimalVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_bytes_vector(capacity: usize) -> Self {
+        VectorValue::BytesVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_date_time_vector(capacity: usize) -> Self {
+        VectorValue::DateTimeVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_duration_vector(capacity: usize) -> Self {
+        VectorValue::DurationVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_json_vector(capacity: usize) -> Self {
+        VectorValue::JsonVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_enum_vector(capacity: usize) -> Self {
+        VectorValue::EnumVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_set_vector(capacity: usize) -> Self {
+        VectorValue::SetVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_bit_set_vector(capacity: usize) -> Self {
+        VectorValue::BitSetVector(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_int_vector_set(capacity: usize) -> Self {
+        VectorValue::IntVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_real_vector_set(capacity: usize) -> Self {
+        VectorValue::RealVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_decimal_vector_set(capacity: usize) -> Self {
+        VectorValue::DecimalVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_bytes_vector_set(capacity: usize) -> Self {
+        VectorValue::BytesVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_date_time_vector_set(capacity: usize) -> Self {
+        VectorValue::DateTimeVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_duration_vector_set(capacity: usize) -> Self {
+        VectorValue::DurationVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_json_vector_set(capacity: usize) -> Self {
+        VectorValue::JsonVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_enum_vector_set(capacity: usize) -> Self {
+        VectorValue::EnumVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_set_vector_set(capacity: usize) -> Self {
+        VectorValue::SetVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_bit_set_vector_set(capacity: usize) -> Self {
+        VectorValue::BitSetVectorSet(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_int_map(capacity: usize) -> Self {
+        VectorValue::IntMap(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_real_map(capacity: usize) -> Self {
+        VectorValue::RealMap(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_decimal_map(capacity: usize) -> Self {
+        VectorValue::DecimalMap(ChunkedVec::new(capacity))
+    }
+
+
+    pub fn new_int_vector_map(capacity: usize) -> Self {
+        VectorValue::IntVectorMap(ChunkedVec::new(capacity))
+    }
+
+
+    pub fn new_bytes_vector_map(capacity: usize) -> Self {
+        VectorValue::BytesVectorMap(ChunkedVec::new(capacity))
+    }
+
+    pub fn new_int_vector_map_set(capacity: usize) -> Self {
+        VectorValue::IntVectorMapSet(ChunkedVec::new(capacity))
+    }
+    pub fn new_bytes_vector_map_set(capacity: usize) -> Self {
+        VectorValue::BytesVectorMapSet(ChunkedVec::new(capacity))
+    }
+
+
+    /// Creates a new `VectorValue` with the same eval type and capacity.
+    /// The capacity is the number of elements the vector can hold without
+    /// resizing.
+    /// # Example
+    /// ```
+    ///
+    /// use interlocking_datatype::VectorValue;
+    ///     let mut v = VectorValue::new_int_vector(10);
+    ///
+    ///
+
+
+    /// Creates a new `VectorValue` with the same eval type and capacity.
+    ///
+    /// The capacity is the number of elements the vector can hold without
+    ///
+    ///
+    /// Creates a new `VectorValue` with the same eval type and capacity.
+    /// The capacity is the same as the capacity of the `VectorValue` `self`.
+    /// The length of the new `VectorValue` is 0.
+    /// The data of the new `VectorValue` is uninitialized.
+    /// The new `VectorValue` is not chunked.
+    /// The new `VectorValue` is not sorted.
+    /// The new `VectorValue` is not deduped.
+
+
+
+    /// Creates a new `VectorValue` with the same eval type and capacity.
+
+
+    /// Creates a new `VectorValue` with the same eval type and capacity.
+    /// The capacity is the same as the capacity of the `VectorValue` `self`.
+    /// The length of the new `VectorValue` is 0.
+    ///
+    /// The new `VectorValue` is not chunked.
+
+
+
+
+    /// Creates a new `VectorValue` with the same eval type and capacity.
+    ///
+    /// The new `VectorValue` is not chunked.
+    /// The new `VectorValue` is not sorted.
+    /// The new `VectorValue` is not deduped.
+    /// The new `VectorValue` is not compressed.
+    ///
+
+
+    //avoid using self
     /// Returns the number of datums contained in this causet_merge.
-    #[inline]
-    pub fn len(&self) -> usize {
-        match_template_evaluable! {
-            TT, match self {
-                VectorValue::TT(v) => v.len(),
-            }
-        }
-    }
-
-    /// Returns whether this causet_merge is empty.
+    /// This is a constant time operation.
+    /// # Examples
+    /// ```
+    /// use mileva_db::expr::EvalType;
+    /// use mileva_db::expr::vector::VectorValue;
+    /// use mileva_db::expr::vector::VectorValue::*;
     ///
-    /// Equals to `len() == 0`.
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
-    /// Shortens the causet_merge, keeping the first `len` datums and dropping the rest.
+    /// let mut v = VectorValue::TT(vec![1, 2, 3]);
+    /// assert_eq!(v.len(), 3);
     ///
-    /// If `len` is greater than the causet_merge's current length, this has no effect.
-    #[inline]
-    pub fn truncate(&mut self, len: usize) {
-        match_template_evaluable! {
-            TT, match self {
-                VectorValue::TT(v) => v.truncate(len),
-            }
-        }
-    }
-
-    /// Clears the causet_merge, removing all datums.
-    #[inline]
-    pub fn clear(&mut self) {
-        self.truncate(0);
-    }
-
-    /// Returns the number of elements this causet_merge can hold without reallocating.
-    #[inline]
-    pub fn capacity(&self) -> usize {
-        match_template_evaluable! {
-            TT, match self {
-                VectorValue::TT(v) => v.capacity(),
-            }
-        }
-    }
-
     /// Moves all the elements of `other` into `Self`, leaving `other` empty.
     ///
     /// # Panics
     ///
     /// Panics if `other` does not have the same `EvalType` as `Self`.
-    #[inline]
-    pub fn append(&mut self, other: &mut VectorValue) {
-        match_template_evaluable! {
-            TT, match self {
-                VectorValue::TT(self_vec) => match other {
-                    VectorValue::TT(other_vec) => {
-                        self_vec.append(other_vec);
-                    }
-                    other => panic!("Cannot append {} to {} vector", other.eval_type(), self.eval_type())
-                },
-            }
-        }
-    }
-
-    /// Evaluates causet_locales into MyBerolinaSQL logic causet_locales.
     ///
-    /// The caller must provide an output buffer which is large enough for holding causet_locales.
-    pub fn eval_as_myBerolinaSQL_bools(
-        &self,
-        ctx: &mut EvalContext,
-        outputs: &mut [bool],
-    ) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<()> {
-        assert!(outputs.len() >= self.len());
-        match_template_evaluable! {
-            TT, match self {
-                VectorValue::TT(v) => {
-                    let l = self.len();
-                    for i in 0..l {
-                        outputs[i] = v.get_option_ref(i).as_myBerolinaSQL_bool(ctx)?;
-                    }
-                },
-            }
-        }
-        Ok(())
-    }
 
-    /// Gets a reference of the element in corresponding index.
-    ///
-    /// # Panics
-    ///
-    /// Panics if index is out of range.
-    #[inline]
-    pub fn get_scalar_ref(&self, index: usize) -> ScalarValueRef<'_> {
-        match_template_evaluable! {
-            TT, match self {
-                VectorValue::TT(v) => ScalarValueRef::TT(v.get_option_ref(index)),
-            }
-        }
-    }
+    impl_ext! { Int, push_int }
+    impl_ext! { Real, push_real }
+    impl_ext! { Decimal, push_decimal }
 
-    /// Returns maximum encoded size in binary format.
-    pub fn maximum_encoded_size(&self, logical_rows: &[usize]) -> usize {
-        match self {
-            VectorValue::Int(_) => logical_rows.len() * 9,
 
-            // Some elements might be NULLs which encoded size is 1 byte. However it's fine because
-            // this function only calculates a maximum encoded size (for constructing buffers), not
-            // actual encoded size.
-            VectorValue::Real(_) => logical_rows.len() * 9,
-            VectorValue::Decimal(vec) => {
-                let mut size = 0;
-                for idx in logical_rows {
-                    let el = vec.get_option_ref(*idx);
-                    match el {
-                        Some(v) => {
-                            // FIXME: We don't need approximate size. Maximum size is enough (so
-                            // that we don't need to iterate each causet_locale).
-                            size += 1 /* FLAG */ + v.approximate_encoded_size();
-                        }
-                        None => {
-                            size += 1;
-                        }
-                    }
-                }
-                size
-            }
-            VectorValue::Bytes(vec) => {
-                let mut size = 0;
-                for idx in logical_rows {
-                    let el = vec.get_option_ref(*idx);
-                    match el {
-                        Some(v) => {
-                            size += 1 /* FLAG */ + 10 /* MAX VARINT LEN */ + v.len();
-                        }
-                        None => {
-                            size += 1;
-                        }
-                    }
-                }
-                size
-            }
-            VectorValue::DateTime(_) => logical_rows.len() * 9,
-            VectorValue::Duration(_) => logical_rows.len() * 9,
-            VectorValue::Json(vec) => {
-                let mut size = 0;
-                for idx in logical_rows {
-                    let el = vec.get_option_ref(*idx);
-                    match el {
-                        Some(v) => {
-                            size += 1 /* FLAG */ + v.binary_len();
-                        }
-                        None => {
-                            size += 1;
-                        }
-                    }
-                }
-                size
-            }
-        }
-    }
+    impl_ext! { Bytes, push_bytes }
+    impl_ext! { DateTime, push_date_time}
 
-    /// Returns maximum encoded size in chunk format.
-    pub fn maximum_encoded_size_chunk(&self, logical_rows: &[usize]) -> usize {
-        match self {
-            VectorValue::Int(_) => logical_rows.len() * 9 + 10,
-            VectorValue::Real(_) => logical_rows.len() * 9 + 10,
-            VectorValue::Decimal(_) => logical_rows.len() * (DECIMAL_STRUCT_SIZE + 1) + 10,
-            VectorValue::DateTime(_) => logical_rows.len() * 21 + 10,
-            VectorValue::Duration(_) => logical_rows.len() * 9 + 10,
-            VectorValue::Bytes(vec) => {
-                let mut size = logical_rows.len() + 10;
-                for idx in logical_rows {
-                    let el = vec.get_option_ref(*idx);
-                    match el {
-                        Some(v) => {
-                            size += 8 /* Offset */ + v.len();
-                        }
-                        None => {
-                            size +=  8 /* Offset */;
-                        }
-                    }
-                }
-                size
-            }
-            VectorValue::Json(vec) => {
-                let mut size = logical_rows.len() + 10;
-                for idx in logical_rows {
-                    let el = vec.get_option_ref(*idx);
-                    match el {
-                        Some(v) => {
-                            size += 8 /* Offset */ + v.binary_len();
-                        }
-                        None => {
-                            size += 8 /* Offset */;
-                        }
-                    }
-                }
-                size
-            }
-        }
-    }
+    impl_ext! { Duration, push_duration }
+    impl_ext! { Json, push_json }
+    impl_ext! { Time, push_time }
+    impl_ext! { Date, push_date }
+    impl_ext! { Interval, push_interval }
+    impl_ext! { String, push_string }
+    impl_ext! { Uuid, push_uuid }
+    impl_ext! { Enum, push_enum }
+    impl_ext! { Set, push_set }
+    impl_ext! { List, push_list }
+    impl_ext! { Map, push_map }
+    impl_ext! { Struct, push_struct }
+    impl_ext! { Tuple, push_tuple }
+    impl_ext! { Vector, push_vector }
+    impl_ext! { Dict, push_dict }
+    impl_ext! { SetKey, push_set_key }
+    impl_ext! { ListKey, push_list_key }    //      impl_ext! { ListKey, push_list_key }
+    impl_ext! { MapKey, push_map_key }
+    impl_ext! { StructKey, push_struct_key }
+    impl_ext! { TupleKey, push_tuple_key }
+    impl_ext! { VectorKey, push_vector_key }
 
-    /// Encodes a single element into binary format.
-    pub fn encode(
-        &self,
-        row_index: usize,
-        field_type: &FieldType,
-        ctx: &mut EvalContext,
-        output: &mut Vec<u8>,
-    ) -> Result<()> {
-        use crate::codec::datum_codec::EvaluableDatumEncoder;
+    impl_ext! { IntVector, push_int_vector }
 
-        match self {
-            VectorValue::Int(ref vec) => {
-                match vec.get_option_ref(row_index) {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        // Always encode to INT / UINT instead of VAR INT to be efficient.
-                        let is_unsigned = field_type.as_accessor().is_unsigned();
-                        output.write_evaluable_datum_int(*val, is_unsigned)?;
-                    }
-                }
-                Ok(())
-            }
-            VectorValue::Real(ref vec) => {
-                match vec.get_option_ref(row_index) {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        output.write_evaluable_datum_real(val.into_inner())?;
-                    }
-                }
-                Ok(())
-            }
-            VectorValue::Decimal(ref vec) => {
-                match &vec.get_option_ref(row_index) {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        output.write_evaluable_datum_decimal(*val)?;
-                    }
-                }
-                Ok(())
-            }
-            VectorValue::Bytes(ref vec) => {
-                match &vec.get_option_ref(row_index) {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(ref val) => {
-                        output.write_evaluable_datum_bytes(*val)?;
-                    }
-                }
-                Ok(())
-            }
-            VectorValue::DateTime(ref vec) => {
-                match vec.get_option_ref(row_index) {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        output.write_evaluable_datum_date_time(*val, ctx)?;
-                    }
-                }
-                Ok(())
-            }
-            VectorValue::Duration(ref vec) => {
-                match vec.get_option_ref(row_index) {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(val) => {
-                        output.write_evaluable_datum_duration(*val)?;
-                    }
-                }
-                Ok(())
-            }
-            VectorValue::Json(ref vec) => {
-                match &vec.get_option_ref(row_index) {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(ref val) => {
-                        output.write_evaluable_datum_json(*val)?;
-                    }
-                }
-                Ok(())
-            }
-        }
-    }
+    impl_ext! { RealVector, push_real_vector }
 
-    pub fn encode_sort_soliton_id(
-        &self,
-        row_index: usize,
-        field_type: &FieldType,
-        ctx: &mut EvalContext,
-        output: &mut Vec<u8>,
-    ) -> Result<()> {
-        use crate::codec::collation::{match_template_collator, Collator};
-        use crate::codec::datum_codec::EvaluableDatumEncoder;
-        use crate::Collation;
-
-        match self {
-            VectorValue::Bytes(ref vec) => {
-                match vec.get_option_ref(row_index) {
-                    None => {
-                        output.write_evaluable_datum_null()?;
-                    }
-                    Some(ref val) => {
-                        let sort_soliton_id = match_template_collator! {
-                            TT, match field_type.collation()? {
-                                Collation::TT => TT::sort_soliton_id(val)?
-                            }
-                        };
-                        output.write_evaluable_datum_bytes(&sort_soliton_id)?;
-                    }
-                }
-                Ok(())
-            }
-            _ => self.encode(row_index, field_type, ctx, output),
-        }
-    }
-}
-
-macro_rules! impl_as_slice {
-    ($ty:tt, $name:solitonid) => {
-        impl VectorValue {
-            /// Extracts a slice of causet_locales in specified concrete type from current causet_merge.
-            ///
-            /// # Panics
-            ///
-            /// Panics if the current causet_merge does not match the type.
-            #[inline]
-            pub fn $name(&self) -> &[Option<$ty>] {
-                match self {
-                    VectorValue::$ty(vec) => vec.as_slice(),
-                    other => panic!(
-                        "Cannot call `{}` over a {} causet_merge",
-                        stringify!($name),
-                        other.eval_type()
-                    ),
-                }
-            }
-        }
-
-        impl AsRef<[Option<$ty>]> for VectorValue {
-            #[inline]
-            fn as_ref(&self) -> &[Option<$ty>] {
-                self.$name()
-            }
-        }
-    };
-}
-
-impl_as_slice! { Int, as_int_slice }
-impl_as_slice! { Real, as_real_slice }
-impl_as_slice! { Decimal, as_decimal_slice }
-impl_as_slice! { Bytes, as_bytes_slice }
-impl_as_slice! { DateTime, as_date_time_slice }
-impl_as_slice! { Duration, as_duration_slice }
-impl_as_slice! { Json, as_json_slice }
-
-/// Additional `VectorValue` methods available via generics. These methods support different
-/// concrete types but have same names and should be specified via the generic parameter type.
-pub trait VectorValueExt<T: EvaluableRet> {
-    /// The generic version for `VectorValue::push_xxx()`.
-    fn push(&mut self, v: Option<T>);
-}
-
-macro_rules! impl_ext {
-    ($ty:tt, $push_name:solitonid) => {
-        // Explicit version
-
-        impl VectorValue {
-            /// Pushes a causet_locale in specified concrete type into current causet_merge.
-            ///
-            /// # Panics
-            ///
-            /// Panics if the current causet_merge does not match the type.
-            #[inline]
-            pub fn $push_name(&mut self, v: Option<$ty>) {
-                match self {
-                    VectorValue::$ty(ref mut vec) => vec.push(v),
-                    other => panic!(
-                        "Cannot call `{}` over a {} causet_merge",
-                        stringify!($push_name),
-                        other.eval_type()
-                    ),
-                };
-            }
-        }
-
-        // Implicit version
-
-        impl VectorValueExt<$ty> for VectorValue {
-            #[inline]
-            fn push(&mut self, v: Option<$ty>) {
-                self.$push_name(v);
-            }
-        }
-    };
-}
-
-impl_ext! { Int, push_int }
-impl_ext! { Real, push_real }
-impl_ext! { Decimal, push_decimal }
-impl_ext! { Bytes, push_bytes }
-impl_ext! { DateTime, push_date_time }
-impl_ext! { Duration, push_duration }
-impl_ext! { Json, push_json }
-
-macro_rules! impl_from {
-    ($ty:tt) => {
-        impl From<NotChunkedVec<$ty>> for VectorValue {
-            #[inline]
-            fn from(s: NotChunkedVec<$ty>) -> VectorValue {
-                VectorValue::$ty(s)
-            }
-        }
-    };
-}
-
-impl_from! { Int }
-impl_from! { Real }
-impl_from! { Decimal }
-impl_from! { Bytes }
-impl_from! { DateTime }
-impl_from! { Duration }
-impl_from! { Json }
-
-#[braneg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_basic() {
-        let mut causet_merge = VectorValue::with_capacity(0, EvalType::Bytes);
-        assert_eq!(causet_merge.eval_type(), EvalType::Bytes);
-        assert_eq!(causet_merge.len(), 0);
-        assert_eq!(causet_merge.capacity(), 0);
-        assert!(causet_merge.is_empty());
-        assert_eq!(causet_merge.as_bytes_slice(), &[]);
-
-        causet_merge.push_bytes(None);
-        assert_eq!(causet_merge.len(), 1);
-        assert!(causet_merge.capacity() > 0);
-        assert!(!causet_merge.is_empty());
-        assert_eq!(causet_merge.as_bytes_slice(), &[None]);
-
-        causet_merge.push_bytes(Some(vec![1, 2, 3]));
-        assert_eq!(causet_merge.len(), 2);
-        assert!(causet_merge.capacity() > 0);
-        assert!(!causet_merge.is_empty());
-        assert_eq!(causet_merge.as_bytes_slice(), &[None, Some(vec![1, 2, 3])]);
-
-        let mut causet_merge = VectorValue::with_capacity(3, EvalType::Real);
-        assert_eq!(causet_merge.eval_type(), EvalType::Real);
-        assert_eq!(causet_merge.len(), 0);
-        assert_eq!(causet_merge.capacity(), 3);
-        assert!(causet_merge.is_empty());
-        assert_eq!(causet_merge.as_real_slice(), &[]);
-        let column_cloned = causet_merge.clone();
-        assert_eq!(column_cloned.capacity(), 0);
-        assert_eq!(column_cloned.as_real_slice(), causet_merge.as_real_slice());
-
-        causet_merge.push_real(Real::new(1.0).ok());
-        assert_eq!(causet_merge.len(), 1);
-        assert_eq!(causet_merge.capacity(), 3);
-        assert!(!causet_merge.is_empty());
-        assert_eq!(causet_merge.as_real_slice(), &[Real::new(1.0).ok()]);
-        let column_cloned = causet_merge.clone();
-        assert_eq!(column_cloned.capacity(), 1);
-        assert_eq!(column_cloned.as_real_slice(), causet_merge.as_real_slice());
-
-        causet_merge.push_real(None);
-        assert_eq!(causet_merge.len(), 2);
-        assert_eq!(causet_merge.capacity(), 3);
-        assert!(!causet_merge.is_empty());
-        assert_eq!(causet_merge.as_real_slice(), &[Real::new(1.0).ok(), None]);
-        let column_cloned = causet_merge.clone();
-        assert_eq!(column_cloned.capacity(), 2);
-        assert_eq!(column_cloned.as_real_slice(), causet_merge.as_real_slice());
-
-        causet_merge.push_real(Real::new(4.5).ok());
-        assert_eq!(causet_merge.len(), 3);
-        assert_eq!(causet_merge.capacity(), 3);
-        assert!(!causet_merge.is_empty());
-        assert_eq!(
-            causet_merge.as_real_slice(),
-            &[Real::new(1.0).ok(), None, Real::new(4.5).ok()]
-        );
-        let column_cloned = causet_merge.clone();
-        assert_eq!(column_cloned.capacity(), 3);
-        assert_eq!(column_cloned.as_real_slice(), causet_merge.as_real_slice());
-
-        causet_merge.push_real(None);
-        assert_eq!(causet_merge.len(), 4);
-        assert!(causet_merge.capacity() > 3);
-        assert!(!causet_merge.is_empty());
-        assert_eq!(
-            causet_merge.as_real_slice(),
-            &[Real::new(1.0).ok(), None, Real::new(4.5).ok(), None]
-        );
-        assert_eq!(causet_merge.clone().as_real_slice(), causet_merge.as_real_slice());
-
-        causet_merge.truncate(2);
-        assert_eq!(causet_merge.len(), 2);
-        assert!(causet_merge.capacity() > 3);
-        assert!(!causet_merge.is_empty());
-        assert_eq!(causet_merge.as_real_slice(), &[Real::new(1.0).ok(), None]);
-        assert_eq!(causet_merge.clone().as_real_slice(), causet_merge.as_real_slice());
-
-        let causet_merge = VectorValue::with_capacity(10, EvalType::DateTime);
-        assert_eq!(causet_merge.eval_type(), EvalType::DateTime);
-        assert_eq!(causet_merge.len(), 0);
-        assert_eq!(causet_merge.capacity(), 10);
-        assert!(causet_merge.is_empty());
-        assert_eq!(causet_merge.as_date_time_slice(), &[]);
-        assert_eq!(
-            causet_merge.clone().as_date_time_slice(),
-            causet_merge.as_date_time_slice()
-        );
-    }
-
-    #[test]
-    fn test_append() {
-        let mut column1 = VectorValue::with_capacity(0, EvalType::Real);
-        let mut column2 = VectorValue::with_capacity(3, EvalType::Real);
-
-        column1.append(&mut column2);
-        assert_eq!(column1.len(), 0);
-        assert_eq!(column1.capacity(), 0);
-        assert_eq!(column2.len(), 0);
-        assert_eq!(column2.capacity(), 3);
-
-        column2.push_real(Real::new(1.0).ok());
-        column2.append(&mut column1);
-        assert_eq!(column1.len(), 0);
-        assert_eq!(column1.capacity(), 0);
-        assert_eq!(column1.as_real_slice(), &[]);
-        assert_eq!(column2.len(), 1);
-        assert_eq!(column2.capacity(), 3);
-        assert_eq!(column2.as_real_slice(), &[Real::new(1.0).ok()]);
-
-        column1.push_real(None);
-        column1.push_real(None);
-        column1.append(&mut column2);
-        assert_eq!(column1.len(), 3);
-        assert!(column1.capacity() > 0);
-        assert_eq!(column1.as_real_slice(), &[None, None, Real::new(1.0).ok()]);
-        assert_eq!(column2.len(), 0);
-        assert_eq!(column2.capacity(), 3);
-        assert_eq!(column2.as_real_slice(), &[]);
-
-        column1.push_real(Real::new(1.1).ok());
-        column2.push_real(Real::new(3.5).ok());
-        column2.push_real(Real::new(4.1).ok());
-        column2.truncate(1);
-        column2.append(&mut column1);
-        assert_eq!(column1.len(), 0);
-        assert!(column1.capacity() > 0);
-        assert_eq!(column1.as_real_slice(), &[]);
-        assert_eq!(column2.len(), 5);
-        assert!(column2.capacity() > 3);
-        assert_eq!(
-            column2.as_real_slice(),
-            &[
-                Real::new(3.5).ok(),
-                None,
-                None,
-                Real::new(1.0).ok(),
-                Real::new(1.1).ok()
-            ]
-        );
-    }
-
-    #[test]
-    fn test_from() {
-        let slice: &[_] = &[None, Real::new(1.0).ok()];
-        let chunked_vec = NotChunkedVec::from_slice(slice);
-        let causet_merge = VectorValue::from(chunked_vec);
-        assert_eq!(causet_merge.len(), 2);
-        assert_eq!(causet_merge.as_real_slice(), slice);
-    }
-}

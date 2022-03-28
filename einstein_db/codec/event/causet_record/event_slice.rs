@@ -14,6 +14,14 @@ use std::cmp::Ordering::{Equal, Greater, Less};
 use std::marker::PhantomData;
 
 use crate::codec::{Error, Result};
+use crate::codec::event::causet_record::{EventSlice, EventSliceMut};
+use crate::codec::event::causet_record::{EventSliceReader, EventSliceWriter};
+use crate::codec::event::causet_record::{EventSliceReaderMut, EventSliceWriterMut};
+use crate::codec::event::causet_record::{EventSliceReaderVec, EventSliceWriterVec};
+
+/// A trait for types that can be used as the key of a causet record.
+/// The key is used to identify the causet record.
+
 
 pub enum RowSlice<'a> {
     Small {

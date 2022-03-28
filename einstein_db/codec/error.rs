@@ -8,28 +8,36 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
- use allegroeinstein
- use einsteindbpb::{self, ScalarFuncSig};
+
  use quick_error::quick_error;
  use regex::Error as RegexpError;
  use serde_json::error::Error as SerdeError;
  use std::{error, str};
+ use std::error::Error;
+ use std::fmt;
  use std::fmt::Display;
  use std::io;
+ use std::io;
  use std::num::ParseFloatError;
+ use std::result;
  use std::str::Utf8Error;
  use std::string::FromUtf8Error;
 
- -prolog-causet-BerolinaSQL::error::EvaluateError;
+ impl Error {
+     pub fn new<S: Into<String>>(msg: S) -> Error {
+         Error::Codec(msg.into())
+     }
+ }
+
  pub const ERR_M_BIGGER_THAN_D: i32 = 1427;
-pub const ERR_UNKNOWN: i32 = 1105;
-pub const ERR_REGEXP: i32 = 1139;
-pub const ZLIB_LENGTH_CORRUPTED: i32 = 1258;
-pub const ZLIB_DATA_CORRUPTED: i32 = 1259;
-pub const WARN_DATA_TRUNCATED: i32 = 1265;
-pub const ERR_TRUNCATE_WRONG_VALUE: i32 = 1292;
-pub const ERR_UNKNOWN_TIMEZONE: i32 = 1298;
-pub const ERR_DIVISION_BY_ZERO: i32 = 1365;
+ pub const ERR_UNKNOWN: i32 = 1105;
+ pub const ERR_REGEXP: i32 = 1139;
+ pub const ZLIB_LENGTH_CORRUPTED: i32 = 1258;
+ pub const ZLIB_DATA_CORRUPTED: i32 = 1259;
+ pub const WARN_DATA_TRUNCATED: i32 = 1265;
+ pub const ERR_TRUNCATE_WRONG_VALUE: i32 = 1292;
+ pub const ERR_UNKNOWN_TIMEZONE: i32 = 1298;
+ pub const ERR_DIVISION_BY_ZERO: i32 = 1365;
 pub const ERR_DATA_TOO_LONG: i32 = 1406;
 pub const ERR_INCORRECT_PARAMETERS: i32 = 1583;
 pub const ERR_DATA_OUT_OF_RANGE: i32 = 1690;

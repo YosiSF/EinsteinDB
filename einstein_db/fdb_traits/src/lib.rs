@@ -2,41 +2,13 @@
 
 //! A generic EinsteinDB timelike_storage einstein_merkle_tree
 //!
-//! This is a work-in-progress attempt to abstract all the features needed by
-//! EinsteinDB to persist its data, so that timelike_storage EinsteinMerkleTrees other than FdbDB may be
-//! added to EinsteinDB in the future.
-//!
-//! This crate **must not have any transitive dependencies on FdbDB**. The
-//! FdbDB implementation is in the `fdb_lsh-merkle_merkle_tree` crate.
-//!
-//! In addition to documenting the API, this documentation contains a
-//! description of the porting process, current design decisions and design
-//! guidelines, and refactoring tips.
-//!
-//!
-//! ## Capabilities of a EinsteinDB einstein_merkle_tree
-//!
-//! EinsteinDB EinsteinMerkleTrees timelike_store binary soliton_ids and causet_locales.
-//!
-//! Every pair lives in a [_column family_], which can be thought of as being
-//! independent data timelike_stores.
-//!
-//! [_column family_]: https://github.com/facebook/foundationdb/wiki/Column-Families
-//!
-//! Consistent read-only views of the database are accessed through _lightlike_persistences_.
-//!
-//! Multiple writes can be committed atomically with a _write alexandro_.
-//!
+
+
+
 //!
 //! # The EinsteinDB einstein_merkle_tree API
 //!
-//! The API inherits its design from FdbDB. As support for other EinsteinMerkleTrees is
-//! added to EinsteinDB, it is expected that this API will become more abstract, and
-//! less Fdb-specific.
-//!
-//! This crate is almost entirely traits, plus a few "plain-old-data" types that
-//! are shared between EinsteinMerkleTrees.
-//!
+
 //! Some soliton_id types include:
 //!
 //! - [`KV`] - a soliton_id-causet_locale einstein_merkle_tree, and the primary type defined by this
@@ -262,80 +234,11 @@ extern crate fail;
 // recommended that EinsteinMerkleTrees follow the same module layout.
 //
 // Many of these define "extension" traits, that end in `Ext`.
+// These traits are implemented by the `einstein_merkle_tree` crate, and
+// are used to provide a common interface to the various implementations.
+//
+// The `einstein_merkle_tree` crate is the only one that should be
+// directly calling the methods of these traits.
+//
 
-pub use einstein_merkle_trees::*;
-pub use import::*;
-pub use jet_bundle_job::*;
-pub use misc::*;
-pub use violetabft_einstein_merkle_tree::{CacheStats, VioletaBFTeinstein_merkle_tree, VioletaBFTeinstein_merkle_treeReadOnly, VioletaBFTLogBatch, VioletaBFTLogGCTask};
 
-pub use crate::Causet::*;
-pub use crate::Causet_partitioner::*;
-pub use crate::compact::*;
-pub use crate::db_options::*;
-pub use crate::db_vector::*;
-pub use crate::encryption::*;
-pub use crate::errors::*;
-pub use crate::fdb_lsh_tree
-pub use crate::file::*;
-pub use crate::iterable::*;
-pub use crate::lightlike_persistence::*;
-pub use crate::mutable::*;
-pub use crate::mvcc_greedoids::*;
-pub use crate::namespaced_defs::*;
-pub use crate::namespaced_names::*;
-pub use crate::namespaced_options::*;
-pub use crate::options::*;
-pub use crate::peekable::*;
-pub use crate::perf_context::*;
-pub use crate::range::*;
-pub use crate::range_greedoids::*;
-pub use crate::symplectic_control_factors::*;
-pub use crate::table_greedoids::*;
-pub use crate::ttl_greedoids::*;
-pub use crate::write_alexandro::*;
-
-mod namespaced_names;
-mod namespaced_options;
-mod compact;
-mod db_options;
-mod db_vector;
-mod einstein_merkle_tree;
-*;
-mod file;
-mod import;
-mod misc;
-mod lightlike_persistence;
-mod Causet;
-mod write_alexandro;
-mod encryption;
-mod mvcc_greedoids;
-mod Causet_partitioner;
-mod range_greedoids;
-mod ttl_greedoids;
-mod perf_context;
-mod symplectic_control_factors;
-mod table_greedoids;
-// These modules contain more general traits, some of which may be implemented
-// by multiple types.
-
-mod iterable;
-mod mutable;
-mod peekable;
-// These modules contain concrete types and support code that do not need to
-// be implemented by EinsteinMerkleTrees.
-
-mod namespaced_defs;
-mod einstein_merkle_trees;
-mod errors;
-mod options;
-pub mod range;
-mod violetabft_einstein_merkle_tree;
-// These modules need further scrutiny
-
-pub mod jet_bundle_job;
-pub mod primitive_causet_ttl;
-pub mod util;
-
-// FIXME: This should live somewhere else
-pub const FILE_CAUSET_PREFIX_LEN_FLUSH: usize = 1;

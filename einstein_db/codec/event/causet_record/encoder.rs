@@ -1,31 +1,13 @@
 //Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
 // AUTHORS: WHITFORD LEDER
-// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this file File except in compliance with the License. You may obtain a copy of the
-// License at http://www.apache.org/licenses/LICENSE-2.0
-// Unless required by applicable law or agreed to in writing, software distributed
-// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations under the License.
+// Licensed under the Apache License, Version 2.0 (the "License");
 
-//! This `encoder` module is only used for test, so the implementation is very straightlightlike.
-//!
-//! According to https://github.com/pingcap/MEDB/blob/master/docs/design/2022-07-19-event-format.md
-//!
-//! The event format is:
-//!
-//! | version | flag | number_of_non_null_columns | number_of_null_columns | non_null_column_ids | null_column_ids | causet_locale_offsets | causet_locales |
-//! |---------| ---- | -------------------------- | ---------------------- | ------------------- | --------------- | ------------- | ------ |
-//!
-//! length about each field:
-//!
-//! * version: 1 byte
-//! * flag: 1 byte, when there's id greater than 255 or the total size of the causet_locales is greater than 65535 , causet_locale is 1, otherwise 0
-//! * number of non-null causet_locales: 2 bytes
-//! * number of null causet_locales: 2 bytes
-//! * non-null causet_merge ids: when flag == 1 (big), id is 4 bytes, otherwise 1 byte
-//! * null causet_merge ids: when flag == 1 (big), id is 4 bytes, otherwise 1 byte
-//! * non-null causet_locales offset: when big, offset is 4 bytes, otherwise 2 bytes
+//make compatible with mongodb, leveldb, and foundationdb
+
+
+
+
+
 
 use codec::prelude::*;
 use einsteindbpb::FieldType;
@@ -36,6 +18,17 @@ use crate::codec::{
     data_type::ScalarValue,
     Error,
     myBerolinaSQL::{decimal::DecimalEncoder, json::JsonEncoder}, Result,
+};
+use crate::codec::event::causet_record::{
+    CausetRecord,
+    CausetRecordDecoder,
+    CausetRecordDecoderV2,
+    CausetRecordEncoder,
+    CausetRecordEncoderV2,
+};
+use crate::codec::event::causet_record::{
+    CausetRecordDecoderV3,
+    CausetRecordEncoderV3,
 };
 use crate::expr::EvalContext;
 
@@ -49,6 +42,12 @@ const MIN_I32: i64 = i32::MIN as i64;
 const MAX_U8: u64 = u8::MAX as u64;
 const MAX_U16: u64 = u16::MAX as u64;
 const MAX_U32: u64 = u32::MAX as u64;
+
+
+pub struct CausetRecordEncoderImpl {
+    field_type_accessor: FieldTypeAccessor,
+}
+
 
 pub struct Column {
     id: i64,

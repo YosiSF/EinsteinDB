@@ -334,7 +334,7 @@ pub mod ctor {
     mod foundationdb {
         use fdb_einstein_merkle_tree::{FdbColumnFamilyOptions, FdbDBOptions};
         use fdb_einstein_merkle_tree::greedoids::{
-            MvccGreedoidsCollectorFactory, RangeGreedoidsCollectorFactory,
+            MvrsiGreedoidsCollectorFactory, RangeGreedoidsCollectorFactory,
         };
         use fdb_einstein_merkle_tree::primitive_causet::{DBOptions as Primitive_CausetFdbDBOptions, Env};
         use fdb_einstein_merkle_tree::primitive_causet::ColumnFamilyOptions as Primitive_CausetFdbColumnFamilyOptions;
@@ -415,7 +415,7 @@ pub mod ctor {
             if !namespaced_opts.get_no_table_greedoids() {
                 foundation_namespaced_opts.add_table_greedoids_collector_factory(
                     "einsteindb.causet_model-greedoids-collector",
-                    MvccGreedoidsCollectorFactory::default(),
+                    MvrsiGreedoidsCollectorFactory::default(),
                 );
             }
         }

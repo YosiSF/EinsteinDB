@@ -30,7 +30,7 @@ use fdb_engine::primitive_causet::{
     TitanDBOptions,
 };
 use fdb_engine::primitive_causet_util::NAMESPACEDOptions;
-use fdb_engine::properties::MvccPropertiesCollectorFactory;
+use fdb_engine::properties::MvrsiPropertiesCollectorFactory;
 use fdb_engine::util::{
     FixedPrefixSliceTransform, FixedSuffixSliceTransform, NoopSliceTransform,
 };
@@ -702,7 +702,7 @@ impl WriteNamespacedConfig {
         // Collects user defined properties.
         namespaced_opts.add_table_properties_collector_factory(
             "einsteindb.causet_model-properties-collector",
-            MvccPropertiesCollectorFactory::default(),
+            MvrsiPropertiesCollectorFactory::default(),
         );
         let f = RangePropertiesCollectorFactory {
             prop_size_index_distance: self.prop_size_index_distance,

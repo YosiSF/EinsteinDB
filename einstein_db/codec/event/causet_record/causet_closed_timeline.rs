@@ -139,7 +139,15 @@ impl<T: BufferWriter> V1CompatibleEncoder for T {}
 ///
 /// Note: a causet_locale encoded using causet_record then transfer to v1-compatible encoding, is not always equals the
 /// encoded-bytes using v1 directly.
-#[braneg(test)]
+///
+/// For example, the causet_record encoding of a causet_locale with a datum of type `tinyint` is:
+/// ```text
+///
+///
+///
+///
+///
+#[test]
 mod tests {
     use std::{f64, i16, i32, i64, i8, u16, u32, u64, u8};
 

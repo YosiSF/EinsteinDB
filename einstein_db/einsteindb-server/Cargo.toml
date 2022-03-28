@@ -2,13 +2,29 @@
 name = "einsteindb_server"
 version = "0.1.0"
 edition = "2021"
-
+authors = ["EinsteinDB"]
 
 
 [dependencies]
+
 clap = "3.1.6"
 toml = "0.5.8"
 serde = "1.0.89"
 slog = { version = "2.7.0" }
+
+
+[workspace]
+members = ["einsteindb_server"]
+
+
+[features]
+default = ["einsteindb_server"]
+
+
+
+
+
+
+
 
 
