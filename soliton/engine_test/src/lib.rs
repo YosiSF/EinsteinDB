@@ -118,9 +118,9 @@ pub mod kv {
     pub fn new_einstein_merkle_tree_opt(
         local_path: &str,
         db_opt: DBOptions,
-        namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
+        namespaces_opts: Vec<NAMESPACEDOptions<'_>>,
     ) -> Result<KvTesteinstein_merkle_tree> {
-        KvTesteinstein_merkle_tree::new_einstein_merkle_tree_opt(local_path, db_opt, namespaceds_opts)
+        KvTesteinstein_merkle_tree::new_einstein_merkle_tree_opt(local_path, db_opt, namespaces_opts)
     }
 }
 
