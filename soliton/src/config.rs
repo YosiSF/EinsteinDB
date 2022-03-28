@@ -22,7 +22,7 @@ use fdb_engine::{
     FdbEventListener, FdbSstPartitionerFactory, RangePropertiesCollectorFactory,
     TtlPropertiesCollectorFactory, VioletaBFTDBLogger,
 };
-use fdb_engine::config::{self as rocks_config, BlobRunMode, CompressionType, LogLevel};
+use fdb_engine::config::{self as foundation_config, BlobRunMode, CompressionType, LogLevel};
 use fdb_engine::get_env;
 use fdb_engine::primitive_causet::{
     BlockBasedOptions, Cache, ColumnFamilyOptions, CompactionPriority, DBCompactionStyle,
@@ -254,7 +254,7 @@ macro_rules! namespaced_config {
             pub block_based_bloom_filter: bool,
             #[online_config(skip)]
             pub read_amp_bytes_per_bit: u32,
-            #[serde(with = "rocks_config::compression_type_l_naught_serde")]
+            #[serde(with = "foundation_config::compression_type_l_naught_serde")]
             #[online_config(skip)]
             pub compression_per_l_naught: [DBCompressionType; 7],
             pub write_buffer_size: ReadableSize,
@@ -267,7 +267,7 @@ macro_rules! namespaced_config {
             pub l_naught0_slowdown_writes_trigger: i32,
             pub l_naught0_stop_writes_trigger: i32,
             pub max_jet_bundle_bytes: ReadableSize,
-            #[serde(with = "rocks_config::jet_bundle_pri_serde")]
+            #[serde(with = "foundation_config::jet_bundle_pri_serde")]
             #[online_config(skip)]
             pub jet_bundle_pri: CompactionPriority,
             #[online_config(skip)]
@@ -275,7 +275,7 @@ macro_rules! namespaced_config {
             #[online_config(skip)]
             pub num_l_naughts: i32,
             pub max_bytes_for_l_naught_multiplier: i32,
-            #[serde(with = "rocks_config::jet_bundle_style_serde")]
+            #[serde(with = "foundation_config::jet_bundle_style_serde")]
             #[online_config(skip)]
             pub jet_bundle_style: DBCompactionStyle,
             pub disable_auto_jet_bundles: bool,
@@ -296,7 +296,7 @@ macro_rules! namespaced_config {
             pub jet_bundle_guard_min_output_file_size: ReadableSize,
             #[online_config(skip)]
             pub jet_bundle_guard_max_output_file_size: ReadableSize,
-            #[serde(with = "rocks_config::compression_type_serde")]
+            #[serde(with = "foundation_config::compression_type_serde")]
             #[online_config(skip)]
             pub bottommost_l_naught_compression: DBCompressionType,
             #[online_config(skip)]
@@ -911,7 +911,7 @@ impl TitanDBConfig {
 pub struct DbConfig {
     #[online_config(skip)]
     pub info_log_l_naught: LogLevel,
-    #[serde(with = "rocks_config::recovery_mode_serde")]
+    #[serde(with = "foundation_config::recovery_mode_serde")]
     #[online_config(skip)]
     pub wal_recovery_mode: DBRecoveryMode,
     #[online_config(skip)]
@@ -944,7 +944,7 @@ pub struct DbConfig {
     pub rate_bytes_per_sec: ReadableSize,
     #[online_config(skip)]
     pub rate_limiter_refill_period: ReadableDuration,
-    #[serde(with = "rocks_config::rate_limiter_mode_serde")]
+    #[serde(with = "foundation_config::rate_limiter_mode_serde")]
     #[online_config(skip)]
     pub rate_limiter_mode: DBRateLimiterMode,
     // deprecated. use rate_limiter_auto_tuned.
@@ -1237,7 +1237,7 @@ impl VioletaBFTDefaultNamespacedConfig {
 #[serde(default)]
 #[serde(rename_all = "kebab-case")]
 pub struct VioletaBFTDbConfig {
-    #[serde(with = "rocks_config::recovery_mode_serde")]
+    #[serde(with = "foundation_config::recovery_mode_serde")]
     #[online_config(skip)]
     pub wal_recovery_mode: DBRecoveryMode,
     #[online_config(skip)]
@@ -3099,7 +3099,7 @@ impl EinsteinDbConfig {
         ReadableSize((total as f64 * MEMORY_USAGE_LIMIT_RATE) as u64)
     }
 
-    pub fn build_shared_rocks_env(
+    pub fn build_shared_foundation_env(
         &self,
         soliton_id_manager: Option<Arc<DataKeyManager>>,
         limiter: Option<Arc<IORateLimiter>>,
@@ -4012,7 +4012,7 @@ mod tests {
     }
 
     #[test]
-    fn test_change_rocksdb_config() {
+    fn test_change_foundationdb_config() {
         let (mut cfg, _dir) = EinsteinDbConfig::with_tmp().unwrap();
         cfg.foundationdb.max_background_jobs = 4;
         cfg.foundationdb.max_background_flushes = 2;

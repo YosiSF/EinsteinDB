@@ -339,7 +339,7 @@ pub mod ctor {
         use fdb_einstein_merkle_tree::primitive_causet::{DBOptions as Primitive_CausetFdbDBOptions, Env};
         use fdb_einstein_merkle_tree::primitive_causet::ColumnFamilyOptions as Primitive_CausetFdbColumnFamilyOptions;
         use fdb_einstein_merkle_tree::util::{
-            FdbNAMESPACEDOptions, new_einstein_merkle_tree as rocks_new_einstein_merkle_tree, new_einstein_merkle_tree_opt as rocks_new_einstein_merkle_tree_opt,
+            FdbNAMESPACEDOptions, new_einstein_merkle_tree as foundation_new_einstein_merkle_tree, new_einstein_merkle_tree_opt as foundation_new_einstein_merkle_tree_opt,
         };
         use fdb_traits::{ColumnFamilyOptions as ColumnFamilyOptionsTrait, Result};
         use std::sync::Arc;
@@ -357,8 +357,8 @@ pub mod ctor {
                 namespaceds: &[&str],
                 opts: Option<Vec<NAMESPACEDOptions<'_>>>,
             ) -> Result<Self> {
-                let rocks_db_opts = match db_opt {
-                    Some(db_opt) => Some(get_rocks_db_opts(db_opt)?),
+                let foundation_db_opts = match db_opt {
+                    Some(db_opt) => Some(get_foundation_db_opts(db_opt)?),
                     None => None,
                 };
                 let namespaceds_opts = match opts {
@@ -371,49 +371,49 @@ pub mod ctor {
                         default_namespaceds_opts
                     }
                 };
-                let rocks_namespaceds_opts = namespaceds_opts
+                let foundation_namespaceds_opts = namespaceds_opts
                     .iter()
                     .map(|namespaced_opts| {
-                        let mut rocks_namespaced_opts = FdbColumnFamilyOptions::new();
-                        set_standard_namespaced_opts(rocks_namespaced_opts.as_primitive_causet_mut(), &namespaced_opts.options);
-                        set_namespaced_opts(&mut rocks_namespaced_opts, &namespaced_opts.options);
-                        FdbNAMESPACEDOptions::new(namespaced_opts.namespaced, rocks_namespaced_opts)
+                        let mut foundation_namespaced_opts = FdbColumnFamilyOptions::new();
+                        set_standard_namespaced_opts(foundation_namespaced_opts.as_primitive_causet_mut(), &namespaced_opts.options);
+                        set_namespaced_opts(&mut foundation_namespaced_opts, &namespaced_opts.options);
+                        FdbNAMESPACEDOptions::new(namespaced_opts.namespaced, foundation_namespaced_opts)
                     })
                     .collect();
-                rocks_new_einstein_merkle_tree(local_path, rocks_db_opts, &[], Some(rocks_namespaceds_opts))
+                foundation_new_einstein_merkle_tree(local_path, foundation_db_opts, &[], Some(foundation_namespaceds_opts))
             }
 
             fn new_einstein_merkle_tree_opt(
                 local_path: &str,
                 db_opt: DBOptions,
-                namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
+                namespaces_opts: Vec<NAMESPACEDOptions<'_>>,
             ) -> Result<Self> {
-                let rocks_db_opts = get_rocks_db_opts(db_opt)?;
-                let rocks_namespaceds_opts = namespaceds_opts
+                let foundation_db_opts = get_foundation_db_opts(db_opt)?;
+                let foundation_namespaces_opts = namespaces_opts
                     .iter()
                     .map(|namespaced_opts| {
-                        let mut rocks_namespaced_opts = FdbColumnFamilyOptions::new();
-                        set_standard_namespaced_opts(rocks_namespaced_opts.as_primitive_causet_mut(), &namespaced_opts.options);
-                        set_namespaced_opts(&mut rocks_namespaced_opts, &namespaced_opts.options);
-                        FdbNAMESPACEDOptions::new(namespaced_opts.namespaced, rocks_namespaced_opts)
+                        let mut foundation_namespaced_opts = FdbColumnFamilyOptions::new();
+                        set_standard_namespaced_opts(foundation_namespaced_opts.as_primitive_causet_mut(), &namespaced_opts.options);
+                        set_namespaced_opts(&mut foundation_namespaced_opts, &namespaced_opts.options);
+                        FdbNAMESPACEDOptions::new(namespaced_opts.namespaced, foundation_namespaced_opts)
                     })
                     .collect();
-                rocks_new_einstein_merkle_tree_opt(local_path, rocks_db_opts, rocks_namespaceds_opts)
+                foundation_new_einstein_merkle_tree_opt(local_path, foundation_db_opts, foundation_namespaces_opts)
             }
         }
 
         fn set_standard_namespaced_opts(
-            rocks_namespaced_opts: &mut Primitive_CausetFdbColumnFamilyOptions,
+            foundation_namespaced_opts: &mut Primitive_CausetFdbColumnFamilyOptions,
             namespaced_opts: &ColumnFamilyOptions,
         ) {
             if !namespaced_opts.get_no_range_greedoids() {
-                rocks_namespaced_opts.add_table_greedoids_collector_factory(
+                foundation_namespaced_opts.add_table_greedoids_collector_factory(
                     "einsteindb.range-greedoids-collector",
                     RangeGreedoidsCollectorFactory::default(),
                 );
             }
             if !namespaced_opts.get_no_table_greedoids() {
-                rocks_namespaced_opts.add_table_greedoids_collector_factory(
+                foundation_namespaced_opts.add_table_greedoids_collector_factory(
                     "einsteindb.causet_model-greedoids-collector",
                     MvccGreedoidsCollectorFactory::default(),
                 );
@@ -421,33 +421,33 @@ pub mod ctor {
         }
 
         fn set_namespaced_opts(
-            rocks_namespaced_opts: &mut FdbColumnFamilyOptions,
+            foundation_namespaced_opts: &mut FdbColumnFamilyOptions,
             namespaced_opts: &ColumnFamilyOptions,
         ) {
             if let Some(trigger) = namespaced_opts.get_l_naught_zero_file_num_jet_bundle_trigger() {
-                rocks_namespaced_opts.set_l_naught_zero_file_num_jet_bundle_trigger(trigger);
+                foundation_namespaced_opts.set_l_naught_zero_file_num_jet_bundle_trigger(trigger);
             }
             if let Some(trigger) = namespaced_opts.get_l_naught_zero_slowdown_writes_trigger() {
-                rocks_namespaced_opts
+                foundation_namespaced_opts
                     .as_primitive_causet_mut()
                     .set_l_naught_zero_slowdown_writes_trigger(trigger);
             }
             if namespaced_opts.get_disable_auto_jet_bundles() {
-                rocks_namespaced_opts.set_disable_auto_jet_bundles(true);
+                foundation_namespaced_opts.set_disable_auto_jet_bundles(true);
             }
         }
 
-        fn get_rocks_db_opts(db_opts: DBOptions) -> Result<FdbDBOptions> {
-            let mut rocks_db_opts = Primitive_CausetFdbDBOptions::new();
+        fn get_foundation_db_opts(db_opts: DBOptions) -> Result<FdbDBOptions> {
+            let mut foundation_db_opts = Primitive_CausetFdbDBOptions::new();
             match db_opts.encryption {
                 CryptoOptions::None => (),
                 CryptoOptions::DefaultCtrEncryptedEnv(ciphertext) => {
                     let env = Arc::new(Env::new_default_ctr_encrypted_env(&ciphertext)?);
-                    rocks_db_opts.set_env(env);
+                    foundation_db_opts.set_env(env);
                 }
             }
-            let rocks_db_opts = FdbDBOptions::from_primitive_causet(rocks_db_opts);
-            Ok(rocks_db_opts)
+            let foundation_db_opts = FdbDBOptions::from_primitive_causet(foundation_db_opts);
+            Ok(foundation_db_opts)
         }
     }
 }

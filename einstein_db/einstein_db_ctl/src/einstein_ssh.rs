@@ -2,6 +2,7 @@ use std::{str, u64};
 use std::borrow::ToOwned;
 use std::lazy::SyncLazy;
 use std::string::ToString;
+
 use structopt::StructOpt;
 
 const BI_KEY_HINT: &str = "Bimap soliton_ids(generally starts with \"einst\") in delimiter";
@@ -53,7 +54,7 @@ pub struct Opt {
     pub data_dir: Option<String>,
 
     #[structopt(long)]
-    /// Skip paranoid checks when open rocksdb
+    /// Skip paranoid checks when open foundationdb
     pub skip_paranoid_checks: bool,
 
     #[allow(dead_code)]
@@ -61,7 +62,7 @@ pub struct Opt {
     long,
     validator = |_| Err("DEPRECATED!!! Use --data-dir and --config instead".to_owned()),
     )]
-    /// Set the rocksdb path
+    /// Set the foundationdb path
     pub einstein_db: Option<String>,
 
     #[allow(dead_code)]
@@ -69,7 +70,7 @@ pub struct Opt {
     long,
     validator = |_| Err("DEPRECATED!!! Use --data-dir and --config instead".to_owned()),
     )]
-    /// Set the violetabft rocksdb path
+    /// Set the violetabft foundationdb path
     pub violetabftdb: Option<String>,
 
     #[structopt(conflicts_with = "escaped-to-hex", long = "to-escaped")]
