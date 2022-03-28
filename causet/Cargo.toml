@@ -4,79 +4,25 @@ version = "0.1.0"
 edition = "2021"
 
 # See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-causet-core = "0.1.0"
+chrono = "0.4"
+itertools = "0.7"
+num = "0.1"
+ordered-float = "0.5"
+pretty = "0.2"
+uuid = { version = "0.5", features = ["v4", "serde"] }
+serde = { version = "1.0", optional = true }
+serde_derive = { version = "1.0", optional = true }
 
+[dev-dependencies]
+serde_test = "1.0"
+serde_json = "1.0"
 
-# Language: toml
-# Path: causet/Cargo.toml
-[package]
-name = "causet-core"
-version = "0.1.0"
-edition = "2021"
+[features]
+serde_support = ["serde", "serde_derive"]
 
-
-[workspace]
-members = ["causet-ml", "causet-ml-core", "causet-ml-core-tests", "causet-ml-tests"]
-
-
-# Language: toml
-# Path: causet-ml/Cargo.toml
-[package]
-name = "causet-ml"
-version = "0.1.0"
-edition = "2021"
-
-
-# Language: toml
-
-[profile.release]
-opt-level = 3
-lto = true
-debug-assertions = false
-rpath = false
-
-[profile.dev]
-opt-level = 0
-lto = false
-debug-assertions = true
-rpath = false
-
-[target.x86_64-unknown-linux-gnu.release]
-linker = "x86_64-unknown-linux-gnu-gcc"
-ar = "x86_64-unknown-linux-gnu-ar"
-rustflags = ["-C", "link-arg=-s"]
-
-
-
-[target.x86_64-unknown-linux-gnu.dev]
-linker = "x86_64-unknown-linux-gnu-gcc"
-ar = "x86_64-unknown-linux-gnu-ar"
-rustflags = ["-C", "link-arg=-s"]
-
-
-# Language: toml
-# Path: causet-ml-core/Cargo.toml
-[package]
-name = "causet-ml-core"
-version = "0.1.0"
-edition = "2021"
-
-[target.x86_64-unknown-linux-gnu.debug]
-
-[target.x86_64-unknown-linux-gnu.debug.rpath]
-
-
-[target.x86_64-unknown-linux-gnu.debug.crt]
-
-[target.x86_64-unknown-linux-gnu.debug.crt.rpath]
-
-[target.x86_64-unknown-linux-gnu.debug.crt.static]
-
-
-
-
+[build-dependencies]
+peg = "0.5"
 
 
 
