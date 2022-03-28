@@ -47,15 +47,20 @@ pub trait CausetPartitioner {
 }
 
 pub trait CausetPartitionerFactory: Sync + Send {
-    fn create_partitioner(&self) -> Box<dyn CausetPartitioner>;
-}   // end trait CausetPartitionerFactory
 
-
-
-
-
-    type Partitioner: CausetPartitioner + 'static;
+// end trait CausetPartitionerFactory
 
     fn name(&self) -> &CString;
+    fn name_mut(&mut self) -> &mut CString;
+    fn name_mut_ref(&mut self) -> &mut CString;
+    fn name_ref(&self) -> &CString;
+    fn name_mut_ref_ref(&mut self) -> &mut CString;
+
+    fn should_partition(&mut self, req: &CausetPartitionerRequest<'_>) -> CausetPartitionerResult;
+    fn can_do_trivial_move(&mut self, smallest_soliton_id: &[u8], largest_soliton_id: &[u8]) -> bool;
+    fn partitioner_context(&mut self, req: &CausetPartitionerRequest<'_>) -> CausetPartitionerContext<'_>;
+
     fn create_partitioner(&self, context: &CausetPartitionerContext<'_>) -> Option<Self::Partitioner>;
-}
+    // end trait CausetPartitionerFactory
+}// end trait CausetPartitionerFactory
+
