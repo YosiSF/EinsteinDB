@@ -9,17 +9,26 @@ docker volume create --name $POOL_NAME
 
 
 
-  docker run -d --name $DOCKER_CONTAINER
+  docker run -d --name "$DOCKER_CONTAINER"
+        # shellcheck disable=SC2215
         --ulimit nofile=65536:65536
+        # shellcheck disable=SC2215
         -v /etc/localtime:/etc/localtime:ro
+        # shellcheck disable=SC2215
         -p 127.0.0.1::2222
+        # shellcheck disable=SC2215
         -p 127.0.0.1::2379
 
-		--name $DOCKER_CONTAINER
+		# shellcheck disable=SC2215
+		--name "$DOCKER_CONTAINER"
+        # shellcheck disable=SC2215
         --restart always
 
+          # shellcheck disable=SC2215
           -v $fermipool_path:/mnt/fermipool
+          # shellcheck disable=SC2215
           -v /etc/localtime:/etc/localtime:ro
+          # shellcheck disable=SC2215
           -v /etc/timezone:/etc/timezone:ro
 
     echo "Starting $DOCKER_IMAGE..."   # This message helps user know what
@@ -33,7 +42,7 @@ echo ""
 echo "#########################################################"
 sleep 1s
 
-    docker start $DOCKER_CONTAINER 2>&1 | grep -v 'port is already
+    docker start "$DOCKER_CONTAINER" 2>&1 | grep -v 'port is already
 allocated'
 
 
@@ -41,54 +50,54 @@ echo ""
 echo "#########################################################"
 sleep 1s
 
-#docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/grastate.dat
-#docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/galera.cache
-#docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/gvwstate.dat
-#docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/gvwstate.dat
+#docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/grastate.dat
+#docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/galera.cache
+#docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/gvwstate.dat
+#docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/gvwstate.dat
 
 echo "Initializing an empty cluster..."
 echo ""
 
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/grastate.dat
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/galera.cache
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/gvwstate.dat
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/gvwstate.dat
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep.sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep.sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_receive
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_receive_address
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_replay
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/mysql-bin.*
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql-bin*
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/grastate.dat
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/galera.cache
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/gvwstate.dat
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/gvwstate.dat
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep.sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep.sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_receive
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_receive_address
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_replay
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/mysql-bin.*
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql-bin*
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/gvwstate.dat
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep.sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep.sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_receive
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_receive_address
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_replay
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/mysql-bin.*
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql-bin*
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/gvwstate.dat
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep.sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep.sst
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_receive
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_receive_address
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/wsrep_sst_replay
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql/mysql-bin.*
-docker exec $DOCKER_CONTAINER rm -rf /var/lib/mysql-bin*
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/grastate.dat
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/galera.cache
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/gvwstate.dat
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/gvwstate.dat
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep.sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep.sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_receive
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_receive_address
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_replay
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/mysql-bin.*
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql-bin*
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/grastate.dat
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/galera.cache
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/gvwstate.dat
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/gvwstate.dat
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep.sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep.sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_receive
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_receive_address
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_replay
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/mysql-bin.*
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql-bin*
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/gvwstate.dat
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep.sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep.sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_receive
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_receive_address
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_replay
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/mysql-bin.*
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql-bin*
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/gvwstate.dat
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep.sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep.sst
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_receive
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_receive_address
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/wsrep_sst_replay
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql/mysql-bin.*
+docker exec "$DOCKER_CONTAINER" rm -rf /var/lib/mysql-bin*
 
 sudo apt-get update
 sudo apt-get install -y \
@@ -141,20 +150,22 @@ sudo pip3 install -U pygments
 sudo pip3 install -U cython
 
 git clone https://github.com/YosiSF/EinsteinDB gdb
+# shellcheck disable=SC2164
 cd gdb
-git checkout $branch
+# shellcheck disable=SC2154
+git checkout "$branch"
 # get all dependencies
 ./prepare.sh
+# shellcheck disable=SC2103
 cd ..
 # run gdb
 ./gdb/gcdb/gdb
 # run cli
 ./gdb/gdb/gdb --interactive --tty=0 --ex "set args $*"
 
-```
+
 ###install and setup EinsteinDB with istio######
-```init.sh```
-```
+
 sudo apt-get update
 sudo apt-get install -y \
   build-essential \
@@ -205,8 +216,9 @@ sudo pip3 install -U pygments
 sudo pip3 install -U cython
 
 git clone https://github.com/YosiSF/EinsteinDB gdb
+# shellcheck disable=SC2164
 cd gdb
-git checkout $branch
+git checkout "$branch"
 # get all dependencies
 ./prepare.sh
 cd ..
@@ -217,7 +229,7 @@ cd ..
 
 ```
 
-###install and setup einsteindb with gremlinvm, tinkerpop######
+###install and setup einsteindb with gremlin, tinkerpop######
 ```init.sh```
 ```
 sudo apt-get update
@@ -269,15 +281,19 @@ sudo pip3 install -U pygments
 sudo pip3 install -U cython
 
 git clone https://github.com/YosiSF/EinsteinDB gdb
-cd gdb
-git checkout $branch
+# shellcheck disable=SC2164
+cd gdb || exit
+git checkout "$branch"
 
-## install gremlinvm and tinkerpop
+## install gremlin and tinkerpop
 ./prepare.sh
 cd ..
 ./gdb/gremlinvm/gremlinvm
-# run gremlinvm
+# run gremlin
 
 ./gdb/tinkerpop/tinkerpop
 # run tinkerpop
+
+
+
 

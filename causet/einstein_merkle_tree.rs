@@ -1,15 +1,14 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::fmt::Debug;
+use std::hash::Hash;
+use std::marker::PhantomData;
+use std::mem;
+use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
 use crate::*;
 
-// FIXME: Revisit the remaining types and methods on KV. Some of these are
-// here for lack of somewhere better to put them at the time of writing.
-// Consider moving everything into other traits and making KV essentially
-// a trait typedef.
-
-/// A EinsteinDB soliton_id-causet_locale timelike_store
 pub trait KV:
     Peekable
     + SyncMutable

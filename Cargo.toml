@@ -44,7 +44,9 @@ semver = "1.0.6"
 serde = { version = "1.0", features = ["derive"] }
 serde_ignored = "0.1"
 serde_json = "1.0"
-slog = { version = "2.3", features = ["max_level_trace", "release_max_level_debug"] }
+serde_urlencoded = "0.9"
+serde_yaml = "0.9"
+slog = "2.7.0"
 slog-global = { version = "0.1", git = "https://github.com/breeswish/slog-global.git", rev = "d592f88e4dbba5eb439998463054f1a44fbf17b9" }
 strum = { version = "0.24.0", features = ["derive"] }
 parking_lot = "0.12"

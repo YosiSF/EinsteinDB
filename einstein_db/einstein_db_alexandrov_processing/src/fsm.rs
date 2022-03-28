@@ -1,7 +1,8 @@
-use crate::mailbox::BasicMailbox;
+use std::{ptr, usize};
 use std::borrow::Cow;
 use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
-use std::{ptr, usize};
+
+use crate::mailbox::BasicMailbox;
 
 // The FSM is notified.
 const NOTIFYSTATE_NOTIFIED: usize = 0;

@@ -2,17 +2,10 @@
 name = "einstein_db_ctl"
 version = "0.1.0"
 edition = "2021"
+authors = ["EinsteinDB"]
+
 
 [dependencies]
-einstein_db = "0.1.0"
-
-
-# Language: toml
-# Path: einstein_db/einstein_db/Cargo.toml
-[package]
-name = "einstein_db"
-version = "0.1.0"
-edition = "2021"
 chrono = "0.4"
 crossbeam = "0.8"
 tempfile = "3.0"
