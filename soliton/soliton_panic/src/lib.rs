@@ -17,3 +17,15 @@ mod compact;
 mod db_vector;
 mod engine;
 mod einsteindb_options;
+mod mvrsi;
+mod namespaced_names;
+mod namespaced_options;
+mod perf_context;
+mod range_properties;
+mod snapshot;
+mod table_properties;
+mod ttl_properties;
+mod violetabft_engine;
+
+
+
