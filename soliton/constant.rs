@@ -1,30 +1,22 @@
-use std::borrow::Cow;
-
-use crate::Constant;
-use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::{Decimal, Duration, Json, Time};
-use causet_algebrizer::MEDB_query_datatype::codec::Datum;
-use causet_algebrizer::MEDB_query_datatype::expr::Result;
-
-
-use std::rc::Rc;
-
 use ::{
+    berolina_sql,
     Element,
     FindSpec,
     QueryOutput,
     QueryResults,
     Rows,
     Topograph,
-    berolinaBerolinaSQL,
 };
+use allegroeinstein_prolog_causet_projector::errors::Result;
+use causet_algebrizer::MEDB_query_datatype::codec::Datum;
+use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::{Decimal, Duration, Json, Time};
+use causet_algebrizer::MEDB_query_datatype::expr::Result;
+use std::borrow::Cow;
+use std::rc::Rc;
 
-use allegroeinstein_prolog_causet_projector::errors::{
-    Result,
-};
+use crate::Constant;
 
-use super::{
-    Projector,
-};
+use super::Projector;
 
 /// A projector that produces a `QueryResult` containing fixed data.
 /// Takes a boxed function that should return an empty result set of the desired type.
@@ -44,9 +36,373 @@ impl ConstantProjector {
     pub fn project_without_rows<'stmt>(&self) -> Result<QueryOutput> {
         let results = (self.results_factory)();
         let spec = self.spec.clone();
-        Ok(QueryOutput {
-            spec: spec,
-            results: results,
-        })
+        let topograph = Topograph::new(spec.clone());
+        let query_output = QueryOutput::new(spec, topograph, results);
+        Ok(query_output)
     }
 }
+
+impl Projector for ConstantProjector {
+    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput> {
+        self.project_without_rows()
+    }
+}
+
+
+/// A projector that produces a `QueryResult` containing fixed data.
+/// Takes a boxed function that should return an empty result set of the desired type.
+/// This version is for use with the `berolina_sql` crate.
+/// It is used to create a constant result set for a query that has no rows.
+///
+/// # Example
+/// ```
+/// use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::{Decimal, Duration, Json, Time};
+/// use causet_algebrizer::MEDB_query_datatype::codec::Datum;
+/// use causet_algebrizer::MEDB_query_datatype::expr::Result;
+/// use causet_algebrizer::MEDB_query_datatype::query_output::{
+///    QueryOutput,
+///   Projector,
+/// };
+/// use causet_algebrizer::MEDB_query_datatype::query_results::{
+///   QueryResults,
+///  Rows,
+/// };
+/// use causet_algebrizer::MEDB_query_datatype::topograph::{
+///  Topograph,
+/// };
+///
+/// use std::rc::Rc;
+///
+/// use ::{
+///   Element,
+///  FindSpec,
+/// };
+///
+///
+/// fn main() {
+///    let spec = Rc::new(FindSpec::new(
+///
+//
+///
+///
+///
+
+
+impl Projector for ConstantProjector {
+    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput> {
+        self.project_without_rows()
+    }
+}
+
+
+impl ConstantProjector {
+    pub fn new_with_json_clone(spec: Rc<FindSpec>, json: Json) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Json(json)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_time(spec: Rc<FindSpec>, time: Time) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Time(time)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_duration(spec: Rc<FindSpec>, duration: Duration) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Duration(duration)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_decimal(spec: Rc<FindSpec>, decimal: Decimal) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Decimal(decimal)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_result(spec: Rc<FindSpec>, result: Result) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Result(result)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_bool(spec: Rc<FindSpec>, bool: bool) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Bool(bool)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_int(spec: Rc<FindSpec>, int: i64) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Int(int)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_float(spec: Rc<FindSpec>, float: f64) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Float(float)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_string(spec: Rc<FindSpec>, string: String) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::String(string)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_bytes(spec: Rc<FindSpec>, bytes: Bytes) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Bytes(bytes)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+    pub fn new_with_json(spec: Rc<FindSpec>, json: Json) -> ConstantProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![Datum::Json(json)]);
+            results
+        });
+        ConstantProjector::new(spec, results_factory)
+    }
+}
+
+
+pub fn new_with_duration(spec: Rc<FindSpec>, duration: Duration) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::Duration(duration)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_date(spec: Rc<FindSpec>, date: Date) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::Date(date)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_time(spec: Rc<FindSpec>, time: Time) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::Time(time)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_timestamp(spec: Rc<FindSpec>, timestamp: Timestamp) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::Timestamp(timestamp)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_date_time(spec: Rc<FindSpec>, date_time: DateTime) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::DateTime(date_time)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_date_time_tz(spec: Rc<FindSpec>, date_time_tz: DateTimeTz) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::DateTimeTz(date_time_tz)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_interval(spec: Rc<FindSpec>, interval: Interval) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::Interval(interval)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_uuid(spec: Rc<FindSpec>, uuid: Uuid) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::Uuid(uuid)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_json(spec: Rc<FindSpec>, json: Json) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::Json(json)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_json_b(spec: Rc<FindSpec>, json_b: JsonB) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::JsonB(json_b)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_oid(spec: Rc<FindSpec>, oid: Oid) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::Oid(oid)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_reg_type(spec: Rc<FindSpec>, reg_type: RegType) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::RegType(reg_type)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_reg_procedure(spec: Rc<FindSpec>, reg_procedure: RegProcedure) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::RegProcedure(reg_procedure)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_reg_per(spec: Rc<FindSpec>, reg_oper: RegOper) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::RegOper(reg_oper)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+pub fn new_with_reg_class(spec: Rc<FindSpec>, reg_class: RegClass) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![Datum::RegClass(reg_class)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+
+
+
+
+/// A projector that produces a `QueryResult` containing fixed data.
+///

@@ -8,22 +8,13 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 //
-//extern crate failure;
-//extern crate indexmap;
-//extern crate itertools;
-//#[macro_use] extern crate lazy_static;
-//#[macro_use] extern crate log;
 
 #[macro_use] extern crate causetq;
-extern crate einstai_BerolinaSQL;
 extern crate einstein_ml;
 extern crate einsteindb_core;
 extern crate einsteindb_traits;
-//extern crate petgraph;
-extern crate rusqlite;
 #[cfg(feature = "syncable")]
 #[macro_use] extern crate serde_derive;
-extern crate tabwriter;
 extern crate time;
 
 // Export these for reference from sync code and tests.
@@ -72,27 +63,56 @@ pub use types::{
 };
 pub use watcher::TransactWatcher;
 
-#[macro_use] pub mod debug;
+#[macro_use]
+pub mod mvrsi
+{
+    pub use einsteindb_traits::mvrsi::{
+        MVRSI,
+        MVRSI_SCHEMA_VERSION,
+    };
+}
 
-mod add_retract_alter_set;
-pub mod cache;
-pub mod einsteindb;
-mod bootstrap;
-pub mod causetids;
-pub mod causal_setal_types;    // pub because we need them for building causets programmatically.
-mod spacetime;
-//mod topograph;
-pub mod tx_observer;
-mod watcher;
-pub mod discrete_morses;
-mod tx;
-mod tx_checking;
-//pub mod types;
-mod upsert_resolution;
+pub mod db_
+{
+    pub use einsteindb_traits::db_::{
+        DB,
+        DB_SCHEMA_VERSION,
+    };
+}
 
-pub static discrete_morse_MAIN: i64 = 0;
+pub mod cache
+{
+    pub use einsteindb_traits::cache::{
+        Cache,
+        Cache_SCHEMA_VERSION,
+    };
+}
 
-pub fn to_isoliton_namespaceable_soliton_idword(s: &str) -> Result<shellings::Keyword> {
+
+pub mod bootstrap
+{
+    pub use einsteindb_traits::bootstrap::{
+        CORE_SCHEMA_VERSION,
+        TX0,
+        USER0,
+        V1_PARTS,
+    };
+}
+
+
+pub mod causetids
+{
+    pub use einsteindb_traits::causetids::einsteindb_SCHEMA_CORE;
+}
+
+
+pub static DISCRETE_MORSE_MAIN: i64 = 0;
+
+pub fn to_rsplitn_namespace_solid_dword(s: &str) -> Result<shellings::Keyword> {
+    let mut s = s.to_string();
+    s.push_str("_");
+    s.push_str(&MVRSI_SCHEMA_VERSION.to_string());
+
     let splits = [':', '/'];
     let mut i = s.split(&splits[..]);
     let nsk = match (i.next(), i.next(), i.next(), i.next()) {

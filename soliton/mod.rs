@@ -9,36 +9,39 @@
 // specific language governing permissions and limitations under the License.
 
 use super::{
+    berolina_sql,
     Element,
-    Topograph,
     QueryOutput,
     Rows,
-    berolinaBerolinaSQL,
+    Topograph,
 };
 
-
+pub use self::constant::ConstantProjector;
+pub use self::simple::SimpleProjector;
 
 pub trait Projector {
-    fn project<'stmt, 's>(&self, topograph: &Topograph, berolinaBerolinaSQL: &'s berolinaBerolinaSQL::Connection, rows: Rows<'stmt>) -> Result<QueryOutput>;
-    fn columns<'s>(&'s self) -> Box<Iterator<Item=&Element> + 's>;
+    fn project<'stmt, 's>(&self, topograph: &Topograph, berolina_sql: &'s berolina_sql::Connection, rows: Rows<'stmt>) -> Result<QueryOutput>;
+    fn columns<'s>(&'s self) -> Box<dyn Iterator<Item=&Element> + 's>;
+
+    fn is_projectable(&self) -> bool {
+        self.columns().count() == 1
+    }
+
+    fn is_aggregable(&self) -> bool {
+        self.columns().count() == 1
+    }
+
+    fn is_groupable(&self) -> bool {
+        self.columns().count() == 1
+    }
+
+    fn is_sortable(&self) -> bool {
+        self.columns().count() == 1
+    }
 }
+
 
 mod constant;
 mod simple;
-mod pull_two_stage;
 
-pub use self::constant::ConstantProjector;
 
-pub(crate) use self::simple::{
-    CollProjector,
-    RelProjector,
-    ScalarProjector,
-    TupleProjector,
-};
-
-pub(crate) use self::pull_two_stage::{
-    CollTwoProngedCrownProjector,
-    RelTwoProngedCrownProjector,
-    ScalarTwoProngedCrownProjector,
-    TupleTwoProngedCrownProjector,
-};

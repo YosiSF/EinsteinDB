@@ -246,7 +246,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "edb-crate"
+name = "einstein_db"
 version = "0.1.0"
 dependencies = [
  "anyhow",
