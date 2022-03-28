@@ -75,7 +75,7 @@ pub mod violetabft {
         namespaced: &str,
         opt: Option<NAMESPACEDOptions<'_>>,
     ) -> Result<VioletaBFTTesteinstein_merkle_tree> {
-        let namespaceds = &[namespaced];
+        let namespace = &[namespaced];
         let opts = opt.map(|o| vec![o]);
         VioletaBFTTesteinstein_merkle_tree::new_einstein_merkle_tree(local_path, db_opt, namespaceds, opts)
     }
@@ -145,20 +145,20 @@ pub mod ctor {
     ///
     /// Specifically, this means that FdbDB constructors should set up
     /// all greedoids collectors, always.
-    pub trait einstein_merkle_treeConstructorExt: Sized {
+    pub trait EinsteinMerkleTreeConstructorExt: Sized {
         /// Create a new einstein_merkle_tree with either:
         ///
-        /// - The causet_merge families specified as `namespaceds`, with default options, or
+        /// - The causet_merge families specified as `namespaces`, with default options, or
         /// - The causet_merge families specified as `opts`, with options.
         ///
-        /// Note that if `opts` is not `None` then the `namespaceds` argument is completely ignored.
+        /// Note that if `opts` is not `None` then the `namespaces` argument is completely ignored.
         ///
         /// The einstein_merkle_tree timelike_stores its data in the `local_path` directory.
         /// If that directory does not exist, then it is created.
         fn new_einstein_merkle_tree(
             local_path: &str,
             db_opt: Option<DBOptions>,
-            namespaceds: &[&str],
+            namespaces: &[&str],
             opts: Option<Vec<NAMESPACEDOptions<'_>>>,
         ) -> Result<Self>;
 
@@ -169,7 +169,7 @@ pub mod ctor {
         fn new_einstein_merkle_tree_opt(
             local_path: &str,
             db_opt: DBOptions,
-            namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
+            namespaces_opts: Vec<NAMESPACEDOptions<'_>>,
         ) -> Result<Self>;
     }
 
@@ -309,9 +309,9 @@ pub mod ctor {
         use einstein_merkle_tree_panic::Paniceinstein_merkle_tree;
         use fdb_traits::Result;
 
-        use super::{DBOptions, einstein_merkle_treeConstructorExt, NAMESPACEDOptions};
+        use super::{DBOptions, EinsteinMerkleTreeConstructorExt, NAMESPACEDOptions};
 
-        impl einstein_merkle_treeConstructorExt for einstein_merkle_tree_panic::Paniceinstein_merkle_tree {
+        impl EinsteinMerkleTreeConstructorExt for einstein_merkle_tree_panic::Paniceinstein_merkle_tree {
             fn new_einstein_merkle_tree(
                 _local_path: &str,
                 _db_opt: Option<DBOptions>,
@@ -345,10 +345,10 @@ pub mod ctor {
         use std::sync::Arc;
 
         use super::{
-            ColumnFamilyOptions, CryptoOptions, DBOptions, einstein_merkle_treeConstructorExt, NAMESPACEDOptions,
-                };
+            ColumnFamilyOptions, CryptoOptions, DBOptions, EinsteinMerkleTreeConstructorExt, NAMESPACEDOptions,
+        };
 
-        impl einstein_merkle_treeConstructorExt for fdb_einstein_merkle_tree::Fdbeinstein_merkle_tree {
+        impl EinsteinMerkleTreeConstructorExt for fdb_einstein_merkle_tree::Fdbeinstein_merkle_tree {
             // FIXME this is duplicating behavior from fdb_lsh-merkle_merkle_tree::primitive_causet_util in order to
             // call set_standard_namespaced_opts.
             fn new_einstein_merkle_tree(

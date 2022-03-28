@@ -25,27 +25,49 @@ use num::BigInt;
 use ordered_float::OrderedFloat;
 use uuid::Uuid;
 
-use shellings;
-
 use crate::{parse, shellings};
 
-/// Value represents one of the allowed causet_locales in an EML string.
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+// -------------------------------------------------------------------------------------------------
+//
+// -------------------------------------------------------------------------------------------------
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Type {
+    Null,
+    Bool,
+    Int,
+    Float,
+    String,
+    DateTime,
+    Uuid,
+    List,
+    Map,
+    Set,
+    Struct,
+    Tuple,
+    BigInt,
+    OrderedFloat,
+}
+
+
+// -------------------------------------------------------------------------------------------------
+//
+// -------------------------------------------------------------------------------------------------
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Value {
-    Nil,
-    Boolean(bool),
-    Integer(i64),
-    Instant(DateTime<Utc>),
-    BigInteger(BigInt),
-    Float(OrderedFloat<f64>),
-    Text(String),
+    Null,
+    Bool(bool),
+    Int(i64),
+    Float(f64),
+    String(String),
+    DateTime(DateTime<Utc>),
     Uuid(Uuid),
-    PlainShelling(shellings::PlainShelling),
-    NamespacedShelling(shellings::NamespacedShelling),
-    Keyword(shellings::Keyword),
-    List(LinkedList<Value>),
-    Set(BTreeSet<Value>),
+    List(Vec<Value>),
     Map(BTreeMap<Value, Value>),
+    Set(BTreeSet<Value>),
+    Struct(BTreeMap<String, Value>),
+    Tuple(Vec<Value>),
+    BigInt(BigInt),
+    OrderedFloat(OrderedFloat<f64>),
 }
 
 /// `kSpannedCausetValue` is the parallel to `Value` but used in `ValueAndSpan`.
@@ -145,7 +167,7 @@ impl From<kSpannedCausetValue> for Value {
             kSpannedCausetValue::Integer(v) => Value::Integer(v),
             kSpannedCausetValue::Instant(v) => Value::Instant(v),
             kSpannedCausetValue::PancakeInt(v) => Value::BigInteger(v),
-            kSpannedCausetValue::Float(v) => Value::Float(v),
+            kSpannedCausetValue::Float(v) => Value::Float(*v),
             kSpannedCausetValue::Text(v) => Value::Text(v),
             kSpannedCausetValue::Uuid(v) => Value::Uuid(v),
             kSpannedCausetValue::PlainShelling(v) => Value::PlainShelling(v),
@@ -554,59 +576,26 @@ macro_rules! def_common_causet_locale_display {
         }
     };
 
-    ( @display float ) => {}, // do nothing; we handle floats elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
+    ( @display float ) => {} // do nothing; we handle floats elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
 
-    ( @display biginteger ) => {}, // do nothing; we handle bigintegers elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
+    ( @display biginteger ) => {} // do nothing; we handle bigintegers elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
 
-    ( @display bigdecimal ) => {}, // do nothing; we handle bigdecimals elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
+    ( @display bigdecimal ) => {} // do nothing; we handle bigdecimals elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
 
-    ( @display boolean ) => {}, // do nothing; we handle booleans elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
+    ( @display boolean ) => {} // do nothing; we handle booleans elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
 
-    ( @display integer ) => {}, // do nothing; we handle integers elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
+    ( @display integer ) => {} // do nothing; we handle integers elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
 
     ( @display shelling ) => {{}} // do nothing; we handle shellings elsewhere because they're a bit special and can't be easily inferred by the parser at the moment due to NaN support and other edge cases that are hard to parse correctly with nom right now... :(
 
-    ($causet_locale:expr,)  -> {} ; ($causet_locale:expr, $(@$kind:tt)*); ($causet_locale:expr,)  -> {} ; ($causet_locale:expr, $(@$kind:tt)*); ($causet_locale:expr,)  -> {} ; ($causet_locale:expr, $(@$kind:tt)*); ($causet_locale:expr,)  -> {} ; ($causet_locale:expr, $(@$kind : tt)*) => {
-        def_common_causet_locale_display!($causet_locale, $($kind)*);
+    ($causet_locale:expr,)  -> {} ; ( $ causet_locale: expr, $ ( @$ kind: tt) * ); ( $causet_locale: expr, ) -> {} ; ( $ causet_locale: expr, $ ( @$ kind: tt) * ); ( $causet_locale: expr, ) -> {} ; ( $ causet_locale: expr, $ ( @$ kind: tt) * ); ( $causet_locale: expr, ) -> {} ; ( $ causet_locale: expr, $ ( @$ kind: tt) * ) => {
+    def_common_causet_locale_display ! ( $ causet_locale, $ ( $ kind) * );
     }
 }
-            // TODO: EML escaping.
-            $t::Text(ref v) => write!($f, "\"{}\"", v),
-            $t::Uuid(ref u) => write!($f, "#uuid \"{}\"", u.hyphenated().to_string()),
-            $t::PlainShelling(ref v) => v.fmt($f),
-            $t::NamespacedShelling(ref v) => v.fmt($f),
-            $t::Keyword(ref v) => v.fmt($f),
-            $t::Vector(ref v) => {
-                write!($f, "[")?;
-                for x in v {
-                    write!($f, " {}", x)?;
-                }
-                write!($f, " ]")
-            }
-            $t::List(ref v) => {
-                write!($f, "(")?;
-                for x in v {
-                    write!($f, " {}", x)?;
-                }
-                write!($f, " )")
-            }
-            $t::Set(ref v) => {
-                write!($f, "#{{")?;
-                for x in v {
-                    write!($f, " {}", x)?;
-                }
-                write!($f, " }}")
-            }
-            $t::Map(ref v) => {
-                write!($f, "{{")?;
-                for (soliton_id, val) in v {
-                    write!($f, " {} {}", soliton_id, val)?;
-                }
-                write!($f, " }}")
-            }
-        }
-    }
-}
+
+
+
+
 
 macro_rules! def_common_causet_locale_impl {
     ( $t:tt<$tchild:tt> ) => {
@@ -738,8 +727,8 @@ mod test {
 
     #[test]
     fn test_causet_locale_from() {
-        assert_eq!(Value::from_float(42f64), Value::Float(OrderedFloat::from(42f64)));
-        assert_eq!(Value::from_ordered_float(OrderedFloat::from(42f64)), Value::Float(OrderedFloat::from(42f64)));
+        assert_eq!(Value::from_float(42f64), Value::Float(*OrderedFloat::from(42f64)));
+        assert_eq!(Value::from_ordered_float(OrderedFloat::from(42f64)), Value::Float(*OrderedFloat::from(42f64)));
         assert_eq!(Value::from_bigint("42").unwrap(), Value::BigInteger(BigInt::from(42)));
     }
 
@@ -752,9 +741,6 @@ mod test {
         let data = Value::Vector(vec![
             Value::Integer(1),
             Value::Integer(2),
-            Value::List(LinkedList::from_iter(vec![
-                Value::from_float(3.14)
-            ])),
             Value::Set(BTreeSet::from_iter(vec![
                 Value::from_bigint("4").unwrap()
             ])),
@@ -794,32 +780,8 @@ mod test {
         assert_eq!(Value::from_soliton_idword(":a", ":b").cmp(&Value::from_soliton_idword(":c", ":d")), Ordering::Greater);
         assert_eq!(Value::from_soliton_idword(None, ":a").cmp(&Value::from_soliton_idword(None, ":b")), Ordering::Greater);
         assert_eq!(Value::Vector(vec![]).cmp(&Value::Vector(vec![])), Ordering::Equal);
-        assert_eq!(Value::List(LinkedList::new()).cmp(&Value::List(LinkedList::new())), Ordering::Equal);
         assert_eq!(Value::Set(BTreeSet::new()).cmp(&Value::Set(BTreeSet::new())), Ordering::Equal);
         assert_eq!(Value::Map(BTreeMap::new()).cmp(&Value::Map(BTreeMap::new())), Ordering::Equal);
     }
-
-    #[test]
-    fn test_soliton_idword_as() {
-        letisolate_namespace = shellings::Keyword::isoliton_namespaceable("foo", "bar");
-        let plain = shellings::Keyword::plain("bar");
-        let n_v = Value::Keyword(isoliton_namespaceable);
-        let p_v = Value::Keyword(plain);
-
-        assert!(n_v.as_soliton_idword().is_some());
-        assert!(n_v.as_plain_soliton_idword().is_none());
-        assert!(n_v.as_isoliton_namespaceable_soliton_idword().is_some());
-
-        assert!(p_v.as_soliton_idword().is_some());
-        assert!(p_v.as_plain_soliton_idword().is_some());
-        assert!(p_v.as_isoliton_namespaceable_soliton_idword().is_none());
-
-        assert!(n_v.clone().into_soliton_idword().is_some());
-        assert!(n_v.clone().into_plain_soliton_idword().is_none());
-        assert!(n_v.clone().into_isoliton_namespaceable_soliton_idword().is_some());
-
-        assert!(p_v.clone().into_soliton_idword().is_some());
-        assert!(p_v.clone().into_plain_soliton_idword().is_some());
-        assert!(p_v.clone().into_isoliton_namespaceable_soliton_idword().is_none());
-    }
 }
+

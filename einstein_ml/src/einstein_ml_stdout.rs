@@ -41,15 +41,34 @@ impl Value {
     ///  2,
     ///  3].
     fn bracket<'a, A, T, I>(&'a self, allocator: &'a A, open: T, vs: I, close: T) -> pretty::DocBuilder<'a, A>
-    where A: pretty::DocAllocator<'a>, T: Into<Cow<'a, str>>, I: IntoIterator<Item=&'a Value> {
+        where A: pretty::DocAllocator<'a>, T: Into<Cow<'a, str>>, I: IntoIterator<Item=&'a Value> {
         let open = open.into();
         let n = open.len();
         let i = vs.into_iter().map(|v| v.as_doc(allocator)).intersperse(allocator.space());
         allocator.text(open)
-            .append(allocator.concat(i).nest(n))
-            .append(allocator.text(close))
-            .group()
+            .append(allocator.concat(i).nest(n as isize))     // [1, 2, 3]
+            .append(allocator.text(close))           // [1, 2, 3]   ]
     }
+
+    /// Return a pretty string representation of this `Value`.
+    ///
+    /// This is a convenience function that calls `to_pretty` on the `Value`
+    /// and then returns the result as a `String`.
+    ///
+    /// # Examples
+    ///
+    ///     let v = Value::from_str("[1, 2, 3]").unwrap();
+    ///     assert_eq!(v.to_pretty_string(), "[1, 2, 3]");
+    ///
+    ///    let v = Value::from_str("{\"a\": 1, \"b\": 2}").unwrap();
+    ///   assert_eq!(v.to_pretty_string(), "{\"a\": 1, \"b\": 2}");
+    ///
+
+    ///
+    pub fn to_pretty_string(&self) -> String {
+        self.to_pretty(80).unwrap()
+    }
+
 
     /// Recursively traverses this causet_locale and creates a pretty.rs document.
     /// This pretty printing impleeinstaiion is optimized for einstein_mlqueries

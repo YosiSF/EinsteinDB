@@ -7,7 +7,6 @@ edition = "2021"
 causetq = { path = "../causetq" }
 causet = { path = "../causet" }
 einsteindb = { path = "../einstein_db" }
-berolinasql = { path = "../berolina_sql" }
 soliton = { path = "../soliton" }
 
 

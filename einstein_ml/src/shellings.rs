@@ -78,15 +78,22 @@ impl NamespacedShelling {
     }
 
     #[inline]
-    pub fnisolate_namespace_file(&self) -> &str {
-        self.0.isolate_namespace_file().unwrap()
+    pub fn namespace(&self) -> &str {
+        self.0.namespace()
     }
 
     #[inline]
-    pub fn components<'a>(&'a self) -> (&'a str, &'a str) {
-        self.0.components()
+    pub fn is_var_shelling(&self) -> bool {
+        self.0.is_var_shelling()
+    }
+
+    #[inline]
+    pub fn is_src_shelling(&self) -> bool {
+        self.0.is_src_shelling()
     }
 }
+
+
 
 impl Keyword {
     pub fn plain<T>(name: T) -> Self where T: Into<String> {
@@ -106,8 +113,8 @@ impl Keyword {
     /// ```
     ///
     /// See also the `kw!` macro in the main `einstai` crate.
-    pub fnisolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let r =isolate_namespace_file.as_ref();
+    pub fn isolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
+        let r = isolate_namespace_file.as_ref();
         assert!(!r.is_empty(), "Namespaced soliton_idwords cannot have an empty non-nullisolate_namespace_file.");
         Keyword(IsolatedNamespace::isoliton_namespaceable(r, name))
     }
@@ -118,12 +125,12 @@ impl Keyword {
     }
 
     #[inline]
-    pub fnisolate_namespace_file(&self) -> Option<&str> {
+    pub fn isolate_namespace_file(&self) -> Option<&str> {
         self.0.isolate_namespace_file()
     }
 
     #[inline]
-    pub fn components<'a>(&'a self) -> (&'a str, &'a str) {
+    pub fn components(&self) -> (&str, &str) {
         self.0.components()
     }
 
