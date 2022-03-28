@@ -13,6 +13,70 @@ slog = "2.7.0 + nightly"
 slog-global = { version = "0.1", git = "https://github.com/breeswish/slog-global.git", rev = "d592f88e4dbba5eb439998463054f1a44fbf17b9" }
 
 
+[features]
+default = ["file", "protobuf", "thiserror", "serde", "slog-global"]
+
+
+[workspace]
+members = ["einsteindb_util_fuse"]
+
+
+[profile.release]
+opt-level = "3"
+lto = true
+debug = false
+rpath = false
+panic = "abort"
+
+[profile.debug]
+opt-level = "0"
+lto = false
+debug = true
+rpath = false
+panic = "abort"
+
+[profile.bench]
+opt-level = "3"
+lto = true
+debug = false
+rpath = false
+panic = "abort"
+
+[profile.test]
+opt-level = "3"
+lto = true
+debug = false
+rpath = false
+panic = "abort"
+
+
+
+[target.x86_64-pc-windows-msvc.release]
+linker = "x86_64-pc-windows-msvc-gcc"
+ar = "x86_64-pc-windows-msvc-ar"
+
+
+[target.x86_64-pc-windows-msvc.debug]
+linker = "x86_64-pc-windows-msvc-gcc"
+ar = "x86_64-pc-windows-msvc-ar"
+
+
+[target.x86_64-pc-windows-msvc.bench]
+linker = "x86_64-pc-windows-msvc-gcc"
+ar = "x86_64-pc-windows-msvc-ar"
+
+
+[target.x86_64-pc-windows-msvc.test]
+linker = "x86_64-pc-windows-msvc-gcc"
+ar = "x86_64-pc-windows-msvc-ar"
+
+
+[target.x86_64-pc-windows-msvc.doc]
+linker = "x86_64-pc-windows-msvc-gcc"
+ar = "x86_64-pc-windows-msvc-ar"
+
+
+
 
 [dependencies.fail]
 version = "0.5"

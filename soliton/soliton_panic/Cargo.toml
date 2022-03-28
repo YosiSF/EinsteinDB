@@ -6,6 +6,29 @@ edition = "2018"
 publish = false
 
 
+[dependencies]
+soliton = { path = "../soliton" }
+
+
+[workspace]
+members = ["soliton_panic"]
+
+
+[profile.release]
+opt-level = 3
+lto = true
+debug = false
+rpath = false
+panic = "abort"
+
+
+[profile.debug]
+opt-level = 0
+lto = false
+debug = true
+rpath = false
+panic = "abort"
+
 
 
 

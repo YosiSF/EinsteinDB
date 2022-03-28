@@ -5,6 +5,49 @@ edition = "2021"
 
 
 [dependencies]
+diesel = "^0.14"
+postgres = "^0.13"
+foundationdb = "^0.1"
+
+
+[dependencies.diesel]
+version = "^0.14"
+
+
+[dependencies.foundationdb]
+version = "^0.1"
+
+
+
+[dependencies.postgres]
+version = "^0.13"
+
+
+
+[dependencies.sqlite]
+version = "^3.30"
+
+
+
+[dependencies.serde]
+version = "^1.0"
+features = ["derive"]
+
+
+[dependencies.serde_derive]
+version = "^1.0"
+
+
+
+[dependencies.serde_json]
+version = "^1.0"
+
+
+
+[dependencies.serde_urlencoded]
+version = "^1.0"
+
+
 chrono = "0.4"
 failure = "0.1.1"
 lazy_static = "1.4.0"
@@ -67,4 +110,15 @@ features = ["bundled"]
 
 [dependencies.rusqlite.bundled]
 rusqlite = "0.27.0"
+
+
+[dependencies.rusqlite.default]
+version = "0.27.0"
+features = ["bundled"]
+
+
+[dependencies.rusqlite.default.bundled]
+rusqlite = "0.27.0"
+
+
 
