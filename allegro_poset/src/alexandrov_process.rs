@@ -29,7 +29,7 @@ pub struct Poset {
     root: Arc<PosetNode>,
     //the leaves of the tree
     leaves: HashMap<u64, Arc<PosetNode>>,
-    //sqlite secondary index
+    //sqlite secondary Index
     soft_index: HashMap<u64, Arc<PosetNode>>,
 
 }
@@ -180,7 +180,7 @@ impl Mutable for PanicWriteBatch {
 }
 */
 
-//Wrap the Tuplefied index byte slice from the tree with a semantic encoder hexadecimal soliton
+//Wrap the Tuplefied Index byte slice from the tree with a semantic encoder hexadecimal soliton
 //id and causet_locale
 
 

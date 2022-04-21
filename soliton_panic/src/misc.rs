@@ -1,7 +1,7 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::fdb_lsh_treePaniceinstein_merkle_tree;
-use fdb_traits::{DeleteStrategy, MiscExt, Range, Result};
+use fdb_traits::{DeleteStrategy, MiscExt, , Result};
 
 impl MiscExt for Paniceinstein_merkle_tree {
     fn flush(&self, sync: bool) -> Result<()> {
@@ -16,12 +16,12 @@ impl MiscExt for Paniceinstein_merkle_tree {
         &self,
         namespaced: &str,
         strategy: DeleteStrategy,
-        ranges: &[Range<'_>],
+        ranges: &[<'_>],
     ) -> Result<()> {
         panic!()
     }
 
-    fn get_approximate_memtable_stats_namespaced(&self, namespaced: &str, range: &Range<'_>) -> Result<(u64, u64)> {
+    fn get_approximate_memtable_stats_namespaced(&self, namespaced: &str, range: &<'_>) -> Result<(u64, u64)> {
         panic!()
     }
 

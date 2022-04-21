@@ -304,9 +304,9 @@ fn calc_sub_carry(lhs: &Decimal, rhs: &Decimal) -> (Option<i32>, u8, SubTmp, Sub
             while r_idx as isize <= r_end && rhs.word_buf[r_end as usize] == 0 {
                 r_end -= 1;
             }
-            // here l_end is the last nonzero index in l.word_buf, attention:it may in the range of (0,l_int_word_cnt)
+            // here l_end is the last nonzero Index in l.word_buf, attention:it may in the range of (0,l_int_word_cnt)
             l_frac_word_cnt = cmp::max(0, l_end + 1 - l_stop as isize) as u8;
-            // here r_end is the last nonzero index in r.word_buf, attention:it may in the range of (0,r_int_word_cnt)
+            // here r_end is the last nonzero Index in r.word_buf, attention:it may in the range of (0,r_int_word_cnt)
             r_frac_word_cnt = cmp::max(0, r_end + 1 - r_stop as isize) as u8;
             while l_idx as isize <= l_end
                 && r_idx as isize <= r_end
@@ -970,7 +970,7 @@ impl Decimal {
     }
 
     /// Given a precision count 'prec', get:
-    ///  1. the index of first non-zero word in self.word_buf to hold the leading 'prec' number of
+    ///  1. the Index of first non-zero word in self.word_buf to hold the leading 'prec' number of
     ///     digits
     ///  2. the number of remained digits if we remove all leading zeros for the leading 'prec'
     ///     number of digits

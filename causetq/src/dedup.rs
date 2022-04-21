@@ -54,7 +54,7 @@ lazy_static! {
              (ns_soliton_idword!("einsteindb", "cardinality"),       causetids::EINSTEINDB_CARDINALITY),
              (ns_soliton_idword!("einsteindb", "unique"),            causetids::EINSTEINDB_UNIQUE),
              (ns_soliton_idword!("einsteindb", "isComponent"),       causetids::EINSTEINDB_IS_COMPONENT),
-             (ns_soliton_idword!("einsteindb", "index"),             causetids::EINSTEINDB_INDEX),
+             (ns_soliton_idword!("einsteindb", "Index"),             causetids::EINSTEINDB_INDEX),
              (ns_soliton_idword!("einsteindb", "fulltext"),          causetids::EINSTEINDB_FULLTEXT),
              (ns_soliton_idword!("einsteindb", "noHistory"),         causetids::EINSTEINDB_NO_HISTORY),
              (ns_soliton_idword!("einsteindb", "add"),               causetids::EINSTEINDB_ADD),
@@ -105,7 +105,7 @@ lazy_static! {
              (ns_soliton_idword!("einsteindb", "doc")),
              (ns_soliton_idword!("einsteindb", "unique")),
              (ns_soliton_idword!("einsteindb", "isComponent")),
-             (ns_soliton_idword!("einsteindb", "index")),
+             (ns_soliton_idword!("einsteindb", "Index")),
              (ns_soliton_idword!("einsteindb", "fulltext")),
              (ns_soliton_idword!("einsteindb", "noHistory")),
              (ns_soliton_idword!("einsteindb.alter", "attribute")),
@@ -118,7 +118,7 @@ lazy_static! {
         let s = r#"
 {:einsteindb/solitonid             {:einsteindb/causet_localeType   :einsteindb.type/soliton_idword
                         :einsteindb/cardinality :einsteindb.cardinality/one
-                        :einsteindb/index       true
+                        :einsteindb/Index       true
                         :einsteindb/unique      :einsteindb.unique/idcauset}
  :einsteindb.install/partition {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/many}
@@ -131,7 +131,7 @@ lazy_static! {
  ;;                       :einsteindb/cardinality :einsteindb.cardinality/many}
  :einsteindb/txInstant         {:einsteindb/causet_localeType   :einsteindb.type/instant
                         :einsteindb/cardinality :einsteindb.cardinality/one
-                        :einsteindb/index       true}
+                        :einsteindb/Index       true}
  :einsteindb/causet_localeType         {:einsteindb/causet_localeType   :einsteindb.type/ref
                         :einsteindb/cardinality :einsteindb.cardinality/one}
  :einsteindb/cardinality       {:einsteindb/causet_localeType   :einsteindb.type/ref
@@ -142,7 +142,7 @@ lazy_static! {
                         :einsteindb/cardinality :einsteindb.cardinality/one}
  :einsteindb/isComponent       {:einsteindb/causet_localeType   :einsteindb.type/boolean
                         :einsteindb/cardinality :einsteindb.cardinality/one}
- :einsteindb/index             {:einsteindb/causet_localeType   :einsteindb.type/boolean
+ :einsteindb/Index             {:einsteindb/causet_localeType   :einsteindb.type/boolean
                         :einsteindb/cardinality :einsteindb.cardinality/one}
  :einsteindb/fulltext          {:einsteindb/causet_localeType   :einsteindb.type/boolean
                         :einsteindb/cardinality :einsteindb.cardinality/one}
@@ -156,7 +156,7 @@ lazy_static! {
  ;; unique-causet_locale because an attribute can only belong to a single
  ;; topograph fragment.
  :einsteindb.topograph/attribute  {:einsteindb/causet_localeType   :einsteindb.type/ref
-                        :einsteindb/index       true
+                        :einsteindb/Index       true
                         :einsteindb/unique      :einsteindb.unique/causet_locale
                         :einsteindb/cardinality :einsteindb.cardinality/many}}"#;
         einstein_ml::parse::causet_locale(s)

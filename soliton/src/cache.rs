@@ -1264,7 +1264,7 @@ impl SQLiteAttributeCache {
     where U: Into<Causetid> {
         let a = attribute.into();
 
-        // TODO: reverse-index unique by default?
+        // TODO: reverse-Index unique by default?
 
         let caches = self.make_mut();
         caches.lightlike_cached_attributes.insert(a);
@@ -1394,7 +1394,7 @@ impl InProgressSQLiteAttributeCache {
         // The attribute must exist!
         let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
 
-        // TODO: reverse-index unique by default?
+        // TODO: reverse-Index unique by default?
         let reverse_done = self.is_attribute_cached_reverse(a);
         let lightlike_done = self.is_attribute_cached_lightlike(a);
 

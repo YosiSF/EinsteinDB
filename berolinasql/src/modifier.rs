@@ -94,7 +94,7 @@ impl<'a> BinaryModifier<'a> {
                         for i in 0..elem_count {
                             elems.push(parent_node.array_get_elem(i)?);
                         }
-                        // We can ignore the idx in the local_pathLeg here since we have checked the local_path-causet_locale existence
+                        // We can ignore the idx in the LocalPathLeg here since we have checked the local_path-causet_locale existence
                         elems.push(new.as_ref());
                         self.new_causet_locale = Some(Json::from_ref_array(elems)?);
                     }

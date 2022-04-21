@@ -8,12 +8,11 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-// Refer to https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-local_path-syntax.html
-// From MyBerolinaSQL 5.7, JSON local_path expression grammar:
-//     local_pathExpression ::= scope (local_pathLeg)*
+
+//     LocalPathExpression ::= scope (LocalPathLeg)*
 //     scope ::= [ columnReference ] '$'
 //     columnReference ::= // omit...
-//     local_pathLeg ::= member | arrayLocation | '**'
+//     LocalPathLeg ::= member | arrayLocation | '**'
 //     member ::= '.' (soliton_idName | '*')
 //     arrayLocation ::= '[' (non-negative-integer | '*') ']'
 //     soliton_idName ::= ECMAScript-identifier | ECMAScript-string-literal
@@ -31,24 +30,118 @@
 //     select json_extract('{"a": "b", "c": [1, "2"]}', '$.c[*]') -> [1, "2"]
 //     select json_extract('{"a": "b", "c": [1, "2"]}', '$.*') -> ["b", [1, "2"]]
 
- use regex::Regex;
- use std::ops::Index;
 
- use crate::codec::Result;
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fmt::{self, Debug};
+use std::cmp::Ordering;
+use std::hash::{Hash, Hasher};
+use std::mem;
+use std::ops::Deref;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
+use std::sync::Mutex;
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::thread;
+use std::time::Duration;
+use std::sync::mpsc::TryRecvError;
+use std::sync::mpsc::RecvTimeoutError;
+use std::sync::mpsc::RecvError;
+use std::sync::mpsc::SendError;
+ //istio specific
+use std::sync::mpsc::TrySendError;
+use std::sync::mpsc::SendTimeoutError;
+ //we'll use diesel for sql query orm and data access
+use diesel::pg::Pg;
+use diesel::prelude::*;
+use diesel::sql_types::{Text, Nullable};
+use diesel::sql_query;
+ //kubernetes specific
+use k8s_openapi::api::core::v1::{Pod, PodList, PodStatus, ContainerStatus, ContainerState, ContainerStateTerminated};
+use k8s_openapi::api::core::v1::{PodSpec, Container, ContainerStateRunning, ContainerStateWaiting};
+use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, LabelSelector};
+use diesel::sql_query::SqlQuery;
+ //use prost for protobuf
+use prost::Message;
+use prost::encoding::{self, EncodeError};
+use prost::Message as ProtobufMessage;
+ //jenkins specific
+use jenkins_api::{Jenkins, JenkinsError};
+use jenkins_api::api::{Jenkins as JenkinsApi, JenkinsApiError};
+use prost::MessageDescriptor;
+use prost::UnknownFields;
+use prost::UnknownFields as ProtobufUnknownFields;
+ //use protobuf for protobuf
+use protobuf::{self, Message as ProtobufMessage, MessageDescriptor, RepeatedField};
+use protobuf::error::ProtobufError;
+ //capnproto for capnp  and capnproto-rust for capnp
+use capnp::{serialize, message, text_format};
+use capnp::capability::Promise;
+use capnp::capability::ClientHook;
+use capnp::capability::Request;
+use capnp::capability::Server;
+use capnp::capability::ServerHook;
+ //gremlin for capnp
+use gremlin_capnp::{gremlin, gremlin_capnp};
+use gremlin_capnp::gremlin_capnp::{GremlinRequest, GremlinResponse};
+use gremlin_capnp::gremlin_capnp::{GremlinRequest_get_query, GremlinRequest_get_query_get_query};
 
- use super::json_unquote::unquote_string;
 
- pub const local_path_EXPR_ASTERISK: &str = "*";
+//Gremlin server
+pub enum GremlinServer {
+    Capnp(Server<GremlinRequest, GremlinResponse>),
+    Gremlin(Server<GremlinRequest, GremlinResponse>),
+}
+
+
+//Gremlin client
+pub enum GremlinClient {
+    Capnp(ClientHook<GremlinRequest, GremlinResponse>),
+    Gremlin(ClientHook<GremlinRequest, GremlinResponse>),
+}
+
+
+ pub const GREMLIN_SERVER_PORT: u16 = 8182;
+
+ pub const GREMLIN_SERVER_MAX_THREADS: usize = 10;
+
+ pub const GREMLIN_SERVER_MAX_REQUESTS: usize = 100;
+
+ pub const GREMLIN_SERVER_MAX_REQUEST_TIME: u64 = 10;
+
+ pub const LOCAL_PATH_EXPR_ASTERISK: &str = "*";
 
 // [a-zA-Z_][a-zA-Z0-9_]* matches any identifier;
 // "[^"\\]*(\\.[^"\\]*)*" matches any string literal which can carry escaped quotes.
-const local_path_EXPR_LEG_RE_STR: &str =
-    r#"(\.\s*([a-zA-Z_][a-zA-Z0-9_]*|\*|"[^"\\]*(\\.[^"\\]*)*")|(\[\s*([0-9]+|\*)\s*\])|\*\*)"#;
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum local_pathLeg {
+
+const LOCAL_PATH_EXPR_LEG_RE_STR: &str =
+    r#"(\.\s*([a-zA-Z_][a-zA-Z0-9_]*|\*|"[^"\\]*(\\.[^"\\]*)*")|(\[\s*([0-9]+|\*)\s*\])|\*\*)"#;
+const LOCAL_PATH_EXPR_LEG_RE: &str = LOCAL_PATH_EXPR_LEG_RE_STR;
+const LOCAL_PATH_EXPR_LEG_RE_CAPTURE_GROUP: &str = r#"(?P<leg>\.\s*([a-zA-Z_][a-zA-Z0-9_]*|\*|"[^"\\]*(\\.[^"\\]*)*")|(\[\s*([0-9]+|\*)\s*\])|\*\*)"#;
+ //k8s specific
+const LOCAL_PATH_EXPR_LEG_RE_CAPTURE_GROUP_K8S: &str = r#"(?P<leg>\.\s*([a-zA-Z_][a-zA-Z0-9_]*|\*|"[^"\\]*(\\.[^"\\]*)*")|(\[\s*([0-9]+|\*)\s*\])|\*\*)"#;
+
+
+
+ #[derive(Debug, Clone)]
+pub struct GremlinRequest {
+     pub query: String,
+     pub query_type: String,
+     pub query_id: String,
+     pub query_timeout: u64,
+     pub query_max_memory: u64,
+     pub query_max_time: u64,
+     pub query_max_scheduled_time: u64,
+     pub query_max_scheduled_time_unit: String,
+ }
+
+
+#[derive(clone,debug,partial_eq)]
+pub enum LocalPathLeg {
     /// `Key` indicates the local_path leg  with '.soliton_id'.
-    Key(String),
+    Key(string),
     /// `Index` indicates the local_path leg with form '[number]'.
     Index(i32),
     /// `DoubleAsterisk` indicates the local_path leg with form '**'.
@@ -65,12 +158,12 @@ pub const local_path_EXPRESSION_CONTAINS_ASTERISK: local_pathExpressionFlag = 0x
 pub const local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK: local_pathExpressionFlag = 0x02;
 
 #[derive(Clone, Default, Debug, PartialEq)]
-pub struct local_pathExpression {
-    pub legs: Vec<local_pathLeg>,
+pub struct LocalPathExpression {
+    pub legs: Vec<LocalPathLeg>,
     pub flags: local_pathExpressionFlag,
 }
 
-impl local_pathExpression {
+impl LocalPathExpression {
     pub fn contains_any_asterisk(&self) -> bool {
         (self.flags
             & (local_path_EXPRESSION_CONTAINS_ASTERISK | local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK))
@@ -78,9 +171,9 @@ impl local_pathExpression {
     }
 }
 
-/// Parses a JSON local_path expression. Returns a `local_pathExpression`
+/// Parses a JSON local_path expression. Returns a `LocalPathExpression`
 /// object which can be used in `JSON_EXTRACT`, `JSON_SET` and so on.
-pub fn parse_json_local_path_expr(local_path_expr: &str) -> Result<local_pathExpression> {
+pub fn parse_json_local_path_expr(local_path_expr: &str) -> Result<LocalPathExpression> {
     // Find the position of first '$'. If any no-blank characters in
     // local_path_expr[0: dollarIndex], return an error.
     let dollar_index = match local_path_expr.find('$') {
@@ -117,30 +210,30 @@ pub fn parse_json_local_path_expr(local_path_expr: &str) -> Result<local_pathExp
 
         let next_char = expr.index(start..).chars().next().unwrap();
         if next_char == '[' {
-            // The leg is an index of a JSON array.
+            // The leg is an Index of a JSON array.
             let leg = expr[start + 1..end].trim();
             let index_str = leg[0..leg.len() - 1].trim();
-            let index = if index_str == local_path_EXPR_ASTERISK {
+            let index = if index_str == LOCAL_PATH_EXPR_ASTERISK {
                 flags |= local_path_EXPRESSION_CONTAINS_ASTERISK;
                 local_path_EXPR_ARRAY_INDEX_ASTERISK
             } else {
                 box_try!(index_str.parse::<i32>())
             };
-            legs.push(local_pathLeg::Index(index))
+            legs.push(LocalPathLeg::Index(index))
         } else if next_char == '.' {
             // The leg is a soliton_id of a JSON object.
             let mut soliton_id = expr[start + 1..end].trim().to_owned();
-            if soliton_id == local_path_EXPR_ASTERISK {
+            if soliton_id == LOCAL_PATH_EXPR_ASTERISK {
                 flags |= local_path_EXPRESSION_CONTAINS_ASTERISK;
             } else if soliton_id.starts_with('"') {
                 // We need to unquote the origin string.
                 soliton_id = unquote_string(&soliton_id[1..soliton_id.len() - 1])?;
             }
-            legs.push(local_pathLeg::Key(soliton_id))
+            legs.push(LocalPathLeg::Key(soliton_id))
         } else {
             // The leg is '**'.
             flags |= local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK;
-            legs.push(local_pathLeg::DoubleAsterisk);
+            legs.push(LocalPathLeg::DoubleAsterisk);
         }
     }
     // Check `!expr.is_empty()` here because "$" is a valid local_path to specify the current JSON.
@@ -148,12 +241,12 @@ pub fn parse_json_local_path_expr(local_path_expr: &str) -> Result<local_pathExp
         return Err(box_err!("Invalid JSON local_path: {}", local_path_expr));
     }
     if !legs.is_empty() {
-        if let local_pathLeg::DoubleAsterisk = *legs.last().unwrap() {
+        if let LocalPathLeg::DoubleAsterisk = *legs.last().unwrap() {
             // The last leg of a local_path expression cannot be '**'.
             return Err(box_err!("Invalid JSON local_path: {}", local_path_expr));
         }
     }
-    Ok(local_pathExpression { legs, flags })
+    Ok(LocalPathExpression { legs, flags })
 }
 
 #[braneg(test)]
@@ -162,7 +255,7 @@ mod tests {
 
     #[test]
     fn test_local_path_expression_flag() {
-        let mut e = local_pathExpression {
+        let mut e = LocalPathExpression {
             legs: vec![],
             flags: local_pathExpressionFlag::default(),
         };
@@ -180,7 +273,7 @@ mod tests {
             (
                 "$",
                 true,
-                Some(local_pathExpression {
+                Some(LocalPathExpression {
                     legs: vec![],
                     flags: local_pathExpressionFlag::default(),
                 }),
@@ -188,32 +281,32 @@ mod tests {
             (
                 "$.a",
                 true,
-                Some(local_pathExpression {
-                    legs: vec![local_pathLeg::Key(String::from("a"))],
+                Some(LocalPathExpression {
+                    legs: vec![LocalPathLeg::Key(String::from("a"))],
                     flags: local_pathExpressionFlag::default(),
                 }),
             ),
             (
                 "$.\"hello world\"",
                 true,
-                Some(local_pathExpression {
-                    legs: vec![local_pathLeg::Key(String::from("hello world"))],
+                Some(LocalPathExpression {
+                    legs: vec![LocalPathLeg::Key(String::from("hello world"))],
                     flags: local_pathExpressionFlag::default(),
                 }),
             ),
             (
                 "$[0]",
                 true,
-                Some(local_pathExpression {
-                    legs: vec![local_pathLeg::Index(0)],
+                Some(LocalPathExpression {
+                    legs: vec![LocalPathLeg::Index(0)],
                     flags: local_pathExpressionFlag::default(),
                 }),
             ),
             (
                 "$**.a",
                 true,
-                Some(local_pathExpression {
-                    legs: vec![local_pathLeg::DoubleAsterisk, local_pathLeg::Key(String::from("a"))],
+                Some(LocalPathExpression {
+                    legs: vec![LocalPathLeg::DoubleAsterisk, LocalPathLeg::Key(String::from("a"))],
                     flags: local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK,
                 }),
             ),

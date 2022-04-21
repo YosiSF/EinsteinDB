@@ -98,8 +98,7 @@ use crate::block::{BlockBody, BlockBodyType};
 use crate::block::{BlockHeaderHash, BlockHeaderHashType};
 use crate::block::{BlockBodyHash, BlockBodyHashType};
 use crate::block::{BlockHash, BlockHashType};
-
-
+use crate::block::{BlockSignature, BlockSignatureType};
 //a causet is a causal set or coset of posets
 // causet is a set of blocks
 // a poset is a set of blocks
@@ -109,6 +108,16 @@ use crate::block::{BlockHash, BlockHashType};
 // a byte is a set of bits
 // a bit is a set of bits
 // A BTree is a nested forest of causets_after_a_block
+
+
+//use crate::block::{Block, BlockType};
+//use crate::block::{BlockHeader, BlockHeaderType};
+//use crate::block::{BlockBody, BlockBodyType};
+
+
+//use crate::block::{BlockHeaderHash, BlockHeaderHashType};
+//use crate::block::{BlockBodyHash, BlockBodyHashType};
+
 
 
 

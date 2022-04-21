@@ -44,7 +44,7 @@
         self.val_causet_get(val_causet_off)
     }
 
-    /// Searches the causet_locale index by the give `soliton_id` in Object.
+    /// Searches the causet_locale Index by the give `soliton_id` in Object.
     ///
     /// See `objectSearchKey()` in MEDB `json/binary_function.go`
     pub fn object_search_soliton_id(&self, soliton_id: &[u8]) -> Option<usize> {

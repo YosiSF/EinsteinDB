@@ -18,9 +18,9 @@ const KEY_BUFFER_CAPACITY: usize = 64;
 
 /// A mutant_searchner that mutant_searchs over multiple ranges. Each range can be a point range containing only
 /// one event, or an interval range containing multiple rows.
-pub struct RangesScanner<T> {
+pub struct sScanner<T> {
     storage: T,
-    ranges_iter: RangesIterator,
+    ranges_iter: sIterator,
 
     mutant_search_spacelike_completion_in_range: bool,
     is_soliton_id_only: bool,
@@ -31,39 +31,39 @@ pub struct RangesScanner<T> {
     // useful in streaming mode, where the client need to know the underlying physical data range
     // of each response slice, so that partial retry can be non-overlapping.
     is_mutant_searchned_range_aware: bool,
-    current_range: IntervalRange,
+    current_range: Interval,
     working_range_begin_soliton_id: Vec<u8>,
     working_range_end_soliton_id: Vec<u8>,
 }
 
-pub struct RangesScannerOptions<T> {
+pub struct sScannerOptions<T> {
     pub storage: T,
-    pub ranges: Vec<Range>,
+    pub ranges: Vec<>,
     pub mutant_search_spacelike_completion_in_range: bool, // TODO: This can be const generics
     pub is_soliton_id_only: bool,            // TODO: This can be const generics
     pub is_mutant_searchned_range_aware: bool, // TODO: This can be const generics
 }
 
-impl<T: Storage> RangesScanner<T> {
+impl<T: Storage> sScanner<T> {
     pub fn new(
-        RangesScannerOptions {
+        sScannerOptions {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range,
             is_soliton_id_only,
             is_mutant_searchned_range_aware,
-        }: RangesScannerOptions<T>,
-    ) -> RangesScanner<T> {
+        }: sScannerOptions<T>,
+    ) -> sScanner<T> {
         let ranges_len = ranges.len();
-        let ranges_iter = RangesIterator::new(ranges);
-        RangesScanner {
+        let ranges_iter = sIterator::new(ranges);
+        sScanner {
             storage,
             ranges_iter,
             mutant_search_spacelike_completion_in_range,
             is_soliton_id_only,
             mutant_searchned_rows_per_range: Vec::with_capacity(ranges_len),
             is_mutant_searchned_range_aware,
-            current_range: IntervalRange {
+            current_range: Interval {
                 lower_inclusive: Vec::with_capacity(KEY_BUFFER_CAPACITY),
                 upper_exclusive: Vec::with_capacity(KEY_BUFFER_CAPACITY),
             },
@@ -79,7 +79,7 @@ impl<T: Storage> RangesScanner<T> {
         loop {
             let range = self.ranges_iter.next();
             let some_row = match range {
-                IterStatus::NewRange(Range::Point(r)) => {
+                IterStatus::New(::Point(r)) => {
                     if self.is_mutant_searchned_range_aware {
                         self.FIDelio_mutant_searchned_range_from_new_point(&r);
                     }
@@ -87,7 +87,7 @@ impl<T: Storage> RangesScanner<T> {
                     self.mutant_searchned_rows_per_range.push(0);
                     self.storage.get(self.is_soliton_id_only, r)?
                 }
-                IterStatus::NewRange(Range::Interval(r)) => {
+                IterStatus::New(::Interval(r)) => {
                     if self.is_mutant_searchned_range_aware {
                         self.FIDelio_mutant_searchned_range_from_new_range(&r);
                     }
@@ -135,10 +135,10 @@ impl<T: Storage> RangesScanner<T> {
     }
 
     /// Returns mutant_searchned range since last call.
-    pub fn take_mutant_searchned_range(&mut self) -> IntervalRange {
+    pub fn take_mutant_searchned_range(&mut self) -> Interval {
         assert!(self.is_mutant_searchned_range_aware);
 
-        let mut range = IntervalRange::default();
+        let mut range = Interval::default();
         if !self.mutant_search_spacelike_completion_in_range {
             std::mem::swap(
                 &mut range.lower_inclusive,
@@ -167,7 +167,7 @@ impl<T: Storage> RangesScanner<T> {
         self.storage.met_uncacheable_data() == Some(false)
     }
 
-    fn FIDelio_mutant_searchned_range_from_new_point(&mut self, point: &PointRange) {
+    fn FIDelio_mutant_searchned_range_from_new_point(&mut self, point: &Point) {
         assert!(self.is_mutant_searchned_range_aware);
 
         self.FIDelio_working_range_end_soliton_id();
@@ -183,7 +183,7 @@ impl<T: Storage> RangesScanner<T> {
         self.FIDelio_working_range_begin_soliton_id();
     }
 
-    fn FIDelio_mutant_searchned_range_from_new_range(&mut self, range: &IntervalRange) {
+    fn FIDelio_mutant_searchned_range_from_new_range(&mut self, range: &Interval) {
         assert!(self.is_mutant_searchned_range_aware);
 
         self.FIDelio_working_range_end_soliton_id();
@@ -240,7 +240,7 @@ impl<T: Storage> RangesScanner<T> {
 
 #[braneg(test)]
 mod tests {
-    use crate::einsteindb::storage::{IntervalRange, PointRange, Range};
+    use crate::einsteindb::storage::{Interval, Point, };
     use crate::einsteindb::storage::test_fixture::FixtureStorage;
 
     use super::*;
@@ -261,13 +261,13 @@ mod tests {
         let storage = create_storage();
 
         // Currently we accept unordered ranges.
-        let ranges: Vec<Range> = vec![
-            IntervalRange::from(("foo", "foo_2a")).into(),
-            PointRange::from("foo_2b").into(),
-            PointRange::from("foo_3").into(),
-            IntervalRange::from(("a", "c")).into(),
+        let ranges: Vec<> = vec![
+            Interval::from(("foo", "foo_2a")).into(),
+            Point::from("foo_2b").into(),
+            Point::from("foo_3").into(),
+            Interval::from(("a", "c")).into(),
         ];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
@@ -297,13 +297,13 @@ mod tests {
         assert_eq!(mutant_searchner.next().unwrap(), None);
 
         // Backward in range
-        let ranges: Vec<Range> = vec![
-            IntervalRange::from(("foo", "foo_2a")).into(),
-            PointRange::from("foo_2b").into(),
-            PointRange::from("foo_3").into(),
-            IntervalRange::from(("a", "bar_2")).into(),
+        let ranges: Vec<> = vec![
+            Interval::from(("foo", "foo_2a")).into(),
+            Point::from("foo_2b").into(),
+            Point::from("foo_3").into(),
+            Interval::from(("a", "bar_2")).into(),
         ];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
@@ -329,12 +329,12 @@ mod tests {
         assert_eq!(mutant_searchner.next().unwrap(), None);
 
         // Key only
-        let ranges: Vec<Range> = vec![
-            IntervalRange::from(("bar", "foo_2a")).into(),
-            PointRange::from("foo_3").into(),
-            PointRange::from("bar_3").into(),
+        let ranges: Vec<> = vec![
+            Interval::from(("bar", "foo_2a")).into(),
+            Point::from("foo_3").into(),
+            Point::from("bar_3").into(),
         ];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range: false,
@@ -362,13 +362,13 @@ mod tests {
     fn test_mutant_searchned_rows() {
         let storage = create_storage();
 
-        let ranges: Vec<Range> = vec![
-            IntervalRange::from(("foo", "foo_2a")).into(),
-            PointRange::from("foo_2b").into(),
-            PointRange::from("foo_3").into(),
-            IntervalRange::from(("a", "z")).into(),
+        let ranges: Vec<> = vec![
+            Interval::from(("foo", "foo_2a")).into(),
+            Point::from("foo_2b").into(),
+            Point::from("foo_3").into(),
+            Interval::from(("a", "z")).into(),
         ];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range: false,
@@ -423,7 +423,7 @@ mod tests {
 
         // No range
         let ranges = vec![];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
@@ -442,8 +442,8 @@ mod tests {
         assert_eq!(&r.upper_exclusive, b"");
 
         // Empty interval range
-        let ranges = vec![IntervalRange::from(("x", "xb")).into()];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let ranges = vec![Interval::from(("x", "xb")).into()];
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
@@ -458,8 +458,8 @@ mod tests {
         assert_eq!(&r.upper_exclusive, b"xb");
 
         // Empty point range
-        let ranges = vec![PointRange::from("x").into()];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let ranges = vec![Point::from("x").into()];
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
@@ -474,8 +474,8 @@ mod tests {
         assert_eq!(&r.upper_exclusive, b"x\0");
 
         // Filled interval range
-        let ranges = vec![IntervalRange::from(("foo", "foo_8")).into()];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let ranges = vec![Interval::from(("foo", "foo_8")).into()];
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: false,
@@ -506,14 +506,14 @@ mod tests {
         // TODO: caller should not pass in unordered ranges otherwise mutant_searchned ranges would be
         // unsound.
         let ranges = vec![
-            IntervalRange::from(("foo", "foo_3")).into(),
-            IntervalRange::from(("foo_5", "foo_50")).into(),
-            IntervalRange::from(("bar", "bar_")).into(),
-            PointRange::from("bar_2").into(),
-            PointRange::from("bar_3").into(),
-            IntervalRange::from(("bar_4", "box")).into(),
+            Interval::from(("foo", "foo_3")).into(),
+            Interval::from(("foo_5", "foo_50")).into(),
+            Interval::from(("bar", "bar_")).into(),
+            Point::from("bar_2").into(),
+            Point::from("bar_3").into(),
+            Interval::from(("bar_4", "box")).into(),
         ];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range: false,
@@ -558,7 +558,7 @@ mod tests {
 
         // No range
         let ranges = vec![];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
@@ -577,8 +577,8 @@ mod tests {
         assert_eq!(&r.upper_exclusive, b"");
 
         // Empty interval range
-        let ranges = vec![IntervalRange::from(("x", "xb")).into()];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let ranges = vec![Interval::from(("x", "xb")).into()];
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
@@ -593,8 +593,8 @@ mod tests {
         assert_eq!(&r.upper_exclusive, b"xb");
 
         // Empty point range
-        let ranges = vec![PointRange::from("x").into()];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let ranges = vec![Point::from("x").into()];
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
@@ -609,8 +609,8 @@ mod tests {
         assert_eq!(&r.upper_exclusive, b"x\0");
 
         // Filled interval range
-        let ranges = vec![IntervalRange::from(("foo", "foo_8")).into()];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let ranges = vec![Interval::from(("foo", "foo_8")).into()];
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage: storage.clone(),
             ranges,
             mutant_search_spacelike_completion_in_range: true,
@@ -639,14 +639,14 @@ mod tests {
 
         // Multiple ranges
         let ranges = vec![
-            IntervalRange::from(("bar_4", "box")).into(),
-            PointRange::from("bar_3").into(),
-            PointRange::from("bar_2").into(),
-            IntervalRange::from(("bar", "bar_")).into(),
-            IntervalRange::from(("foo_5", "foo_50")).into(),
-            IntervalRange::from(("foo", "foo_3")).into(),
+            Interval::from(("bar_4", "box")).into(),
+            Point::from("bar_3").into(),
+            Point::from("bar_2").into(),
+            Interval::from(("bar", "bar_")).into(),
+            Interval::from(("foo_5", "foo_50")).into(),
+            Interval::from(("foo", "foo_3")).into(),
         ];
-        let mut mutant_searchner = RangesScanner::new(RangesScannerOptions {
+        let mut mutant_searchner = sScanner::new(sScannerOptions {
             storage,
             ranges,
             mutant_search_spacelike_completion_in_range: true,

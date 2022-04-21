@@ -592,7 +592,7 @@ impl DatumType {
         }
     }
 
-    /// `to_json_local_path_expr` parses DatumType::Bytes(b) to a JSON local_pathExpression.
+    /// `to_json_local_path_expr` parses DatumType::Bytes(b) to a JSON LocalPathExpression.
     pub fn to_json_local_path_expr(&self) -> Result<local_pathExpression> {
         let v = match *self {
             DatumType::Bytes(ref bs) => str::from_utf8(bs)?,

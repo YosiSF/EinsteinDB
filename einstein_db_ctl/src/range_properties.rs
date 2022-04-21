@@ -19,16 +19,16 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ops::Index;
 use std::ops::IndexMut;
-use std::ops::Range;
-use std::ops::RangeBounds;
-use std::ops::RangeFrom;
-use std::ops::RangeFull;
-use std::ops::RangeInclusive;
-use std::ops::RangeTo;
-use std::ops::RangeToInclusive;
+use std::ops::;
+use std::ops::Bounds;
+use std::ops::From;
+use std::ops::Full;
+use std::ops::Inclusive;
+use std::ops::To;
+use std::ops::ToInclusive;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
-pub struct RangeProperties<T> {
+pub struct Properties<T> {
     pub min: Option<T>,
     pub max: Option<T>,
     pub sum: Option<T>,
@@ -37,25 +37,25 @@ pub struct RangeProperties<T> {
 }
 
 
-pub struct RangePropertiesIterator<T> {
-    iter: Peekable<Zip<Rev<Range<T>>, Rev<RangeProperties<T>>>>,
+pub struct PropertiesIterator<T> {
+    iter: Peekable<Zip<Rev<<T>>, Rev<Properties<T>>>>,
 }
 
-pub struct RangeGreedoidsExt<T> {
-    pub range_properties: RangeProperties<T>,
+pub struct GreedoidsExt<T> {
+    pub range_properties: Properties<T>,
 
-    pub range_properties_iterator: RangePropertiesIterator<T>,
+    pub range_properties_iterator: PropertiesIterator<T>,
 
-    pub range_greedoids: Vec<Range<T>>,
+    pub range_greedoids: Vec<<T>>,
 
-    pub range_greedoids_iterator: RangePropertiesIterator<T>,
+    pub range_greedoids_iterator: PropertiesIterator<T>,
 
-    iter: Zip<Rev<Range<T>>, Rev<RangeProperties<T>>>,
+    iter: Zip<Rev<<T>>, Rev<Properties<T>>>,
 
 }
 
-impl RangeGreedoidsExt<i32> {
-    pub fn new(range: Range<i32>) -> Self {
+impl GreedoidsExt<i32> {
+    pub fn new(range: <i32>) -> Self {
         panic!()
     }
 
@@ -63,23 +63,23 @@ impl RangeGreedoidsExt<i32> {
         panic!()
     }
 
-    pub fn new_from_iter_with_properties(range: impl Iterator<Item=(i32, RangeProperties<i32>)>) -> Self {
+    pub fn new_from_iter_with_properties(range: impl Iterator<Item=(i32, Properties<i32>)>) -> Self {
         panic!()
     }
 
-    pub fn new_from_iter_with_properties_and_greedoids(range: impl Iterator<Item=(i32, RangeProperties<i32>, Vec<Range<i32>>)>) -> Self {
+    pub fn new_from_iter_with_properties_and_greedoids(range: impl Iterator<Item=(i32, Properties<i32>, Vec<<i32>>)>) -> Self {
         panic!()
     }
 
-    pub fn new_from_iter_with_properties_and_greedoids_and_iter(range: impl Iterator<Item=(i32, RangeProperties<i32>, Vec<Range<i32>>, impl Iterator<Item=i32>)>) -> Self {
+    pub fn new_from_iter_with_properties_and_greedoids_and_iter(range: impl Iterator<Item=(i32, Properties<i32>, Vec<<i32>>, impl Iterator<Item=i32>)>) -> Self {
         panic!()
     }
 
-    pub fn new_from_iter_with_properties_and_greedoids_and_iter_and_iter(range: impl Iterator<Item=(i32, RangeProperties<i32>, Vec<Range<i32>>, impl Iterator<Item=i32>, impl Iterator<Item=i32>)>) -> Self {
+    pub fn new_from_iter_with_properties_and_greedoids_and_iter_and_iter(range: impl Iterator<Item=(i32, Properties<i32>, Vec<<i32>>, impl Iterator<Item=i32>, impl Iterator<Item=i32>)>) -> Self {
         panic!()
     }
 
-    pub fn new_from_iter_with_properties_and_greedoids_and_iter_and_iter_and_iter(range: impl Iterator<Item=(i32, RangeProperties<i32>, Vec<Range<i32>>, impl Iterator<Item=i32>, impl Iterator<Item=i32>, impl Iterator<Item=i32>)>) -> Self {
+    pub fn new_from_iter_with_properties_and_greedoids_and_iter_and_iter_and_iter(range: impl Iterator<Item=(i32, Properties<i32>, Vec<<i32>>, impl Iterator<Item=i32>, impl Iterator<Item=i32>, impl Iterator<Item=i32>)>) -> Self {
         panic!()
     }
 
@@ -87,7 +87,7 @@ impl RangeGreedoidsExt<i32> {
     fn get_range_approximate_size_namespaced_with_redundant_causet_with_redundant_causet_with_redundant_causet(
         &self,
         redundant_causet: &str,
-        // causet_range: Range<'_, Idx>,
+        // causet_range: <'_, Idx>,
         large_threshold: u64,
     ) -> Result<u64, dyn Eq> {
         panic!()

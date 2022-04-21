@@ -516,7 +516,7 @@ mod tests {
                 None => {
                     assert!(
                         rb.is_err(),
-                        "index: {}, {:?} should not be converted, but got: {:?}",
+                        "Index: {}, {:?} should not be converted, but got: {:?}",
                         i,
                         v,
                         rb

@@ -319,7 +319,7 @@ mod tests {
             in_progress.transact(r#"[
                 {  :einsteindb/solitonid       :foo/bar
                    :einsteindb/cardinality :einsteindb.cardinality/one
-                   :einsteindb/index       true
+                   :einsteindb/Index       true
                    :einsteindb/unique      :einsteindb.unique/idcauset
                    :einsteindb/causet_localeType   :einsteindb.type/long },
                 {  :einsteindb/solitonid       :foo/baz

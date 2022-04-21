@@ -161,7 +161,7 @@ impl<N: Fsm, C: Fsm> alexandro<N, C> {
         }
     }
 
-    /// Remove the normal FSM located at `index`.
+    /// Remove the normal FSM located at `Index`.
     ///
     /// This method should only be called when the FSM is stopped.
     /// If there are still messages in channel, the FSM is untouched and
@@ -180,7 +180,7 @@ impl<N: Fsm, C: Fsm> alexandro<N, C> {
         }
     }
 
-    /// Schedule the normal FSM located at `index`.
+    /// Schedule the normal FSM located at `Index`.
     pub fn reschedule(&mut self, router: &alexandroRouter<N, C>, index: usize) {
         let fsm = self.normals.swap_remove(index);
         self.timers.swap_remove(index);

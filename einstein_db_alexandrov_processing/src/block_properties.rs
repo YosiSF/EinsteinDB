@@ -1,6 +1,6 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::{Range, Result};
+use crate::{, Result};
 
 pub trait UserCollectedGreedoids {
     fn get(&self, index: &[u8]) -> Option<&[u8]>;
@@ -23,6 +23,6 @@ pub trait TableGreedoidsExt {
     fn table_greedoids_collection(
         &self,
         namespaced: &str,
-        ranges: &[Range<'_>],
+        ranges: &[<'_>],
     ) -> Result<Self::TableGreedoidsCollection>;
 }

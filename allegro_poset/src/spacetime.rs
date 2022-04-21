@@ -10,7 +10,9 @@
 
 #![allow(dead_code)]
 
-//! Most transactions can mutate the EinsteinDB Spacetime by transacting lightlike_dagger_upsert:
+//! Most transactions can mutate the EinsteinDB Spacetime by transacting lightlike_upsert:
+//!  - `lightlike_upsert`: inserts or updates a value in the spacetime or cone of spacetime.
+//! - `lightlike_delete`: deletes a value in the spacetime or cone of spacetime.
 //!
 //! - they can add (and, eventually, retract and alter) recognized solitonids using the `:einsteindb/solitonid`
 //!   attribute;
@@ -21,6 +23,7 @@
 //! - eventually, they will be able to add (and possibly retract) causetid partitions using a EinsteinDB
 //!   equivalent (perhaps :einsteindb/partition or :einsteindb.partition/start) to Datomic's `:einsteindb.install/partition`
 //!   attribute.
+//! - eventually, they will be able to add (and possibly retract) causetid partitions using EinsteinDB equivalent
 //!
 //! This module recognizes, validates, applies, and reports on these mutations.
 
@@ -58,18 +61,18 @@ use std::collections::BTreeSet;
 use std::collections::btree_set::Iter as BTreeSetIter;
 use std::collections::btree_set::IterMut as BTreeSetIterMut;
 use std::collections::btree_set::IntoIter as BTreeSetIntoIter;
-use std::collections::btree_set::RangeBounds;
-use std::collections::btree_set::Range;
-use std::collections::btree_set::RangeMut;
-use std::collections::btree_set::RangeFull;
-use std::collections::btree_set::RangeInclusive;
+use std::collections::btree_set::Bounds;
+use std::collections::btree_set::;
+use std::collections::btree_set::Mut;
+use std::collections::btree_set::Full;
+use std::collections::btree_set::Inclusive;
 
 
 use std::collections::HashSet;
 use std::collections::hash_set::Iter as HashSetIter;
 use std::collections::hash_set::IterMut as HashSetIterMut;
 use std::collections::hash_set::IntoIter as HashSetIntoIter;
-use std::collections::hash_set::RangeBounds;
+use std::collections::hash_set::Bounds;
 
 
 
@@ -307,7 +310,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                 match *causet_locale {
                     causetq_TV::Ref(causetids::einsteindb_INDEX_FULLTEXT) => { builder.index(true); },
                     causetq_TV::Ref(causetids::einsteindb_INDEX_NONE) => { builder.index(false); },
-                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/index :einsteindb.index/fulltext|:einsteindb.index/none] but got [... :einsteindb/index {:?}]", causet_locale)))
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/Index :einsteindb.Index/fulltext|:einsteindb.Index/none] but got [... :einsteindb/Index {:?}]", causet_locale)))
                 }
             },
 
@@ -322,7 +325,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
             causetids::einsteindb_INDEX => {
                 match *causet_locale {
                     causetq_TV::Boolean(x) => { builder.index(x); },
-                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/index true|false] but got [... :einsteindb/index {:?}]", causet_locale)))
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/Index true|false] but got [... :einsteindb/Index {:?}]", causet_locale)))
                 }
             },
 

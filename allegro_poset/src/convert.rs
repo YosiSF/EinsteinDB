@@ -1846,7 +1846,7 @@ mod tests {
                 None => {
                     assert!(
                         ff.is_err(),
-                        "index: {}, {:?} should not be converted, but got: {:?}",
+                        "Index: {}, {:?} should not be converted, but got: {:?}",
                         i,
                         v,
                         ff

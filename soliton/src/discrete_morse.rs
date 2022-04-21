@@ -27,7 +27,7 @@ use einsteindb_traits::errors::{
     Result,
 };
 use rusqlite;
-use std::ops::RangeFrom;
+use std::ops::From;
 use tx::{
     transact_terms_with_action,
     TransactorAction,
@@ -37,7 +37,7 @@ use watcher::NullWatcher;
 
 /// Collects a supplied tx range into an DESC ordered Vec of valid txs,
 /// ensuring they all belong to the same discrete_morse.
-fn collect_ordered_txs_to_move(conn: &rusqlite::Connection, txs_from: RangeFrom<Causetid>, discrete_morse: Causetid) -> Result<Vec<Causetid>> {
+fn collect_ordered_txs_to_move(conn: &rusqlite::Connection, txs_from: From<Causetid>, discrete_morse: Causetid) -> Result<Vec<Causetid>> {
     let mut stmt = conn.prepare("SELECT tx, discrete_morse FROM discrete_morsed_transactions WHERE tx >= ? AND discrete_morse = ? GROUP BY tx ORDER BY tx DESC")?;
     let mut rows = stmt.query_and_then(&[&txs_from.start, &discrete_morse], |event: &rusqlite::Row| -> Result<(Causetid, Causetid)>{
         Ok((event.get_checked(0)?, event.get_checked(1)?))
@@ -52,7 +52,7 @@ fn collect_ordered_txs_to_move(conn: &rusqlite::Connection, txs_from: RangeFrom<
             txs.push(t.0);
             t.1
         },
-        None => bail!(einsteindbErrorKind::discrete_morsesInvalidRange)
+        None => bail!(einsteindbErrorKind::discrete_morsesInvalid)
     };
 
     while let Some(t) = rows.next() {
@@ -114,9 +114,9 @@ fn reversed_terms_for(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Ve
     Ok(terms)
 }
 
-/// Move specified transaction RangeFrom off of main discrete_morse.
+/// Move specified transaction From off of main discrete_morse.
 pub fn move_from_main_discrete_morse(conn: &rusqlite::Connection, topograph: &Topograph,
-    partition_map: PartitionMap, txs_from: RangeFrom<Causetid>, new_discrete_morse: Causetid) -> Result<(Option<Topograph>, PartitionMap)> {
+    partition_map: PartitionMap, txs_from: From<Causetid>, new_discrete_morse: Causetid) -> Result<(Option<Topograph>, PartitionMap)> {
 
     if new_discrete_morse == ::discrete_morse_MAIN {
         bail!(einsteindbErrorKind::NotYetImplemented(format!("Can't move transactions to main discrete_morse")));
@@ -279,7 +279,7 @@ mod tests {
 
         // Transact a basic topograph.
         assert_transact!(conn, r#"
-            [{:einsteindb/solitonid :person/name :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/index true}]
+            [{:einsteindb/solitonid :person/name :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/Index true}]
         "#);
 
         // Make an lightlike_dagger_assertion against our topograph.
@@ -298,14 +298,14 @@ mod tests {
             [?e :einsteindb/causet_localeType :einsteindb.type/string]
             [?e :einsteindb/cardinality :einsteindb.cardinality/one]
             [?e :einsteindb/unique :einsteindb.unique/idcauset]
-            [?e :einsteindb/index true]]");
+            [?e :einsteindb/Index true]]");
         // Same for transactions.
         assert_matches!(conn.transactions(), "
             [[[?e :einsteindb/solitonid :person/name ?tx true]
             [?e :einsteindb/causet_localeType :einsteindb.type/string ?tx true]
             [?e :einsteindb/cardinality :einsteindb.cardinality/one ?tx true]
             [?e :einsteindb/unique :einsteindb.unique/idcauset ?tx true]
-            [?e :einsteindb/index true ?tx true]
+            [?e :einsteindb/Index true ?tx true]
             [?tx :einsteindb/txInstant ?ms ?tx true]]]");
 
         // Re-assert our initial fact against our topograph.
@@ -323,7 +323,7 @@ mod tests {
             [?e1 :einsteindb/causet_localeType :einsteindb.type/string]
             [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
             [?e1 :einsteindb/unique :einsteindb.unique/idcauset]
-            [?e1 :einsteindb/index true]
+            [?e1 :einsteindb/Index true]
             [?e2 :person/name "Ivan"]]
         "#);
 
@@ -336,7 +336,7 @@ mod tests {
                 [?e1 :einsteindb/causet_localeType :einsteindb.type/string ?tx1 true]
                 [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
                 [?e1 :einsteindb/unique :einsteindb.unique/idcauset ?tx1 true]
-                [?e1 :einsteindb/index true ?tx1 true]
+                [?e1 :einsteindb/Index true ?tx1 true]
                 [?tx1 :einsteindb/txInstant ?ms1 ?tx1 true]
             ]
             [
@@ -417,7 +417,7 @@ mod tests {
                 :einsteindb/causet_localeType :einsteindb.type/string
                 :einsteindb/cardinality :einsteindb.cardinality/one
                 :einsteindb/unique :einsteindb.unique/causet_locale
-                :einsteindb/index true
+                :einsteindb/Index true
                 :einsteindb/fulltext true
             }]
         "#;
@@ -452,7 +452,7 @@ mod tests {
              [?e1 :einsteindb/causet_localeType :einsteindb.type/string]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
              [?e1 :einsteindb/unique :einsteindb.unique/causet_locale]
-             [?e1 :einsteindb/index true]
+             [?e1 :einsteindb/Index true]
              [?e1 :einsteindb/fulltext true]]
         "#);
         assert_matches!(conn.transactions(), r#"
@@ -460,7 +460,7 @@ mod tests {
              [?e1 :einsteindb/causet_localeType :einsteindb.type/string ?tx1 true]
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
              [?e1 :einsteindb/unique :einsteindb.unique/causet_locale ?tx1 true]
-             [?e1 :einsteindb/index true ?tx1 true]
+             [?e1 :einsteindb/Index true ?tx1 true]
              [?e1 :einsteindb/fulltext true ?tx1 true]
              [?tx1 :einsteindb/txInstant ?ms ?tx1 true]]]
         "#);
@@ -478,7 +478,7 @@ mod tests {
                 :einsteindb/causet_localeType :einsteindb.type/ref
                 :einsteindb/cardinality :einsteindb.cardinality/one
                 :einsteindb/unique :einsteindb.unique/causet_locale
-                :einsteindb/index true
+                :einsteindb/Index true
                 :einsteindb/isComponent true
             }]
         "#;
@@ -521,7 +521,7 @@ mod tests {
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one]
              [?e1 :einsteindb/unique :einsteindb.unique/causet_locale]
              [?e1 :einsteindb/isComponent true]
-             [?e1 :einsteindb/index true]]
+             [?e1 :einsteindb/Index true]]
         "#);
         assert_matches!(conn.transactions(), r#"
             [[[?e1 :einsteindb/solitonid :test/one ?tx1 true]
@@ -529,7 +529,7 @@ mod tests {
              [?e1 :einsteindb/cardinality :einsteindb.cardinality/one ?tx1 true]
              [?e1 :einsteindb/unique :einsteindb.unique/causet_locale ?tx1 true]
              [?e1 :einsteindb/isComponent true ?tx1 true]
-             [?e1 :einsteindb/index true ?tx1 true]
+             [?e1 :einsteindb/Index true ?tx1 true]
              [?tx1 :einsteindb/txInstant ?ms ?tx1 true]]]
         "#);
     }
@@ -544,7 +544,7 @@ mod tests {
         assert_eq!((65536..65538),
                    conn.partition_map.allocate_causetids(":einsteindb.part/user", 2));
         let tx_report0 = assert_transact!(conn, r#"[
-            {:einsteindb/id 65536 :einsteindb/solitonid :test/one :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/index true}
+            {:einsteindb/id 65536 :einsteindb/solitonid :test/one :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/one :einsteindb/unique :einsteindb.unique/idcauset :einsteindb/Index true}
             {:einsteindb/id 65537 :einsteindb/solitonid :test/many :einsteindb/causet_localeType :einsteindb.type/long :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
@@ -553,7 +553,7 @@ mod tests {
             [65536 :einsteindb/causet_localeType :einsteindb.type/long]
             [65536 :einsteindb/cardinality :einsteindb.cardinality/one]
             [65536 :einsteindb/unique :einsteindb.unique/idcauset]
-            [65536 :einsteindb/index true]
+            [65536 :einsteindb/Index true]
             [65537 :einsteindb/solitonid :test/many]
             [65537 :einsteindb/causet_localeType :einsteindb.type/long]
             [65537 :einsteindb/cardinality :einsteindb.cardinality/many]
@@ -583,7 +583,7 @@ mod tests {
             [65536 :einsteindb/causet_localeType :einsteindb.type/long]
             [65536 :einsteindb/cardinality :einsteindb.cardinality/one]
             [65536 :einsteindb/unique :einsteindb.unique/idcauset]
-            [65536 :einsteindb/index true]
+            [65536 :einsteindb/Index true]
             [65537 :einsteindb/solitonid :test/many]
             [65537 :einsteindb/causet_localeType :einsteindb.type/long]
             [65537 :einsteindb/cardinality :einsteindb.cardinality/many]
@@ -613,7 +613,7 @@ mod tests {
             [65536 :einsteindb/causet_localeType :einsteindb.type/long]
             [65536 :einsteindb/cardinality :einsteindb.cardinality/one]
             [65536 :einsteindb/unique :einsteindb.unique/idcauset]
-            [65536 :einsteindb/index true]
+            [65536 :einsteindb/Index true]
             [65537 :einsteindb/solitonid :test/many]
             [65537 :einsteindb/causet_localeType :einsteindb.type/long]
             [65537 :einsteindb/cardinality :einsteindb.cardinality/many]

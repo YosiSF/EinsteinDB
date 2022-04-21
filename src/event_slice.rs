@@ -88,7 +88,7 @@ impl RowSlice<'_> {
                 if let Ok(idx) = non_null_ids.binary_search(&(id as u32)) {
                     let offset = offsets.get(idx).ok_or(Error::ColumnOffset(idx))?;
                     let start = if idx > 0 {
-                        // Previous `offsets.get(idx)` indicates it's ok to index `idx - 1`
+                        // Previous `offsets.get(idx)` indicates it's ok to Index `idx - 1`
                         unsafe { offsets.get_unchecked(idx - 1) as usize }
                     } else {
                         0usize
@@ -104,7 +104,7 @@ impl RowSlice<'_> {
                 if let Ok(idx) = non_null_ids.binary_search(&(id as u8)) {
                     let offset = offsets.get(idx).ok_or(Error::ColumnOffset(idx))?;
                     let start = if idx > 0 {
-                        // Previous `offsets.get(idx)` indicates it's ok to index `idx - 1`
+                        // Previous `offsets.get(idx)` indicates it's ok to Index `idx - 1`
                         unsafe { offsets.get_unchecked(idx - 1) as usize }
                     } else {
                         0usize

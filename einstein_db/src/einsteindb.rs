@@ -89,7 +89,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter::{once, repeat};
 use std::local_path::local_path;
-use std::ops::Range;
+use std::ops::;
 use topograph::TopographBuilding;
 use tx::transact;
 use types::{
@@ -236,14 +236,14 @@ async fn put<T>(  cursor: &rusqlite::Cursor, causet_locales: T ) -> Result<u64, 
         // between getting everything at once and iterating over them?!?
         // Suppose so.. oh well.... just do what feels natural....
         // Hmmmmm..... Wait! wait! I know!!!!!\
-        // FromRange and all that shit exists!!!!
-        // So we can just use FromRange and be done with it!!!!!!
+        // From and all that shit exists!!!!
+        // So we can just use From and be done with it!!!!!!
         // Oh yeah!!! Why didn't I think of that before?!?!
         // (wait nvm wait nevermind both exist).
         // This is pretty brilliant actually :D :
         // D :D
         // oooohh yeaaaaaahhh!!!!!!
-        // use the FromRange thing!!!!!
+        // use the From thing!!!!!
         // Weeeeeeee!!!!!!!!! Ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhh yeaaahhh!!!!!!!!!!!!!! <3 <3 <3 :P :) :) :) :) :) :) :)
 
         let mut sql = String::new();
@@ -283,7 +283,7 @@ async fn get_range<'a>(cursor: &rusqlite::Cursor<'a>, begin: Option<u32>, end: O
 
     };
 
-    //todo should I use query here or iterate over rows??? They'll give me the same results but isn't there a tradeoff between getting everything at once and iterating over them?!? Suppose so.. oh well.... just do what feels natural....   Hmmmmm..... Wait! wait! I know!!!!! FromRange and all that shit exists!!!! So we can just use FromRange and be done with it!!!!!! Oh yeah!!! Why didn't I think of that before?!?! (wait nvm wait nevermind both exist).   This is pretty brilliant actually :D :D :D oooohh yeaaaaaahhh!!!!!! use the FromRange thing!!!!! Weeeeeeee!!!!!!!!! Ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhh yeaaahhh!!!!!!!!!!!!!! <3 <3 <3 :P :) :) :) :) :) :) :)
+    //todo should I use query here or iterate over rows??? They'll give me the same results but isn't there a tradeoff between getting everything at once and iterating over them?!? Suppose so.. oh well.... just do what feels natural....   Hmmmmm..... Wait! wait! I know!!!!! From and all that shit exists!!!! So we can just use From and be done with it!!!!!! Oh yeah!!! Why didn't I think of that before?!?! (wait nvm wait nevermind both exist).   This is pretty brilliant actually :D :D :D oooohh yeaaaaaahhh!!!!!! use the From thing!!!!! Weeeeeeee!!!!!!!!! Ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhh yeaaahhh!!!!!!!!!!!!!! <3 <3 <3 :P :) :) :) :) :) :) :)
 
     let mut sql = String::new();
 
@@ -394,20 +394,20 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         r#"CREATE UNIQUE INDEX idx_causets_eavt ON causets (e, a, causet_locale_type_tag, v)"#,
         r#"CREATE UNIQUE INDEX idx_causets_aevt ON causets (a, e, causet_locale_type_tag, v)"#,
 
-        // Opt-in index: only if a has :einsteindb/index true.
+        // Opt-in Index: only if a has :einsteindb/Index true.
         r#"CREATE UNIQUE INDEX idx_causets_avet ON causets (a, causet_locale_type_tag, v, e) WHERE index_avet IS NOT 0"#,
 
-        // Opt-in index: only if a has :einsteindb/causet_localeType :einsteindb.type/ref.  No need for tag here since all
+        // Opt-in Index: only if a has :einsteindb/causet_localeType :einsteindb.type/ref.  No need for tag here since all
         // indexed elements are refs.
         r#"CREATE UNIQUE INDEX idx_causets_vaet ON causets (v, a, e) WHERE index_vaet IS NOT 0"#,
 
-        // Opt-in index: only if a has :einsteindb/fulltext true; thus, it has :einsteindb/causet_localeType :einsteindb.type/string,
+        // Opt-in Index: only if a has :einsteindb/fulltext true; thus, it has :einsteindb/causet_localeType :einsteindb.type/string,
         // which is not :einsteindb/causet_localeType :einsteindb.type/ref.  That is, index_vaet and index_fulltext are mutually
         // exclusive.
         r#"CREATE INDEX idx_causets_fulltext ON causets (causet_locale_type_tag, v, a, e) WHERE index_fulltext IS NOT 0"#,
 
-        // TODO: possibly remove this index.  :einsteindb.unique/{causet_locale,idcauset} should be asserted by the
-        // transactor in all cases, but the index may speed up some of SQLite's query planning.  For now,
+        // TODO: possibly remove this Index.  :einsteindb.unique/{causet_locale,idcauset} should be asserted by the
+        // transactor in all cases, but the Index may speed up some of SQLite's query planning.  For now,
         // it serves to validate the transactor impleEinsteinDBion.  Note that tag is needed here to
         // differentiate, e.g., soliton_idwords and strings.
         r#"CREATE UNIQUE INDEX idx_causets_unique_causet_locale ON causets (a, causet_locale_type_tag, v) WHERE unique_causet_locale IS NOT 0"#,
@@ -1011,7 +1011,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
                flags0 TINYINT NOT NULL)"#,
 
                 // It is fine to transact the same [e a v] twice in one transaction, but the transaction
-                // processor should unify such repeated causets.  This index will cause insertion to fail
+                // processor should unify such repeated causets.  This Index will cause insertion to fail
                 // if the transaction processor incorrectly tries to assert the same (cardinality one)
                 // causet twice.  (Sadly, the failure is opaque.)
                 r#"CREATE UNIQUE INDEX IF NOT EXISTS temp.inexact_searches_unique ON inexact_searches (e0, a0) WHERE added0 = 1"#,
@@ -1029,11 +1029,11 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
                rid INTEGER,
                v BLOB)"#,
                 // It is fine to transact the same [e a v] twice in one transaction, but the transaction
-                // processor should identify those causets.  This index will cause insertion to fail if
+                // processor should identify those causets.  This Index will cause insertion to fail if
                 // the causal_setals of the database searching code incorrectly find the same causet twice.
                 // (Sadly, the failure is opaque.)
                 //
-                // N.b.: temp goes on index name, not table name.  See http://stackoverCausetxctx.com/a/22308016.
+                // N.b.: temp goes on Index name, not table name.  See http://stackoverCausetxctx.com/a/22308016.
                 r#"CREATE UNIQUE INDEX IF NOT EXISTS temp.search_results_unique ON search_results (e0, a0, v0, causet_locale_type_tag0)"#,
             ];
 
@@ -1408,7 +1408,7 @@ SELECT EXISTS
         }
 
         /// Allocate `n` fresh causetids in the given `partition`.
-        pub(crate) fn allocate_causetids(&mut self, partition: &str, n: usize) -> Range<i64> {
+        pub(crate) fn allocate_causetids(&mut self, partition: &str, n: usize) -> <i64> {
             match self.get_mut(partition) {
                 Some(partition) => partition.allocate_causetids(n),
                 None => panic!("Cannot allocate causetid from unknown partition: {}", partition)
@@ -1664,7 +1664,7 @@ SELECT EXISTS
               :einsteindb/causet_localeType :einsteindb.type/string
               :einsteindb/unique :einsteindb.unique/causetid
               :einsteindb/cardinality :einsteindb.cardinality/many}]",
-              Err("bad topograph lightlike_dagger_assertion: :einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: 65538"));
+              Err("bad topograph lightlike_dagger_assertion: :einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/Index true for causetid: 65538"));
         }
 
         // TODO: don't use :einsteindb/solitonid to test upserts!
@@ -1782,12 +1782,12 @@ SELECT EXISTS
             {:einsteindb/solitonid :test/id
              :einsteindb/causet_localeType :einsteindb.type/string
              :einsteindb/unique :einsteindb.unique/idcauset
-             :einsteindb/index true
+             :einsteindb/Index true
              :einsteindb/cardinality :einsteindb.cardinality/one}
             {:einsteindb/solitonid :test/ref
              :einsteindb/causet_localeType :einsteindb.type/ref
              :einsteindb/unique :einsteindb.unique/idcauset
-             :einsteindb/index true
+             :einsteindb/Index true
              :einsteindb/cardinality :einsteindb.cardinality/one}
         ]");
 
@@ -2066,7 +2066,7 @@ SELECT EXISTS
             // But we can if we make sure there's no repeated [a v] pair.
             assert_transact!(conn, "[[:einsteindb/add 201 :test/solitonid 2]]");
 
-            assert_transact!(conn, "[[:einsteindb/add :test/solitonid :einsteindb/index true]
+            assert_transact!(conn, "[[:einsteindb/add :test/solitonid :einsteindb/Index true]
                                  [:einsteindb/add :test/solitonid :einsteindb/unique :einsteindb.unique/causet_locale]
                                  [:einsteindb/add :einsteindb.part/einsteindb :einsteindb.alter/attribute 100]]");
 
@@ -2093,7 +2093,7 @@ SELECT EXISTS
                                  [:einsteindb/add 100 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/one]
                                  [:einsteindb/add 100 :einsteindb/unique :einsteindb.unique/idcauset]
-                                 [:einsteindb/add 100 :einsteindb/index true]]");
+                                 [:einsteindb/add 100 :einsteindb/Index true]]");
 
             assert_transact!(conn, "[[:einsteindb/add 200 :test/solitonid \"Oi\"]]");
 
@@ -2110,7 +2110,7 @@ SELECT EXISTS
                           [100 :einsteindb/causet_localeType :einsteindb.type/string]
                           [100 :einsteindb/cardinality :einsteindb.cardinality/one]
                           [100 :einsteindb/unique :einsteindb.unique/idcauset]
-                          [100 :einsteindb/index true]
+                          [100 :einsteindb/Index true]
                           [200 :test/solitonid \"Ai!\"]]");
         }
 
@@ -2123,12 +2123,12 @@ SELECT EXISTS
             assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/fulltext]
                                  [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/idcauset]
-                                 [:einsteindb/add 111 :einsteindb/index true]
+                                 [:einsteindb/add 111 :einsteindb/Index true]
                                  [:einsteindb/add 111 :einsteindb/fulltext true]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/string]
                                  [:einsteindb/add 222 :einsteindb/cardinality :einsteindb.cardinality/one]
                                  [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/string]
-                                 [:einsteindb/add 222 :einsteindb/index true]]");
+                                 [:einsteindb/add 222 :einsteindb/Index true]]");
 
             assert_transact!(conn,
                          "[[:einsteindb/retract 111 :einsteindb/fulltext true]]",
@@ -2147,12 +2147,12 @@ SELECT EXISTS
             assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/fulltext]
                                  [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/idcauset]
-                                 [:einsteindb/add 111 :einsteindb/index true]
+                                 [:einsteindb/add 111 :einsteindb/Index true]
                                  [:einsteindb/add 111 :einsteindb/fulltext true]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/other]
                                  [:einsteindb/add 222 :einsteindb/cardinality :einsteindb.cardinality/one]
                                  [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/string]
-                                 [:einsteindb/add 222 :einsteindb/index true]
+                                 [:einsteindb/add 222 :einsteindb/Index true]
                                  [:einsteindb/add 222 :einsteindb/fulltext true]]");
 
             // Let's check we actually have the topograph characteristics we expect.
@@ -2180,12 +2180,12 @@ SELECT EXISTS
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
-                          [111 :einsteindb/index true]
+                          [111 :einsteindb/Index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
                           [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
-                          [222 :einsteindb/index true]
+                          [222 :einsteindb/Index true]
                           [222 :einsteindb/fulltext true]
                           [301 :test/fulltext 1]]");
 
@@ -2203,12 +2203,12 @@ SELECT EXISTS
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
-                          [111 :einsteindb/index true]
+                          [111 :einsteindb/Index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
                           [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
-                          [222 :einsteindb/index true]
+                          [222 :einsteindb/Index true]
                           [222 :einsteindb/fulltext true]
                           [301 :test/fulltext 2]]");
 
@@ -2227,12 +2227,12 @@ SELECT EXISTS
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
-                          [111 :einsteindb/index true]
+                          [111 :einsteindb/Index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
                           [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
-                          [222 :einsteindb/index true]
+                          [222 :einsteindb/Index true]
                           [222 :einsteindb/fulltext true]
                           [301 :test/fulltext 2]
                           [301 :test/other 3]]");
@@ -2251,12 +2251,12 @@ SELECT EXISTS
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
-                          [111 :einsteindb/index true]
+                          [111 :einsteindb/Index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
                           [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
-                          [222 :einsteindb/index true]
+                          [222 :einsteindb/Index true]
                           [222 :einsteindb/fulltext true]
                           [301 :test/fulltext 2]
                           [301 :test/other 3]
@@ -2277,12 +2277,12 @@ SELECT EXISTS
                         "[[111 :einsteindb/solitonid :test/fulltext]
                           [111 :einsteindb/causet_localeType :einsteindb.type/string]
                           [111 :einsteindb/unique :einsteindb.unique/idcauset]
-                          [111 :einsteindb/index true]
+                          [111 :einsteindb/Index true]
                           [111 :einsteindb/fulltext true]
                           [222 :einsteindb/solitonid :test/other]
                           [222 :einsteindb/causet_localeType :einsteindb.type/string]
                           [222 :einsteindb/cardinality :einsteindb.cardinality/one]
-                          [222 :einsteindb/index true]
+                          [222 :einsteindb/Index true]
                           [222 :einsteindb/fulltext true]
                           [301 :test/fulltext 2]
                           [301 :test/other 3]]");
@@ -2296,15 +2296,15 @@ SELECT EXISTS
             assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/unique_causet_locale]
                                  [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/causet_locale]
-                                 [:einsteindb/add 111 :einsteindb/index true]
+                                 [:einsteindb/add 111 :einsteindb/Index true]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/unique_idcauset]
                                  [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 222 :einsteindb/unique :einsteindb.unique/idcauset]
-                                 [:einsteindb/add 222 :einsteindb/index true]
+                                 [:einsteindb/add 222 :einsteindb/Index true]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/not_unique]
                                  [:einsteindb/add 333 :einsteindb/cardinality :einsteindb.cardinality/one]
                                  [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/soliton_idword]
-                                 [:einsteindb/add 333 :einsteindb/index true]]");
+                                 [:einsteindb/add 333 :einsteindb/Index true]]");
 
             // And a few causets to match against.
             assert_transact!(conn, "[[:einsteindb/add 501 :test/unique_causet_locale \"test this\"]
@@ -2350,19 +2350,19 @@ SELECT EXISTS
             assert_transact!(conn, "[[:einsteindb/add 111 :einsteindb/solitonid :test/unique_causet_locale]
                                  [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/string]
                                  [:einsteindb/add 111 :einsteindb/unique :einsteindb.unique/causet_locale]
-                                 [:einsteindb/add 111 :einsteindb/index true]
+                                 [:einsteindb/add 111 :einsteindb/Index true]
                                  [:einsteindb/add 222 :einsteindb/solitonid :test/unique_idcauset]
                                  [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 222 :einsteindb/unique :einsteindb.unique/idcauset]
-                                 [:einsteindb/add 222 :einsteindb/index true]
+                                 [:einsteindb/add 222 :einsteindb/Index true]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/not_unique]
                                  [:einsteindb/add 333 :einsteindb/cardinality :einsteindb.cardinality/one]
                                  [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/soliton_idword]
-                                 [:einsteindb/add 333 :einsteindb/index true]
+                                 [:einsteindb/add 333 :einsteindb/Index true]
                                  [:einsteindb/add 444 :einsteindb/solitonid :test/ref]
                                  [:einsteindb/add 444 :einsteindb/causet_localeType :einsteindb.type/ref]
                                  [:einsteindb/add 444 :einsteindb/unique :einsteindb.unique/idcauset]
-                                 [:einsteindb/add 444 :einsteindb/index true]]");
+                                 [:einsteindb/add 444 :einsteindb/Index true]]");
 
             // And a few causets to match against.
             assert_transact!(conn, "[[:einsteindb/add 501 :test/unique_causet_locale \"test this\"]
@@ -2459,7 +2459,7 @@ SELECT EXISTS
                                  [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/ref]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/unique]
                                  [:einsteindb/add 333 :einsteindb/unique :einsteindb.unique/idcauset]
-                                 [:einsteindb/add 333 :einsteindb/index true]
+                                 [:einsteindb/add 333 :einsteindb/Index true]
                                  [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 444 :einsteindb/solitonid :test/dangling]
                                  [:einsteindb/add 444 :einsteindb/causet_localeType :einsteindb.type/ref]]");
@@ -2547,7 +2547,7 @@ SELECT EXISTS
                                  [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/ref]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/unique]
                                  [:einsteindb/add 333 :einsteindb/unique :einsteindb.unique/idcauset]
-                                 [:einsteindb/add 333 :einsteindb/index true]
+                                 [:einsteindb/add 333 :einsteindb/Index true]
                                  [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 444 :einsteindb/solitonid :test/dangling]
                                  [:einsteindb/add 444 :einsteindb/causet_localeType :einsteindb.type/ref]]");
@@ -2651,7 +2651,7 @@ SELECT EXISTS
                                  [:einsteindb/add 222 :einsteindb/causet_localeType :einsteindb.type/ref]
                                  [:einsteindb/add 333 :einsteindb/solitonid :test/unique]
                                  [:einsteindb/add 333 :einsteindb/unique :einsteindb.unique/idcauset]
-                                 [:einsteindb/add 333 :einsteindb/index true]
+                                 [:einsteindb/add 333 :einsteindb/Index true]
                                  [:einsteindb/add 333 :einsteindb/causet_localeType :einsteindb.type/long]
                                  [:einsteindb/add 444 :einsteindb/solitonid :test/dangling]
                                  [:einsteindb/add 444 :einsteindb/causet_localeType :einsteindb.type/ref]]");
@@ -2701,7 +2701,7 @@ SELECT EXISTS
             [:einsteindb/add 111 :einsteindb/causet_localeType :einsteindb.type/long]
             [:einsteindb/add 111 :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add 112 :einsteindb/solitonid :test/unique]
-            [:einsteindb/add 112 :einsteindb/index true]
+            [:einsteindb/add 112 :einsteindb/Index true]
             [:einsteindb/add 112 :einsteindb/causet_localeType :einsteindb.type/string]
             [:einsteindb/add 112 :einsteindb/cardinality :einsteindb.cardinality/one]
             [:einsteindb/add 112 :einsteindb/unique :einsteindb.unique/idcauset]
@@ -2736,8 +2736,8 @@ SELECT EXISTS
             let mut conn = TestConn::default();
 
             assert_transact!(conn, r#"[
-            {:einsteindb/solitonid :page/id :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
-            {:einsteindb/solitonid :page/ref :einsteindb/causet_localeType :einsteindb.type/ref :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
+            {:einsteindb/solitonid :page/id :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/Index true :einsteindb/unique :einsteindb.unique/idcauset}
+            {:einsteindb/solitonid :page/ref :einsteindb/causet_localeType :einsteindb.type/ref :einsteindb/Index true :einsteindb/unique :einsteindb.unique/idcauset}
             {:einsteindb/solitonid :page/title :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 
@@ -2788,8 +2788,8 @@ SELECT EXISTS
             let mut conn = TestConn::default();
 
             assert_transact!(conn, r#"[
-            {:einsteindb/solitonid :page/id :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
-            {:einsteindb/solitonid :page/ref :einsteindb/causet_localeType :einsteindb.type/ref :einsteindb/index true :einsteindb/unique :einsteindb.unique/idcauset}
+            {:einsteindb/solitonid :page/id :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/Index true :einsteindb/unique :einsteindb.unique/idcauset}
+            {:einsteindb/solitonid :page/ref :einsteindb/causet_localeType :einsteindb.type/ref :einsteindb/Index true :einsteindb/unique :einsteindb.unique/idcauset}
             {:einsteindb/solitonid :page/title :einsteindb/causet_localeType :einsteindb.type/string :einsteindb/cardinality :einsteindb.cardinality/many}
         ]"#);
 

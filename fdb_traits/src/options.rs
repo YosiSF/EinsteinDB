@@ -1,6 +1,6 @@
 use einsteindb_util::soliton_idbuilder::KeyBuilder;
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
-use std::ops::{Bound, RangeBounds};
+use std::ops::{Bound, Bounds};
 
 #[derive(Clone)]
 pub struct ReadOptions {

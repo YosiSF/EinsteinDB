@@ -1,31 +1,107 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use codec::prelude::*;
-use einsteindbpb::{self, Table};
-use std::{cmp, u8};
-use std::convert::TryInto;
-use std::io::Write;
-use std::sync::Arc;
+use berolina_sql::{
+    ast::{self, Expr, ExprKind, Field, FieldType, FieldTypeTp, FieldTypeVisitor},
+    Column,
+    EvalContext,
+    Result,
+    ScalarFunc,
+    ScalarFuncArgs,
+    ScalarFuncCall,
+    ScalarFuncCallArgs,
+    ScalarFuncCallType,
+    ScalarValue,
+    TypeFlag,
+    Value,
+};
 
-use crate::expr::EvalContext;
-use crate::FieldTypeTp;
-use crate::prelude::*;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    convert::TryFrom,
+    fmt,
+    hash::{Hash, Hasher},
+    iter::FromIterator,
+    ops::{Deref, DerefMut},
+    str::FromStr,
+    sync::Arc,
+};
 
-use super::{Error, Result};
-use super::{datum, DatumType, datum::DatumTypeDecoder, Error, Result};
-use super::myBerolinaSQL::{Duration, Time};
+use einsteindb::{ColumnInfo, ColumnInfo_Type, IndexInfo, IndexInfo_Type, IndexInfo_Unique};
+use einsteindb::{IndexType, IndexTypeTp, IndexTypeTpFlag, TableInfo, TableInfo_Type};
+use einstein_db::Causetid;
+use soliton::types::{
+    ColumnType, ColumnTypeFlag, ColumnTypeTp, ColumnTypeTpFlag, ColumnTypeTpFlagVec,
+    ColumnTypeTpVec,
+};
 
-// handle or index id
+// handle or Index id
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct Id(u64);
+
+
+impl Id {
+    pub fn new(id: u64) -> Self {
+        Id(id)
+    }
+
+    pub fn as_u64(&self) -> u64 {
+        self.0
+    }
+}
+
+
+impl fmt::Display for Id {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+
+impl FromStr for Id {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Id(s.parse()?))
+    }
+}
+
+
+impl Hash for Id {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.hash(state);
+    }
+}
+
+//Deferred Column Type
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct DeferredColumnType {
+    pub column_type: ColumnType,
+    pub column_id: Id,
+}
+
+
+impl DeferredColumnType {
+    pub fn new(column_type: ColumnType, column_id: Id) -> Self {
+        DeferredColumnType {
+            column_type,
+            column_id,
+        }
+    }
+}
+
+
+
 pub const ID_LEN: usize = 8;
 pub const PREFIX_LEN: usize = TABLE_PREFIX_LEN + ID_LEN /*table_id*/ + SEP_LEN;
 pub const RECORD_ROW_KEY_LEN: usize = PREFIX_LEN + ID_LEN;
 pub const TABLE_PREFIX: &[u8] = b"t";
+pub const SEP: &[u8] = b"_";
 pub const RECORD_PREFIX_SEP: &[u8] = b"_r";
 pub const INDEX_PREFIX_SEP: &[u8] = b"_i";
 pub const SEP_LEN: usize = 2;
 pub const TABLE_PREFIX_LEN: usize = 1;
 pub const TABLE_PREFIX_KEY_LEN: usize = TABLE_PREFIX_LEN + ID_LEN;
-// the maximum len of the old encoding of index causet_locale.
+// the maximum len of the old encoding of Index causet_locale.
 pub const MAX_OLD_ENCODED_VALUE_LEN: usize = 9;
 
 
@@ -50,7 +126,7 @@ pub fn encode_row(table_id: i64, handle: i64, row: Vec<DatumType>) -> Result<Vec
 }
 
 
-/// `TableEncoder` encodes the table record/index prefix.
+/// `TableEncoder` encodes the table record/Index prefix.
 trait TableEncoder: NumberEncoder {
     fn append_table_record_prefix(&mut self, table_id: i64) -> Result<()> {
         self.write_bytes(TABLE_PREFIX)?;
@@ -67,12 +143,12 @@ trait TableEncoder: NumberEncoder {
 
 impl<T: BufferWriter> TableEncoder for T {}
 
-/// Extracts table prefix from table record or index.
+/// Extracts table prefix from table record or Index.
 #[inline]
 pub fn extract_table_prefix(soliton_id: &[u8]) -> Result<&[u8]> {
     if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
         Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
+            "record soliton_id or Index soliton_id expected, but got {:?}",
             soliton_id
         ))
     } else {
@@ -80,8 +156,8 @@ pub fn extract_table_prefix(soliton_id: &[u8]) -> Result<&[u8]> {
     }
 }
 
-/// Checks if the range is for table record or index.
-pub fn check_table_ranges(ranges: &[KeyRange]) -> Result<()> {
+/// Checks if the range is for table record or Index.
+pub fn check_table_ranges(ranges: &[Key]) -> Result<()> {
     for range in ranges {
         extract_table_prefix(range.get_start())?;
         extract_table_prefix(range.get_end())?;
@@ -97,9 +173,9 @@ pub fn check_table_ranges(ranges: &[KeyRange]) -> Result<()> {
 }
 
 
-/// `TableDecoder` decodes the table record/index prefix.
-/// It is used to decode the table record/index prefix from the table record/index key.
-/// For example, we have a table record/index key:
+/// `TableDecoder` decodes the table record/Index prefix.
+/// It is used to decode the table record/Index prefix from the table record/Index key.
+/// For example, we have a table record/Index key:
 ///    t1_r1
 ///   t1_r2
 ///  t1_r3
@@ -107,7 +183,7 @@ pub fn check_table_ranges(ranges: &[KeyRange]) -> Result<()> {
 /// t2_r2
 /// t2_r3
 ///
-/// The TableDecoder will point to the first byte of the table record/index key:
+/// The TableDecoder will point to the first byte of the table record/Index key:
 ///   t1_r1
 ///  t1_r2
 ///
@@ -119,7 +195,7 @@ pub fn check_table_ranges(ranges: &[KeyRange]) -> Result<()> {
 /// t2_r2 -> t2
 /// t2_r3 -> t2
 ///
-/// The TableDecoder can be used to decode the record/index handle:
+/// The TableDecoder can be used to decode the record/Index handle:
 /// t1_r1 -> 1
 /// t1_r2 -> 2
 /// t1_r3 -> 3
@@ -127,7 +203,7 @@ pub fn check_table_ranges(ranges: &[KeyRange]) -> Result<()> {
 /// t2_r2 -> 2
 /// t2_r3 -> 3
 ///
-/// The TableDecoder can be used to decode the record/index key:
+/// The TableDecoder can be used to decode the record/Index key:
 /// t1_r1 -> t1_r1
 /// t1_r2 -> t1_r2
 /// t1_r3 -> t1_r3
@@ -148,20 +224,16 @@ pub fn check_table_ranges(ranges: &[KeyRange]) -> Result<()> {
 ///
 #[inline]
 fn check_soliton_id_type(soliton_id: &[u8], prefix_sep: u8) -> Result<()> {
-    if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
+    if !soliton_id.starts_with(&[prefix_sep]) {
         Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
-            soliton_id
-        ))
-    } else if soliton_id[TABLE_PREFIX_KEY_LEN] != prefix_sep {
-        Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
+            "record soliton_id or Index soliton_id expected, but got {:?}",
             soliton_id
         ))
     } else {
         Ok(())
     }
-}   // check_soliton_id_type
+}
+   // check_soliton_id_type
 
 
 //no prefix
@@ -171,19 +243,13 @@ pub fn check_index_soliton_id(soliton_id: &[u8]) -> Result<()> {
     //we just save ourselves a function call
 
 
-    if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
+    if soliton_id.len() < INDEX_PREFIX_KEY_LEN {
         Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
-            soliton_id
-        ))
-    } else if soliton_id[TABLE_PREFIX_KEY_LEN] != INDEX_PREFIX_SEP {
-        Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
+            "record soliton_id or Index soliton_id expected, but got {:?}",
             soliton_id
         ))
     } else {
-        //check the rest
-        Ok(())
+        check_soliton_id_type(soliton_id, INDEX_PREFIX_SEP)
     }
 }   // check_index_soliton_id
 
@@ -193,47 +259,33 @@ pub fn check_index_soliton_id(soliton_id: &[u8]) -> Result<()> {
 //no table prefix
 #[inline]
 pub fn check_record_soliton_id(soliton_id: &[u8]) -> Result<()> {
-    if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
-        Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
-            soliton_id
-        ))
-    } else if soliton_id[TABLE_PREFIX_KEY_LEN] != RECORD_PREFIX_SEP {
-        Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
-            soliton_id
-        ))
-    } else {
-        //check the rest
-        Ok(())
-    }
+    //quicker check
+    //we just save ourselves a function call
 
-    if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
+
+    if soliton_id.len() < RECORD_PREFIX_KEY_LEN {
         Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
-            soliton_id
-        ))
-    } else if soliton_id[TABLE_PREFIX_KEY_LEN] != INDEX_PREFIX_SEP {
-        Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
+            "record soliton_id or Index soliton_id expected, but got {:?}",
             soliton_id
         ))
     } else {
-        Ok(())
+        check_soliton_id_type(soliton_id, RECORD_PREFIX_SEP)
     }
 }   // check_index_soliton_id
+
+
 
 
 #[inline]
 pub fn check_table_soliton_id(soliton_id: &[u8]) -> Result<()> {
     if !soliton_id.starts_with(TABLE_PREFIX) || soliton_id.len() < TABLE_PREFIX_KEY_LEN {
         Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
+            "record soliton_id or Index soliton_id expected, but got {:?}",
             soliton_id
         ))
     } else if soliton_id[TABLE_PREFIX_KEY_LEN] != TABLE_PREFIX_SEP {
         Err(invalid_type!(
-            "record soliton_id or index soliton_id expected, but got {:?}",
+            "record soliton_id or Index soliton_id expected, but got {:?}",
             soliton_id
         ))
     } else {
@@ -311,7 +363,7 @@ pub fn decode_common_handle(mut soliton_id: &[u8]) -> Result<&[u8]> {
     Ok(soliton_id)
 }
 
-/// `encode_index_seek_soliton_id` encodes an index causet_locale to byte array.
+/// `encode_index_seek_soliton_id` encodes an Index causet_locale to byte array.
 pub fn encode_index_seek_soliton_id(table_id: i64, idx_id: i64, encoded: &[u8]) -> Vec<u8> {
     let mut soliton_id = Vec::with_capacity(PREFIX_LEN + ID_LEN + encoded.len());
     soliton_id.append_table_index_prefix(table_id).unwrap();
@@ -320,7 +372,7 @@ pub fn encode_index_seek_soliton_id(table_id: i64, idx_id: i64, encoded: &[u8]) 
     soliton_id
 }
 
-// `decode_index_soliton_id` decodes datums from an index soliton_id.
+// `decode_index_soliton_id` decodes datums from an Index soliton_id.
 pub fn decode_index_soliton_id(
     ctx: &mut EvalContext,
     encoded: &[u8],
@@ -584,7 +636,7 @@ fn cut_row_causet_record(data: Vec<u8>, cols: Arc<Vec<ColumnInfo>>) -> Result<Ro
     Ok(RowColsDict::new(meta_map, result))
 }
 
-/// `cut_idx_soliton_id` cuts the encoded index soliton_id into RowColsDict and handle .
+/// `cut_idx_soliton_id` cuts the encoded Index soliton_id into RowColsDict and handle .
 pub fn cut_idx_soliton_id(soliton_id: Vec<u8>, col_ids: &[i64]) -> Result<(RowColsDict, Option<i64>)> {
     let mut meta_map: HashMap<i64, RowColMeta> =
         HashMap::with_capacity_and_hasher(col_ids.len(), Default::default());
@@ -880,18 +932,18 @@ mod tests {
     fn test_check_table_range() {
         let small_soliton_id = b"t\x80\x00\x00\x00\x00\x00\x00\x01a".to_vec();
         let large_soliton_id = b"t\x80\x00\x00\x00\x00\x00\x00\x01b".to_vec();
-        let mut range = KeyRange::default();
+        let mut range = Key::default();
         range.set_start(small_soliton_id.clone());
         range.set_end(large_soliton_id.clone());
         assert!(check_table_ranges(&[range]).is_ok());
         //test range.start > range.end
-        let mut range = KeyRange::default();
+        let mut range = Key::default();
         range.set_end(small_soliton_id.clone());
         range.set_start(large_soliton_id);
         assert!(check_table_ranges(&[range]).is_err());
 
         // test invalid end
-        let mut range = KeyRange::default();
+        let mut range = Key::default();
         range.set_start(small_soliton_id);
         range.set_end(b"xx".to_vec());
         assert!(check_table_ranges(&[range]).is_err());

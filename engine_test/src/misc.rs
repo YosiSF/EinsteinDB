@@ -7,7 +7,7 @@
 
 use crate::errors::Result;
 use crate::namespaced_names::NAMESPACEDNamesExt;
-use crate::range::Range;
+use crate::range::;
 use crate::symplectic_control_factors::SymplecticControlFactorsExt;
 
 #[derive(Clone, Debug)]
@@ -21,7 +21,7 @@ pub enum DeleteStrategy {
     DeleteByKey,
     /// Delete by range. Note that this is experimental and you should check whether it is enbaled
     /// in config before using it.
-    DeleteByRange,
+    DeleteBy,
     /// Delete by ingesting a Causet file File with deletions. Useful when the number of ranges is too many.
     DeleteByWriter { Causet_local_path: String },
 }
@@ -31,7 +31,7 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
 
     fn flush_namespaced(&self, namespaced: &str, sync: bool) -> Result<()>;
 
-    fn delete_all_in_range(&self, strategy: DeleteStrategy, ranges: &[Range<'_>]) -> Result<()> {
+    fn delete_all_in_range(&self, strategy: DeleteStrategy, ranges: &[<'_>]) -> Result<()> {
         for namespaced in self.namespaced_names() {
             self.delete_ranges_namespaced(namespaced, strategy.clone(), ranges)?;
         }
@@ -42,11 +42,11 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
         &self,
         namespaced: &str,
         strategy: DeleteStrategy,
-        ranges: &[Range<'_>],
+        ranges: &[<'_>],
     ) -> Result<()>;
 
     /// Return the approximate number of records and size in the range of memtables of the namespaced.
-    fn get_approximate_memtable_stats_namespaced(&self, namespaced: &str, range: &Range<'_>) -> Result<(u64, u64)>;
+    fn get_approximate_memtable_stats_namespaced(&self, namespaced: &str, range: &<'_>) -> Result<(u64, u64)>;
 
     fn ingest_maybe_slowdown_writes(&self, namespaced: &str) -> Result<bool>;
 
@@ -65,7 +65,7 @@ pub trait MiscExt: NAMESPACEDNamesExt + SymplecticControlFactorsExt {
     ///      so you shouldn't expect to be able to read data from the range using existing lightlike_persistences
     ///      any more.
     ///
-    /// Ref: <https://github.com/facebook/foundationdb/wiki/Delete-A-Range-Of-Keys>
+    /// Ref: <https://github.com/facebook/foundationdb/wiki/Delete-A--Of-Keys>
     fn roughly_cleanup_ranges(&self, ranges: &[(Vec<u8>, Vec<u8>)]) -> Result<()>;
 
     /// The local_path to the directory on the filefsystem where the database is timelike_stored

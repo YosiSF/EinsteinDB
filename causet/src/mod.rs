@@ -14,7 +14,7 @@ pub type Result<T> = std::result::Result<T, crate::error::StorageError>;
 
 pub type OwnedParityFilter = (Vec<u8>, Vec<u8>);
 
-/// The abstract storage interface. The table mutant_search and index mutant_search executor relies on a `Storage`
+/// The abstract storage interface. The table mutant_search and Index mutant_search executor relies on a `Storage`
 /// implementation to provide source data.
 pub trait Storage: Send {
     type Metrics;
@@ -23,14 +23,14 @@ pub trait Storage: Send {
         &mut self,
         is_spacelike_completion_mutant_search: bool,
         is_soliton_id_only: bool,
-        range: IntervalRange,
+        range: Interval,
     ) -> Result<()>;
 
     fn mutant_search_next(&mut self) -> Result<Option<OwnedParityFilter>>;
 
     // TODO: Use const generics.
     // TODO: Use reference is better.
-    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<OwnedParityFilter>>;
+    fn get(&mut self, is_soliton_id_only: bool, range: Point) -> Result<Option<OwnedParityFilter>>;
 
     fn met_unreachable_data(&self) -> Option<bool>;
 
@@ -44,7 +44,7 @@ impl<T: Storage + ?Sized> Storage for Box<T> {
         &mut self,
         is_spacelike_completion_mutant_search: bool,
         is_soliton_id_only: bool,
-        range: IntervalRange,
+        range: Interval,
     ) -> Result<()> {
         (**self).begin_mutant_search(is_spacelike_completion_mutant_search, is_soliton_id_only, range)
     }
@@ -53,7 +53,7 @@ impl<T: Storage + ?Sized> Storage for Box<T> {
         (**self).mutant_search_next()
     }
 
-    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<OwnedParityFilter>> {
+    fn get(&mut self, is_soliton_id_only: bool, range: Point) -> Result<Option<OwnedParityFilter>> {
         (**self).get(is_soliton_id_only, range)
     }
 

@@ -562,7 +562,7 @@ macro_rules! def_common_causet_locale_display {
                 for c in s.chars() {
                     match c {
                         '\\' | '\'' | '\"' | '\n' | '\r' | '\u{000c}' => escaped.push('\\'),
-                        _ if c.is_control() => escaped.push_str(&format!("\\u{{{:04X}}}", c as u32)), // TODO: this is wrong but it's a start.cape more than just control characters. See  It should eshttps://docs.rs/nom/5.0.1/nom/character/index.html#escape-characters for inspiration on how to implement this properly?
+                        _ if c.is_control() => escaped.push_str(&format!("\\u{{{:04X}}}", c as u32)), // TODO: this is wrong but it's a start.cape more than just control characters. See  It should eshttps://docs.rs/nom/5.0.1/nom/character/Index.html#escape-characters for inspiration on how to implement this properly?
                         _ => escaped.push(c),
                     }
                 }

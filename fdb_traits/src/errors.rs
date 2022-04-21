@@ -15,7 +15,7 @@ pub enum Error {
         "Key {} is out of [region {}] [{}, {})",
         log_wrappers::Value::soliton_id(.soliton_id), .region_id, log_wrappers::Value::soliton_id(.start), log_wrappers::Value::soliton_id(.end)
     )]
-    NotInRange {
+    NotIn {
         soliton_id: Vec<u8>,
         region_id: u64,
         start: Vec<u8>,
@@ -49,7 +49,7 @@ impl ErrorCodeExt for Error {
     fn error_code(&self) -> ErrorCode {
         match self {
             Error::einstein_merkle_tree(_) => error_code::einstein_merkle_tree::einstein_merkle_tree,
-            Error::NotInRange { .. } => error_code::einstein_merkle_tree::NOT_IN_RANGE,
+            Error::NotIn { .. } => error_code::einstein_merkle_tree::NOT_IN_RANGE,
             Error::Protobuf(_) => error_code::einstein_merkle_tree::PROTOBUF,
             Error::Io(_) => error_code::einstein_merkle_tree::IO,
             Error::NAMESPACEDName(_) => error_code::einstein_merkle_tree::NAMESPACED_NAME,

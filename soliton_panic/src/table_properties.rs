@@ -1,6 +1,6 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use fdb_traits::{Range, Result};
+use fdb_traits::{, Result};
 
 use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 
@@ -29,7 +29,7 @@ impl fdb_traits::TableGreedoidsExt for Paniceinstein_merkle_tree {
     fn table_greedoids_collection(
         &self,
         namespaced: &str,
-        ranges: &[Range<'_>],
+        ranges: &[<'_>],
     ) -> Result<Self::TableGreedoidsCollection> {
         panic!()
     }

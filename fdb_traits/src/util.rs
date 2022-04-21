@@ -13,7 +13,7 @@ pub fn check_soliton_id_in_range(
     if soliton_id >= start_soliton_id && (end_soliton_id.is_empty() || soliton_id < end_soliton_id) {
         Ok(())
     } else {
-        Err(Error::NotInRange {
+        Err(Error::NotIn {
             soliton_id: soliton_id.to_vec(),
             region_id,
             start: start_soliton_id.to_vec(),

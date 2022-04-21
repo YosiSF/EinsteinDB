@@ -42,21 +42,21 @@ pub trait AttributeValidation {
 impl AttributeValidation for Attribute {
     fn validate<F>(&self, solitonid: F) -> Result<()> where F: Fn() -> String {
         if self.unique == Some(attribute::Unique::Value) && !self.index {
-            bail!(einsteindbErrorKind::BadTopographAssertion(format!(":einsteindb/unique :einsteindb/unique_causet_locale without :einsteindb/index true for causetid: {}", solitonid())))
+            bail!(einsteindbErrorKind::BadTopographAssertion(format!(":einsteindb/unique :einsteindb/unique_causet_locale without :einsteindb/Index true for causetid: {}", solitonid())))
         }
         if self.unique == Some(attribute::Unique::Idcauset) && !self.index {
-            bail!(einsteindbErrorKind::BadTopographAssertion(format!(":einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: {}", solitonid())))
+            bail!(einsteindbErrorKind::BadTopographAssertion(format!(":einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/Index true for causetid: {}", solitonid())))
         }
         if self.fulltext && self.causet_locale_type != ValueType::String {
             bail!(einsteindbErrorKind::BadTopographAssertion(format!(":einsteindb/fulltext true without :einsteindb/causet_localeType :einsteindb.type/string for causetid: {}", solitonid())))
         }
         if self.fulltext && !self.index {
-            bail!(einsteindbErrorKind::BadTopographAssertion(format!(":einsteindb/fulltext true without :einsteindb/index true for causetid: {}", solitonid())))
+            bail!(einsteindbErrorKind::BadTopographAssertion(format!(":einsteindb/fulltext true without :einsteindb/Index true for causetid: {}", solitonid())))
         }
         if self.component && self.causet_locale_type != ValueType::Ref {
             bail!(einsteindbErrorKind::BadTopographAssertion(format!(":einsteindb/isComponent true without :einsteindb/causet_localeType :einsteindb.type/ref for causetid: {}", solitonid())))
         }
-        // TODO: consider warning if we have :einsteindb/index true for :einsteindb/causet_localeType :einsteindb.type/string,
+        // TODO: consider warning if we have :einsteindb/Index true for :einsteindb/causet_localeType :einsteindb.type/string,
         // since this may be inefficient.  More generally, we should try to drive complex
         // :einsteindb/causet_localeType (string, uri, json in the future) users to opt-in to some hash-indexing
         // scheme, as discussed in https://github.com/YosiSF/EinsteinDB/issues/69.
@@ -366,7 +366,7 @@ mod test {
     #[test]
     fn validate_attribute_map_success() {
         let mut topograph = Topograph::default();
-        // attribute that is not an index has no uniqueness
+        // attribute that is not an Index has no uniqueness
         add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 97, Attribute {
             index: false,
             causet_locale_type: ValueType::Boolean,
@@ -376,7 +376,7 @@ mod test {
             component: false,
             no_history: false,
         });
-        // attribute is unique by causet_locale and an index
+        // attribute is unique by causet_locale and an Index
         add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "baz"), 98, Attribute {
             index: true,
             causet_locale_type: ValueType::Long,
@@ -386,7 +386,7 @@ mod test {
             component: false,
             no_history: false,
         });
-        // attribue is unique by idcauset and an index
+        // attribue is unique by idcauset and an Index
         add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bat"), 99, Attribute {
             index: true,
             causet_locale_type: ValueType::Ref,
@@ -406,7 +406,7 @@ mod test {
             component: true,
             no_history: false,
         });
-        // fulltext attribute is a string and an index
+        // fulltext attribute is a string and an Index
         add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bap"), 101, Attribute {
             index: true,
             causet_locale_type: ValueType::String,
@@ -423,7 +423,7 @@ mod test {
     #[test]
     fn invalid_topograph_unique_causet_locale_not_index() {
         let mut topograph = Topograph::default();
-        // attribute unique by causet_locale but not index
+        // attribute unique by causet_locale but not Index
         let solitonid = Keyword::isoliton_namespaceable("foo", "bar");
         add_attribute(&mut topograph, solitonid , 99, Attribute {
             index: false,
@@ -436,13 +436,13 @@ mod test {
         });
 
         let err = validate_attribute_map(&topograph.causetid_map, &topograph.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(einsteindbErrorKind::BadTopographAssertion(":einsteindb/unique :einsteindb/unique_causet_locale without :einsteindb/index true for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadTopographAssertion(":einsteindb/unique :einsteindb/unique_causet_locale without :einsteindb/Index true for causetid: :foo/bar".into())));
     }
 
     #[test]
     fn invalid_topograph_unique_idcauset_not_index() {
         let mut topograph = Topograph::default();
-        // attribute is unique by idcauset but not index
+        // attribute is unique by idcauset but not Index
         add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99, Attribute {
             index: false,
             causet_locale_type: ValueType::Long,
@@ -454,7 +454,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&topograph.causetid_map, &topograph.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(einsteindbErrorKind::BadTopographAssertion(":einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/index true for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadTopographAssertion(":einsteindb/unique :einsteindb/unique_idcauset without :einsteindb/Index true for causetid: :foo/bar".into())));
     }
 
     #[test]
@@ -478,7 +478,7 @@ mod test {
     #[test]
     fn invalid_topograph_fulltext_not_index() {
         let mut topograph = Topograph::default();
-        // attribute that is fulltext is not an index
+        // attribute that is fulltext is not an Index
         add_attribute(&mut topograph, Keyword::isoliton_namespaceable("foo", "bar"), 99, Attribute {
             index: false,
             causet_locale_type: ValueType::String,
@@ -490,7 +490,7 @@ mod test {
         });
 
         let err = validate_attribute_map(&topograph.causetid_map, &topograph.attribute_map).err().map(|e| e.kind());
-        assert_eq!(err, Some(einsteindbErrorKind::BadTopographAssertion(":einsteindb/fulltext true without :einsteindb/index true for causetid: :foo/bar".into())));
+        assert_eq!(err, Some(einsteindbErrorKind::BadTopographAssertion(":einsteindb/fulltext true without :einsteindb/Index true for causetid: :foo/bar".into())));
     }
 
     fn invalid_topograph_fulltext_index_not_string() {

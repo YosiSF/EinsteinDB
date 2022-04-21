@@ -28,7 +28,7 @@ pub struct ExecSummary {
 pub trait ExecSummaryCollector: Send {
     type DurationRecorder;
 
-    /// Creates a new instance with specified output slot index.
+    /// Creates a new instance with specified output slot Index.
     fn new(output_index: usize) -> Self
     where
         Self: Sized;

@@ -22,7 +22,7 @@ pub struct Range {
 
 }
 
-impl Range {
+impl  {
     pub fn new(start: u64, end: u64) -> Range {
         Range { start, end }
 
@@ -49,25 +49,25 @@ mod tests {
     }
 }
 
-impl From<IntervalRange> for Range {
-    fn from(r: IntervalRange) -> Self {
-        Range::Interval(r)
+impl From<Interval> for  {
+    fn from(r: Interval) -> Self {
+        ::Interval(r)
     }
 }
 
-impl From<PointRange> for Range {
-    fn from(r: PointRange) -> Self {
-        Range::Point(r)
+impl From<Point> for  {
+    fn from(r: Point) -> Self {
+        ::Point(r)
     }
 }
 
 #[derive(Default, PartialEq, Eq, Clone)]
-pub struct IntervalRange {
+pub struct Interval {
     pub lower_inclusive: Vec<u8>,
     pub upper_exclusive: Vec<u8>,
 }
 
-impl std::fmt::Debug for IntervalRange {
+impl std::fmt::Debug for Interval {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "[")?;
         write!(f, "{}", hex::encode_upper(self.lower_inclusive.as_slice()))?;
@@ -77,52 +77,52 @@ impl std::fmt::Debug for IntervalRange {
     }
 }
 
-impl From<(Vec<u8>, Vec<u8>)> for IntervalRange {
+impl From<(Vec<u8>, Vec<u8>)> for Interval {
     fn from((lower, upper): (Vec<u8>, Vec<u8>)) -> Self {
-        IntervalRange {
+        Interval {
             lower_inclusive: lower,
             upper_exclusive: upper,
         }
     }
 }
 
-impl From<(String, String)> for IntervalRange {
+impl From<(String, String)> for Interval {
     fn from((lower, upper): (String, String)) -> Self {
-        IntervalRange::from((lower.into_bytes(), upper.into_bytes()))
+        Interval::from((lower.into_bytes(), upper.into_bytes()))
     }
 }
 
 // FIXME: Maybe abuse.
-impl<'a, 'b> From<(&'a str, &'b str)> for IntervalRange {
+impl<'a, 'b> From<(&'a str, &'b str)> for Interval {
     fn from((lower, upper): (&'a str, &'b str)) -> Self {
-        IntervalRange::from((lower.to_owned(), upper.to_owned()))
+        Interval::from((lower.to_owned(), upper.to_owned()))
     }
 }
 
 #[derive(Default, PartialEq, Eq, Clone)]
-pub struct PointRange(pub Vec<u8>);
+pub struct Point(pub Vec<u8>);
 
-impl std::fmt::Debug for PointRange {
+impl std::fmt::Debug for Point {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{}", hex::encode_upper(self.0.as_slice()))
     }
 }
 
-impl From<Vec<u8>> for PointRange {
+impl From<Vec<u8>> for Point {
     fn from(v: Vec<u8>) -> Self {
-        PointRange(v)
+        Point(v)
     }
 }
 
-impl From<String> for PointRange {
+impl From<String> for Point {
     fn from(v: String) -> Self {
-        PointRange::from(v.into_bytes())
+        Point::from(v.into_bytes())
     }
 }
 
 // FIXME: Maybe abuse.
-impl<'a> From<&'a str> for PointRange {
+impl<'a> From<&'a str> for Point {
     fn from(v: &'a str) -> Self {
-        PointRange::from(v.to_owned())
+        Point::from(v.to_owned())
     }
 }

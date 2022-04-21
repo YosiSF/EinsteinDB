@@ -9,9 +9,9 @@ use std::sync::Arc;
 /// FieldType is the type of a column.
 /// It is used in the table schema definition.
 /// It is also used in the table data definition.
-/// It is used in the table index definition.
-/// It is used in the table index data definition.
-/// It is used in the table index data definition.
+/// It is used in the table Index definition.
+/// It is used in the table Index data definition.
+/// It is used in the table Index data definition.
 
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

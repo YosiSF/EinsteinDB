@@ -523,7 +523,7 @@ mod tests {
             let one = report.tempids.get("one").expect("found it").clone();
             let two = report.tempids.get("two").expect("found it").clone();
 
-            // The IDs are contiguous, starting at the previous part index.
+            // The IDs are contiguous, starting at the previous part Index.
             assert!(one != two);
             assert!(one == tempid_offset || one == tempid_offset + 1);
             assert!(two == tempid_offset || two == tempid_offset + 1);

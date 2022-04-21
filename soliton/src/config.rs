@@ -19,7 +19,7 @@ use interlocking_directorate_traits::{ColumnFamilyOptions as ColumnFamilyOptions
 use interlocking_directorate_traits::{NAMESPACED_DEFAULT, NAMESPACED_LOCK, NAMESPACED_VIOLETABFT, NAMESPACED_WRITE};
 use fdb_interlocking_directorate::{
     DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE, DEFAULT_PROP_SIZE_INDEX_DISTANCE, FdbdbLogger, FdbEngine,
-    FdbEventListener, FdbSstPartitionerFactory, RangePropertiesCollectorFactory,
+    FdbEventListener, FdbSstPartitionerFactory, PropertiesCollectorFactory,
     TtlPropertiesCollectorFactory, VioletaBFTDBLogger,
 };
 use fdb_interlocking_directorate::config::{self as foundation_config, BlobRunMode, CompressionType, LogLevel};
@@ -588,7 +588,7 @@ impl DefaultNamespacedConfig {
         api_version: ApiVersion,
     ) -> ColumnFamilyOptions {
         let mut namespaced_opts = build_namespaced_opt!(self, NAMESPACED_DEFAULT, cache, region_info_accessor);
-        let f = RangePropertiesCollectorFactory {
+        let f = PropertiesCollectorFactory {
             prop_size_index_distance: self.prop_size_index_distance,
             prop_soliton_ids_index_distance: self.prop_soliton_ids_index_distance,
         };
@@ -704,7 +704,7 @@ impl WriteNamespacedConfig {
             "einsteindb.causet_model-properties-collector",
             MvrsiPropertiesCollectorFactory::default(),
         );
-        let f = RangePropertiesCollectorFactory {
+        let f = PropertiesCollectorFactory {
             prop_size_index_distance: self.prop_size_index_distance,
             prop_soliton_ids_index_distance: self.prop_soliton_ids_index_distance,
         };
@@ -785,7 +785,7 @@ impl DaggerNamespacedConfig {
         namespaced_opts
             .set_prefix_extractor("NoopSliceTransform", NoopSliceTransform)
             .unwrap();
-        let f = RangePropertiesCollectorFactory {
+        let f = PropertiesCollectorFactory {
             prop_size_index_distance: self.prop_size_index_distance,
             prop_soliton_ids_index_distance: self.prop_soliton_ids_index_distance,
         };

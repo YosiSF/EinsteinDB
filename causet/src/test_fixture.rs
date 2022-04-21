@@ -22,7 +22,7 @@ type FixtureValue = std::result::Result<Vec<u8>, ErrorBuilder>;
 #[derive(Clone)]
 pub struct FixtureStorage {
     data: Arc<BTreeMap<Vec<u8>, FixtureValue>>,
-    data_view_unsafe: Option<btree_map::Range<'static, Vec<u8>, FixtureValue>>,
+    data_view_unsafe: Option<btree_map::<'static, Vec<u8>, FixtureValue>>,
     is_spacelike_completion_mutant_search: bool,
     is_soliton_id_only: bool,
 }
@@ -62,7 +62,7 @@ impl super::Storage for FixtureStorage {
         &mut self,
         is_spacelike_completion_mutant_search: bool,
         is_soliton_id_only: bool,
-        range: IntervalRange,
+        range: Interval,
     ) -> Result<()> {
         let data_view = self
             .data
@@ -95,7 +95,7 @@ impl super::Storage for FixtureStorage {
         }
     }
 
-    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<super::OwnedHikvPair>> {
+    fn get(&mut self, is_soliton_id_only: bool, range: Point) -> Result<Option<super::OwnedHikvPair>> {
         let r = self.data.get(&range.0);
         match r {
             None => Ok(None),
@@ -135,22 +135,22 @@ mod tests {
         let mut storage = FixtureStorage::from(data);
 
         // Get Key only = false
-        assert_eq!(storage.get(false, PointRange::from("a")).unwrap(), None);
+        assert_eq!(storage.get(false, Point::from("a")).unwrap(), None);
         assert_eq!(
-            storage.get(false, PointRange::from("foo")).unwrap(),
+            storage.get(false, Point::from("foo")).unwrap(),
             Some((b"foo".to_vec(), b"1".to_vec()))
         );
 
         // Get Key only = true
-        assert_eq!(storage.get(true, PointRange::from("a")).unwrap(), None);
+        assert_eq!(storage.get(true, Point::from("a")).unwrap(), None);
         assert_eq!(
-            storage.get(true, PointRange::from("foo")).unwrap(),
+            storage.get(true, Point::from("foo")).unwrap(),
             Some((b"foo".to_vec(), Vec::new()))
         );
 
         // Scan Backward = false, Key only = false
         storage
-            .begin_mutant_search(false, false, IntervalRange::from(("foo", "foo_3")))
+            .begin_mutant_search(false, false, Interval::from(("foo", "foo_3")))
             .unwrap();
 
         assert_eq!(
@@ -176,7 +176,7 @@ mod tests {
 
         // Scan Backward = false, Key only = false
         storage
-            .begin_mutant_search(false, false, IntervalRange::from(("bar", "bar_2")))
+            .begin_mutant_search(false, false, Interval::from(("bar", "bar_2")))
             .unwrap();
 
         assert_eq!(
@@ -187,7 +187,7 @@ mod tests {
 
         // Scan Backward = false, Key only = true
         storage
-            .begin_mutant_search(false, true, IntervalRange::from(("bar", "foo_")))
+            .begin_mutant_search(false, true, Interval::from(("bar", "foo_")))
             .unwrap();
 
         assert_eq!(
@@ -206,7 +206,7 @@ mod tests {
 
         // Scan Backward = true, Key only = false
         storage
-            .begin_mutant_search(true, false, IntervalRange::from(("foo", "foo_3")))
+            .begin_mutant_search(true, false, Interval::from(("foo", "foo_3")))
             .unwrap();
 
         assert_eq!(
@@ -222,12 +222,12 @@ mod tests {
 
         // Scan empty range
         storage
-            .begin_mutant_search(false, false, IntervalRange::from(("faa", "fab")))
+            .begin_mutant_search(false, false, Interval::from(("faa", "fab")))
             .unwrap();
         assert_eq!(storage.mutant_search_next().unwrap(), None);
 
         storage
-            .begin_mutant_search(false, false, IntervalRange::from(("foo", "foo")))
+            .begin_mutant_search(false, false, Interval::from(("foo", "foo")))
             .unwrap();
         assert_eq!(storage.mutant_search_next().unwrap(), None);
     }
