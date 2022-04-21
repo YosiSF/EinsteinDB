@@ -56,7 +56,7 @@ impl From<Vec<(Vec<u8>, Vec<u8>)>> for FixtureStorage {
 }
 
 impl super::Storage for FixtureStorage {
-    type Statistics = ();
+    type Metrics = ();
 
     fn begin_mutant_search(
         &mut self,
@@ -110,7 +110,7 @@ impl super::Storage for FixtureStorage {
         }
     }
 
-    fn collect_statistics(&mut self, _dest: &mut Self::Statistics) {}
+    fn collect_statistics(&mut self, _dest: &mut Self::Metrics) {}
 
     fn met_uncacheable_data(&self) -> Option<bool> {
         None

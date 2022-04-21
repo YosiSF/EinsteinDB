@@ -1,4 +1,4 @@
-//Copyright (c) 2019, <MIT License> Copyright (c) 2019, <AKarl Whitford and Josh Leder>
+//Copyright (c) 2022, <MIT License> Copyright (c) 2022, <Karl Whitford and Josh Leder>
 
 //A Causet is a set of causets.
 //We call this set of causets a Causet of Causets.

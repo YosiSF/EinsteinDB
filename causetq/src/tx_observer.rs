@@ -8,30 +8,10 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use causetq::{
-    Causetid,
-    causetq_TV,
-};
-use einstein_ml::causets::OpType;
-use einsteindb_core::Topograph;
-use einsteindb_traits::errors::Result;
-use indexmap::IndexMap;
-use std::sync::{
-    Arc,
-    Weak,
-};
-use std::sync::mpsc::{
-    channel,
-    Receiver,
-    RecvError,
-    Sender,
-};
-use std::thread;
-use types::AttributeSet;
-use watcher::TransactWatcher;
+
 
 pub struct TxObserver {
-    notify_fn: Arc<Box<Fn(&str, IndexMap<&Causetid, &AttributeSet>) + Send + Sync>>,
+    notify_fn: Arc<Box<dyn Fn(&str, IndexMap<&Causetid, &AttributeSet>) + Send + Sync>>,
     attributes: AttributeSet,
 }
 

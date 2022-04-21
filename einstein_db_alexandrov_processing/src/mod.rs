@@ -1,7 +1,7 @@
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
 use crate::einsteindb::storage::kv::{DB, DBVector, DBVectorValue, DBValue};
 use crate::einsteindb::storage::{
-    kv::{Engine, EngineIterator, EngineResult, Error, Iterator, Snapshot, Statistics, TEMP_DIR},
+    kv::{Engine, EngineIterator, EngineResult, Error, Iterator, Snapshot, Metrics, TEMP_DIR},
     kvproto::{
         self, batch_commit_resp, batch_get_resp, batch_rollback_resp, batch_write_resp,
         get_resp, put_req, put_resp,

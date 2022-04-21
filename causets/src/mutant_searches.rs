@@ -123,7 +123,7 @@ impl<T: Storage> RangesScanner<T> {
 
     /// Appends storage statistics collected so far to the given container and clears the
     /// collected statistics.
-    pub fn collect_storage_stats(&mut self, dest: &mut T::Statistics) {
+    pub fn collect_storage_stats(&mut self, dest: &mut T::Metrics) {
         self.storage.collect_statistics(dest)
     }
 

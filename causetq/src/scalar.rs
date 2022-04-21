@@ -8,12 +8,6 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use einsteindbpb::FieldType;
-use match_template::match_template;
-use std::cmp::Ordering;
-
-use crate::{Collation, EvalType, FieldTypeAccessor};
-use crate::codec::collation::{Collator, match_template_collator};
 
 use super::*;
 

@@ -8,32 +8,44 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use ehikvproto::interlock::KeyRange;
 
-// TODO: Remove this module after switching to POSETDAG causet_record.
+use std::cmp::Ordering;
+use std::ops::{Bound, RangeBounds};
+
+
 
 #[derive(PartialEq, Eq, Clone)]
-pub enum Range {
-    Point(PointRange),
-    Interval(IntervalRange),
+pub struct Range {
+
+    pub start: u64,
+    pub end: u64,
+
 }
 
 impl Range {
-    pub fn from_pb_range(mut range: KeyRange, accept_point_range: bool) -> Self {
-        if accept_point_range && crate::util::is_point(&range) {
-            Range::Point(PointRange(range.take_start()))
-        } else {
-            Range::Interval(IntervalRange::from((range.take_start(), range.take_end())))
-        }
-    }
+    pub fn new(start: u64, end: u64) -> Range {
+        Range { start, end }
+
+            }
 }
 
 impl std::fmt::Debug for Range {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Range::Point(r) => std::fmt::Debug::fmt(r, f),
-            Range::Interval(r) => std::fmt::Debug::fmt(r, f),
-        }
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f,"Range {{ start: {}, end: {} }}", self.start, self.end)
+
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_range() {
+        let range = Range::new(1, 2);
+        assert_eq!(range.start, 1);
+        assert_eq!(range.end, 2);
     }
 }
 

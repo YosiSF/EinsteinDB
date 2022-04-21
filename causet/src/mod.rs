@@ -8,21 +8,16 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-pub use self::range::*;
 
-mod range;
-pub mod ranges_iter;
-pub mod mutant_search;
-pub mod test_fixture;
 
 pub type Result<T> = std::result::Result<T, crate::error::StorageError>;
 
-pub type OwnedHikvPair = (Vec<u8>, Vec<u8>);
+pub type OwnedParityFilter = (Vec<u8>, Vec<u8>);
 
 /// The abstract storage interface. The table mutant_search and index mutant_search executor relies on a `Storage`
 /// implementation to provide source data.
 pub trait Storage: Send {
-    type Statistics;
+    type Metrics;
 
     fn begin_mutant_search(
         &mut self,
@@ -31,19 +26,19 @@ pub trait Storage: Send {
         range: IntervalRange,
     ) -> Result<()>;
 
-    fn mutant_search_next(&mut self) -> Result<Option<OwnedHikvPair>>;
+    fn mutant_search_next(&mut self) -> Result<Option<OwnedParityFilter>>;
 
     // TODO: Use const generics.
     // TODO: Use reference is better.
-    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<OwnedHikvPair>>;
+    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<OwnedParityFilter>>;
 
-    fn met_uncacheable_data(&self) -> Option<bool>;
+    fn met_unreachable_data(&self) -> Option<bool>;
 
-    fn collect_statistics(&mut self, dest: &mut Self::Statistics);
+    fn collect_statistics(&mut self, dest: &mut Self::Metrics);
 }
 
 impl<T: Storage + ?Sized> Storage for Box<T> {
-    type Statistics = T::Statistics;
+    type Metrics = T::Metrics;
 
     fn begin_mutant_search(
         &mut self,
@@ -54,19 +49,19 @@ impl<T: Storage + ?Sized> Storage for Box<T> {
         (**self).begin_mutant_search(is_spacelike_completion_mutant_search, is_soliton_id_only, range)
     }
 
-    fn mutant_search_next(&mut self) -> Result<Option<OwnedHikvPair>> {
+    fn mutant_search_next(&mut self) -> Result<Option<OwnedParityFilter>> {
         (**self).mutant_search_next()
     }
 
-    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<OwnedHikvPair>> {
+    fn get(&mut self, is_soliton_id_only: bool, range: PointRange) -> Result<Option<OwnedParityFilter>> {
         (**self).get(is_soliton_id_only, range)
     }
 
-    fn met_uncacheable_data(&self) -> Option<bool> {
+    fn met_unreachable_data(&self) -> Option<bool> {
         (**self).met_uncacheable_data()
     }
 
-    fn collect_statistics(&mut self, dest: &mut Self::Statistics) {
+    fn collect_statistics(&mut self, dest: &mut Self::Metrics) {
         (**self).collect_statistics(dest);
     }
 }

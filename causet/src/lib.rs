@@ -1,5 +1,32 @@
 //Copyright (c) 2019-present, Whtcorps Inc.
 
+
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::collections::VecDeque;
+use std::fmt;
+use std::hash::Hash;
+use std::iter::FromIterator;
+use std::iter::Iterator;
+use std::iter::Peekable;
+use std::iter::Rev;
+use std::ops::Index;
+use std::ops::IndexMut;
+use std::ops::Range;
+use std::ops::RangeFrom;
+use std::ops::RangeFull;
+use std::ops::RangeTo;
+use std::ops::RangeToInclusive;
+use std::ops::RangeFull;
+use std::ops::Deref;
+use std::ops::DerefMut;
+use std::ops::Index;
+use std::ops::IndexMut;
+use std::ops::Range;
+use std::ops::RangeFrom;
+use std::ops::RangeFull;
+
+
 //! A library for causet.
 //!
 //! # Examples
@@ -105,16 +132,12 @@ use crate::allegro_poset::*;
 /// causet.add_rule(Rule::new("x", "y"));
 /// causet.add_rule(Rule::new("y", "z"));
 /// causet.add_rule(Rule::new("z", "a"));
-/// ```
+///```
 
+///Use the EAVTrie for the poset.
 
-
-
-
-
-
-
-
+use crate::allegro_poset::*;
+use crate::allegro_poset::AllegroPoset::*;
 
 
 

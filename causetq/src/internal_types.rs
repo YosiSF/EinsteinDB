@@ -11,45 +11,14 @@
 #![allow(dead_code)]
 
 //! Types used only within the transactor.  These should not be exposed outside of this crate.
+//foundationdb types
+use fdb::{FdbError, FdbResult};
+use fdb::{FdbTransactOptions, FdbTransactReadOptions, FdbTransactWriteOptions};
+use fdb::{FdbFuture, FdbFutureExt, FdbFutureExt2};
+use fdb::{FdbDatabase, FdbDatabaseExt, FdbDatabaseExt2};
+use fdb::{FdbReadTransaction, FdbReadTransactionExt, FdbReadTransactionExt2};
 
-use causetq::{
-    Attribute,
-    Causetid,
-    KnownCausetid,
-    causetq_TV,
-causetq_VT,
-};
-use einstein_ml;
-use einstein_ml::{
-    kSpannedCausetValue,
-    ValueAndSpan,
-    ValueRc,
-};
-use einstein_ml::causets;
-use einstein_ml::causets::{
-    causetPlace,
-    OpType,
-    TempId,
-    TxFunction,
-};
-use einsteindb_core::util::Either;
-use einsteindb_traits::errors as errors;
-use einsteindb_traits::errors::{
-    einsteindbErrorKind,
-    Result,
-};
-use std::collections::{
-    BTreeMap,
-    BTreeSet,
-    HashMap,
-};
-use topograph::TopographTypeChecking;
-use types::{
-    AVMap,
-    AVPair,
-    Topograph,
-    TransactableValue,
-};
+
 
 use self::Either::*;
 

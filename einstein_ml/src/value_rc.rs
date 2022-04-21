@@ -10,6 +10,54 @@
 
 use ::std::rc::Rc;
 use ::std::sync::Arc;
+use ::std::cell::RefCell;
+use ::std::fmt::Debug;
+use ::std::fmt::Display;
+use ::std::fmt::Formatter;
+use ::std::fmt::Result;
+use ::std::fmt::Error;
+use ::std::fmt::Error as FmtError;
+use ::std::fmt::Write;
+use ::std::ops::Deref;
+use ::std::ops::DerefMut;
+use ::std::ops::Drop;
+use ::std::ops::Index;
+use ::std::ops::IndexMut;
+use ::std::ops::Range;
+use ::std::ops::RangeFrom;
+use ::std::ops::RangeFull;
+use ::std::ops::RangeTo;
+use ::std::ops::RangeToInclusive;
+use ::std::ops::IndexMut;
+
+use crate::einstein_db::value::Value;
+use crate::einstein_db::value::ValueType;
+use crate::einstein_db::causetq::Causetq;
+
+///! # Rc Value
+///
+///     Rc Value is a reference counted wrapper around a Value.  It is used to \
+///    provide a safe way to share values between threads.  It is also used to \
+///   provide a safe way to share values between threads and to provide a \
+///  reference counted wrapper around a Value. It is used to provide a safe \
+/// way to share values between threads and to provide a reference counted \
+/// wrapper around a Value.
+///
+/// ## Example
+///
+/// ```
+/// use einstein_ml::value::Value;
+/// use einstein_ml::value::ValueType;
+/// use einstein_ml::value::ValueType::*;
+/// use einstein_ml::value::ValueRc;
+///
+/// let mut v = Value::new(String::from("Hello World"));
+/// let v_rc = ValueRc::new(v);
+///
+/// assert_eq!(v_rc.get_type(), String);
+/// assert_eq!(v_rc.get_value(), String::from("Hello World"));
+/// ```
+///
 
 pub trait FromRc<T> {
     fn from_rc(val: Rc<T>) -> Self;
@@ -21,12 +69,7 @@ impl<T> FromRc<T> for Rc<T> where T: Sized + Clone {
         val.clone()
     }
 
-    fn from_arc(val: Arc<T>) -> Self {
-        match ::std::sync::Arc::<T>::try_unwrap(val) {
-            Ok(v) => Self::new(v),
-            Err(r) => Self::new(r.cloned()),
-        }
-    }
+
 }
 
 impl<T> FromRc<T> for Arc<T> where T: Sized + Clone {

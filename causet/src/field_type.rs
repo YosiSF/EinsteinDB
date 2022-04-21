@@ -1,10 +1,189 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use einsteindbpb::ColumnInfo;
-use einsteindbpb::FieldType;
-use std::fmt;
 
-use crate::error::DataTypeError;
+use std::fmt::{self, Debug, Display, Formatter};
+use std::str::FromStr;
+use std::sync::Arc;
+
+
+/// FieldType is the type of a column.
+/// It is used in the table schema definition.
+/// It is also used in the table data definition.
+/// It is used in the table index definition.
+/// It is used in the table index data definition.
+/// It is used in the table index data definition.
+
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum FieldType {
+    TinyInt,
+    SmallInt,
+    Int,
+    BigInt,
+    Float,
+    Double,
+    Decimal,
+    Date,
+    Datetime,
+    Timestamp,
+    Duration,
+    Year,
+    Char,
+    VarChar,
+    Binary,
+    VarBinary,
+    TinyBlob,
+    Blob,
+    MediumBlob,
+    LongBlob,
+    TinyText,
+    Text,
+    MediumText,
+    LongText,
+    Enum,
+    Set,
+    Bit,
+    Geometry,
+    Json,
+    Other(String),
+}
+
+
+impl FieldType {
+    pub fn as_str(&self) -> &str {
+        match self {
+            FieldType::TinyInt => "tinyint",
+            FieldType::SmallInt => "smallint",
+            FieldType::Int => "int",
+            FieldType::BigInt => "bigint",
+            FieldType::Float => "float",
+            FieldType::Double => "double",
+            FieldType::Decimal => "decimal",
+            FieldType::Date => "date",
+            FieldType::Datetime => "datetime",
+            FieldType::Timestamp => "timestamp",
+            FieldType::Duration => "duration",
+            FieldType::Year => "year",
+            FieldType::Char => "char",
+            FieldType::VarChar => "varchar",
+            FieldType::Binary => "binary",
+            FieldType::VarBinary => "varbinary",
+            FieldType::TinyBlob => "tinyblob",
+            FieldType::Blob => "blob",
+            FieldType::MediumBlob => "mediumblob",
+            FieldType::LongBlob => "longblob",
+            FieldType::TinyText => "tinytext",
+            FieldType::Text => "text",
+            FieldType::MediumText => "mediumtext",
+            FieldType::LongText => "longtext",
+            FieldType::Enum => "enum",
+            FieldType::Set => "set",
+            FieldType::Bit => "bit",
+            FieldType::Geometry => "geometry",
+            FieldType::Json => "json",
+            FieldType::Other(ref s) => s,
+        }
+    }
+
+    pub fn as_str_lower(&self) -> &str {
+        self.as_str().to_lowercase()
+    }
+
+    pub fn as_str_upper(&self) -> &str {
+        self.as_str().to_uppercase()
+    }
+
+    pub fn is_string(&self) -> bool {
+        match self {
+            FieldType::Char
+            | FieldType::VarChar
+            | FieldType::TinyText
+            | FieldType::Text
+            | FieldType::MediumText => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_binary(&self) -> bool {
+        match self {
+            FieldType::Binary
+            | FieldType::VarBinary
+            | FieldType::TinyBlob
+            | FieldType::Blob
+            | FieldType::MediumBlob
+            | FieldType::LongBlob => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_blob(&self) -> bool {
+        match self {
+            FieldType::TinyBlob
+            | FieldType::Blob
+            | FieldType::MediumBlob
+            | FieldType::LongBlob => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_text(&self) -> bool {
+        match self {
+            FieldType::TinyText
+            | FieldType::Text
+            | FieldType::MediumText
+            | FieldType::LongText => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_numeric(&self) -> bool {
+        match self {
+            FieldType::TinyInt
+            | FieldType::SmallInt
+            | FieldType::Int
+            | FieldType::BigInt
+            | FieldType::Float
+            | FieldType::Double
+            | FieldType::Decimal => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_integer(&self) -> bool {
+        match self {
+            FieldType::TinyInt
+            | FieldType::SmallInt
+            | FieldType::Int
+            | FieldType::BigInt => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_unsigned(&self) -> bool {
+        match self {
+            FieldType::TinyInt => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_float(&self) -> bool {
+        match self {
+            FieldType::Float
+            | FieldType::Double
+            | FieldType::Decimal => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_decimal(&self) -> bool {
+        match self {
+            FieldType::Decimal => true,
+            _ => false,
+        }
+    }
+}
+
+
 
 /// Valid causet_locales of `einsteindbpb::FieldType::tp` and `einsteindbpb::ColumnInfo::tp`.
 ///
