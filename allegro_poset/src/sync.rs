@@ -8,27 +8,61 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use uuid::Uuid;
 
-use einsteindb_transaction::{
-    InProgress,
-};
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+use std::time::Duration;
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::collections::hash_map::Iter;
+use std::collections::hash_map::IterMut;
 
-use errors::{
-    Result,
-};
 
-use einsteindb_tolstoy::{
-    Syncer,
-    RemoteClient,
-    SyncReport,
-};
+use super::{AllegroPoset, Poset};
+use super::{PosetError, PosetErrorKind};
+use super::{PosetNode, PosetNodeId, PosetNodeData};
+
+
+/// A `Sync` implementation for `AllegroPoset`.
+///
+/// This implementation is thread-safe.
+///
+
+
+pub struct Sync {
+    poset: Arc<Mutex<AllegroPoset>>,
+    is_running: Arc<AtomicBool>,
+    thread: Option<thread::JoinHandle<()>>,
+    thread_id: Option<thread::ThreadId>,
+    thread_name: String,
+    thread_name_lock: Arc<Mutex<String>>,
+    thread_name_cond: Arc<Condvar>,
+    thread_name_cond_signal: Arc<AtomicBool>,
+    thread_name_cond_signal_lock: Arc<Mutex<()>>,
+}
 
 pub trait Syncable {
+
     fn sync(&mut self, server_uri: &String, user_uuid: &String) -> Result<SyncReport>;
+
+    fn sync_with_timeout(&self, server_uri: &String, user_uuid: &String, timeout: Duration) -> Result<SyncReport>;
+
+    fn sync_with_timeout_and_retry(&self, server_uri: &String, user_uuid: &String, timeout: Duration, retry_interval: Duration) -> Result<SyncReport>;
+
 }
 
 impl<'a, 'c> Syncable for InProgress<'a, 'c> {
+    fn sync_with_timeout(&self, server_uri: &String, user_uuid: &String, timeout: Duration) -> Result<SyncReport> {
+        self.sync.sync_with_timeout(server_uri, user_uuid, timeout)
+    }
+
+
+
+    fn sync_with_timeout_and_retry(&self, server_uri: &String, user_uuid: &String, timeout: Duration, retry_interval: Duration) -> Result<SyncReport> {
+        self.sync.sync_with_timeout_and_retry(server_uri, user_uuid, timeout, retry_interval)
+    }
+
     fn sync(&mut self, server_uri: &String, user_uuid: &String) -> Result<SyncReport> {
         // Syncer behaves as if it's part of InProgress.
         // This split into a separate crate is segment synchronization functionality
@@ -37,10 +71,22 @@ impl<'a, 'c> Syncable for InProgress<'a, 'c> {
         // But for all intents and purposes, Syncer operates over a "einsteindb transaction",
         // which is exactly what InProgress represents.
         let mut remote_client = RemoteClient::new(
+            server_uri,
+            user_uuid,
+            self.sync.poset.clone(),
             server_uri.to_string(),
-            Uuid::parse_str(&user_uuid)?
+            user_uuid.to_string(),
+            Uuid::parse_str(&user_uuid)?,
+            self.sync.poset.lock().unwrap().get_node_id(),
+            self.sync.poset.lock().unwrap().get_node_data().clone(),
         );
-        Syncer::sync(self, &mut remote_client)
-            .map_err(|e| e.into())
+        Syncer::sync(self, &mut remote_client, self.sync.poset.clone())
     }
+
+
 }
+
+
+
+
+

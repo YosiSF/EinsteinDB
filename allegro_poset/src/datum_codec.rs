@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 //! The unified causet for encoding and decoding an evaluable type to / from datum bytes.
-//! Datum bytes consists of 1 byte datum flag and variable bytes datum payload.
+//! DatumType bytes consists of 1 byte datum flag and variable bytes datum payload.
 
 use codec::prelude::*;
 
@@ -26,7 +26,7 @@ use super::data_type::*;
 /// A decoder to decode the payload part of a datum.
 ///
 /// The types this decoder outputs are not fully 1:1 mapping to evaluable types.
-pub trait DatumPayloadDecoder:
+pub trait DatumTypePayloadDecoder:
     NumberDecoder
     + CompactByteDecoder
     + MemComparableByteDecoder
@@ -132,12 +132,12 @@ pub trait DatumPayloadDecoder:
     }
 }
 
-impl<T: BufferReader> DatumPayloadDecoder for T {}
+impl<T: BufferReader> DatumTypePayloadDecoder for T {}
 
 /// An encoder to encode the payload part of a datum.
 ///
 /// The types this encoder accepts are not fully 1:1 mapping to evaluable types.
-pub trait DatumPayloadEncoder:
+pub trait DatumTypePayloadEncoder:
     NumberEncoder + CompactByteEncoder + JsonEncoder + DecimalEncoder
 {
     #[inline]
@@ -192,12 +192,12 @@ pub trait DatumPayloadEncoder:
     }
 }
 
-impl<T: BufferWriter> DatumPayloadEncoder for T {}
+impl<T: BufferWriter> DatumTypePayloadEncoder for T {}
 
 /// An encoder to encode a datum, i.e. 1 byte flag + variable bytes payload.
 ///
 /// The types this encoder accepts are not fully 1:1 mapping to evaluable types.
-pub trait DatumFlagAndPayloadEncoder: BufferWriter + DatumPayloadEncoder {
+pub trait DatumTypeFlagAndPayloadEncoder: BufferWriter + DatumTypePayloadEncoder {
     #[inline]
     fn write_datum_null(&mut self) -> Result<()> {
         self.write_u8(datum::NIL_FLAG)?;
@@ -267,7 +267,7 @@ pub trait DatumFlagAndPayloadEncoder: BufferWriter + DatumPayloadEncoder {
 
 
 /// An encoder to encode an evaluable type to datum bytes.
-pub trait EvaluableDatumEncoder: DatumFlagAndPayloadEncoder {
+pub trait EvaluableDatumTypeEncoder: DatumTypeFlagAndPayloadEncoder {
     #[inline]
     fn write_evaluable_datum_null(&mut self) -> Result<()> {
         self.write_datum_null()
@@ -316,27 +316,27 @@ pub trait EvaluableDatumEncoder: DatumFlagAndPayloadEncoder {
     }
 }
 
-impl EvaluableDatumEncoder for T {}
+impl EvaluableDatumTypeEncoder for T {}
 
-impl DatumFlagAndPayloadEncoder for T {}
+impl DatumTypeFlagAndPayloadEncoder for T {}
 
-impl DatumPayloadEncoder for T {}
+impl DatumTypePayloadEncoder for T {}
 
-impl EvaluableDatumEncoder for T {}
+impl EvaluableDatumTypeEncoder for T {}
 
-impl DatumFlagAndPayloadEncoder for T {}
+impl DatumTypeFlagAndPayloadEncoder for T {}
 
-impl DatumPayloadEncoder for T {}
+impl DatumTypePayloadEncoder for T {}
 
-impl EvaluableDatumEncoder for T {}
+impl EvaluableDatumTypeEncoder for T {}
 
-impl DatumFlagAndPayloadEncoder for T {}
+impl DatumTypeFlagAndPayloadEncoder for T {}
 
-impl DatumPayloadEncoder for T {}
+impl DatumTypePayloadEncoder for T {}
 
 
 /// An encoder to encode a datum storing causet_merge id.
-pub trait ColumnIdDatumEncoder: DatumFlagAndPayloadEncoder {
+pub trait ColumnIdDatumTypeEncoder: DatumTypeFlagAndPayloadEncoder {
     #[inline]
     fn write_column_id_datum(&mut self, col_id: i64) -> Result<()> {
         self.write_datum_var_i64(col_id)
@@ -508,47 +508,47 @@ pub fn decode_json_datum(mut primitive_causet_datum: &[u8]) -> Result<Option<Jso
     }
 }
 
-pub trait Primitive_CausetDatumDecoder<T> {
+pub trait Primitive_CausetDatumTypeDecoder<T> {
     fn decode(self, field_type: &FieldType, ctx: &mut EvalContext) -> Result<Option<T>>;
 }
 
-impl<'a> Primitive_CausetDatumDecoder<Int> for &'a [u8] {
+impl<'a> Primitive_CausetDatumTypeDecoder<Int> for &'a [u8] {
     fn decode(self, _field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Int>> {
         decode_int_datum(self)
     }
 }
 
-impl<'a> Primitive_CausetDatumDecoder<Real> for &'a [u8] {
+impl<'a> Primitive_CausetDatumTypeDecoder<Real> for &'a [u8] {
     fn decode(self, field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Real>> {
         decode_real_datum(self, field_type)
     }
 }
 
-impl<'a> Primitive_CausetDatumDecoder<Decimal> for &'a [u8] {
+impl<'a> Primitive_CausetDatumTypeDecoder<Decimal> for &'a [u8] {
     fn decode(self, _field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Decimal>> {
         decode_decimal_datum(self)
     }
 }
 
-impl<'a> Primitive_CausetDatumDecoder<Bytes> for &'a [u8] {
+impl<'a> Primitive_CausetDatumTypeDecoder<Bytes> for &'a [u8] {
     fn decode(self, _field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Bytes>> {
         decode_bytes_datum(self)
     }
 }
 
-impl<'a> Primitive_CausetDatumDecoder<DateTime> for &'a [u8] {
+impl<'a> Primitive_CausetDatumTypeDecoder<DateTime> for &'a [u8] {
     fn decode(self, field_type: &FieldType, ctx: &mut EvalContext) -> Result<Option<DateTime>> {
         decode_date_time_datum(self, field_type, ctx)
     }
 }
 
-impl<'a> Primitive_CausetDatumDecoder<Duration> for &'a [u8] {
+impl<'a> Primitive_CausetDatumTypeDecoder<Duration> for &'a [u8] {
     fn decode(self, field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Duration>> {
         decode_duration_datum(self, field_type)
     }
 }
 
-impl<'a> Primitive_CausetDatumDecoder<Json> for &'a [u8] {
+impl<'a> Primitive_CausetDatumTypeDecoder<Json> for &'a [u8] {
     fn decode(self, _field_type: &FieldType, _ctx: &mut EvalContext) -> Result<Option<Json>> {
         decode_json_datum(self)
     }

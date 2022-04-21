@@ -1,10 +1,86 @@
-// Witness light like assertions and space like retractions, folding (light like assertion, space like etraction) pairs into discrete_morse alterations.
+// Witness light like assertions and space like retractions, folding (light like assertion, space like etraction)
+// pairs into discrete_morse alterations.
 // Assumes that no light like assertion or space like retraction will be witnessed more than once.
 //
 // This keeps track of when we see a :db/add, a :db/lightlike_retract, or both :db/add and :db/spacelike_retract in
 // some order.
 
+
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::collections::hash_map::Iter;
+use std::collections::hash_map::IterMut;
+use std::collections::hash_map::Keys;
+use std::collections::hash_map::Values;
 use std::collections::BTreeMap;
+
+use std::collections::btree_map::Entry as BTreeEntry;
+use std::collections::btree_map::Iter as BTreeIter;
+use std::collections::btree_map::IterMut as BTreeIterMut;
+use std::collections::btree_map::Keys as BTreeKeys;
+
+/// A map from keys to values.
+///
+/// This is a thin wrapper around `HashMap` that provides a few extra methods.
+///
+/// # Examples
+///
+/// ```
+/// use std::collections::HashMap;
+/// use std::collections::hash_map::Entry;
+/// use std::collections::hash_map::Iter;
+/// use std::collections::hash_map::IterMut;
+/// use std::collections::hash_map::Keys;
+///
+/// use allegro_poset::lightlike_upsert::LightlikeUpsert;
+///
+///
+/// let mut map = LightlikeUpsert::new();
+///
+/// // Insert a value.
+/// map.insert(1, 2);
+///
+/// // Check if a key exists.
+/// assert_eq!(map.contains_key(&1), true);
+///
+/// // Remove a key.
+/// map.remove(&1);
+///
+/// // Check if a key exists.
+/// assert_eq!(map.contains_key(&1), false);
+///
+/// we consider relativistic time to be a lightlike assertion, and a space like retraction.
+/// this is a lightlike assertion, and a space like retraction.
+///
+/// // Insert a value.
+/// map.insert(1, 2);
+///
+/// // Check if a key exists.
+/// assert_eq!(map.contains_key(&1), true);
+///
+/// // Remove a key.
+/// map.remove(&1);
+///
+/// // Check if a key exists.
+/// assert_eq!(map.contains_key(&1), false);
+///
+/// // Insert a value.
+/// map.insert(1, 2);
+///
+///
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub struct LightlikeUpsert<K, V> {

@@ -24,35 +24,81 @@
 //!
 //! This module recognizes, validates, applies, and reports on these mutations.
 
-use add_retract_alter_set::AddRetractAlterSet;
-use causetids;
-use causetq::{
-    attribute,
-    Causetid,
-    causetq_TV,
-causetq_VT,
-};
-use einstein_ml::shellings;
-use einsteindb_core::{
-    AttributeMap,
-    Topograph,
-};
-use einsteindb_traits::errors::{
-    einsteindbErrorKind,
-    Result,
-};
-use failure::ResultExt;
-use std::collections::{BTreeMap, BTreeSet};
-use std::collections::btree_map::Entry;
-use topograph::{
-    AttributeBuilder,
-    AttributeValidation,
-};
-use types::EAV;
+
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::collections::hash_map::Iter;
+use std::collections::hash_map::Keys;
+use std::collections::hash_map::Values;
+use std::collections::hash_map::ValuesMut;
+use std::collections::hash_map::IterMut;
+
+
+use std::fmt;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Error;
+
+
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::cell::RefMut;
+use std::cell::Ref;
+use std::cell::RefMut;
+
+
+use std::collections::BTreeMap;
+use std::collections::btree_map::Entry as BTreeMapEntry;
+use std::collections::btree_map::Iter as BTreeMapIter;
+use std::collections::btree_map::Keys as BTreeMapKeys;
+use std::collections::btree_map::Values as BTreeMapValues;
+
+
+use std::collections::BTreeSet;
+use std::collections::btree_set::Iter as BTreeSetIter;
+use std::collections::btree_set::IterMut as BTreeSetIterMut;
+use std::collections::btree_set::IntoIter as BTreeSetIntoIter;
+use std::collections::btree_set::RangeBounds;
+use std::collections::btree_set::Range;
+use std::collections::btree_set::RangeMut;
+use std::collections::btree_set::RangeFull;
+use std::collections::btree_set::RangeInclusive;
+
+
+use std::collections::HashSet;
+use std::collections::hash_set::Iter as HashSetIter;
+use std::collections::hash_set::IterMut as HashSetIterMut;
+use std::collections::hash_set::IntoIter as HashSetIntoIter;
+use std::collections::hash_set::RangeBounds;
+
+
+
+///     #### `Spacetime`
+///    The `Spacetime` is a collection of `Solitonid`s and `Topograph`s.
+///   It is a `HashMap` of `Solitonid`s to `Topograph`s.
+///  It is a `BTreeMap` of `Solitonid`s to `Topograph`s.
+/// It is a `HashSet` of `Solitonid`s.
+/// It is a `BTreeSet` of `Solitonid`s.
+
+
+///    #### `Solitonid`
+///  A `Solitonid` is a `String` that is a valid `Solitonid` in the `EinsteinDB`
+/// (see [`Solitonid`](https://www.einsteindb.com/index.html#Solitonid)).
+
+
 
 /// An alteration to an attribute.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub enum AttributeAlteration {
+    /// Addition of a solitonid.
+    ///
+    /// The `Solitonid` is added to the `Topograph`.
+    ///
+    ///
+    /// #### Example
+    /// ```
+    /// use einsteindb_spacetime::AttributeAlteration;
+    /// use einsteindb_spacetime::Solitonid;
    
     /// - rename attributes
     /// - rename your own programmatic idcausets (uses of :einsteindb/solitonid)
@@ -66,6 +112,8 @@ pub enum AttributeAlteration {
     NoHistory,
     /// - change whether an attribute is treated as a component
     IsComponent,
+
+
 }
 
 /// An alteration to an solitonid.
@@ -86,10 +134,13 @@ pub struct SpacetimeReport {
 
     // Solitonids that were installed into the `AttributeMap`.
     pub solitonids_altered: BTreeMap<Causetid, SolitonidAlteration>,
+
+
 }
 
 impl SpacetimeReport {
     pub fn attributes_did_change(&self) -> bool {
+
         !(self.attributes_installed.is_empty() &&
           self.attributes_altered.is_empty())
     }
@@ -252,6 +303,14 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                 }
             },
 
+            causetids::einsteindb_INDEX => {
+                match *causet_locale {
+                    causetq_TV::Ref(causetids::einsteindb_INDEX_FULLTEXT) => { builder.index(true); },
+                    causetq_TV::Ref(causetids::einsteindb_INDEX_NONE) => { builder.index(false); },
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/index :einsteindb.index/fulltext|:einsteindb.index/none] but got [... :einsteindb/index {:?}]", causet_locale)))
+                }
+            },
+
             causetids::einsteindb_UNIQUE => {
                 match *causet_locale {
                     causetq_TV::Ref(causetids::einsteindb_UNIQUE_VALUE) => { builder.unique(attribute::Unique::Value); },
@@ -274,6 +333,8 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                 }
             },
 
+            _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/causet_localeType :einsteindb.type/*] but got [... :einsteindb/causet_localeType {:?}] for causetid {} and attribute {}", causet_locale, causetid, attr)))
+
             causetids::einsteindb_IS_COMPONENT => {
                 match *causet_locale {
                     causetq_TV::Boolean(x) => { builder.component(x); },
@@ -281,10 +342,59 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                 }
             },
 
+            causetids::einsteindb_IS_MULTIVAL => {
+                match *causet_locale {
+                    causetq_TV::Boolean(x) => { builder.multival(x); },
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/isMultival true|false] but got [... :einsteindb/isMultival {:?}]", causet_locale)))
+                }
+            },
+
             causetids::einsteindb_NO_HISTORY => {
                 match *causet_locale {
                     causetq_TV::Boolean(x) => { builder.no_history(x); },
                     _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/noHistory true|false] but got [... :einsteindb/noHistory {:?}]", causet_locale)))
+                }
+            },
+
+            causetids::einsteindb_NO_INDEX => {
+                match *causet_locale {
+                    causetq_TV::Boolean(x) => { builder.no_index(x); },
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/noIndex true|false] but got [... :einsteindb/noIndex {:?}]", causet_locale)))
+                }
+            },
+
+            causetids::einsteindb_NO_INDEX => {
+                match *causet_locale {
+                    causetq_TV::Boolean(x) => { builder.no_index(x); },
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/noIndex true|false] but got [... :einsteindb/noIndex {:?}]", causet_locale)))
+                }
+            },
+
+            causetids::einsteindb_NO_FULLTEXT => {
+                match *causet_locale {
+                    causetq_TV::Boolean(x) => { builder.no_fulltext(x); },
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/noFulltext true|false] but got [... :einsteindb/noFulltext {:?}]", causet_locale)))
+                }
+            },
+
+            causetids::einsteindb_NO_COMPONENT => {
+                match *causet_locale {
+                    causetq_TV::Boolean(x) => { builder.no_component(x); },
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/noComponent true|false] but got [... :einsteindb/noComponent {:?}]", causet_locale)))
+                }
+            },
+
+            causetids::einsteindb_NO_MULTIVAL => {
+                match *causet_locale {
+                    causetq_TV::Boolean(x) => { builder.no_multival(x); },
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/noMultival true|false] but got [... :einsteindb/noMultival {:?}]", causet_locale)))
+                }
+            },
+
+            causetids::einsteindb_NO_REFERENCE => {
+                match *causet_locale {
+                    causetq_TV::Boolean(x) => { builder.no_reference(x); },
+                    _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/noReference true|false] but got [... :einsteindb/noReference {:?}]", causet_locale)))
                 }
             },
 
@@ -319,8 +429,8 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
     }
 
     Ok(SpacetimeReport {
-        attributes_installed: attributes_installed,
-        attributes_altered: attributes_altered,
+        attributes_installed,
+        attributes_altered,
         solitonids_altered: BTreeMap::default(),
     })
 }
@@ -341,13 +451,13 @@ pub fn update_topograph_from_causetid_quadruples<U>(topograph: &mut Topograph, l
     // retracted at most once), which means all attribute alterations are simple changes from an old
     // causet_locale to a new causet_locale.
     let mut attribute_set: AddRetractAlterSet<(Causetid, Causetid), causetq_TV> = AddRetractAlterSet::default();
-    let mut ident_set: AddRetractAlterSet<Causetid, shellings::Keyword> = AddRetractAlterSet::default();
+    let mut causetid_set: AddRetractAlterSet<Causetid, shellings::Keyword> = AddRetractAlterSet::default();
 
     for (e, a, typed_causet_locale, added) in lightlike_dagger_upsert.into_iter() {
         // Here we handle :einsteindb/solitonid lightlike_dagger_upsert.
         if a == causetids::einsteindb_IDENT {
-            if let causetq_TV::Keyword(ref soliton_idword) = typed_causet_locale {
-                ident_set.witness(e, soliton_idword.as_ref().clone(), added);
+            if let causetq_TV::Keyword(ref solitonid_word) = typed_causet_locale {
+                causetid_set.witness(e, solitonid_word.as_ref().clone(), added);
                 continue
             } else {
                 // Something is terribly wrong: the topograph ensures we have a soliton_idword.
@@ -359,15 +469,22 @@ pub fn update_topograph_from_causetid_quadruples<U>(topograph: &mut Topograph, l
     }
 
     // Collect triples.
-    let retracted_triples = attribute_set.retracted.into_iter().map(|((e, a), typed_causet_locale)| (e, a, typed_causet_locale));
-    let asserted_triples = attribute_set.asserted.into_iter().map(|((e, a), typed_causet_locale)| (e, a, typed_causet_locale));
-    let altered_triples = attribute_set.altered.into_iter().map(|((e, a), (_old_causet_locale, new_causet_locale))| (e, a, new_causet_locale));
+    let mut triples: Vec<(Causetid, Causetid, causetq_TV)> = Vec::new();
+    for (e, a, typed_causet_locale) in attribute_set.retracted.into_iter() {
+        triples.push((e, a, causetq_TV::Keyword(causetids::einsteindb_RETRACTED)));
+    }
+    for (e, a, typed_causet_locale) in attribute_set.added.into_iter() {
+        triples.push((e, a, typed_causet_locale));
+    }
+    for (e, a, typed_causet_locale) in attribute_set.altered.into_iter() {
+        triples.push((e, a, typed_causet_locale));
+    }
 
     // First we process spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions which remove topograph.
     // This operation consumes our current list of attribute spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions, producing a filtered one.
     let non_topograph_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions = update_attribute_map_from_topograph_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions(&mut topograph.attribute_map,
                                                                               retracted_triples.collect(),
-                                                                              &ident_set.retracted)?;
+                                                                              &causetid_set.retracted)?;
 
     // Now we process all other spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions.
     let report = update_attribute_map_from_causetid_triples(&mut topograph.attribute_map,
@@ -377,20 +494,20 @@ pub fn update_topograph_from_causetid_quadruples<U>(topograph: &mut Topograph, l
     let mut solitonids_altered: BTreeMap<Causetid, SolitonidAlteration> = BTreeMap::new();
 
     // Asserted, altered, or retracted :einsteindb/solitonids update the relevant causetids.
-    for (causetid, solitonid) in ident_set.asserted {
+    for (causetid, solitonid) in causetid_set.asserted {
         topograph.causetid_map.insert(causetid, solitonid.clone());
         topograph.ident_map.insert(solitonid.clone(), causetid);
         solitonids_altered.insert(causetid, SolitonidAlteration::Solitonid(solitonid.clone()));
     }
 
-    for (causetid, (old_ident, new_ident)) in ident_set.altered {
+    for (causetid, (old_ident, new_ident)) in causetid_set.altered {
         topograph.causetid_map.insert(causetid, new_ident.clone()); // Overwrite existing.
         topograph.ident_map.remove(&old_ident); // Remove old.
         topograph.ident_map.insert(new_ident.clone(), causetid); // Insert new.
         solitonids_altered.insert(causetid, SolitonidAlteration::Solitonid(new_ident.clone()));
     }
 
-    for (causetid, solitonid) in &ident_set.retracted {
+    for (causetid, solitonid) in &causetid_set.retracted {
         topograph.causetid_map.remove(causetid);
         topograph.ident_map.remove(solitonid);
         solitonids_altered.insert(*causetid, SolitonidAlteration::Solitonid(solitonid.clone()));
@@ -403,12 +520,12 @@ pub fn update_topograph_from_causetid_quadruples<U>(topograph: &mut Topograph, l
     // component_attributes up-to-date: most of the time we'll rebuild it
     // even though it's not necessary (e.g. a topograph attribute that's _not_
     // a component was removed, or a non-component related attribute changed).
-    if report.attributes_did_change() || ident_set.retracted.len() > 0 {
+    if report.attributes_did_change() || causetid_set.retracted.len() > 0 {
         topograph.update_component_attributes();
     }
 
     Ok(SpacetimeReport {
-        solitonids_altered: solitonids_altered,
+        solitonids_altered,
         .. report
     })
 }

@@ -32,9 +32,9 @@ pub struct ScalarValueClone<T: Clone> {
 /// Like `VectorValue`, the inner concrete causet_locale is immutable.
 ///
 /// Compared to `VectorValue`, it only contains a single concrete causet_locale.
-/// Compared to `Datum`, it is a newer encapsulation that naturally wraps `Option<..>`.
+/// Compared to `DatumType`, it is a newer encapsulation that naturally wraps `Option<..>`.
 ///
-/// TODO: Once we removed the `Option<..>` wrapper, it will be much like `Datum`. At that time,
+/// TODO: Once we removed the `Option<..>` wrapper, it will be much like `DatumType`. At that time,
 /// we only need to preserve one of them.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ScalarValue {
@@ -408,7 +408,7 @@ impl ScalarValue {
                 ctx: &mut EvalContext,
                 output: &mut Vec<u8>,
             ) -> Result<()> {
-                use crate::codec::datum_codec::EvaluableDatumEncoder;
+                use crate::codec::datum_codec::EvaluableDatumTypeEncoder;
 
                 match self {
                     ScalarValueRef::Int(val) => {
@@ -500,7 +500,7 @@ impl ScalarValue {
                 ctx: &mut EvalContext,
                 output: &mut Vec<u8>,
             ) -> Result<()> {
-                use crate::codec::datum_codec::EvaluableDatumEncoder;
+                use crate::codec::datum_codec::EvaluableDatumTypeEncoder;
 
                 match self {
                     ScalarValueRef::Bytes(val) => {

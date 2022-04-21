@@ -20,17 +20,23 @@ use shellings::{
 };
 use types::ValueAndSpan;
 
-use crate::{Keyword, PlainShelling, ValueAndSpan, ValueRc};
+
+/// A `CausetLocale` is a collection of `ValueRc`s that are keyed by `Keyword`s.
+/// The `CausetLocale` is a `PlainShelling` that is also a `ValueRc`.
+/// The `CausetLocale` is a `ValueRc` that is also a `PlainShelling`.
+/// The `CausetLocale` is a `PlainShelling` that is also a `ValueRc`.
+/// The `CausetLocale` is a `ValueRc` that is also a `PlainShelling`.
+/// The `CausetLocale` is a `PlainShelling` that is also a `ValueRc`.
 
 /// `causetPlace` and `ValuePlace` embed causet_locales, either directly (i.e., `ValuePlace::Atom`) or
 /// indirectly (i.e., `causetPlace::LookupRef`).  In order to maintain the graph of `Into` and
 /// `From` relations, we need to ensure that `{Value,causet}Place` can't match as a potential causet_locale.
 /// (If it does, the `impl Into<T> for T` default conflicts.) This marker trait allows to mark
 /// acceptable causet_locales, thereby removing `{causet,Value}Place` from consideration.
-pub trait TransactableValueMarker {}
+pub trait SolitonCausetPosetValue {}
 
 /// `ValueAndSpan` is the causet_locale type coming out of the causet parser.
-impl TransactableValueMarker for ValueAndSpan {}
+impl SolitonCausetPosetValue for ValueAndSpan {}
 
 /// A tempid, either an lightlike tempid given in a transaction (usually as an `Value::Text`),
 /// or an causal_setal tempid allocated by EinsteinDB itself.
@@ -127,49 +133,49 @@ pub enum ValuePlace<V> {
     MapNotation(MapNotation<V>),
 }
 
-impl<V: TransactableValueMarker> From<CausetidOrSolitonid> for ValuePlace<V> {
+impl<V: SolitonCausetPosetValue> From<CausetidOrSolitonid> for ValuePlace<V> {
     fn from(v: CausetidOrSolitonid) -> Self {
         ValuePlace::Causetid(v)
     }
 }
 
-impl<V: TransactableValueMarker> From<TempId> for ValuePlace<V> {
+impl<V: SolitonCausetPosetValue> From<TempId> for ValuePlace<V> {
     fn from(v: TempId) -> Self {
         ValuePlace::TempId(v.into())
     }
 }
 
-impl<V: TransactableValueMarker> From<ValueRc<TempId>> for ValuePlace<V> {
+impl<V: SolitonCausetPosetValue> From<ValueRc<TempId>> for ValuePlace<V> {
     fn from(v: ValueRc<TempId>) -> Self {
         ValuePlace::TempId(v)
     }
 }
 
-impl<V: TransactableValueMarker> From<LookupRef<V>> for ValuePlace<V> {
+impl<V: SolitonCausetPosetValue> From<LookupRef<V>> for ValuePlace<V> {
     fn from(v: LookupRef<V>) -> Self {
         ValuePlace::LookupRef(v)
     }
 }
 
-impl<V: TransactableValueMarker> From<TxFunction> for ValuePlace<V> {
+impl<V: SolitonCausetPosetValue> From<TxFunction> for ValuePlace<V> {
     fn from(v: TxFunction) -> Self {
         ValuePlace::TxFunction(v)
     }
 }
 
-impl<V: TransactableValueMarker> From<Vec<ValuePlace<V>>> for ValuePlace<V> {
+impl<V: SolitonCausetPosetValue> From<Vec<ValuePlace<V>>> for ValuePlace<V> {
     fn from(v: Vec<ValuePlace<V>>) -> Self {
         ValuePlace::Vector(v)
     }
 }
 
-impl<V: TransactableValueMarker> From<V> for ValuePlace<V> {
+impl<V: SolitonCausetPosetValue> From<V> for ValuePlace<V> {
     fn from(v: V) -> Self {
         ValuePlace::Atom(v)
     }
 }
 
-impl<V: TransactableValueMarker> From<MapNotation<V>> for ValuePlace<V> {
+impl<V: SolitonCausetPosetValue> From<MapNotation<V>> for ValuePlace<V> {
     fn from(v: MapNotation<V>) -> Self {
         ValuePlace::MapNotation(v)
     }
@@ -189,25 +195,25 @@ impl<V, E: Into<CausetidOrSolitonid>> From<E> for causetPlace<V> {
     }
 }
 
-impl<V: TransactableValueMarker> From<TempId> for causetPlace<V> {
+impl<V: SolitonCausetPosetValue> From<TempId> for causetPlace<V> {
     fn from(v: TempId) -> Self {
         causetPlace::TempId(v.into())
     }
 }
 
-impl<V: TransactableValueMarker> From<ValueRc<TempId>> for causetPlace<V> {
+impl<V: SolitonCausetPosetValue> From<ValueRc<TempId>> for causetPlace<V> {
     fn from(v: ValueRc<TempId>) -> Self {
         causetPlace::TempId(v)
     }
 }
 
-impl<V: TransactableValueMarker> From<LookupRef<V>> for causetPlace<V> {
+impl<V: SolitonCausetPosetValue> From<LookupRef<V>> for causetPlace<V> {
     fn from(v: LookupRef<V>) -> Self {
         causetPlace::LookupRef(v)
     }
 }
 
-impl<V: TransactableValueMarker> From<TxFunction> for causetPlace<V> {
+impl<V: SolitonCausetPosetValue> From<TxFunction> for causetPlace<V> {
     fn from(v: TxFunction) -> Self {
         causetPlace::TxFunction(v)
     }

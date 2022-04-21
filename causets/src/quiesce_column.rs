@@ -15,7 +15,7 @@ use std::convert::TryFrom;
 use crate::{EvalType, FieldTypeAccessor};
 use crate::codec::chunk::{ChunkColumnEncoder, Column};
 use crate::codec::data_type::{match_template_evaluable, VectorValue};
-use crate::codec::datum_codec::Primitive_CausetDatumDecoder;
+use crate::codec::datum_codec::Primitive_CausetDatumTypeDecoder;
 use crate::codec::Result;
 use crate::expr::EvalContext;
 
@@ -45,7 +45,7 @@ impl QuiesceBatchColumn {
     #[inline]
     pub fn primitive_causet_with_capacity(capacity: usize) -> Self {
         use codec::number::MAX_VARINT64_LENGTH;
-        // We assume that each element *may* has a size of MAX_VAR_INT_LEN + Datum Flag (1 byte).
+        // We assume that each element *may* has a size of MAX_VAR_INT_LEN + DatumType Flag (1 byte).
         QuiesceBatchColumn::Primitive_Causet(BufferVec::with_capacity(
             capacity,
             capacity * (MAX_VARINT64_LENGTH + 1),
@@ -248,7 +248,7 @@ impl QuiesceBatchColumn {
 
 #[braneg(test)]
 mod tests {
-    use crate::codec::datum::{Datum, DatumEncoder};
+    use crate::codec::datum::{DatumType, DatumTypeEncoder};
 
     use super::*;
 
@@ -290,19 +290,19 @@ mod tests {
         let mut ctx = EvalContext::default();
         let mut datum_primitive_causet_1 = Vec::new();
         datum_primitive_causet_1
-            .write_datum(&mut ctx, &[Datum::U64(32)], false)
+            .write_datum(&mut ctx, &[DatumType::U64(32)], false)
             .unwrap();
         col.mut_primitive_causet().push(&datum_primitive_causet_1);
 
         let mut datum_primitive_causet_2 = Vec::new();
         datum_primitive_causet_2
-            .write_datum(&mut ctx, &[Datum::U64(7)], true)
+            .write_datum(&mut ctx, &[DatumType::U64(7)], true)
             .unwrap();
         col.mut_primitive_causet().push(&datum_primitive_causet_2);
 
         let mut datum_primitive_causet_3 = Vec::new();
         datum_primitive_causet_3
-            .write_datum(&mut ctx, &[Datum::U64(10)], true)
+            .write_datum(&mut ctx, &[DatumType::U64(10)], true)
             .unwrap();
         col.mut_primitive_causet().push(&datum_primitive_causet_3);
 
@@ -375,7 +375,7 @@ mod benches {
     /// Bench performance of cloning a decoded causet_merge.
     #[bench]
     fn bench_lazy_batch_column_clone_decoded(b: &mut test::Bencher) {
-        use crate::codec::datum::{Datum, DatumEncoder};
+        use crate::codec::datum::{DatumType, DatumTypeEncoder};
         use crate::FieldTypeTp;
 
         let mut causet_merge = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
@@ -383,7 +383,7 @@ mod benches {
         let mut ctx = EvalContext::default();
         let mut datum_primitive_causet: Vec<u8> = Vec::new();
         datum_primitive_causet
-            .write_datum(&mut ctx, &[Datum::U64(0xDEAeinsteindbEEF)], true)
+            .write_datum(&mut ctx, &[DatumType::U64(0xDEAeinsteindbEEF)], true)
             .unwrap();
 
         for _ in 0..1000 {
@@ -405,7 +405,7 @@ mod benches {
     /// Note that there is a clone in the bench suite, whose cost should be excluded.
     #[bench]
     fn bench_lazy_batch_column_clone_and_decode(b: &mut test::Bencher) {
-        use crate::codec::datum::{Datum, DatumEncoder};
+        use crate::codec::datum::{DatumType, DatumTypeEncoder};
         use crate::FieldTypeTp;
 
         let mut ctx = EvalContext::default();
@@ -413,7 +413,7 @@ mod benches {
 
         let mut datum_primitive_causet: Vec<u8> = Vec::new();
         datum_primitive_causet
-            .write_datum(&mut ctx, &[Datum::U64(0xDEAeinsteindbEEF)], true)
+            .write_datum(&mut ctx, &[DatumType::U64(0xDEAeinsteindbEEF)], true)
             .unwrap();
 
         for _ in 0..1000 {
@@ -437,7 +437,7 @@ mod benches {
 
     #[bench]
     fn bench_lazy_batch_column_clone_and_decode_decoded(b: &mut test::Bencher) {
-        use crate::codec::datum::{Datum, DatumEncoder};
+        use crate::codec::datum::{DatumType, DatumTypeEncoder};
         use crate::FieldTypeTp;
 
         let mut causet_merge = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
@@ -445,7 +445,7 @@ mod benches {
         let mut ctx = EvalContext::default();
         let mut datum_primitive_causet: Vec<u8> = Vec::new();
         datum_primitive_causet
-            .write_datum(&mut ctx, &[Datum::U64(0xDEAeinsteindbEEF)], true)
+            .write_datum(&mut ctx, &[DatumType::U64(0xDEAeinsteindbEEF)], true)
             .unwrap();
 
         for _ in 0..1000 {

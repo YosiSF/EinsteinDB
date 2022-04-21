@@ -79,9 +79,9 @@
  use crate::expr::EvalContext;
 
  use super::super::{Error, Result};
- use super::super::datum::Datum;
+ use super::super::datum::DatumType;
 
- pub use self::jcodec::{JsonDatumPayloadChunkEncoder, JsonDecoder, JsonEncoder};
+ pub use self::jcodec::{JsonDatumTypePayloadChunkEncoder, JsonDecoder, JsonEncoder};
  pub use self::json_modify::ModifyType;
  pub use self::local_path_expr::{local_pathExpression, parse_json_local_path_expr};
 
@@ -336,7 +336,7 @@ impl Json {
 
 /// Create JSON arrayy by given elements
 /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-creation-functions.html#function_json-array
-pub fn json_array(elems: Vec<Datum>) -> Result<Json> {
+pub fn json_array(elems: Vec<DatumType>) -> Result<Json> {
     let mut a = Vec::with_capacity(elems.len());
     for elem in elems {
         a.push(elem.into_json()?);
@@ -346,7 +346,7 @@ pub fn json_array(elems: Vec<Datum>) -> Result<Json> {
 
 /// Create JSON object by given soliton_id-causet_locale pairs
 /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-creation-functions.html#function_json-object
-pub fn json_object(ehikvs: Vec<Datum>) -> Result<Json> {
+pub fn json_object(ehikvs: Vec<DatumType>) -> Result<Json> {
     let len = ehikvs.len();
     if !is_even(len) {
         return Err(Error::Other(box_err!(
@@ -359,7 +359,7 @@ pub fn json_object(ehikvs: Vec<Datum>) -> Result<Json> {
     for elem in ehikvs {
         if soliton_id.is_none() {
             // take elem as soliton_id
-            if elem == Datum::Null {
+            if elem == DatumType::Null {
                 return Err(invalid_type!(
                     "JSON documents may not contain NULL member names"
                 ));
@@ -492,10 +492,10 @@ mod tests {
         let cases = vec![
             (
                 vec![
-                    Datum::I64(1),
-                    Datum::Bytes(b"sdf".to_vec()),
-                    Datum::U64(2),
-                    Datum::Json(r#"[3,4]"#.parse().unwrap()),
+                    DatumType::I64(1),
+                    DatumType::Bytes(b"sdf".to_vec()),
+                    DatumType::U64(2),
+                    DatumType::Json(r#"[3,4]"#.parse().unwrap()),
                 ],
                 r#"[1,"sdf",2,[3,4]]"#.parse().unwrap(),
             ),
@@ -509,12 +509,12 @@ mod tests {
     #[test]
     fn test_json_object() {
         let cases = vec![
-            vec![Datum::I64(1)],
+            vec![DatumType::I64(1)],
             vec![
-                Datum::I64(1),
-                Datum::Bytes(b"sdf".to_vec()),
-                Datum::Null,
-                Datum::U64(2),
+                DatumType::I64(1),
+                DatumType::Bytes(b"sdf".to_vec()),
+                DatumType::Null,
+                DatumType::U64(2),
             ],
         ];
         for d in cases {
@@ -524,12 +524,12 @@ mod tests {
         let cases = vec![
             (
                 vec![
-                    Datum::I64(1),
-                    Datum::Bytes(b"sdf".to_vec()),
-                    Datum::Bytes(b"asd".to_vec()),
-                    Datum::Bytes(b"qwe".to_vec()),
-                    Datum::I64(2),
-                    Datum::Json(r#"{"3":4}"#.parse().unwrap()),
+                    DatumType::I64(1),
+                    DatumType::Bytes(b"sdf".to_vec()),
+                    DatumType::Bytes(b"asd".to_vec()),
+                    DatumType::Bytes(b"qwe".to_vec()),
+                    DatumType::I64(2),
+                    DatumType::Json(r#"{"3":4}"#.parse().unwrap()),
                 ],
                 r#"{"1":"sdf","2":{"3":4},"asd":"qwe"}"#.parse().unwrap(),
             ),

@@ -8,7 +8,7 @@ use ::{
     Topograph,
 };
 use allegroeinstein_prolog_causet_projector::errors::Result;
-use causet_algebrizer::MEDB_query_datatype::codec::Datum;
+use causet_algebrizer::MEDB_query_datatype::codec::DatumType;
 use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::{Decimal, Duration, Json, Time};
 use causet_algebrizer::MEDB_query_datatype::expr::Result;
 use std::borrow::Cow;
@@ -57,7 +57,7 @@ impl Projector for ConstantProjector {
 /// # Example
 /// ```
 /// use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::{Decimal, Duration, Json, Time};
-/// use causet_algebrizer::MEDB_query_datatype::codec::Datum;
+/// use causet_algebrizer::MEDB_query_datatype::codec::DatumType;
 /// use causet_algebrizer::MEDB_query_datatype::expr::Result;
 /// use causet_algebrizer::MEDB_query_datatype::query_output::{
 ///    QueryOutput,
@@ -102,7 +102,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Json(json)]);
+            results.add_row(vec![DatumType::Json(json)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -113,7 +113,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Time(time)]);
+            results.add_row(vec![DatumType::Time(time)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -124,7 +124,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Duration(duration)]);
+            results.add_row(vec![DatumType::Duration(duration)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -135,7 +135,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Decimal(decimal)]);
+            results.add_row(vec![DatumType::Decimal(decimal)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -146,7 +146,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Result(result)]);
+            results.add_row(vec![DatumType::Result(result)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -157,7 +157,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Bool(bool)]);
+            results.add_row(vec![DatumType::Bool(bool)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -168,7 +168,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Int(int)]);
+            results.add_row(vec![DatumType::Int(int)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -179,7 +179,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Float(float)]);
+            results.add_row(vec![DatumType::Float(float)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -190,7 +190,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::String(string)]);
+            results.add_row(vec![DatumType::String(string)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -201,7 +201,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Bytes(bytes)]);
+            results.add_row(vec![DatumType::Bytes(bytes)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -212,7 +212,7 @@ impl ConstantProjector {
                 Rows::new(vec![]),
                 vec![],
             );
-            results.add_row(vec![Datum::Json(json)]);
+            results.add_row(vec![DatumType::Json(json)]);
             results
         });
         ConstantProjector::new(spec, results_factory)
@@ -226,7 +226,7 @@ pub fn new_with_duration(spec: Rc<FindSpec>, duration: Duration) -> ConstantProj
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::Duration(duration)]);
+        results.add_row(vec![DatumType::Duration(duration)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -238,7 +238,7 @@ pub fn new_with_date(spec: Rc<FindSpec>, date: Date) -> ConstantProjector {
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::Date(date)]);
+        results.add_row(vec![DatumType::Date(date)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -250,7 +250,7 @@ pub fn new_with_time(spec: Rc<FindSpec>, time: Time) -> ConstantProjector {
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::Time(time)]);
+        results.add_row(vec![DatumType::Time(time)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -262,7 +262,7 @@ pub fn new_with_timestamp(spec: Rc<FindSpec>, timestamp: Timestamp) -> ConstantP
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::Timestamp(timestamp)]);
+        results.add_row(vec![DatumType::Timestamp(timestamp)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -274,7 +274,7 @@ pub fn new_with_date_time(spec: Rc<FindSpec>, date_time: DateTime) -> ConstantPr
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::DateTime(date_time)]);
+        results.add_row(vec![DatumType::DateTime(date_time)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -286,7 +286,7 @@ pub fn new_with_date_time_tz(spec: Rc<FindSpec>, date_time_tz: DateTimeTz) -> Co
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::DateTimeTz(date_time_tz)]);
+        results.add_row(vec![DatumType::DateTimeTz(date_time_tz)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -298,7 +298,7 @@ pub fn new_with_interval(spec: Rc<FindSpec>, interval: Interval) -> ConstantProj
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::Interval(interval)]);
+        results.add_row(vec![DatumType::Interval(interval)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -310,7 +310,7 @@ pub fn new_with_uuid(spec: Rc<FindSpec>, uuid: Uuid) -> ConstantProjector {
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::Uuid(uuid)]);
+        results.add_row(vec![DatumType::Uuid(uuid)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -322,7 +322,7 @@ pub fn new_with_json(spec: Rc<FindSpec>, json: Json) -> ConstantProjector {
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::Json(json)]);
+        results.add_row(vec![DatumType::Json(json)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -334,7 +334,7 @@ pub fn new_with_json_b(spec: Rc<FindSpec>, json_b: JsonB) -> ConstantProjector {
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::JsonB(json_b)]);
+        results.add_row(vec![DatumType::JsonB(json_b)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -346,7 +346,7 @@ pub fn new_with_oid(spec: Rc<FindSpec>, oid: Oid) -> ConstantProjector {
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::Oid(oid)]);
+        results.add_row(vec![DatumType::Oid(oid)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -358,7 +358,7 @@ pub fn new_with_reg_type(spec: Rc<FindSpec>, reg_type: RegType) -> ConstantProje
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::RegType(reg_type)]);
+        results.add_row(vec![DatumType::RegType(reg_type)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -370,7 +370,7 @@ pub fn new_with_reg_procedure(spec: Rc<FindSpec>, reg_procedure: RegProcedure) -
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::RegProcedure(reg_procedure)]);
+        results.add_row(vec![DatumType::RegProcedure(reg_procedure)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -382,7 +382,7 @@ pub fn new_with_reg_per(spec: Rc<FindSpec>, reg_oper: RegOper) -> ConstantProjec
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::RegOper(reg_oper)]);
+        results.add_row(vec![DatumType::RegOper(reg_oper)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -394,7 +394,7 @@ pub fn new_with_reg_class(spec: Rc<FindSpec>, reg_class: RegClass) -> ConstantPr
             Rows::new(vec![]),
             vec![],
         );
-        results.add_row(vec![Datum::RegClass(reg_class)]);
+        results.add_row(vec![DatumType::RegClass(reg_class)]);
         results
     });
     ConstantProjector::new(spec, results_factory)

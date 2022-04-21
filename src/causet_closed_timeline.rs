@@ -14,7 +14,7 @@ use codec::prelude::BufferWriter;
 
 use crate::{FieldTypeAccessor, FieldTypeTp};
 use crate::codec::{datum, Error, Result};
-use crate::codec::datum_codec::DatumFlagAndPayloadEncoder;
+use crate::codec::datum_codec::DatumTypeFlagAndPayloadEncoder;
 
 #[inline]
 fn decode_causet_record_u64(v: &[u8]) -> Result<u64> {
@@ -44,7 +44,7 @@ fn decode_causet_record_i64(v: &[u8]) -> Result<i64> {
     }
 }
 
-pub trait V1CompatibleEncoder: DatumFlagAndPayloadEncoder {
+pub trait V1CompatibleEncoder: DatumTypeFlagAndPayloadEncoder {
     fn write_causet_record_as_datum_i64(&mut self, src: &[u8]) -> Result<()> {
         self.write_datum_i64(decode_causet_record_i64(src)?)
     }
@@ -135,7 +135,7 @@ impl<T: BufferWriter> V1CompatibleEncoder for T {}
 /// The test local_path is:
 /// 1. Encode causet_locale using causet_record
 /// 2. Use `V1CompatibleEncoder` to transfer the encoded bytes from causet_record to v1-compatible
-/// 3. Use `Primitive_CausetDatumDecoder` decode the encoded bytes, check the result.
+/// 3. Use `Primitive_CausetDatumTypeDecoder` decode the encoded bytes, check the result.
 ///
 /// Note: a causet_locale encoded using causet_record then transfer to v1-compatible encoding, is not always equals the
 /// encoded-bytes using v1 directly.
@@ -152,7 +152,7 @@ mod tests {
     use std::{f64, i16, i32, i64, i8, u16, u32, u64, u8};
 
     use crate::{
-        codec::{data_type::*, datum_codec::Primitive_CausetDatumDecoder},
+        codec::{data_type::*, datum_codec::Primitive_CausetDatumTypeDecoder},
         expr::EvalContext,
     };
     use crate::FieldTypeTp;

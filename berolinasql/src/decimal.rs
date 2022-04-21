@@ -2096,7 +2096,7 @@ pub trait DecimalEncoder: NumberEncoder {
 
 impl<T: BufferWriter> DecimalEncoder for T {}
 
-pub trait DecimalDatumPayloadChunkEncoder: NumberEncoder + DecimalEncoder {
+pub trait DecimalDatumTypePayloadChunkEncoder: NumberEncoder + DecimalEncoder {
     #[inline]
     fn write_decimal_to_chunk_by_datum_payload(&mut self, mut src_payload: &[u8]) -> Result<()> {
         let decimal = src_payload.read_decimal()?;
@@ -2104,7 +2104,7 @@ pub trait DecimalDatumPayloadChunkEncoder: NumberEncoder + DecimalEncoder {
     }
 }
 
-impl<T: BufferWriter> DecimalDatumPayloadChunkEncoder for T {}
+impl<T: BufferWriter> DecimalDatumTypePayloadChunkEncoder for T {}
 
 // Mark as `#[inline]` since in many cases `size` is a constant.
 #[inline]

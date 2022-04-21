@@ -597,7 +597,7 @@ pub trait DurationEncoder: NumberEncoder {
     }
 }
 
-pub trait DurationDatumPayloadChunkEncoder: NumberEncoder {
+pub trait DurationDatumTypePayloadChunkEncoder: NumberEncoder {
     #[inline]
     fn write_duration_to_chunk_by_datum_payload_int(
         &mut self,
@@ -619,7 +619,7 @@ pub trait DurationDatumPayloadChunkEncoder: NumberEncoder {
     }
 }
 
-impl<T: BufferWriter> DurationDatumPayloadChunkEncoder for T {}
+impl<T: BufferWriter> DurationDatumTypePayloadChunkEncoder for T {}
 
 pub trait DurationDecoder: NumberDecoder {
     #[inline]

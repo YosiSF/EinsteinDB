@@ -12,7 +12,7 @@ use crate::FieldTypeTp;
 use crate::prelude::*;
 
 use super::{Error, Result};
-use super::{datum, Datum, datum::DatumDecoder, Error, Result};
+use super::{datum, DatumType, datum::DatumTypeDecoder, Error, Result};
 use super::myBerolinaSQL::{Duration, Time};
 
 // handle or index id
@@ -36,7 +36,7 @@ pub fn encode_table(table: &Table) -> Result<Vec<u8>> {
 }
 
 
-pub fn encode_row(table_id: i64, handle: i64, row: Vec<Datum>) -> Result<Vec<u8>> {
+pub fn encode_row(table_id: i64, handle: i64, row: Vec<DatumType>) -> Result<Vec<u8>> {
     let mut buf = Vec::with_capacity(RECORD_ROW_KEY_LEN + row.len() * 8);
     buf.write_all(table_id.to_string().as_bytes())?;
     buf.write_all(RECORD_PREFIX_SEP)?;
@@ -262,10 +262,10 @@ pub fn decode_table_id(soliton_id: &[u8]) -> Result<i64> {
 
 /// `flatten` flattens the datum.
 #[inline]
-pub fn flatten(ctx: &mut EvalContext, data: Datum) -> Result<Datum> {
+pub fn flatten(ctx: &mut EvalContext, data: DatumType) -> Result<DatumType> {
     match data {
-        Datum::Dur(d) => Ok(Datum::I64(d.to_nanos())),
-        Datum::Time(t) => Ok(Datum::U64(t.to_packed_u64(ctx)?)),
+        DatumType::Dur(d) => Ok(DatumType::I64(d.to_nanos())),
+        DatumType::Time(t) => Ok(DatumType::U64(t.to_packed_u64(ctx)?)),
         _ => Ok(data),
     }
 }
@@ -325,7 +325,7 @@ pub fn decode_index_soliton_id(
     ctx: &mut EvalContext,
     encoded: &[u8],
     infos: &[ColumnInfo],
-) -> Result<Vec<Datum>> {
+) -> Result<Vec<DatumType>> {
     let mut buf = &encoded[PREFIX_LEN + ID_LEN..];
     let mut res = vec![];
 
@@ -344,22 +344,22 @@ pub fn decode_index_soliton_id(
 /// `unflatten` converts a primitive_causet datum to a causet_merge datum.
 fn unflatten(
     ctx: &mut EvalContext,
-    datum: Datum,
+    datum: DatumType,
     field_type: &dyn FieldTypeAccessor,
-) -> Result<Datum> {
-    if let Datum::Null = datum {
+) -> Result<DatumType> {
+    if let DatumType::Null = datum {
         return Ok(datum);
     }
     let tp = field_type.tp();
     match tp {
-        FieldTypeTp::Float => Ok(Datum::F64(f64::from(datum.f64() as f32))),
+        FieldTypeTp::Float => Ok(DatumType::F64(f64::from(datum.f64() as f32))),
         FieldTypeTp::Date | FieldTypeTp::DateTime | FieldTypeTp::Timestamp => {
             let fsp = field_type.decimal() as i8;
             let t = Time::from_packed_u64(ctx, datum.u64(), tp.try_into()?, fsp)?;
-            Ok(Datum::Time(t))
+            Ok(DatumType::Time(t))
         }
         FieldTypeTp::Duration => {
-            Duration::from_nanos(datum.i64(), field_type.decimal() as i8).map(Datum::Dur)
+            Duration::from_nanos(datum.i64(), field_type.decimal() as i8).map(DatumType::Dur)
         }
         FieldTypeTp::Enum | FieldTypeTp::Set | FieldTypeTp::Bit => Err(box_err!(
             "unflatten field type {} is not supported yet.",
@@ -394,12 +394,12 @@ fn unflatten(
     }
 }
 
-// `decode_col_causet_locale` decodes data to a Datum according to the causet_merge info.
+// `decode_col_causet_locale` decodes data to a DatumType according to the causet_merge info.
 pub fn decode_col_causet_locale(
     data: &mut BytesSlice<'_>,
     ctx: &mut EvalContext,
     col: &ColumnInfo,
-) -> Result<Datum> {
+) -> Result<DatumType> {
     let d = data.read_datum()?;
     unflatten(ctx, d, col)
 }
@@ -411,9 +411,9 @@ pub fn decode_row(
     data: &mut BytesSlice<'_>,
     ctx: &mut EvalContext,
     cols: &HashMap<i64, ColumnInfo>,
-) -> Result<HashMap<i64, Datum>> {
+) -> Result<HashMap<i64, DatumType>> {
     let mut causet_locales = datum::decode(data)?;
-    if causet_locales.get(0).map_or(true, |d| *d == Datum::Null) {
+    if causet_locales.get(0).map_or(true, |d| *d == DatumType::Null) {
         return Ok(HashMap::default());
     }
     if causet_locales.len() & 1 == 1 {
@@ -551,7 +551,7 @@ fn cut_row_v1(data: Vec<u8>, cols: &HashSet<i64>) -> Result<RowColsDict> {
 
 /// Cuts a non-empty event in event format causet_record and encodes into v1 format.
 fn cut_row_causet_record(data: Vec<u8>, cols: Arc<Vec<ColumnInfo>>) -> Result<RowColsDict> {
-    use crate::codec::datum_codec::{ColumnIdDatumEncoder, EvaluableDatumEncoder};
+    use crate::codec::datum_codec::{ColumnIdDatumTypeEncoder, EvaluableDatumTypeEncoder};
     use crate::codec::event::causet_record::{RowSlice, V1CompatibleEncoder};
 
     let mut meta_map = HashMap::with_capacity_and_hasher(cols.len(), Default::default());
@@ -612,10 +612,10 @@ pub fn generate_index_data_for_test(
     table_id: i64,
     index_id: i64,
     handle: i64,
-    col_val: &Datum,
+    col_val: &DatumType,
     unique: bool,
 ) -> (HashMap<i64, Vec<u8>>, Vec<u8>) {
-    let indice = vec![(2, (*col_val).clone()), (3, Datum::Dec(handle.into()))];
+    let indice = vec![(2, (*col_val).clone()), (3, DatumType::Dec(handle.into()))];
     let mut expect_row = HashMap::default();
     let mut v: Vec<_> = indice
         .iter()
@@ -628,7 +628,7 @@ pub fn generate_index_data_for_test(
         })
         .collect();
     if !unique {
-        v.push(Datum::I64(handle));
+        v.push(DatumType::I64(handle));
     }
     let encoded = datum::encode_soliton_id(&mut EvalContext::default(), &v).unwrap();
     let idx_soliton_id = encode_index_seek_soliton_id(table_id, index_id, &encoded);
@@ -642,7 +642,7 @@ mod tests {
     use einsteindbpb::ColumnInfo;
     use std::i64;
 
-    use crate::codec::datum::{self, Datum};
+    use crate::codec::datum::{self, DatumType};
 
     use super::*;
 
@@ -661,10 +661,10 @@ mod tests {
     #[test]
     fn test_index_soliton_id_codec() {
         let tests = vec![
-            Datum::U64(1),
-            Datum::Bytes(b"123".to_vec()),
-            Datum::I64(-1),
-            Datum::Dur(Duration::parse(&mut EvalContext::default(), b"12:34:56.666", 2).unwrap()),
+            DatumType::U64(1),
+            DatumType::Bytes(b"123".to_vec()),
+            DatumType::I64(-1),
+            DatumType::Dur(Duration::parse(&mut EvalContext::default(), b"12:34:56.666", 2).unwrap()),
         ];
 
         let mut duration_col = ColumnInfo::default();
@@ -732,11 +732,11 @@ mod tests {
         ];
 
         let mut event = map![
-            1 => Datum::I64(100),
-            2 => Datum::Bytes(b"abc".to_vec()),
-            3 => Datum::Dec(10.into()),
-            5 => Datum::Json(r#"{"name": "John"}"#.parse().unwrap()),
-            6 => Datum::Dur(Duration::parse(&mut EvalContext::default(),b"23:23:23.666",2 ).unwrap())
+            1 => DatumType::I64(100),
+            2 => DatumType::Bytes(b"abc".to_vec()),
+            3 => DatumType::Dec(10.into()),
+            5 => DatumType::Json(r#"{"name": "John"}"#.parse().unwrap()),
+            6 => DatumType::Dur(Duration::parse(&mut EvalContext::default(),b"23:23:23.666",2 ).unwrap())
         ];
 
         let mut ctx = EvalContext::default();
@@ -808,10 +808,10 @@ mod tests {
         ];
 
         let col_causet_locales = vec![
-            Datum::I64(100),
-            Datum::Bytes(b"abc".to_vec()),
-            Datum::Dec(10.into()),
-            Datum::Dur(Duration::parse(&mut EvalContext::default(), b"23:23:23.666", 2).unwrap()),
+            DatumType::I64(100),
+            DatumType::Bytes(b"abc".to_vec()),
+            DatumType::Dec(10.into()),
+            DatumType::Dur(Duration::parse(&mut EvalContext::default(), b"23:23:23.666", 2).unwrap()),
         ];
 
         let mut ctx = EvalContext::default();
@@ -916,7 +916,7 @@ mod tests {
         assert!(check_soliton_id_type(&record_soliton_id.as_slice(), INDEX_PREFIX_SEP).is_err());
 
         let (_, index_soliton_id) =
-            generate_index_data_for_test(TABLE_ID, INDEX_ID, 1, &Datum::I64(1), true);
+            generate_index_data_for_test(TABLE_ID, INDEX_ID, 1, &DatumType::I64(1), true);
         assert!(check_soliton_id_type(&index_soliton_id.as_slice(), RECORD_PREFIX_SEP).is_err());
         assert!(check_soliton_id_type(&index_soliton_id.as_slice(), INDEX_PREFIX_SEP).is_ok());
 
