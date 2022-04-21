@@ -8,6 +8,37 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-pub mod causet_record;
+//mod for soliton_panic
+
+
+#[macro_use]
+extern crate soliton_panic;
+
+extern crate soliton;
+
+//mods
+use causal_set::CausalSet;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::thread;
+use std::time::Duration;
+use std::time::Instant;
+use std::{thread, time};
+
+
+//mod for causal_set
+pub mod causal_set;
+
+pub mod causet;
+
+
+//mod for causal_set_test
+//TODO: test the causal_set module  and the causet module  in the same time  and the causet module is not used in the causal_set module
+//mod for causal_set_test
+
+
+
 
 

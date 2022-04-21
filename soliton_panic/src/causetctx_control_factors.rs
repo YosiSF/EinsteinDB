@@ -1,11 +1,23 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use fdb_traits::{Result, SymplecticControlFactorsExt};
+use super::*;
+use crate::storage::kv::{
+    crate::{
+        CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE, DATA_MAX_LEN, DATA_MIN_LEN, DATA_MAX_KEY_LEN,
+        DATA_MIN_KEY_LEN, DATA_MAX_VALUE_LEN, DATA_MIN_VALUE_LEN, DATA_MAX_FIELD_LEN,
+        DATA_MIN_FIELD_LEN, DATA_MAX_FIELD_NUM, DATA_MIN_FIELD_NUM, DATA_MAX_VERSION,
+        DATA_MIN_VERSION, DATA_MAX_TIME_STAMP, DATA_MIN_TIME_STAMP, DATA_MAX_TXN_TS,
+        DATA_MIN_TXN_TS, DATA_MAX_TS_VERSION, DATA_MIN_TS_VERSION, DATA_MAX_TS_DELAY,
+        DATA_MIN_TS_DELAY, DATA_MAX_TS_COMMIT, DATA_MIN_TS_COMMIT, DATA_MAX_TS_WRITE,
+        DATA_MIN_TS_WRITE, DATA_MAX_TS_COMMIT_TS, DATA_MIN_TS_COMMIT_TS, DATA_MAX_TS_WRITE_TS,
+        DATA_MIN_TS_WRITE_TS, DATA_MAX_TS_COMMIT_TS_TS, DATA_MIN_TS_COMMIT_TS_TS,
+    },
+    Key,
+};
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 
 impl SymplecticControlFactorsExt for Paniceinstein_merkle_tree {
-    fn get_namespaced_num_filefs_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>> {
+    fn get_namespaced_num_fuse_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>> {
         panic!()
     }
 
