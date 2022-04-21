@@ -333,7 +333,7 @@ pub fn update_attribute_map_from_causetid_triples(attribute_map: &mut AttributeM
                 }
             },
 
-            _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/causet_localeType :einsteindb.type/*] but got [... :einsteindb/causet_localeType {:?}] for causetid {} and attribute {}", causet_locale, causetid, attr)))
+            _ => bail!(einsteindbErrorKind::BadTopographAssertion(format!("Expected [... :einsteindb/causet_localeType :einsteindb.type/*] but got [... :einsteindb/causet_localeType {:?}] for causetid {} and attribute {}", causet_locale, causetid, attr))),
 
             causetids::einsteindb_IS_COMPONENT => {
                 match *causet_locale {

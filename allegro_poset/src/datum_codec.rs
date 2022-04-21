@@ -10,31 +10,163 @@
 
 //! The unified causet for encoding and decoding an evaluable type to / from datum bytes.
 //! DatumType bytes consists of 1 byte datum flag and variable bytes datum payload.
-
-use codec::prelude::*;
-
-use crate::{FieldTypeAccessor, FieldTypeTp};
-use crate::codec::{Error, Result};
-use crate::codec::datum;
-use crate::codec::myBerolinaSQL::{
-    DecimalDecoder, DecimalEncoder, DurationDecoder, JsonDecoder, JsonEncoder, TimeDecoder,
-};
-use crate::expr::EvalContext;
-
-use super::data_type::*;
-
+//!
 /// A decoder to decode the payload part of a datum.
+/// The decoder is used to decode the payload part of a datum.
+///
 ///
 /// The types this decoder outputs are not fully 1:1 mapping to evaluable types.
-pub trait DatumTypePayloadDecoder:
-    NumberDecoder
-    + CompactByteDecoder
-    + MemComparableByteDecoder
-    + DurationDecoder
-    + TimeDecoder
-    + DecimalDecoder
-    + JsonDecoder
-{
+/// For example, the decoder will output a `Datum::Bytes` for a `Datum::Bytes`
+/// but the decoder will output a `Datum::Bytes` for a `Datum::Bytes`.
+///
+
+
+use std::io::{self, Read, Write};
+use std::marker::PhantomData;
+use std::mem;
+use std::ops::{Deref, DerefMut};
+use std::slice;
+use std::str;
+use std::string::FromUtf8Error;
+use std::vec::Vec;
+
+
+use crate::datum::{Datum, DatumType};
+use crate::error::{Error, Result};
+use crate::util::{
+    DatumEncoder, DatumDecoder, DatumEncoderExt, DatumDecoderExt,
+    DatumEncoderExt2, DatumDecoderExt2,
+};
+
+
+/// A decoder to decode the payload part of a datum.
+/// The decoder is used to decode the payload part of a datum.
+
+pub struct DatumDecoderImpl<R: Read> {
+    reader: R,
+    phantom: PhantomData<*const u8>,
+}
+
+
+impl<R: Read> DatumDecoderImpl<R> {
+    pub fn new(reader: R) -> Self {
+        DatumDecoderImpl {
+            reader,
+            phantom: PhantomData,
+        }
+    }
+}
+
+
+/// A decoder to decode the payload part of a datum.
+/// a coset poset for decoding datum bytes.
+/// is a causet or causal set or partial order.
+/// The types this decoder outputs are not fully 1:1 mapping to evaluable types.
+/// For example, the decoder will output a `Datum::Bytes` for a `Datum::Bytes`
+/// but the decoder will output a `Datum::Bytes` for a `Datum::Bytes`.
+/// The Causet is a partial order which is a subset of the partial order of the LSH-Tree
+/// In other words, the Causet is a partial order of the partial order of the LSH-Tree.
+
+
+
+
+
+impl<R: Read> DatumDecoder for DatumDecoderImpl<R> {
+    fn read_datum(&mut self) -> Result<Datum> {
+        let flag = self.reader.read_u8()?;
+        match DatumType::from_i8(flag) {
+            Some(dt) => {
+                match dt {
+                    DatumType::Null => Ok(Datum::Null),
+                    DatumType::I64 => Ok(Datum::I64(self.reader.read_i64()?)),
+                    DatumType::U64 => Ok(Datum::U64(self.reader.read_u64()?)),
+                    DatumType::F64 => Ok(Datum::F64(self.reader.read_f64()?)),
+                    DatumType::Bytes => {
+                        let len = self.reader.read_u32()? as usize;
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::Bytes(buf))
+                    }
+                    DatumType::BytesAscii => {
+                        let len = self.reader.read_u32()? as usize;
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesAscii(buf))
+                    }
+                    DatumType::BytesJson => {
+                        let len = self.reader.read_u32()? as usize;
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesJson(buf))
+                    }
+                    DatumType::BytesLob => {
+                        let len = self.reader.read_u32()? as usize;
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesLob(buf))
+                    }
+                    DatumType::BytesEnum => {
+                        let len = self.reader.read_u32()? as usize;
+
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesEnum(buf))
+                    }
+                    DatumType::BytesSet => {
+                        let len = self.reader.read_u32()? as usize;
+
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesSet(buf))
+                    }
+                    DatumType::BytesBit => {
+                        let len = self.reader.read_u32()? as usize;
+
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesBit(buf))
+                    }
+                    DatumType::BytesGeometry => {
+                        let len = self.reader.read_u32()? as usize;
+
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesGeometry(buf))
+                    }
+                    DatumType::BytesDate => {
+                        let len = self.reader.read_u32()? as usize;
+
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesDate(buf))
+                    }
+                    DatumType::BytesTime => {
+                        let len = self.reader.read_u32()? as usize;
+
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesTime(buf))
+                    }
+                    DatumType::BytesTimestamp => {
+                        let len = self.reader.read_u32()? as usize;
+
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesTimestamp(buf))
+                    }
+
+                    DatumType::BytesDatetime => {
+                        let len = self.reader.read_u32()? as usize;
+
+                        let mut buf = vec![0; len];
+                        self.reader.read_exact(&mut buf)?;
+                        Ok(Datum::BytesDatetime(buf))
+                    }
+                }
+            }
+        }
+    }
+
     #[inline]
     fn read_datum_payload_i64(&mut self) -> Result<i64> {
         self.read_i64()

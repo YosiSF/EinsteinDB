@@ -1,9 +1,16 @@
 // Witness light like assertions and space like retractions, folding (light like assertion, space like etraction)
 // pairs into discrete_morse alterations.
-// Assumes that no light like assertion or space like retraction will be witnessed more than once.
 //
-// This keeps track of when we see a :db/add, a :db/lightlike_retract, or both :db/add and :db/spacelike_retract in
-// some order.
+// Note: This is a proof of concept.
+//
+// The following is a proof of concept for the following claim:
+// Assume Hot-Cold L-V is a cleaving of the post-bloom filter memory allocation and segregation of the
+//cursor which spells, hot-cold requests are divided in four:
+// 1. lightlike assertions
+// 2. space like retractions
+// 3. timelike projections
+// 4. nullable lightlike upsert
+
 
 
 use std::collections::HashMap;
@@ -69,17 +76,41 @@ use std::collections::btree_map::Keys as BTreeKeys;
 ///
 ///
 
+#[derive(Debug)]
+pub struct ConicalMap<K: Key, V: Value> {
+    map: HashMap<K, V>,
+    //    map: BTreeMap<K, V>,
+    lightlike_asserted: HashMap<K, V>, //future and now are the same
+    //    lightlike_asserted: BTreeMap<K, V>,
+    space_retracted: HashMap<K, V>, //the space takes memory and time and represents a relativistic timestamp at soliton time
+    //    space_retracted: BTreeMap<K, V>,
+    timelike_projected: HashMap<K, V>, //that instanton of time and place in memory is relativistically causal consistent with the past
+    //    timelike_projected: BTreeMap<K, V>,
+    nullable_lightlike_upsert: HashMap<K, V>, //the nullable lightlike upsert is a lightlike assertion, and a space like retraction
+
+    //    nullable_lightlike_upsert: BTreeMap<K, V>,
+    //    nullable_lightlike_upsert: HashMap<K, V>,
+    //    nullable_lightlike_upsert: BTreeMap<K, V>,
+}
 
 
 
+#[derive(Causetid, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct LightlikeAssertion<K: Key, V: Value> {
+    soliton_id: K,  //the soliton id is the key
+    causetid: HashMap<K, V>, //the causetid is the value
+    key: K, //dummy key
+    value: V //dummy value
+}
 
 
-
-
-
-
-
-
+#[derive(Causetid, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct SpaceLikeRetraction<K: Key, V: Value> {
+    soliton_id: K,  //the soliton id is the key
+    causetid: HashMap<K, V>, //the causetid is the value
+    key: K, //dummy key
+    value: V //dummy value
+}
 
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
