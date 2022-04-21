@@ -6,7 +6,7 @@ edition = "2021"
 # See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "allegro_poset"
-path = "lib.rs"
+path = "src/lib.rs"
 crate-type = ["cdylib"]
 
 
