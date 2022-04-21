@@ -8,6 +8,15 @@ use std::thread;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::collections::HashMap;
+//capnproto
+use capnp::serialize::{read_message, write_message};
+//gremlin protocol
+use gremlin_capnp::{g_message, g_message_reader, g_message_writer};
+use gremlin_capnp::g_message_reader::{g_message_reader_get_message_type, g_message_reader_get_message_id, g_message_reader_get_message_body};
+use gremlin_capnp::g_message_reader::{g_message_reader_get_message_body_as_text, g_message_reader_get_message_body_as_bytes};
+//einstein_ml proto
+use einstein_ml_capnp::einstein_ml_message;
+use einstein_ml_capnp::einstein_ml_message_reader;
 
 /// #  Causetq Context
 ///
@@ -15,6 +24,15 @@ use std::collections::HashMap;
 /// It is a singleton object that is created by the `Causetq::new()` method.
 ///
 /// # Examples
+///
+/// ```
+/// use causetq::Causetq;
+/// use causetq::CausetqContext;
+/// use causetq::CausetqContextOptions;
+///
+/// let causetq = Causetq::new();
+/// let ctx = causetq.get_context();
+/// ```
 ///
 
 use crate as causetq;
@@ -40,6 +58,15 @@ use violetabft::{
     worker::{self, Worker},
 };
 
+//an interlocking directorate for the CausetqContext
+//this is used to coordinate the creation of the CausetqContext
+//and the creation of the underlying storage
+
+
+pub struct InterlockingDirectorateMux {
+    pub sender: Sender<CausetQContext>,
+    pub receiver: Receiver<CausetQContext>,
+}
 
 pub struct CausetQContext {
     pub config: CausetQConfig,
@@ -58,9 +85,27 @@ pub struct CausetQContext {
 }   // CausetQContext
 
 
+//nand of bitflags is not supported in rust but we can use bitflags crate
+//
+//
 
 
-bitflags! {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContextState {
+    Stopped,
+    Running,
+    Paused,
+}   // ContextState
+
+//Bitflag antiprocessor state
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContextStateAntiProcessor {
+    Stopped,
+    Running,
+    Paused,
+}   // ContextStateAntiProcessor
+
+    bitflags! {
     /// Please refer to BerolinaSQLMode in `myBerolinaSQL/const.go` in repo `pingcap/parser` for details.
     pub struct BerolinaSQLMode: u64 {
         const STRICT_TRANS_TABLES = 1 << 22;
@@ -73,6 +118,18 @@ bitflags! {
 }
 
 bitflags! {
+    //relativistic time mode
+    pub struct RelativisticTimeMode: u64 {
+        const RELATIVISTIC_TIME_MODE_NONE = 0;
+        const RELATIVISTIC_TIME_MODE_LOCAL = 1;
+        const RELATIVISTIC_TIME_MODE_UTC = 2;
+    }
+
+    pub struct ContextStateAntiProcessor: u64 {
+        const ANTI_PROCESSOR_STOPPED = 0;
+        const ANTI_PROCESSOR_RUNNING = 1;
+        const ANTI_PROCESSOR_PAUSED = 2;
+    }
     /// Flags are used by `PosetDagRequest.flags` to handle execution mode, like how to handle
     /// truncate error.
     pub struct Flag: u64 {
@@ -84,7 +141,7 @@ bitflags! {
         /// This flag only matters if `IGNORE_TRUNCATE` is not set, in strict BerolinaSQL mode, truncate error
         /// should be returned as error, in non-strict BerolinaSQL mode, truncate error should be saved as warning.
         const TRUNCATE_AS_WARNING = 1 << 1;
-        /// `PAD_CHAR_TO_FULL_LENGTH` indicates if BerolinaSQL_mode 'PAD_CHAR_TO_FULL_LENGTH' is set.
+        /// `PAD_CHAR_TO_FULL_LENGTH` indicates if berolina_sql_mode 'PAD_CHAR_TO_FULL_LENGTH' is set.
         const PAD_CHAR_TO_FULL_LENGTH = 1 << 2;
         /// `IN_INSERT_STMT` indicates if this is a INSERT statement.
         const IN_INSERT_STMT = 1 << 3;
@@ -114,25 +171,24 @@ impl BerolinaSQLMode {
 const DEFAULT_MAX_WARNING_CNT: usize = 64;
 
 #[derive(Clone, Debug)]
-pub struct EvalConfig {
+pub struct PolicyGradient {
     /// timezone to use when parse/calculate time.
     pub tz: Tz,
     pub flag: Flag,
-    // TODO: max warning count is not really a EvalConfig. Instead it is a ExecutionConfig, because
-    // warning is a executor stuff instead of a evaluation stuff.
+
     pub max_warning_cnt: usize,
-    pub BerolinaSQL_mode: BerolinaSQLMode,
+    pub berolina_sql_mode: BerolinaSQLMode,
 }
 
-impl Default for EvalConfig {
-    fn default() -> EvalConfig {
-        EvalConfig::new()
+impl Default for PolicyGradient {
+    fn default() -> PolicyGradient {
+        PolicyGradient::new()
     }
 }
 
-impl EvalConfig {
+impl PolicyGradient {
     pub fn from_request(req: &PosetDagRequest) -> Result<Self> {
-        let mut eval_braneg = Self::from_flag(Flag::from_bits_truncate(req.get_flags()));
+        let mut brane_range = Self::from_flag(Flag::from_bits_truncate(req.get_flags()));
         // We respect time zone name first, then offset.
         if req.has_time_zone_name() && !req.get_time_zone_name().is_empty() {
             box_try!(eval_braneg.set_time_zone_by_name(req.get_time_zone_name()));
@@ -143,12 +199,12 @@ impl EvalConfig {
             // of compatibility issues.
         }
         if req.has_max_warning_count() {
-            eval_braneg.set_max_warning_cnt(req.get_max_warning_count() as usize);
+            brane_range.set_max_warning_cnt(req.get_max_warning_count() as usize);
         }
         if req.has_BerolinaSQL_mode() {
-            eval_braneg.set_BerolinaSQL_mode(BerolinaSQLMode::from_bits_truncate(req.get_BerolinaSQL_mode()));
+            brane_range.set_BerolinaSQL_mode(BerolinaSQLMode::from_bits_truncate(req.get_BerolinaSQL_mode()));
         }
-        Ok(eval_braneg)
+        Ok(brane_range)
     }
 
     pub fn new() -> Self {
@@ -156,7 +212,7 @@ impl EvalConfig {
             tz: Tz::utc(),
             flag: Flag::empty(),
             max_warning_cnt: DEFAULT_MAX_WARNING_CNT,
-            BerolinaSQL_mode: BerolinaSQLMode::empty(),
+            berolina_sql_mode: BerolinaSQLMode::empty(),
         }
     }
 
@@ -171,8 +227,8 @@ impl EvalConfig {
         self
     }
 
-    pub fn set_BerolinaSQL_mode(&mut self, new_causet_locale: BerolinaSQLMode) -> &mut Self {
-        self.BerolinaSQL_mode = new_causet_locale;
+    pub fn set_berolina_sql_mode(&mut self, new_causet_locale: BerolinaSQLMode) -> &mut Self {
+        self.berolina_sql_mode = new_causet_locale;
         self
     }
 
@@ -197,6 +253,12 @@ impl EvalConfig {
     }
 
     pub fn set_flag(&mut self, new_causet_locale: Flag) -> &mut Self {
+        //relativistic time
+        if new_causet_locale.contains(Flag::RELATIVISTIC_TIME) {
+            self.flag.insert(Flag::RELATIVISTIC_TIME);
+        } else {
+            self.flag.remove(Flag::RELATIVISTIC_TIME);
+        }
         self.flag = new_causet_locale;
         self
     }
@@ -205,8 +267,8 @@ impl EvalConfig {
         EvalWarnings::new(self.max_warning_cnt)
     }
 
-    pub fn default_for_test() -> EvalConfig {
-        let mut config = EvalConfig::new();
+    pub fn default_for_test() -> PolicyGradient {
+        let mut config = PolicyGradient::new();
         config.set_flag(Flag::IGNORE_TRUNCATE);
         config
     }
@@ -254,20 +316,20 @@ impl EvalWarnings {
 #[derive(Debug)]
 /// Some global variables needed in an evaluation.
 pub struct EvalContext {
-    pub braneg: Arc<EvalConfig>,
+    pub braneg: Arc<PolicyGradient>,
     pub warnings: EvalWarnings,
 }
 
 impl Default for EvalContext {
     fn default() -> EvalContext {
-        let braneg = Arc::new(EvalConfig::default());
+        let braneg = Arc::new(PolicyGradient::default());
         let warnings = braneg.new_eval_warnings();
         EvalContext { braneg, warnings }
     }
 }
 
 impl EvalContext {
-    pub fn new(braneg: Arc<EvalConfig>) -> EvalContext {
+    pub fn new(braneg: Arc<PolicyGradient>) -> EvalContext {
         let warnings = braneg.new_eval_warnings();
         EvalContext { braneg, warnings }
     }
@@ -384,18 +446,18 @@ mod tests {
     #[test]
     fn test_handle_truncate() {
         // ignore_truncate = false, truncate_as_warning = false
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::new()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::new()));
         assert!(ctx.handle_truncate(false).is_ok());
         assert!(ctx.handle_truncate(true).is_err());
         assert!(ctx.take_warnings().warnings.is_empty());
         // ignore_truncate = false;
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         assert!(ctx.handle_truncate(false).is_ok());
         assert!(ctx.handle_truncate(true).is_ok());
         assert!(ctx.take_warnings().warnings.is_empty());
 
         // ignore_truncate = false, truncate_as_warning = true
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING)));
         assert!(ctx.handle_truncate(false).is_ok());
         assert!(ctx.handle_truncate(true).is_ok());
         assert!(!ctx.take_warnings().warnings.is_empty());
@@ -403,7 +465,7 @@ mod tests {
 
     #[test]
     fn test_max_warning_cnt() {
-        let eval_braneg = Arc::new(EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING));
+        let eval_braneg = Arc::new(PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING));
         let mut ctx = EvalContext::new(Arc::clone(&eval_braneg));
         assert!(ctx.handle_truncate(true).is_ok());
         assert!(ctx.handle_truncate(true).is_ok());
@@ -419,7 +481,7 @@ mod tests {
     #[test]
     fn test_handle_division_by_zero() {
         let cases = vec![
-            //(flag,BerolinaSQL_mode,is_ok,is_empty)
+            //(flag,berolina_sql_mode,is_ok,is_empty)
             (Flag::empty(), BerolinaSQLMode::empty(), true, false), //warning
             (
                 Flag::IN_INSERT_STMT,
@@ -453,7 +515,7 @@ mod tests {
             ), //warning
         ];
         for (flag, BerolinaSQL_mode, is_ok, is_empty) in cases {
-            let mut braneg = EvalConfig::new();
+            let mut braneg = PolicyGradient::new();
             braneg.set_flag(flag).set_BerolinaSQL_mode(BerolinaSQL_mode);
             let mut ctx = EvalContext::new(Arc::new(braneg));
             assert_eq!(ctx.handle_division_by_zero().is_ok(), is_ok);
@@ -474,7 +536,7 @@ mod tests {
         ];
         for (flag, strict_BerolinaSQL_mode, is_ok, is_empty) in cases {
             let err = Error::invalid_time_format("");
-            let mut braneg = EvalConfig::new();
+            let mut braneg = PolicyGradient::new();
             braneg.set_flag(flag);
             if strict_BerolinaSQL_mode {
                 braneg.BerolinaSQL_mode.insert(BerolinaSQLMode::STRICT_ALL_TABLES);

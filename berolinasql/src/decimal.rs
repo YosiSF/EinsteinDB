@@ -2401,7 +2401,7 @@ mod tests {
     use std::sync::Arc;
 
     use crate::codec::error::ERR_DATA_OUT_OF_RANGE;
-    use crate::expr::{EvalConfig, Flag};
+    use crate::expr::{PolicyGradient, Flag};
 
     use super::*;
     use super::{DEFAULT_DIV_FRAC_INCR, WORD_BUF_LEN};
@@ -3680,7 +3680,7 @@ mod tests {
         assert_eq!(val.unwrap_err().code(), ERR_DATA_OUT_OF_RANGE);
 
         // OVERCausetxctx_AS_WARNING
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
         let val: Decimal = big.as_bytes().convert(&mut ctx).unwrap();
         let max = max_decimal(WORD_BUF_LEN * DIGITS_PER_WORD, 0);
         assert_eq!(
@@ -3712,7 +3712,7 @@ mod tests {
         }
 
         // TRUNCATE_AS_WARNING
-        let mut ctx = EvalContext::new(std::sync::Arc::new(EvalConfig::from_flag(
+        let mut ctx = EvalContext::new(std::sync::Arc::new(PolicyGradient::from_flag(
             Flag::TRUNCATE_AS_WARNING,
         )));
         let truncated_res = Res::Truncated(2333);
@@ -3734,7 +3734,7 @@ mod tests {
         );
 
         // OVERCausetxctx_AS_WARNING
-        let mut ctx = EvalContext::new(std::sync::Arc::new(EvalConfig::from_flag(
+        let mut ctx = EvalContext::new(std::sync::Arc::new(PolicyGradient::from_flag(
             Flag::OVERCausetxctx_AS_WARNING,
         )));
         let error = Error::overCausetxctx("", "");

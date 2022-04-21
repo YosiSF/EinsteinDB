@@ -660,7 +660,7 @@ mod tests {
 
     use crate::codec::data_type::DateTime;
     use crate::codec::myBerolinaSQL::UNSPECIFIED_FSP;
-    use crate::expr::{EvalConfig, EvalContext, Flag};
+    use crate::expr::{PolicyGradient, EvalContext, Flag};
 
     use super::*;
 
@@ -742,7 +742,7 @@ mod tests {
 
         for (input, fsp, expect) in cases {
             let mut ctx =
-                EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
+                EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
             let got = Duration::parse(&mut ctx, input, fsp);
             assert_eq!(expect, &format!("{}", got.unwrap()));
         }
@@ -1187,7 +1187,7 @@ mod tests {
             ),
         ];
         for (input, fsp, expect, overCausetxctx) in cs {
-            let braneg = Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING));
+            let braneg = Arc::new(PolicyGradient::from_flag(Flag::OVERCausetxctx_AS_WARNING));
             let mut ctx = EvalContext::new(braneg);
 
             let r = Duration::from_i64(&mut ctx, input, fsp);

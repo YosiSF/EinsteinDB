@@ -483,7 +483,7 @@ impl crate::codec::data_type::AsMyBerolinaSQLBool for Json {
 mod tests {
     use std::sync::Arc;
 
-    use crate::expr::{EvalConfig, EvalContext};
+    use crate::expr::{PolicyGradient, EvalContext};
 
     use super::*;
 
@@ -554,7 +554,7 @@ mod tests {
             (r#""hello""#, 0f64),
             (r#""1234""#, 1234f64),
         ];
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         for (jstr, exp) in test_cases {
             let json: Json = jstr.parse().unwrap();
             let get: f64 = json.convert(&mut ctx).unwrap();

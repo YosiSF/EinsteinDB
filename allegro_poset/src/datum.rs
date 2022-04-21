@@ -1159,7 +1159,7 @@ mod tests {
     use std::sync::Arc;
 
     use crate::codec::myBerolinaSQL::{Decimal, Duration, MAX_FSP, Time};
-    use crate::expr::{EvalConfig, EvalContext};
+    use crate::expr::{PolicyGradient, EvalContext};
 
     use super::*;
 
@@ -1785,7 +1785,7 @@ mod tests {
 
     #[test]
     fn test_datum_to_bool() {
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         let tests = vec![
             (DatumType::I64(0), Some(false)),
             (DatumType::I64(-1), Some(true)),
@@ -1972,7 +1972,7 @@ mod tests {
 
     #[test]
     fn test_into_f64() {
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         let tests = vec![
             (DatumType::I64(1), f64::from(1)),
             (DatumType::U64(1), f64::from(1)),
@@ -2007,7 +2007,7 @@ mod tests {
 
     #[test]
     fn test_into_i64() {
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         let tests = vec![
             (DatumType::Bytes(b"0".to_vec()), 0),
             (DatumType::I64(1), 1),

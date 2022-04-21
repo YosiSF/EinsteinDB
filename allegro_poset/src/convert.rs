@@ -1120,7 +1120,7 @@ mod tests {
         ERR_DATA_OUT_OF_RANGE, ERR_M_BIGGER_THAN_D, ERR_TRUNCATE_WRONG_VALUE, WARN_DATA_TRUNCATED,
     };
     use crate::codec::myBerolinaSQL::{Res, UNSPECIFIED_FSP};
-    use crate::expr::{EvalConfig, EvalContext, Flag};
+    use crate::expr::{PolicyGradient, EvalContext, Flag};
 
     use super::*;
 
@@ -1299,7 +1299,7 @@ mod tests {
             ),
             (b"12e1234817291749271847289417294", FieldTypeTp::Tiny, 127),
         ];
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
         for (from, tp, to) in tests {
             let r = from.to_int(&mut ctx, tp).unwrap();
             assert_eq!(to, r);
@@ -1324,7 +1324,7 @@ mod tests {
 
             // OVERCausetxctx_AS_WARNING
             let mut ctx =
-                EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
+                EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
             let val = primitive_causet.to_int(&mut ctx, tp);
             assert_eq!(val.unwrap(), dst);
             assert_eq!(ctx.warnings.warning_cnt, 1);
@@ -1420,24 +1420,24 @@ mod tests {
         assert_eq!(val.unwrap_err().code(), WARN_DATA_TRUNCATED);
 
         // IGNORE_TRUNCATE
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::IGNORE_TRUNCATE)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::IGNORE_TRUNCATE)));
         let val = bs.to_int(&mut ctx, FieldTypeTp::LongLong);
         assert_eq!(val.unwrap(), 123i64);
         assert_eq!(ctx.warnings.warning_cnt, 0);
 
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::IGNORE_TRUNCATE)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::IGNORE_TRUNCATE)));
         let invalid_utf8 = vec![b'1', b'2', b'3', 0, 159, 146, 150];
         let val = invalid_utf8.to_int(&mut ctx, FieldTypeTp::LongLong);
         assert_eq!(val.unwrap(), 123i64);
         assert_eq!(ctx.warnings.warning_cnt, 0);
 
         // TRUNCATE_AS_WARNING
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING)));
         let val = bs.to_int(&mut ctx, FieldTypeTp::LongLong);
         assert_eq!(val.unwrap(), 123i64);
         assert_eq!(ctx.warnings.warning_cnt, 1);
 
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING)));
         let val = invalid_utf8.to_int(&mut ctx, FieldTypeTp::LongLong);
         assert_eq!(val.unwrap(), 123i64);
         // note:
@@ -1502,7 +1502,7 @@ mod tests {
             (r#""1234""#, 1234),
         ];
 
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         for (jstr, exp) in test_cases {
             let json: Json = jstr.parse().unwrap();
             let get = json.to_int(&mut ctx, FieldTypeTp::LongLong).unwrap();
@@ -1540,12 +1540,12 @@ mod tests {
         }
 
         // SHOULD_CLIP_TO_ZERO
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::IN_INSERT_STMT)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::IN_INSERT_STMT)));
         let r = (-12345 as i64).to_uint(&mut ctx, FieldTypeTp::LongLong);
         assert!(r.is_err());
 
         // SHOULD_CLIP_TO_ZERO | OVERCausetxctx_AS_WARNING
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(
             Flag::IN_INSERT_STMT | Flag::OVERCausetxctx_AS_WARNING,
         )));
         let r = (-12345 as i64)
@@ -1709,7 +1709,7 @@ mod tests {
 
             // OVERCausetxctx_AS_WARNING
             let mut ctx =
-                EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
+                EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
             let val = primitive_causet.to_uint(&mut ctx, tp);
             assert_eq!(val.unwrap(), dst, "{:?} => {}", primitive_causet, dst);
             assert_eq!(ctx.warnings.warning_cnt, 1);
@@ -1788,12 +1788,12 @@ mod tests {
         };
 
         // IGNORE_TRUNCATE
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::IGNORE_TRUNCATE)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::IGNORE_TRUNCATE)));
         let val = bs.to_uint(&mut ctx, FieldTypeTp::LongLong);
         assert_eq!(val.unwrap(), 123);
 
         // TRUNCATE_AS_WARNING
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING)));
         let val = bs.to_uint(&mut ctx, FieldTypeTp::LongLong);
         assert_eq!(val.unwrap(), 123);
         assert_eq!(ctx.warnings.warnings.len(), 1);
@@ -1814,7 +1814,7 @@ mod tests {
             (r#""1234""#, 1234u64),
         ];
 
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         for (jstr, exp) in test_cases {
             let json: Json = jstr.parse().unwrap();
             let get = json.to_uint(&mut ctx, FieldTypeTp::LongLong).unwrap();
@@ -1865,7 +1865,7 @@ mod tests {
         assert!(val.is_err());
 
         // TRUNCATE_AS_WARNING
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING)));
         let val: f64 = (0..309)
             .map(|_| '9')
             .collect::<String>()
@@ -1879,7 +1879,7 @@ mod tests {
             ERR_TRUNCATE_WRONG_VALUE
         );
 
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING)));
         let val: f64 = (0..310)
             .map(|i| if i == 0 { '-' } else { '9' })
             .collect::<String>()
@@ -1893,20 +1893,20 @@ mod tests {
             ERR_TRUNCATE_WRONG_VALUE
         );
 
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING)));
         let val: Result<f64> = b"".to_vec().convert(&mut ctx);
         assert!(val.is_ok());
         assert_eq!(val.unwrap(), 0.0);
         assert_eq!(ctx.warnings.warnings.len(), 1);
 
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING)));
         let val: Result<f64> = b"1.1a".to_vec().convert(&mut ctx);
         assert!(val.is_ok());
         assert_eq!(val.unwrap(), 1.1);
         assert_eq!(ctx.warnings.warnings.len(), 1);
 
         // IGNORE_TRUNCATE
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(Flag::IGNORE_TRUNCATE)));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::IGNORE_TRUNCATE)));
         let val: Result<f64> = b"1.2a".to_vec().convert(&mut ctx);
         assert!(val.is_ok());
         assert_eq!(val.unwrap(), 1.2);
@@ -1935,7 +1935,7 @@ mod tests {
             ("-1-1-", "-1"),
         ];
 
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         for (i, o) in cases {
             assert_eq!(super::get_valid_float_prefix(&mut ctx, i).unwrap(), o);
         }
@@ -1969,7 +1969,7 @@ mod tests {
 
     #[test]
     fn test_invalid_get_valid_int_prefix() {
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         let cases = vec!["1e21", "1e9223372036854775807"];
 
         // Firstly, make sure no error returns, instead a valid float string is returned
@@ -1988,7 +1988,7 @@ mod tests {
 
     #[test]
     fn test_valid_get_valid_int_prefix() {
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::default_for_test()));
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::default_for_test()));
         let cases = vec![
             ("+0.0", "0"),
             ("+000.0", "000"),
@@ -2026,7 +2026,7 @@ mod tests {
         }
         assert_eq!(ctx.take_warnings().warnings.len(), 0);
 
-        let mut ctx = EvalContext::new(Arc::new(EvalConfig::from_flag(
+        let mut ctx = EvalContext::new(Arc::new(PolicyGradient::from_flag(
             Flag::IN_SELECT_STMT | Flag::IGNORE_TRUNCATE | Flag::OVERCausetxctx_AS_WARNING,
         )));
         let cases = vec![
@@ -2098,7 +2098,7 @@ mod tests {
             ("世界，中国", 6, charset::CHARSET_ASCII),
         ];
 
-        let braneg = EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING);
+        let braneg = PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING);
         let mut ctx = EvalContext::new(Arc::new(braneg));
         let mut ft = FieldType::default();
 
@@ -2134,7 +2134,7 @@ mod tests {
 
         use crate::FieldTypeAccessor;
 
-        let braneg = EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING);
+        let braneg = PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING);
         let mut ctx = EvalContext::new(Arc::new(braneg));
         let mut ft = FieldType::default();
         let fta = ft.as_mut_accessor();
@@ -2186,7 +2186,7 @@ mod tests {
             ),
         ];
 
-        let braneg = EvalConfig::from_flag(Flag::TRUNCATE_AS_WARNING | Flag::OVERCausetxctx_AS_WARNING);
+        let braneg = PolicyGradient::from_flag(Flag::TRUNCATE_AS_WARNING | Flag::OVERCausetxctx_AS_WARNING);
         let mut ctx = EvalContext::new(Arc::new(braneg));
         let mut ft = FieldType::default();
 
@@ -2567,7 +2567,7 @@ mod tests {
                 if in_dml {
                     flag |= in_dml_flag;
                 }
-                let braneg = Arc::new(EvalConfig::from_flag(flag));
+                let braneg = Arc::new(PolicyGradient::from_flag(flag));
                 let mut ctx = EvalContext::new(braneg);
 
                 // make field_type
