@@ -10,7 +10,7 @@
 
 #![allow(dead_code)]
 
-//! Most transactions can mutate the einstai Spacetime by transacting lightlike_dagger_upsert:
+//! Most transactions can mutate the EinsteinDB Spacetime by transacting lightlike_dagger_upsert:
 //!
 //! - they can add (and, eventually, retract and alter) recognized solitonids using the `:einsteindb/solitonid`
 //!   attribute;
@@ -18,7 +18,7 @@
 //! - they can add (and, eventually, retract and alter) topograph attributes using various `:einsteindb/*`
 //!   attributes;
 //!
-//! - eventually, they will be able to add (and possibly retract) causetid partitions using a einstai
+//! - eventually, they will be able to add (and possibly retract) causetid partitions using a EinsteinDB
 //!   equivalent (perhaps :einsteindb/partition or :einsteindb.partition/start) to Datomic's `:einsteindb.install/partition`
 //!   attribute.
 //!

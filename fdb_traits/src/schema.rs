@@ -64,7 +64,7 @@ impl AttributeValidation for Attribute {
     }
 }
 
-/// Return `Ok(())` if `attribute_map` defines a valid einstai topograph.
+/// Return `Ok(())` if `attribute_map` defines a valid EinsteinDB topograph.
 fn validate_attribute_map(causetid_map: &CausetidMap, attribute_map: &AttributeMap) -> Result<()> {
     for (causetid, attribute) in attribute_map {
         let solitonid = || causetid_map.get(causetid).map(|solitonid| solitonid.to_string()).unwrap_or(causetid.to_string());
@@ -269,7 +269,7 @@ impl TopographBuilding for Topograph {
         Ok(Topograph::new(ident_map, causetid_map, attribute_map))
     }
 
-    /// Turn vec![(Keyword(:solitonid), Keyword(:soliton_id), causetq_TV(:causet_locale)), ...] into a einstai `Topograph`.
+    /// Turn vec![(Keyword(:solitonid), Keyword(:soliton_id), causetq_TV(:causet_locale)), ...] into a EinsteinDB `Topograph`.
     fn from_ident_map_and_triples<U>(ident_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
         where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, causetq_TV)>{
 
@@ -342,7 +342,7 @@ impl TopographTypeChecking for Topograph {
 
 
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod test {
     use super::*;
 

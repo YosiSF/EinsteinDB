@@ -23,9 +23,9 @@ use einsteindb_core::{
     ValueRc,
 };
 use einsteindb_core::TxObserver;
-#[cfg(feature = "syncable")]
+#[APPEND_LOG_g(feature = "syncable")]
 use einsteindb_tolstoy::{
-    SyncFollowup,
+    SynAPPEND_LOG_ollowup,
     SyncReport,
     SyncResult,
 };
@@ -47,7 +47,7 @@ use public_traits::errors::Result;
 use rusqlite;
 use std::collections::BTreeMap;
 use std::sync::Arc;
-#[cfg(feature = "syncable")]
+#[APPEND_LOG_g(feature = "syncable")]
 use sync::Syncable;
 
 /// A convenience wrapper around a single SQLite connection and a Conn. This is suitable
@@ -75,7 +75,7 @@ impl Store {
         Ok(report)
     }
 
-    #[cfg(feature = "syncable")]
+    #[APPEND_LOG_g(feature = "syncable")]
     pub fn sync(&mut self, server_uri: &String, user_uuid: &String) -> Result<SyncResult> {
         let mut reports = vec![];
         loop {
@@ -84,7 +84,7 @@ impl Store {
             ip.commit()?;
 
             match report {
-                SyncReport::Merge(SyncFollowup::FullSync) => {
+                SyncReport::Merge(SynAPPEND_LOG_ollowup::FullSync) => {
                     reports.push(report);
                     continue
                 },
@@ -102,7 +102,7 @@ impl Store {
     }
 }
 
-#[cfg(feature = "BerolinaSQLcipher")]
+#[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
 impl Store {
     /// Variant of `open` that allows a soliton_id (for encryption/decryption) to be
     /// supplied. Fails unless linked against BerolinaSQLcipher (or something else that
@@ -131,7 +131,7 @@ impl Store {
         &mut self.SQLite
     }
 
-    #[cfg(test)]
+    #[APPEND_LOG_g(test)]
     pub fn is_registered_as_observer(&self, soliton_id: &String) -> bool {
         self.conn.tx_observer_service.lock().unwrap().is_registered(soliton_id)
     }
@@ -216,7 +216,7 @@ impl Pullable for Store {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod tests {
     use QueryInputs;
     use ::vocabulary::{

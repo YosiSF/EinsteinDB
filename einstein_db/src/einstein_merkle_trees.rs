@@ -1,28 +1,5 @@
-//Store everything in a mongodb instance for now
-use mongodb::{
-    bson::{Bson, doc},
-    Client,
-    coll::options::FindOptions,
-    error::Error,
-    options::ClientOptions,
-};
 
-// Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
-//foundationdb crate
-use crate::{
-    einsteindb_grpc::{
-        einsteindb_grpc::{einsteindb_grpc::EinsteinDBGrpcClient, EinsteinDBGrpcClientStreaming},
-        EinsteinDBGrpcClientStreamingExt,
-    },
-    EinsteinDBGrpcClientExt,
-    EinsteinDBGrpcClientStreamingExt,
-};
-use crate::errors::Result;
-use crate::fdb_lsh_treeKV;
-use crate::fdb_lsh_treeKV;
-use crate::options::WriteOptions;
-use crate::violetabft_einstein_merkle_tree::VioletaBFTeinstein_merkle_tree;
-use crate::write_alexandro::WriteBatch;
+
 
 #[derive(Clone, Debug)]
 pub struct EinsteinMerkleTrees<K, R> {

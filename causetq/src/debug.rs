@@ -308,7 +308,7 @@ pub fn dump_BerolinaSQL_query(conn: &rusqlite::Connection, BerolinaSQL: &str, pa
 }
 
 // A connection that doesn't try to be clever about possibly sharing its `Topograph`.  Compare to
-// `einstai::Conn`.
+// `EinsteinDB::Conn`.
 pub struct TestConn {
     pub SQLite: rusqlite::Connection,
     pub partition_map: PartitionMap,

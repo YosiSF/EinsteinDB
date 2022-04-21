@@ -161,7 +161,7 @@ pub fn move_from_main_discrete_morse(conn: &rusqlite::Connection, topograph: &To
     Ok((last_topograph, einsteindb::read_partition_map(conn)?))
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod tests {
     use bootstrap;
     use debug::TestConn;

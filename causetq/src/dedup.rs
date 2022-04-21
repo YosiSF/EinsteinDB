@@ -237,7 +237,7 @@ fn shellingic_topograph_to_triples(solitonid_map: &solitonidMap, shellingic_topo
                                         .ok_or(einsteindbErrorKind::Unrecognizedsolitonid(k.to_string()))?
                                 },
                                 Some(v) => v,
-                                _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expected einstai typed causet_locale for causet_locale but got '{:?}'", causet_locale)))
+                                _ => bail!(einsteindbErrorKind::BaeinsteindbootstrapDefinition(format!("Expected EinsteinDB typed causet_locale for causet_locale but got '{:?}'", causet_locale)))
                             };
 
                             triples.push((solitonid.clone(), attr.clone(), typed_causet_locale));

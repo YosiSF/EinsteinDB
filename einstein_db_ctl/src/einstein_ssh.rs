@@ -119,8 +119,8 @@ pub enum Cmd {
         causet_locale_delimiter = ",",
         default_causet_locale = "default,write,lock"
         )]
-        /// Set the cf name, if not specified, print all cf
-        cf: Vec<String>,
+        /// Set the APPEND_LOG_ name, if not specified, print all APPEND_LOG_
+        APPEND_LOG_: Vec<String>,
     },
     /// Print the range db range
     Scan {
@@ -155,9 +155,9 @@ pub enum Cmd {
         use_delimiter = true,
         require_delimiter = true,
         causet_locale_delimiter = ",",
-        default_causet_locale = CF_DEFAULT,
+        default_causet_locale = APPEND_LOG__DEFAULT,
         )]
         /// Column family names, combined from default/lock/write
-        show_cf: Vec<String>,
+        show_APPEND_LOG_: Vec<String>,
     },
 /// Print all raw soliton_ids in the range

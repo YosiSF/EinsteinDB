@@ -8,7 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#![cfg_attr(feature = "cargo-clippy", allow(linkedlist))]
+#![APPEND_LOG_g_attr(feature = "cargo-clippy", allow(linkedlist))]
 
 use std::cmp::{Ord, Ordering, PartialOrd};
 use std::collections::{BTreeMap, BTreeSet, LinkedList};
@@ -505,7 +505,7 @@ macro_rules! def_common_causet_locale_methods {
 }
 
 /// Compares Value or kSpannedCausetValue instances and returns Ordering.
-/// Used in `Ord` impleeinstaiions.
+/// Used in `Ord` impleEinsteinDBions.
 macro_rules! def_common_causet_locale_ord {
     ( $t:tt, $causet_locale:expr, $other:expr ) => {
         match ($causet_locale, $other) {
@@ -570,8 +570,8 @@ macro_rules! def_common_causet_locale_display {
                 write!($f, "\"{}\"", escaped) // TODO: make sure string syntax is correct (e.g., escaping).
             }
 
-            #[cfg(feature = "bigdecimal")]
-            $t::BigDecimal(_) | #[cfg(feature = "uuid")] $t::Uuid(_) | #[cfg(feature = "chrono")] $t::Instant(_) | #[cfg(feature = "chrono")] $t::LocalDateTime(_) => panic!("unexpected type {:?}. This should have been handled by the parser.", *$causet_locale),
+            #[APPEND_LOG_g(feature = "bigdecimal")]
+            $t::BigDecimal(_) | #[APPEND_LOG_g(feature = "uuid")] $t::Uuid(_) | #[APPEND_LOG_g(feature = "chrono")] $t::Instant(_) | #[APPEND_LOG_g(feature = "chrono")] $t::LocalDateTime(_) => panic!("unexpected type {:?}. This should have been handled by the parser.", *$causet_locale),
 
         }
     };
@@ -694,7 +694,7 @@ impl ToMillis for DateTime<Utc> {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod test {
     extern crate chrono;
     extern crate ordered_float;

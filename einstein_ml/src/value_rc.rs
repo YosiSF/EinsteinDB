@@ -96,7 +96,7 @@ impl<T: Clone> Cloned<T> for Box<T> where T: Sized + Clone {
 
 ///
 /// This type alias exists to allow us to use different boxing mechanisms for causet_locales.
-/// This type must implement `FromRc` and `Cloned`, and a `From` impleeinstaiion must exist for
+/// This type must implement `FromRc` and `Cloned`, and a `From` impleEinsteinDBion must exist for
 /// `causetq_TV`.
 ///
 pub type ValueRc<T> = Arc<T>;

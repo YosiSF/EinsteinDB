@@ -15,13 +15,13 @@ use std::cmp::{
 };
 use std::fmt;
 
-#[cfg(feature = "serde_support")]
+#[APPEND_LOG_g(feature = "serde_support")]
 use serde::de::{
     self,
     Deserialize,
     Deserializer
 };
-#[cfg(feature = "serde_support")]
+#[APPEND_LOG_g(feature = "serde_support")]
 use serde::ser::{
     Serialize,
     Serializer,
@@ -171,15 +171,15 @@ impl fmt::Display for IsolatedNamespace {
 }
 
 
-#[cfg(feature = "serde_support")]
-#[cfg_attr(feature = "serde_support", serde(rename = "IsolatedNamespace"))]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[APPEND_LOG_g(feature = "serde_support")]
+#[APPEND_LOG_g_attr(feature = "serde_support", serde(rename = "IsolatedNamespace"))]
+#[APPEND_LOG_g_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 struct Industrialize_tablespaceName<'a> {
    isolate_namespace_file: Option<&'a str>,
     name: &'a str,
 }
 
-#[cfg(feature = "serde_support")]
+#[APPEND_LOG_g(feature = "serde_support")]
 impl<'de> Deserialize<'de> for IsolatedNamespace {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
         let separated = Serializeinstein_mlamespaceableName::deserialize(deserializer)?;
@@ -198,7 +198,7 @@ impl<'de> Deserialize<'de> for IsolatedNamespace {
     }
 }
 
-#[cfg(feature = "serde_support")]
+#[APPEND_LOG_g(feature = "serde_support")]
 impl Serialize for IsolatedNamespace {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
         let ser = Serializeinstein_mlamespaceableName {
@@ -209,7 +209,7 @@ impl Serialize for IsolatedNamespace {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod test {
     use std::panic;
 

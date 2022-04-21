@@ -15,23 +15,23 @@ use einsteindb_util::time::duration_to_sec;
 use einsteindb_util::yatp_pool;
 use ekvproto::kvrpcpb::ApiVersion;
 use encryption_export::DataKeyManager;
-use engine_traits::{ColumnFamilyOptions as ColumnFamilyOptionsTrait, DBOptionsExt, NAMESPACEDOptionsExt};
-use engine_traits::{NAMESPACED_DEFAULT, NAMESPACED_LOCK, NAMESPACED_VIOLETABFT, NAMESPACED_WRITE};
-use fdb_engine::{
+use interlocking_directorate_traits::{ColumnFamilyOptions as ColumnFamilyOptionsTrait, DBOptionsExt, NAMESPACEDOptionsExt};
+use interlocking_directorate_traits::{NAMESPACED_DEFAULT, NAMESPACED_LOCK, NAMESPACED_VIOLETABFT, NAMESPACED_WRITE};
+use fdb_interlocking_directorate::{
     DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE, DEFAULT_PROP_SIZE_INDEX_DISTANCE, FdbdbLogger, FdbEngine,
     FdbEventListener, FdbSstPartitionerFactory, RangePropertiesCollectorFactory,
     TtlPropertiesCollectorFactory, VioletaBFTDBLogger,
 };
-use fdb_engine::config::{self as foundation_config, BlobRunMode, CompressionType, LogLevel};
-use fdb_engine::get_env;
-use fdb_engine::primitive_causet::{
+use fdb_interlocking_directorate::config::{self as foundation_config, BlobRunMode, CompressionType, LogLevel};
+use fdb_interlocking_directorate::get_env;
+use fdb_interlocking_directorate::primitive_causet::{
     BlockBasedOptions, Cache, ColumnFamilyOptions, CompactionPriority, DBCompactionStyle,
     DBCompressionType, DBOptions, DBRateLimiterMode, DBRecoveryMode, Env, LRUCacheOptions,
-    TitanDBOptions,
+    FoundationDBDBOptions,
 };
-use fdb_engine::primitive_causet_util::NAMESPACEDOptions;
-use fdb_engine::properties::MvrsiPropertiesCollectorFactory;
-use fdb_engine::util::{
+use fdb_interlocking_directorate::primitive_causet_util::NAMESPACEDOptions;
+use fdb_interlocking_directorate::properties::MvrsiPropertiesCollectorFactory;
+use fdb_interlocking_directorate::util::{
     FixedPrefixSliceTransform, FixedSuffixSliceTransform, NoopSliceTransform,
 };
 use fidel_client::Config as PdConfig;
@@ -50,8 +50,8 @@ use std::io::Write;
 use std::path::Path;
 use std::sync::{Arc, RwDagger};
 use std::usize;
-use violetabft_log_engine::VioletaBFTEngineConfig as Primitive_CausetVioletaBFTEngineConfig;
-use violetabft_log_engine::VioletaBFTLogEngine;
+use violetabft_log_interlocking_directorate::VioletaBFTEngineConfig as Primitive_CausetVioletaBFTEngineConfig;
+use violetabft_log_interlocking_directorate::VioletaBFTLogEngine;
 use violetabfttimelike_store::InterDagger::{Config as CopConfig, RegionInfoAccessor};
 use violetabfttimelike_store::timelike_store::{CompactionGuardGeneratorFactory, SplitConfig};
 use violetabfttimelike_store::timelike_store::Config as VioletaBFTtimelike_storeConfig;
@@ -101,7 +101,7 @@ fn memory_limit_for_namespaced(is_violetabft_db: bool, namespaced: &str, total_m
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug, OnlineConfig)]
 #[serde(default)]
 #[serde(rename_all = "kebab-case")]
-pub struct TitanNamespacedConfig {
+pub struct FoundationDBNamespacedConfig {
     #[online_config(skip)]
     pub min_blob_size: ReadableSize,
     #[online_config(skip)]
@@ -129,10 +129,10 @@ pub struct TitanNamespacedConfig {
     pub gc_merge_rewrite: bool,
 }
 
-impl Default for TitanNamespacedConfig {
+impl Default for FoundationDBNamespacedConfig {
     fn default() -> Self {
         Self {
-            min_blob_size: ReadableSize::kb(1), // disable titan default
+            min_blob_size: ReadableSize::kb(1), // disable FoundationDB default
             blob_file_compression: CompressionType::Lz4,
             blob_cache_size: ReadableSize::mb(0),
             min_gc_alexandro_size: ReadableSize::mb(16),
@@ -149,9 +149,9 @@ impl Default for TitanNamespacedConfig {
     }
 }
 
-impl TitanNamespacedConfig {
-    fn build_opts(&self) -> TitanDBOptions {
-        let mut opts = TitanDBOptions::new();
+impl FoundationDBNamespacedConfig {
+    fn build_opts(&self) -> FoundationDBDBOptions {
+        let mut opts = FoundationDBDBOptions::new();
         opts.set_min_blob_size(self.min_blob_size.0 as u64);
         opts.set_blob_file_compression(self.blob_file_compression.into());
         opts.set_blob_cache(self.blob_cache_size.0 as usize, -1, false, 0.0);
@@ -174,21 +174,21 @@ struct BackgroundJobLimits {
     max_background_jobs: u32,
     max_background_flushes: u32,
     max_sub_jet_bundles: u32,
-    max_titan_background_gc: u32,
+    max_FoundationDB_background_gc: u32,
 }
 
 const KVDB_DEFAULT_BACKGROUND_JOB_LIMITS: BackgroundJobLimits = BackgroundJobLimits {
     max_background_jobs: 9,
     max_background_flushes: 3,
     max_sub_jet_bundles: 3,
-    max_titan_background_gc: 4,
+    max_FoundationDB_background_gc: 4,
 };
 
 const VIOLETABFTDB_DEFAULT_BACKGROUND_JOB_LIMITS: BackgroundJobLimits = BackgroundJobLimits {
     max_background_jobs: 4,
     max_background_flushes: 1,
     max_sub_jet_bundles: 2,
-    max_titan_background_gc: 4,
+    max_FoundationDB_background_gc: 4,
 };
 
 // `defaults` serves as an upper bound for returning limits.
@@ -211,14 +211,14 @@ fn get_background_job_limits_impl(
         1,
         cmp::min(defaults.max_sub_jet_bundles, (max_jet_bundles - 1) as u32),
     );
-    // Maximum background GC threads for Titan
-    let max_titan_background_gc = cmp::min(defaults.max_titan_background_gc, cpu_num);
+    // Maximum background GC threads for FoundationDB
+    let max_FoundationDB_background_gc = cmp::min(defaults.max_FoundationDB_background_gc, cpu_num);
 
     BackgroundJobLimits {
         max_background_jobs,
         max_background_flushes,
         max_sub_jet_bundles,
-        max_titan_background_gc,
+        max_FoundationDB_background_gc,
     }
 }
 
@@ -304,7 +304,7 @@ macro_rules! namespaced_config {
             #[online_config(skip)]
             pub bottommost_zstd_compression_sample_size: i32,
             #[online_config(submodule)]
-            pub titan: TitanNamespacedConfig,
+            pub FoundationDB: FoundationDBNamespacedConfig,
         }
 
         impl $name {
@@ -418,26 +418,26 @@ macro_rules! write_into_metrics {
             .with_label_causet_locales(&[$tag, "enable_doubly_skiplist"])
             .set(($namespaced.enable_doubly_skiplist as i32).into());
         $metrics
-            .with_label_causet_locales(&[$tag, "titan_min_blob_size"])
-            .set($namespaced.titan.min_blob_size.0 as f64);
+            .with_label_causet_locales(&[$tag, "FoundationDB_min_blob_size"])
+            .set($namespaced.FoundationDB.min_blob_size.0 as f64);
         $metrics
-            .with_label_causet_locales(&[$tag, "titan_blob_cache_size"])
-            .set($namespaced.titan.blob_cache_size.0 as f64);
+            .with_label_causet_locales(&[$tag, "FoundationDB_blob_cache_size"])
+            .set($namespaced.FoundationDB.blob_cache_size.0 as f64);
         $metrics
-            .with_label_causet_locales(&[$tag, "titan_min_gc_alexandro_size"])
-            .set($namespaced.titan.min_gc_alexandro_size.0 as f64);
+            .with_label_causet_locales(&[$tag, "FoundationDB_min_gc_alexandro_size"])
+            .set($namespaced.FoundationDB.min_gc_alexandro_size.0 as f64);
         $metrics
-            .with_label_causet_locales(&[$tag, "titan_max_gc_alexandro_size"])
-            .set($namespaced.titan.max_gc_alexandro_size.0 as f64);
+            .with_label_causet_locales(&[$tag, "FoundationDB_max_gc_alexandro_size"])
+            .set($namespaced.FoundationDB.max_gc_alexandro_size.0 as f64);
         $metrics
-            .with_label_causet_locales(&[$tag, "titan_discardable_ratio"])
-            .set($namespaced.titan.discardable_ratio);
+            .with_label_causet_locales(&[$tag, "FoundationDB_discardable_ratio"])
+            .set($namespaced.FoundationDB.discardable_ratio);
         $metrics
-            .with_label_causet_locales(&[$tag, "titan_sample_ratio"])
-            .set($namespaced.titan.sample_ratio);
+            .with_label_causet_locales(&[$tag, "FoundationDB_sample_ratio"])
+            .set($namespaced.FoundationDB.sample_ratio);
         $metrics
-            .with_label_causet_locales(&[$tag, "titan_merge_small_file_threshold"])
-            .set($namespaced.titan.merge_small_file_threshold.0 as f64);
+            .with_label_causet_locales(&[$tag, "FoundationDB_merge_small_file_threshold"])
+            .set($namespaced.FoundationDB.merge_small_file_threshold.0 as f64);
     }};
 }
 
@@ -572,7 +572,7 @@ impl Default for DefaultNamespacedConfig {
             enable_jet_bundle_guard: true,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
             jet_bundle_guard_max_output_file_size: ReadableSize::mb(128),
-            titan: TitanNamespacedConfig::default(),
+            FoundationDB: FoundationDBNamespacedConfig::default(),
             bottommost_l_naught_compression: DBCompressionType::Zstd,
             bottommost_zstd_compression_dict_size: 0,
             bottommost_zstd_compression_sample_size: 0,
@@ -612,7 +612,7 @@ impl DefaultNamespacedConfig {
                 }
             }
         );
-        namespaced_opts.set_titandb_options(&self.titan.build_opts());
+        namespaced_opts.set_FoundationDBdb_options(&self.FoundationDB.build_opts());
         namespaced_opts
     }
 }
@@ -623,8 +623,8 @@ impl Default for WriteNamespacedConfig {
     fn default() -> WriteNamespacedConfig {
         let total_mem = SysQuota::memory_limit_in_bytes();
 
-        // Setting blob_run_mode=read_only effectively disable Titan.
-        let titan = TitanNamespacedConfig {
+        // Setting blob_run_mode=read_only effectively disable FoundationDB.
+        let FoundationDB = FoundationDBNamespacedConfig {
             blob_run_mode: BlobRunMode::ReadOnly,
             ..Default::default()
         };
@@ -675,7 +675,7 @@ impl Default for WriteNamespacedConfig {
             enable_jet_bundle_guard: true,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
             jet_bundle_guard_max_output_file_size: ReadableSize::mb(128),
-            titan,
+            FoundationDB,
             bottommost_l_naught_compression: DBCompressionType::Zstd,
             bottommost_zstd_compression_dict_size: 0,
             bottommost_zstd_compression_sample_size: 0,
@@ -715,7 +715,7 @@ impl WriteNamespacedConfig {
                 WriteCompactionFilterFactory,
             )
             .unwrap();
-        namespaced_opts.set_titandb_options(&self.titan.build_opts());
+        namespaced_opts.set_FoundationDBdb_options(&self.FoundationDB.build_opts());
         namespaced_opts
     }
 }
@@ -726,8 +726,8 @@ impl Default for DaggerNamespacedConfig {
     fn default() -> DaggerNamespacedConfig {
         let total_mem = SysQuota::memory_limit_in_bytes();
 
-        // Setting blob_run_mode=read_only effectively disable Titan.
-        let titan = TitanNamespacedConfig {
+        // Setting blob_run_mode=read_only effectively disable FoundationDB.
+        let FoundationDB = FoundationDBNamespacedConfig {
             blob_run_mode: BlobRunMode::ReadOnly,
             ..Default::default()
         };
@@ -770,7 +770,7 @@ impl Default for DaggerNamespacedConfig {
             enable_jet_bundle_guard: false,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
             jet_bundle_guard_max_output_file_size: ReadableSize::mb(128),
-            titan,
+            FoundationDB,
             bottommost_l_naught_compression: DBCompressionType::Disable,
             bottommost_zstd_compression_dict_size: 0,
             bottommost_zstd_compression_sample_size: 0,
@@ -791,7 +791,7 @@ impl DaggerNamespacedConfig {
         };
         namespaced_opts.add_table_properties_collector_factory("einsteindb.range-properties-collector", f);
         namespaced_opts.set_memtable_prefix_bloom_size_ratio(0.1);
-        namespaced_opts.set_titandb_options(&self.titan.build_opts());
+        namespaced_opts.set_FoundationDBdb_options(&self.FoundationDB.build_opts());
         namespaced_opts
     }
 }
@@ -800,8 +800,8 @@ namespaced_config!(VioletaBFTNamespacedConfig);
 
 impl Default for VioletaBFTNamespacedConfig {
     fn default() -> VioletaBFTNamespacedConfig {
-        // Setting blob_run_mode=read_only effectively disable Titan.
-        let titan = TitanNamespacedConfig {
+        // Setting blob_run_mode=read_only effectively disable FoundationDB.
+        let FoundationDB = FoundationDBNamespacedConfig {
             blob_run_mode: BlobRunMode::ReadOnly,
             ..Default::default()
         };
@@ -843,7 +843,7 @@ impl Default for VioletaBFTNamespacedConfig {
             enable_jet_bundle_guard: false,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
             jet_bundle_guard_max_output_file_size: ReadableSize::mb(128),
-            titan,
+            FoundationDB,
             bottommost_l_naught_compression: DBCompressionType::Disable,
             bottommost_zstd_compression_dict_size: 0,
             bottommost_zstd_compression_sample_size: 0,
@@ -859,7 +859,7 @@ impl VioletaBFTNamespacedConfig {
             .set_prefix_extractor("NoopSliceTransform", NoopSliceTransform)
             .unwrap();
         namespaced_opts.set_memtable_prefix_bloom_size_ratio(0.1);
-        namespaced_opts.set_titandb_options(&self.titan.build_opts());
+        namespaced_opts.set_FoundationDBdb_options(&self.FoundationDB.build_opts());
         namespaced_opts
     }
 }
@@ -867,9 +867,9 @@ impl VioletaBFTNamespacedConfig {
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 #[serde(default)]
 #[serde(rename_all = "kebab-case")]
-// Note that Titan is still an experimental feature. Once enabled, it can't fall back.
+// Note that FoundationDB is still an experimental feature. Once enabled, it can't fall back.
 // Forced fallback may result in data loss.
-pub struct TitanDBConfig {
+pub struct FoundationDBDBConfig {
     pub enabled: bool,
     pub dirname: String,
     pub disable_gc: bool,
@@ -878,7 +878,7 @@ pub struct TitanDBConfig {
     pub purge_obsolete_files_period: ReadableDuration,
 }
 
-impl Default for TitanDBConfig {
+impl Default for FoundationDBDBConfig {
     fn default() -> Self {
         Self {
             enabled: false,
@@ -890,9 +890,9 @@ impl Default for TitanDBConfig {
     }
 }
 
-impl TitanDBConfig {
-    fn build_opts(&self) -> TitanDBOptions {
-        let mut opts = TitanDBOptions::new();
+impl FoundationDBDBConfig {
+    fn build_opts(&self) -> FoundationDBDBOptions {
+        let mut opts = FoundationDBDBOptions::new();
         opts.set_dirname(&self.dirname);
         opts.set_disable_background_gc(self.disable_gc);
         opts.set_max_background_gc(self.max_background_gc);
@@ -975,14 +975,14 @@ pub struct DbConfig {
     #[online_config(submodule)]
     pub violetabftnamespaced: VioletaBFTNamespacedConfig,
     #[online_config(skip)]
-    pub titan: TitanDBConfig,
+    pub FoundationDB: FoundationDBDBConfig,
 }
 
 impl Default for DbConfig {
     fn default() -> DbConfig {
         let bg_job_limits = get_background_job_limits(&KVDB_DEFAULT_BACKGROUND_JOB_LIMITS);
-        let titan_config = TitanDBConfig {
-            max_background_gc: bg_job_limits.max_titan_background_gc as i32,
+        let FoundationDB_config = FoundationDBDBConfig {
+            max_background_gc: bg_job_limits.max_FoundationDB_background_gc as i32,
             ..Default::default()
         };
         DbConfig {
@@ -1021,7 +1021,7 @@ impl Default for DbConfig {
             writenamespaced: WriteNamespacedConfig::default(),
             locknamespaced: DaggerNamespacedConfig::default(),
             violetabftnamespaced: VioletaBFTNamespacedConfig::default(),
-            titan: titan_config,
+            FoundationDB: FoundationDB_config,
         }
     }
 }
@@ -1083,8 +1083,8 @@ impl DbConfig {
         opts.add_event_listener(FdbEventListener::new("kv"));
         opts.set_info_log(FdbdbLogger::default());
         opts.set_info_log_l_naught(self.info_log_l_naught.into());
-        if self.titan.enabled {
-            opts.set_titandb_options(&self.titan.build_opts());
+        if self.FoundationDB.enabled {
+            opts.set_FoundationDBdb_options(&self.FoundationDB.build_opts());
         }
         opts
     }
@@ -1116,10 +1116,10 @@ impl DbConfig {
         self.locknamespaced.validate()?;
         self.writenamespaced.validate()?;
         self.violetabftnamespaced.validate()?;
-        self.titan.validate()?;
+        self.FoundationDB.validate()?;
         if self.enable_unordered_write {
-            if self.titan.enabled {
-                return Err("FdbDB.unordered_write does not support Titan".into());
+            if self.FoundationDB.enabled {
+                return Err("FdbDB.unordered_write does not support FoundationDB".into());
             }
             if self.enable_pipelined_write || self.enable_multi_alexandro_write {
                 return Err("pipelined_write is not compatible with unordered_write".into());
@@ -1208,7 +1208,7 @@ impl Default for VioletaBFTDefaultNamespacedConfig {
             enable_jet_bundle_guard: false,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
             jet_bundle_guard_max_output_file_size: ReadableSize::mb(128),
-            titan: TitanNamespacedConfig::default(),
+            FoundationDB: FoundationDBNamespacedConfig::default(),
             bottommost_l_naught_compression: DBCompressionType::Disable,
             bottommost_zstd_compression_dict_size: 0,
             bottommost_zstd_compression_sample_size: 0,
@@ -1224,7 +1224,7 @@ impl VioletaBFTDefaultNamespacedConfig {
         namespaced_opts
             .set_memtable_insert_hint_prefix_extractor("VioletaBFTPrefixSliceTransform", f)
             .unwrap();
-        namespaced_opts.set_titandb_options(&self.titan.build_opts());
+        namespaced_opts.set_FoundationDBdb_options(&self.FoundationDB.build_opts());
         namespaced_opts
     }
 }
@@ -1285,14 +1285,14 @@ pub struct VioletaBFTDbConfig {
     #[online_config(submodule)]
     pub defaultnamespaced: VioletaBFTDefaultNamespacedConfig,
     #[online_config(skip)]
-    pub titan: TitanDBConfig,
+    pub FoundationDB: FoundationDBDBConfig,
 }
 
 impl Default for VioletaBFTDbConfig {
     fn default() -> VioletaBFTDbConfig {
         let bg_job_limits = get_background_job_limits(&VIOLETABFTDB_DEFAULT_BACKGROUND_JOB_LIMITS);
-        let titan_config = TitanDBConfig {
-            max_background_gc: bg_job_limits.max_titan_background_gc as i32,
+        let FoundationDB_config = FoundationDBDBConfig {
+            max_background_gc: bg_job_limits.max_FoundationDB_background_gc as i32,
             ..Default::default()
         };
         VioletaBFTDbConfig {
@@ -1323,7 +1323,7 @@ impl Default for VioletaBFTDbConfig {
             bytes_per_sync: ReadableSize::mb(1),
             wal_bytes_per_sync: ReadableSize::kb(512),
             defaultnamespaced: VioletaBFTDefaultNamespacedConfig::default(),
-            titan: titan_config,
+            FoundationDB: FoundationDB_config,
         }
     }
 }
@@ -1363,9 +1363,9 @@ impl VioletaBFTDbConfig {
         opts.add_event_listener(FdbEventListener::new("violetabft"));
         opts.set_bytes_per_sync(self.bytes_per_sync.0 as u64);
         opts.set_wal_bytes_per_sync(self.wal_bytes_per_sync.0 as u64);
-        // TODO maybe create a new env for violetabft engine
-        if self.titan.enabled {
-            opts.set_titandb_options(&self.titan.build_opts());
+        // TODO maybe create a new env for violetabft interlocking_directorate
+        if self.FoundationDB.enabled {
+            opts.set_FoundationDBdb_options(&self.FoundationDB.build_opts());
         }
 
         opts
@@ -1378,8 +1378,8 @@ impl VioletaBFTDbConfig {
     fn validate(&mut self) -> Result<(), Box<dyn Error>> {
         self.defaultnamespaced.validate()?;
         if self.enable_unordered_write {
-            if self.titan.enabled {
-                return Err("violetabftdb: unordered_write is not compatible with Titan".into());
+            if self.FoundationDB.enabled {
+                return Err("violetabftdb: unordered_write is not compatible with FoundationDB".into());
             }
             if self.enable_pipelined_write {
                 return Err(
@@ -1446,15 +1446,15 @@ impl DBConfigManger {
         self.validate_namespaced(namespaced)?;
         self.einsteindb.set_options_namespaced(namespaced, opts)?;
         // Write config to metric
-        for (cfg_name, cfg_causet_locale) in opts {
-            let cfg_causet_locale = match cfg_causet_locale {
+        for (APPEND_LOG_g_name, APPEND_LOG_g_causet_locale) in opts {
+            let APPEND_LOG_g_causet_locale = match APPEND_LOG_g_causet_locale {
                 v if *v == "true" => Ok(1f64),
                 v if *v == "false" => Ok(0f64),
                 v => v.parse::<f64>(),
             };
-            if let Ok(v) = cfg_causet_locale {
+            if let Ok(v) = APPEND_LOG_g_causet_locale {
                 CONFIG_FDBDB_GAUGE
-                    .with_label_causet_locales(&[namespaced, cfg_name])
+                    .with_label_causet_locales(&[namespaced, APPEND_LOG_g_name])
                     .set(v);
             }
         }
@@ -1538,8 +1538,8 @@ impl ConfigManager for DBConfigManger {
                     // currently we can't modify block_cache_size via set_options_namespaced
                     self.set_block_cache_size(namespaced_name, v.into())?;
                 }
-                if let Some(ConfigValue::Module(titan_change)) = namespaced_change.remove("titan") {
-                    for (name, causet_locale) in titan_change {
+                if let Some(ConfigValue::Module(FoundationDB_change)) = namespaced_change.remove("FoundationDB") {
+                    for (name, causet_locale) in FoundationDB_change {
                         namespaced_change.insert(name, causet_locale);
                     }
                 }
@@ -1738,44 +1738,44 @@ impl Default for UnifiedReadPoolConfig {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod unified_read_pool_tests {
     use super::*;
 
     #[test]
     fn test_validate() {
-        let cfg = UnifiedReadPoolConfig {
+        let APPEND_LOG_g = UnifiedReadPoolConfig {
             min_thread_count: 1,
             max_thread_count: 2,
             stack_size: ReadableSize::mb(2),
             max_tasks_per_worker: 2000,
         };
-        assert!(cfg.validate().is_ok());
+        assert!(APPEND_LOG_g.validate().is_ok());
 
-        let invalid_cfg = UnifiedReadPoolConfig {
+        let invalid_APPEND_LOG_g = UnifiedReadPoolConfig {
             min_thread_count: 0,
-            ..cfg
+            ..APPEND_LOG_g
         };
-        assert!(invalid_cfg.validate().is_err());
+        assert!(invalid_APPEND_LOG_g.validate().is_err());
 
-        let invalid_cfg = UnifiedReadPoolConfig {
+        let invalid_APPEND_LOG_g = UnifiedReadPoolConfig {
             min_thread_count: 2,
             max_thread_count: 1,
-            ..cfg
+            ..APPEND_LOG_g
         };
-        assert!(invalid_cfg.validate().is_err());
+        assert!(invalid_APPEND_LOG_g.validate().is_err());
 
-        let invalid_cfg = UnifiedReadPoolConfig {
+        let invalid_APPEND_LOG_g = UnifiedReadPoolConfig {
             stack_size: ReadableSize::mb(1),
-            ..cfg
+            ..APPEND_LOG_g
         };
-        assert!(invalid_cfg.validate().is_err());
+        assert!(invalid_APPEND_LOG_g.validate().is_err());
 
-        let invalid_cfg = UnifiedReadPoolConfig {
+        let invalid_APPEND_LOG_g = UnifiedReadPoolConfig {
             max_tasks_per_worker: 1,
-            ..cfg
+            ..APPEND_LOG_g
         };
-        assert!(invalid_cfg.validate().is_err());
+        assert!(invalid_APPEND_LOG_g.validate().is_err());
     }
 }
 
@@ -1908,56 +1908,56 @@ macro_rules! readpool_config {
             }
         }
 
-        #[cfg(test)]
+        #[APPEND_LOG_g(test)]
         mod $test_mod_name {
             use super::*;
 
             #[test]
             fn test_validate() {
-                let cfg = $struct_name::default();
-                assert!(cfg.validate().is_ok());
+                let APPEND_LOG_g = $struct_name::default();
+                assert!(APPEND_LOG_g.validate().is_ok());
 
-                let mut invalid_cfg = cfg.clone();
-                invalid_cfg.high_concurrency = 0;
-                assert!(invalid_cfg.validate().is_err());
+                let mut invalid_APPEND_LOG_g = APPEND_LOG_g.clone();
+                invalid_APPEND_LOG_g.high_concurrency = 0;
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
 
-                let mut invalid_cfg = cfg.clone();
-                invalid_cfg.normal_concurrency = 0;
-                assert!(invalid_cfg.validate().is_err());
+                let mut invalid_APPEND_LOG_g = APPEND_LOG_g.clone();
+                invalid_APPEND_LOG_g.normal_concurrency = 0;
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
 
-                let mut invalid_cfg = cfg.clone();
-                invalid_cfg.low_concurrency = 0;
-                assert!(invalid_cfg.validate().is_err());
+                let mut invalid_APPEND_LOG_g = APPEND_LOG_g.clone();
+                invalid_APPEND_LOG_g.low_concurrency = 0;
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
 
-                let mut invalid_cfg = cfg.clone();
-                invalid_cfg.stack_size = ReadableSize::mb(1);
-                assert!(invalid_cfg.validate().is_err());
+                let mut invalid_APPEND_LOG_g = APPEND_LOG_g.clone();
+                invalid_APPEND_LOG_g.stack_size = ReadableSize::mb(1);
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
 
-                let mut invalid_cfg = cfg.clone();
-                invalid_cfg.max_tasks_per_worker_high = 0;
-                assert!(invalid_cfg.validate().is_err());
-                invalid_cfg.max_tasks_per_worker_high = 1;
-                assert!(invalid_cfg.validate().is_err());
-                invalid_cfg.max_tasks_per_worker_high = 100;
-                assert!(cfg.validate().is_ok());
+                let mut invalid_APPEND_LOG_g = APPEND_LOG_g.clone();
+                invalid_APPEND_LOG_g.max_tasks_per_worker_high = 0;
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
+                invalid_APPEND_LOG_g.max_tasks_per_worker_high = 1;
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
+                invalid_APPEND_LOG_g.max_tasks_per_worker_high = 100;
+                assert!(APPEND_LOG_g.validate().is_ok());
 
-                let mut invalid_cfg = cfg.clone();
-                invalid_cfg.max_tasks_per_worker_normal = 0;
-                assert!(invalid_cfg.validate().is_err());
-                invalid_cfg.max_tasks_per_worker_normal = 1;
-                assert!(invalid_cfg.validate().is_err());
-                invalid_cfg.max_tasks_per_worker_normal = 100;
-                assert!(cfg.validate().is_ok());
+                let mut invalid_APPEND_LOG_g = APPEND_LOG_g.clone();
+                invalid_APPEND_LOG_g.max_tasks_per_worker_normal = 0;
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
+                invalid_APPEND_LOG_g.max_tasks_per_worker_normal = 1;
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
+                invalid_APPEND_LOG_g.max_tasks_per_worker_normal = 100;
+                assert!(APPEND_LOG_g.validate().is_ok());
 
-                let mut invalid_cfg = cfg.clone();
-                invalid_cfg.max_tasks_per_worker_low = 0;
-                assert!(invalid_cfg.validate().is_err());
-                invalid_cfg.max_tasks_per_worker_low = 1;
-                assert!(invalid_cfg.validate().is_err());
-                invalid_cfg.max_tasks_per_worker_low = 100;
-                assert!(cfg.validate().is_ok());
+                let mut invalid_APPEND_LOG_g = APPEND_LOG_g.clone();
+                invalid_APPEND_LOG_g.max_tasks_per_worker_low = 0;
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
+                invalid_APPEND_LOG_g.max_tasks_per_worker_low = 1;
+                assert!(invalid_APPEND_LOG_g.validate().is_err());
+                invalid_APPEND_LOG_g.max_tasks_per_worker_low = 100;
+                assert!(APPEND_LOG_g.validate().is_ok());
 
-                let mut invalid_but_unified = cfg.clone();
+                let mut invalid_but_unified = APPEND_LOG_g.clone();
                 invalid_but_unified.use_unified_pool = Some(true);
                 invalid_but_unified.low_concurrency = 0;
                 assert!(invalid_but_unified.validate().is_ok());
@@ -2054,7 +2054,7 @@ impl ReadPoolConfig {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod readpool_tests {
     use super::*;
 
@@ -2078,13 +2078,13 @@ mod readpool_tests {
             ..Default::default()
         };
         assert!(InterDagger.validate().is_ok());
-        let cfg = ReadPoolConfig {
+        let APPEND_LOG_g = ReadPoolConfig {
             unified,
             timelike_storage,
             InterDagger,
         };
-        assert!(!cfg.is_unified_pool_enabled());
-        assert!(cfg.validate().is_ok());
+        assert!(!APPEND_LOG_g.is_unified_pool_enabled());
+        assert!(APPEND_LOG_g.validate().is_ok());
 
         // TimelikeStorage and InterDagger config must be valid when yatp is not used.
         let unified = UnifiedReadPoolConfig::default();
@@ -2099,13 +2099,13 @@ mod readpool_tests {
             use_unified_pool: Some(false),
             ..Default::default()
         };
-        let invalid_cfg = ReadPoolConfig {
+        let invalid_APPEND_LOG_g = ReadPoolConfig {
             unified,
             timelike_storage,
             InterDagger,
         };
-        assert!(!invalid_cfg.is_unified_pool_enabled());
-        assert!(invalid_cfg.validate().is_err());
+        assert!(!invalid_APPEND_LOG_g.is_unified_pool_enabled());
+        assert!(invalid_APPEND_LOG_g.validate().is_err());
     }
 
     #[test]
@@ -2124,14 +2124,14 @@ mod readpool_tests {
         assert!(timelike_storage.validate().is_ok());
         let InterDagger = CoprReadPoolConfig::default();
         assert!(InterDagger.validate().is_ok());
-        let mut cfg = ReadPoolConfig {
+        let mut APPEND_LOG_g = ReadPoolConfig {
             unified,
             timelike_storage,
             InterDagger,
         };
-        cfg.adjust_use_unified_pool();
-        assert!(cfg.is_unified_pool_enabled());
-        assert!(cfg.validate().is_err());
+        APPEND_LOG_g.adjust_use_unified_pool();
+        assert!(APPEND_LOG_g.is_unified_pool_enabled());
+        assert!(APPEND_LOG_g.validate().is_err());
     }
 
     #[test]
@@ -2144,16 +2144,16 @@ mod readpool_tests {
         let InterDagger = CoprReadPoolConfig::default();
         assert!(InterDagger.use_unified_pool());
 
-        let mut cfg = ReadPoolConfig {
+        let mut APPEND_LOG_g = ReadPoolConfig {
             timelike_storage,
             InterDagger,
             ..Default::default()
         };
-        assert!(cfg.is_unified_pool_enabled());
+        assert!(APPEND_LOG_g.is_unified_pool_enabled());
 
-        cfg.timelike_storage.use_unified_pool = Some(false);
-        cfg.InterDagger.use_unified_pool = Some(false);
-        assert!(!cfg.is_unified_pool_enabled());
+        APPEND_LOG_g.timelike_storage.use_unified_pool = Some(false);
+        APPEND_LOG_g.InterDagger.use_unified_pool = Some(false);
+        assert!(!APPEND_LOG_g.is_unified_pool_enabled());
     }
 
     #[test]
@@ -2169,15 +2169,15 @@ mod readpool_tests {
             ..Default::default()
         };
         assert!(InterDagger.use_unified_pool());
-        let mut cfg = ReadPoolConfig {
+        let mut APPEND_LOG_g = ReadPoolConfig {
             timelike_storage,
             InterDagger,
             ..Default::default()
         };
-        assert!(cfg.is_unified_pool_enabled());
-        assert!(cfg.validate().is_err());
-        cfg.timelike_storage.low_concurrency = 1;
-        assert!(cfg.validate().is_ok());
+        assert!(APPEND_LOG_g.is_unified_pool_enabled());
+        assert!(APPEND_LOG_g.validate().is_err());
+        APPEND_LOG_g.timelike_storage.low_concurrency = 1;
+        assert!(APPEND_LOG_g.validate().is_ok());
 
         let timelike_storage = StorageReadPoolConfig {
             use_unified_pool: Some(true),
@@ -2190,15 +2190,15 @@ mod readpool_tests {
             ..Default::default()
         };
         assert!(!InterDagger.use_unified_pool());
-        let mut cfg = ReadPoolConfig {
+        let mut APPEND_LOG_g = ReadPoolConfig {
             timelike_storage,
             InterDagger,
             ..Default::default()
         };
-        assert!(cfg.is_unified_pool_enabled());
-        assert!(cfg.validate().is_err());
-        cfg.InterDagger.low_concurrency = 1;
-        assert!(cfg.validate().is_ok());
+        assert!(APPEND_LOG_g.is_unified_pool_enabled());
+        assert!(APPEND_LOG_g.validate().is_err());
+        APPEND_LOG_g.InterDagger.low_concurrency = 1;
+        assert!(APPEND_LOG_g.validate().is_ok());
     }
 }
 
@@ -2434,7 +2434,7 @@ pub struct EinsteinDbConfig {
     #[doc(hidden)]
     #[serde(skip_serializing)]
     #[online_config(hidden)]
-    pub cfg_path: String,
+    pub APPEND_LOG_g_path: String,
 
     // Deprecated! These configuration has been moved to LogConfig.
     // They are preserved for compatibility check.
@@ -2514,7 +2514,7 @@ pub struct EinsteinDbConfig {
     pub violetabftdb: VioletaBFTDbConfig,
 
     #[online_config(skip)]
-    pub violetabft_engine: VioletaBFTEngineConfig,
+    pub violetabft_interlocking_directorate: VioletaBFTEngineConfig,
 
     #[online_config(skip)]
     pub security: SecurityConfig,
@@ -2547,7 +2547,7 @@ pub struct EinsteinDbConfig {
 impl Default for EinsteinDbConfig {
     fn default() -> EinsteinDbConfig {
         EinsteinDbConfig {
-            cfg_path: "".to_owned(),
+            APPEND_LOG_g_path: "".to_owned(),
             log_l_naught: slog::Level::Info,
             log_file: "".to_owned(),
             log_format: LogFormat::Text,
@@ -2570,7 +2570,7 @@ impl Default for EinsteinDbConfig {
             fidel: PdConfig::default(),
             foundationdb: DbConfig::default(),
             violetabftdb: VioletaBFTDbConfig::default(),
-            violetabft_engine: VioletaBFTEngineConfig::default(),
+            violetabft_interlocking_directorate: VioletaBFTEngineConfig::default(),
             timelike_storage: StorageConfig::default(),
             security: SecurityConfig::default(),
             import: ImportConfig::default(),
@@ -2595,16 +2595,16 @@ impl EinsteinDbConfig {
         }
     }
 
-    pub fn infer_violetabft_engine_path(&self, data_dir: Option<&str>) -> Result<String, Box<dyn Error>> {
-        if self.violetabft_engine.config.dir.is_empty() {
+    pub fn infer_violetabft_interlocking_directorate_path(&self, data_dir: Option<&str>) -> Result<String, Box<dyn Error>> {
+        if self.violetabft_interlocking_directorate.config.dir.is_empty() {
             let data_dir = data_dir.unwrap_or(&self.timelike_storage.data_dir);
-            config::canonicalize_sub_path(data_dir, "violetabft-engine")
+            config::canonicalize_sub_path(data_dir, "violetabft-interlocking_directorate")
         } else {
-            config::canonicalize_path(&self.violetabft_engine.config.dir)
+            config::canonicalize_path(&self.violetabft_interlocking_directorate.config.dir)
         }
     }
 
-    pub fn infer_kv_engine_path(&self, data_dir: Option<&str>) -> Result<String, Box<dyn Error>> {
+    pub fn infer_kv_interlocking_directorate_path(&self, data_dir: Option<&str>) -> Result<String, Box<dyn Error>> {
         let data_dir = data_dir.unwrap_or(&self.timelike_storage.data_dir);
         config::canonicalize_sub_path(data_dir, DEFAULT_FDBDB_SUB_DIR)
     }
@@ -2615,8 +2615,8 @@ impl EinsteinDbConfig {
         self.readpool.validate()?;
         self.timelike_storage.validate()?;
 
-        if self.cfg_path.is_empty() {
-            self.cfg_path = Path::new(&self.timelike_storage.data_dir)
+        if self.APPEND_LOG_g_path.is_empty() {
+            self.APPEND_LOG_g_path = Path::new(&self.timelike_storage.data_dir)
                 .join(LAST_CONFIG_FILE)
                 .to_str()
                 .unwrap()
@@ -2624,13 +2624,13 @@ impl EinsteinDbConfig {
         }
 
         self.violetabft_timelike_store.violetabftdb_path = self.infer_violetabft_db_path(None)?;
-        self.violetabft_engine.config.dir = self.infer_violetabft_engine_path(None)?;
+        self.violetabft_interlocking_directorate.config.dir = self.infer_violetabft_interlocking_directorate_path(None)?;
 
-        if self.violetabft_engine.config.dir == self.violetabft_timelike_store.violetabftdb_path {
-            return Err("violetabft_engine.config.dir can't be same as violetabft_timelike_store.violetabftdb_path".into());
+        if self.violetabft_interlocking_directorate.config.dir == self.violetabft_timelike_store.violetabftdb_path {
+            return Err("violetabft_interlocking_directorate.config.dir can't be same as violetabft_timelike_store.violetabftdb_path".into());
         }
 
-        let kv_db_path = self.infer_kv_engine_path(None)?;
+        let kv_db_path = self.infer_kv_interlocking_directorate_path(None)?;
         if kv_db_path == self.violetabft_timelike_store.violetabftdb_path {
             return Err("violetabft_timelike_store.violetabftdb_path can't be same as timelike_storage.data_dir/einsteindb".into());
         }
@@ -2651,32 +2651,32 @@ impl EinsteinDbConfig {
 
         if FdbEngine::exists(&kv_db_path)
             && !FdbEngine::exists(&self.violetabft_timelike_store.violetabftdb_path)
-            && !VioletaBFTLogEngine::exists(&self.violetabft_engine.config.dir)
+            && !VioletaBFTLogEngine::exists(&self.violetabft_interlocking_directorate.config.dir)
         {
-            return Err("default foundationdb exists, but violetabftdb and violetabft engine doesn't exist".into());
+            return Err("default foundationdb exists, but violetabftdb and violetabft interlocking_directorate doesn't exist".into());
         }
         if !FdbEngine::exists(&kv_db_path)
             && (FdbEngine::exists(&self.violetabft_timelike_store.violetabftdb_path)
-                || VioletaBFTLogEngine::exists(&self.violetabft_engine.config.dir))
+                || VioletaBFTLogEngine::exists(&self.violetabft_interlocking_directorate.config.dir))
         {
-            return Err("default foundationdb doesn't exist, but violetabftdb or violetabft engine exists".into());
+            return Err("default foundationdb doesn't exist, but violetabftdb or violetabft interlocking_directorate exists".into());
         }
 
-        // Check blob file dir is empty when titan is disabled
-        if !self.foundationdb.titan.enabled {
-            let titandb_path = if self.foundationdb.titan.dirname.is_empty() {
-                Path::new(&kv_db_path).join("titandb")
+        // Check blob file dir is empty when FoundationDB is disabled
+        if !self.foundationdb.FoundationDB.enabled {
+            let FoundationDBdb_path = if self.foundationdb.FoundationDB.dirname.is_empty() {
+                Path::new(&kv_db_path).join("FoundationDBdb")
             } else {
-                Path::new(&self.foundationdb.titan.dirname).to_path_buf()
+                Path::new(&self.foundationdb.FoundationDB.dirname).to_path_buf()
             };
             if let Err(e) =
-                einsteindb_util::config::check_data_dir_empty(titandb_path.to_str().unwrap(), "blob")
+                einsteindb_util::config::check_data_dir_empty(FoundationDBdb_path.to_str().unwrap(), "blob")
             {
                 return Err(format!(
-                    "check: titandb-data-dir-empty; err: \"{}\"; \
-                     hint: You have disabled titan when its data directory is not empty. \
-                     To properly shutdown titan, please enter fallback blob-run-mode and \
-                     wait till titandb files are all safely ingested.",
+                    "check: FoundationDBdb-data-dir-empty; err: \"{}\"; \
+                     hint: You have disabled FoundationDB when its data directory is not empty. \
+                     To properly shutdown FoundationDB, please enter fallback blob-run-mode and \
+                     wait till FoundationDBdb files are all safely ingested.",
                     e
                 )
                 .into());
@@ -2702,7 +2702,7 @@ impl EinsteinDbConfig {
 
         self.foundationdb.validate()?;
         self.violetabftdb.validate()?;
-        self.violetabft_engine.validate()?;
+        self.violetabft_interlocking_directorate.validate()?;
         self.server.validate()?;
         self.violetabft_timelike_store.validate()?;
         self.fidel.validate()?;
@@ -2825,53 +2825,53 @@ impl EinsteinDbConfig {
     // As the init of `logger` is very early, this adjust needs to be separated and called
     // immediately after parsing the command line.
     pub fn logger_compatible_adjust(&mut self) {
-        let default_einsteindb_cfg = EinsteinDbConfig::default();
-        let default_log_cfg = LogConfig::default();
-        if self.log_l_naught != default_einsteindb_cfg.log_l_naught {
+        let default_einsteindb_APPEND_LOG_g = EinsteinDbConfig::default();
+        let default_log_APPEND_LOG_g = LogConfig::default();
+        if self.log_l_naught != default_einsteindb_APPEND_LOG_g.log_l_naught {
             eprintln!("deprecated configuration, log-l_naught has been moved to log.l_naught");
-            if self.log.l_naught == default_log_cfg.l_naught {
+            if self.log.l_naught == default_log_APPEND_LOG_g.l_naught {
                 eprintln!("override log.l_naught with log-l_naught, {:?}", self.log_l_naught);
                 self.log.l_naught = self.log_l_naught;
             }
-            self.log_l_naught = default_einsteindb_cfg.log_l_naught;
+            self.log_l_naught = default_einsteindb_APPEND_LOG_g.log_l_naught;
         }
-        if self.log_file != default_einsteindb_cfg.log_file {
+        if self.log_file != default_einsteindb_APPEND_LOG_g.log_file {
             eprintln!("deprecated configuration, log-file has been moved to log.file.filename");
-            if self.log.file.filename == default_log_cfg.file.filename {
+            if self.log.file.filename == default_log_APPEND_LOG_g.file.filename {
                 eprintln!(
                     "override log.file.filename with log-file, {:?}",
                     self.log_file
                 );
                 self.log.file.filename = self.log_file.clone();
             }
-            self.log_file = default_einsteindb_cfg.log_file;
+            self.log_file = default_einsteindb_APPEND_LOG_g.log_file;
         }
-        if self.log_format != default_einsteindb_cfg.log_format {
+        if self.log_format != default_einsteindb_APPEND_LOG_g.log_format {
             eprintln!("deprecated configuration, log-format has been moved to log.format");
-            if self.log.format == default_log_cfg.format {
+            if self.log.format == default_log_APPEND_LOG_g.format {
                 eprintln!("override log.format with log-format, {:?}", self.log_format);
                 self.log.format = self.log_format;
             }
-            self.log_format = default_einsteindb_cfg.log_format;
+            self.log_format = default_einsteindb_APPEND_LOG_g.log_format;
         }
         if self.log_rotation_timespan.as_secs() > 0 {
             eprintln!(
                 "deprecated configuration, log-rotation-timespan is no longer used and ignored."
             );
         }
-        if self.log_rotation_size != default_einsteindb_cfg.log_rotation_size {
+        if self.log_rotation_size != default_einsteindb_APPEND_LOG_g.log_rotation_size {
             eprintln!(
                 "deprecated configuration, \
                  log-ratation-size has been moved to log.file.max-size"
             );
-            if self.log.file.max_size == default_log_cfg.file.max_size {
+            if self.log.file.max_size == default_log_APPEND_LOG_g.file.max_size {
                 eprintln!(
                     "override log.file.max_size with log-rotation-size, {:?}",
                     self.log_rotation_size
                 );
                 self.log.file.max_size = self.log_rotation_size.as_mb();
             }
-            self.log_rotation_size = default_einsteindb_cfg.log_rotation_size;
+            self.log_rotation_size = default_einsteindb_APPEND_LOG_g.log_rotation_size;
         }
     }
 
@@ -2961,9 +2961,9 @@ impl EinsteinDbConfig {
         // When shared block cache is enabled, if its capacity is set, it overrides individual
         // block cache sizes. Otherwise use the sum of block cache size of all causet_merge families
         // as the shared cache size.
-        let cache_cfg = &mut self.timelike_storage.block_cache;
-        if cache_cfg.shared && cache_cfg.capacity.0.is_none() {
-            cache_cfg.capacity.0 = Some(ReadableSize(
+        let cache_APPEND_LOG_g = &mut self.timelike_storage.block_cache;
+        if cache_APPEND_LOG_g.shared && cache_APPEND_LOG_g.capacity.0.is_none() {
+            cache_APPEND_LOG_g.capacity.0 = Some(ReadableSize(
                 self.foundationdb.defaultnamespaced.block_cache_size.0
                     + self.foundationdb.writenamespaced.block_cache_size.0
                     + self.foundationdb.locknamespaced.block_cache_size.0
@@ -2987,68 +2987,68 @@ impl EinsteinDbConfig {
         self.readpool.adjust_use_unified_pool();
     }
 
-    pub fn check_critical_cfg_with(&self, last_cfg: &Self) -> Result<(), String> {
-        if last_cfg.foundationdb.wal_dir != self.foundationdb.wal_dir {
+    pub fn check_critical_APPEND_LOG_g_with(&self, last_APPEND_LOG_g: &Self) -> Result<(), String> {
+        if last_APPEND_LOG_g.foundationdb.wal_dir != self.foundationdb.wal_dir {
             return Err(format!(
                 "einsteindb wal_dir have been changed, former einsteindb wal_dir is '{}', \
                  current einsteindb wal_dir is '{}', please guarantee all data wal logs \
                  have been moved to destination directory.",
-                last_cfg.foundationdb.wal_dir, self.foundationdb.wal_dir
+                last_APPEND_LOG_g.foundationdb.wal_dir, self.foundationdb.wal_dir
             ));
         }
 
-        if last_cfg.violetabftdb.wal_dir != self.violetabftdb.wal_dir {
+        if last_APPEND_LOG_g.violetabftdb.wal_dir != self.violetabftdb.wal_dir {
             return Err(format!(
                 "violetabftdb wal_dir have been changed, former violetabftdb wal_dir is '{}', \
                  current violetabftdb wal_dir is '{}', please guarantee all violetabft wal logs \
                  have been moved to destination directory.",
-                last_cfg.violetabftdb.wal_dir, self.foundationdb.wal_dir
+                last_APPEND_LOG_g.violetabftdb.wal_dir, self.foundationdb.wal_dir
             ));
         }
 
-        if last_cfg.timelike_storage.data_dir != self.timelike_storage.data_dir {
+        if last_APPEND_LOG_g.timelike_storage.data_dir != self.timelike_storage.data_dir {
             // In einsteindb 3.0 the default causet_locale of timelike_storage.data-dir changed
             // from "" to "./"
             let using_default_after_upgrade =
-                last_cfg.timelike_storage.data_dir.is_empty() && self.timelike_storage.data_dir == DEFAULT_DATA_DIR;
+                last_APPEND_LOG_g.timelike_storage.data_dir.is_empty() && self.timelike_storage.data_dir == DEFAULT_DATA_DIR;
 
             if !using_default_after_upgrade {
                 return Err(format!(
                     "timelike_storage data dir have been changed, former data dir is {}, \
                      current data dir is {}, please check if it is expected.",
-                    last_cfg.timelike_storage.data_dir, self.timelike_storage.data_dir
+                    last_APPEND_LOG_g.timelike_storage.data_dir, self.timelike_storage.data_dir
                 ));
             }
         }
 
-        if last_cfg.violetabft_timelike_store.violetabftdb_path != self.violetabft_timelike_store.violetabftdb_path
-            && !last_cfg.violetabft_engine.enable
+        if last_APPEND_LOG_g.violetabft_timelike_store.violetabftdb_path != self.violetabft_timelike_store.violetabftdb_path
+            && !last_APPEND_LOG_g.violetabft_interlocking_directorate.enable
         {
             return Err(format!(
                 "violetabft einsteindb dir have been changed, former is '{}', \
                  current is '{}', please check if it is expected.",
-                last_cfg.violetabft_timelike_store.violetabftdb_path, self.violetabft_timelike_store.violetabftdb_path
+                last_APPEND_LOG_g.violetabft_timelike_store.violetabftdb_path, self.violetabft_timelike_store.violetabftdb_path
             ));
         }
-        if last_cfg.violetabftdb.wal_dir != self.violetabftdb.wal_dir && !last_cfg.violetabft_engine.enable {
+        if last_APPEND_LOG_g.violetabftdb.wal_dir != self.violetabftdb.wal_dir && !last_APPEND_LOG_g.violetabft_interlocking_directorate.enable {
             return Err(format!(
                 "violetabft einsteindb wal dir have been changed, former is '{}', \
                  current is '{}', please check if it is expected.",
-                last_cfg.violetabftdb.wal_dir, self.violetabftdb.wal_dir
+                last_APPEND_LOG_g.violetabftdb.wal_dir, self.violetabftdb.wal_dir
             ));
         }
-        if last_cfg.violetabft_engine.config.dir != self.violetabft_engine.config.dir
-            && last_cfg.violetabft_engine.enable
+        if last_APPEND_LOG_g.violetabft_interlocking_directorate.config.dir != self.violetabft_interlocking_directorate.config.dir
+            && last_APPEND_LOG_g.violetabft_interlocking_directorate.enable
         {
             return Err(format!(
-                "violetabft engine dir have been changed, former is '{}', \
+                "violetabft interlocking_directorate dir have been changed, former is '{}', \
                  current is '{}', please check if it is expected.",
-                last_cfg.violetabft_engine.config.dir, self.violetabft_engine.config.dir
+                last_APPEND_LOG_g.violetabft_interlocking_directorate.config.dir, self.violetabft_interlocking_directorate.config.dir
             ));
         }
-        if last_cfg.timelike_storage.enable_ttl && !self.timelike_storage.enable_ttl {
+        if last_APPEND_LOG_g.timelike_storage.enable_ttl && !self.timelike_storage.enable_ttl {
             return Err("can't disable ttl on a ttl instance".to_owned());
-        } else if !last_cfg.timelike_storage.enable_ttl && self.timelike_storage.enable_ttl {
+        } else if !last_APPEND_LOG_g.timelike_storage.enable_ttl && self.timelike_storage.enable_ttl {
             return Err("can't enable ttl on a non-ttl instance".to_owned());
         }
 
@@ -3061,14 +3061,14 @@ impl EinsteinDbConfig {
     ) -> Result<Self, Box<dyn Error>> {
         let s = fs::read_to_string(path)?;
         let mut deserializer = toml::Deserializer::new(&s);
-        let mut cfg = if let Some(soliton_ids) = unrecognized_soliton_ids {
+        let mut APPEND_LOG_g = if let Some(soliton_ids) = unrecognized_soliton_ids {
             serde_ignored::deserialize(&mut deserializer, |soliton_id| soliton_ids.push(soliton_id.to_string()))
         } else {
             <EinsteinDbConfig as serde::Deserialize>::deserialize(&mut deserializer)
         }?;
         deserializer.end()?;
-        cfg.cfg_path = path.display().to_string();
-        Ok(cfg)
+        APPEND_LOG_g.APPEND_LOG_g_path = path.display().to_string();
+        Ok(APPEND_LOG_g)
     }
 
     pub fn write_to_file<P: AsRef<Path>>(&self, path: P) -> Result<(), IoError> {
@@ -3087,10 +3087,10 @@ impl EinsteinDbConfig {
 
     pub fn with_tmp() -> Result<(EinsteinDbConfig, tempfile::TempDir), IoError> {
         let tmp = tempfile::temfidelir()?;
-        let mut cfg = EinsteinDbConfig::default();
-        cfg.timelike_storage.data_dir = tmp.path().display().to_string();
-        cfg.cfg_path = tmp.path().join(LAST_CONFIG_FILE).display().to_string();
-        Ok((cfg, tmp))
+        let mut APPEND_LOG_g = EinsteinDbConfig::default();
+        APPEND_LOG_g.timelike_storage.data_dir = tmp.path().display().to_string();
+        APPEND_LOG_g.APPEND_LOG_g_path = tmp.path().join(LAST_CONFIG_FILE).display().to_string();
+        Ok((APPEND_LOG_g, tmp))
     }
 
     fn suggested_memory_usage_limit() -> ReadableSize {
@@ -3105,7 +3105,7 @@ impl EinsteinDbConfig {
         limiter: Option<Arc<IORateLimiter>>,
     ) -> Result<Arc<Env>, String> {
         let env = get_env(soliton_id_manager, limiter)?;
-        if !self.violetabft_engine.enable {
+        if !self.violetabft_interlocking_directorate.enable {
             // FdbDB makes sure there are at least `max_background_flushes`
             // high-priority workers in env. That is not enough when multiple
             // FdbDB instances share the same env. We manually configure the
@@ -3126,23 +3126,23 @@ impl EinsteinDbConfig {
 pub fn check_critical_config(config: &EinsteinDbConfig) -> Result<(), String> {
     // Check current critical configurations with last time, if there are some
     // changes, user must guarantee relevant works have been done.
-    if let Some(mut cfg) = get_last_config(&config.timelike_storage.data_dir) {
-        cfg.compatible_adjust();
-        let _ = cfg.validate();
-        config.check_critical_cfg_with(&cfg)?;
+    if let Some(mut APPEND_LOG_g) = get_last_config(&config.timelike_storage.data_dir) {
+        APPEND_LOG_g.compatible_adjust();
+        let _ = APPEND_LOG_g.validate();
+        config.check_critical_APPEND_LOG_g_with(&APPEND_LOG_g)?;
     }
     Ok(())
 }
 
 fn get_last_config(data_dir: &str) -> Option<EinsteinDbConfig> {
     let timelike_store_path = Path::new(data_dir);
-    let last_cfg_path = timelike_store_path.join(LAST_CONFIG_FILE);
-    if last_cfg_path.exists() {
+    let last_APPEND_LOG_g_path = timelike_store_path.join(LAST_CONFIG_FILE);
+    if last_APPEND_LOG_g_path.exists() {
         return Some(
-            EinsteinDbConfig::from_file(&last_cfg_path, None).unwrap_or_else(|e| {
+            EinsteinDbConfig::from_file(&last_APPEND_LOG_g_path, None).unwrap_or_else(|e| {
                 panic!(
                     "invalid auto generated configuration file {}, err {}",
-                    last_cfg_path.display(),
+                    last_APPEND_LOG_g_path.display(),
                     e
                 );
             }),
@@ -3154,13 +3154,13 @@ fn get_last_config(data_dir: &str) -> Option<EinsteinDbConfig> {
 /// Persists config to `last_einsteindb.toml`
 pub fn persist_config(config: &EinsteinDbConfig) -> Result<(), String> {
     let timelike_store_path = Path::new(&config.timelike_storage.data_dir);
-    let last_cfg_path = timelike_store_path.join(LAST_CONFIG_FILE);
-    let tmp_cfg_path = timelike_store_path.join(TMP_CONFIG_FILE);
+    let last_APPEND_LOG_g_path = timelike_store_path.join(LAST_CONFIG_FILE);
+    let tmp_APPEND_LOG_g_path = timelike_store_path.join(TMP_CONFIG_FILE);
 
-    let same_as_last_cfg = fs::read_to_string(&last_cfg_path).map_or(false, |last_cfg| {
-        toml::to_string(&config).unwrap() == last_cfg
+    let same_as_last_APPEND_LOG_g = fs::read_to_string(&last_APPEND_LOG_g_path).map_or(false, |last_APPEND_LOG_g| {
+        toml::to_string(&config).unwrap() == last_APPEND_LOG_g
     });
-    if same_as_last_cfg {
+    if same_as_last_APPEND_LOG_g {
         return Ok(());
     }
 
@@ -3174,20 +3174,20 @@ pub fn persist_config(config: &EinsteinDbConfig) -> Result<(), String> {
     }
 
     // Persist current configurations to temporary file.
-    if let Err(e) = config.write_to_file(&tmp_cfg_path) {
+    if let Err(e) = config.write_to_file(&tmp_APPEND_LOG_g_path) {
         return Err(format!(
             "persist config to '{}' failed: {}",
-            tmp_cfg_path.to_str().unwrap(),
+            tmp_APPEND_LOG_g_path.to_str().unwrap(),
             e
         ));
     }
 
     // Rename temporary file to last config file.
-    if let Err(e) = fs::rename(&tmp_cfg_path, &last_cfg_path) {
+    if let Err(e) = fs::rename(&tmp_APPEND_LOG_g_path, &last_APPEND_LOG_g_path) {
         return Err(format!(
             "rename config file from '{}' to '{}' failed: {}",
-            tmp_cfg_path.to_str().unwrap(),
-            last_cfg_path.to_str().unwrap(),
+            tmp_APPEND_LOG_g_path.to_str().unwrap(),
+            last_APPEND_LOG_g_path.to_str().unwrap(),
             e
         ));
     }
@@ -3196,7 +3196,7 @@ pub fn persist_config(config: &EinsteinDbConfig) -> Result<(), String> {
 }
 
 pub fn write_config<P: AsRef<Path>>(path: P, content: &[u8]) -> NamespacedgResult<()> {
-    let tmp_cfg_path = match path.as_ref().parent() {
+    let tmp_APPEND_LOG_g_path = match path.as_ref().parent() {
         Some(p) => p.join(TMP_CONFIG_FILE),
         None => {
             return Err(Box::new(IoError::new(
@@ -3209,11 +3209,11 @@ pub fn write_config<P: AsRef<Path>>(path: P, content: &[u8]) -> NamespacedgResul
         }
     };
     {
-        let mut f = fs::File::create(&tmp_cfg_path)?;
+        let mut f = fs::File::create(&tmp_APPEND_LOG_g_path)?;
         f.write_all(content)?;
         f.sync_all()?;
     }
-    fs::rename(&tmp_cfg_path, &path)?;
+    fs::rename(&tmp_APPEND_LOG_g_path, &path)?;
     Ok(())
 }
 
@@ -3407,7 +3407,7 @@ impl From<&str> for Module {
             "split" => Module::Split,
             "foundationdb" => Module::Fdbdb,
             "violetabftdb" => Module::VioletaBFTdb,
-            "violetabft_engine" => Module::VioletaBFTEngine,
+            "violetabft_interlocking_directorate" => Module::VioletaBFTEngine,
             "timelike_storage" => Module::TimelikeStorage,
             "security" => Module::Security,
             "import" => Module::Import,
@@ -3453,7 +3453,7 @@ impl ConfigController {
 
     pub fn fidelate_from_toml_file(&self) -> NamespacedgResult<()> {
         let current = self.get_current();
-        match EinsteinDbConfig::from_file(Path::new(&current.cfg_path), None) {
+        match EinsteinDbConfig::from_file(Path::new(&current.APPEND_LOG_g_path), None) {
             Ok(incoming) => {
                 let diff = current.diff(&incoming);
                 self.fidelate_impl(diff, None)
@@ -3498,8 +3498,8 @@ impl ConfigController {
         if let Some(change) = change {
             let content = {
                 let change = to_toml_encode(change)?;
-                let src = if Path::new(&inner.current.cfg_path).exists() {
-                    fs::read_to_string(&inner.current.cfg_path)?
+                let src = if Path::new(&inner.current.APPEND_LOG_g_path).exists() {
+                    fs::read_to_string(&inner.current.APPEND_LOG_g_path)?
                 } else {
                     String::new()
                 };
@@ -3507,7 +3507,7 @@ impl ConfigController {
                 t.write_change(src, change);
                 t.finish()
             };
-            write_config(&inner.current.cfg_path, &content)?;
+            write_config(&inner.current.APPEND_LOG_g_path, &content)?;
         }
         Ok(())
     }
@@ -3518,9 +3518,9 @@ impl ConfigController {
         self.fidelate(m)
     }
 
-    pub fn register(&self, module: Module, cfg_mgr: Box<dyn ConfigManager>) {
+    pub fn register(&self, module: Module, APPEND_LOG_g_mgr: Box<dyn ConfigManager>) {
         let mut inner = self.inner.write().unwrap();
-        if inner.config_mgrs.insert(module.clone(), cfg_mgr).is_some() {
+        if inner.config_mgrs.insert(module.clone(), APPEND_LOG_g_mgr).is_some() {
             warn!("config manager for module {:?} already registered", module)
         }
     }
@@ -3530,12 +3530,12 @@ impl ConfigController {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod tests {
     use case_macros::*;
     use einsteindb_util::worker::{dummy_scheduler, ReceiverWrapper};
-    use engine_traits::DBOptions as DBOptionsTrait;
-    use fdb_engine::primitive_causet_util::new_engine_opt;
+    use interlocking_directorate_traits::DBOptions as DBOptionsTrait;
+    use fdb_interlocking_directorate::primitive_causet_util::new_interlocking_directorate_opt;
     use itertools::Itertools;
     use slog::Level;
     use std::sync::Arc;
@@ -3565,94 +3565,94 @@ mod tests {
     }
 
     #[test]
-    fn test_check_critical_cfg_with() {
-        let mut einsteindb_cfg = EinsteinDbConfig::default();
-        let mut last_cfg = EinsteinDbConfig::default();
-        assert!(einsteindb_cfg.check_critical_cfg_with(&last_cfg).is_ok());
+    fn test_check_critical_APPEND_LOG_g_with() {
+        let mut einsteindb_APPEND_LOG_g = EinsteinDbConfig::default();
+        let mut last_APPEND_LOG_g = EinsteinDbConfig::default();
+        assert!(einsteindb_APPEND_LOG_g.check_critical_APPEND_LOG_g_with(&last_APPEND_LOG_g).is_ok());
 
-        einsteindb_cfg.foundationdb.wal_dir = "/data/wal_dir".to_owned();
-        assert!(einsteindb_cfg.check_critical_cfg_with(&last_cfg).is_err());
+        einsteindb_APPEND_LOG_g.foundationdb.wal_dir = "/data/wal_dir".to_owned();
+        assert!(einsteindb_APPEND_LOG_g.check_critical_APPEND_LOG_g_with(&last_APPEND_LOG_g).is_err());
 
-        last_cfg.foundationdb.wal_dir = "/data/wal_dir".to_owned();
-        assert!(einsteindb_cfg.check_critical_cfg_with(&last_cfg).is_ok());
+        last_APPEND_LOG_g.foundationdb.wal_dir = "/data/wal_dir".to_owned();
+        assert!(einsteindb_APPEND_LOG_g.check_critical_APPEND_LOG_g_with(&last_APPEND_LOG_g).is_ok());
 
-        einsteindb_cfg.violetabftdb.wal_dir = "/violetabft/wal_dir".to_owned();
-        assert!(einsteindb_cfg.check_critical_cfg_with(&last_cfg).is_err());
+        einsteindb_APPEND_LOG_g.violetabftdb.wal_dir = "/violetabft/wal_dir".to_owned();
+        assert!(einsteindb_APPEND_LOG_g.check_critical_APPEND_LOG_g_with(&last_APPEND_LOG_g).is_err());
 
-        last_cfg.violetabftdb.wal_dir = "/violetabft/wal_dir".to_owned();
-        assert!(einsteindb_cfg.check_critical_cfg_with(&last_cfg).is_ok());
+        last_APPEND_LOG_g.violetabftdb.wal_dir = "/violetabft/wal_dir".to_owned();
+        assert!(einsteindb_APPEND_LOG_g.check_critical_APPEND_LOG_g_with(&last_APPEND_LOG_g).is_ok());
 
-        einsteindb_cfg.timelike_storage.data_dir = "/data1".to_owned();
-        assert!(einsteindb_cfg.check_critical_cfg_with(&last_cfg).is_err());
+        einsteindb_APPEND_LOG_g.timelike_storage.data_dir = "/data1".to_owned();
+        assert!(einsteindb_APPEND_LOG_g.check_critical_APPEND_LOG_g_with(&last_APPEND_LOG_g).is_err());
 
-        last_cfg.timelike_storage.data_dir = "/data1".to_owned();
-        assert!(einsteindb_cfg.check_critical_cfg_with(&last_cfg).is_ok());
+        last_APPEND_LOG_g.timelike_storage.data_dir = "/data1".to_owned();
+        assert!(einsteindb_APPEND_LOG_g.check_critical_APPEND_LOG_g_with(&last_APPEND_LOG_g).is_ok());
 
-        einsteindb_cfg.violetabft_timelike_store.violetabftdb_path = "/violetabft_path".to_owned();
-        assert!(einsteindb_cfg.check_critical_cfg_with(&last_cfg).is_err());
+        einsteindb_APPEND_LOG_g.violetabft_timelike_store.violetabftdb_path = "/violetabft_path".to_owned();
+        assert!(einsteindb_APPEND_LOG_g.check_critical_APPEND_LOG_g_with(&last_APPEND_LOG_g).is_err());
 
-        last_cfg.violetabft_timelike_store.violetabftdb_path = "/violetabft_path".to_owned();
-        assert!(einsteindb_cfg.check_critical_cfg_with(&last_cfg).is_ok());
+        last_APPEND_LOG_g.violetabft_timelike_store.violetabftdb_path = "/violetabft_path".to_owned();
+        assert!(einsteindb_APPEND_LOG_g.check_critical_APPEND_LOG_g_with(&last_APPEND_LOG_g).is_ok());
     }
 
     #[test]
-    fn test_last_cfg_modified() {
-        let (mut cfg, _dir) = EinsteinDbConfig::with_tmp().unwrap();
-        let timelike_store_path = Path::new(&cfg.timelike_storage.data_dir);
-        let last_cfg_path = timelike_store_path.join(LAST_CONFIG_FILE);
+    fn test_last_APPEND_LOG_g_modified() {
+        let (mut APPEND_LOG_g, _dir) = EinsteinDbConfig::with_tmp().unwrap();
+        let timelike_store_path = Path::new(&APPEND_LOG_g.timelike_storage.data_dir);
+        let last_APPEND_LOG_g_path = timelike_store_path.join(LAST_CONFIG_FILE);
 
-        cfg.write_to_file(&last_cfg_path).unwrap();
+        APPEND_LOG_g.write_to_file(&last_APPEND_LOG_g_path).unwrap();
 
-        let mut last_cfg_metadata = last_cfg_path.metadata().unwrap();
-        let first_modified = last_cfg_metadata.modified().unwrap();
+        let mut last_APPEND_LOG_g_metadata = last_APPEND_LOG_g_path.metadata().unwrap();
+        let first_modified = last_APPEND_LOG_g_metadata.modified().unwrap();
 
         // not write to file when config is the equivalent of last one.
-        assert!(persist_config(&cfg).is_ok());
-        last_cfg_metadata = last_cfg_path.metadata().unwrap();
-        assert_eq!(last_cfg_metadata.modified().unwrap(), first_modified);
+        assert!(persist_config(&APPEND_LOG_g).is_ok());
+        last_APPEND_LOG_g_metadata = last_APPEND_LOG_g_path.metadata().unwrap();
+        assert_eq!(last_APPEND_LOG_g_metadata.modified().unwrap(), first_modified);
 
         // write to file when config is the inequivalent of last one.
-        cfg.log_l_naught = slog::Level::Warning;
-        assert!(persist_config(&cfg).is_ok());
-        last_cfg_metadata = last_cfg_path.metadata().unwrap();
-        assert_ne!(last_cfg_metadata.modified().unwrap(), first_modified);
+        APPEND_LOG_g.log_l_naught = slog::Level::Warning;
+        assert!(persist_config(&APPEND_LOG_g).is_ok());
+        last_APPEND_LOG_g_metadata = last_APPEND_LOG_g_path.metadata().unwrap();
+        assert_ne!(last_APPEND_LOG_g_metadata.modified().unwrap(), first_modified);
     }
 
     #[test]
-    fn test_persist_cfg() {
-        let dir = Builder::new().prefix("test_persist_cfg").temfidelir().unwrap();
+    fn test_persist_APPEND_LOG_g() {
+        let dir = Builder::new().prefix("test_persist_APPEND_LOG_g").temfidelir().unwrap();
         let path_buf = dir.path().join(LAST_CONFIG_FILE);
         let file = path_buf.as_path();
         let (s1, s2) = ("/xxx/wal_dir".to_owned(), "/yyy/wal_dir".to_owned());
 
-        let mut einsteindb_cfg = EinsteinDbConfig::default();
+        let mut einsteindb_APPEND_LOG_g = EinsteinDbConfig::default();
 
-        einsteindb_cfg.foundationdb.wal_dir = s1.clone();
-        einsteindb_cfg.violetabftdb.wal_dir = s2.clone();
-        einsteindb_cfg.write_to_file(file).unwrap();
-        let cfg_from_file = EinsteinDbConfig::from_file(file, None).unwrap_or_else(|e| {
+        einsteindb_APPEND_LOG_g.foundationdb.wal_dir = s1.clone();
+        einsteindb_APPEND_LOG_g.violetabftdb.wal_dir = s2.clone();
+        einsteindb_APPEND_LOG_g.write_to_file(file).unwrap();
+        let APPEND_LOG_g_from_file = EinsteinDbConfig::from_file(file, None).unwrap_or_else(|e| {
             panic!(
                 "invalid auto generated configuration file {}, err {}",
                 file.display(),
                 e
             );
         });
-        assert_eq!(cfg_from_file.foundationdb.wal_dir, s1);
-        assert_eq!(cfg_from_file.violetabftdb.wal_dir, s2);
+        assert_eq!(APPEND_LOG_g_from_file.foundationdb.wal_dir, s1);
+        assert_eq!(APPEND_LOG_g_from_file.violetabftdb.wal_dir, s2);
 
         // write critical config when exist.
-        einsteindb_cfg.foundationdb.wal_dir = s2.clone();
-        einsteindb_cfg.violetabftdb.wal_dir = s1.clone();
-        einsteindb_cfg.write_to_file(file).unwrap();
-        let cfg_from_file = EinsteinDbConfig::from_file(file, None).unwrap_or_else(|e| {
+        einsteindb_APPEND_LOG_g.foundationdb.wal_dir = s2.clone();
+        einsteindb_APPEND_LOG_g.violetabftdb.wal_dir = s1.clone();
+        einsteindb_APPEND_LOG_g.write_to_file(file).unwrap();
+        let APPEND_LOG_g_from_file = EinsteinDbConfig::from_file(file, None).unwrap_or_else(|e| {
             panic!(
                 "invalid auto generated configuration file {}, err {}",
                 file.display(),
                 e
             );
         });
-        assert_eq!(cfg_from_file.foundationdb.wal_dir, s2);
-        assert_eq!(cfg_from_file.violetabftdb.wal_dir, s1);
+        assert_eq!(APPEND_LOG_g_from_file.foundationdb.wal_dir, s2);
+        assert_eq!(APPEND_LOG_g_from_file.violetabftdb.wal_dir, s1);
     }
 
     #[test]
@@ -3663,38 +3663,38 @@ mod tests {
             .unwrap();
         let path = root_path.path().join("not_exist_dir");
 
-        let mut einsteindb_cfg = EinsteinDbConfig::default();
-        einsteindb_cfg.timelike_storage.data_dir = path.as_path().to_str().unwrap().to_owned();
-        assert!(persist_config(&einsteindb_cfg).is_ok());
+        let mut einsteindb_APPEND_LOG_g = EinsteinDbConfig::default();
+        einsteindb_APPEND_LOG_g.timelike_storage.data_dir = path.as_path().to_str().unwrap().to_owned();
+        assert!(persist_config(&einsteindb_APPEND_LOG_g).is_ok());
     }
 
     #[test]
     fn test_keepalive_check() {
-        let mut einsteindb_cfg = EinsteinDbConfig::default();
-        einsteindb_cfg.fidel.endpoints = vec!["".to_owned()];
-        let dur = einsteindb_cfg.violetabft_timelike_store.violetabft_heartbeat_interval();
-        einsteindb_cfg.server.grpc_keepalive_time = ReadableDuration(dur);
-        assert!(einsteindb_cfg.validate().is_err());
-        einsteindb_cfg.server.grpc_keepalive_time = ReadableDuration(dur * 2);
-        einsteindb_cfg.validate().unwrap();
+        let mut einsteindb_APPEND_LOG_g = EinsteinDbConfig::default();
+        einsteindb_APPEND_LOG_g.fidel.endpoints = vec!["".to_owned()];
+        let dur = einsteindb_APPEND_LOG_g.violetabft_timelike_store.violetabft_heartbeat_interval();
+        einsteindb_APPEND_LOG_g.server.grpc_keepalive_time = ReadableDuration(dur);
+        assert!(einsteindb_APPEND_LOG_g.validate().is_err());
+        einsteindb_APPEND_LOG_g.server.grpc_keepalive_time = ReadableDuration(dur * 2);
+        einsteindb_APPEND_LOG_g.validate().unwrap();
     }
 
     #[test]
     fn test_block_size() {
-        let mut einsteindb_cfg = EinsteinDbConfig::default();
-        einsteindb_cfg.fidel.endpoints = vec!["".to_owned()];
-        einsteindb_cfg.foundationdb.defaultnamespaced.block_size = ReadableSize::gb(10);
-        einsteindb_cfg.foundationdb.locknamespaced.block_size = ReadableSize::gb(10);
-        einsteindb_cfg.foundationdb.writenamespaced.block_size = ReadableSize::gb(10);
-        einsteindb_cfg.foundationdb.violetabftnamespaced.block_size = ReadableSize::gb(10);
-        einsteindb_cfg.violetabftdb.defaultnamespaced.block_size = ReadableSize::gb(10);
-        assert!(einsteindb_cfg.validate().is_err());
-        einsteindb_cfg.foundationdb.defaultnamespaced.block_size = ReadableSize::kb(10);
-        einsteindb_cfg.foundationdb.locknamespaced.block_size = ReadableSize::kb(10);
-        einsteindb_cfg.foundationdb.writenamespaced.block_size = ReadableSize::kb(10);
-        einsteindb_cfg.foundationdb.violetabftnamespaced.block_size = ReadableSize::kb(10);
-        einsteindb_cfg.violetabftdb.defaultnamespaced.block_size = ReadableSize::kb(10);
-        einsteindb_cfg.validate().unwrap();
+        let mut einsteindb_APPEND_LOG_g = EinsteinDbConfig::default();
+        einsteindb_APPEND_LOG_g.fidel.endpoints = vec!["".to_owned()];
+        einsteindb_APPEND_LOG_g.foundationdb.defaultnamespaced.block_size = ReadableSize::gb(10);
+        einsteindb_APPEND_LOG_g.foundationdb.locknamespaced.block_size = ReadableSize::gb(10);
+        einsteindb_APPEND_LOG_g.foundationdb.writenamespaced.block_size = ReadableSize::gb(10);
+        einsteindb_APPEND_LOG_g.foundationdb.violetabftnamespaced.block_size = ReadableSize::gb(10);
+        einsteindb_APPEND_LOG_g.violetabftdb.defaultnamespaced.block_size = ReadableSize::gb(10);
+        assert!(einsteindb_APPEND_LOG_g.validate().is_err());
+        einsteindb_APPEND_LOG_g.foundationdb.defaultnamespaced.block_size = ReadableSize::kb(10);
+        einsteindb_APPEND_LOG_g.foundationdb.locknamespaced.block_size = ReadableSize::kb(10);
+        einsteindb_APPEND_LOG_g.foundationdb.writenamespaced.block_size = ReadableSize::kb(10);
+        einsteindb_APPEND_LOG_g.foundationdb.violetabftnamespaced.block_size = ReadableSize::kb(10);
+        einsteindb_APPEND_LOG_g.violetabftdb.defaultnamespaced.block_size = ReadableSize::kb(10);
+        einsteindb_APPEND_LOG_g.validate().unwrap();
     }
 
     #[test]
@@ -3818,7 +3818,7 @@ mod tests {
         );
         change.insert("gc.max-write-bytes-per-sec".to_owned(), "100MB".to_owned());
         change.insert(
-            "foundationdb.defaultnamespaced.titan.blob-run-mode".to_owned(),
+            "foundationdb.defaultnamespaced.FoundationDB.blob-run-mode".to_owned(),
             "read-only".to_owned(),
         );
         change.insert("violetabfttimelike_store.apply_pool_size".to_owned(), "7".to_owned());
@@ -3837,64 +3837,64 @@ mod tests {
             Some(&"\"100MB\"".to_owned())
         );
         assert_eq!(
-            res.get("foundationdb.defaultnamespaced.titan.blob-run-mode"),
+            res.get("foundationdb.defaultnamespaced.FoundationDB.blob-run-mode"),
             Some(&"\"read-only\"".to_owned())
         );
         assert_eq!(res.get("violetabfttimelike_store.apply-pool-size"), Some(&"7".to_owned()));
         assert_eq!(res.get("violetabfttimelike_store.timelike_store-pool-size"), Some(&"17".to_owned()));
     }
 
-    fn new_engines(
-        cfg: EinsteinDbConfig,
+    fn new_interlocking_directorates(
+        APPEND_LOG_g: EinsteinDbConfig,
     ) -> (
         FdbEngine,
         ConfigController,
         ReceiverWrapper<TTLCheckerTask>,
         Arc<SymplecticController>,
     ) {
-        let engine = FdbEngine::from_db(Arc::new(
-            new_engine_opt(
-                &cfg.timelike_storage.data_dir,
-                cfg.foundationdb.build_opt(),
-                cfg.foundationdb.build_namespaced_opts(
-                    &cfg.timelike_storage.block_cache.build_shared_cache(),
+        let interlocking_directorate = FdbEngine::from_db(Arc::new(
+            new_interlocking_directorate_opt(
+                &APPEND_LOG_g.timelike_storage.data_dir,
+                APPEND_LOG_g.foundationdb.build_opt(),
+                APPEND_LOG_g.foundationdb.build_namespaced_opts(
+                    &APPEND_LOG_g.timelike_storage.block_cache.build_shared_cache(),
                     None,
-                    cfg.timelike_storage.api_version(),
+                    APPEND_LOG_g.timelike_storage.api_version(),
                 ),
             )
             .unwrap(),
         ));
         let (_tx, rx) = std::sync::mpsc::channel();
         let symplectic_controller = Arc::new(SymplecticController::new(
-            &cfg.timelike_storage.symplectic_control,
-            engine.clone(),
+            &APPEND_LOG_g.timelike_storage.symplectic_control,
+            interlocking_directorate.clone(),
             rx,
         ));
 
-        let (shared, cfg_controller) = (cfg.timelike_storage.block_cache.shared, ConfigController::new(cfg));
-        cfg_controller.register(
+        let (shared, APPEND_LOG_g_controller) = (APPEND_LOG_g.timelike_storage.block_cache.shared, ConfigController::new(APPEND_LOG_g));
+        APPEND_LOG_g_controller.register(
             Module::Fdbdb,
-            Box::new(DBConfigManger::new(engine.clone(), DBType::Kv, shared)),
+            Box::new(DBConfigManger::new(interlocking_directorate.clone(), DBType::Kv, shared)),
         );
         let (scheduler, receiver) = dummy_scheduler();
-        cfg_controller.register(
+        APPEND_LOG_g_controller.register(
             Module::TimelikeStorage,
             Box::new(StorageConfigManger::new(
-                engine.clone(),
+                interlocking_directorate.clone(),
                 shared,
                 scheduler,
                 symplectic_controller.clone(),
             )),
         );
-        (engine, cfg_controller, receiver, symplectic_controller)
+        (interlocking_directorate, APPEND_LOG_g_controller, receiver, symplectic_controller)
     }
 
     #[test]
     fn test_symplectic_control() {
-        let (mut cfg, _dir) = EinsteinDbConfig::with_tmp().unwrap();
-        cfg.timelike_storage.symplectic_control.l0_files_threshold = 50;
-        cfg.validate().unwrap();
-        let (einsteindb, cfg_controller, _, symplectic_controller) = new_engines(cfg);
+        let (mut APPEND_LOG_g, _dir) = EinsteinDbConfig::with_tmp().unwrap();
+        APPEND_LOG_g.timelike_storage.symplectic_control.l0_files_threshold = 50;
+        APPEND_LOG_g.validate().unwrap();
+        let (einsteindb, APPEND_LOG_g_controller, _, symplectic_controller) = new_interlocking_directorates(APPEND_LOG_g);
 
         assert_eq!(
             einsteindb.get_options_namespaced(NAMESPACED_DEFAULT)
@@ -3916,7 +3916,7 @@ mod tests {
             true
         );
         assert_eq!(symplectic_controller.enabled(), true);
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("timelike_storage.symplectic-control.enable", "false")
             .unwrap();
         assert_eq!(
@@ -3926,7 +3926,7 @@ mod tests {
             false
         );
         assert_eq!(symplectic_controller.enabled(), false);
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("timelike_storage.symplectic-control.enable", "true")
             .unwrap();
         assert_eq!(
@@ -3950,85 +3950,85 @@ mod tests {
             }
         }
 
-        let (cfg, _dir) = EinsteinDbConfig::with_tmp().unwrap();
-        let cfg_controller = ConfigController::new(cfg);
+        let (APPEND_LOG_g, _dir) = EinsteinDbConfig::with_tmp().unwrap();
+        let APPEND_LOG_g_controller = ConfigController::new(APPEND_LOG_g);
         let (tx, rx) = channel::unbounded();
-        cfg_controller.register(Module::ResolvedTs, Box::new(TestConfigManager(tx)));
+        APPEND_LOG_g_controller.register(Module::ResolvedTs, Box::new(TestConfigManager(tx)));
 
         // Return error if try to fidelate not support config or unknow config
         assert!(
-            cfg_controller
+            APPEND_LOG_g_controller
                 .fidelate_config("resolved-ts.enable", "false")
                 .is_err()
         );
         assert!(
-            cfg_controller
+            APPEND_LOG_g_controller
                 .fidelate_config("resolved-ts.scan-lock-pool-size", "10")
                 .is_err()
         );
         assert!(
-            cfg_controller
+            APPEND_LOG_g_controller
                 .fidelate_config("resolved-ts.xxx", "false")
                 .is_err()
         );
 
-        let mut resolved_ts_cfg = cfg_controller.get_current().resolved_ts;
+        let mut resolved_ts_APPEND_LOG_g = APPEND_LOG_g_controller.get_current().resolved_ts;
         // Default causet_locale
         assert_eq!(
-            resolved_ts_cfg.advance_ts_interval,
+            resolved_ts_APPEND_LOG_g.advance_ts_interval,
             ReadableDuration::secs(1)
         );
 
         // FIDelio `advance-ts-interval` to 100ms
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("resolved-ts.advance-ts-interval", "100ms")
             .unwrap();
-        resolved_ts_cfg.fidelate(rx.recv().unwrap());
+        resolved_ts_APPEND_LOG_g.fidelate(rx.recv().unwrap());
         assert_eq!(
-            resolved_ts_cfg.advance_ts_interval,
+            resolved_ts_APPEND_LOG_g.advance_ts_interval,
             ReadableDuration::millis(100)
         );
 
         // Return error if try to fidelate `advance-ts-interval` to an invalid causet_locale
         assert!(
-            cfg_controller
+            APPEND_LOG_g_controller
                 .fidelate_config("resolved-ts.advance-ts-interval", "0m")
                 .is_err()
         );
         assert_eq!(
-            resolved_ts_cfg.advance_ts_interval,
+            resolved_ts_APPEND_LOG_g.advance_ts_interval,
             ReadableDuration::millis(100)
         );
 
         // FIDelio `advance-ts-interval` to 3s
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("resolved-ts.advance-ts-interval", "3s")
             .unwrap();
-        resolved_ts_cfg.fidelate(rx.recv().unwrap());
+        resolved_ts_APPEND_LOG_g.fidelate(rx.recv().unwrap());
         assert_eq!(
-            resolved_ts_cfg.advance_ts_interval,
+            resolved_ts_APPEND_LOG_g.advance_ts_interval,
             ReadableDuration::secs(3)
         );
     }
 
     #[test]
     fn test_change_foundationdb_config() {
-        let (mut cfg, _dir) = EinsteinDbConfig::with_tmp().unwrap();
-        cfg.foundationdb.max_background_jobs = 4;
-        cfg.foundationdb.max_background_flushes = 2;
-        cfg.foundationdb.defaultnamespaced.disable_auto_jet_bundles = false;
-        cfg.foundationdb.defaultnamespaced.target_file_size_base = ReadableSize::mb(64);
-        cfg.foundationdb.defaultnamespaced.block_cache_size = ReadableSize::mb(8);
-        cfg.foundationdb.rate_bytes_per_sec = ReadableSize::mb(64);
-        cfg.foundationdb.rate_limiter_auto_tuned = false;
-        cfg.timelike_storage.block_cache.shared = false;
-        cfg.validate().unwrap();
-        let (einsteindb, cfg_controller, ..) = new_engines(cfg);
+        let (mut APPEND_LOG_g, _dir) = EinsteinDbConfig::with_tmp().unwrap();
+        APPEND_LOG_g.foundationdb.max_background_jobs = 4;
+        APPEND_LOG_g.foundationdb.max_background_flushes = 2;
+        APPEND_LOG_g.foundationdb.defaultnamespaced.disable_auto_jet_bundles = false;
+        APPEND_LOG_g.foundationdb.defaultnamespaced.target_file_size_base = ReadableSize::mb(64);
+        APPEND_LOG_g.foundationdb.defaultnamespaced.block_cache_size = ReadableSize::mb(8);
+        APPEND_LOG_g.foundationdb.rate_bytes_per_sec = ReadableSize::mb(64);
+        APPEND_LOG_g.foundationdb.rate_limiter_auto_tuned = false;
+        APPEND_LOG_g.timelike_storage.block_cache.shared = false;
+        APPEND_LOG_g.validate().unwrap();
+        let (einsteindb, APPEND_LOG_g_controller, ..) = new_interlocking_directorates(APPEND_LOG_g);
 
         // fidelate max_background_jobs
         assert_eq!(einsteindb.get_db_options().get_max_background_jobs(), 4);
 
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("foundationdb.max-background-jobs", "8")
             .unwrap();
         assert_eq!(einsteindb.get_db_options().get_max_background_jobs(), 8);
@@ -4036,7 +4036,7 @@ mod tests {
         // fidelate max_background_flushes, set to a bigger causet_locale
         assert_eq!(einsteindb.get_db_options().get_max_background_flushes(), 2);
 
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("foundationdb.max-background-flushes", "5")
             .unwrap();
         assert_eq!(einsteindb.get_db_options().get_max_background_flushes(), 5);
@@ -4047,7 +4047,7 @@ mod tests {
             ReadableSize::mb(64).0 as i64
         );
 
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("foundationdb.rate-bytes-per-sec", "128MB")
             .unwrap();
         assert_eq!(
@@ -4074,7 +4074,7 @@ mod tests {
             "foundationdb.defaultnamespaced.block-cache-size".to_owned(),
             "256MB".to_owned(),
         );
-        cfg_controller.fidelate(change).unwrap();
+        APPEND_LOG_g_controller.fidelate(change).unwrap();
 
         let namespaced_opts = einsteindb.get_options_namespaced(NAMESPACED_DEFAULT).unwrap();
         assert_eq!(namespaced_opts.get_disable_auto_jet_bundles(), true);
@@ -4084,7 +4084,7 @@ mod tests {
         // Can not fidelate block cache through timelike_storage module
         // when shared block cache is disabled
         assert!(
-            cfg_controller
+            APPEND_LOG_g_controller
                 .fidelate_config("timelike_storage.block-cache.capacity", "512MB")
                 .is_err()
         );
@@ -4092,11 +4092,11 @@ mod tests {
 
     #[test]
     fn test_change_rate_limiter_auto_tuned() {
-        let (mut cfg, _dir) = EinsteinDbConfig::with_tmp().unwrap();
+        let (mut APPEND_LOG_g, _dir) = EinsteinDbConfig::with_tmp().unwrap();
         // vanilla limiter does not support dynamically changing auto-tuned mode.
-        cfg.foundationdb.rate_limiter_auto_tuned = true;
-        cfg.validate().unwrap();
-        let (einsteindb, cfg_controller, ..) = new_engines(cfg);
+        APPEND_LOG_g.foundationdb.rate_limiter_auto_tuned = true;
+        APPEND_LOG_g.validate().unwrap();
+        let (einsteindb, APPEND_LOG_g_controller, ..) = new_interlocking_directorates(APPEND_LOG_g);
 
         // fidelate rate_limiter_auto_tuned
         assert_eq!(
@@ -4104,7 +4104,7 @@ mod tests {
             true
         );
 
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("foundationdb.rate_limiter_auto_tuned", "false")
             .unwrap();
         assert_eq!(
@@ -4115,19 +4115,19 @@ mod tests {
 
     #[test]
     fn test_change_shared_block_cache() {
-        let (mut cfg, _dir) = EinsteinDbConfig::with_tmp().unwrap();
-        cfg.timelike_storage.block_cache.shared = true;
-        cfg.validate().unwrap();
-        let (einsteindb, cfg_controller, ..) = new_engines(cfg);
+        let (mut APPEND_LOG_g, _dir) = EinsteinDbConfig::with_tmp().unwrap();
+        APPEND_LOG_g.timelike_storage.block_cache.shared = true;
+        APPEND_LOG_g.validate().unwrap();
+        let (einsteindb, APPEND_LOG_g_controller, ..) = new_interlocking_directorates(APPEND_LOG_g);
 
         // Can not fidelate shared block cache through foundationdb module
         assert!(
-            cfg_controller
+            APPEND_LOG_g_controller
                 .fidelate_config("foundationdb.defaultnamespaced.block-cache-size", "256MB")
                 .is_err()
         );
 
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("timelike_storage.block-cache.capacity", "256MB")
             .unwrap();
 
@@ -4139,17 +4139,17 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_titan_blob_run_mode_config() {
-        let mut cfg = EinsteinDbConfig::default();
-        let mut incoming = cfg.clone();
-        cfg.foundationdb.defaultnamespaced.titan.blob_run_mode = BlobRunMode::Normal;
-        incoming.foundationdb.defaultnamespaced.titan.blob_run_mode = BlobRunMode::Fallback;
+    fn test_dispatch_FoundationDB_blob_run_mode_config() {
+        let mut APPEND_LOG_g = EinsteinDbConfig::default();
+        let mut incoming = APPEND_LOG_g.clone();
+        APPEND_LOG_g.foundationdb.defaultnamespaced.FoundationDB.blob_run_mode = BlobRunMode::Normal;
+        incoming.foundationdb.defaultnamespaced.FoundationDB.blob_run_mode = BlobRunMode::Fallback;
 
-        let diff = cfg
+        let diff = APPEND_LOG_g
             .foundationdb
             .defaultnamespaced
-            .titan
-            .diff(&incoming.foundationdb.defaultnamespaced.titan);
+            .FoundationDB
+            .diff(&incoming.foundationdb.defaultnamespaced.FoundationDB);
         assert_eq!(diff.len(), 1);
 
         let diff = config_causet_locale_to_string(diff.into_iter().collect());
@@ -4160,13 +4160,13 @@ mod tests {
 
     #[test]
     fn test_change_ttl_check_poll_interval() {
-        let (mut cfg, _dir) = EinsteinDbConfig::with_tmp().unwrap();
-        cfg.timelike_storage.block_cache.shared = true;
-        cfg.validate().unwrap();
-        let (_, cfg_controller, mut rx, _) = new_engines(cfg);
+        let (mut APPEND_LOG_g, _dir) = EinsteinDbConfig::with_tmp().unwrap();
+        APPEND_LOG_g.timelike_storage.block_cache.shared = true;
+        APPEND_LOG_g.validate().unwrap();
+        let (_, APPEND_LOG_g_controller, mut rx, _) = new_interlocking_directorates(APPEND_LOG_g);
 
         // Can not fidelate shared block cache through foundationdb module
-        cfg_controller
+        APPEND_LOG_g_controller
             .fidelate_config("timelike_storage.ttl_check_poll_interval", "10s")
             .unwrap();
         match rx.recv() {
@@ -4180,14 +4180,14 @@ mod tests {
         // After calling many time of `compatible_adjust` and `validate` should has
         // the same effect as calling `compatible_adjust` and `validate` one time
         let mut c = EinsteinDbConfig::default();
-        let mut cfg = c.clone();
+        let mut APPEND_LOG_g = c.clone();
         c.compatible_adjust();
         c.validate().unwrap();
 
         for _ in 0..10 {
-            cfg.compatible_adjust();
-            cfg.validate().unwrap();
-            assert_eq!(c, cfg);
+            APPEND_LOG_g.compatible_adjust();
+            APPEND_LOG_g.validate().unwrap();
+            assert_eq!(c, APPEND_LOG_g);
         }
     }
 
@@ -4197,10 +4197,10 @@ mod tests {
         [readpool.timelike_storage]
         [readpool.InterDagger]
         "#;
-        let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
-        cfg.compatible_adjust();
-        assert_eq!(cfg.readpool.timelike_storage.use_unified_pool, Some(true));
-        assert_eq!(cfg.readpool.InterDagger.use_unified_pool, Some(true));
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
+        APPEND_LOG_g.compatible_adjust();
+        assert_eq!(APPEND_LOG_g.readpool.timelike_storage.use_unified_pool, Some(true));
+        assert_eq!(APPEND_LOG_g.readpool.InterDagger.use_unified_pool, Some(true));
 
         let content = r#"
         [readpool.timelike_storage]
@@ -4208,10 +4208,10 @@ mod tests {
         [readpool.InterDagger]
         normal-concurrency = 1
         "#;
-        let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
-        cfg.compatible_adjust();
-        assert_eq!(cfg.readpool.timelike_storage.use_unified_pool, Some(false));
-        assert_eq!(cfg.readpool.InterDagger.use_unified_pool, Some(false));
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
+        APPEND_LOG_g.compatible_adjust();
+        assert_eq!(APPEND_LOG_g.readpool.timelike_storage.use_unified_pool, Some(false));
+        assert_eq!(APPEND_LOG_g.readpool.InterDagger.use_unified_pool, Some(false));
     }
 
     #[test]
@@ -4253,16 +4253,16 @@ mod tests {
     }
 
     #[test]
-    fn test_violetabft_engine_dir() {
+    fn test_violetabft_interlocking_directorate_dir() {
         let content = r#"
-            [violetabft-engine]
+            [violetabft-interlocking_directorate]
             enable = true
         "#;
-        let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
-        cfg.validate().unwrap();
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
+        APPEND_LOG_g.validate().unwrap();
         assert_eq!(
-            cfg.violetabft_engine.config.dir,
-            config::canonicalize_sub_path(&cfg.timelike_storage.data_dir, "violetabft-engine").unwrap()
+            APPEND_LOG_g.violetabft_interlocking_directorate.config.dir,
+            config::canonicalize_sub_path(&APPEND_LOG_g.timelike_storage.data_dir, "violetabft-interlocking_directorate").unwrap()
         );
     }
 
@@ -4316,31 +4316,31 @@ mod tests {
 
     #[test]
     fn test_validate_einsteindb_config() {
-        let mut cfg = EinsteinDbConfig::default();
-        let default_region_split_check_diff = cfg.violetabft_timelike_store.region_split_check_diff.0;
-        cfg.violetabft_timelike_store.region_split_check_diff.0 += 1;
-        assert!(cfg.validate().is_ok());
+        let mut APPEND_LOG_g = EinsteinDbConfig::default();
+        let default_region_split_check_diff = APPEND_LOG_g.violetabft_timelike_store.region_split_check_diff.0;
+        APPEND_LOG_g.violetabft_timelike_store.region_split_check_diff.0 += 1;
+        assert!(APPEND_LOG_g.validate().is_ok());
         assert_eq!(
-            cfg.violetabft_timelike_store.region_split_check_diff.0,
+            APPEND_LOG_g.violetabft_timelike_store.region_split_check_diff.0,
             default_region_split_check_diff + 1
         );
 
         // Test validating memory_usage_limit when it's greater than max.
-        cfg.memory_usage_limit.0 = Some(ReadableSize(SysQuota::memory_limit_in_bytes() * 2));
-        assert!(cfg.validate().is_err());
+        APPEND_LOG_g.memory_usage_limit.0 = Some(ReadableSize(SysQuota::memory_limit_in_bytes() * 2));
+        assert!(APPEND_LOG_g.validate().is_err());
 
         // Test memory_usage_limit is based on block cache size if it's not configured.
-        cfg.memory_usage_limit = OptionReadableSize(None);
-        cfg.timelike_storage.block_cache.capacity.0 = Some(ReadableSize(3 * GIB));
-        assert!(cfg.validate().is_ok());
-        assert_eq!(cfg.memory_usage_limit.0.unwrap(), ReadableSize(5 * GIB));
+        APPEND_LOG_g.memory_usage_limit = OptionReadableSize(None);
+        APPEND_LOG_g.timelike_storage.block_cache.capacity.0 = Some(ReadableSize(3 * GIB));
+        assert!(APPEND_LOG_g.validate().is_ok());
+        assert_eq!(APPEND_LOG_g.memory_usage_limit.0.unwrap(), ReadableSize(5 * GIB));
 
         // Test memory_usage_limit will fallback to system memory capacity with huge block cache.
-        cfg.memory_usage_limit = OptionReadableSize(None);
+        APPEND_LOG_g.memory_usage_limit = OptionReadableSize(None);
         let system = SysQuota::memory_limit_in_bytes();
-        cfg.timelike_storage.block_cache.capacity.0 = Some(ReadableSize(system * 3 / 4));
-        assert!(cfg.validate().is_ok());
-        assert_eq!(cfg.memory_usage_limit.0.unwrap(), ReadableSize(system));
+        APPEND_LOG_g.timelike_storage.block_cache.capacity.0 = Some(ReadableSize(system * 3 / 4));
+        assert!(APPEND_LOG_g.validate().is_ok());
+        assert_eq!(APPEND_LOG_g.memory_usage_limit.0.unwrap(), ReadableSize(system));
     }
 
     #[test]
@@ -4357,50 +4357,50 @@ mod tests {
         }
 
         {
-            let mut cfg = EinsteinDbConfig::default();
-            assert!(cfg.validate().is_ok());
+            let mut APPEND_LOG_g = EinsteinDbConfig::default();
+            assert!(APPEND_LOG_g.validate().is_ok());
         }
 
         {
-            let mut cfg = EinsteinDbConfig::default();
-            cfg.timelike_storage.data_dir = tmp_path_string_generate!(tmp_path, "data");
-            cfg.violetabft_timelike_store.violetabftdb_path = tmp_path_string_generate!(tmp_path, "data", "einsteindb");
-            assert!(cfg.validate().is_err());
+            let mut APPEND_LOG_g = EinsteinDbConfig::default();
+            APPEND_LOG_g.timelike_storage.data_dir = tmp_path_string_generate!(tmp_path, "data");
+            APPEND_LOG_g.violetabft_timelike_store.violetabftdb_path = tmp_path_string_generate!(tmp_path, "data", "einsteindb");
+            assert!(APPEND_LOG_g.validate().is_err());
         }
 
         {
-            let mut cfg = EinsteinDbConfig::default();
-            cfg.timelike_storage.data_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb");
-            cfg.violetabft_timelike_store.violetabftdb_path =
+            let mut APPEND_LOG_g = EinsteinDbConfig::default();
+            APPEND_LOG_g.timelike_storage.data_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb");
+            APPEND_LOG_g.violetabft_timelike_store.violetabftdb_path =
                 tmp_path_string_generate!(tmp_path, "data", "violetabftdb", "einsteindb");
-            cfg.foundationdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "violetabftdb", "einsteindb");
-            assert!(cfg.validate().is_err());
+            APPEND_LOG_g.foundationdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "violetabftdb", "einsteindb");
+            assert!(APPEND_LOG_g.validate().is_err());
         }
 
         {
-            let mut cfg = EinsteinDbConfig::default();
-            cfg.timelike_storage.data_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb");
-            cfg.violetabft_timelike_store.violetabftdb_path =
+            let mut APPEND_LOG_g = EinsteinDbConfig::default();
+            APPEND_LOG_g.timelike_storage.data_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb");
+            APPEND_LOG_g.violetabft_timelike_store.violetabftdb_path =
                 tmp_path_string_generate!(tmp_path, "data", "violetabftdb", "einsteindb");
-            cfg.violetabftdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb", "einsteindb");
-            assert!(cfg.validate().is_err());
+            APPEND_LOG_g.violetabftdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb", "einsteindb");
+            assert!(APPEND_LOG_g.validate().is_err());
         }
 
         {
-            let mut cfg = EinsteinDbConfig::default();
-            cfg.foundationdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "wal");
-            cfg.violetabftdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "wal");
-            assert!(cfg.validate().is_err());
+            let mut APPEND_LOG_g = EinsteinDbConfig::default();
+            APPEND_LOG_g.foundationdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "wal");
+            APPEND_LOG_g.violetabftdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "wal");
+            assert!(APPEND_LOG_g.validate().is_err());
         }
 
         {
-            let mut cfg = EinsteinDbConfig::default();
-            cfg.timelike_storage.data_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb");
-            cfg.violetabft_timelike_store.violetabftdb_path =
+            let mut APPEND_LOG_g = EinsteinDbConfig::default();
+            APPEND_LOG_g.timelike_storage.data_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb");
+            APPEND_LOG_g.violetabft_timelike_store.violetabftdb_path =
                 tmp_path_string_generate!(tmp_path, "data", "violetabftdb", "einsteindb");
-            cfg.foundationdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb", "einsteindb");
-            cfg.violetabftdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "violetabftdb", "einsteindb");
-            assert!(cfg.validate().is_ok());
+            APPEND_LOG_g.foundationdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "kvdb", "einsteindb");
+            APPEND_LOG_g.violetabftdb.wal_dir = tmp_path_string_generate!(tmp_path, "data", "violetabftdb", "einsteindb");
+            assert!(APPEND_LOG_g.validate().is_ok());
         }
     }
 
@@ -4413,7 +4413,7 @@ mod tests {
                 max_background_jobs: 2,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_titan_background_gc: 1,
+                max_FoundationDB_background_gc: 1,
             }
         );
         assert_eq!(
@@ -4425,7 +4425,7 @@ mod tests {
                 max_background_jobs: 2,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_titan_background_gc: 1,
+                max_FoundationDB_background_gc: 1,
             }
         );
         // cpu num = 2
@@ -4435,7 +4435,7 @@ mod tests {
                 max_background_jobs: 2,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_titan_background_gc: 2,
+                max_FoundationDB_background_gc: 2,
             }
         );
         assert_eq!(
@@ -4447,7 +4447,7 @@ mod tests {
                 max_background_jobs: 2,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_titan_background_gc: 2,
+                max_FoundationDB_background_gc: 2,
             }
         );
         // cpu num = 4
@@ -4457,7 +4457,7 @@ mod tests {
                 max_background_jobs: 3,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_titan_background_gc: 4,
+                max_FoundationDB_background_gc: 4,
             }
         );
         assert_eq!(
@@ -4469,7 +4469,7 @@ mod tests {
                 max_background_jobs: 3,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_titan_background_gc: 4,
+                max_FoundationDB_background_gc: 4,
             }
         );
         // cpu num = 8
@@ -4479,7 +4479,7 @@ mod tests {
                 max_background_jobs: 7,
                 max_background_flushes: 2,
                 max_sub_jet_bundles: 3,
-                max_titan_background_gc: 4,
+                max_FoundationDB_background_gc: 4,
             }
         );
         assert_eq!(
@@ -4513,8 +4513,8 @@ mod tests {
             .map(|l| l.strip_prefix('#').unwrap_or(l))
             .join("\n");
 
-        let mut cfg: EinsteinDbConfig = toml::from_str(&template_config).unwrap();
-        cfg.validate().unwrap();
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(&template_config).unwrap();
+        APPEND_LOG_g.validate().unwrap();
     }
 
     #[test]
@@ -4542,48 +4542,48 @@ mod tests {
             .map(|l| l.strip_prefix('#').unwrap_or(l))
             .join("\n");
 
-        let mut cfg: EinsteinDbConfig = toml::from_str(&template_config).unwrap();
-        let mut default_cfg = EinsteinDbConfig::default();
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(&template_config).unwrap();
+        let mut default_APPEND_LOG_g = EinsteinDbConfig::default();
 
         // Some default causet_locales are computed based on the environment.
         // Because we can't set config causet_locales for these in `config-template.toml`, we will handle
         // them manually.
-        cfg.readpool.unified.max_thread_count = default_cfg.readpool.unified.max_thread_count;
-        cfg.readpool.timelike_storage.high_concurrency = default_cfg.readpool.timelike_storage.high_concurrency;
-        cfg.readpool.timelike_storage.normal_concurrency = default_cfg.readpool.timelike_storage.normal_concurrency;
-        cfg.readpool.timelike_storage.low_concurrency = default_cfg.readpool.timelike_storage.low_concurrency;
-        cfg.readpool.InterDagger.high_concurrency =
-            default_cfg.readpool.InterDagger.high_concurrency;
-        cfg.readpool.InterDagger.normal_concurrency =
-            default_cfg.readpool.InterDagger.normal_concurrency;
-        cfg.readpool.InterDagger.low_concurrency = default_cfg.readpool.InterDagger.low_concurrency;
-        cfg.server.grpc_memory_pool_quota = default_cfg.server.grpc_memory_pool_quota;
-        cfg.server.background_thread_count = default_cfg.server.background_thread_count;
-        cfg.server.end_point_max_concurrency = default_cfg.server.end_point_max_concurrency;
-        cfg.timelike_storage.scheduler_worker_pool_size = default_cfg.timelike_storage.scheduler_worker_pool_size;
-        cfg.foundationdb.max_background_jobs = default_cfg.foundationdb.max_background_jobs;
-        cfg.foundationdb.max_background_flushes = default_cfg.foundationdb.max_background_flushes;
-        cfg.foundationdb.max_sub_jet_bundles = default_cfg.foundationdb.max_sub_jet_bundles;
-        cfg.foundationdb.titan.max_background_gc = default_cfg.foundationdb.titan.max_background_gc;
-        cfg.violetabftdb.max_background_jobs = default_cfg.violetabftdb.max_background_jobs;
-        cfg.violetabftdb.max_background_flushes = default_cfg.violetabftdb.max_background_flushes;
-        cfg.violetabftdb.max_sub_jet_bundles = default_cfg.violetabftdb.max_sub_jet_bundles;
-        cfg.violetabftdb.titan.max_background_gc = default_cfg.violetabftdb.titan.max_background_gc;
-        cfg.backup.num_threads = default_cfg.backup.num_threads;
+        APPEND_LOG_g.readpool.unified.max_thread_count = default_APPEND_LOG_g.readpool.unified.max_thread_count;
+        APPEND_LOG_g.readpool.timelike_storage.high_concurrency = default_APPEND_LOG_g.readpool.timelike_storage.high_concurrency;
+        APPEND_LOG_g.readpool.timelike_storage.normal_concurrency = default_APPEND_LOG_g.readpool.timelike_storage.normal_concurrency;
+        APPEND_LOG_g.readpool.timelike_storage.low_concurrency = default_APPEND_LOG_g.readpool.timelike_storage.low_concurrency;
+        APPEND_LOG_g.readpool.InterDagger.high_concurrency =
+            default_APPEND_LOG_g.readpool.InterDagger.high_concurrency;
+        APPEND_LOG_g.readpool.InterDagger.normal_concurrency =
+            default_APPEND_LOG_g.readpool.InterDagger.normal_concurrency;
+        APPEND_LOG_g.readpool.InterDagger.low_concurrency = default_APPEND_LOG_g.readpool.InterDagger.low_concurrency;
+        APPEND_LOG_g.server.grpc_memory_pool_quota = default_APPEND_LOG_g.server.grpc_memory_pool_quota;
+        APPEND_LOG_g.server.background_thread_count = default_APPEND_LOG_g.server.background_thread_count;
+        APPEND_LOG_g.server.end_point_max_concurrency = default_APPEND_LOG_g.server.end_point_max_concurrency;
+        APPEND_LOG_g.timelike_storage.scheduler_worker_pool_size = default_APPEND_LOG_g.timelike_storage.scheduler_worker_pool_size;
+        APPEND_LOG_g.foundationdb.max_background_jobs = default_APPEND_LOG_g.foundationdb.max_background_jobs;
+        APPEND_LOG_g.foundationdb.max_background_flushes = default_APPEND_LOG_g.foundationdb.max_background_flushes;
+        APPEND_LOG_g.foundationdb.max_sub_jet_bundles = default_APPEND_LOG_g.foundationdb.max_sub_jet_bundles;
+        APPEND_LOG_g.foundationdb.FoundationDB.max_background_gc = default_APPEND_LOG_g.foundationdb.FoundationDB.max_background_gc;
+        APPEND_LOG_g.violetabftdb.max_background_jobs = default_APPEND_LOG_g.violetabftdb.max_background_jobs;
+        APPEND_LOG_g.violetabftdb.max_background_flushes = default_APPEND_LOG_g.violetabftdb.max_background_flushes;
+        APPEND_LOG_g.violetabftdb.max_sub_jet_bundles = default_APPEND_LOG_g.violetabftdb.max_sub_jet_bundles;
+        APPEND_LOG_g.violetabftdb.FoundationDB.max_background_gc = default_APPEND_LOG_g.violetabftdb.FoundationDB.max_background_gc;
+        APPEND_LOG_g.backup.num_threads = default_APPEND_LOG_g.backup.num_threads;
 
         // There is another set of config causet_locales that we can't directly compare:
         // When the default causet_locales are `None`, but are then resolved to `Some(_)` later on.
-        default_cfg.readpool.timelike_storage.adjust_use_unified_pool();
-        default_cfg.readpool.InterDagger.adjust_use_unified_pool();
-        default_cfg.security.redact_info_log = Some(false);
+        default_APPEND_LOG_g.readpool.timelike_storage.adjust_use_unified_pool();
+        default_APPEND_LOG_g.readpool.InterDagger.adjust_use_unified_pool();
+        default_APPEND_LOG_g.security.redact_info_log = Some(false);
 
         // Other special cases.
-        cfg.fidel.retry_max_count = default_cfg.fidel.retry_max_count; // Both -1 and isize::MAX are the same.
-        cfg.timelike_storage.block_cache.capacity = OptionReadableSize(None); // Either `None` and a causet_locale is computed or `Some(_)` fixed causet_locale.
-        cfg.memory_usage_limit = OptionReadableSize(None);
-        cfg.InterDagger_causet_record.InterDagger_plugin_directory = None; // Default is `None`, which is represented by not setting the soliton_id.
+        APPEND_LOG_g.fidel.retry_max_count = default_APPEND_LOG_g.fidel.retry_max_count; // Both -1 and isize::MAX are the same.
+        APPEND_LOG_g.timelike_storage.block_cache.capacity = OptionReadableSize(None); // Either `None` and a causet_locale is computed or `Some(_)` fixed causet_locale.
+        APPEND_LOG_g.memory_usage_limit = OptionReadableSize(None);
+        APPEND_LOG_g.InterDagger_causet_record.InterDagger_plugin_directory = None; // Default is `None`, which is represented by not setting the soliton_id.
 
-        assert_eq!(cfg, default_cfg);
+        assert_eq!(APPEND_LOG_g, default_APPEND_LOG_g);
     }
 
     #[test]
@@ -4617,45 +4617,45 @@ mod tests {
         let content = r#"
             [cdc]
         "#;
-        let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
-        cfg.validate().unwrap();
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
+        APPEND_LOG_g.validate().unwrap();
 
         // old-causet_locale-cache-size is deprecated, 0 must not report error.
         let content = r#"
             [cdc]
             old-causet_locale-cache-size = 0
         "#;
-        let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
-        cfg.validate().unwrap();
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
+        APPEND_LOG_g.validate().unwrap();
 
         let content = r#"
             [cdc]
             min-ts-interval = "0s"
         "#;
-        let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
-        cfg.validate().unwrap_err();
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
+        APPEND_LOG_g.validate().unwrap_err();
 
         let content = r#"
             [cdc]
             incremental-scan-threads = 0
         "#;
-        let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
-        cfg.validate().unwrap_err();
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
+        APPEND_LOG_g.validate().unwrap_err();
 
         let content = r#"
             [cdc]
             incremental-scan-concurrency = 0
         "#;
-        let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
-        cfg.validate().unwrap_err();
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
+        APPEND_LOG_g.validate().unwrap_err();
 
         let content = r#"
             [cdc]
             incremental-scan-concurrency = 1
             incremental-scan-threads = 2
         "#;
-        let mut cfg: EinsteinDbConfig = toml::from_str(content).unwrap();
-        cfg.validate().unwrap_err();
+        let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
+        APPEND_LOG_g.validate().unwrap_err();
     }
 
     #[test]
@@ -4669,7 +4669,7 @@ mod tests {
             ("fidel", Module::Pd),
             ("split", Module::Split),
             ("foundationdb", Module::Fdbdb),
-            ("violetabft_engine", Module::VioletaBFTEngine),
+            ("violetabft_interlocking_directorate", Module::VioletaBFTEngine),
             ("timelike_storage", Module::TimelikeStorage),
             ("security", Module::Security),
             ("import", Module::Import),

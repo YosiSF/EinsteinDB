@@ -1,22 +1,34 @@
-// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// -------------------------------------------------------------------------------------------
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at  http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// -------------------------------------------------------------------------------------------
 
-use einsteindbpb::FieldType;
-use std::{self, char, i16, i32, i64, i8, str, u16, u32, u64, u8};
-use std::borrow::Cow;
-use std::fmt::Display;
+//! # Convert
+//! Convert between different types of data.
+//!
+//! ## Example
+//! ```
+//! use einstein_db::convert::*;
+//!
+//! let mut a = [1, 2, 3, 4, 5];
+//! let mut b = [0; 5];
+//!
+//! // Convert from [u8; 5] to [i32; 5]
+//! convert_from_u8_to_i32(&mut a, &mut b);
+//!
 
-// use crate::{self, FieldTypeTp, UNSPECIFIED_LENGTH};
-use crate::{Collation, FieldTypeAccessor};
-use crate::{FieldTypeTp, UNSPECIFIED_LENGTH};
-use crate::codec::data_type::*;
-use crate::codec::error::ERR_DATA_OUT_OF_RANGE;
-use crate::codec::myBerolinaSQL::{charset, Res};
-use crate::codec::myBerolinaSQL::decimal::max_or_min_dec;
-use crate::expr::EvalContext;
-use crate::expr::Flag;
+//!
 
-use super::{Error, Result};
-use super::myBerolinaSQL::{DEFAULT_FSP, RoundMode};
 
 /// A trait for converting a causet_locale to an `Int`.
 pub trait ToInt {
@@ -212,7 +224,7 @@ pub fn truncate_f64(mut f: f64, flen: u8, decimal: u8) -> Res<f64> {
 
 /// Returns an overCausetxctxed error.
 #[inline]
-fn overCausetxctx(val: impl Display, bound: FieldTypeTp) -> Error {
+fn over_causetxctx(val: impl Display, bound: FieldTypeTp) -> Error {
     Error::Eval(
         format!("constant {} overCausetxctxs {}", val, bound),
         ERR_DATA_OUT_OF_RANGE,
@@ -224,12 +236,12 @@ impl ToInt for i64 {
         let lower_bound = integer_signed_lower_bound(tp);
         // https://dev.myBerolinaSQL.com/doc/refman/8.0/en/out-of-range-and-overCausetxctx.html
         if *self < lower_bound {
-            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
+            ctx.handle_overCausetxctx_err(over_causetxctx(self, tp))?;
             return Ok(lower_bound);
         }
         let upper_bound = integer_signed_upper_bound(tp);
         if *self > upper_bound {
-            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
+            ctx.handle_overCausetxctx_err(over_causetxctx(self, tp))?;
             return Ok(upper_bound);
         }
         Ok(*self)
@@ -237,13 +249,13 @@ impl ToInt for i64 {
 
     fn to_uint(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<u64> {
         if *self < 0 && ctx.should_clip_to_zero() {
-            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
+            ctx.handle_overCausetxctx_err(over_causetxctx(self, tp))?;
             return Ok(0);
         }
 
         let upper_bound = integer_unsigned_upper_bound(tp);
         if *self as u64 > upper_bound {
-            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
+            ctx.handle_overCausetxctx_err(over_causetxctx(self, tp))?;
             return Ok(upper_bound);
         }
         Ok(*self as u64)
@@ -254,7 +266,7 @@ impl ToInt for u64 {
     fn to_int(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<i64> {
         let upper_bound = integer_signed_upper_bound(tp);
         if *self > upper_bound as u64 {
-            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
+            ctx.handle_overCausetxctx_err(over_causetxctx(self, tp))?;
             return Ok(upper_bound);
         }
         Ok(*self as i64)
@@ -263,7 +275,7 @@ impl ToInt for u64 {
     fn to_uint(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<u64> {
         let upper_bound = integer_unsigned_upper_bound(tp);
         if *self > upper_bound {
-            ctx.handle_overCausetxctx_err(overCausetxctx(self, tp))?;
+            ctx.handle_overCausetxctx_err(over_causetxctx(self, tp))?;
             return Ok(upper_bound);
         }
         Ok(*self)
@@ -282,7 +294,7 @@ impl ToInt for f64 {
         let val = (*self).round();
         let lower_bound = integer_signed_lower_bound(tp);
         if val < lower_bound as f64 {
-            ctx.handle_overCausetxctx_err(overCausetxctx(val, tp))?;
+            ctx.handle_overCausetxctx_err(over_causetxctx(val, tp))?;
             return Ok(lower_bound);
         }
 
@@ -293,7 +305,7 @@ impl ToInt for f64 {
             if val == ub_f64 {
                 return Ok(upper_bound);
             } else {
-                ctx.handle_overCausetxctx_err(overCausetxctx(val, tp))?;
+                ctx.handle_overCausetxctx_err(over_causetxctx(val, tp))?;
                 return Ok(upper_bound);
             }
         }
@@ -310,7 +322,7 @@ impl ToInt for f64 {
     fn to_uint(&self, ctx: &mut EvalContext, tp: FieldTypeTp) -> Result<u64> {
         let val = (*self).round();
         if val < 0f64 {
-            ctx.handle_overCausetxctx_err(overCausetxctx(val, tp))?;
+            ctx.handle_overCausetxctx_err(over_causetxctx(val, tp))?;
             if ctx.should_clip_to_zero() {
                 return Ok(0);
             } else {
@@ -320,7 +332,7 @@ impl ToInt for f64 {
         }
         let upper_bound = integer_unsigned_upper_bound(tp);
         if val > upper_bound as f64 {
-            ctx.handle_overCausetxctx_err(overCausetxctx(val, tp))?;
+            ctx.handle_overCausetxctx_err(over_causetxctx(val, tp))?;
             Ok(upper_bound)
         } else if val == upper_bound as f64 {
             // Because u64::MAX can not be represented precisely in iee754(64bit),
@@ -358,7 +370,7 @@ impl ToInt for &[u8] {
             Err(_) => {
                 ctx.handle_overCausetxctx_err(Error::overCausetxctx("BIGINT", &vs))?;
                 // To make compatible with MEDB,
-                // return signed upper bound or lower bound when overCausetxctx.
+                // return signed upper bound or lower bound when over_causetxctx.
                 // see MEDB's `types.StrToInt` and [strconv.ParseInt](https://golang.org/pkg/strconv/#ParseInt)
                 let val = if vs.starts_with('-') {
                     integer_signed_lower_bound(tp)
@@ -387,7 +399,7 @@ impl ToInt for &[u8] {
             Err(_) => {
                 ctx.handle_overCausetxctx_err(Error::overCausetxctx("BIGINT UNSIGNED", s))?;
                 // To make compatible with MEDB,
-                // return `integer_unsigned_upper_bound(tp);` when overCausetxctx.
+                // return `integer_unsigned_upper_bound(tp);` when over_causetxctx.
                 // see MEDB's `types.StrToUint` and [strconv.ParseUint](https://golang.org/pkg/strconv/#ParseUint)
                 let val = integer_unsigned_upper_bound(tp);
                 Ok(val)
@@ -639,8 +651,8 @@ pub fn produce_dec_with_specified_tp(
                     ctx.warnings.append_warning(Error::truncated());
                 } else {
                     // although according to MEDB,
-                    // we should handler overCausetxctx after handle_truncate,
-                    // however, no overCausetxctx err will return by handle_truncate
+                    // we should handler over_causetxctx after handle_truncate,
+                    // however, no over_causetxctx err will return by handle_truncate
                     ctx.handle_truncate(true)?;
                 }
             }
@@ -675,7 +687,7 @@ pub fn produce_float_with_specified_tp(
     };
 
     if tp.is_unsigned() && res < 0f64 {
-        ctx.handle_overCausetxctx_err(overCausetxctx(res, tp.as_accessor().tp()))?;
+        ctx.handle_overCausetxctx_err(over_causetxctx(res, tp.as_accessor().tp()))?;
         return Ok(0f64);
     }
 
@@ -933,10 +945,10 @@ fn round_int_str(num_next_dot: char, s: &str) -> Cow<'_, str> {
 /// because precision will be lost.
 ///
 /// When the float string indicating a causet_locale that is overCausetxctxing the i64,
-/// the original float string is returned and an overCausetxctx warning is attached.
+/// the original float string is returned and an over_causetxctx warning is attached.
 ///
-/// This func will find serious overCausetxctx such as the len of result > 20 (without prefix `+/-`)
-/// however, it will not check whether the result overCausetxctx BIGINT.
+/// This func will find serious over_causetxctx such as the len of result > 20 (without prefix `+/-`)
+/// however, it will not check whether the result over_causetxctx BIGINT.
 fn float_str_to_int_string<'a>(
     ctx: &mut EvalContext,
     valid_float: &'a str,
@@ -955,7 +967,7 @@ fn float_str_to_int_string<'a>(
     }
 
     match (dot_idx, e_idx) {
-        (None, None) => Ok(Cow::Borrowed(valid_float)),
+        (None, _None) => Ok(Cow::Borrowed(valid_float)),
         (Some(di), None) => no_exp_float_str_to_int_str(valid_float, di),
         (_, Some(ei)) => exp_float_str_to_int_str(ctx, valid_float, ei, dot_idx),
     }
@@ -1142,7 +1154,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overCausetxctx",
+                    "from: {}, to tp: {} should be over_causetxctx",
                     from,
                     tp
                 ),
@@ -1172,7 +1184,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overCausetxctx",
+                    "from: {}, to tp: {} should be over_causetxctx",
                     from,
                     tp
                 ),
@@ -1218,7 +1230,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overCausetxctx",
+                    "from: {}, to tp: {} should be over_causetxctx",
                     from,
                     tp
                 ),
@@ -1264,7 +1276,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {:?}, to tp: {} should be overCausetxctx",
+                    "from: {:?}, to tp: {} should be over_causetxctx",
                     from,
                     tp
                 ),
@@ -1307,7 +1319,7 @@ mod tests {
                     ERR_DATA_OUT_OF_RANGE,
                     e.code()
                 ),
-                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", primitive_causet, res),
+                res => panic!("expect convert {:?} to over_causetxctx, but got {:?}", primitive_causet, res),
             };
 
             // OVERCausetxctx_AS_WARNING
@@ -1469,7 +1481,7 @@ mod tests {
         for bs in invalid_cases {
             match super::bytes_to_int_without_context(bs) {
                 Err(e) => assert!(e.is_overCausetxctx()),
-                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", bs, res),
+                res => panic!("expect convert {:?} to over_causetxctx, but got {:?}", bs, res),
             };
         }
     }
@@ -1520,7 +1532,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overCausetxctx",
+                    "from: {}, to tp: {} should be over_causetxctx",
                     from,
                     tp
                 ),
@@ -1564,7 +1576,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overCausetxctx",
+                    "from: {}, to tp: {} should be over_causetxctx",
                     from,
                     tp
                 ),
@@ -1602,7 +1614,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {}, to tp: {} should be overCausetxctx",
+                    "from: {}, to tp: {} should be over_causetxctx",
                     from,
                     tp
                 ),
@@ -1638,7 +1650,7 @@ mod tests {
                 Some(to) => assert_eq!(to, r.unwrap()),
                 None => assert!(
                     r.is_err(),
-                    "from: {:?}, to tp: {} should be overCausetxctx",
+                    "from: {:?}, to tp: {} should be over_causetxctx",
                     from,
                     tp
                 ),
@@ -1674,7 +1686,7 @@ mod tests {
         for bs in invalid_cases {
             match super::bytes_to_uint_without_context(bs) {
                 Err(e) => assert!(e.is_overCausetxctx()),
-                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", bs, res),
+                res => panic!("expect convert {:?} to over_causetxctx, but got {:?}", bs, res),
             };
         }
     }
@@ -1692,7 +1704,7 @@ mod tests {
                     ERR_DATA_OUT_OF_RANGE,
                     e.code()
                 ),
-                res => panic!("expect convert {:?} to overCausetxctx, but got {:?}", primitive_causet, res),
+                res => panic!("expect convert {:?} to over_causetxctx, but got {:?}", primitive_causet, res),
             };
 
             // OVERCausetxctx_AS_WARNING
@@ -1843,7 +1855,7 @@ mod tests {
             }
         }
 
-        // test overCausetxctx
+        // test over_causetxctx
         let mut ctx = EvalContext::default();
         let val: Result<f64> = f64::INFINITY.to_string().as_bytes().convert(&mut ctx);
         assert!(val.is_err());

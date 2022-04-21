@@ -343,7 +343,7 @@ impl Conn {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod tests {
     use ::{
         IntoResult,

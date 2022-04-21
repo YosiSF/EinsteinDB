@@ -1,6 +1,6 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::db_options::PanicTitanDBOptions;
+use crate::db_options::PaniAPPEND_LOG_oundationDBDBOptions;
 use crate::fdb_lsh_treePaniceinstein_merkle_tree;
 use fdb_traits::{NAMESPACEDOptionsExt, Result};
 use fdb_traits::{ColumnFamilyOptions, CausetPartitionerFactory};
@@ -19,7 +19,7 @@ impl NAMESPACEDOptionsExt for Paniceinstein_merkle_tree {
 pub struct PanicColumnFamilyOptions;
 
 impl ColumnFamilyOptions for PanicColumnFamilyOptions {
-    type TitanDBOptions = PanicTitanDBOptions;
+    type FoundationDBDBOptions = PaniAPPEND_LOG_oundationDBDBOptions;
 
     fn new() -> Self {
         panic!()
@@ -48,7 +48,7 @@ impl ColumnFamilyOptions for PanicColumnFamilyOptions {
     fn set_block_cache_capacity(&self, capacity: u64) -> std::result::Result<(), String> {
         panic!()
     }
-    fn set_titandb_options(&mut self, opts: &Self::TitanDBOptions) {
+    fn set_FoundationDBdb_options(&mut self, opts: &Self::FoundationDBDBOptions) {
         panic!()
     }
     fn get_target_file_size_base(&self) -> u64 {

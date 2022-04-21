@@ -3,7 +3,7 @@
 use super::*;
 use crate::storage::kv::{
     crate::{
-        CF_DEFAULT, CF_LOCK, CF_RAFT, CF_WRITE, DATA_MAX_LEN, DATA_MIN_LEN, DATA_MAX_KEY_LEN,
+        APPEND_LOG__DEFAULT, APPEND_LOG__LOCK, APPEND_LOG__RAFT, APPEND_LOG__WRITE, DATA_MAX_LEN, DATA_MIN_LEN, DATA_MAX_KEY_LEN,
         DATA_MIN_KEY_LEN, DATA_MAX_VALUE_LEN, DATA_MIN_VALUE_LEN, DATA_MAX_FIELD_LEN,
         DATA_MIN_FIELD_LEN, DATA_MAX_FIELD_NUM, DATA_MIN_FIELD_NUM, DATA_MAX_VERSION,
         DATA_MIN_VERSION, DATA_MAX_TIME_STAMP, DATA_MIN_TIME_STAMP, DATA_MAX_TXN_TS,
@@ -17,7 +17,7 @@ use crate::storage::kv::{
 
 
 impl SymplecticControlFactorsExt for Paniceinstein_merkle_tree {
-    fn get_namespaced_num_fuse_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>> {
+    fn get_namespaced_num_filefs_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>> {
         panic!()
     }
 

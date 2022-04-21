@@ -115,7 +115,7 @@ impl<'a> CausetQ<'a> {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod test {
     use super::{
         CausetQ,

@@ -115,7 +115,7 @@ impl Value {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod test {
     use parse;
 

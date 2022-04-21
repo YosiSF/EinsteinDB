@@ -9,52 +9,47 @@
 // specific language governing permissions and limitations under the License.
 
 
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock};
+use std::time::{Duration, Instant};
 
-use causetq::{
-    Binding,
-    Causetid,
-    causetq_TV,
-};
-use einstai_BerolinaSQL::{
-    BerolinaSQLQuery,
-    CausetQ,
-    SQLiteCausetQ,
-};
-use einstein_ml::causets::OpType;
-use einsteindb::TypedBerolinaSQLValue;
-use einsteindb_core::{
-    CachedAttributes,
-    HasTopograph,
-    Topograph,
-    UpdateableCache,
-    ValueRc,
-};
-use einsteindb_core::util::Either;
-use einsteindb_traits::errors::{
-    einsteindbError,
-    einsteindbErrorKind,
-    Result,
-};
-use failure::ResultExt;
-use rusqlite;
-use std::collections::{
-    BTreeMap,
-    BTreeSet,
-    HashSet,
-};
-use std::collections::btree_map::Entry;
-use std::collections::btree_map::Entry::{
-    Occupied,
-    Vacant,
-};
-use std::iter::once;
-use std::iter::Peekable;
-use std::mem;
-use std::sync::Arc;
-use watcher::TransactWatcher;
+
+use crate::cache::{Cache, CacheEntry};
+use crate::error::{Error, Result};
+use crate::util::{self, CacheKey};
+
+
+/// A simple in-memory cache.
+///
+/// This cache is not thread-safe.
+///
+/// # Examples
+///
+/// ```
+/// use soliton::cache::{Cache, CacheEntry};
+///
+/// let mut cache = Cache::new();
+///
+/// cache.set("foo", CacheEntry::new("bar", Duration::from_secs(1)));
+///
+///     // The cache entry is still valid.
+/// assert_eq!(cache.get("foo").unwrap().value(), "bar");
+///
+/// std::thread::sleep(Duration::from_secs(1));
+///
+///    // The cache entry is no longer valid.
+/// assert!(cache.get("foo").is_none());
+/// ```
+///
+/// ```
+/// use soliton::cache::{Cache, CacheEntry};
+///
 
 // Right now we use BTreeMap, because we expect few cached attributes.
 pub type CacheMap<K, V> = BTreeMap<K, V>;
+
+
+/// A simple in-memory cache.
 
 trait Remove<T> where T: PartialEq {
     fn remove_every(&mut self, item: &T) -> usize;
@@ -89,15 +84,90 @@ impl<K, V> Absorb for CacheMap<K, Option<V>> where K: Ord {
     }
 }
 
-trait ExteneinsteindbyAbsorbing {
+trait EinsteinDBFDBPlugPlay {
+
+    fn plug_play(&mut self, other: Self);
+
+    fn get_cache_map(&self) -> &CacheMap<CacheKey, CacheEntry>;
+
+    fn get_cache_map_mut(&mut self) -> &mut CacheMap<CacheKey, CacheEntry>;
+
+    fn einstein_db_fdb_plug_play(&mut self, other: Self);
     /// Just like `extend`, but rather than replacing our causet_locale with the other, the other is
     /// absorbed into ours.
-    fn extend_by_absorbing(&mut self, other: Self);
+    ///
+    /// This is useful for merging two caches.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use soliton::cache::{Cache, CacheEntry};
+    ///
+    /// let mut cache = Cache::new();
+    ///
+    /// cache.set("foo", CacheEntry::new("bar", Duration::from_secs(1)));
+    ///
+    /// let mut other = Cache::new();
+    ///
+    /// other.set("foo", CacheEntry::new("baz", Duration::from_secs(1)));
+    ///
+    /// cache.einstein_db_fdb_plug_play(other);
+    ///
+    /// assert_eq!(cache.get("foo").unwrap().value(), "baz");
+    ///
+    /// std::thread::sleep(Duration::from_secs(1));
+    ///
+    /// assert!(cache.get("foo").is_none());
+    ///
+    /// ```
+    ///
+    /// ```
+    /// use soliton::cache::{Cache, CacheEntry};
+    /// use std::collections::HashMap;
+    /// use std::sync::{Arc, RwLock};
+    /// use std::time::{Duration, Instant};
+    /// use soliton::util::{self, CacheKey};
+    /// use soliton::error::{Error, Result};
+
 }
 
-impl<K, V> ExteneinsteindbyAbsorbing for BTreeMap<K, V> where K: Ord, V: Absorb {
+
+
+
+impl<K, V> EinsteinDBFDBPlugPlay for BTreeMap<K, V> where K: Ord, V: Absorb {
+
+    fn plug_play(&mut self, other: Self) {
+        for (e, v) in other.into_iter() {
+            match self.get_mut(&e) {
+                Some(v) => {
+                    v.absorb(v);
+                },
+                None => {
+                    self.insert(e, v);
+                },
+            }
+        }
+    }
+
+    fn get_cache_map(&self) -> &CacheMap<CacheKey, CacheEntry> {
+        self
+    }
+
+
+    fn get_cache_map_mut(&mut self) -> &mut CacheMap<CacheKey, CacheEntry> {
+        //get the mutable reference to the cache map
+        //return self
+        //TOOD: this is a bit of a hack, but it works for now.
+        self
+    }
+
+    fn einstein_db_fdb_plug_play(&mut self, other: Self) {
+        self.plug_play(other);
+    }
     fn extend_by_absorbing(&mut self, other: Self) {
+        self.plug_play(other);
         for (k, v) in other.into_iter() {
+            self.insert(k, v);
             match self.entry(k) {
                 Occupied(mut entry) => {
                     entry.get_mut().absorb(v);

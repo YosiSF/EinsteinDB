@@ -34,7 +34,7 @@ pub struct NamespacedShelling(IsolatedNamespace);
 
 
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
+#[APPEND_LOG_g_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct Keyword(IsolatedNamespace);
 
 impl PlainShelling {
@@ -112,7 +112,7 @@ impl Keyword {
     /// assert_eq!(soliton_idword.to_string(), ":foo/bar");
     /// ```
     ///
-    /// See also the `kw!` macro in the main `einstai` crate.
+    /// See also the `kw!` macro in the main `EinsteinDB` crate.
     pub fn isolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
         let r = isolate_namespace_file.as_ref();
         assert!(!r.is_empty(), "Namespaced soliton_idwords cannot have an empty non-nullisolate_namespace_file.");

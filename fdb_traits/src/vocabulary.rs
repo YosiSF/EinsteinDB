@@ -916,7 +916,7 @@ impl<T> HasVocabularies for T where T: HasSchema + Queryable {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod tests {
     use Store;
 

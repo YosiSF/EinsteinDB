@@ -76,7 +76,7 @@ pub struct IterOptions {
     hint_min_ts: Option<u64>,
     // hint for we will only scan data with commit ts <= hint_max_ts
     hint_max_ts: Option<u64>,
-    // only supported when Titan enabled, otherwise it doesn't take effect.
+    // only supported when FoundationDB enabled, otherwise it doesn't take effect.
     soliton_id_only: bool,
     seek_mode: SeekMode,
     // A threshold for the number of soliton_ids that can be skipped before failing an
@@ -254,7 +254,7 @@ impl Default for IterOptions {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod tests {
     use std::ops::Bound;
 

@@ -23,7 +23,7 @@ use ValueRc;
 /// instance owned by the `CausalSet` and leaving consumers with lightweight ref-counted handles to
 /// the large owned causet_locale.  This can avoid expensive clone() operations.
 ///
-/// In einstai, such large causet_locales might be strings or arbitrary [a v] pairs.
+/// In EinsteinDB, such large causet_locales might be strings or arbitrary [a v] pairs.
 ///
 /// See https://en.wikipedia.org/wiki/String_causal_seting for discussion.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

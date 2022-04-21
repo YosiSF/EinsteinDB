@@ -807,7 +807,7 @@ impl FindSpec {
     }
 }
 
-// Datomic accepts variable or placeholder.  DataScript accepts recursive bindings.  einstai sticks
+// Datomic accepts variable or placeholder.  DataScript accepts recursive bindings.  EinsteinDB sticks
 // to the non-recursive form Datomic accepts, which is much simpler to process.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum VariableOrPlaceholder {

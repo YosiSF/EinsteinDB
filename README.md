@@ -7,14 +7,14 @@ EinsteinDB is the world’s first relativistic linearizable; embedded, bolt-on c
 
 In a nutshell, EinsteinDB is a persistent indexing scheme based off of LSH-KVX that exploits the distinct merits of hash index and B+-Tree index to support range scan and avoids long NVM writes for maintaining consistency; thus improving on LSH’s performance guarantees for skewed data and adopts ordered-write consistency to ensure crash consistency, while retaining the same storage and query overhead.
 
-The practical beneﬁt of EinsteinDB is that it creates a fast inference engine with GPT3 , it then generates a bootstrap SQL design of data structures which engages with OpenAI: An AllegroCL meta-language. For example, we can near instantly predict how a speciﬁc de­sign change in the underlying storage of a data system would aﬀect performance, or reversely what would be the optimal data structure (from a given set of designs) given workload characteristics and memory budget. In turn, these prop­erties allow us to envision new class self-designing soliton_id-causet_locale stores with substantially improved ability to adapt to workload and hardware changes by transitioning between drastically different data structure designs on demand.
+The practical beneﬁt of EinsteinDB is that it creates a fast inference interlocking_directorate with GPT3 , it then generates a bootstrap SQL design of data structures which engages with OpenAI: An AllegroCL meta-language. For example, we can near instantly predict how a speciﬁc de­sign change in the underlying storage of a data system would aﬀect performance, or reversely what would be the optimal data structure (from a given set of designs) given workload characteristics and memory budget. In turn, these prop­erties allow us to envision new class self-designing soliton_id-causet_locale stores with substantially improved ability to adapt to workload and hardware changes by transitioning between drastically different data structure designs on demand.
 
 EinsteinDB and FoundationDB are both excellent choices for data storage, but which one is right for you? Let's take a look at some of the soliton_id differences.
 
 EinsteinDB is a database that uses an ontology to describe data. This makes it possible to easily understand and query the data, \
 even if it is spread across multiple tables.\
 Additionally, EinsteinDB offers several features that make it stand out from other databases: \
--It has a blazing fast search engine that can handle complex queries in milliseconds. \ 
+-It has a blazing fast search interlocking_directorate that can handle complex queries in milliseconds. \ 
 -It supports ACID transactions, so you can be sure your data is always safe. \
 -It integrates well with popular programming languages like Java and Python. \
 -It is open source, so you can use it for free.

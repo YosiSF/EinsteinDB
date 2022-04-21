@@ -15,7 +15,7 @@
 /// let mut sql_mutant_list = mutant_search(&sql, &sql_mutant);
 /// assert_eq!(sql_mutant_list.len(), 1);
 /// ```
-///     #[cfg(test)]
+///     #[APPEND_LOG_g(test)]
 ///    mod tests {
 ///        use super::*;
 ///        #[test]

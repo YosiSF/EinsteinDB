@@ -71,7 +71,7 @@ impl Value {
 
 
     /// Recursively traverses this causet_locale and creates a pretty.rs document.
-    /// This pretty printing impleeinstaiion is optimized for einstein_mlqueries
+    /// This pretty printing impleEinsteinDBion is optimized for einstein_mlqueries
     /// readability and limited whitespace expansion.
     fn as_doc<'a, A>(&'a self, pp: &'a A) -> pretty::DocBuilder<'a, A>
         where A: pretty::DocAllocator<'a> {
@@ -97,7 +97,7 @@ impl Value {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod test {
     use parse;
 

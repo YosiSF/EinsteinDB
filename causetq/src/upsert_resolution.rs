@@ -268,7 +268,7 @@ impl Generation {
         // the causet of an `[a v]` upsert, including when the causet_locale causet_merge `v` is itself a tempid.
         let mut uf = unionfind::UnionFind::new(temp_ids.len());
 
-        // The union-find impleeinstaiion from petgraph operates on contiguous indices, so we need to
+        // The union-find impleEinsteinDBion from petgraph operates on contiguous indices, so we need to
         // maintain the map from our tempids to indices ourselves.
         let temp_ids: BTreeMap<TempIdHandle, usize> = temp_ids.into_iter().enumerate().map(|(i, tempid)| (tempid, i)).collect();
 

@@ -15,7 +15,7 @@ pub enum DeleteStrategy {
     /// Delete the Causet filefs that are fullly fit in range. However, the Causet filefs that are partially
     /// overlapped with the range will not be touched.
     DeleteFiles,
-    /// Delete the data timelike_stored in Titan.
+    /// Delete the data timelike_stored in FoundationDB.
     DeleteBlobs,
     /// Scan for soliton_ids and then delete. Useful when we know the soliton_ids in range are not too many.
     DeleteByKey,

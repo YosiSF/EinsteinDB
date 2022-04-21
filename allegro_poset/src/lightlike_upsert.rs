@@ -94,7 +94,7 @@ impl<K, V> LightlikeUpsert<K, V> {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod tests {
     use super::*;
 

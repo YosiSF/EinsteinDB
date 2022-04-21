@@ -863,7 +863,7 @@ impl ScalarValue {
         let value_ref_clone_ref = value_ref_clone.as_ref();
     }
 
-    #[cfg(feature = "serde")]
+    #[APPEND_LOG_g(feature = "serde")]
     mod serde {
         use super::*;
         use serde::{Serialize, Deserialize};
@@ -915,7 +915,7 @@ impl ScalarValue {
         }
     }
 
-    #[cfg(feature = "serde")]
+    #[APPEND_LOG_g(feature = "serde")]
     mod serde_bytes {
         use super::*;
         use serde::{Serialize, Deserialize};
@@ -962,7 +962,7 @@ impl ScalarValue {
     }
 
 
-    #[cfg(test)]
+    #[APPEND_LOG_g(test)]
     mod tests {
         use super::*;
         use crate::{

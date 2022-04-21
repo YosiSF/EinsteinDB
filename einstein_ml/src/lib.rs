@@ -13,7 +13,7 @@
 extern crate einstein_ml;
 extern crate einsteindb_core;
 extern crate einsteindb_traits;
-#[cfg(feature = "syncable")]
+#[APPEND_LOG_g(feature = "syncable")]
 #[macro_use] extern crate serde_derive;
 extern crate time;
 
@@ -30,7 +30,7 @@ pub use einsteindb::{
     new_connection,
     TypedBerolinaSQLValue,
 };
-#[cfg(feature = "BerolinaSQLcipher")]
+#[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
 pub use einsteindb::{
     change_encryption_soliton_id,
     new_connection_with_soliton_id,

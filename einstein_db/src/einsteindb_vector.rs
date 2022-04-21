@@ -2,6 +2,10 @@
 
 use std::fmt::Debug;
 use std::ops::Deref;
+use std::sync::Arc;
+
+
+use allegro_poset::causet_locale::CausetLocale;
 
 /// A type that holds buffers queried from the database.
 ///

@@ -14,7 +14,7 @@ use yatp::queue::Extras;
 use yatp::task::future::TaskCell;
 
 use crate::config::UnifiedReadPoolConfig;
-use crate::timelike_storage::kv::{destroy_tls_engine, Engine, set_tls_engine, SymplecticStatsReporter};
+use crate::timelike_storage::kv::{destroy_tls_interlocking_directorate, Engine, set_tls_interlocking_directorate, SymplecticStatsReporter};
 
 use self::metrics::*;
 
@@ -197,7 +197,7 @@ impl<R: SymplecticStatsReporter> ReporterTicker<R> {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 fn get_unified_read_pool_name() -> String {
     use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -208,7 +208,7 @@ fn get_unified_read_pool_name() -> String {
     )
 }
 
-#[cfg(not(test))]
+#[APPEND_LOG_g(not(test))]
 fn get_unified_read_pool_name() -> String {
     "unified-read-pool".to_string()
 }
@@ -216,22 +216,22 @@ fn get_unified_read_pool_name() -> String {
 pub fn build_yatp_read_pool<E: Engine, R: SymplecticStatsReporter>(
     config: &UnifiedReadPoolConfig,
     reporter: R,
-    engine: E,
+    interlocking_directorate: E,
 ) -> ReadPool {
     let unified_read_pool_name = get_unified_read_pool_name();
     let mut builder = YatpPoolBuilder::new(ReporterTicker { reporter });
-    let violetabftkv = Arc::new(Mutex::new(engine));
+    let violetabftkv = Arc::new(Mutex::new(interlocking_directorate));
     let pool = builder
         .name_prefix(&unified_read_pool_name)
         .stack_size(config.stack_size.0 as usize)
         .thread_count(config.min_thread_count, config.max_thread_count)
         .after_start(move || {
-            let engine = violetabftkv.lock().unwrap().clone();
-            set_tls_engine(engine);
+            let interlocking_directorate = violetabftkv.lock().unwrap().clone();
+            set_tls_interlocking_directorate(interlocking_directorate);
             set_io_type(IOType::ForegroundRead);
         })
         .before_stop(|| unsafe {
-            destroy_tls_engine::<E>();
+            destroy_tls_interlocking_directorate::<E>();
         })
         .build_multi_l_naught_pool();
     ReadPool::Yatp {
@@ -284,7 +284,7 @@ mod metrics {
     }
 }
 
-#[cfg(test)]
+#[APPEND_LOG_g(test)]
 mod tests {
     use futures::channel::oneshot;
     use std::thread;
@@ -313,8 +313,8 @@ mod tests {
         };
         // max running tasks number should be 2*1 = 2
 
-        let engine = TestEngineBuilder::new().build().unwrap();
-        let pool = build_yatp_read_pool(&config, DummyReporter, engine);
+        let interlocking_directorate = TestEngineBuilder::new().build().unwrap();
+        let pool = build_yatp_read_pool(&config, DummyReporter, interlocking_directorate);
 
         let gen_task = || {
             let (tx, rx) = oneshot::channel::<()>();

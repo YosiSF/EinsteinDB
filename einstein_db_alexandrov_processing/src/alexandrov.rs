@@ -1,18 +1,50 @@
 //Copyright 2021 EinsteinDB Project Authors, WHTCORPS INC; EINST.AI -- LICENSED UNDER APACHE 2.0
 
 
+//add cauet support for einstein_db_alexandrov_processing
 
-use crossbeam::channel::{self, SendError};
-use EinsteinDB_util::mpsc;
-use EinsteinDB_util::time::Instant;
-use std::borrow::Cow;
-use std::thread::{self, JoinHandle};
-use std::time::Duration;
 
-use crate::config::Config;
-use crate::fsm::{Fsm, FsmScheduler};
-use crate::mailbox::BasicMailbox;
-use crate::router::Router;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
+use std::sync::RwLockReadGuard;
+use std::sync::RwLockWriteGuard;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::{Duration, Instant};
+use std::thread;
+use std::thread::JoinHandle;
+use std::thread::sleep;
+use std::thread::yield_now;
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::Duration as StdDuration;
+use std::collections::HashSet;
+use std::collections::HashMap as StdHashMap;
+use std::collections::HashSet as StdHashSet;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+use std::collections::VecDeque;
+use std::collections::LinkedList;
+use std::collections::BinaryHeap;
+
+
+
+
+
+
+use einstein_db::{
+    interlocking_directorate::{
+        Engine,
+        LazyBatchColumn,
+        LazyBatchColumnVec,
+        LazyBatchColumnRaw,
+        LazyBatchColumnRawVec,
+    },
+    kv::{
+        Key,
+        Value,
+    },
+    Result,
 
 /// A unify type for FSMs so that they can be sent to channel easily.
 enum FsmTypes<N, C> {
@@ -423,7 +455,7 @@ pub type alexandroRouter<N, C> = Router<N, C, NormalScheduler<N, C>, ControlSche
 ///
 /// `sender` and `controller` should be paired.
 pub fn create_system<N: Fsm, C: Fsm>(
-    cfg: &Config,
+    APPEND_LOG_g: &Config,
     sender: mpsc::LooseBoundedSender<C::Message>,
     controller: Box<C>,
 ) -> (alexandroRouter<N, C>, alexandroSystem<N, C>) {
@@ -436,9 +468,9 @@ pub fn create_system<N: Fsm, C: Fsm>(
         name_prefix: None,
         router: router.clone(),
         receiver: rx,
-        pool_size: cfg.pool_size,
-        max_alexandro_size: cfg.max_alexandro_size,
-        reschedule_duration: cfg.reschedule_duration.0,
+        pool_size: APPEND_LOG_g.pool_size,
+        max_alexandro_size: APPEND_LOG_g.max_alexandro_size,
+        reschedule_duration: APPEND_LOG_g.reschedule_duration.0,
         workers: vec![],
     };
     (router, system)

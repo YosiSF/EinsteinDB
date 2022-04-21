@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "autocfg"
+name = "autoAPPEND_LOG_g"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
@@ -23,7 +23,7 @@ checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
+checksum = "bef38d45163c2f1dde094a7dfd33cAPPEND_LOG_595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "clap"
@@ -73,7 +73,7 @@ version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "282a6247722caba404c065016bbfa522806e51714c34f5dfc3e4a3a46fcb4223"
 dependencies = [
-    "autocfg",
+    "autoAPPEND_LOG_g",
     "hashbrown",
 ]
 
@@ -163,7 +163,7 @@ dependencies = [
 name = "slog"
 version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8347046d4ebd943127157b94d63abb990fcf729dc4e9978927fdf4ac3c998d06"
+checksum = "8347046d4ebd943127157b94d63abb990fAPPEND_LOG_729dc4e9978927fdf4ac3c998d06"
 
 [[package]]
 name = "strsim"
@@ -241,4 +241,4 @@ dependencies = [
 name = "winapi-x86_64-pc-windows-gnu"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
+checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42APPEND_LOG_c1931183f"
