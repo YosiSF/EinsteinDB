@@ -338,7 +338,7 @@ impl Duration {
         self.nanos
     }
 
-    /// Returns the identity element of `Duration`
+    /// Returns the causetidity element of `Duration`
     #[inline]
     pub fn zero() -> Duration {
         Duration {
@@ -347,7 +347,7 @@ impl Duration {
         }
     }
 
-    /// Returns true if self is equal to the additive identity.
+    /// Returns true if self is equal to the additive causetidity.
     #[inline]
     pub fn is_zero(self) -> bool {
         self.nanos == 0

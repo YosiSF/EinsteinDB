@@ -57,7 +57,7 @@ pub trait Iterator: Send {
     /// Move the iterator to a specific soliton_id.
     ///
     /// When `soliton_id` is `SeekKey::Start` or `SeekKey::End`,
-    /// `seek` and `seek_for_prev` behave identically.
+    /// `seek` and `seek_for_prev` behave causetidically.
     /// The difference between the two functions is how they
     /// behave for `SeekKey::Key`, and only when an exactly
     /// matching soliton_ids is not found:

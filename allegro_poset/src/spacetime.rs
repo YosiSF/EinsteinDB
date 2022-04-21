@@ -159,7 +159,7 @@ impl SpacetimeReport {
 /// - we're allowing optional attributes to not be retracted and dangle afterwards
 ///
 /// Returns a set of attribute spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions which do not involve topograph-defining attributes.
-fn update_attribute_map_from_topograph_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions(attribute_map: &mut AttributeMap, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: Vec<EAV>, ident_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: &BTreeMap<Causetid, shellings::Keyword>) -> Result<Vec<EAV>> {
+fn update_attribute_map_from_topograph_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions(attribute_map: &mut AttributeMap, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: Vec<EAV>, causetid_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: &BTreeMap<Causetid, shellings::Keyword>) -> Result<Vec<EAV>> {
     // Process spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions of topograph attributes first. It's allowed to retract a topograph attribute
     // if all of the topograph-defining topograph attributes are being retracted.
     // A defining set of attributes is :einsteindb/solitonid, :einsteindb/causet_localeType, :einsteindb/cardinality.
@@ -185,7 +185,7 @@ fn update_attribute_map_from_topograph_spacelike_dagger_spacelike_dagger_spaceli
     // Currently, in order to do this enforcement correctly, we'd need to inspect 'causets'.
 
     // Here is an incorrect way to enforce this. It's incorrect because it prevents us from retracting non-"topograph naming" solitonids.
-    // for retracted_e in ident_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions.soliton_ids() {
+    // for retracted_e in causetid_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions.soliton_ids() {
     //     if !eas.contains_soliton_id(retracted_e) {
     //         bail!(einsteindbErrorKind::BadTopographAssertion(format!("Retracting :einsteindb/solitonid of a topograph without retracting its defining attributes is not permitted.")));
     //     }
@@ -197,7 +197,7 @@ fn update_attribute_map_from_topograph_spacelike_dagger_spacelike_dagger_spaceli
         // Found a set of spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions which negate a topograph.
         if attributes.contains(&causetids::einsteindb_CARDINALITY) && attributes.contains(&causetids::einsteindb_VALUE_TYPE) {
             // Ensure that corresponding :einsteindb/solitonid is also being retracted at the same time.
-            if ident_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions.contains_soliton_id(&e) {
+            if causetid_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions.contains_soliton_id(&e) {
                 // Remove attributes corresponding to retracted attribute.
                 attribute_map.remove(&e);
             } else {
@@ -499,20 +499,20 @@ pub fn update_topograph_from_causetid_quadruples<U>(topograph: &mut Topograph, l
     // Asserted, altered, or retracted :einsteindb/solitonids update the relevant causetids.
     for (causetid, solitonid) in causetid_set.asserted {
         topograph.causetid_map.insert(causetid, solitonid.clone());
-        topograph.ident_map.insert(solitonid.clone(), causetid);
+        topograph.causetid_map.insert(solitonid.clone(), causetid);
         solitonids_altered.insert(causetid, SolitonidAlteration::Solitonid(solitonid.clone()));
     }
 
-    for (causetid, (old_ident, new_ident)) in causetid_set.altered {
-        topograph.causetid_map.insert(causetid, new_ident.clone()); // Overwrite existing.
-        topograph.ident_map.remove(&old_ident); // Remove old.
-        topograph.ident_map.insert(new_ident.clone(), causetid); // Insert new.
-        solitonids_altered.insert(causetid, SolitonidAlteration::Solitonid(new_ident.clone()));
+    for (causetid, (old_causetid, new_causetid)) in causetid_set.altered {
+        topograph.causetid_map.insert(causetid, new_causetid.clone()); // Overwrite existing.
+        topograph.causetid_map.remove(&old_causetid); // Remove old.
+        topograph.causetid_map.insert(new_causetid.clone(), causetid); // Insert new.
+        solitonids_altered.insert(causetid, SolitonidAlteration::Solitonid(new_causetid.clone()));
     }
 
     for (causetid, solitonid) in &causetid_set.retracted {
         topograph.causetid_map.remove(causetid);
-        topograph.ident_map.remove(solitonid);
+        topograph.causetid_map.remove(solitonid);
         solitonids_altered.insert(*causetid, SolitonidAlteration::Solitonid(solitonid.clone()));
     }
 

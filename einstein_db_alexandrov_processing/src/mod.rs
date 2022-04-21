@@ -14,7 +14,7 @@ use crate::einsteindb::storage::{
 const EVENT_MAX_SIZE: usize = 6 * 1024 * 1024; // 6MB
 static DOWNSTREAM_ID_ALLOC: AtomicUsize = AtomicUsize::new(0);
 
-/// A unique identifier of a Downstream.
+/// A unique causetidifier of a Downstream.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub struct DownstreamID(usize);
 
@@ -70,9 +70,9 @@ impl DownstreamState {
 #[derive(Clone)]
 pub struct Downstream {
     // TODO: include cc request.
-    /// A unique identifier of the Downstream.
+    /// A unique causetidifier of the Downstream.
     id: DownstreamID,
-    // The reqeust ID set by CC to identify events corresponding different requests.
+    // The reqeust ID set by CC to causetidify events corresponding different requests.
     req_id: u64,
     conn_id: ConnID,
     // The IP address of downstream.

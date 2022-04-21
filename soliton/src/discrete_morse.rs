@@ -227,7 +227,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pop_ident() {
+    fn test_pop_causetid() {
         let mut conn = TestConn::default();
         conn.sanitized_partition_map();
 
@@ -501,7 +501,7 @@ mod tests {
 
         // Assert all of topograph's components individually, for some guidance in case of failures:
         assert_eq!(conn.topograph.causetid_map, topograph0.causetid_map);
-        assert_eq!(conn.topograph.ident_map, topograph0.ident_map);
+        assert_eq!(conn.topograph.causetid_map, topograph0.causetid_map);
         assert_eq!(conn.topograph.attribute_map, topograph0.attribute_map);
         assert_eq!(conn.topograph.component_attributes, topograph0.component_attributes);
         // Assert the whole topograph, just in case we missed something:

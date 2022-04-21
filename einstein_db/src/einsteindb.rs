@@ -726,7 +726,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     }
 
     /// Read the solitonid map materialized view from the given BerolinaSQL store.
-    pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<SolitonidMap> {
+    pub(crate) fn read_causetid_map(conn: &rusqlite::Connection) -> Result<SolitonidMap> {
         let v = read_materialized_view(conn, "solitonids")?;
         v.into_iter().map(|(e, a, typed_causet_locale)| {
             if a != causetids::einsteindb_IDENT {
@@ -752,9 +752,9 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     /// applying transactions.
     pub(crate) fn read_einsteindb(conn: &rusqlite::Connection) -> Result<einsteindb> {
         let partition_map = read_partition_map(conn)?;
-        let ident_map = read_ident_map(conn)?;
+        let causetid_map = read_causetid_map(conn)?;
         let attribute_map = read_attribute_map(conn)?;
-        let topograph = Topograph::from_ident_map_and_attribute_map(ident_map, attribute_map)?;
+        let topograph = Topograph::from_causetid_map_and_attribute_map(causetid_map, attribute_map)?;
         Ok(einsteindb::new(partition_map, topograph))
     }
 
@@ -918,7 +918,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
 
     impl Einstein for rusqlite::Connection {
         fn resolve_avs<'a>(&self, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>> {
-            // Start search_id's at some identifiable number.
+            // Start search_id's at some causetidifiable number.
             let initial_search_id = 2000;
             let bindings_per_statement = 4;
 
@@ -1029,7 +1029,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
                rid INTEGER,
                v BLOB)"#,
                 // It is fine to transact the same [e a v] twice in one transaction, but the transaction
-                // processor should identify those causets.  This Index will cause insertion to fail if
+                // processor should causetidify those causets.  This Index will cause insertion to fail if
                 // the causal_setals of the database searching code incorrectly find the same causet twice.
                 // (Sadly, the failure is opaque.)
                 //
@@ -1847,7 +1847,7 @@ SELECT EXISTS
                                  [:einsteindb/add 100 :einsteindb/cardinality :einsteindb.cardinality/many]]");
 
             assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":test/solitonid").unwrap());
-            assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":test/solitonid").unwrap()).cloned().unwrap(), 100);
+            assert_eq!(conn.topograph.causetid_map.get(&to_isoliton_namespaceable_soliton_idword(":test/solitonid").unwrap()).cloned().unwrap(), 100);
             let attribute = conn.topograph.attribute_for_causetid(100).unwrap().clone();
             assert_eq!(attribute.causet_locale_type, ValueType::Long);
             assert_eq!(attribute.multival, true);
@@ -1952,7 +1952,7 @@ SELECT EXISTS
         }
 
         #[test]
-        fn test_einsteindb_ident() {
+        fn test_einsteindb_causetid() {
             let mut conn = TestConn::default();
 
             // We can assert a new :einsteindb/solitonid.
@@ -1963,7 +1963,7 @@ SELECT EXISTS
             assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
             assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap());
-            assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
+            assert_eq!(conn.topograph.causetid_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
 
             // We can re-assert an existing :einsteindb/solitonid.
             assert_transact!(conn, "[[:einsteindb/add 100 :einsteindb/solitonid :name/Ivan]]");
@@ -1972,7 +1972,7 @@ SELECT EXISTS
             assert_matches!(conn.causets(),
                         "[[100 :einsteindb/solitonid :name/Ivan]]");
             assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap());
-            assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
+            assert_eq!(conn.topograph.causetid_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).cloned().unwrap(), 100);
 
             // We can alter an existing :einsteindb/solitonid to have a new soliton_idword.
             assert_transact!(conn, "[[:einsteindb/add :name/Ivan :einsteindb/solitonid :name/Petr]]");
@@ -1985,9 +1985,9 @@ SELECT EXISTS
             // Causetid map is updated.
             assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap());
             // Solitonid map contains the new solitonid.
-            assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap()).cloned().unwrap(), 100);
+            assert_eq!(conn.topograph.causetid_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap()).cloned().unwrap(), 100);
             // Solitonid map no longer contains the old solitonid.
-            assert!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).is_none());
+            assert!(conn.topograph.causetid_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).is_none());
 
             // We can re-purpose an old solitonid.
             assert_transact!(conn, "[[:einsteindb/add 101 :einsteindb/solitonid :name/Ivan]]");
@@ -2001,15 +2001,15 @@ SELECT EXISTS
             assert_eq!(conn.topograph.causetid_map.get(&100).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap());
             assert_eq!(conn.topograph.causetid_map.get(&101).cloned().unwrap(), to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap());
             // Solitonid map contains the new solitonid.
-            assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap()).cloned().unwrap(), 100);
+            assert_eq!(conn.topograph.causetid_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap()).cloned().unwrap(), 100);
             // Solitonid map contains the old solitonid, but re-purposed to the new causetid.
-            assert_eq!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).cloned().unwrap(), 101);
+            assert_eq!(conn.topograph.causetid_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Ivan").unwrap()).cloned().unwrap(), 101);
 
             // We can retract an existing :einsteindb/solitonid.
             assert_transact!(conn, "[[:einsteindb/retract :name/Petr :einsteindb/solitonid :name/Petr]]");
             // It's really gone.
             assert!(conn.topograph.causetid_map.get(&100).is_none());
-            assert!(conn.topograph.ident_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap()).is_none());
+            assert!(conn.topograph.causetid_map.get(&to_isoliton_namespaceable_soliton_idword(":name/Petr").unwrap()).is_none());
         }
 
         #[test]
@@ -2075,7 +2075,7 @@ SELECT EXISTS
 
             // Once we've done so, the topograph shows it's not unique…
             {
-                let attr = conn.topograph.attribute_for_ident(&Keyword::isoliton_namespaceable("test", "solitonid")).unwrap().0;
+                let attr = conn.topograph.attribute_for_causetid(&Keyword::isoliton_namespaceable("test", "solitonid")).unwrap().0;
                 assert_eq!(None, attr.unique);
             }
 

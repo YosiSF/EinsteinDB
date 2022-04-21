@@ -135,7 +135,7 @@ impl Keyword {
     }
 
     /// Whether this `Keyword` should be interpreted in reverse order. For example,
-    /// the two following snippets are identical:
+    /// the two following snippets are causetidical:
     ///
     /// ```einstein_ml
     /// [?y :person/friend ?x]

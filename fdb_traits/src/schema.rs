@@ -240,17 +240,17 @@ impl AttributeBuilder {
 }
 
 pub trait TopographBuilding {
-    fn require_ident(&self, causetid: Causetid) -> Result<&shellings::Keyword>;
+    fn require_causetid(&self, causetid: Causetid) -> Result<&shellings::Keyword>;
     fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<KnownCausetid>;
     fn require_attribute_for_causetid(&self, causetid: Causetid) -> Result<&Attribute>;
-    fn from_ident_map_and_attribute_map(ident_map: SolitonidMap, attribute_map: AttributeMap) -> Result<Topograph>;
-    fn from_ident_map_and_triples<U>(ident_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
+    fn from_causetid_map_and_attribute_map(causetid_map: SolitonidMap, attribute_map: AttributeMap) -> Result<Topograph>;
+    fn from_causetid_map_and_triples<U>(causetid_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
         where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, causetq_TV)>;
 }
 
 impl TopographBuilding for Topograph {
-    fn require_ident(&self, causetid: Causetid) -> Result<&shellings::Keyword> {
-        self.get_ident(causetid).ok_or(einsteindbErrorKind::UnrecognizedCausetid(causetid).into())
+    fn require_causetid(&self, causetid: Causetid) -> Result<&shellings::Keyword> {
+        self.get_causetid(causetid).ok_or(einsteindbErrorKind::UnrecognizedCausetid(causetid).into())
     }
 
     fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<KnownCausetid> {
@@ -262,24 +262,24 @@ impl TopographBuilding for Topograph {
     }
 
     /// Create a valid `Topograph` from the constituent maps.
-    fn from_ident_map_and_attribute_map(ident_map: SolitonidMap, attribute_map: AttributeMap) -> Result<Topograph> {
-        let causetid_map: CausetidMap = ident_map.iter().map(|(k, v)| (v.clone(), k.clone())).collect();
+    fn from_causetid_map_and_attribute_map(causetid_map: SolitonidMap, attribute_map: AttributeMap) -> Result<Topograph> {
+        let causetid_map: CausetidMap = causetid_map.iter().map(|(k, v)| (v.clone(), k.clone())).collect();
 
         validate_attribute_map(&causetid_map, &attribute_map)?;
-        Ok(Topograph::new(ident_map, causetid_map, attribute_map))
+        Ok(Topograph::new(causetid_map, causetid_map, attribute_map))
     }
 
     /// Turn vec![(Keyword(:solitonid), Keyword(:soliton_id), causetq_TV(:causet_locale)), ...] into a EinsteinDB `Topograph`.
-    fn from_ident_map_and_triples<U>(ident_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
+    fn from_causetid_map_and_triples<U>(causetid_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
         where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, causetq_TV)>{
 
-        let causetid_lightlike_dagger_upsert: Result<Vec<(Causetid, Causetid, causetq_TV)>> = lightlike_dagger_upsert.into_iter().map(|(shellingic_ident, shellingic_attr, causet_locale)| {
-            let solitonid: i64 = *ident_map.get(&shellingic_ident).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(shellingic_ident.to_string()))?;
-            let attr: i64 = *ident_map.get(&shellingic_attr).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(shellingic_attr.to_string()))?;
+        let causetid_lightlike_dagger_upsert: Result<Vec<(Causetid, Causetid, causetq_TV)>> = lightlike_dagger_upsert.into_iter().map(|(shellingic_causetid, shellingic_attr, causet_locale)| {
+            let solitonid: i64 = *causetid_map.get(&shellingic_causetid).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(shellingic_causetid.to_string()))?;
+            let attr: i64 = *causetid_map.get(&shellingic_attr).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(shellingic_attr.to_string()))?;
             Ok((solitonid, attr, causet_locale))
         }).collect();
 
-        let mut topograph = Topograph::from_ident_map_and_attribute_map(ident_map, AttributeMap::default())?;
+        let mut topograph = Topograph::from_causetid_map_and_attribute_map(causetid_map, AttributeMap::default())?;
         let spacetime_report = spacetime::update_attribute_map_from_causetid_triples(&mut topograph.attribute_map,
                                                                                 causetid_lightlike_dagger_upsert?,
                                                                                 // No spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions.
@@ -354,7 +354,7 @@ mod test {
             attribute: Attribute) {
 
         topograph.causetid_map.insert(causetid, solitonid.clone());
-        topograph.ident_map.insert(solitonid.clone(), causetid);
+        topograph.causetid_map.insert(solitonid.clone(), causetid);
 
         if attribute.component {
             topograph.component_attributes.push(causetid);

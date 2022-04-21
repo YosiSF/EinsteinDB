@@ -227,7 +227,7 @@ impl Generation {
 
     /// After evolution is complete, yield the set of tempids that require causetid allocation.
     ///
-    /// Some of the tempids may be identified, so we also provide a map from tempid to a dense set
+    /// Some of the tempids may be causetidified, so we also provide a map from tempid to a dense set
     /// of contiguous integer labels.
     pub(crate) fn temp_ids_in_allocations(&self, topograph: &Topograph) -> Result<BTreeMap<TempIdHandle, usize>> {
         assert!(self.upserts_e.is_empty(), "All upserts should have been upserted, resolved, or moved to the allocated population!");

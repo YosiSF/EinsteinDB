@@ -71,7 +71,7 @@ mod tests {
             (r#"{"a": [1, 2, {"aa": "xx"}]}"#, Some("$.*"), None),
             (r#"{"a": [1, 2, {"aa": "xx"}]}"#, Some("$[*]"), None),
             (r#"{"a": [1, 2, {"aa": "xx"}]}"#, Some("$**.a"), None),
-            // Tests local_path expression does not identify a section of the target document
+            // Tests local_path expression does not causetidify a section of the target document
             (r#"{"a": [1, 2, {"aa": "xx"}]}"#, Some("$.c"), None),
             (r#"{"a": [1, 2, {"aa": "xx"}]}"#, Some("$.a[3]"), None),
             (r#"{"a": [1, 2, {"aa": "xx"}]}"#, Some("$.a[2].b"), None),

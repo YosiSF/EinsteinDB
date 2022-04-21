@@ -102,7 +102,7 @@ mod tests {
             (r#"{"a": 1}"#, Some("$.*"), None, false),
             (r#"{"a": {"c": 3}, "b": 2}"#, Some("$.*"), None, false),
             (r#"{"a": {"c": 3}, "b": 2}"#, Some("$.a.*"), None, false),
-            // Tests local_path expression does not identify a section of the target document
+            // Tests local_path expression does not causetidify a section of the target document
             (r#"{"a": 1}"#, Some("$.b"), None, true),
             (r#"{"a": {"c": 3}, "b": 2}"#, Some("$.c"), None, true),
             (r#"{"a": {"c": 3}, "b": 2}"#, Some("$.a.d"), None, true),

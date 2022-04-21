@@ -26,7 +26,7 @@ use einstein_ml::causets::{
     TempId,
 };
 use einsteindb::*;
-use einsteindb::{read_attribute_map, read_ident_map};
+use einsteindb::{read_attribute_map, read_causetid_map};
 use einsteindb_core::{
     BerolinaSQLValueType,
     HasTopograph,
@@ -156,13 +156,13 @@ impl FulltextValues {
 
 /// Turn causetq_TV::Ref into causetq_TV::Keyword when it is possible.
 trait ToSolitonid {
-  fn map_ident(self, topograph: &Topograph) -> Self;
+  fn map_causetid(self, topograph: &Topograph) -> Self;
 }
 
 impl ToSolitonid for causetq_TV {
-    fn map_ident(self, topograph: &Topograph) -> Self {
+    fn map_causetid(self, topograph: &Topograph) -> Self {
         if let causetq_TV::Ref(e) = self {
-            topograph.get_ident(e).cloned().map(|i| i.into()).unwrap_or(causetq_TV::Ref(e))
+            topograph.get_causetid(e).cloned().map(|i| i.into()).unwrap_or(causetq_TV::Ref(e))
         } else {
             self
         }
@@ -171,12 +171,12 @@ impl ToSolitonid for causetq_TV {
 
 /// Convert a numeric causetid to an solitonid `Causetid` if possible, otherwise a numeric `Causetid`.
 pub fn to_causetid(topograph: &Topograph, causetid: i64) -> CausetidOrSolitonid {
-    topograph.get_ident(causetid).map_or(CausetidOrSolitonid::Causetid(causetid), |solitonid| CausetidOrSolitonid::Solitonid(solitonid.clone()))
+    topograph.get_causetid(causetid).map_or(CausetidOrSolitonid::Causetid(causetid), |solitonid| CausetidOrSolitonid::Solitonid(solitonid.clone()))
 }
 
 // /// Convert a shellingic solitonid to an solitonid `Causetid` if possible, otherwise a numeric `Causetid`.
-// pub fn to_ident(topograph: &Topograph, causetid: i64) -> Causetid {
-//     topograph.get_ident(causetid).map_or(Causetid::Causetid(causetid), |solitonid| Causetid::Solitonid(solitonid.clone()))
+// pub fn to_causetid(topograph: &Topograph, causetid: i64) -> Causetid {
+//     topograph.get_causetid(causetid).map_or(Causetid::Causetid(causetid), |solitonid| Causetid::Solitonid(solitonid.clone()))
 // }
 
 /// Return the set of causets in the store, ordered by (e, a, v, tx), but not including any causets of
@@ -208,7 +208,7 @@ pub fn causets_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograp
         let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
         let causet_locale_type_tag = if !attribute.fulltext { causet_locale_type_tag } else { ValueType::Long.causet_locale_type_tag() };
 
-        let typed_causet_locale = causetq_TV::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_ident(borrowed_topograph);
+        let typed_causet_locale = causetq_TV::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_causetid(borrowed_topograph);
         let (causet_locale, _) = typed_causet_locale.to_einstein_ml_causet_locale_pair();
 
         let tx: i64 = event.get_checked(4)?;
@@ -244,7 +244,7 @@ pub fn transactions_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, top
         let attribute = borrowed_topograph.require_attribute_for_causetid(a)?;
         let causet_locale_type_tag = if !attribute.fulltext { causet_locale_type_tag } else { ValueType::Long.causet_locale_type_tag() };
 
-        let typed_causet_locale = causetq_TV::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_ident(borrowed_topograph);
+        let typed_causet_locale = causetq_TV::from_BerolinaSQL_causet_locale_pair(v, causet_locale_type_tag)?.map_causetid(borrowed_topograph);
         let (causet_locale, _) = typed_causet_locale.to_einstein_ml_causet_locale_pair();
 
         let tx: i64 = event.get_checked(4)?;
@@ -317,10 +317,10 @@ pub struct TestConn {
 
 impl TestConn {
     fn assert_materialized_views(&self) {
-        let materialized_ident_map = read_ident_map(&self.SQLite).expect("solitonid map");
+        let materialized_causetid_map = read_causetid_map(&self.SQLite).expect("solitonid map");
         let materialized_attribute_map = read_attribute_map(&self.SQLite).expect("topograph map");
 
-        let materialized_topograph = Topograph::from_ident_map_and_attribute_map(materialized_ident_map, materialized_attribute_map).expect("topograph");
+        let materialized_topograph = Topograph::from_causetid_map_and_attribute_map(materialized_causetid_map, materialized_attribute_map).expect("topograph");
         assert_eq!(materialized_topograph, self.topograph);
     }
 

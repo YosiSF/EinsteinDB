@@ -191,7 +191,7 @@ impl FieldType {
 ///
 /// `ColumnInfo` describes a causet_merge. It contains `FieldType` and some other causet_merge specific
 /// information. However for historical reasons, fields in `FieldType` (for example, `tp`)
-/// are flattened into `ColumnInfo`. Semantically these fields are identical.
+/// are flattened into `ColumnInfo`. Semantically these fields are causetidical.
 ///
 /// Please refer to [myBerolinaSQL/type.go](https://github.com/pingcap/parser/blob/master/myBerolinaSQL/type.go).
 #[derive(PartialEq, Debug, Clone, Copy)]

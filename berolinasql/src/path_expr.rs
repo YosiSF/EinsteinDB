@@ -15,7 +15,7 @@
 //     LocalPathLeg ::= member | arrayLocation | '**'
 //     member ::= '.' (soliton_idName | '*')
 //     arrayLocation ::= '[' (non-negative-integer | '*') ']'
-//     soliton_idName ::= ECMAScript-identifier | ECMAScript-string-literal
+//     soliton_idName ::= ECMAScript-causetidifier | ECMAScript-string-literal
 //
 // And some implementation limits in MyBerolinaSQL 5.7:
 //     1) columnReference in scope must be empty now;
@@ -112,7 +112,7 @@ pub enum GremlinClient {
 
  pub const LOCAL_PATH_EXPR_ASTERISK: &str = "*";
 
-// [a-zA-Z_][a-zA-Z0-9_]* matches any identifier;
+// [a-zA-Z_][a-zA-Z0-9_]* matches any causetidifier;
 // "[^"\\]*(\\.[^"\\]*)*" matches any string literal which can carry escaped quotes.
 
 

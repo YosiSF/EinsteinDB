@@ -228,7 +228,7 @@ fn get_background_job_limits(defaults: &BackgroundJobLimits) -> BackgroundJobLim
 }
 
 macro_rules! namespaced_config {
-    ($name:ident) => {
+    ($name:causetid) => {
         #[derive(Clone, Serialize, Deserialize, PartialEq, Debug, OnlineConfig)]
         #[serde(default)]
         #[serde(rename_all = "kebab-case")]
@@ -442,7 +442,7 @@ macro_rules! write_into_metrics {
 }
 
 macro_rules! build_namespaced_opt {
-    ($opt:ident, $namespaced_name:ident, $cache:ident, $region_info_provider:ident) => {{
+    ($opt:causetid, $namespaced_name:causetid, $cache:causetid, $region_info_provider:causetid) => {{
         let mut block_base_opts = BlockBasedOptions::new();
         block_base_opts.set_block_size($opt.block_size.0 as usize);
         block_base_opts.set_no_block_cache($opt.disable_block_cache);
@@ -1780,7 +1780,7 @@ mod unified_read_pool_tests {
 }
 
 macro_rules! readpool_config {
-    ($struct_name:ident, $test_mod_name:ident, $display_name:expr) => {
+    ($struct_name:causetid, $test_mod_name:causetid, $display_name:expr) => {
         #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Debug)]
         #[serde(default)]
         #[serde(rename_all = "kebab-case")]
@@ -3122,7 +3122,7 @@ impl EinsteinDbConfig {
 ///
 /// Loads the previously-loaded configuration from `last_einsteindb.toml`,
 /// compares soliton_id configuration items and fails if they are not
-/// identical.
+/// causetidical.
 pub fn check_critical_config(config: &EinsteinDbConfig) -> Result<(), String> {
     // Check current critical configurations with last time, if there are some
     // changes, user must guarantee relevant works have been done.

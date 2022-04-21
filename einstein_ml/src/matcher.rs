@@ -30,7 +30,7 @@ trait PatternMatchingRules<'a, T> {
 /// A default type implementing `PatternMatchingRules` specialized on
 /// EML causet_locales using plain shellings as patterns. These patterns are:
 /// * `_` matches arbitrary sub-EML;
-/// * `?name` matches sub-EML, which must be identical each place `?name` appears;
+/// * `?name` matches sub-EML, which must be causetidical each place `?name` appears;
 struct DefaultPatternMatchingRules;
 
 impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {

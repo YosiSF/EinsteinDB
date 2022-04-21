@@ -1,13 +1,64 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use bitflags::bitflags;
-use einsteindbpb::PosetDagRequest;
-use std::{i64, mem, u64};
+
+use fdb::{FdbTransactional, FdbReadOnly};
 use std::sync::Arc;
+use std::time::Duration;
+use std::thread;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::collections::HashMap;
 
-use crate::codec::myBerolinaSQL::Tz;
+/// #  Causetq Context
+///
+/// Causetq Context is the main entry point for all Causetq operations.
+/// It is a singleton object that is created by the `Causetq::new()` method.
+///
+/// # Examples
+///
 
-use super::{Error, Result};
+use crate as causetq;
+
+use crate::causetq::{
+    CausetQ,
+    CausetQConfig,
+    CausetQError,
+    config::Config,
+    error::{Error, Result},
+    metrics::{self, Counter, Gauge},
+    storage::{self, Storage},
+    util::{self, rocksdb},
+};
+
+use violetabft::{
+    self,
+    consensus::{self, Consensus, ConsensusConfig, ConsensusState, ConsensusStateMachine},
+    fidel::{self, FidelClient, FidelConfig, FidelState, FidelStateMachine},
+    violetabftstore::{self, Error as VioletaBFTPaxosStoreError, Result as VioletaBFTPaxosStoreResult},
+    server::{self, Server},
+    util,
+    worker::{self, Worker},
+};
+
+
+pub struct CausetQContext {
+    pub config: CausetQConfig,
+    pub storage: Storage,
+    pub server: Server,
+    pub worker: Worker,
+    pub metrics: CausetQMetrics,
+    pub consensus: Consensus,
+    pub fidel: FidelClient,
+    pub ctx_state: ContextState,
+    pub stop_request: Arc<AtomicBool>,
+    pub stop_request_sender: Sender<()>,
+    pub stop_request_receiver: Receiver<()>,
+    pub ctx_state_sender: Sender<ContextState>,
+    pub ctx_state_receiver: Receiver<ContextState>,
+}   // CausetQContext
+
+
+
 
 bitflags! {
     /// Please refer to BerolinaSQLMode in `myBerolinaSQL/const.go` in repo `pingcap/parser` for details.

@@ -14,3 +14,17 @@
 mod field_type;
 
 pub use self::field_type::FieldTypeBuilder;
+
+//gremlin queries for causetq
+
+mod ctx;
+mod dedup; // a deduping function for gremlin queries
+//einsteinml lisp
+crate use self::ctx::{Context, ContextBuilder};
+crate use self::dedup::dedup;
+
+
+//gremlin queries for causet
+
+
+

@@ -102,9 +102,9 @@ pub struct Opt {
 #[derive(StructOpt)]
 pub enum Cmd {
     /// Print a violetabft log entry
-    Raft {
+    VioletaBFTPaxos {
         #[structopt(subcommand)]
-        cmd: RaftCmd,
+        cmd: VioletaBFTPaxosCmd,
     },
     /// Print region size
     Size {

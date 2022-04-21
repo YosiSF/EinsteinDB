@@ -20,7 +20,7 @@ use crate::codec::event::causet_record::{EventSliceReaderMut, EventSliceWriterMu
 use crate::codec::event::causet_record::{EventSliceReaderVec, EventSliceWriterVec};
 
 /// A trait for types that can be used as the key of a causet record.
-/// The key is used to identify the causet record.
+/// The key is used to causetidify the causet record.
 
 
 pub enum RowSlice<'a> {

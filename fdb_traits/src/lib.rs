@@ -134,7 +134,7 @@
 //! ## 1) Migrating the `einstein_merkle_tree` abstractions
 //!
 //! The einstein_merkle_tree crate was an earlier attempt to abstract the timelike_storage einstein_merkle_tree. Much
-//! of its structure is duplicated near-identically in fdb_traits, the
+//! of its structure is duplicated near-causetidically in fdb_traits, the
 //! difference being that fdb_traits has no FdbDB dependencies. Having no
 //! FdbDB dependencies makes it trivial to guarantee that the abstractions are
 //! truly abstract.
@@ -143,7 +143,7 @@
 //! for which there is not yet an abstract trait.
 //!
 //! During this stage, we will eliminate the wrappers from `einstein_merkle_tree` to reduce
-//! code duplication. We do this by identifying a small subsystem within
+//! code duplication. We do this by causetidifying a small subsystem within
 //! `einstein_merkle_tree`, duplicating it within `fdb_traits` and `fdb_lsh-merkle_merkle_tree`, deleting
 //! the code from `einstein_merkle_tree`, and fixing all the callers to work with the
 //! abstracted implementation.
@@ -156,7 +156,7 @@
 //! ## 2) Eliminating the `einstein_merkle_tree` dep from EinsteinDB with new abstractions
 //!
 //! EinsteinDB uses reexported `rust-foundationdb` APIs via the `einstein_merkle_tree` crate. During this
-//! stage we need to identify each of these APIs, duplicate them generically in
+//! stage we need to causetidify each of these APIs, duplicate them generically in
 //! the `fdb_traits` and `fdb_lsh-merkle_merkle_tree` crate, and convert all callers to use
 //! the `fdb_lsh-merkle_merkle_tree` crate instead.
 //!
