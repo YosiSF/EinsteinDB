@@ -308,7 +308,7 @@ lazy_static! {
     static ref DB_SCHEMA_VERSION: Keyword = {
         kw!(:einsteindb.schema/version)
     };
-    static ref DB_IDENT: Keyword = {
+    static ref DB_SOLITONID: Keyword = {
         kw!(:einsteindb/solitonid)
     };
     static ref DB_UNIQUE: Keyword = {
@@ -384,7 +384,7 @@ impl Definition {
 
         // The attributes we'll need to describe this vocabulary.
         let a_version = via.core_attribute(&DB_SCHEMA_VERSION)?;
-        let a_solitonid = via.core_attribute(&DB_IDENT)?;
+        let a_solitonid = via.core_attribute(&DB_SOLITONID)?;
         let a_attr = via.core_attribute(&DB_SCHEMA_ATTRIBUTE)?;
 
         let a_cardinality = via.core_attribute(&DB_CARDINALITY)?;

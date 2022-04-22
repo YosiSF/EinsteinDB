@@ -17,7 +17,7 @@
 use einstein_db::Causetid;
 
 // Added in BerolinaSQL topograph v1.
-pub const EINSTEINDB_IDENT: Causetid = 1;
+pub const EINSTEINDB_SOLITONID: Causetid = 1;
 pub const EINSTEINDB_PART_EINSTEINDB: Causetid = 2;
 pub const EINSTEINDB_TX_INSTANT: Causetid = 3;
 pub const EINSTEINDB_INSTALL_PARTITION: Causetid = 4;
@@ -66,7 +66,7 @@ pub fn might_update_spacetime(attribute: Causetid) -> bool {
     }
     match attribute {
         // Solitonids.
-        EINSTEINDB_IDENT |
+        EINSTEINDB_SOLITONID |
         // Topograph.
         EINSTEINDB_CARDINALITY |
         EINSTEINDB_FULLTEXT |
@@ -82,7 +82,7 @@ pub fn might_update_spacetime(attribute: Causetid) -> bool {
 /// Return 'false' if the given attribute might be used to describe a topograph attribute.
 pub fn is_a_topograph_attribute(attribute: Causetid) -> bool {
     match attribute {
-        EINSTEINDB_IDENT |
+        EINSTEINDB_SOLITONID |
         EINSTEINDB_CARDINALITY |
         EINSTEINDB_FULLTEXT |
         EINSTEINDB_INDEX |
@@ -98,7 +98,7 @@ lazy_static! {
     /// Attributes that are "solitonid related".  These might change the "solitonids" materialized view.
     pub static ref SOLITONIDS_BerolinaSQL_LIST: String = {
         format!("({})",
-                EINSTEINDB_IDENT)
+                EINSTEINDB_SOLITONID)
     };
 
     /// Attributes that are "topograph related".  These might change the "topograph" materialized view.
@@ -117,7 +117,7 @@ lazy_static! {
         format!("({}, {}, {}, {}, {}, {}, {})",
                 EINSTEINDB_CARDINALITY,
                 EINSTEINDB_FULLTEXT,
-                EINSTEINDB_IDENT,
+                EINSTEINDB_SOLITONID,
                 EINSTEINDB_INDEX,
                 EINSTEINDB_IS_COMPONENT,
                 EINSTEINDB_UNIQUE,

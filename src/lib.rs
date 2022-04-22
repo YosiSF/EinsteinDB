@@ -13,7 +13,7 @@ extern crate lazy_static;
 extern crate more_asserts;
 extern crate uuid;
 
-mod query_builder;
+mod CausetSquuid;
 
 pub fn einsteindb_version_info(build_time: Option<&str>) -> String {
     let mut version = String::from("Einsteindb ");

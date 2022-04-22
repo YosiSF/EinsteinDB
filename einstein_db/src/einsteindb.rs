@@ -729,7 +729,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     pub(crate) fn read_causetid_map(conn: &rusqlite::Connection) -> Result<SolitonidMap> {
         let v = read_materialized_view(conn, "solitonids")?;
         v.into_iter().map(|(e, a, typed_causet_locale)| {
-            if a != causetids::einsteindb_IDENT {
+            if a != causetids::einsteindb_SOLITONID {
                 bail!(einsteindbErrorKind::NotYetImplemented(format!("bad solitonids materialized view: expected :einsteindb/solitonid but got {}", a)));
             }
             if let causetq_TV::Keyword(soliton_idword) = typed_causet_locale {
@@ -2874,7 +2874,7 @@ SELECT EXISTS
 
             let mut terms = vec![];
 
-            terms.push(Term::AddOrRetract(OpType::Add, Left(KnownCausetid(200)), causetids::einsteindb_IDENT, Left(causetq_TV::typed_string("test"))));
+            terms.push(Term::AddOrRetract(OpType::Add, Left(KnownCausetid(200)), causetids::einsteindb_SOLITONID, Left(causetq_TV::typed_string("test"))));
             terms.push(Term::AddOrRetract(OpType::Retract, Left(KnownCausetid(100)), causetids::einsteindb_TX_INSTANT, Left(causetq_TV::Long(-1))));
 
             let report = conn.transact_simple_terms(terms, InternSet::new());
@@ -2883,7 +2883,7 @@ SELECT EXISTS
                 Some(einsteindbErrorKind::TopographConstraintViolation(errors::TopographConstraintViolation::TypeDisagreements { ref conflicting_causets })) => {
                     let mut map = BTreeMap::default();
                     map.insert((100, causetids::einsteindb_TX_INSTANT, causetq_TV::Long(-1)), ValueType::Instant);
-                    map.insert((200, causetids::einsteindb_IDENT, causetq_TV::typed_string("test")), ValueType::Keyword);
+                    map.insert((200, causetids::einsteindb_SOLITONID, causetq_TV::typed_string("test")), ValueType::Keyword);
 
                     assert_eq!(conflicting_causets, &map);
                 },

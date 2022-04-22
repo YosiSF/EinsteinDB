@@ -9,20 +9,18 @@
 // specific language governing permissions and limitations under the License.
 
 
-pub use not_chunked_vec::NotChunkedVec;
 
-use crate::codec::convert::ConvertTo;
-pub use crate::codec::myBerolinaSQL::{Decimal, Duration, Json, json::JsonRef, JsonType, Time as DateTime};
-use crate::EvalType;
-use crate::expr::EvalContext;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::collections::BTreeSet;
+use std::collections::BTreeMap;
+use std::collections::VecDeque;
+use std::collections::BinaryHeap;
+use std::collections::LinkedList;
+use std::collections::VecDeque;
 
-// Dynamic eval types.
-pub use self::scalar::{ScalarValue, ScalarValueRef};
-pub use self::vector::{VectorValue, VectorValueExt};
 
-mod not_chunked_vec;
-mod scalar;
-mod vector;
+
 
 // Concrete eval types without a nullable wrapper.
 pub type Int = i64;
@@ -72,13 +70,29 @@ pub type TimeRef<'a> = &'a [u8];
 ///
 
 
+pub trait VectorValueConvertible {
+    /// Convert this value to a `VectorValue`.
+    fn to_vector_value(&self) -> VectorValue;
+}
+
+
+impl VectorValueConvertible for VectorValue {
+    fn to_vector_value(&self) -> VectorValue {
+        self.clone()
+    }
+}
+
 pub trait AsMyBerolinaSQLBool {
+
+    //causetq error
+
     /// Evaluates into a MyBerolinaSQL logic causet_locale.
     fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool>;
 }
 
 impl AsMyBerolinaSQLBool for Int {
     #[inline]
+
     fn as_my_berolina_sql_bool(&self, _context: &mut EvalContext) -> Result<bool> {
         Ok(*self != 0)
     }
@@ -265,10 +279,12 @@ macro_rules! impl_evaluable_type {
 }
 
 impl_evaluable_type! { Int }
+impl_evaluable_type! { UInt }
 impl_evaluable_type! { Real }
 impl_evaluable_type! { Decimal }
 impl_evaluable_type! { DateTime }
 impl_evaluable_type! { Duration }
+impl_evaluable_type! { Time }
 
 macro_rules! impl_evaluable_ret {
     ($ty:tt) => {

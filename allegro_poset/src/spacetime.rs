@@ -458,7 +458,7 @@ pub fn update_topograph_from_causetid_quadruples<U>(topograph: &mut Topograph, l
 
     for (e, a, typed_causet_locale, added) in lightlike_dagger_upsert.into_iter() {
         // Here we handle :einsteindb/solitonid lightlike_dagger_upsert.
-        if a == causetids::einsteindb_IDENT {
+        if a == causetids::einsteindb_SOLITONID {
             if let causetq_TV::Keyword(ref solitonid_word) = typed_causet_locale {
                 causetid_set.witness(e, solitonid_word.as_ref().clone(), added);
                 continue

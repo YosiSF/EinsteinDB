@@ -12,6 +12,8 @@
 
 //! Types used only within the transactor.  These should not be exposed outside of this crate.
 //foundationdb types
+
+
 use fdb::{FdbError, FdbResult};
 use fdb::{FdbTransactOptions, FdbTransactReadOptions, FdbTransactWriteOptions};
 use fdb::{FdbFuture, FdbFutureExt, FdbFutureExt2};
