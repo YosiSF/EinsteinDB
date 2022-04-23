@@ -1,31 +1,59 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use super::*;
-use crate::storage::kv::{
-    crate::{
-        APPEND_LOG__DEFAULT, APPEND_LOG__LOCK, APPEND_LOG__RAFT, APPEND_LOG__WRITE, DATA_MAX_LEN, DATA_MIN_LEN, DATA_MAX_KEY_LEN,
-        DATA_MIN_KEY_LEN, DATA_MAX_VALUE_LEN, DATA_MIN_VALUE_LEN, DATA_MAX_FIELD_LEN,
-        DATA_MIN_FIELD_LEN, DATA_MAX_FIELD_NUM, DATA_MIN_FIELD_NUM, DATA_MAX_VERSION,
-        DATA_MIN_VERSION, DATA_MAX_TIME_STAMP, DATA_MIN_TIME_STAMP, DATA_MAX_TXN_TS,
-        DATA_MIN_TXN_TS, DATA_MAX_TS_VERSION, DATA_MIN_TS_VERSION, DATA_MAX_TS_DELAY,
-        DATA_MIN_TS_DELAY, DATA_MAX_TS_COMMIT, DATA_MIN_TS_COMMIT, DATA_MAX_TS_WRITE,
-        DATA_MIN_TS_WRITE, DATA_MAX_TS_COMMIT_TS, DATA_MIN_TS_COMMIT_TS, DATA_MAX_TS_WRITE_TS,
-        DATA_MIN_TS_WRITE_TS, DATA_MAX_TS_COMMIT_TS_TS, DATA_MIN_TS_COMMIT_TS_TS,
-    },
-    Key,
-};
+use crate::storage::{Engine, SnapshotStore, SnapshotStoreStatistics, Statistics};
+use crate::causetq::{CausetQ, CausetQStatistics};
+use crate::causet::{Causet, CausetStatistics};
+use crate::causetctx::{CausetCtx, CausetCtxStatistics};
+use crate::einstein_db::{EINSTEIN_DB_VERSION, EINSTEIN_DB_VERSION_LATEST};
+use crate::storage::{SnapshotStore, SnapshotStoreStatistics, Statistics};
+use crate::soliton::{Soliton, SolitonStatistics};
+use crate as einstein_db_causet;
+use crate::allegro_poset::{AllegroPoset, AllegroPosetStatistics};
 
 
-impl SymplecticControlFactorsExt for Paniceinstein_merkle_tree {
-    fn get_namespaced_num_filefs_at_l_naught(&self, namespaced: &str, l_naught: usize) -> Result<Option<u64>> {
-        panic!()
-    }
-
-    fn get_namespaced_num_immutable_mem_table(&self, namespaced: &str) -> Result<Option<u64>> {
-        panic!()
-    }
-
-    fn get_namespaced_pending_jet_bundle_bytes(&self, namespaced: &str) -> Result<Option<u64>> {
-        panic!()
-    }
+/// A `CausetCtx` is a `Causet` with a `CausetQ` and a `SnapshotStore`.
+/// It is used to control the causetctx.
+/// ///! # Examples
+/// ```
+/// use einstein_db::causetctx_control_factors::*;
+/// use einstein_db::causetctx::*;
+/// use einstein_db::causet::*;
+/// use einstein_db::causetq::*;
+///
+/// let mut causetctx = CausetCtx::new();
+/// let mut causet = Causet::new();
+///
+/// let mut causetq = CausetQ::new();
+/// let mut snapshot_store = SnapshotStore::new();
+///
+/// causetctx.set_causet(&mut causet);
+/// causetctx.set_causetq(&mut causetq);
+///
+/// causetctx.set_snapshot_store(&mut snapshot_store);
+///
+/// causetctx.set_allegro_poset(&mut allegro_poset);
+/// ```
+#[cfg_attr(feature = "flame_it", flame)]
+pub struct CausetCtxControlFactors {
+    pub causet: Causet,
+    pub causetq: CausetQ,
+    pub snapshot_store: SnapshotStore,
+    pub soliton: Soliton,
+    pub allegro_poset: AllegroPoset,
 }
+
+#[cfg_attr(feature = "flame_it", flame)]
+pub struct CausetCtxControlFactorsStatistics {
+    pub causet: CausetStatistics,
+    pub causetq: CausetQStatistics,
+    pub snapshot_store: SnapshotStoreStatistics,
+    pub soliton: SolitonStatistics,
+    pub allegro_poset: AllegroPosetStatistics,
+}
+
+
+
+
+
+

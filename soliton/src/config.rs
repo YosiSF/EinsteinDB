@@ -2241,14 +2241,14 @@ impl Default for CdcConfig {
 impl CdcConfig {
     pub fn validate(&mut self) -> Result<(), Box<dyn Error>> {
         if self.min_ts_interval.is_zero() {
-            return Err("cdc.min-ts-interval can't be 0".into());
+            return Err("soliton.min-ts-interval can't be 0".into());
         }
         if self.incremental_scan_threads == 0 {
-            return Err("cdc.incremental-scan-threads can't be 0".into());
+            return Err("soliton.incremental-scan-threads can't be 0".into());
         }
         if self.incremental_scan_concurrency < self.incremental_scan_threads {
             return Err(
-                "cdc.incremental-scan-concurrency must be larger than cdc.incremental-scan-threads"
+                "soliton.incremental-scan-concurrency must be larger than soliton.incremental-scan-threads"
                     .into(),
             );
         }
@@ -2256,7 +2256,7 @@ impl CdcConfig {
             || self.incremental_scan_ts_filter_ratio > 1.0
         {
             return Err(
-                "cdc.incremental-scan-ts-filter-ratio should be larger than 0 and less than 1"
+                "soliton.incremental-scan-ts-filter-ratio should be larger than 0 and less than 1"
                     .into(),
             );
         }
@@ -2459,7 +2459,7 @@ pub struct EinsteinDbConfig {
     pub split: SplitConfig,
 
     #[online_config(submodule)]
-    pub cdc: CdcConfig,
+    pub soliton: CdcConfig,
 
     #[online_config(submodule)]
     pub resolved_ts: ResolvedTsConfig,
@@ -2502,7 +2502,7 @@ impl Default for EinsteinDbConfig {
             pessimistic_causet_chains: PessimisticCausetchaindConfig::default(),
             gc: GcConfig::default(),
             split: SplitConfig::default(),
-            cdc: CdcConfig::default(),
+            soliton: CdcConfig::default(),
             resolved_ts: ResolvedTsConfig::default(),
             resource_metering: ResourceMeteringConfig::default(),
         }
@@ -2576,15 +2576,15 @@ impl EinsteinDbConfig {
             .into());
         }
 
-        if self.violetabft_timelike_store.hibernate_regions && !self.cdc.hibernate_regions_compatible {
+        if self.violetabft_timelike_store.hibernate_regions && !self.soliton.hibernate_regions_compatible {
             warn!(
-                "violetabfttimelikestore.hibernate_regions is set to true, but cdc.hibernate_regions_compatible is false"
+                "violetabfttimelikestore.hibernate_regions is set to true, but soliton.hibernate_regions_compatible is false"
             );
         }
 
         if self.violetabft_timelike_store.hibernate_regions && self.violetabft_timelike_store.hibernate_regions_compatible {
             warn!(
-                "violetabfttimelikestore.hibernate_regions is set to true, but cdc.hibernate_regions_compatible is true"
+                "violetabfttimelikestore.hibernate_regions is set to true, but soliton.hibernate_regions_compatible is true"
             );
         }
 
@@ -3227,7 +3227,7 @@ impl From<&str> for Module {
             "backup" => Module::Backup,
             "pessimistic_causet_chains" => Module::PessimisticCausetchaind,
             "gc" => Module::Gc,
-            "cdc" => Module::CDC,
+            "soliton" => Module::CDC,
             "resolved_ts" => Module::ResolvedTs,
             "resource_metering" => Module::ResourceMetering,
             n => Module::Unknown(n.to_owned()),
@@ -4428,42 +4428,42 @@ mod tests {
     #[test]
     fn test_cdc() {
         let content = r#"
-            [cdc]
+            [soliton]
         "#;
         let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
         APPEND_LOG_g.validate().unwrap();
 
         // old-causet_locale-cache-size is deprecated, 0 must not report error.
         let content = r#"
-            [cdc]
+            [soliton]
             old-causet_locale-cache-size = 0
         "#;
         let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
         APPEND_LOG_g.validate().unwrap();
 
         let content = r#"
-            [cdc]
+            [soliton]
             min-ts-interval = "0s"
         "#;
         let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
         APPEND_LOG_g.validate().unwrap_err();
 
         let content = r#"
-            [cdc]
+            [soliton]
             incremental-scan-threads = 0
         "#;
         let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
         APPEND_LOG_g.validate().unwrap_err();
 
         let content = r#"
-            [cdc]
+            [soliton]
             incremental-scan-concurrency = 0
         "#;
         let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
         APPEND_LOG_g.validate().unwrap_err();
 
         let content = r#"
-            [cdc]
+            [soliton]
             incremental-scan-concurrency = 1
             incremental-scan-threads = 2
         "#;
@@ -4489,7 +4489,7 @@ mod tests {
             ("backup", Module::Backup),
             ("pessimistic_causet_chains", Module::PessimisticCausetchaind),
             ("gc", Module::Gc),
-            ("cdc", Module::CDC),
+            ("soliton", Module::CDC),
             ("resolved_ts", Module::ResolvedTs),
             ("resource_metering", Module::ResourceMetering),
             ("unknown", Module::Unknown("unknown".to_string())),

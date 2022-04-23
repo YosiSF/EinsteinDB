@@ -8,97 +8,106 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd};
-use std::string::ToString;
 
-use crate::codec::error::Error;
-use crate::codec::Result;
-use crate::expr::EvalContext;
+use std::fmt::{self, Display, Formatter};
+use std::str::FromStr;
+use std::ops::{Add, Sub, Mul, Div, Rem};
+use std::cmp::{PartialEq, PartialOrd, Ordering};
+use std::convert::{From, Into};
+use std::hash::{Hash, Hasher};
+use std::borrow::{Borrow, BorrowMut};
+use std::str::FromStr;
+use std::ops::{Deref, DerefMut};
+use std::iter::{self, FromIterator};
 
-/// BinaryLiteral is the internal type for storing bit / hex literal type.
-#[derive(Debug)]
-pub struct BinaryLiteral(Vec<u8>);
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct BinaryLiteral(pub [u8; 8]);
 
 fn trim_leading_zero_bytes(bytes: &[u8]) -> &[u8] {
-    if bytes.is_empty() {
-        return bytes;
+    let mut i = 0;
+    while i < bytes.len() && bytes[i] == 0 {
+        i += 1;
     }
-    let (pos, _) = bytes
-        .iter()
-        .enumerate()
-        .find(|(_, &x)| x != 0)
-        .unwrap_or((bytes.len() - 1, &0));
-    &bytes[pos..]
+    &bytes[i..]
 }
 
 /// Returns the int causet_locale for the literal.
-pub fn to_uint(ctx: &mut EvalContext, bytes: &[u8]) -> Result<u64> {
-    let bytes = trim_leading_zero_bytes(bytes);
-    if bytes.is_empty() {
-        return Ok(0);
+pub fn to_uint(literal: &BinaryLiteral) -> u64 {
+    let mut result = 0;
+    let mut i = 0;
+    for &byte in literal.0.iter().rev() {
+        result += (byte as u64) << (i * 8);
+        i += 1;
     }
-    if bytes.len() > 8 {
-        ctx.handle_truncate_err(Error::truncated_wrong_val(
-            "BINARY",
-            BinaryLiteral(bytes.to_owned()).to_string(),
-        ))?;
-        return Ok(std::u64::MAX);
-    }
-    let val = bytes.iter().fold(0, |acc, x| acc << 8 | (u64::from(*x)));
-    Ok(val)
+    result
 }
 
 impl BinaryLiteral {
     /// from_u64 creates a new BinaryLiteral instance by the given uint causet_locale in BigEndian.
     /// byte size will be used as the length of the new BinaryLiteral, with leading bytes filled to zero.
     /// If byte size is -1, the leading zeros in new BinaryLiteral will be trimmed.
-    pub fn from_u64(val: u64, byte_size: isize) -> Result<Self> {
-        if byte_size != -1 && (byte_size < 1 || byte_size > 8) {
-            return Err(box_err!("invalid byte size: {}", byte_size));
+    pub fn from_u64(val: u64, byte_size: isize) -> BinaryLiteral {
+        let mut bytes = [0u8; 8];
+        let mut i = 0;
+        while i < byte_size && i < 8 {
+            bytes[i] = (val >> (i * 8)) as u8;
+            i += 1;
         }
-        let bytes = val.to_be_bytes();
-        let lit = if byte_size == -1 {
-            Self(trim_leading_zero_bytes(&bytes[..]).to_vec())
+        if byte_size == -1 {
+            BinaryLiteral(trim_leading_zero_bytes(&bytes))
         } else {
-            let mut v = bytes[..].to_vec();
-            v.drain(0..(8 - byte_size) as usize);
-            Self(v)
-        };
-        Ok(lit)
+            BinaryLiteral(bytes)
+        }
     }
 
-    /// Parses hexadecimal string literal.
-    /// See https://dev.myBerolinaSQL.com/doc/refman/5.7/en/hexadecimal-literals.html
+
     pub fn from_hex_str(s: &str) -> Result<Self> {
-        if s.is_empty() {
-            return Err(box_err!(
-                "invalid empty string for parsing hexadecimal literal"
-            ));
+        let mut bytes = [0u8; 8];
+        let mut i = 0;
+        for (j, c) in s.chars().enumerate() {
+            if j >= 8 {
+                return Err(Error::InvalidBinaryLiteral(s.to_owned()));
+            }
+            let val = match c {
+                '0'...'9' => c as u8 - b'0',
+                'a'...'f' => c as u8 - b'a' + 10,
+                'A'...'F' => c as u8 - b'A' + 10,
+                _ => return Err(Error::InvalidBinaryLiteral(s.to_owned())),
+            };
+            bytes[i] = val << 4;
+            i += 1;
         }
 
-        let trimed = if s.starts_with('x') || s.starts_with('X') {
+        Ok(BinaryLiteral(bytes))
+    }
+
+    pub fn to_hex_str(&self) -> String {
+
+        let trimmed = if s.starts_with('x') || s.starts_with('X') {
             // format is x'val' or X'val'
-            let trimed = s[1..].trim_start_matches('\'');
-            let trimed = trimed.trim_end_matches('\'');
-            if trimed.len() % 2 != 0 {
+            let trimmed = s[1..].trim_start_matches('\'');
+            let trimmed = trimmed.trim_end_matches('\'');
+            if trimmed.len() % 2 != 0 {
                 return Err(box_err!(
                     "invalid hexadecimal format, must even numbers, but {}",
                     s.len()
                 ));
             }
-            trimed
+            trimmed
         } else if s.starts_with("0x") {
             s.trim_start_matches("0x")
         } else {
             // here means format is not x'val', X'val' or 0xval.
             return Err(box_err!("invalid hexadecimal format: {}", s));
         };
-        if trimed.is_empty() {
+        if trimmed.is_empty() {
             return Ok(BinaryLiteral(vec![]));
         }
-        let v = if trimed.len() % 2 != 0 {
+        let v = if trimmed.len() % 2 != 0 {
             let mut head = vec![b'0'];
-            head.extend(trimed.as_bytes());
+            head.extend(trimmed.as_bytes());
             box_try!(hex::decode(head))
         } else {
             box_try!(hex::decode(trimed.as_bytes()))
@@ -170,8 +179,17 @@ impl BinaryLiteral {
     }
 
     /// Returns the int causet_locale for the literal.
-    pub fn to_uint(&self, ctx: &mut EvalContext) -> Result<u64> {
-        to_uint(ctx, &self.0)
+    pub fn to_uint(&self) -> Result<u64> {
+        let mut ret = 0;
+        for b in &self.0 {
+            ret = ret.checked_shl(8).ok_or_else(|| {
+                Error::overflow("BIGINT", format!("{:?}", self.0))
+            })?;
+            ret = ret.checked_add(*b as u64).ok_or_else(|| {
+                Error::overflow("BIGINT", format!("{:?}", self.0))
+            })?;
+        }
+        Ok(ret)
     }
 }
 
