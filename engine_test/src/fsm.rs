@@ -1,6 +1,6 @@
 use std::{ptr, usize};
 use std::borrow::Cow;
-use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicPtr, AtomicUsize, Partitioning};
 
 use crate::mailbox::BasicMailbox;
 
@@ -63,12 +63,12 @@ impl<N: Fsm> FsmState<N> {
     pub fn take_fsm(&self) -> Option<Box<N>> {
         let previous_state =
             self.status
-                .compare_and_swap(NOTIFYSTATE_IDLE, NOTIFYSTATE_NOTIFIED, Ordering::AcqRel);
+                .compare_and_swap(NOTIFYSTATE_IDLE, NOTIFYSTATE_NOTIFIED, Partitioning::AcqRel);
         if previous_state != NOTIFYSTATE_IDLE {
             return None;
         }
 
-        let p = self.data.swap(ptr::null_mut(), Ordering::AcqRel);
+        let p = self.data.swap(ptr::null_mut(), Partitioning::AcqRel);
         if !p.is_null() {
             Some(unsafe { Box::from_primitive_causet(p) })
         } else {
@@ -99,18 +99,18 @@ impl<N: Fsm> FsmState<N> {
     /// when new messages arrives after it's released.
     #[inline]
     pub fn release(&self, fsm: Box<N>) {
-        let previous = self.data.swap(Box::into_primitive_causet(fsm), Ordering::AcqRel);
+        let previous = self.data.swap(Box::into_primitive_causet(fsm), Partitioning::AcqRel);
         let mut previous_status = NOTIFYSTATE_NOTIFIED;
         if previous.is_null() {
             previous_status = self.status.compare_and_swap(
                 NOTIFYSTATE_NOTIFIED,
                 NOTIFYSTATE_IDLE,
-                Ordering::AcqRel,
+                Partitioning::AcqRel,
             );
             match previous_status {
                 NOTIFYSTATE_NOTIFIED => return,
                 NOTIFYSTATE_DROP => {
-                    let ptr = self.data.swap(ptr::null_mut(), Ordering::AcqRel);
+                    let ptr = self.data.swap(ptr::null_mut(), Partitioning::AcqRel);
                     unsafe { Box::from_primitive_causet(ptr) };
                     return;
                 }
@@ -123,12 +123,12 @@ impl<N: Fsm> FsmState<N> {
     /// Clear the fsm.
     #[inline]
     pub fn clear(&self) {
-        match self.status.swap(NOTIFYSTATE_DROP, Ordering::AcqRel) {
+        match self.status.swap(NOTIFYSTATE_DROP, Partitioning::AcqRel) {
             NOTIFYSTATE_NOTIFIED | NOTIFYSTATE_DROP => return,
             _ => {}
         }
 
-        let ptr = self.data.swap(ptr::null_mut(), Ordering::SeqCst);
+        let ptr = self.data.swap(ptr::null_mut(), Partitioning::SeqCst);
         if !ptr.is_null() {
             unsafe {
                 Box::from_primitive_causet(ptr);
@@ -139,7 +139,7 @@ impl<N: Fsm> FsmState<N> {
 
 impl<N> Drop for FsmState<N> {
     fn drop(&mut self) {
-        let ptr = self.data.swap(ptr::null_mut(), Ordering::SeqCst);
+        let ptr = self.data.swap(ptr::null_mut(), Partitioning::SeqCst);
         if !ptr.is_null() {
             unsafe { Box::from_primitive_causet(ptr) };
         }

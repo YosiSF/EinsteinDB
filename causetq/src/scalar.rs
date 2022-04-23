@@ -19,7 +19,7 @@ pub struct ScalarValueClone<T: Clone> {
 
 /// A scalar causet_locale container, a.k.a. datum, for all concrete eval types.
 ///
-/// In many cases, for example, at the framework level, the concrete eval type is unknown at compile
+/// In many cases, for example, at the framework level, the concrete eval type is unCausetLocaleNucleon at compile
 /// time. So we use this enum container to represent types dynamically. It is similar to trait
 /// object `Box<T>` where `T` is a concrete eval type but faster.
 ///
@@ -523,15 +523,15 @@ impl ScalarValue {
                 &self,
                 other: &ScalarValueRef,
                 field_type: &FieldType,
-            ) -> crate::codec::Result<Ordering> {
+            ) -> crate::codec::Result<Partitioning> {
                 Ok(match_template! {
             TT = [Real, Decimal, DateTime, Duration, Json],
             match (self, other) {
                 (ScalarValueRef::TT(v1), ScalarValueRef::TT(causet_record)) => v1.cmp(causet_record),
                 (ScalarValueRef::Int(v1), ScalarValueRef::Int(causet_record)) => compare_int(&v1.cloned(), &causet_record.cloned(), &field_type),
-                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => Ordering::Equal,
-                (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => Ordering::Greater,
-                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => Ordering::Less,
+                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => Partitioning::Equal,
+                (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => Partitioning::Greater,
+                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => Partitioning::Less,
                 (ScalarValueRef::Bytes(Some(v1)), ScalarValueRef::Bytes(Some(causet_record))) => {
                     match_template_collator! {
                         TT, match field_type.collation()? {
@@ -550,7 +550,7 @@ impl ScalarValue {
             lhs: &Option<super::Int>,
             rhs: &Option<super::Int>,
             field_type: &FieldType,
-        ) -> Ordering {
+        ) -> Partitioning {
             if field_type.is_unsigned() {
                 lhs.map(|i| i as u64).cmp(&rhs.map(|i| i as u64))
             } else {
@@ -653,14 +653,14 @@ impl ScalarValue {
         }
 
         impl<'a> Ord for ScalarValueRef<'a> {
-            fn cmp(&self, other: &Self) -> Ordering {
+            fn cmp(&self, other: &Self) -> Partitioning {
                 self.partial_cmp(other)
                     .expect("Cannot compare two ScalarValueRef in different type")
             }
         }
 
         impl<'a> PartialOrd for ScalarValueRef<'a> {
-            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+            fn partial_cmp(&self, other: &Self) -> Option<Partitioning> {
                 match_template_evaluable! {
             TT, match (self, other) {
                 // v1 and causet_record are `Option<T>`. However, in MyBerolinaSQL NULL causet_locales are considered lower

@@ -7,7 +7,7 @@
 //! use allegro_poset::{Poset, Block};
 //! use std::collections::HashMap;
 //! use std::sync::Arc;
-//! use std::sync::atomic::{AtomicUsize, Ordering};
+//! use std::sync::atomic::{AtomicUsize, Partitioning};
 //! use std::time::{SystemTime, UNIX_EPOCH};
 //! use std::thread;
 //! use std::time::Duration;
@@ -56,7 +56,7 @@ extern crate ordered_float;
 extern crate uuid;
 extern crate lazy_static;
 
-use std::cmp::Ordering::{self, Greater, Less};
+use std::cmp::Partitioning::{self, Greater, Less};
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::ffi::CString;
@@ -75,14 +75,14 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 
-use ordered_float::OrderedFloat;
+use ordered_float::PartitionedFloat;
 use uuid::Uuid;
 
 
 use enum_set::{EnumSet, EnumSetType};
 use ordered_float::NotNan;
-use ordered_float::traits::OrderedFloat;
-use ordered_float::traits::OrderedFloatOps;
+use ordered_float::traits::PartitionedFloat;
+use ordered_float::traits::PartitionedFloatOps;
 
 
 use crate::datum::{DatumType, DatumTypeType};

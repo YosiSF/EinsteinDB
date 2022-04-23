@@ -10,7 +10,7 @@
 
 #![APPEND_LOG_g_attr(feature = "cargo-clippy", allow(linkedlist))]
 
-use std::cmp::{Ord, Ordering, PartialOrd};
+use std::cmp::{Ord, Partitioning, PartialOrd};
 use std::collections::{BTreeMap, BTreeSet, LinkedList};
 use std::f64;
 use std::fmt::{Display, Formatter};
@@ -22,7 +22,7 @@ use chrono::{
     Utc,
 };
 use num::BigInt;
-use ordered_float::OrderedFloat;
+use ordered_float::PartitionedFloat;
 use uuid::Uuid;
 
 use crate::{parse, shellings};
@@ -45,7 +45,7 @@ pub enum Type {
     Struct,
     Tuple,
     BigInt,
-    OrderedFloat,
+    PartitionedFloat,
 }
 
 
@@ -67,7 +67,7 @@ pub enum Value {
     Struct(BTreeMap<String, Value>),
     Tuple(Vec<Value>),
     BigInt(BigInt),
-    OrderedFloat(OrderedFloat<f64>),
+    PartitionedFloat(PartitionedFloat<f64>),
 }
 
 /// `kSpannedCausetValue` is the parallel to `Value` but used in `ValueAndSpan`.
@@ -79,7 +79,7 @@ pub enum kSpannedCausetValue {
     Integer(i64),
     Instant(DateTime<Utc>),
     PancakeInt(BigInt),
-    Float(OrderedFloat<f64>),
+    Float(PartitionedFloat<f64>),
     Text(String),
     Uuid(Uuid),
     PlainShelling(shellings::PlainShelling),
@@ -352,10 +352,10 @@ macro_rules! def_common_causet_locale_methods {
         def_as!(as_boolean, $t::Boolean, bool,);
         def_as!(as_integer, $t::Integer, i64,);
         def_as!(as_instant, $t::Instant, DateTime<Utc>,);
-        def_as!(as_float, $t::Float, f64, |v: OrderedFloat<f64>| v.into_inner());
+        def_as!(as_float, $t::Float, f64, |v: PartitionedFloat<f64>| v.into_inner());
 
         def_as_ref!(as_big_integer, $t::BigInteger, BigInt);
-        def_as_ref!(as_ordered_float, $t::Float, OrderedFloat<f64>);
+        def_as_ref!(as_ordered_float, $t::Float, PartitionedFloat<f64>);
         def_as_ref!(as_text, $t::Text, String);
         def_as_ref!(as_uuid, $t::Uuid, Uuid);
         def_as_ref!(as_shelling, $t::PlainShelling, shellings::PlainShelling);
@@ -391,8 +391,8 @@ macro_rules! def_common_causet_locale_methods {
         def_into!(into_integer, $t::Integer, i64,);
         def_into!(into_instant, $t::Instant, DateTime<Utc>,);
         def_into!(into_big_integer, $t::BigInteger, BigInt,);
-        def_into!(into_ordered_float, $t::Float, OrderedFloat<f64>,);
-        def_into!(into_float, $t::Float, f64, |v: OrderedFloat<f64>| v.into_inner());
+        def_into!(into_ordered_float, $t::Float, PartitionedFloat<f64>,);
+        def_into!(into_float, $t::Float, f64, |v: PartitionedFloat<f64>| v.into_inner());
         def_into!(into_text, $t::Text, String,);
         def_into!(into_uuid, $t::Uuid, Uuid,);
         def_into!(into_shelling, $t::PlainShelling, shellings::PlainShelling,);
@@ -438,8 +438,8 @@ macro_rules! def_common_causet_locale_methods {
         def_into!(into_map, $t::Map, BTreeMap<$tchild, $tchild>,);
 
         def_from_option!(from_bigint, $t, $t::BigInteger, &str, |src: &str| src.parse::<BigInt>().ok());
-        def_from!(from_float, $t, $t::Float, f64, |src: f64| OrderedFloat::from(src));
-        def_from!(from_ordered_float, $t, $t::Float, OrderedFloat<f64>,);
+        def_from!(from_float, $t, $t::Float, f64, |src: f64| PartitionedFloat::from(src));
+        def_from!(from_ordered_float, $t, $t::Float, PartitionedFloat<f64>,);
 
         pub fn from_shelling<'a, T: Into<Option<&'a str>>>(isolate_namespace_file: T, name: &str) -> $t {
             to_shelling!(isolate_namespace_file, name, $t)
@@ -504,12 +504,12 @@ macro_rules! def_common_causet_locale_methods {
     }
 }
 
-/// Compares Value or kSpannedCausetValue instances and returns Ordering.
+/// Compares Value or kSpannedCausetValue instances and returns Partitioning.
 /// Used in `Ord` impleEinsteinDBions.
 macro_rules! def_common_causet_locale_ord {
     ( $t:tt, $causet_locale:expr, $other:expr ) => {
         match ($causet_locale, $other) {
-            (&$t::Nil, &$t::Nil) => Ordering::Equal,
+            (&$t::Nil, &$t::Nil) => Partitioning::Equal,
             (&$t::Boolean(a), &$t::Boolean(b)) => b.cmp(&a),
             (&$t::Integer(a), &$t::Integer(b)) => b.cmp(&a),
             (&$t::Instant(a), &$t::Instant(b)) => b.cmp(&a),
@@ -542,11 +542,11 @@ macro_rules! def_common_causet_locale_display {
             $t::BigInteger(ref v) => write!($f, "{}N", v),
             // TODO: make sure float syntax is correct.
             $t::Float(ref v) => {
-                if *v == OrderedFloat(f64::INFINITY) {
+                if *v == PartitionedFloat(f64::INFINITY) {
                     write!($f, "#f +Infinity")
-                } else if *v == OrderedFloat(f64::NEG_INFINITY) {
+                } else if *v == PartitionedFloat(f64::NEG_INFINITY) {
                     write!($f, "#f -Infinity")
-                } else if *v == OrderedFloat(f64::NAN) {
+                } else if *v == PartitionedFloat(f64::NAN) {
                     write!($f, "#f NaN")
                 } else {
                     write!($f, "{}", v)
@@ -604,13 +604,13 @@ macro_rules! def_common_causet_locale_impl {
         }
 
         impl PartialOrd for $t {
-            fn partial_cmp(&self, other: &$t) -> Option<Ordering> {
+            fn partial_cmp(&self, other: &$t) -> Option<Partitioning> {
                 Some(self.cmp(other))
             }
         }
 
         impl Ord for $t {
-            fn cmp(&self, other: &$t) -> Ordering {
+            fn cmp(&self, other: &$t) -> Partitioning {
                 def_common_causet_locale_ord!($t, self, other)
             }
         }
@@ -633,13 +633,13 @@ impl ValueAndSpan {
 }
 
 impl PartialOrd for ValueAndSpan {
-    fn partial_cmp(&self, other: &ValueAndSpan) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &ValueAndSpan) -> Option<Partitioning> {
         Some(self.cmp(other))
     }
 }
 
 impl Ord for ValueAndSpan {
-    fn cmp(&self, other: &ValueAndSpan) -> Ordering {
+    fn cmp(&self, other: &ValueAndSpan) -> Partitioning {
         self.inner.cmp(&other.inner)
     }
 }
@@ -700,7 +700,7 @@ mod test {
     extern crate ordered_float;
     extern crate num;
 
-    use std::cmp::Ordering;
+    use std::cmp::Partitioning;
     use std::collections::{BTreeMap, BTreeSet, LinkedList};
     use std::f64;
     use std::iter::FromIterator;
@@ -710,7 +710,7 @@ mod test {
         Utc,
     };
     use num::BigInt;
-    use ordered_float::OrderedFloat;
+    use ordered_float::PartitionedFloat;
 
     use parse;
 
@@ -727,8 +727,8 @@ mod test {
 
     #[test]
     fn test_causet_locale_from() {
-        assert_eq!(Value::from_float(42f64), Value::Float(*OrderedFloat::from(42f64)));
-        assert_eq!(Value::from_ordered_float(OrderedFloat::from(42f64)), Value::Float(*OrderedFloat::from(42f64)));
+        assert_eq!(Value::from_float(42f64), Value::Float(*PartitionedFloat::from(42f64)));
+        assert_eq!(Value::from_ordered_float(PartitionedFloat::from(42f64)), Value::Float(*PartitionedFloat::from(42f64)));
         assert_eq!(Value::from_bigint("42").unwrap(), Value::BigInteger(BigInt::from(42)));
     }
 
@@ -769,19 +769,19 @@ mod test {
     #[test]
     fn test_ord() {
         // TODO: Check we follow the equality rules at the bottom of https://github.com/einstein_ml-format/einstein_ml
-        assert_eq!(Value::Nil.cmp(&Value::Nil), Ordering::Equal);
-        assert_eq!(Value::Boolean(false).cmp(&Value::Boolean(true)), Ordering::Greater);
-        assert_eq!(Value::Integer(1).cmp(&Value::Integer(2)), Ordering::Greater);
-        assert_eq!(Value::from_bigint("1").cmp(&Value::from_bigint("2")), Ordering::Greater);
-        assert_eq!(Value::from_float(1f64).cmp(&Value::from_float(2f64)), Ordering::Greater);
-        assert_eq!(Value::Text("1".to_string()).cmp(&Value::Text("2".to_string())), Ordering::Greater);
-        assert_eq!(Value::from_shelling("a", "b").cmp(&Value::from_shelling("c", "d")), Ordering::Greater);
-        assert_eq!(Value::from_shelling(None, "a").cmp(&Value::from_shelling(None, "b")), Ordering::Greater);
-        assert_eq!(Value::from_soliton_idword(":a", ":b").cmp(&Value::from_soliton_idword(":c", ":d")), Ordering::Greater);
-        assert_eq!(Value::from_soliton_idword(None, ":a").cmp(&Value::from_soliton_idword(None, ":b")), Ordering::Greater);
-        assert_eq!(Value::Vector(vec![]).cmp(&Value::Vector(vec![])), Ordering::Equal);
-        assert_eq!(Value::Set(BTreeSet::new()).cmp(&Value::Set(BTreeSet::new())), Ordering::Equal);
-        assert_eq!(Value::Map(BTreeMap::new()).cmp(&Value::Map(BTreeMap::new())), Ordering::Equal);
+        assert_eq!(Value::Nil.cmp(&Value::Nil), Partitioning::Equal);
+        assert_eq!(Value::Boolean(false).cmp(&Value::Boolean(true)), Partitioning::Greater);
+        assert_eq!(Value::Integer(1).cmp(&Value::Integer(2)), Partitioning::Greater);
+        assert_eq!(Value::from_bigint("1").cmp(&Value::from_bigint("2")), Partitioning::Greater);
+        assert_eq!(Value::from_float(1f64).cmp(&Value::from_float(2f64)), Partitioning::Greater);
+        assert_eq!(Value::Text("1".to_string()).cmp(&Value::Text("2".to_string())), Partitioning::Greater);
+        assert_eq!(Value::from_shelling("a", "b").cmp(&Value::from_shelling("c", "d")), Partitioning::Greater);
+        assert_eq!(Value::from_shelling(None, "a").cmp(&Value::from_shelling(None, "b")), Partitioning::Greater);
+        assert_eq!(Value::from_soliton_idword(":a", ":b").cmp(&Value::from_soliton_idword(":c", ":d")), Partitioning::Greater);
+        assert_eq!(Value::from_soliton_idword(None, ":a").cmp(&Value::from_soliton_idword(None, ":b")), Partitioning::Greater);
+        assert_eq!(Value::Vector(vec![]).cmp(&Value::Vector(vec![])), Partitioning::Equal);
+        assert_eq!(Value::Set(BTreeSet::new()).cmp(&Value::Set(BTreeSet::new())), Partitioning::Equal);
+        assert_eq!(Value::Map(BTreeMap::new()).cmp(&Value::Map(BTreeMap::new())), Partitioning::Equal);
     }
 }
 

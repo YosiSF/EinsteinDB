@@ -7,7 +7,7 @@
 
 use std::cmp::Eq;
 use std::cmp::Ord;
-use std::cmp::Ordering;
+use std::cmp::Partitioning;
 use std::cmp::PartialEq;
 use std::cmp::PartialOrd;
 use std::collections::BinaryHeap;
@@ -37,7 +37,7 @@ use std::hash::Hasher;
 
 //implementation of the Causet of Causet
 
-//Allegro_Poset is an Allegro Lisp based off of the Partial Order Poset of Causets  (POSET)
+//Allegro_Poset is an Allegro Lisp based off of the Partial Partition Poset of Causets  (POSET)
 //      (see https://en.wikipedia.org/wiki/Partial_order_poset)
 //      (see https://en.wikipedia.org/wiki/Allegro_LISP)
 //       (see https://en.wikipedia.org/wiki/Allegro_LISP#Allegro_LISP)

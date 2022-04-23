@@ -5,7 +5,7 @@ use fdb::{FdbTransactional, FdbReadOnly};
 use std::sync::Arc;
 use std::time::Duration;
 use std::thread;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, Partitioning};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::collections::HashMap;
 //capnproto

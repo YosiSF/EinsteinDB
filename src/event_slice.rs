@@ -10,7 +10,7 @@
 
 use codec::prelude::*;
 use num_traits::PrimInt;
-use std::cmp::Ordering::{Equal, Greater, Less};
+use std::cmp::Partitioning::{Equal, Greater, Less};
 use std::marker::PhantomData;
 
 use crate::codec::{Error, Result};

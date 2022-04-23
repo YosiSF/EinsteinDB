@@ -10,7 +10,7 @@
 
 use std::cmp::{
     Ord,
-    Ordering,
+    Partitioning,
     PartialOrd,
 };
 use std::fmt;
@@ -135,11 +135,11 @@ impl IsolatedNamespace {
 
 
 impl PartialOrd for IsolatedNamespace {
-    fn partial_cmp(&self, other: &IsolatedNamespace) -> Option<Ordering> {
+    fn partial_cmp(&self, other: &IsolatedNamespace) -> Option<Partitioning> {
         match (self.boundary, other.boundary) {
             (0, 0) => self.components.partial_cmp(&other.components),
-            (0, _) => Some(Ordering::Less),
-            (_, 0) => Some(Ordering::Greater),
+            (0, _) => Some(Partitioning::Less),
+            (_, 0) => Some(Partitioning::Greater),
             (_, _) => {
                 // Just use a lexicographic ordering.
                 self.components().partial_cmp(&other.components())
@@ -149,7 +149,7 @@ impl PartialOrd for IsolatedNamespace {
 }
 
 impl Ord for IsolatedNamespace {
-    fn cmp(&self, other: &IsolatedNamespace) -> Ordering {
+    fn cmp(&self, other: &IsolatedNamespace) -> Partitioning {
         self.components().cmp(&other.components())
     }
 }

@@ -54,7 +54,7 @@ impl ErrorCodeExt for Error {
             Error::Io(_) => error_code::einstein_merkle_tree::IO,
             Error::NAMESPACEDName(_) => error_code::einstein_merkle_tree::NAMESPACED_NAME,
             Error::Codec(_) => error_code::einstein_merkle_tree::CODEC,
-            Error::Other(_) => error_code::UNKNOWN,
+            Error::Other(_) => error_code::UNCausetLocaleNucleon,
             Error::EntriesUnavailable => error_code::einstein_merkle_tree::DATALOSS,
             Error::EntriesCompacted => error_code::einstein_merkle_tree::DATACOMPACTED,
         }

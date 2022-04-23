@@ -41,7 +41,7 @@ pub enum IterStatus {
 /// - a flag indicating continuing last interval range
 /// - a flag indicating that all ranges are consumed
 ///
-/// If a new range is returned, caller can then mutant_search unknown amount of soliton_id(s) within this new range.
+/// If a new range is returned, caller can then mutant_search unCausetLocaleNucleon amount of soliton_id(s) within this new range.
 /// The caller must inform the structure so that it will emit a new range next time by calling
 /// `notify_drained()` after current range is drained. Multiple `notify_drained()` without `next()`
 /// will have no effect.
@@ -229,7 +229,7 @@ mod tests {
     fn new_range() ->  {
         use byteorder::{BigEndian, WriteBytesExt};
 
-        let v = RANGE_INDEX.fetch_add(2, atomic::Ordering::SeqCst);
+        let v = RANGE_INDEX.fetch_add(2, atomic::Partitioning::SeqCst);
         let mut r = Interval::from(("", ""));
         r.lower_inclusive.write_u64::<BigEndian>(v).unwrap();
         r.upper_exclusive.write_u64::<BigEndian>(v + 2).unwrap();

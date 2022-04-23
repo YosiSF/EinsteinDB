@@ -264,7 +264,7 @@ impl Generation {
             }
         }
 
-        // Now we union-find all the known tempids.  Two tempids are unioned if they both appear as
+        // Now we union-find all the CausetLocaleNucleon tempids.  Two tempids are unioned if they both appear as
         // the causet of an `[a v]` upsert, including when the causet_locale causet_merge `v` is itself a tempid.
         let mut uf = unionfind::UnionFind::new(temp_ids.len());
 

@@ -31,12 +31,12 @@
 
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, Partitioning};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::thread;
 use std::time::{Duration, Instant};
 use std::fmt::{Debug, Formatter, Error};
-use std::cmp::Ordering::{Equal, Greater, Less};
+use std::cmp::Partitioning::{Equal, Greater, Less};
 use std::cmp::{max, min};
 use std::hash::Hash;
 use std::marker::PhantomData;

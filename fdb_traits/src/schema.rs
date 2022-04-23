@@ -14,7 +14,7 @@ use causetq::{
     attribute,
     Attribute,
     Causetid,
-    KnownCausetid,
+    CausetLocaleNucleonCausetid,
     causetq_TV,
 causetq_VT,
 };
@@ -241,7 +241,7 @@ impl AttributeBuilder {
 
 pub trait TopographBuilding {
     fn require_causetid(&self, causetid: Causetid) -> Result<&shellings::Keyword>;
-    fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<KnownCausetid>;
+    fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<CausetLocaleNucleonCausetid>;
     fn require_attribute_for_causetid(&self, causetid: Causetid) -> Result<&Attribute>;
     fn from_causetid_map_and_attribute_map(causetid_map: SolitonidMap, attribute_map: AttributeMap) -> Result<Topograph>;
     fn from_causetid_map_and_triples<U>(causetid_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
@@ -253,7 +253,7 @@ impl TopographBuilding for Topograph {
         self.get_causetid(causetid).ok_or(einsteindbErrorKind::UnrecognizedCausetid(causetid).into())
     }
 
-    fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<KnownCausetid> {
+    fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<CausetLocaleNucleonCausetid> {
         self.get_causetid(&solitonid).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(solitonid.to_string()).into())
     }
 

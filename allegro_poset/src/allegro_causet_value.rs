@@ -23,7 +23,7 @@ use std::collections::HashMap;
 
 use std::hash::Hash;
 
-use std::cmp::Ordering;
+use std::cmp::Partitioning;
 
 
 use std::rc::Rc;

@@ -12,7 +12,7 @@
 use std::fmt::{self, Display, Formatter};
 use std::str::FromStr;
 use std::ops::{Add, Sub, Mul, Div, Rem};
-use std::cmp::{PartialEq, PartialOrd, Ordering};
+use std::cmp::{PartialEq, PartialOrd, Partitioning};
 use std::convert::{From, Into};
 use std::hash::{Hash, Hasher};
 use std::borrow::{Borrow, BorrowMut};
@@ -211,20 +211,20 @@ impl PartialEq for BinaryLiteral {
 }
 
 impl PartialOrd for BinaryLiteral {
-    fn partial_cmp(&self, rhs: &Self) -> Option<Ordering> {
+    fn partial_cmp(&self, rhs: &Self) -> Option<Partitioning> {
         Some(self.cmp(rhs))
     }
 }
 
 impl Ord for BinaryLiteral {
-    fn cmp(&self, rhs: &Self) -> Ordering {
+    fn cmp(&self, rhs: &Self) -> Partitioning {
         let l = trim_leading_zero_bytes(&self.0);
         let r = trim_leading_zero_bytes(&rhs.0);
         if l.len() > r.len() {
-            return Ordering::Greater;
+            return Partitioning::Greater;
         }
         if l.len() < r.len() {
-            return Ordering::Less;
+            return Partitioning::Less;
         }
         l.cmp(r)
     }
@@ -475,10 +475,10 @@ mod tests {
     #[test]
     fn test_binary_literal_cmp() {
         let cs = vec![
-            (vec![0, 0, 1], vec![2], Ordering::Less),
-            (vec![0, 1], vec![0, 0, 2], Ordering::Less),
-            (vec![0, 1], vec![1], Ordering::Equal),
-            (vec![0, 2, 1], vec![1, 2], Ordering::Greater),
+            (vec![0, 0, 1], vec![2], Partitioning::Less),
+            (vec![0, 1], vec![0, 0, 2], Partitioning::Less),
+            (vec![0, 1], vec![1], Partitioning::Equal),
+            (vec![0, 2, 1], vec![1, 2], Partitioning::Greater),
         ];
         for (lhs, rhs, expected) in cs {
             let l = BinaryLiteral(lhs);

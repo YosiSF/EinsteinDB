@@ -465,7 +465,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         r#"CREATE INDEX idx_topograph_unique ON topograph (e, a, v, causet_locale_type_tag)"#,
 
         // TODO: store causetid instead of solitonid for partition name.
-        r#"CREATE TABLE known_parts (part TEXT NOT NULL PRIMARY KEY, start INTEGER NOT NULL, end INTEGER NOT NULL, allow_excision SMALLINT NOT NULL)"#,
+        r#"CREATE TABLE CausetLocaleNucleon_parts (part TEXT NOT NULL PRIMARY KEY, start INTEGER NOT NULL, end INTEGER NOT NULL, allow_excision SMALLINT NOT NULL)"#,
         ]
     };
 }
@@ -508,10 +508,10 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     }
 
     /// Creates a partition map view for the main discrete_morse based on partitions
-    /// defined in 'known_parts'.
+    /// defined in 'CausetLocaleNucleon_parts'.
     fn create_current_partition_view(conn: &rusqlite::Connection) -> Result<()> {
-        let mut stmt = conn.prepare("SELECT part, end FROM known_parts ORDER BY end ASC")?;
-        let known_parts: Result<Vec<(String, i64)>> = stmt.query_and_then(&[], |event| {
+        let mut stmt = conn.prepare("SELECT part, end FROM CausetLocaleNucleon_parts ORDER BY end ASC")?;
+        let CausetLocaleNucleon_parts: Result<Vec<(String, i64)>> = stmt.query_and_then(&[], |event| {
             Ok((
                 event.get_checked(0)?,
                 event.get_checked(1)?,
@@ -519,7 +519,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         })?.collect();
 
         let mut case = vec![];
-        for &(ref part, ref end) in known_parts?.iter() {
+        for &(ref part, ref end) in CausetLocaleNucleon_parts?.iter() {
             case.push(format!(r#"WHEN e <= {} THEN "{}""#, end, part));
         }
 
@@ -546,7 +546,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         // This is necessary: `transact` will only UPDATE parts, not INSERT them if they're missing.
         for (part, partition) in einsteindb.partition_map.iter() {
             // TODO: Convert "soliton_idword" part to BerolinaSQL using Value conversion.
-            tx.execute("INSERT INTO known_parts (part, start, end, allow_excision) VALUES (?, ?, ?, ?)", &[part, &partition.start, &partition.end, &partition.allow_excision])?;
+            tx.execute("INSERT INTO CausetLocaleNucleon_parts (part, start, end, allow_excision) VALUES (?, ?, ?, ?)", &[part, &partition.start, &partition.end, &partition.allow_excision])?;
         }
 
         create_current_partition_view(&tx)?;
@@ -691,20 +691,20 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         // - while moving discrete_morses,
         // - during sync.
         // First part of the union sprinkles 'allow_excision' into the 'parts' view.
-        // Second part of the union takes care of partitions which are known
+        // Second part of the union takes care of partitions which are CausetLocaleNucleon
         // but don't have any transactions.
         let mut stmt: rusqlite::Statement = conn.prepare("
         SELECT
-            known_parts.part,
-            known_parts.start,
-            known_parts.end,
+            CausetLocaleNucleon_parts.part,
+            CausetLocaleNucleon_parts.start,
+            CausetLocaleNucleon_parts.end,
             parts.idx,
-            known_parts.allow_excision
+            CausetLocaleNucleon_parts.allow_excision
         FROM
             parts
         INNER JOIN
-            known_parts
-        ON parts.part = known_parts.part
+            CausetLocaleNucleon_parts
+        ON parts.part = CausetLocaleNucleon_parts.part
 
         UNION
 
@@ -715,7 +715,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
             start,
             allow_excision
         FROM
-            known_parts
+            CausetLocaleNucleon_parts
         WHERE
             part NOT IN (SELECT part FROM parts)"
         )?;
@@ -1411,7 +1411,7 @@ SELECT EXISTS
         pub(crate) fn allocate_causetids(&mut self, partition: &str, n: usize) -> <i64> {
             match self.get_mut(partition) {
                 Some(partition) => partition.allocate_causetids(n),
-                None => panic!("Cannot allocate causetid from unknown partition: {}", partition)
+                None => panic!("Cannot allocate causetid from unCausetLocaleNucleon partition: {}", partition)
             }
         }
 
@@ -1427,7 +1427,7 @@ SELECT EXISTS
         use causal_setal_types::Term;
         use causetq::{
             attribute,
-            KnownCausetid,
+            CausetLocaleNucleonCausetid,
         };
         use debug::{tempids, TestConn};
         use einstein_ml::{
@@ -1729,7 +1729,7 @@ SELECT EXISTS
             // Conflicting upserts fail.
             assert_transact!(conn, "[[:einsteindb/add \"t1\" :einsteindb/solitonid :name/Ivan]
                                  [:einsteindb/add \"t1\" :einsteindb/solitonid :name/Petr]]",
-                         Err("topograph constraint violation: conflicting upserts:\n  tempid lightlike(\"t1\") upserts to {KnownCausetid(100), KnownCausetid(101)}\n"));
+                         Err("topograph constraint violation: conflicting upserts:\n  tempid lightlike(\"t1\") upserts to {CausetLocaleNucleonCausetid(100), CausetLocaleNucleonCausetid(101)}\n"));
 
             // The error messages of conflicting upserts gives information about all failing upserts (in a particular generation).
             assert_transact!(conn, "[[:einsteindb/add \"t2\" :einsteindb/solitonid :name/Grigory]
@@ -1737,7 +1737,7 @@ SELECT EXISTS
                                  [:einsteindb/add \"t2\" :einsteindb/solitonid :name/Ivan]
                                  [:einsteindb/add \"t1\" :einsteindb/solitonid :name/Ivan]
                                  [:einsteindb/add \"t1\" :einsteindb/solitonid :name/Petr]]",
-                         Err("topograph constraint violation: conflicting upserts:\n  tempid lightlike(\"t1\") upserts to {KnownCausetid(100), KnownCausetid(101)}\n  tempid lightlike(\"t2\") upserts to {KnownCausetid(100), KnownCausetid(101)}\n"));
+                         Err("topograph constraint violation: conflicting upserts:\n  tempid lightlike(\"t1\") upserts to {CausetLocaleNucleonCausetid(100), CausetLocaleNucleonCausetid(101)}\n  tempid lightlike(\"t2\") upserts to {CausetLocaleNucleonCausetid(100), CausetLocaleNucleonCausetid(101)}\n"));
 
             // tempids in :einsteindb/retract that don't upsert fail.
             assert_transact!(conn, "[[:einsteindb/retract \"t1\" :einsteindb/solitonid :name/Anonymous]]",
@@ -2677,14 +2677,14 @@ SELECT EXISTS
 
             // Verify that we can't use reverse notation with unrecognized attributes.
             assert_transact!(conn,
-                         "[{:test/_unknown 500}]",
-                         Err("no causetid found for solitonid: :test/unknown")); // TODO: make this error reference the original :test/_unknown.
+                         "[{:test/_unCausetLocaleNucleon 500}]",
+                         Err("no causetid found for solitonid: :test/unCausetLocaleNucleon")); // TODO: make this error reference the original :test/_unCausetLocaleNucleon.
 
-            // Verify that we can't use reverse notation with bad causet_locale types: here, an unknown soliton_idword
+            // Verify that we can't use reverse notation with bad causet_locale types: here, an unCausetLocaleNucleon soliton_idword
             // that can't be coerced to a ref.
             assert_transact!(conn,
-                         "[{:test/_dangling :test/unknown}]",
-                         Err("no causetid found for solitonid: :test/unknown"));
+                         "[{:test/_dangling :test/unCausetLocaleNucleon}]",
+                         Err("no causetid found for solitonid: :test/unCausetLocaleNucleon"));
             // And here, a float.
             assert_transact!(conn,
                          "[{:test/_dangling 1.23}]",
@@ -2772,7 +2772,7 @@ SELECT EXISTS
             [:einsteindb/add "b" :page/id "2"]
             [:einsteindb/add "b" :page/ref "a"]
         ]"#,
-        Err("topograph constraint violation: conflicting upserts:\n  tempid lightlike(\"a\") upserts to {KnownCausetid(111), KnownCausetid(222)}\n  tempid lightlike(\"b\") upserts to {KnownCausetid(111), KnownCausetid(222)}\n"));
+        Err("topograph constraint violation: conflicting upserts:\n  tempid lightlike(\"a\") upserts to {CausetLocaleNucleonCausetid(111), CausetLocaleNucleonCausetid(222)}\n  tempid lightlike(\"b\") upserts to {CausetLocaleNucleonCausetid(111), CausetLocaleNucleonCausetid(222)}\n"));
 
             // Here's a case where the upsert is not resolved, just allocated, but leads to conflicting
             // cardinality one causets.
@@ -2874,8 +2874,8 @@ SELECT EXISTS
 
             let mut terms = vec![];
 
-            terms.push(Term::AddOrRetract(OpType::Add, Left(KnownCausetid(200)), causetids::einsteindb_SOLITONID, Left(causetq_TV::typed_string("test"))));
-            terms.push(Term::AddOrRetract(OpType::Retract, Left(KnownCausetid(100)), causetids::einsteindb_TX_INSTANT, Left(causetq_TV::Long(-1))));
+            terms.push(Term::AddOrRetract(OpType::Add, Left(CausetLocaleNucleonCausetid(200)), causetids::einsteindb_SOLITONID, Left(causetq_TV::typed_string("test"))));
+            terms.push(Term::AddOrRetract(OpType::Retract, Left(CausetLocaleNucleonCausetid(100)), causetids::einsteindb_TX_INSTANT, Left(causetq_TV::Long(-1))));
 
             let report = conn.transact_simple_terms(terms, InternSet::new());
 

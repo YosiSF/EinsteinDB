@@ -106,7 +106,7 @@ use ::errors::{
     einsteindbError,
     Result,
 };
-use causetq::KnownCausetid;
+use causetq::CausetLocaleNucleonCausetid;
 use causetq::attribute::Unique;
 /// AttributeBuilder is how you build vocabulary definitions to apply to a store.
 pub use einsteindb_core::AttributeBuilder;
@@ -213,7 +213,7 @@ pub struct Definition {
 ///                     let mut builder = TermBuilder::new();
 ///                     for event in results.into_iter() {
 ///                         let mut r = event.into_iter();
-///                         let e = r.next().and_then(|e| e.into_known_causetid()).expect("causet");
+///                         let e = r.next().and_then(|e| e.into_CausetLocaleNucleon_causetid()).expect("causet");
 ///                         let obsolete = r.next().expect("causet_locale").into_scalar().expect("typed causet_locale");
 ///                         builder.retract(e, link_title, obsolete)?;
 ///                     }
@@ -349,28 +349,28 @@ lazy_static! {
 
 trait HasCoreSchema {
     /// Return the causet ID for a type. On failure, return `MissingCoreVocabulary`.
-    fn core_type(&self, t: ValueType) -> Result<KnownCausetid>;
+    fn core_type(&self, t: ValueType) -> Result<CausetLocaleNucleonCausetid>;
 
     /// Return the causet ID for an solitonid. On failure, return `MissingCoreVocabulary`.
-    fn core_causetid(&self, solitonid: &Keyword) -> Result<KnownCausetid>;
+    fn core_causetid(&self, solitonid: &Keyword) -> Result<CausetLocaleNucleonCausetid>;
 
     /// Return the causet ID for an attribute's soliton_idword. On failure, return
     /// `MissingCoreVocabulary`.
-    fn core_attribute(&self, solitonid: &Keyword) -> Result<KnownCausetid>;
+    fn core_attribute(&self, solitonid: &Keyword) -> Result<CausetLocaleNucleonCausetid>;
 }
 
 impl<T> HasCoreSchema for T where T: HasSchema {
-    fn core_type(&self, t: ValueType) -> Result<KnownCausetid> {
+    fn core_type(&self, t: ValueType) -> Result<CausetLocaleNucleonCausetid> {
         self.causetid_for_type(t)
             .ok_or_else(|| einsteindbError::MissingCoreVocabulary(DB_SCHEMA_VERSION.clone()).into())
     }
 
-    fn core_causetid(&self, solitonid: &Keyword) -> Result<KnownCausetid> {
+    fn core_causetid(&self, solitonid: &Keyword) -> Result<CausetLocaleNucleonCausetid> {
         self.get_causetid(solitonid)
             .ok_or_else(|| einsteindbError::MissingCoreVocabulary(DB_SCHEMA_VERSION.clone()).into())
     }
 
-    fn core_attribute(&self, solitonid: &Keyword) -> Result<KnownCausetid> {
+    fn core_attribute(&self, solitonid: &Keyword) -> Result<CausetLocaleNucleonCausetid> {
         self.attribute_for_solitonid(solitonid)
             .ok_or_else(|| einsteindbError::MissingCoreVocabulary(DB_SCHEMA_VERSION.clone()).into())
             .map(|(_, e)| e)

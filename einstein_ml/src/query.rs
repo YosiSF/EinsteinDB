@@ -23,7 +23,7 @@ use itertools::assert_equal;
 use ::{
     BigInt,
     DateTime,
-    OrderedFloat,
+    PartitionedFloat,
     Utc,
     Uuid,
 };
@@ -218,9 +218,9 @@ pub enum Direction {
     Descending,
 }
 
-/// An abstract declaration of ordering: direction and variable.
+/// An abstract declaration of ordering: clock_vector and variable.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Order(pub Direction, pub Variable);   // Future: Element instead of Variable?
+pub struct Partition(pub Direction, pub Variable);   // Future: Element instead of Variable?
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SrcVar {
@@ -257,7 +257,7 @@ impl SrcVar {
 pub enum NonIntegerConstant {
     Boolean(bool),
     BigInteger(BigInt),
-    Float(OrderedFloat<f64>),
+    Float(PartitionedFloat<f64>),
     Text(crate::ValueRc<String>),
     Instant(DateTime<Utc>),
     Uuid(Uuid),
@@ -898,7 +898,7 @@ impl Binding {
 // Note that the "implicit blank" rule applies.
 // A pattern with a reversed attribute — :foo/_bar — is reversed
 // at the point of parsing. These `Pattern` instances only represent
-// one direction.
+// one clock_vector.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Pattern {
     pub source: Option<SrcVar>,
@@ -1069,7 +1069,7 @@ pub struct ParsedQuery {
     pub in_sources: BTreeSet<SrcVar>,
     pub limit: Limit,
     pub where_clauses: Vec<WhereClause>,
-    pub order: Option<Vec<Order>>,
+    pub order: Option<Vec<Partition>>,
 }
 
 pub(crate) enum QueryPart {
@@ -1078,7 +1078,7 @@ pub(crate) enum QueryPart {
     InVars(Vec<Variable>),
     Limit(Limit),
     WhereClauses(Vec<WhereClause>),
-    Order(Vec<Order>),
+    Partition(Vec<Partition>),
 }
 
 /// A `ParsedQuery` represents a parsed but potentially invalid query to the query algebrizer.
@@ -1094,7 +1094,7 @@ impl ParsedQuery {
         let mut in_vars: Option<Vec<Variable>> = None;
         let mut limit: Option<Limit> = None;
         let mut where_clauses: Option<Vec<WhereClause>> = None;
-        let mut order: Option<Vec<Order>> = None;
+        let mut order: Option<Vec<Partition>> = None;
 
         for part in parts.into_iter() {
             match part {
@@ -1128,7 +1128,7 @@ impl ParsedQuery {
                     }
                     where_clauses = Some(x)
                 },
-                QueryPart::Order(x) => {
+                QueryPart::Partition(x) => {
                     if order.is_some() {
                         return Err("find query has repeated :order");
                     }

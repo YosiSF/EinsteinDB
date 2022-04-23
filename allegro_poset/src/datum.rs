@@ -206,9 +206,9 @@ impl Debug for DatumTypeType {
     }
 }
 
-/// `cmp_f64` compares the f64 causet_locales and returns the Ordering.
+/// `cmp_f64` compares the f64 causet_locales and returns the Partitioning.
 #[inline]
-pub fn cmp_f64(l: f64, r: f64) -> Result<Ordering> {
+pub fn cmp_f64(l: f64, r: f64) -> Result<Partitioning> {
     l.partial_cmp(&r)
         .ok_or_else(|| invalid_type!("{} and {} can't be compared", l, r))
 }
@@ -224,8 +224,8 @@ fn checked_add_i64(l: u64, r: i64) -> Option<u64> {
 }
 
 impl DatumType {
-    /// `cmp` compares the datum and returns an Ordering.
-    pub fn cmp(&self, ctx: &mut EvalContext, datum: &DatumType) -> Result<Ordering> {
+    /// `cmp` compares the datum and returns an Partitioning.
+    pub fn cmp(&self, ctx: &mut EvalContext, datum: &DatumType) -> Result<Partitioning> {
         if let DatumType::Json(_) = *self {
             if let DatumType::Json(_) = *datum {
             } else {
@@ -237,17 +237,17 @@ impl DatumType {
 
         match *datum {
             DatumTypeType::Null => match *self {
-                DatumType::Null => Ok(Ordering::Equal),
-                _ => Ok(Ordering::Greater),
+                DatumType::Null => Ok(Partitioning::Equal),
+                _ => Ok(Partitioning::Greater),
             },
             DatumTypeType::Min => match *self {
-                DatumType::Null => Ok(Ordering::Less),
-                DatumType::Min => Ok(Ordering::Equal),
-                _ => Ok(Ordering::Greater),
+                DatumType::Null => Ok(Partitioning::Less),
+                DatumType::Min => Ok(Partitioning::Equal),
+                _ => Ok(Partitioning::Greater),
             },
             DatumTypeType::Max => match *self {
-                DatumType::Max => Ok(Ordering::Equal),
-                _ => Ok(Ordering::Less),
+                DatumType::Max => Ok(Partitioning::Equal),
+                _ => Ok(Partitioning::Less),
             },
             DatumType::I64(i) => self.cmp_i64(ctx, i),
             DatumType::U64(u) => self.cmp_u64(ctx, u),
@@ -260,12 +260,12 @@ impl DatumType {
         }
     }
 
-    fn cmp_i64(&self, ctx: &mut EvalContext, i: i64) -> Result<Ordering> {
+    fn cmp_i64(&self, ctx: &mut EvalContext, i: i64) -> Result<Partitioning> {
         match *self {
             DatumType::I64(ii) => Ok(ii.cmp(&i)),
             DatumType::U64(u) => {
                 if i < 0 || u > i64::MAX as u64 {
-                    Ok(Ordering::Greater)
+                    Ok(Partitioning::Greater)
                 } else {
                     Ok(u.cmp(&(i as u64)))
                 }
@@ -274,11 +274,11 @@ impl DatumType {
         }
     }
 
-    fn cmp_u64(&self, ctx: &mut EvalContext, u: u64) -> Result<Ordering> {
+    fn cmp_u64(&self, ctx: &mut EvalContext, u: u64) -> Result<Partitioning> {
         match *self {
             DatumType::I64(i) => {
                 if i < 0 || u > i64::MAX as u64 {
-                    Ok(Ordering::Less)
+                    Ok(Partitioning::Less)
                 } else {
                     Ok(i.cmp(&(u as i64)))
                 }
@@ -288,10 +288,10 @@ impl DatumType {
         }
     }
 
-    fn cmp_f64(&self, ctx: &mut EvalContext, f: f64) -> Result<Ordering> {
+    fn cmp_f64(&self, ctx: &mut EvalContext, f: f64) -> Result<Partitioning> {
         match *self {
-            DatumType::Null | DatumType::Min => Ok(Ordering::Less),
-            DatumType::Max => Ok(Ordering::Greater),
+            DatumType::Null | DatumType::Min => Ok(Partitioning::Less),
+            DatumType::Max => Ok(Partitioning::Greater),
             DatumType::I64(i) => cmp_f64(i as f64, f),
             DatumType::U64(u) => cmp_f64(u as f64, f),
             DatumType::F64(ff) => cmp_f64(ff, f),
@@ -299,14 +299,14 @@ impl DatumType {
             DatumType::Dec(ref d) => cmp_f64(d.convert(ctx)?, f),
             DatumType::Dur(ref d) => cmp_f64(d.to_secs_f64(), f),
             DatumType::Time(t) => cmp_f64(t.convert(ctx)?, f),
-            DatumType::Json(_) => Ok(Ordering::Less),
+            DatumType::Json(_) => Ok(Partitioning::Less),
         }
     }
 
-    fn cmp_bytes(&self, ctx: &mut EvalContext, bs: &[u8]) -> Result<Ordering> {
+    fn cmp_bytes(&self, ctx: &mut EvalContext, bs: &[u8]) -> Result<Partitioning> {
         match *self {
-            DatumType::Null | DatumType::Min => Ok(Ordering::Less),
-            DatumType::Max => Ok(Ordering::Greater),
+            DatumType::Null | DatumType::Min => Ok(Partitioning::Less),
+            DatumType::Max => Ok(Partitioning::Greater),
             DatumType::Bytes(ref bss) => Ok((bss as &[u8]).cmp(bs)),
             DatumType::Dec(ref d) => {
                 let s = str::from_utf8(bs)?;
@@ -330,7 +330,7 @@ impl DatumType {
         }
     }
 
-    fn cmp_dec(&self, ctx: &mut EvalContext, dec: &Decimal) -> Result<Ordering> {
+    fn cmp_dec(&self, ctx: &mut EvalContext, dec: &Decimal) -> Result<Partitioning> {
         match *self {
             DatumType::Dec(ref d) => Ok(d.cmp(dec)),
             DatumType::Bytes(ref bs) => {
@@ -346,7 +346,7 @@ impl DatumType {
         }
     }
 
-    fn cmp_dur(&self, ctx: &mut EvalContext, d: Duration) -> Result<Ordering> {
+    fn cmp_dur(&self, ctx: &mut EvalContext, d: Duration) -> Result<Partitioning> {
         match *self {
             DatumType::Dur(ref d2) => Ok(d2.cmp(&d)),
             DatumType::Bytes(ref bs) => {
@@ -357,7 +357,7 @@ impl DatumType {
         }
     }
 
-    fn cmp_time(&self, ctx: &mut EvalContext, time: Time) -> Result<Ordering> {
+    fn cmp_time(&self, ctx: &mut EvalContext, time: Time) -> Result<Partitioning> {
         match *self {
             DatumType::Bytes(ref bs) => {
                 let s = str::from_utf8(bs)?;
@@ -373,7 +373,7 @@ impl DatumType {
         }
     }
 
-    fn cmp_json(&self, ctx: &mut EvalContext, json: &Json) -> Result<Ordering> {
+    fn cmp_json(&self, ctx: &mut EvalContext, json: &Json) -> Result<Partitioning> {
         let order = match *self {
             DatumType::Json(ref j) => j.cmp(json),
             DatumType::I64(d) => Json::from_i64(d)?.cmp(json),
@@ -1153,7 +1153,7 @@ pub fn split_datum(buf: &[u8], desc: bool) -> Result<(&[u8], &[u8])> {
 #[braneg(test)]
 mod tests {
     use std::{i16, i32, i64, i8, u16, u32, u64, u8};
-    use std::cmp::Ordering;
+    use std::cmp::Partitioning;
     use std::slice::from_ref;
     use std::str::FromStr;
     use std::sync::Arc;
@@ -1258,123 +1258,123 @@ mod tests {
     fn test_datum_cmp() {
         let mut ctx = EvalContext::default();
         let tests = vec![
-            (DatumType::F64(-1.0), DatumType::Min, Ordering::Greater),
-            (DatumType::F64(1.0), DatumType::Max, Ordering::Less),
-            (DatumType::F64(1.0), DatumType::F64(1.0), Ordering::Equal),
-            (DatumType::F64(1.0), b"1".as_ref().into(), Ordering::Equal),
-            (DatumType::I64(1), DatumType::I64(1), Ordering::Equal),
-            (DatumType::I64(-1), DatumType::I64(1), Ordering::Less),
-            (DatumType::I64(-1), b"-1".as_ref().into(), Ordering::Equal),
-            (DatumType::U64(1), DatumType::U64(1), Ordering::Equal),
-            (DatumType::U64(1), DatumType::I64(-1), Ordering::Greater),
-            (DatumType::U64(1), b"1".as_ref().into(), Ordering::Equal),
+            (DatumType::F64(-1.0), DatumType::Min, Partitioning::Greater),
+            (DatumType::F64(1.0), DatumType::Max, Partitioning::Less),
+            (DatumType::F64(1.0), DatumType::F64(1.0), Partitioning::Equal),
+            (DatumType::F64(1.0), b"1".as_ref().into(), Partitioning::Equal),
+            (DatumType::I64(1), DatumType::I64(1), Partitioning::Equal),
+            (DatumType::I64(-1), DatumType::I64(1), Partitioning::Less),
+            (DatumType::I64(-1), b"-1".as_ref().into(), Partitioning::Equal),
+            (DatumType::U64(1), DatumType::U64(1), Partitioning::Equal),
+            (DatumType::U64(1), DatumType::I64(-1), Partitioning::Greater),
+            (DatumType::U64(1), b"1".as_ref().into(), Partitioning::Equal),
             (
                 DatumType::Dec(1i64.into()),
                 DatumType::Dec(1i64.into()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::Dec(1i64.into()),
                 b"2".as_ref().into(),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(1i64.into()),
                 b"0.2".as_ref().into(),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(1i64.into()),
                 b"1".as_ref().into(),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
-            (b"1".as_ref().into(), b"1".as_ref().into(), Ordering::Equal),
-            (b"1".as_ref().into(), DatumType::I64(-1), Ordering::Greater),
-            (b"1".as_ref().into(), DatumType::U64(1), Ordering::Equal),
+            (b"1".as_ref().into(), b"1".as_ref().into(), Partitioning::Equal),
+            (b"1".as_ref().into(), DatumType::I64(-1), Partitioning::Greater),
+            (b"1".as_ref().into(), DatumType::U64(1), Partitioning::Equal),
             (
                 b"1".as_ref().into(),
                 DatumType::Dec(1i64.into()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
-            (DatumType::Null, DatumType::I64(2), Ordering::Less),
-            (DatumType::Null, DatumType::Null, Ordering::Equal),
-            (false.into(), DatumType::Null, Ordering::Greater),
-            (false.into(), true.into(), Ordering::Less),
-            (true.into(), true.into(), Ordering::Equal),
-            (false.into(), false.into(), Ordering::Equal),
-            (true.into(), DatumType::I64(2), Ordering::Less),
-            (DatumType::F64(1.23), DatumType::Null, Ordering::Greater),
-            (DatumType::F64(0.0), DatumType::F64(3.45), Ordering::Less),
-            (DatumType::F64(354.23), DatumType::F64(3.45), Ordering::Greater),
-            (DatumType::F64(3.452), DatumType::F64(3.452), Ordering::Equal),
-            (DatumType::I64(432), DatumType::Null, Ordering::Greater),
-            (DatumType::I64(-4), DatumType::I64(32), Ordering::Less),
-            (DatumType::I64(4), DatumType::I64(-32), Ordering::Greater),
-            (DatumType::I64(432), DatumType::I64(12), Ordering::Greater),
-            (DatumType::I64(23), DatumType::I64(128), Ordering::Less),
-            (DatumType::I64(123), DatumType::I64(123), Ordering::Equal),
-            (DatumType::I64(23), DatumType::I64(123), Ordering::Less),
-            (DatumType::I64(133), DatumType::I64(183), Ordering::Less),
-            (DatumType::U64(123), DatumType::U64(183), Ordering::Less),
-            (DatumType::U64(2), DatumType::I64(-2), Ordering::Greater),
-            (DatumType::U64(2), DatumType::I64(1), Ordering::Greater),
-            (b"".as_ref().into(), DatumType::Null, Ordering::Greater),
-            (b"".as_ref().into(), b"24".as_ref().into(), Ordering::Less),
+            (DatumType::Null, DatumType::I64(2), Partitioning::Less),
+            (DatumType::Null, DatumType::Null, Partitioning::Equal),
+            (false.into(), DatumType::Null, Partitioning::Greater),
+            (false.into(), true.into(), Partitioning::Less),
+            (true.into(), true.into(), Partitioning::Equal),
+            (false.into(), false.into(), Partitioning::Equal),
+            (true.into(), DatumType::I64(2), Partitioning::Less),
+            (DatumType::F64(1.23), DatumType::Null, Partitioning::Greater),
+            (DatumType::F64(0.0), DatumType::F64(3.45), Partitioning::Less),
+            (DatumType::F64(354.23), DatumType::F64(3.45), Partitioning::Greater),
+            (DatumType::F64(3.452), DatumType::F64(3.452), Partitioning::Equal),
+            (DatumType::I64(432), DatumType::Null, Partitioning::Greater),
+            (DatumType::I64(-4), DatumType::I64(32), Partitioning::Less),
+            (DatumType::I64(4), DatumType::I64(-32), Partitioning::Greater),
+            (DatumType::I64(432), DatumType::I64(12), Partitioning::Greater),
+            (DatumType::I64(23), DatumType::I64(128), Partitioning::Less),
+            (DatumType::I64(123), DatumType::I64(123), Partitioning::Equal),
+            (DatumType::I64(23), DatumType::I64(123), Partitioning::Less),
+            (DatumType::I64(133), DatumType::I64(183), Partitioning::Less),
+            (DatumType::U64(123), DatumType::U64(183), Partitioning::Less),
+            (DatumType::U64(2), DatumType::I64(-2), Partitioning::Greater),
+            (DatumType::U64(2), DatumType::I64(1), Partitioning::Greater),
+            (b"".as_ref().into(), DatumType::Null, Partitioning::Greater),
+            (b"".as_ref().into(), b"24".as_ref().into(), Partitioning::Less),
             (
                 b"aasf".as_ref().into(),
                 b"4".as_ref().into(),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
-            (b"".as_ref().into(), b"".as_ref().into(), Ordering::Equal),
+            (b"".as_ref().into(), b"".as_ref().into(), Partitioning::Equal),
             (
                 Duration::from_millis(34, 2).unwrap().into(),
                 DatumType::Null,
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Duration::from_millis(3340, 2).unwrap().into(),
                 Duration::from_millis(29034, 2).unwrap().into(),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 Duration::from_millis(3340, 2).unwrap().into(),
                 Duration::from_millis(34, 2).unwrap().into(),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Duration::from_millis(34, 2).unwrap().into(),
                 Duration::from_millis(34, 2).unwrap().into(),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 Duration::from_millis(-34, 2).unwrap().into(),
                 DatumType::Null,
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Duration::from_millis(0, 2).unwrap().into(),
                 DatumType::I64(0),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 Duration::from_millis(3340, 2).unwrap().into(),
                 Duration::from_millis(-29034, 2).unwrap().into(),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Duration::from_millis(-3340, 2).unwrap().into(),
                 Duration::from_millis(34, 2).unwrap().into(),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 Duration::from_millis(34, 2).unwrap().into(),
                 Duration::from_millis(-34, 2).unwrap().into(),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Duration::from_millis(34, 2).unwrap().into(),
                 b"-00.34".as_ref().into(),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Time::parse_datetime(&mut ctx, "2011-10-10 00:00:00", 0, true)
@@ -1383,14 +1383,14 @@ mod tests {
                 Time::parse_datetime(&mut ctx, "2000-12-12 11:11:11", 0, true)
                     .unwrap()
                     .into(),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Time::parse_datetime(&mut ctx, "2011-10-10 00:00:00", 0, true)
                     .unwrap()
                     .into(),
                 b"2000-12-12 11:11:11".as_ref().into(),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Time::parse_datetime(&mut ctx, "2000-10-10 00:00:00", 0, true)
@@ -1399,7 +1399,7 @@ mod tests {
                 Time::parse_datetime(&mut ctx, "2001-10-10 00:00:00", 0, true)
                     .unwrap()
                     .into(),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 Time::parse_datetime(&mut ctx, "2000-10-10 00:00:00", 0, true)
@@ -1408,351 +1408,351 @@ mod tests {
                 Time::parse_datetime(&mut ctx, "2000-10-10 00:00:00", 0, true)
                     .unwrap()
                     .into(),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 Time::parse_datetime(&mut ctx, "2000-10-10 00:00:00", 0, true)
                     .unwrap()
                     .into(),
                 DatumType::I64(20001010000000),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 Time::parse_datetime(&mut ctx, "2000-10-10 00:00:00", 0, true)
                     .unwrap()
                     .into(),
                 DatumType::I64(0),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::I64(0),
                 Time::parse_datetime(&mut ctx, "2000-10-10 00:00:00", 0, true)
                     .unwrap()
                     .into(),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("1234".parse().unwrap()),
                 DatumType::Dec("123400".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("12340".parse().unwrap()),
                 DatumType::Dec("123400".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("1234".parse().unwrap()),
                 DatumType::Dec("1234.5".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("1234".parse().unwrap()),
                 DatumType::Dec("1234.0000".parse().unwrap()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::Dec("1234".parse().unwrap()),
                 DatumType::Dec("12.34".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("12.34".parse().unwrap()),
                 DatumType::Dec("12.35".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("0.12".parse().unwrap()),
                 DatumType::Dec("0.1234".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("0.1234".parse().unwrap()),
                 DatumType::Dec("12.3400".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("0.1234".parse().unwrap()),
                 DatumType::Dec("0.1235".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("0.123400".parse().unwrap()),
                 DatumType::Dec("12.34".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("12.34000".parse().unwrap()),
                 DatumType::Dec("12.34".parse().unwrap()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::Dec("0.01234".parse().unwrap()),
                 DatumType::Dec("0.01235".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("0.1234".parse().unwrap()),
                 DatumType::Dec("0".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("0.0000".parse().unwrap()),
                 DatumType::Dec("0".parse().unwrap()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::Dec("0.0001".parse().unwrap()),
                 DatumType::Dec("0".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("0.0001".parse().unwrap()),
                 DatumType::Dec("0.0000".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("0".parse().unwrap()),
                 DatumType::Dec("-0.0000".parse().unwrap()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::Dec("-0.0001".parse().unwrap()),
                 DatumType::Dec("0".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("-0.1234".parse().unwrap()),
                 DatumType::Dec("0".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("-0.1234".parse().unwrap()),
                 DatumType::Dec("-0.12".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("-0.12".parse().unwrap()),
                 DatumType::Dec("-0.1234".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("-0.12".parse().unwrap()),
                 DatumType::Dec("-0.1200".parse().unwrap()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::Dec("-0.1234".parse().unwrap()),
                 DatumType::Dec("0.1234".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("-1.234".parse().unwrap()),
                 DatumType::Dec("-12.34".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("-0.1234".parse().unwrap()),
                 DatumType::Dec("-12.34".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("-12.34".parse().unwrap()),
                 DatumType::Dec("1234".parse().unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec("-12.34".parse().unwrap()),
                 DatumType::Dec("-12.35".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("-0.01234".parse().unwrap()),
                 DatumType::Dec("-0.01235".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("-1234".parse().unwrap()),
                 DatumType::Dec("-123400".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec("-12340".parse().unwrap()),
                 DatumType::Dec("-123400".parse().unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
-            (DatumType::Dec(100.into()), DatumType::I64(1), Ordering::Greater),
-            (DatumType::Dec((-100).into()), DatumType::I64(-1), Ordering::Less),
-            (DatumType::Dec((-100).into()), DatumType::I64(-100), Ordering::Equal),
-            (DatumType::Dec(100.into()), DatumType::I64(100), Ordering::Equal),
+            (DatumType::Dec(100.into()), DatumType::I64(1), Partitioning::Greater),
+            (DatumType::Dec((-100).into()), DatumType::I64(-1), Partitioning::Less),
+            (DatumType::Dec((-100).into()), DatumType::I64(-100), Partitioning::Equal),
+            (DatumType::Dec(100.into()), DatumType::I64(100), Partitioning::Equal),
             // Test for int type decimal.
             (
                 DatumType::Dec((-1i64).into()),
                 DatumType::Dec(1i64.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(i64::MAX.into()),
                 DatumType::Dec(i64::MIN.into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(i64::MAX.into()),
                 DatumType::Dec(i32::MAX.into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(i32::MIN.into()),
                 DatumType::Dec(i16::MAX.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(i64::MIN.into()),
                 DatumType::Dec(i8::MAX.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(0i64.into()),
                 DatumType::Dec(i8::MAX.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(i8::MIN.into()),
                 DatumType::Dec(0i64.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(i16::MIN.into()),
                 DatumType::Dec(i16::MAX.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(1i64.into()),
                 DatumType::Dec((-1i64).into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(1i64.into()),
                 DatumType::Dec(0i64.into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec((-1i64).into()),
                 DatumType::Dec(0i64.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(0i64.into()),
                 DatumType::Dec(0i64.into()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::Dec(i16::MAX.into()),
                 DatumType::Dec(i16::MAX.into()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             // Test for uint type decimal.
             (
                 DatumType::Dec(0u64.into()),
                 DatumType::Dec(0u64.into()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::Dec(1u64.into()),
                 DatumType::Dec(0u64.into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(0u64.into()),
                 DatumType::Dec(1u64.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(i8::MAX.into()),
                 DatumType::Dec(i16::MAX.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(u32::MAX.into()),
                 DatumType::Dec(i32::MAX.into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(u8::MAX.into()),
                 DatumType::Dec(i8::MAX.into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(u16::MAX.into()),
                 DatumType::Dec(i32::MAX.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::Dec(u64::MAX.into()),
                 DatumType::Dec(i64::MAX.into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(i64::MAX.into()),
                 DatumType::Dec(u32::MAX.into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(u64::MAX.into()),
                 DatumType::Dec(0u64.into()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(0u64.into()),
                 DatumType::Dec(u64::MAX.into()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 b"abc".as_ref().into(),
                 b"ab".as_ref().into(),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
-            (b"123".as_ref().into(), DatumType::I64(1234), Ordering::Less),
-            (b"1".as_ref().into(), DatumType::Max, Ordering::Less),
-            (b"".as_ref().into(), DatumType::Null, Ordering::Greater),
-            (DatumType::Max, DatumType::Max, Ordering::Equal),
-            (DatumType::Max, DatumType::Min, Ordering::Greater),
-            (DatumType::Null, DatumType::Min, Ordering::Less),
-            (DatumType::Min, DatumType::Min, Ordering::Equal),
+            (b"123".as_ref().into(), DatumType::I64(1234), Partitioning::Less),
+            (b"1".as_ref().into(), DatumType::Max, Partitioning::Less),
+            (b"".as_ref().into(), DatumType::Null, Partitioning::Greater),
+            (DatumType::Max, DatumType::Max, Partitioning::Equal),
+            (DatumType::Max, DatumType::Min, Partitioning::Greater),
+            (DatumType::Null, DatumType::Min, Partitioning::Less),
+            (DatumType::Min, DatumType::Min, Partitioning::Equal),
             (
                 DatumType::Json(Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
                 DatumType::Json(Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::I64(18),
                 DatumType::Json(Json::from_i64(18).unwrap()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::U64(18),
                 DatumType::Json(Json::from_i64(20).unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 DatumType::F64(1.2),
                 DatumType::Json(Json::from_f64(1.0).unwrap()),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 DatumType::Dec(i32::MIN.into()),
                 DatumType::Json(Json::from_f64(f64::from(i32::MIN)).unwrap()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 b"hi".as_ref().into(),
                 DatumType::Json(Json::from_str(r#""hi""#).unwrap()),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 DatumType::Max,
                 DatumType::Json(Json::from_str(r#""MAX""#).unwrap()),
-                Ordering::Less,
+                Partitioning::Less,
             ),
         ];
         for (lhs, rhs, ret) in tests {
@@ -1776,7 +1776,7 @@ mod tests {
 
                 let lhs_str = format!("{:?}", lhs);
                 let rhs_str = format!("{:?}", rhs);
-                if ret == Ordering::Equal {
+                if ret == Partitioning::Equal {
                     assert_eq!(lhs_str, rhs_str);
                 }
             }

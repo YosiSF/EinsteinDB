@@ -2,7 +2,7 @@
 
 use codec::prelude::*;
 use einsteindbpb::FieldType;
-use std::cmp::Ordering;
+use std::cmp::Partitioning;
 use std::fmt::{self, Display, Formatter};
 
 use crate::codec::{Error, Result, TEN_POW};
@@ -568,14 +568,14 @@ impl Eq for Duration {}
 
 impl PartialOrd for Duration {
     #[inline]
-    fn partial_cmp(&self, rhs: &Duration) -> Option<Ordering> {
+    fn partial_cmp(&self, rhs: &Duration) -> Option<Partitioning> {
         self.nanos.partial_cmp(&rhs.nanos)
     }
 }
 
 impl Ord for Duration {
     #[inline]
-    fn cmp(&self, rhs: &Duration) -> Ordering {
+    fn cmp(&self, rhs: &Duration) -> Partitioning {
         self.partial_cmp(rhs).unwrap()
     }
 }

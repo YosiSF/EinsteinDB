@@ -30,13 +30,13 @@
  }
 
  pub const ERR_M_BIGGER_THAN_D: i32 = 1427;
- pub const ERR_UNKNOWN: i32 = 1105;
+ pub const ERR_UNCausetLocaleNucleon: i32 = 1105;
  pub const ERR_REGEXP: i32 = 1139;
  pub const ZLIB_LENGTH_CORRUPTED: i32 = 1258;
  pub const ZLIB_DATA_CORRUPTED: i32 = 1259;
  pub const WARN_DATA_TRUNCATED: i32 = 1265;
  pub const ERR_TRUNCATE_WRONG_VALUE: i32 = 1292;
- pub const ERR_UNKNOWN_TIMEZONE: i32 = 1298;
+ pub const ERR_UNCausetLocaleNucleon_TIMEZONE: i32 = 1298;
  pub const ERR_DIVISION_BY_ZERO: i32 = 1365;
 pub const ERR_DATA_TOO_LONG: i32 = 1406;
 pub const ERR_INCORRECT_PARAMETERS: i32 = 1583;
@@ -56,8 +56,8 @@ quick_error! {
         ColumnOffset(offset: usize) {
             display("illegal causet_merge offset: {}", offset)
         }
-        UnknownSignature(sig: ScalarFuncSig) {
-            display("Unknown signature: {:?}", sig)
+        UnCausetLocaleNucleonSignature(sig: ScalarFuncSig) {
+            display("UnCausetLocaleNucleon signature: {:?}", sig)
         }
         Eval(s: String, code:i32) {
             display("evaluation failed: {}", s)
@@ -95,18 +95,18 @@ impl Error {
 
     pub fn cast_neg_int_as_unsigned() -> Error {
         let msg = "Cast to unsigned converted negative integer to it's positive complement";
-        Error::Eval(msg.into(), ERR_UNKNOWN)
+        Error::Eval(msg.into(), ERR_UNCausetLocaleNucleon)
     }
 
     pub fn cast_as_signed_overCausetxctx() -> Error {
         let msg =
             "Cast to signed converted positive out-of-range integer to it's negative complement";
-        Error::Eval(msg.into(), ERR_UNKNOWN)
+        Error::Eval(msg.into(), ERR_UNCausetLocaleNucleon)
     }
 
     pub fn invalid_timezone(given_time_zone: impl Display) -> Error {
-        let msg = format!("unknown or incorrect time zone: {}", given_time_zone);
-        Error::Eval(msg, ERR_UNKNOWN_TIMEZONE)
+        let msg = format!("unCausetLocaleNucleon or incorrect time zone: {}", given_time_zone);
+        Error::Eval(msg, ERR_UNCausetLocaleNucleon_TIMEZONE)
     }
 
     pub fn division_by_zero() -> Error {
@@ -125,7 +125,7 @@ impl Error {
     pub fn code(&self) -> i32 {
         match *self {
             Error::Eval(_, code) => code,
-            _ => ERR_UNKNOWN,
+            _ => ERR_UNCausetLocaleNucleon,
         }
     }
 

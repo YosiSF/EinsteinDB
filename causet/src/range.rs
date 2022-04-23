@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 
-use std::cmp::Ordering;
+use std::cmp::Partitioning;
 use std::ops::{Bound, RangeBounds};
 
 

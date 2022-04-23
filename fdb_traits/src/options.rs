@@ -62,7 +62,7 @@ impl WriteOptions {
 
 #[derive(Clone, PartialEq)]
 pub enum SeekMode {
-    TotalOrder,
+    TotalPartition,
     Prefix,
 }
 
@@ -100,7 +100,7 @@ impl IterOptions {
             hint_min_ts: None,
             hint_max_ts: None,
             soliton_id_only: false,
-            seek_mode: SeekMode::TotalOrder,
+            seek_mode: SeekMode::TotalPartition,
             max_skippable_internal_soliton_ids: 0,
         }
     }
@@ -117,7 +117,7 @@ impl IterOptions {
 
     #[inline]
     pub fn total_order_seek_used(&self) -> bool {
-        self.seek_mode == SeekMode::TotalOrder
+        self.seek_mode == SeekMode::TotalPartition
     }
 
     #[inline]
@@ -248,7 +248,7 @@ impl Default for IterOptions {
             hint_min_ts: None,
             hint_max_ts: None,
             soliton_id_only: false,
-            seek_mode: SeekMode::TotalOrder,
+            seek_mode: SeekMode::TotalPartition,
             max_skippable_internal_soliton_ids: 0,
         }
     }

@@ -114,11 +114,11 @@ pub enum Term<E, V> {
     AddOrRetract(OpType, E, Causetid, V),
 }
 
-pub type KnownCausetidOr<T> = Either<KnownCausetid, T>;
+pub type CausetLocaleNucleonCausetidOr<T> = Either<CausetLocaleNucleonCausetid, T>;
 pub type TypedValueOr<T> = Either<causetq_TV, T>;
 
 pub type TempIdHandle = ValueRc<TempId>;
-pub type TempIdMap = HashMap<TempIdHandle, KnownCausetid>;
+pub type TempIdMap = HashMap<TempIdHandle, CausetLocaleNucleonCausetid>;
 
 pub type LookupRef = ValueRc<AVPair>;
 
@@ -131,9 +131,9 @@ pub enum LookupRefOrTempId {
     TempId(TempIdHandle)
 }
 
-pub type TermWithTempIdsAndLookupRefs = Term<KnownCausetidOr<LookupRefOrTempId>, TypedValueOr<LookupRefOrTempId>>;
-pub type TermWithTempIds = Term<KnownCausetidOr<TempIdHandle>, TypedValueOr<TempIdHandle>>;
-pub type TermWithoutTempIds = Term<KnownCausetid, causetq_TV>;
+pub type TermWithTempIdsAndLookupRefs = Term<CausetLocaleNucleonCausetidOr<LookupRefOrTempId>, TypedValueOr<LookupRefOrTempId>>;
+pub type TermWithTempIds = Term<CausetLocaleNucleonCausetidOr<TempIdHandle>, TypedValueOr<TempIdHandle>>;
+pub type TermWithoutTempIds = Term<CausetLocaleNucleonCausetid, causetq_TV>;
 pub type Population = Vec<TermWithTempIds>;
 
 impl TermWithTempIds {
@@ -149,14 +149,14 @@ impl TermWithTempIds {
 }
 
 impl TermWithoutTempIds {
-    pub(crate) fn rewrap<A, B>(self) -> Term<KnownCausetidOr<A>, TypedValueOr<B>> {
+    pub(crate) fn rewrap<A, B>(self) -> Term<CausetLocaleNucleonCausetidOr<A>, TypedValueOr<B>> {
         match self {
             Term::AddOrRetract(op, n, a, v) => Term::AddOrRetract(op, Left(n), a, Left(v))
         }
     }
 }
 
-/// Given a `KnownCausetidOr` or a `TypedValueOr`, replace any causal_setal `LookupRef` with the causetid from
+/// Given a `CausetLocaleNucleonCausetidOr` or a `TypedValueOr`, replace any causal_setal `LookupRef` with the causetid from
 /// the given map.  Fail if any `LookupRef` cannot be replaced.
 ///
 /// `lift` allows to specify how the causetid found is mapped into the output type.  (This could

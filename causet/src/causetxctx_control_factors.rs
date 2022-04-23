@@ -20,7 +20,7 @@ pub trait SymplecticControlFactorsExt {
     /// * `namespaced`:
     /// * `l_naught`:
     ///
-    /// returns: <unknown>
+    /// returns: <unCausetLocaleNucleon>
     ///
     /// # Examples
     ///

@@ -20,7 +20,7 @@ pub struct DownstreamID(usize);
 
 impl DownstreamID {
     pub fn new() -> DownstreamID {
-        DownstreamID(DOWNSTREAM_ID_ALLOC.fetch_add(1, Ordering::SeqCst))
+        DownstreamID(DOWNSTREAM_ID_ALLOC.fetch_add(1, Partitioning::SeqCst))
     }
 }
 
@@ -37,32 +37,32 @@ impl DownstreamState {
     }
 
     pub fn is_normal(&self) -> bool {
-        self.0.load(Ordering::SeqCst) == Self::NORMAL
+        self.0.load(Partitioning::SeqCst) == Self::NORMAL
     }
 
     pub fn is_stopped(&self) -> bool {
-        self.0.load(Ordering::SeqCst) == Self::STOPPED
+        self.0.load(Partitioning::SeqCst) == Self::STOPPED
     }
 
     pub fn is_uninitialized(&self) -> bool {
-        self.0.load(Ordering::SeqCst) == Self::UNINITIALIZED
+        self.0.load(Partitioning::SeqCst) == Self::UNINITIALIZED
     }
 
     pub fn set_normal(&self) {
-        self.0.store(Self::NORMAL, Ordering::SeqCst);
+        self.0.store(Self::NORMAL, Partitioning::SeqCst);
     }
 
     pub fn set_stopped(&self) {
-        self.0.store(Self::STOPPED, Ordering::SeqCst);
+        self.0.store(Self::STOPPED, Partitioning::SeqCst);
     }
 
     pub fn set_uninitialized(&self) {
-        self.0.store(Self::UNINITIALIZED, Ordering::SeqCst);
+        self.0.store(Self::UNINITIALIZED, Partitioning::SeqCst);
     }
 
     pub fn uninitialized_to_normal(&self) -> bool {
         self.0
-            .compare_and_swap(Self::UNINITIALIZED, Self::NORMAL, Ordering::SeqCst)
+            .compare_and_swap(Self::UNINITIALIZED, Self::NORMAL, Partitioning::SeqCst)
             == Self::UNINITIALIZED
     }
 }
@@ -277,7 +277,7 @@ impl Sentinel {
         });
         let is_last = downstreams.is_empty();
         if is_last {
-            self.enabled.store(false, Ordering::SeqCst);
+            self.enabled.store(false, Partitioning::SeqCst);
         }
         is_last
     }
@@ -318,7 +318,7 @@ impl Sentinel {
     pub fn stop(&mut self, err: Error) {
         self.mark_failed();
         // Stop observe further events.
-        self.enabled.store(false, Ordering::SeqCst);
+        self.enabled.store(false, Partitioning::SeqCst);
 
         info!("region met error";
             "region_id" => self.region_id, "error" => ?err);
@@ -664,7 +664,7 @@ fn decode_write(soliton_id: Vec<u8>, causet_locale: &[u8], event: &mut EventRow)
     let (op_type, r_type) = match write.write_type {
         WriteType::Put => (EventRowOpType::Put, EventLogType::Commit),
         WriteType::Delete => (EventRowOpType::Delete, EventLogType::Commit),
-        WriteType::Rollback => (EventRowOpType::Unknown, EventLogType::Rollback),
+        WriteType::Rollback => (EventRowOpType::UnCausetLocaleNucleon, EventLogType::Rollback),
         other => {
             debug!("skip write record"; "write" => ?other, "soliton_id" => hex::encode_upper(soliton_id));
             return true;
@@ -750,7 +750,7 @@ mod tests {
         let mut Sentinel = Sentinel::new(region_id);
         Sentinel.subscribe(downstream);
         let enabled = Sentinel.enabled();
-        assert!(enabled.load(Ordering::SeqCst));
+        assert!(enabled.load(Partitioning::SeqCst));
         let mut resolver = Resolver::new(region_id);
         resolver.init();
         for downstream in Sentinel.on_region_ready(resolver, region) {
@@ -773,7 +773,7 @@ mod tests {
             let event = change_data_event.event.take().unwrap();
             match event {
                 Event_oneof_event::Error(err) => err,
-                _ => panic!("unknown event"),
+                _ => panic!("unCausetLocaleNucleon event"),
             }
         };
 
@@ -783,7 +783,7 @@ mod tests {
         let err = receive_error();
         assert!(err.has_not_leader());
         // Enable is disabled by any error.
-        assert!(!enabled.load(Ordering::SeqCst));
+        assert!(!enabled.load(Partitioning::SeqCst));
 
         let mut err_header = ErrorHeader::default();
         err_header.set_region_not_found(Default::default());
@@ -877,7 +877,7 @@ mod tests {
         let mut Sentinel = Sentinel::new(region_id);
         Sentinel.subscribe(downstream);
         let enabled = Sentinel.enabled();
-        assert!(enabled.load(Ordering::SeqCst));
+        assert!(enabled.load(Partitioning::SeqCst));
 
         let rx_wrap = Cell::new(Some(rx));
         let check_event = |event_rows: Vec<EventRow>| {
@@ -899,7 +899,7 @@ mod tests {
                 Event_oneof_event::Entries(entries) => {
                     assert_eq!(entries.entries.as_slice(), event_rows.as_slice());
                 }
-                _ => panic!("unknown event"),
+                _ => panic!("unCausetLocaleNucleon event"),
             }
         };
 

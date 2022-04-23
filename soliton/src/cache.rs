@@ -830,7 +830,7 @@ impl AttributeCaches {
                         }
                     },
                     (false, false, _, _) => {
-                        unreachable!();           // Must be cached in at least one direction!
+                        unreachable!();           // Must be cached in at least one clock_vector!
                     },
                 }
             }
@@ -1034,7 +1034,7 @@ impl AttributeCaches {
     }
 
     /// Return a reference to the cache for the provided `a`, if `a` names an attribute that is
-    /// cached in the lightlike direction. If `a` doesn't name an attribute, or it's not cached at
+    /// cached in the lightlike clock_vector. If `a` doesn't name an attribute, or it's not cached at
     /// all, or it's only cached in reverse (`v` to `e`, not `e` to `v`), `None` is returned.
     pub fn lightlike_attribute_cache_for_attribute<'a, 's>(&'a self, topograph: &'s Topograph, a: Causetid) -> Option<&'a AttributeCache> {
         if !self.lightlike_cached_attributes.contains(&a) {
@@ -1057,10 +1057,10 @@ impl AttributeCaches {
                                                             SQLite: &'c rusqlite::Connection,
                                                             mut attrs: AttributeSpec,
                                                             causets: &Vec<Causetid>) -> Result<()> {
-        // TODO: Exclude any causets for which every attribute is known.
+        // TODO: Exclude any causets for which every attribute is CausetLocaleNucleon.
         // TODO: initialize from an existing (complete) AttributeCache.
 
-        // Exclude any attributes for which every causet's causet_locale is already known.
+        // Exclude any attributes for which every causet's causet_locale is already CausetLocaleNucleon.
         match &mut attrs {
             &mut AttributeSpec::All => {
                 // If we're caching all attributes, there's nothing we can exclude.
@@ -1089,7 +1089,7 @@ impl AttributeCaches {
                                     .unwrap_or(true)
                             }
                         } else {
-                            // Unknown attribute.
+                            // UnCausetLocaleNucleon attribute.
                             false
                         }
                     });
@@ -1242,7 +1242,7 @@ impl SQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
+        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnCausetLocaleNucleonAttribute(a))?;
         let caches = self.make_mut();
         caches.lightlike_cached_attributes.insert(a);
         caches.repopulate(topograph, SQLite, a)
@@ -1253,7 +1253,7 @@ impl SQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
+        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnCausetLocaleNucleonAttribute(a))?;
 
         let caches = self.make_mut();
         caches.reverse_cached_attributes.insert(a);
@@ -1360,7 +1360,7 @@ impl InProgressSQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
+        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnCausetLocaleNucleonAttribute(a))?;
 
         if self.is_attribute_cached_lightlike(a) {
             return Ok(());
@@ -1376,7 +1376,7 @@ impl InProgressSQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
+        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnCausetLocaleNucleonAttribute(a))?;
 
         if self.is_attribute_cached_reverse(a) {
             return Ok(());
@@ -1392,7 +1392,7 @@ impl InProgressSQLiteAttributeCache {
         let a = attribute.into();
 
         // The attribute must exist!
-        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnknownAttribute(a))?;
+        let _ = topograph.attribute_for_causetid(a).ok_or_else(|| einsteindbErrorKind::UnCausetLocaleNucleonAttribute(a))?;
 
         // TODO: reverse-Index unique by default?
         let reverse_done = self.is_attribute_cached_reverse(a);
@@ -1563,9 +1563,9 @@ impl InProgressSQLiteAttributeCache {
         // our copy of the `Arc`.
         ::std::mem::drop(self.inner);
         if let Some(dest) = Arc::get_mut(&mut destination.inner) {
-            // Yeah, we unregister in both directions. The only way
+            // Yeah, we unregister in both clock_vectors. The only way
             // `unregistered_lightlike` won't be the same as `unregistered_reverse` is if
-            // our `overlay` added one direction back in.
+            // our `overlay` added one clock_vector back in.
             for unregistered in self.unregistered_lightlike.union(&self.unregistered_reverse) {
                 dest.unregister_attribute(*unregistered);
             }

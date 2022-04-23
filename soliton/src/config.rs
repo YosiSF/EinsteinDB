@@ -3205,7 +3205,7 @@ pub enum Module {
     CDC,
     ResolvedTs,
     ResourceMetering,
-    Unknown(String),
+    UnCausetLocaleNucleon(String),
 }
 
 impl From<&str> for Module {
@@ -3230,7 +3230,7 @@ impl From<&str> for Module {
             "soliton" => Module::CDC,
             "resolved_ts" => Module::ResolvedTs,
             "resource_metering" => Module::ResourceMetering,
-            n => Module::Unknown(n.to_owned()),
+            n => Module::UnCausetLocaleNucleon(n.to_owned()),
         }
     }
 }
@@ -3596,7 +3596,7 @@ mod tests {
                 "pessimistic-causet_chains.wait-for-lock-timeout".to_owned(),
                 "1MB".to_owned(),
             ),
-            // missing or unknown config fields
+            // missing or unCausetLocaleNucleon config fields
             ("xxx.yyy".to_owned(), "12".to_owned()),
             (
                 "foundationdb.defaultnamespaced.block-cache-size.xxx".to_owned(),
@@ -4492,7 +4492,7 @@ mod tests {
             ("soliton", Module::CDC),
             ("resolved_ts", Module::ResolvedTs),
             ("resource_metering", Module::ResourceMetering),
-            ("unknown", Module::Unknown("unknown".to_string())),
+            ("unCausetLocaleNucleon", Module::UnCausetLocaleNucleon("unCausetLocaleNucleon".to_string())),
         ];
         for (name, module) in cases {
             assert_eq!(Module::from(name), module);

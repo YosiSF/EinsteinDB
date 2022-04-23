@@ -8,28 +8,28 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
- use std::cmp::{Ord, Ordering};
+ use std::cmp::{Ord, Partitioning};
  use std::f64;
 
  use super::{ERR_CONVERT_FAILED, Json, JsonRef, JsonType};
  use super::constants::*;
  use super::super::Result;
 
- fn compare<T: Ord>(x: T, y: T) -> Ordering {
+ fn compare<T: Ord>(x: T, y: T) -> Partitioning {
     x.cmp(&y)
 }
 
-fn compare_i64_u64(x: i64, y: u64) -> Ordering {
+fn compare_i64_u64(x: i64, y: u64) -> Partitioning {
     if x < 0 {
-        Ordering::Less
+        Partitioning::Less
     } else {
         compare::<u64>(x as u64, y)
     }
 }
 
-fn compare_f64_with_epsilon(x: f64, y: f64) -> Option<Ordering> {
+fn compare_f64_with_epsilon(x: f64, y: f64) -> Option<Partitioning> {
     if (x - y).abs() < f64::EPSILON {
-        Some(Ordering::Equal)
+        Some(Partitioning::Equal)
     } else {
         x.partial_cmp(&y)
     }
@@ -69,7 +69,7 @@ impl<'a> JsonRef<'a> {
 impl<'a> Eq for JsonRef<'a> {}
 
 impl<'a> Ord for JsonRef<'a> {
-    fn cmp(&self, right: &JsonRef<'_>) -> Ordering {
+    fn cmp(&self, right: &JsonRef<'_>) -> Partitioning {
         self.partial_cmp(right).unwrap()
     }
 }
@@ -77,17 +77,17 @@ impl<'a> Ord for JsonRef<'a> {
 impl<'a> PartialEq for JsonRef<'a> {
     fn eq(&self, right: &JsonRef<'_>) -> bool {
         self.partial_cmp(right)
-            .map_or(false, |r| r == Ordering::Equal)
+            .map_or(false, |r| r == Partitioning::Equal)
     }
 }
 impl<'a> PartialOrd for JsonRef<'a> {
     // See `CompareBinary` in MEDB `types/json/binary_functions.go`
-    fn partial_cmp(&self, right: &JsonRef<'_>) -> Option<Ordering> {
+    fn partial_cmp(&self, right: &JsonRef<'_>) -> Option<Partitioning> {
         let precedence_diff = self.get_precedence() - right.get_precedence();
         if precedence_diff == 0 {
             if self.get_precedence() == PRECEDENCE_NULL {
                 // for JSON null.
-                return Some(Ordering::Equal);
+                return Some(Partitioning::Equal);
             }
 
             return match self.get_type() {
@@ -138,9 +138,9 @@ impl<'a> PartialOrd for JsonRef<'a> {
                         {
                             match left_ele.partial_cmp(&right_ele) {
                                 order @ None
-                                | order @ Some(Ordering::Greater)
-                                | order @ Some(Ordering::Less) => return order,
-                                Some(Ordering::Equal) => i += 1,
+                                | order @ Some(Partitioning::Greater)
+                                | order @ Some(Partitioning::Less) => return order,
+                                Some(Partitioning::Equal) => i += 1,
                             }
                         } else {
                             return None;
@@ -160,28 +160,28 @@ impl<'a> PartialOrd for JsonRef<'a> {
         }
 
         if precedence_diff > 0 {
-            Some(Ordering::Greater)
+            Some(Partitioning::Greater)
         } else {
-            Some(Ordering::Less)
+            Some(Partitioning::Less)
         }
     }
 }
 
 impl Eq for Json {}
 impl Ord for Json {
-    fn cmp(&self, right: &Json) -> Ordering {
+    fn cmp(&self, right: &Json) -> Partitioning {
         self.as_ref().partial_cmp(&right.as_ref()).unwrap()
     }
 }
 
 impl PartialEq for Json {
     fn eq(&self, right: &Json) -> bool {
-        self.as_ref().partial_cmp(&right.as_ref()).unwrap() == Ordering::Equal
+        self.as_ref().partial_cmp(&right.as_ref()).unwrap() == Partitioning::Equal
     }
 }
 
 impl PartialOrd for Json {
-    fn partial_cmp(&self, right: &Json) -> Option<Ordering> {
+    fn partial_cmp(&self, right: &Json) -> Option<Partitioning> {
         self.as_ref().partial_cmp(&right.as_ref())
     }
 }
@@ -196,52 +196,52 @@ mod tests {
             (
                 Json::from_i64(922337203685477581),
                 Json::from_i64(922337203685477580),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Json::from_i64(-1),
                 Json::from_u64(18446744073709551615),
-                Ordering::Less,
+                Partitioning::Less,
             ),
             (
                 Json::from_i64(922337203685477580),
                 Json::from_u64(922337203685477581),
-                Ordering::Less,
+                Partitioning::Less,
             ),
-            (Json::from_i64(2), Json::from_u64(1), Ordering::Greater),
+            (Json::from_i64(2), Json::from_u64(1), Partitioning::Greater),
             (
                 Json::from_i64(std::i64::MAX),
                 Json::from_u64(std::i64::MAX as u64),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
             (
                 Json::from_u64(18446744073709551615),
                 Json::from_i64(-1),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
             (
                 Json::from_u64(922337203685477581),
                 Json::from_i64(922337203685477580),
-                Ordering::Greater,
+                Partitioning::Greater,
             ),
-            (Json::from_u64(1), Json::from_i64(2), Ordering::Less),
+            (Json::from_u64(1), Json::from_i64(2), Partitioning::Less),
             (
                 Json::from_u64(std::i64::MAX as u64),
                 Json::from_i64(std::i64::MAX),
-                Ordering::Equal,
+                Partitioning::Equal,
             ),
-            (Json::from_f64(9.0), Json::from_i64(9), Ordering::Equal),
-            (Json::from_f64(8.9), Json::from_i64(9), Ordering::Less),
-            (Json::from_f64(9.1), Json::from_i64(9), Ordering::Greater),
-            (Json::from_f64(9.0), Json::from_u64(9), Ordering::Equal),
-            (Json::from_f64(8.9), Json::from_u64(9), Ordering::Less),
-            (Json::from_f64(9.1), Json::from_u64(9), Ordering::Greater),
-            (Json::from_i64(9), Json::from_f64(9.0), Ordering::Equal),
-            (Json::from_i64(9), Json::from_f64(8.9), Ordering::Greater),
-            (Json::from_i64(9), Json::from_f64(9.1), Ordering::Less),
-            (Json::from_u64(9), Json::from_f64(9.0), Ordering::Equal),
-            (Json::from_u64(9), Json::from_f64(8.9), Ordering::Greater),
-            (Json::from_u64(9), Json::from_f64(9.1), Ordering::Less),
+            (Json::from_f64(9.0), Json::from_i64(9), Partitioning::Equal),
+            (Json::from_f64(8.9), Json::from_i64(9), Partitioning::Less),
+            (Json::from_f64(9.1), Json::from_i64(9), Partitioning::Greater),
+            (Json::from_f64(9.0), Json::from_u64(9), Partitioning::Equal),
+            (Json::from_f64(8.9), Json::from_u64(9), Partitioning::Less),
+            (Json::from_f64(9.1), Json::from_u64(9), Partitioning::Greater),
+            (Json::from_i64(9), Json::from_f64(9.0), Partitioning::Equal),
+            (Json::from_i64(9), Json::from_f64(8.9), Partitioning::Greater),
+            (Json::from_i64(9), Json::from_f64(9.1), Partitioning::Less),
+            (Json::from_u64(9), Json::from_f64(9.0), Partitioning::Equal),
+            (Json::from_u64(9), Json::from_f64(8.9), Partitioning::Greater),
+            (Json::from_u64(9), Json::from_f64(9.1), Partitioning::Less),
         ];
 
         for (left, right, expected) in cases {

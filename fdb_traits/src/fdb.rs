@@ -154,12 +154,12 @@ impl Store {
         self.conn.begin_transaction(&mut self.SQLite)
     }
 
-    pub fn cache(&mut self, attr: &Keyword, direction: CacheDirection) -> Result<()> {
+    pub fn cache(&mut self, attr: &Keyword, clock_vector: CacheDirection) -> Result<()> {
         let schema = &self.conn.current_schema();
         self.conn.cache(&mut self.SQLite,
                         schema,
                         attr,
-                        direction,
+                        clock_vector,
                         CacheAction::Register)
     }
 

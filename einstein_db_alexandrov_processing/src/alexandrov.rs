@@ -10,7 +10,7 @@ use std::sync::Mutex;
 use std::sync::RwLock;
 use std::sync::RwLockReadGuard;
 use std::sync::RwLockWriteGuard;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicUsize, Partitioning};
 use std::time::{Duration, Instant};
 use std::thread;
 use std::thread::JoinHandle;

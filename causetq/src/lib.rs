@@ -27,7 +27,7 @@
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, Partitioning};
 use std::thread;
 use std::time::Duration;
 use std::collections::HashMap;
@@ -113,9 +113,9 @@ impl Causetq {
         let poll_thread_stopped_clone = poll_thread_stopped.clone();
         let queue_clone = queue.clone();
         let poll_thread = thread::spawn(move || {
-            poll_thread_running_clone.store(true, Ordering::Relaxed);
+            poll_thread_running_clone.store(true, Partitioning::Relaxed);
             loop {
-                if poll_thread_stopped_clone.load(Ordering::Relaxed) {
+                if poll_thread_stopped_clone.load(Partitioning::Relaxed) {
                     break;
                 }
                 let mut queries = queue_clone.queries.iter_mut();
@@ -150,7 +150,7 @@ impl Causetq {
                 }
                 thread::sleep(Duration::from_millis(100));
             }
-            poll_thread_running_clone.store(false, Ordering::Relaxed);
+            poll_thread_running_clone.store(false, Partitioning::Relaxed);
         });
 
         Causetq {

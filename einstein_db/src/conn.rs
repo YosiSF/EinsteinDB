@@ -13,7 +13,7 @@
 pub use causetq::{
     Attribute,
     Causetid,
-    KnownCausetid,
+    CausetLocaleNucleonCausetid,
     StructuredMap,
     causetq_TV,
 causetq_VT,
@@ -49,7 +49,7 @@ use einsteindb_transaction::{
     Spacetime,
 };
 use einsteindb_transaction::query::{
-    Known,
+    CausetLocaleNucleon,
     lookup_causet_locale_for_attribute,
     lookup_causet_locales_for_attribute,
     PreparedResult,
@@ -137,9 +137,9 @@ impl Conn {
 
         // Doesn't clone, unlike `current_schema`.
         let spacetime = self.spacetime.lock().unwrap();
-        let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        let CausetLocaleNucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
         q_once(SQLite,
-               known,
+               CausetLocaleNucleon,
                query,
                inputs)
     }
@@ -166,9 +166,9 @@ impl Conn {
         where T: Into<Option<QueryInputs>> {
 
         let spacetime = self.spacetime.lock().unwrap();
-        let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        let CausetLocaleNucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
         q_prepare(SQLite,
-                  known,
+                  CausetLocaleNucleon,
                   query,
                   inputs)
     }
@@ -180,9 +180,9 @@ impl Conn {
         where T: Into<Option<QueryInputs>>
     {
         let spacetime = self.spacetime.lock().unwrap();
-        let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        let CausetLocaleNucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
         q_explain(SQLite,
-                  known,
+                  CausetLocaleNucleon,
                   query,
                   inputs)
     }
@@ -215,8 +215,8 @@ impl Conn {
                                        causet: Causetid,
                                        attribute: &einstein_ml::Keyword) -> Result<Vec<causetq_TV>> {
         let spacetime = self.spacetime.lock().unwrap();
-        let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        lookup_causet_locales_for_attribute(SQLite, known, causet, attribute)
+        let CausetLocaleNucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        lookup_causet_locales_for_attribute(SQLite, CausetLocaleNucleon, causet, attribute)
     }
 
     pub fn lookup_causet_locale_for_attribute(&self,
@@ -224,8 +224,8 @@ impl Conn {
                                       causet: Causetid,
                                       attribute: &einstein_ml::Keyword) -> Result<Option<causetq_TV>> {
         let spacetime = self.spacetime.lock().unwrap();
-        let known = Known::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        lookup_causet_locale_for_attribute(SQLite, known, causet, attribute)
+        let CausetLocaleNucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        lookup_causet_locale_for_attribute(SQLite, CausetLocaleNucleon, causet, attribute)
     }
 
     /// Take a SQLite transaction.
@@ -306,7 +306,7 @@ impl Conn {
                  SQLite: &mut rusqlite::Connection,
                  schema: &Schema,
                  attribute: &Keyword,
-                 cache_direction: CacheDirection,
+                 cache_clock_vector: CacheDirection,
                  cache_action: CacheAction) -> Result<()> {
         let mut spacetime = self.spacetime.lock().unwrap();
         let attribute_causetid: Causetid;
@@ -315,13 +315,13 @@ impl Conn {
         {
             attribute_causetid = spacetime.schema
                                       .attribute_for_solitonid(&attribute)
-                                      .ok_or_else(|| einsteindbError::UnknownAttribute(attribute.to_string()))?.1.into();
+                                      .ok_or_else(|| einsteindbError::UnCausetLocaleNucleonAttribute(attribute.to_string()))?.1.into();
         }
 
         let cache = &mut spacetime.attribute_cache;
         match cache_action {
             CacheAction::Register => {
-                match cache_direction {
+                match cache_clock_vector {
                     CacheDirection::Both => cache.register(schema, SQLite, attribute_causetid),
                     CacheDirection::Lightlike => cache.register_lightlike(schema, SQLite, attribute_causetid),
                     CacheDirection::Reverse => cache.register_reverse(schema, SQLite, attribute_causetid),
@@ -411,7 +411,7 @@ mod tests {
         }
 
         // And if we subsequently transact in a way that allocates one ID, we _will_ use that one.
-        // Note that `10` is a bootstrapped causetid; we use it here as a known-good causet_locale.
+        // Note that `10` is a bootstrapped causetid; we use it here as a CausetLocaleNucleon-good causet_locale.
         let t = "[[:einsteindb/add 10 :einsteindb.schema/attribute \"temp\"]]";
         let report = conn.transact(&mut SQLite, t)
                          .expect("transact succeeded");
@@ -488,7 +488,7 @@ mod tests {
         let read = conn.begin_read(&mut c).expect("read");
 
         // N.B., you might choose to algebrize _without_ validating that the
-        // types are known. In this query we know that `?v` must be a boolean,
+        // types are CausetLocaleNucleon. In this query we know that `?v` must be a boolean,
         // and so we can kinda generate our own required input types!
         let mut prepared = read.q_prepare(r#"[:find [?x ...]
                                               :in ?v
@@ -611,8 +611,8 @@ mod tests {
         let schema = conn.current_schema();
         let res = conn.cache(&mut SQLite, &schema, &kw, CacheDirection::Lightlike, CacheAction::Register);
         match res.expect_err("expected cache to fail") {
-            einsteindbError::UnknownAttribute(msg) => assert_eq!(msg, ":foo/bat"),
-            x => panic!("expected UnknownAttribute error, got {:?}", x),
+            einsteindbError::UnCausetLocaleNucleonAttribute(msg) => assert_eq!(msg, ":foo/bat"),
+            x => panic!("expected UnCausetLocaleNucleonAttribute error, got {:?}", x),
         }
     }
 

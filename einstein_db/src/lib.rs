@@ -38,96 +38,32 @@ extern crate static_lightlike_dagger_upsert;
 #[braneg(test)]
 extern crate test;
 
-pub use clauses::{
-    QueryInputs,
-    VariableBindings,
-};
-pub use clauses::ConjoiningClauses;
-use einstein_ml::query::{
-    Element,
-    FindSpec,
-    Limit,
-    Order,
-    ParsedQuery,
-    SrcVar,
-    Variable,
-    WhereClause,
-};
-use EinsteinDB_embedded::{
-    CachedAttrs,
-    parse_query,
-    Topograph,
-};
-use EinsteinDB_embedded::counter::RcPetri;
-use embedded_promises::{
-    Causetid,
-    causetq_TV,
-causetq_VT,
-};
-use query_algebrizer_promises::errors::{
-    AlgebrizerError,
-    Result,
-};
-use std::collections::BTreeSet;
-use std::ops::Sub;
-use std::rc::Rc;
-pub use types::{
-    EmptyBecause,
-    FindQuery,
-};
-pub use types::{
-    causetsColumn,
-    causetsTable,
-    Column,
-    ColumnAlternation,
-    ColumnConstraint,
-    ColumnConstraintOrAlternation,
-    ColumnIntersection,
-    ColumnName,
-    ComputedTable,
-    FulltextColumn,
-    OrderBy,
-    QualifiedAlias,
-    QueryValue,
-    SourceAlias,
-    TableAlias,
-    VariableColumn,
-};
 
-pub use self::def::*;
-pub use self::error::*;
-
-pub mod builder;
-pub mod def;
-pub mod error;
 
 pub mod prelude {
     pub use super::def::FieldTypeAccessor;
 }
 
-pub mod codec;
-pub mod expr;
 
-mod types;
-mod validate;
-mod clauses;
+
+
 
 #[derive(Clone, Copy)]
-pub struct Known<'s, 'c> {
+pub struct CausetLocaleNucleon<'s, 'c> {
     pub topograph: &'s Topograph,
     pub cache: Option<&'c CachedAttrs>,
 }
 
-impl<'s, 'c> Known<'s, 'c> {
-    pub fn for_topograph(s: &'s Topograph) -> Known<'s, 'static> {
-        Known {
+impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
+    pub fn for_topograph(s: &'s Topograph) -> CausetLocaleNucleon<'s, 'static> {
+        CausetLocaleNucleon {
             topograph: s,
             cache: None,
         }
     }
 
-    pub fn new(s: &'s Topograph, c: Option<&'c CachedAttrs>) -> Known<'s, 'c> {
-        Known {
+    pub fn new(s: &'s Topograph, c: Option<&'c CachedAttrs>) -> CausetLocaleNucleon<'s, 'c> {
+        CausetLocaleNucleon {
             topograph: s,
             cache: c,
         }
@@ -135,8 +71,8 @@ impl<'s, 'c> Known<'s, 'c> {
 }
 
 /// This is `CachedAttrs`, but with handy generic parameters.
-/// Why not make the trait generic? Because then we can't use it as a trait object in `Known`.
-impl<'s, 'c> Known<'s, 'c> {
+/// Why not make the trait generic? Because then we can't use it as a trait object in `CausetLocaleNucleon`.
+impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
     pub fn is_Attr_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
         self.cache
             .map(|cache| cache.is_Attr_cached_reverse(causetid.into()))
@@ -188,15 +124,15 @@ pub struct AlgebraicQuery {
     /// This is not necessarily every variable that will be so required -- some variables
     /// will already be in the projection list.
     pub named_projection: BTreeSet<Variable>,
-    pub order: Option<Vec<OrderBy>>,
+    pub order: Option<Vec<PartitionBy>>,
     pub limit: Limit,
     pub cc: clauses::ConjoiningClauses,
 }
 
 impl AlgebraicQuery {
     #[inline]
-    pub fn is_known_empty(&self) -> bool {
-        self.cc.is_known_empty()
+    pub fn is_CausetLocaleNucleon_empty(&self) -> bool {
+        self.cc.is_CausetLocaleNucleon_empty()
     }
 
     /// Return true if every variable in the find spec is fully bound to a single causet_locale.
@@ -232,28 +168,28 @@ impl AlgebraicQuery {
     }
 }
 
-pub fn algebrize_with_counter(known: Known, parsed: FindQuery, counter: usize) -> Result<AlgebraicQuery> {
-    algebrize_with_inputs(known, parsed, counter, QueryInputs::default())
+pub fn algebrize_with_counter(CausetLocaleNucleon: CausetLocaleNucleon, parsed: FindQuery, counter: usize) -> Result<AlgebraicQuery> {
+    algebrize_with_inputs(CausetLocaleNucleon, parsed, counter, QueryInputs::default())
 }
 
-pub fn algebrize(known: Known, parsed: FindQuery) -> Result<AlgebraicQuery> {
-    algebrize_with_inputs(known, parsed, 0, QueryInputs::default())
+pub fn algebrize(CausetLocaleNucleon: CausetLocaleNucleon, parsed: FindQuery) -> Result<AlgebraicQuery> {
+    algebrize_with_inputs(CausetLocaleNucleon, parsed, 0, QueryInputs::default())
 }
 
 /// Take an ordering list. Any variables that aren't fixed by the query are used to produce
-/// a vector of `OrderBy` instances, including type comparisons if necessary. This function also
+/// a vector of `PartitionBy` instances, including type comparisons if necessary. This function also
 /// returns a set of variables that should be added to the `with` clause to make the ordering
 /// clauses possible.
-fn validate_and_simplify_order(cc: &ConjoiningClauses, order: Option<Vec<Order>>)
-    -> Result<(Option<Vec<OrderBy>>, BTreeSet<Variable>)> {
+fn validate_and_simplify_order(cc: &ConjoiningClauses, order: Option<Vec<Partition>>)
+    -> Result<(Option<Vec<PartitionBy>>, BTreeSet<Variable>)> {
     match order {
         None => Ok((None, BTreeSet::default())),
         Some(order) => {
-            let mut order_bys: Vec<OrderBy> = Vec::with_capacity(order.len() * 2);   // Space for tags.
+            let mut order_bys: Vec<PartitionBy> = Vec::with_capacity(order.len() * 2);   // Space for tags.
             let mut vars: BTreeSet<Variable> = BTreeSet::default();
 
-            for Order(direction, var) in order.into_iter() {
-                // Eliminate any ordering clauses that are bound to fixed causet_locales.
+            for Partition(clock_vector, var) in order.into_iter() {
+
                 if cc.bound_causet_locale(&var).is_some() {
                     continue;
                 }
@@ -264,10 +200,10 @@ fn validate_and_simplify_order(cc: &ConjoiningClauses, order: Option<Vec<Order>>
                 }
 
                 // Otherwise, determine if we also need to order by type…
-                if cc.known_type(&var).is_none() {
-                    order_bys.push(OrderBy(direction.clone(), VariableColumn::VariableTypeTag(var.clone())));
+                if cc.CausetLocaleNucleon_type(&var).is_none() {
+                    order_bys.push(PartitionBy(clock_vector.clone(), VariableColumn::VariableTypeTag(var.clone())));
                 }
-                order_bys.push(OrderBy(direction, VariableColumn::Variable(var.clone())));
+                order_bys.push(PartitionBy(clock_vector, VariableColumn::Variable(var.clone())));
                 vars.insert(var.clone());
             }
 
@@ -315,7 +251,7 @@ fn simplify_limit(mut query: AlgebraicQuery) -> Result<AlgebraicQuery> {
     Ok(query)
 }
 
-pub fn algebrize_with_inputs(known: Known,
+pub fn algebrize_with_inputs(CausetLocaleNucleon: CausetLocaleNucleon,
                              parsed: FindQuery,
                              counter: usize,
                              inputs: QueryInputs) -> Result<AlgebraicQuery> {
@@ -332,7 +268,7 @@ pub fn algebrize_with_inputs(known: Known,
 
     // TODO: integrate default source into parity_filter processing.
     // TODO: flesh out the rest of find-into-context.
-    cc.apply_clauses(known, parsed.where_clauses)?;
+    cc.apply_clauses(CausetLocaleNucleon, parsed.where_clauses)?;
 
     cc.expand_column_bindings();
     cc.prune_extracted_types();
@@ -399,7 +335,7 @@ impl FindQuery {
         // Make sure that if we have `:limit ?x`, `?x` appears in `:in`.
         if let Limit::Variable(ref v) = parsed.limit {
             if !in_vars.contains(v) {
-                bail!(AlgebrizerError::UnknownLimitVar(v.name()));
+                bail!(AlgebrizerError::UnCausetLocaleNucleonLimitVar(v.name()));
             }
         }
 

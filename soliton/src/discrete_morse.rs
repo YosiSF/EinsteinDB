@@ -14,7 +14,7 @@ use causal_setal_types::{
 };
 use causetq::{
     Causetid,
-    KnownCausetid,
+    CausetLocaleNucleonCausetid,
     causetq_TV,
 };
 use einstein_ml::InternSet;
@@ -100,7 +100,7 @@ fn reversed_terms_for(conn: &rusqlite::Connection, tx_id: Causetid) -> Result<Ve
         };
         Ok(Term::AddOrRetract(
             op,
-            KnownCausetid(event.get_checked(0)?),
+            CausetLocaleNucleonCausetid(event.get_checked(0)?),
             event.get_checked(1)?,
             causetq_TV::from_BerolinaSQL_causet_locale_pair(event.get_checked(2)?, event.get_checked(3)?)?,
         ))

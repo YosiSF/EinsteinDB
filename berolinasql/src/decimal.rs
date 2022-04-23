@@ -3,7 +3,7 @@
 
 use std::fmt;
 use std::ops::{Add, Sub, Mul, Div, Rem, Neg, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign};
-use std::cmp::{Ordering, PartialOrd, PartialEq};
+use std::cmp::{Partitioning, PartialOrd, PartialEq};
 use std::convert::{From, Into};
 use std::str::FromStr;
 use std::{i64, u64};
@@ -337,8 +337,8 @@ fn calc_sub_carry(lhs: &Decimal, rhs: &Decimal) -> (Option<i32>, u8, SubTmp, Sub
     let r_int_word_cnt = r_stop - r_idx;
 
     let carry = match r_int_word_cnt.cmp(&l_int_word_cnt) {
-        Ordering::Greater => Some(1),
-        Ordering::Equal => {
+        Partitioning::Greater => Some(1),
+        Partitioning::Equal => {
             let mut l_end = (l_stop + l_frac_word_cnt as usize - 1) as isize;
             let mut r_end = (r_stop + r_frac_word_cnt as usize - 1) as isize;
             // trims suffix 0(also trims the suffix 0 before the point
@@ -375,7 +375,7 @@ fn calc_sub_carry(lhs: &Decimal, rhs: &Decimal) -> (Option<i32>, u8, SubTmp, Sub
                 None
             }
         }
-        Ordering::Less => Some(0),
+        Partitioning::Less => Some(0),
     };
     let l_res = (l_start, l_int_word_cnt, l_frac_word_cnt);
     let r_res = (r_start, r_int_word_cnt, r_frac_word_cnt);
@@ -539,9 +539,9 @@ fn do_add<'a>(mut lhs: &'a Decimal, mut rhs: &'a Decimal) -> Res<Decimal> {
         cmp::max(l_frac_word_cnt, r_frac_word_cnt),
     );
     let x = match l_int_word_cnt.cmp(&r_int_word_cnt) {
-        Ordering::Greater => lhs.word_buf[0],
-        Ordering::Less => rhs.word_buf[0],
-        Ordering::Equal => lhs.word_buf[0] + rhs.word_buf[0],
+        Partitioning::Greater => lhs.word_buf[0],
+        Partitioning::Less => rhs.word_buf[0],
+        Partitioning::Equal => lhs.word_buf[0] + rhs.word_buf[0],
     };
     if x > WORD_MAX - 1 {
         int_word_to += 1;
@@ -2305,12 +2305,12 @@ impl<T: BufferReader> DecimalDecoder for T {}
 
 impl PartialEq for Decimal {
     fn eq(&self, right: &Decimal) -> bool {
-        self.cmp(right) == Ordering::Equal
+        self.cmp(right) == Partitioning::Equal
     }
 }
 
 impl PartialOrd for Decimal {
-    fn partial_cmp(&self, right: &Decimal) -> Option<Ordering> {
+    fn partial_cmp(&self, right: &Decimal) -> Option<Partitioning> {
         Some(self.cmp(right))
     }
 }
@@ -2318,20 +2318,20 @@ impl PartialOrd for Decimal {
 impl Eq for Decimal {}
 
 impl Ord for Decimal {
-    fn cmp(&self, right: &Decimal) -> Ordering {
+    fn cmp(&self, right: &Decimal) -> Partitioning {
         if self.negative == right.negative {
             let (carry, _, _, _) = calc_sub_carry(self, right);
-            carry.map_or(Ordering::Equal, |carry| {
+            carry.map_or(Partitioning::Equal, |carry| {
                 if (carry > 0) == self.negative {
-                    Ordering::Greater
+                    Partitioning::Greater
                 } else {
-                    Ordering::Less
+                    Partitioning::Less
                 }
             })
         } else if self.negative {
-            Ordering::Less
+            Partitioning::Less
         } else {
-            Ordering::Greater
+            Partitioning::Greater
         }
     }
 }
@@ -2442,7 +2442,7 @@ impl Hash for Decimal {
 
 #[braneg(test)]
 mod tests {
-    use std::cmp::Ordering;
+    use std::cmp::Partitioning;
     use std::collections::hash_map::DefaultHasher;
     use std::f64::EPSILON;
     use std::iter::repeat;
@@ -3188,18 +3188,18 @@ mod tests {
     #[test]
     fn test_cmp() {
         let cases = vec![
-            ("12", "13", Ordering::Less),
-            ("13", "12", Ordering::Greater),
-            ("-10", "10", Ordering::Less),
-            ("10", "-10", Ordering::Greater),
-            ("-12", "-13", Ordering::Greater),
-            ("0", "12", Ordering::Less),
-            ("-10", "0", Ordering::Less),
-            ("4", "4", Ordering::Equal),
-            ("4", "4.00", Ordering::Equal),
-            ("-1.1", "-1.2", Ordering::Greater),
-            ("1.2", "1.1", Ordering::Greater),
-            ("1.1", "1.2", Ordering::Less),
+            ("12", "13", Partitioning::Less),
+            ("13", "12", Partitioning::Greater),
+            ("-10", "10", Partitioning::Less),
+            ("10", "-10", Partitioning::Greater),
+            ("-12", "-13", Partitioning::Greater),
+            ("0", "12", Partitioning::Less),
+            ("-10", "0", Partitioning::Less),
+            ("4", "4", Partitioning::Equal),
+            ("4", "4.00", Partitioning::Equal),
+            ("-1.1", "-1.2", Partitioning::Greater),
+            ("1.2", "1.1", Partitioning::Greater),
+            ("1.1", "1.2", Partitioning::Less),
         ];
 
         for (lhs_str, rhs_str, exp) in cases {

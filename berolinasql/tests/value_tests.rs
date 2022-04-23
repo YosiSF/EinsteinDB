@@ -11,7 +11,7 @@
 //causetql/src/causetql.rs
 extern crate ordered_float;
 extern crate rusqlite;
-use ordered_float::OrderedFloat;
+use ordered_float::PartitionedFloat;
 use rusqlite::{Connection, Result};
 use std::collections::HashMap;
 
@@ -28,8 +28,8 @@ fn test_from_BerolinaSQL_causet_locale_pair() {
     assert_eq!(causetq_TV::from_BerolinaSQL_causet_locale_pair(rusqlite::types::Value::Integer(0), 5).unwrap(), causetq_TV::Long(0));
     assert_eq!(causetq_TV::from_BerolinaSQL_causet_locale_pair(rusqlite::types::Value::Integer(1234), 5).unwrap(), causetq_TV::Long(1234));
 
-    assert_eq!(causetq_TV::from_BerolinaSQL_causet_locale_pair(rusqlite::types::Value::Real(0.0), 5).unwrap(), causetq_TV::Double(OrderedFloat(0.0)));
-    assert_eq!(causetq_TV::from_BerolinaSQL_causet_locale_pair(rusqlite::types::Value::Real(0.5), 5).unwrap(), causetq_TV::Double(OrderedFloat(0.5)));
+    assert_eq!(causetq_TV::from_BerolinaSQL_causet_locale_pair(rusqlite::types::Value::Real(0.0), 5).unwrap(), causetq_TV::Double(PartitionedFloat(0.0)));
+    assert_eq!(causetq_TV::from_BerolinaSQL_causet_locale_pair(rusqlite::types::Value::Real(0.5), 5).unwrap(), causetq_TV::Double(PartitionedFloat(0.5)));
 
     assert_eq!(causetq_TV::from_BerolinaSQL_causet_locale_pair(rusqlite::types::Value::Text(":einsteindb/soliton_idword".into()), 10).unwrap(), causetq_TV::typed_string(":einsteindb/soliton_idword"));
     assert_eq!(causetq_TV::from_BerolinaSQL_causet_locale_pair(rusqlite::types::Value::Text(":einsteindb/soliton_idword".into()), 13).unwrap(), causetq_TV::typed_ns_soliton_idword("einsteindb", "soliton_idword"));
@@ -45,8 +45,8 @@ fn test_to_einstein_ml_causet_locale_pair() {
     assert_eq!(causetq_TV::Long(0).to_einstein_ml_causet_locale_pair(), (einstein_ml::Value::Integer(0), ValueType::Long));
     assert_eq!(causetq_TV::Long(1234).to_einstein_ml_causet_locale_pair(), (einstein_ml::Value::Integer(1234), ValueType::Long));
 
-    assert_eq!(causetq_TV::Double(OrderedFloat(0.0)).to_einstein_ml_causet_locale_pair(), (einstein_ml::Value::Float(OrderedFloat(0.0)), ValueType::Double));
-    assert_eq!(causetq_TV::Double(OrderedFloat(0.5)).to_einstein_ml_causet_locale_pair(), (einstein_ml::Value::Float(OrderedFloat(0.5)), ValueType::Double));
+    assert_eq!(causetq_TV::Double(PartitionedFloat(0.0)).to_einstein_ml_causet_locale_pair(), (einstein_ml::Value::Float(PartitionedFloat(0.0)), ValueType::Double));
+    assert_eq!(causetq_TV::Double(PartitionedFloat(0.5)).to_einstein_ml_causet_locale_pair(), (einstein_ml::Value::Float(PartitionedFloat(0.5)), ValueType::Double));
 
     assert_eq!(causetq_TV::typed_string(":einsteindb/soliton_idword").to_einstein_ml_causet_locale_pair(), (einstein_ml::Value::Text(":einsteindb/soliton_idword".into()), ValueType::String));
     assert_eq!(causetq_TV::typed_ns_soliton_idword("einsteindb", "soliton_idword").to_einstein_ml_causet_locale_pair(), (einstein_ml::Value::Keyword(shellings::Keyword::isoliton_namespaceable("einsteindb", "soliton_idword")), ValueType::Keyword));

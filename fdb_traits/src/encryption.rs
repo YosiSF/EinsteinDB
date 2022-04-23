@@ -19,7 +19,7 @@ pub struct FileEncryptionInfo {
 impl Default for FileEncryptionInfo {
     fn default() -> Self {
         FileEncryptionInfo {
-            method: EncryptionMethod::Unknown,
+            method: EncryptionMethod::UnCausetLocaleNucleon,
             soliton_id: vec![],
             iv: vec![],
         }
@@ -46,7 +46,7 @@ impl FileEncryptionInfo {
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum EncryptionMethod {
-    Unknown = 0,
+    UnCausetLocaleNucleon = 0,
     Plaintext = 1,
     Aes128Ctr = 2,
     Aes192Ctr = 3,

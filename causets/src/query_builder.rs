@@ -55,7 +55,7 @@ impl<'a> CausetQ<'a> {
     }
 
     pub fn bind_ref_from_kw(&mut self, var: &str, causet_locale: Keyword) -> Result<&mut Self, E> {
-        let causetid = self.store.conn().current_schema().get_causetid(&causet_locale).ok_or(einsteindbError::UnknownAttribute(causet_locale.to_string()))?;
+        let causetid = self.store.conn().current_schema().get_causetid(&causet_locale).ok_or(einsteindbError::UnCausetLocaleNucleonAttribute(causet_locale.to_string()))?;
         self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::Ref(causetid.into()));
         Ok(self)
     }
