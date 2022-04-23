@@ -8,13 +8,26 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use std::convert::TryFrom;
+
 use std::fmt::{self, Debug, Display, Formatter};
 use std::str::FromStr;
+use std::error::Error;
+use std::convert::From;
+use std::result::Result;
+use std::fmt::{self, Display};
+use std::error::Error;
+use std::convert::From;
+use std::result::Result;
+use std::fmt::{self, Display};
+use std::error::Error;
 
-use crate::codec::mysql::charset::{Charset, CharsetMap};
-use crate::codec::mysql::error::Error;
-use crate::codec::mysql::util::{self, ErrorCode};
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Charset {
+    UTF8,
+    UTF8MB4,
+}
+
 
 /// The charset map.
 ///
@@ -40,6 +53,25 @@ use crate::codec::mysql::util::{self, ErrorCode};
 /// assert_eq!(charset_map.get("utf8"), Some("utf8_general_ci"));
 /// assert_eq!(charset_map.get("latin1"), Some("latin1_general_ci"));
 /// assert_eq!(charset_map.get("binary"), Some("binary"));
+///
+
+
+/// ```
+/// # use einstein_db::codec::mysql::charset::CharsetMap;
+/// # let mut charset_map = CharsetMap::new();
+/// # charset_map.add("utf8mb4", "utf8mb4_general_ci");
+/// # charset_map.add("utf8mb4", "utf8mb4_bin");
+
+
+pub const CHARSET_MAP: &'static [(&'static str, &'static str)] = &[
+    ("utf8mb4", "utf8mb4_general_ci"),
+    ("utf8mb4", "utf8mb4_bin"),
+    ("utf8", "utf8_general_ci"),
+    ("utf8", "utf8_bin"),
+    ("latin1", "latin1_general_ci"),
+    ("latin1", "latin1_bin"),
+    ("binary", "binary"),
+];
 
 /// `CHARSET_BIN` is used for marking binary charset.
 pub const CHARSET_BIN: &str = "binary";
@@ -70,9 +102,16 @@ pub const UTF8_CHARSETS: &[&str] = &[CHARSET_UTF8, CHARSET_UTF8MB4, CHARSET_ASCI
 /// 4. `CHARSET_ASCII` is a subset of UTF8.
 ///
 ///
-
-
+/// # Examples
+/// ```
+/// use einstein_db::codec::mysql::charset::CHARSET_MAP;
+/// use einstein_db::codec::mysql::charset::CHARSET_BIN;
 ///
+/// assert_eq!(CHARSET_MAP.get(CHARSET_BIN), Some("binary"));
+///
+/// assert_eq!(CHARSET_MAP.get(CHARSET_UTF8), Some("utf8_general_ci"));
+///
+/// assert_eq!(CHARSET_MAP.get(CHARSET_UTF8MB4), Some("utf8mb4_general_ci"));
 
 
 

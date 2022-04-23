@@ -1,29 +1,63 @@
-// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use codec::prelude::*;
-use EinsteinDB_util::escape;
-use std::{cmp, i32, i64, mem, u32, u64};
-use std::cmp::Ordering;
-use std::fmt::{self, Display, Formatter};
-use std::hash::{Hash, Hasher};
-use std::intrinsics::copy_nonoverlapping;
-use std::ops::{Add, Deref, DerefMut, Div, Mul, Neg, Rem, Sub};
-use std::str::{self, FromStr};
-use std::string::ToString;
 
-use crate::codec::{Error, Result, TEN_POW};
-use crate::codec::convert::{self, ConvertTo};
-use crate::codec::data_type::*;
-use crate::expr::EvalContext;
+use std::fmt;
+use std::ops::{Add, Sub, Mul, Div, Rem, Neg, AddAssign, SubAssign, MulAssign, DivAssign, RemAssign};
+use std::cmp::{Ordering, PartialOrd, PartialEq};
+use std::convert::{From, Into};
+use std::str::FromStr;
+use std::{i64, u64};
+use std::{f64, f32};
+use std::{u8, u16, u32, u64, u128};
+use std::{i8, i16, i32, i64, i128};
+use std::{usize, isize};
+use std::{f32, f64};
+use std::{self, mem};
+use std::{num, fmt};
+use std::{str};
+use std::{i32, i64};
+use std::{u32, u64};
+use std::{f32, f64};
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PointFreeError {
+    DivisionByZero,
+    Overflow,
+    Underflow,
+    DivideByZero,
+    InvalidType,
+}   // PointFreeError
+
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum Res<T> {
     Ok(T),
-    Truncated(T),
-    OverCausetxctx(T),
-}
+    Err(PointFreeError),
+}   // Res
 
 impl<T> Res<T> {
+    pub fn ok(self) -> Option<T> {
+        match self {
+            Res::Ok(t) => Some(t),
+            Res::Err(_) => None,
+        }
+    }
+
+    pub fn err(self) -> Option<PointFreeError> {
+        match self {
+            Res::Ok(_) => None,
+            Res::Err(e) => Some(e),
+        }
+    }
+
+
+    pub fn unwrap_err(self) -> PointFreeError {
+        match self {
+            Res::Ok(_) => panic!("unwrap_err on ok"),
+            Res::Err(e) => e,
+        }
+    }
     pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Res<U> {
         match self {
             Res::Ok(t) => Res::Ok(f(t)),
@@ -34,12 +68,19 @@ impl<T> Res<T> {
 
     pub fn unwrap(self) -> T {
         match self {
+            Res::Ok(t) => t,
+            Res::Truncated(t) => t,
+            Res::OverCausetxctx(t) => t,
+        }
+        match self {
+            Res::Ok(t) => t,
             Res::Ok(t) | Res::Truncated(t) | Res::OverCausetxctx(t) => t,
         }
     }
 
     pub fn is_ok(&self) -> bool {
         match *self {
+
             Res::Ok(_) => true,
             _ => false,
         }
@@ -62,12 +103,12 @@ impl<T> Res<T> {
     /// Convert `Res` into `Result` with an `EvalContext` that handling the errors
     /// If `truncated_err` is None, `ctx` will try to handle the default truncated error: `Error::truncated()`,
     /// otherwise handle the specified error inside `truncated_err`.
-    /// Same does `overCausetxctx_err` means.
+    /// Same does `over_causetxctx_err` means.
     fn into_result_impl(
         self,
         ctx: &mut EvalContext,
         truncated_err: Option<Error>,
-        overCausetxctx_err: Option<Error>,
+        over_causetxctx_err: Option<Error>,
     ) -> Result<T> {
         match self {
             Res::Ok(t) => Ok(t),
@@ -78,7 +119,7 @@ impl<T> Res<T> {
             }
             .map(|()| t),
 
-            Res::OverCausetxctx(t) => if let Some(error) = overCausetxctx_err {
+            Res::OverCausetxctx(t) => if let Some(error) = over_causetxctx_err {
                 ctx.handle_overCausetxctx_err(error)
             } else {
                 ctx.handle_overCausetxctx_err(Error::overCausetxctx("DECIMAL", ""))
@@ -87,27 +128,34 @@ impl<T> Res<T> {
         }
     }
 
-    pub fn into_result_with_overCausetxctx_err(
+    pub fn into_result_with_over_causetxctx_err(
         self,
         ctx: &mut EvalContext,
-        overCausetxctx_err: Error,
+        over_causetxctx_err: Error,
     ) -> Result<T> {
-        self.into_result_impl(ctx, None, Some(overCausetxctx_err))
+        self.into_result_impl(ctx, None, Some(over_causetxctx_err))
     }
 
     pub fn into_result(self, ctx: &mut EvalContext) -> Result<T> {
+        /// If `truncated_err` is None, `ctx` will try to handle the default truncated error: `Error::truncated()`,
+        /// otherwise handle the specified error inside `truncated_err`.
         self.into_result_impl(ctx, None, None)
     }
 }
 
 impl<T> Into<Result<T>> for Res<T> {
+    
     fn into(self) -> Result<T> {
         match self {
             Res::Ok(t) => Ok(t),
+            Res::Truncated(t) => Err(Error::truncated()),
             Res::Truncated(_) => Err(Error::truncated()),
             Res::OverCausetxctx(_) => Err(Error::overCausetxctx("", "")),
+            
         }
+        
     }
+    
 }
 
 impl<T> Deref for Res<T> {

@@ -15,10 +15,86 @@
  use std::fmt;
  use std::str::FromStr;
  use std::string::ToString;
+ use std::time::Duration;
+ use std::{f32, f64};
+ use std::{i8, i16, i32, i64, u8, u16, u32, u64};
+ use std::{usize, isize};
+ use std::{f32, f64};
+ use std::{f32, f64};
+
 
  use crate::codec::Error;
 
  use super::{Json, JsonRef, JsonType};
+
+ pub struct Serializer;
+
+ impl Serializer {
+     pub fn new() -> Self {
+         Serializer
+     }
+ }
+
+ impl Serialize for Json {
+     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+     where
+         S: Serializer,
+     {
+         match self.json_type {
+             JsonType::Null => serializer.serialize_unit(),
+             JsonType::Boolean => serializer.serialize_bool(self.as_bool()),
+             JsonType::I64 => serializer.serialize_i64(self.as_i64()),
+             JsonType::U64 => serializer.serialize_u64(self.as_u64()),
+             JsonType::F64 => serializer.serialize_f64(self.as_f64()),
+             JsonType::String => serializer.serialize_str(self.as_str()),
+             JsonType::Array => {
+                 let mut seq = serializer.serialize_seq(Some(self.as_array().len()))?;
+                 for item in self.as_array() {
+                     seq.serialize_element(item)?;
+                 }
+                 seq.end()
+             }
+             JsonType::Object => {
+                 let mut map = serializer.serialize_map(Some(self.as_object().len()))?;
+                 for (k, v) in self.as_object() {
+                     map.serialize_entry(k, v)?;
+                 }
+                 map.end()
+             }
+         }
+     }
+ }
+
+ impl<'a> Serialize for JsonRef<'a> {
+     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+     where
+         S: Serializer,
+     {
+         match self.json_type {
+             JsonType::Null => serializer.serialize_unit(),
+             JsonType::Boolean => serializer.serialize_bool(self.as_bool()),
+             JsonType::I64 => serializer.serialize_i64(self.as_i64()),
+             JsonType::U64 => serializer.serialize_u64(self.as_u64()),
+             JsonType::F64 => serializer.serialize_f64(self.as_f64()),
+             JsonType::String => serializer.serialize_str(self.as_str()),
+             JsonType::Array => {
+                 let mut seq = serializer.serialize_seq(Some(self.as_array().len()))?;
+                 for item in self.as_array() {
+                     seq.serialize_element(item)?;
+                 }
+                 seq.end()
+             }
+             JsonType::Object => {
+                 let mut map = serializer.serialize_map(Some(self.as_object().len()))?;
+                 for (k, v) in self.as_object() {
+                     map.serialize_entry(k, v)?;
+                 }
+                 map.end()
+             }
+         }
+     }
+ }
+
 
  impl<'a> ToString for JsonRef<'a> {
     fn to_string(&self) -> String {
@@ -168,7 +244,8 @@ impl<'de> Deserialize<'de> for Json {
     }
 }
 
-#[braneg(test)]
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -223,3 +300,24 @@ mod tests {
         }
     }
 }
+
+#[cfg(test)]
+ ///!   #[test]
+ /// fn test_from_str_for_array() {
+ ///    let jstr1 = r#"[1, "2", {"aa": "bb"}, 4.0, null]"#;
+ ///   let j1: Json = jstr1.parse().unwrap();
+ ///  let jstr2 = j1.to_string();
+ /// let expect_str = r#"[1,"2",{"aa":"bb"},4.0,null]"#;
+ /// assert_eq!(jstr2, expect_str);
+ ///
+ /// }
+ ///
+ /// #[test]
+ /// fn test_from_str_for_array_with_object() {
+ ///   let jstr1 = r#"[1, "2", {"aa": "bb"}, 4.0, null]"#;
+ ///  let j1: Json = jstr1.parse().unwrap();
+ /// let jstr2 = j1.to_string();
+ /// let expect_str = r#"[1,"2",{"aa":"bb"},4.0,null]"#;
+
+
+ /// assert_eq!(jstr2, expect_str);
