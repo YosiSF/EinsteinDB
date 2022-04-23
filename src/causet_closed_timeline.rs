@@ -1,5 +1,9 @@
-//Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
+//Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED
+// APACHE 2.0 COMMUNITY EDITION SL
+//
+////////////////////////////////////////////////////////////////////////////////
 // AUTHORS: WHITFORD LEDER
+////////////////////////////////////////////////////////////////////////////////
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
@@ -7,14 +11,73 @@
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
+////////////////////////////////////////////////////////////////////////////////
 
+//! # Causet Closed Timeline
+//!
+//! This is a causet timeline implementation.
+//! It is a closed timeline, which means that the timeline is not open for new
+//! events.
+//! It is a causet timeline, which means that the timeline is causet.
+/// Collects a supplied tx range into an DESC ordered Vec of valid txs,
+/// ensuring they all belong to the same timeline.
+/// The txs are collected in DESC order, so the first tx is the latest tx.
+/// You have three modalities with EinsteinDB: Lightlike transactions,  Heavy   transactions, and
+/// Full transactions. Lightlike transactions are hot transactions, which are
+/// executed in a single thread. Heavy transactions are cold transactions, which
+/// are executed in multiple threads. Full transactions are transactions that
+/// are executed in multiple threads, but are not heavy.
+///
+/// We will create a lockfree queue for each thread, and we will use a conn to
+/// communicate between the threads. Using sqlite3, we will create a table for each
+/// thread, and we will use a conn to communicate between the threads. Meanwhile, we'll
+/// suspend the threads, and we'll resume the persistence layer of FdbStore
+/// System Defaults: FoundationDB; Lightlike transactions are MVRSI_SCHEMA_VERSION_1; Heavy
+/// transactions are MVRSI_SCHEMA_VERSION_2; Full transactions are MVRSI_SCHEMA_VERSION_3;
+/// MVSR is superior than MVCC (Multi Version Concurrency Control);
+///
+///
 
-use codec::number::NumberCodec;
-use codec::prelude::BufferWriter;
+pub struct ClosedtimelikeConnection {
+    //Mutex for the connection, since we will use it in multiple threads.
+    conn: Mutex<Connection>,
+    //The schema version of the connection.
+    schema_version: i32,
 
-use crate::{FieldTypeAccessor, FieldTypeTp};
-use crate::codec::{datum, Error, Result};
-use crate::codec::datum_codec::DatumTypeFlagAndPayloadEncoder;
+    //spacetime is the metadata which we will use to store the spacetime
+    //information.
+    spacetime: Spacetime,
+
+    //The name of the table which we will use to store the spacetime information.
+    spacetime_table_name: String,
+
+    mvrsi_schema_version: i32,
+
+}
+
+#[macro_use]
+extern crate log;
+extern crate causetq;
+extern crate SymplecticControlFactorsExt;
+extern crate crossbeam;
+extern crate crossbeam_channel;
+
+fn collect_ordered_txs_to_move(
+    txs: &mut Vec<causet::CausetTx>,
+    mut tx_range: causet::CausetTxRange,
+    timeline_id: causet::TimelineId,
+) -> Vec<causet::CausetTx> {
+    let mut txs_to_move = Vec::new();
+    let mut tx_iter = tx_range.into_iter();
+    while let Some(tx) = tx_iter.next() {
+        if tx.timeline_id() == timeline_id {
+            txs.push(tx);
+        } else {
+            txs_to_move.push(tx);
+        }
+    }
+    txs_to_move
+}
 
 #[inline]
 fn decode_causet_record_u64(v: &[u8]) -> Result<u64> {
