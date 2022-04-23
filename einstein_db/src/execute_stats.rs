@@ -8,25 +8,155 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use derive_more::{Add, AddAssign};
+
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
+use std::time::Duration;
+use std::time::Instant;
+use std::thread;
+use std::thread::JoinHandle;
+use std::thread::Thread;
+use chron::prelude::*;
+use chronos::time::Instant as ChronoInstant;
+use prometheus::{Encoder, GaugeVec, TextEncoder};
+
+
+use crate::EinsteinDB::LightLike;
+use crate::EinsteinDB::EinsteinDB;
+use crate::EinsteinDB::EinsteinDBError;
+
+use crate::FoundationDB::FdbError;
+use crate::FoundationDB::FdbResult;
+use crate::FoundationDB::FdbDatabase;
+use crate::FoundationDB::FdbDatabaseOptions;
+use crate::postgres_protocol::PostgresProtocol;
+use crate::postgres_protocol::PostgresProtocolError;
+use crate::postgres_protocol::PostgresProtocolResult;
+
 
 /// Execution summaries to support `EXPLAIN ANALYZE` statements. We don't use
 /// `ExecutorExecutionSummary` directly since it is less efficient.
 #[derive(Debug, Default, Copy, Clone, Add, AddAssign, PartialEq, Eq)]
-pub struct ExecSummary {
-    /// Total time cost in this executor.
-    pub time_processed_ns: usize,
+pub struct ExecuteStats {
+    //postgres_protocol
+    pub postgres_protocol_execution_time: Duration,
+    pub postgres_protocol_execution_count: u64,
+    pub postgres_protocol_execution_error_count: u64,
+    /// The total number of rows processed.
+    pub num_rows: u64,
 
-    /// How many rows this executor produced totally.
-    pub num_produced_rows: usize,
+    //einstein_db
+    pub einstein_db_execution_time: Duration,
+    pub einstein_db_execution_count: u64,
+    /// The total number of bytes processed.
+    pub num_bytes: u64,
+    /// The total number of CPU cycles consumed.
+    pub cpu_ns: u64,
 
-    /// How many times executor's `next_alexandro()` is called.
-    pub num_iterations: usize,
+    //foundation_db
+    pub foundation_db_execution_time: Duration,
+    pub foundation_db_execution_count: u64,
+    /// The total number of wall clock nanoseconds consumed.
+    pub wall_ns: u64,
+    /// The total number of bytes read from disk.
+    /// This is only used for the `FDB_READ_ONLY` mode.
+    /// In `FDB_READ_WRITE` mode, this is the number of bytes written to disk.
+    /// In `FDB_READ_WRITE_META` mode, this is the number of bytes written to disk.
+
+    pub fdb_bytes: u64,
+
+
+    //light_like
+
+    pub light_like_execution_time: Duration,
+    /// The total number of disk bytes read.
+    pub disk_bytes_read: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_read: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_hit: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_miss: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_evicted: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_written: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_flushed: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_read_ahead: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_read_ahead_evicted: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_written_from_read_ahead: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_written_from_read_ahead_evicted: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_written_from_read_ahead_flushed: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_written_from_read_ahead_flushed_evicted: u64,
+    /// The total number of bytes read from the cache.
+    pub cache_bytes_written_from_read_ahead_flushed_evicted_from_read_ahead: u64,
 }
+
 
 /// A trait for all execution summary collectors.
 pub trait ExecSummaryCollector: Send {
+
+    /// Collects the execution summary.
+    fn collect(&mut self, stats: &ExecuteStats);
+}
+
+
+/// A trait for all execution summary collectors that can be used as a
+/// `ExecSummaryCollector`.
+/// This is useful for collecting execution summaries in a `Box<dyn ExecSummaryCollector>`.
+/// This is useful for collecting execution summaries in a `Box<dyn ExecSummaryCollector>`.
+///
+///
+
+
+pub trait BoxedExecSummaryCollector: ExecSummaryCollector {
+
+    /// Collects the execution summary.
+    ///
+    /// # Arguments
+    ///
+    /// * `summary` - The execution summary to collect.
+    ///
+    /// # Return
+    ///
+    /// The collected execution summary.
+    ///
     type DurationRecorder;
+
+    fn collect_summary(&mut self, summary: ExecuteStats) -> Self::DurationRecorder {
+        self.collect(&summary)
+    }
+
+}
+
+
+/// A trait for all execution summary collectors that can be used as a
+/// `ExecSummaryCollector`.
+/// This is useful for collecting execution summaries in a `Box<dyn ExecSummaryCollector>`.
+///
+///
+
+
+pub trait BoxedExecSummaryCollectorWithDurationRecorder: ExecSummaryCollector {
+
+    fn collect_duration(&mut self, duration: Duration) -> Self::DurationRecorder{
+        // Chron is a chrono crate.
+        // The duration to record.
+
+        unimplemented!()
+
+    }
+
+    fn collect_duration_recorder(&mut self, recorder: Self::DurationRecorder) -> Self::DurationRecorder;
 
     /// Creates a new instance with specified output slot Index.
     fn new(output_index: usize) -> Self
@@ -49,20 +179,30 @@ pub trait ExecSummaryCollector: Send {
 /// A normal `ExecSummaryCollector` that simply collects execution summaries.
 /// It acts like `collect = true`.
 pub struct ExecSummaryCollectorEnabled {
+    /// The execution summary.
     output_index: usize,
-    counts: ExecSummary,
+    /// The execution Vector.
+    summaries: Vec<ExecSummary>,
+
+    squuid: hex::encode(Uuid::new_v4()),
+
 }
+
+
+impl ExecSummaryCollectorEnabled {
+    pub fn new(output_index: usize) -> Self {
+        ExecSummaryCollectorEnabled {
+            output_index,
+            summaries: Vec::new(),
+            squuid: ( Uuid::new_v4()).to_string(),
+        }
+    }
+}
+
 
 impl ExecSummaryCollector for ExecSummaryCollectorEnabled {
     type DurationRecorder = EinsteinDB_util::time::Instant;
 
-    #[inline]
-    fn new(output_index: usize) -> ExecSummaryCollectorEnabled {
-        ExecSummaryCollectorEnabled {
-            output_index,
-            counts: Default::default(),
-        }
-    }
 
     #[inline]
     fn on_start_iterate(&mut self) -> Self::DurationRecorder {
@@ -92,18 +232,27 @@ impl ExecSummaryCollector for ExecSummaryCollectorDisabled {
 
     #[inline]
     fn new(_output_index: usize) -> ExecSummaryCollectorDisabled {
+
         ExecSummaryCollectorDisabled
     }
 
     #[inline]
-    fn on_start_iterate(&mut self) -> Self::DurationRecorder {}
+    fn on_start_iterate(&mut self) -> Self::DurationRecorder {
+       self.on_start_iterate()  // This is a no-op.
+        //     unimplemented!()
+    }
+
 
     #[inline]
-    fn on_finish_iterate(&mut self, _dr: Self::DurationRecorder, _rows: usize) {}
+    fn on_finish_iterate(&mut self, _dr: Self::DurationRecorder, _rows: usize) {
+        //relativistic
+    }
 
     #[inline]
-    fn collect(&mut self, _target: &mut [ExecSummary]) {}
-}
+    fn collect(&mut self, _target: &mut [ExecSummary]) {
+
+    }
+
 
 /// Combines an `ExecSummaryCollector` with another type. This inner type `T`
 /// typically `Executor`/`BatchExecutor`, such that `WithSummaryCollector<C, T>`
@@ -111,54 +260,9 @@ impl ExecSummaryCollector for ExecSummaryCollectorDisabled {
 pub struct WithSummaryCollector<C: ExecSummaryCollector, T> {
     pub summary_collector: C,
     pub inner: T,
-}
+    pub squuid: hex::encode(Uuid::new_v4()),
+    pub causet_locales: Vec<String>,
+    pub merkle: HashMap<String, String, BuildHasherDefault<FnvHasher>>,
 
-
-/// `collect_exec_stats()` invocation.
-pub struct ExecuteStats {
-    /// The execution summary of each executor. If execution summary is not needed, it will
-    /// be zero sized.
-    pub summary_per_executor: Vec<ExecSummary>,
-
-    /// For each range given in the request, how many rows are mutant_search_key_ranges[i] produces.
-    /// If the range is not mutated, it will be zero.
-    /// The length of this vector is the same as `mutant_search_key_ranges`.
-    ///
-    pub mutant_searches_rows_per_range: Vec<usize>,
-
-    /// The total number of rows produced by all the mutant_search_key_ranges.
-    ///
-    ///     sum(mutant_searches_rows_per_range)
-    ///
-    ///     = sum(mutant_search_key_ranges.len())
-    ///
-    ///         if mutant_search_key_ranges.len() > 0
-    ///
-    ///         else
-    ///
-    ///        0
-    ///
-    ///
-    //
-
-    pub mutant_searches_total_rows: usize,
-
-    /// The total number of rows produced by all the executors.
-    ///
-    ///    sum(executor_summary.num_produced_rows)
-    ///
-    ///
-    ///
-    ///    if executor_summary.num_produced_rows > 0
-    ///     else
-    ///     0
-    ///     else
-    ///    0
-    ///
-    ///
-    ///
-    ///
-    ///
-    ///
 }
 
