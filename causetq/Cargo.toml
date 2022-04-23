@@ -11,7 +11,7 @@ path = "../causet"
 [dependencies.berolinasql]
 path = "../berolinasql"
 
-[dependencies.EinsteinDB]
+[dependencies.einstein_db]
 path = "../edb-crate"
 
 

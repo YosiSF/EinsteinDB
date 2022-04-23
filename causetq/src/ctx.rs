@@ -45,7 +45,7 @@ use crate::causetq::{
     error::{Error, Result},
     metrics::{self, Counter, Gauge},
     storage::{self, Storage},
-    util::{self, rocksdb},
+    util::{self, FOUNDATIONDB},
 };
 
 use violetabft::{

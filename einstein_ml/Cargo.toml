@@ -3,8 +3,8 @@ name = "einstein_ml"
 license = "Apache-2.0"
 version = "0.1.0"
 edition = "2021"
-repository = "https://github.com/YosiSF/EinsteinDB/einstein_ml"
-description = "AllegroCL wrapper for EinsteinDB Metalanguage (Einstein_ML)"
+repository = "https://github.com/YosiSF/einstein_db/einstein_ml"
+description = "AllegroCL wrapper for einstein_db Metalanguage (Einstein_ML)"
 
 
 

@@ -1,12 +1,13 @@
 [package]
-name = "EinsteinDB"
+name = "einstein_db"
 version = "0.1.0"
-authors = ["WHTCORPS INC, EINST.AI, and EinsteinDB suite authors"]
+authors = ["WHTCORPS INC, EINST.AI, and einstein_db suite authors"]
 edition = "2018"
 
 
 [dependencies]
 cargo-script = "0.6.*"
+
 
 [workspace]
 members = ["src/lib"]

@@ -65,29 +65,29 @@ pub enum ScalarValue {
     Text(Option<super::Text>),
     //SQLite
     Nullable(Option<ScalarValue>),
-    //RocksDB
+    //FOUNDATIONDB
     Bool(Option<super::Bool>),
-    //RocksDB
+    //FOUNDATIONDB
     Float(Option<super::Float>),
-    //RocksDB
+    //FOUNDATIONDB
     Double(Option<super::Double>),
-    //RocksDB
+    //FOUNDATIONDB
     FixedLenByteArray(Option<super::FixedLenByteArray>),
-    //RocksDB
+    //FOUNDATIONDB
     VarLenByteArray(Option<super::VarLenByteArray>),
-    //RocksDB
+    //FOUNDATIONDB
     TimeStampMicros(Option<super::TimeStampMicros>),
-    //RocksDB
+    //FOUNDATIONDB
     TimeStampMillis(Option<super::TimeStampMillis>),
-    //RocksDB
+    //FOUNDATIONDB
     TimeStampSeconds(Option<super::TimeStampSeconds>),
-    //RocksDB
+    //FOUNDATIONDB
     TimeStampNanos(Option<super::TimeStampNanos>),
-    //RocksDB
+    //FOUNDATIONDB
     DecimalVar(Option<super::DecimalVar>),
-    //RocksDB
+    //FOUNDATIONDB
     DecimalFixed(Option<super::DecimalFixed>),
-    //RocksDB
+    //FOUNDATIONDB
     DurationVar(Option<super::DurationVar>),
     //Spanner
     Int64(Option<super::Int64>),

@@ -2,7 +2,7 @@
 name = "einstein_db"
 version = "0.1.0"
 edition = "2021"
-authors = ["Qiang Yu", "EinsteinDB Authors"]
+authors = ["Qiang Yu", "einstein_db Authors"]
 
 [workspace]
 members = ["../einstein_db_ctl", "../einsteindb-server", "../berolinasql/codec", "../einstein_db_alexandrov_processing", "../def", "../fdb_traits", "../berolinasql/codec"]
