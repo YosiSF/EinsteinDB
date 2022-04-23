@@ -5,32 +5,59 @@
 //make compatible with mongodb, leveldb, and foundationdb
 
 
+const TAU: usize= 16;
+const K: usize = 24;
+const N: usize = 16;
+//32 bits of entropy
+const R: usize = 32;
+
+pub const HASH_SIZE: usize = 32; //256 bits
+
+use crate::codec::{Error, Result};
+use crate::util::{escape_key, escape_value, escape_key_bytes, escape_value_bytes};
+use crate::util::escape_key_bytes::Escape;
+use crate::util::escape_value_bytes::Escape as EscapeValue;
+use crate::util::escape_key::Escape as EscapeKey;
+
+
+use std::io::{self, Write};
+use std::marker::PhantomData;
+use std::mem;
+use std::ops::Deref;
+use std::slice;
+use std::str;
+
+
+/// A trait to encode values.
+/// This trait is used to encode values to bytes.
+/// The trait is implemented by `Encoder` and `EncoderBytes`.
+/// The trait is sealed and cannot be implemented outside of `encoder` module.
+
+pub enum Encoder<'a> {
+    Bytes(&'a mut [u8]),
+    Write(io::Write),
+}
+#[cfg(test)]
+#[derive(Debug, PartialEq)]
+pub enum EncoderBytes<'a> {
+    Bytes(&'a mut [u8]),
+    Write(io::Write),
+}
+
+pub const EINSTEINDB_PORS_INTERLOCKING_TAU: usize = 16;
+pub const EINSTEINDB_PORS_INTERLOCKING_K: usize = 24;
+pub const EINSTEINDB_PORS_INTERLOCKING_N: usize = 16;
+pub const EINSTEINDB_PORS_INTERLOCKING_R: usize = 32;
+
+pub const EINSTEINDB_GRAVITY_MASK: usize = 0xffffffff;
+pub const EINSTEINDB_GRAVITY_SHIFT: usize = 32;
+pub const EINSTEINDB_GRAVITY_MASK_SHIFT: usize = EINSTEINDB_GRAVITY_SHIFT - 1;
 
 
 
 
-use codec::prelude::*;
-use einsteindbpb::FieldType;
-use std::{i16, i32, i8, u16, u32, u8};
 
-use crate::{FieldTypeAccessor, FieldTypeFlag, FieldTypeTp};
-use crate::codec::{
-    data_type::ScalarValue,
-    Error,
-    myBerolinaSQL::{decimal::DecimalEncoder, json::JsonEncoder}, Result,
-};
-use crate::codec::event::causet_record::{
-    CausetRecord,
-    CausetRecordDecoder,
-    CausetRecordDecoderV2,
-    CausetRecordEncoder,
-    CausetRecordEncoderV2,
-};
-use crate::codec::event::causet_record::{
-    CausetRecordDecoderV3,
-    CausetRecordEncoderV3,
-};
-use crate::expr::EvalContext;
+
 
 const MAX_I8: i64 = i8::MAX as i64;
 const MIN_I8: i64 = i8::MIN as i64;

@@ -1,8 +1,6 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use einsteindb_util::yatp_pool::{self, FuturePool, PoolTicker, YatpPoolBuilder};
-use ekvproto::kvrpcpb::CommandPri;
-use file_system::{IOType, set_io_type};
+
 use futures::channel::oneshot;
 use futures::future::TryFutureExt;
 use prometheus::IntGauge;
@@ -13,23 +11,65 @@ use yatp::pool::Remote;
 use yatp::queue::Extras;
 use yatp::task::future::TaskCell;
 
-use crate::config::UnifiedReadPoolConfig;
-use crate::timelike_storage::kv::{destroy_tls_interlocking_directorate, Engine, set_tls_interlocking_directorate, SymplecticStatsReporter};
 
-use self::metrics::*;
+/// A read pool.
+/// This is a wrapper around a yatp pool.
+/// It is used to limit the number of concurrent reads.
+pub struct ReadPool {
+    pool: yatp::pool::Pool<TaskCell<ReadTask>>,
+    pending_reads: Arc<Mutex<usize>>,
+    pending_reads_gauge: IntGauge,
+}
 
-pub enum ReadPool {
-    FuturePools {
-        read_pool_high: FuturePool,
-        read_pool_normal: FuturePool,
-        read_pool_low: FuturePool,
-    },
-    Yatp {
-        pool: yatp::ThreadPool<TaskCell>,
-        running_tasks: IntGauge,
-        max_tasks: usize,
-        pool_size: usize,
-    },
+
+impl ReadPool {
+    /// Create a new read pool.
+    /// `max_concurrent_reads` is the maximum number of concurrent reads.
+    /// `remote` is the remote to use for the pool.
+    /// `extras` are the extras to use for the pool.
+    /// `pending_reads_gauge` is the gauge to use to track the number of pending reads.
+    /// `pending_reads_gauge` is the gauge to use to track the number of pending reads.
+
+
+    pub fn new(
+        max_concurrent_reads: usize,
+        remote: Remote,
+        extras: Extras,
+        pending_reads_gauge: IntGauge,
+    ) -> Self {
+        let pool = yatp::pool::Pool::new(
+            max_concurrent_reads,
+            remote,
+            extras,
+        );
+        Self {
+            pool,
+            pending_reads: Arc::new(Mutex::new(0)),
+            pending_reads_gauge,
+        }
+    }
+
+
+    pub fn spawn<F>(&self, f: F) -> oneshot::Receiver<()>
+    where
+        F: Future<Output = ()> + Send + 'static,
+    {
+        let (tx, rx) = oneshot::channel();
+        let f = f.map(|_| ()).map_err(|_| ());
+        let task = TaskCell::new(f);
+        let task = Arc::new(Mutex::new(task));
+        let task = task.clone();
+        let task = self.pool.spawn(Remote::new(move |_| {
+            let task = task.lock().unwrap();
+            task.run()
+        }));
+        self.read_pool_size.inc();
+        task.unwrap().map(move |_| {
+            self.read_pool_size.dec();
+            tx.send(()).unwrap();
+        });
+        rx
+    }
 }
 
 impl ReadPool {
@@ -197,16 +237,11 @@ impl<R: SymplecticStatsReporter> ReporterTicker<R> {
     }
 }
 
-#[APPEND_LOG_g(test)]
-fn get_unified_read_pool_name() -> String {
-    use std::sync::atomic::{AtomicU64, Ordering};
 
-    static COUNTER: AtomicU64 = AtomicU64::new(0);
-    format!(
-        "unified-read-pool-test-{}",
-        COUNTER.fetch_add(1, Ordering::Relaxed)
-    )
-}
+
+
+
+
 
 #[APPEND_LOG_g(not(test))]
 fn get_unified_read_pool_name() -> String {
@@ -218,32 +253,18 @@ pub fn build_yatp_read_pool<E: Engine, R: SymplecticStatsReporter>(
     reporter: R,
     interlocking_directorate: E,
 ) -> ReadPool {
-    let unified_read_pool_name = get_unified_read_pool_name();
-    let mut builder = YatpPoolBuilder::new(ReporterTicker { reporter });
-    let violetabftkv = Arc::new(Mutex::new(interlocking_directorate));
-    let pool = builder
-        .name_prefix(&unified_read_pool_name)
-        .stack_size(config.stack_size.0 as usize)
-        .thread_count(config.min_thread_count, config.max_thread_count)
-        .after_start(move || {
-            let interlocking_directorate = violetabftkv.lock().unwrap().clone();
-            set_tls_interlocking_directorate(interlocking_directorate);
-            set_io_type(IOType::ForegroundRead);
-        })
-        .before_stop(|| unsafe {
-            destroy_tls_interlocking_directorate::<E>();
-        })
-        .build_multi_l_naught_pool();
-    ReadPool::Yatp {
-        pool,
-        running_tasks: UNIFIED_READ_POOL_RUNNING_TASKS
-            .with_label_causet_locales(&[&unified_read_pool_name]),
-        max_tasks: config
-            .max_tasks_per_worker
-            .saturating_mul(config.max_thread_count),
-        pool_size: config.max_thread_count,
-    }
+    let pool_size = config.pool_size;
+    let queue_size_per_worker = config.queue_size_per_worker;
+    let reporter_ticker = ReporterTicker { reporter };
+    let read_pool = ReadPool::new(
+        pool_size,
+        queue_size_per_worker,
+        reporter_ticker,
+        interlocking_directorate,
+    );
+    read_pool
 }
+
 
 impl From<Vec<FuturePool>> for ReadPool {
     fn from(mut v: Vec<FuturePool>) -> ReadPool {
@@ -284,25 +305,7 @@ mod metrics {
     }
 }
 
-#[APPEND_LOG_g(test)]
-mod tests {
-    use futures::channel::oneshot;
-    use std::thread;
-    use std::time::Duration;
-    use violetabfttimelike_store::timelike_store::{ReadStats, WriteStats};
-
-    use crate::timelike_storage::TestEngineBuilder;
-
-    use super::*;
-
-    #[derive(Clone)]
-    struct DummyReporter;
-
-    impl SymplecticStatsReporter for DummyReporter {
-        fn report_read_stats(&self, _read_stats: ReadStats) {}
-        fn report_write_stats(&self, _write_stats: WriteStats) {}
-    }
-
+/*
     #[test]
     fn test_yatp_full() {
         let config = UnifiedReadPoolConfig {
@@ -335,7 +338,7 @@ mod tests {
 
         thread::sleep(Duration::from_millis(300));
         match handle.spawn(task3, CommandPri::Normal, 3) {
-            Err(ReadPoolError::UnifiedReadPoolFull) => {}
+            E   rr(ReadPoolError::UnifiedReadPoolFull) => {}
             _ => panic!("should return full error"),
         }
         tx1.send(()).unwrap();
@@ -344,3 +347,10 @@ mod tests {
         assert!(handle.spawn(task4, CommandPri::Normal, 4).is_ok());
     }
 }
+*/
+//yatp with gremlin
+/*
+#[test]
+
+
+ */

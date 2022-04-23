@@ -9,7 +9,7 @@ In a nutshell, einstein_db is a persistent indexing scheme based off of LSH-KVX 
 
 The practical beneﬁt of einstein_db is that it creates a fast inference interlocking_directorate with GPT3 , it then generates a bootstrap SQL design of data structures which engages with OpenAI: An AllegroCL meta-language. For example, we can near instantly predict how a speciﬁc de­sign change in the underlying storage of a data system would aﬀect performance, or reversely what would be the optimal data structure (from a given set of designs) given workload characteristics and memory budget. In turn, these prop­erties allow us to envision new class self-designing soliton_id-causet_locale stores with substantially improved ability to adapt to workload and hardware changes by transitioning between drastically different data structure designs on demand.
 
-einstein_db and FoundationDB are both excellent choices for data storage, but which one is right for you? Let's take a look at some of the soliton_id differences.
+einstein_db and foundation_db are both excellent choices for data storage, but which one is right for you? Let's take a look at some of the soliton_id differences.
 
 einstein_db is a database that uses an ontology to describe data. This makes it possible to easily understand and query the data, \
 even if it is spread across multiple tables.\
@@ -21,11 +21,11 @@ Additionally, einstein_db offers several features that make it stand out from ot
 
 
 
-First, einstein_db is specifically designed for machine learning and artificial intelligence applications. It has powerful features like support for online learning and automatic model tuning that make it easy to get the most out of your data. FoundationDB is more general-purpose, with features like ACID transactions that make it a good choice for traditional database workloads. 
-Second, einstein_db supports streaming data operations. This makes it easy to keep your models up to date as new data arrives, without having to reload the entire dataset each time. FoundationDB also supports streaming data operations, but they're not quite as fast or efficient as Einstein DB's implementation. 
-Third, Einstein DB integrates tightly with popular machine learning frameworks like TensorFlow and PyTorch . If you're already using one of these frameworks in your projects, then Einstein DB will be a natural fit. FoundationDB does not have any such integrations yet, but this may change in the future
+First, einstein_db is specifically designed for machine learning and artificial intelligence applications. It has powerful features like support for online learning and automatic model tuning that make it easy to get the most out of your data. foundation_db is more general-purpose, with features like ACID transactions that make it a good choice for traditional database workloads. 
+Second, einstein_db supports streaming data operations. This makes it easy to keep your models up to date as new data arrives, without having to reload the entire dataset each time. foundation_db also supports streaming data operations, but they're not quite as fast or efficient as Einstein DB's implementation. 
+Third, Einstein DB integrates tightly with popular machine learning frameworks like TensorFlow and PyTorch . If you're already using one of these frameworks in your projects, then Einstein DB will be a natural fit. foundation_db does not have any such integrations yet, but this may change in the future
 
-That future is now, and 2024 won't be like 1984 👍  einstein_db is now backed by a FoundationDB schema-free universal record layer. 
+That future is now, and 2024 won't be like 1984 👍  einstein_db is now backed by a foundation_db schema-free universal record layer. 
 
 
 

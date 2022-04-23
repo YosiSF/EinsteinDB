@@ -82,7 +82,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "APPEND_LOG_g-if"
+name = "append_log_g-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
@@ -141,7 +141,7 @@ version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "4ae5588f6b3c3cb05239e90bd110f257254aecd01e4635400391aeae07497845"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "crossbeam-channel",
  "crossbeam-deque",
  "crossbeam-epoch",
@@ -155,7 +155,7 @@ version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "5aaa7bd5fb665c6864b5f963dd9097905c54125909c7aa94c9e18507cdbe6c53"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "crossbeam-utils",
 ]
 
@@ -165,7 +165,7 @@ version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "6455c0ca19f0d2fbf751b908d5c55c1f5cbc65e03c4225427254b46890bdde1e"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "crossbeam-epoch",
  "crossbeam-utils",
 ]
@@ -177,7 +177,7 @@ source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "1145APPEND_LOG_131a2c6ba0615079ab6a638f7e1973ac9c2634fcbeaaad6114246efe8c"
 dependencies = [
  "autoAPPEND_LOG_g",
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "crossbeam-utils",
  "lazy_static",
  "memoffset",
@@ -190,7 +190,7 @@ version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "1f25d8400f4a7a5778f0e4e52384a48cbd9b5c495d110786187fc750075277a2"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "crossbeam-utils",
 ]
 
@@ -200,7 +200,7 @@ version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "0bf124c720b7686e3c2663APPEND_LOG_54062ab0f68a88af2fb6a030e87e30bf721fcb38"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "lazy_static",
 ]
 
@@ -370,7 +370,7 @@ version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "d39cd93900197114fa1fcb7ae84ca742095eed9442088988ae74fa744e930e77"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "libc",
  "wasi",
 ]
@@ -448,7 +448,7 @@ version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
 ]
 
 [[package]]
@@ -481,7 +481,7 @@ version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "efbc0f03f9a775e9f6aed295c6a1ba2253c5757a9e03d55c6caa46a681abcddd"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "winapi",
 ]
 
@@ -512,7 +512,7 @@ version = "0.4.16"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "6389c490849ff5bc16be905ae24bc913a9c8892e19b2341dbc175e14c341c2b8"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
 ]
 
 [[package]]
@@ -544,7 +544,7 @@ checksum = "9f866317acbd3a240710c63f065ffb1e4fd466259045ccb504130b7f668f35c6"
 dependencies = [
  "bitflags",
  "cc",
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "libc",
  "memoffset",
 ]
@@ -628,7 +628,7 @@ version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "d76e8e1493bcac0d2766c42737f34458f1c8c50c0d23bcb24ea953affb273216"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "instant",
  "libc",
  "redox_syscall",
@@ -888,7 +888,7 @@ version = "3.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "5cdb1ef4eaeeaddc8fbd371e5017057064af0911902ef36b39801f67cc6d79e4"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "fastrand",
  "libc",
  "redox_syscall",

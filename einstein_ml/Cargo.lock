@@ -15,7 +15,7 @@ source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "d468802bab17cbc0cc575e9b053f41e72aa36bfa6b7f55e3529ffa43161b97fa"
 
 [[package]]
-name = "APPEND_LOG_g-if"
+name = "append_log_g-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
@@ -74,7 +74,7 @@ version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "d39cd93900197114fa1fcb7ae84ca742095eed9442088988ae74fa744e930e77"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "libc",
  "wasi",
 ]
@@ -134,7 +134,7 @@ version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "51b9bbe6c47d51fc3e1a9b945965946b4c44142ab8792c50835a980d362c2710"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
 ]
 
 [[package]]

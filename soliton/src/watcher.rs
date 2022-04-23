@@ -17,22 +17,48 @@
 // - When observers are registered we want to flip some flags as writes occur so that we can
 //   notifying them outside the transaction.
 
-use causetq::{
-    Causetid,
-    causetq_TV,
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+
+use crate::{
+    error::{Error, Result},
+    transaction::{
+        Transaction,
+        TransactionState,
+        TransactionState::{
+            InProgress,
+            Committed,
+            Aborted,
+        },
+    },
+    watcher::{
+        Watcher,
+        WatcherState,
+        WatcherState::{
+            InProgress,
+            Committed,
+            Aborted,
+        },
+    },
 };
 
-use einsteindb_core::{
-    Topograph,
+use super::{
+    Attribute,
+    AttributeCache,
+    AttributeCacheEntry,
+    AttributeCacheEntry::{
+        AttributeCacheEntryInProgress,
+        AttributeCacheEntryCommitted,
+        AttributeCacheEntryAborted,
+    },
 };
 
-use einstein_ml::causets::{
-    OpType,
-};
 
-use einsteindb_traits::errors::{
-    Result,
-};
+
+///! A watcher is a trait that can be implemented by a transaction to watch for changes to
+/// attributes.
+/// The watcher is used to notify observers of changes to attributes.
 
 pub trait TransactWatcher {
     fn causet(&mut self, op: OpType, e: Causetid, a: Causetid, v: &causetq_TV);
@@ -42,6 +68,22 @@ pub trait TransactWatcher {
     /// attribute changes transacted during this transact are not reflected in
     /// the topograph.
     fn done(&mut self, t: &Causetid, topograph: &Topograph) -> Result<()>;
+
+    /// Called with the topograph _after_ the transact -- any attributes or
+    /// attribute changes transacted during this transact are reflected in
+    /// the topograph.
+    /// Only return an error if you want to interrupt the transact!
+    /// This is called after the transact is committed.
+    ///
+
+
+    fn commit(&mut self, t: &Causetid, topograph: &Topograph) -> Result<()>;
+
+    /// Called with the topograph _after_ the transact -- any attributes or
+    /// attribute changes transacted during this transact are reflected in
+    /// the topograph.
+
+    fn abort(&mut self, t: &Causetid, topograph: &Topograph) -> Result<()>;
 }
 
 pub struct NullWatcher();
@@ -52,5 +94,64 @@ impl TransactWatcher for NullWatcher {
 
     fn done(&mut self, _t: &Causetid, _topograph: &Topograph) -> Result<()> {
         Ok(())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TopographCausetTermBuilder<T: TopographCausetTerm> {
+    pub topograph: T,
+    pub causet: Causetid,
+    pub term: causetq_TV,
+}
+
+pub trait TopographCausetTerm {
+    fn causet(&self, causet: Causetid, term: causetq_TV) -> TopographCausetTermBuilder<Self>;
+}
+
+pub struct TopographCausetTermBuilderImpl<T: TopographCausetTerm> {
+    pub topograph: T,
+    pub causet: Causetid,
+    pub term: causetq_TV,
+}
+
+pub trait BuildTopographCausetTerms where Self: Sized {
+    fn causet(&self, causet: Causetid, term: causetq_TV) -> TopographCausetTermBuilder<Self> {
+        TopographCausetTermBuilder {
+            topograph: self.clone(),
+            causet,
+            term,
+        }
+    }
+
+    fn named_causetid(&self, name: C) -> ValueRc<TempId> where C: AsRef<str> {
+        self.causetid(name.as_ref())
+    }
+
+    fn describe_topograph_causet_term(&self, name: C) -> ValueRc<TempId> where C: AsRef<str> {
+        self.causetid(name.as_ref())
+    }
+
+    fn add<C, A, V>(&self, name: C, a: A, v: V) -> TopographCausetTermBuilder<Self>
+        where C: Into<CausetPlace<causetq_TV>>,
+              A: Into<AttributePlace>,
+              V: Into<ValuePlace<causetq_TV>> {
+        let causet = name.into();
+        self.terms.causet(causet.causet, causet.term);
+        self.terms.attribute(a.into(), v.into());
+        self.terms
+    }
+
+    fn retract<C, A, causetq_VT>(&self, name: C, a: A, v: causetq_VT) -> TopographCausetTermBuilder<Self>
+        where C: Into<CausetPlace<causetq_TV>>,
+              A: Into<AttributePlace>,
+              causetq_VT: Into<ValuePlace<causetq_TV>> {
+        let causet = name.into();
+        self.terms.causet(causet.causet, causet.term);
+        self.terms.attribute(a.into(), v.into());
+        self.terms
+    }
+
+    fn causetid(&self, name: &str) -> ValueRc<TempId> {
+        self.terms.causetid(name)
     }
 }

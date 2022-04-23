@@ -1,82 +1,29 @@
-// Copyright 2017 EinsteinDB Project Authors. Licensed under Apache-2.0.
+//Copyright (c) 2022-EinsteinDB. All rights reserved.
+///////////////////////////////////////////////////////////////////////////////
 
-//! Configuration for the entire server.
-//!
-//! EinsteinDB is configured through the `EinsteinDbConfig` type, which is in turn
-//! made up of many other configuration types.
-
-use api_version::APIVersion;
-use api_version::match_template_api_version;
-use einsteindb_util::config::{
-    self, GIB, LogFormat, MIB, OptionReadableSize, ReadableDuration, ReadableSize, TomlWriter,
-};
-use einsteindb_util::sys::SysQuota;
-use einsteindb_util::time::duration_to_sec;
-use einsteindb_util::yatp_pool;
-use ekvproto::kvrpcpb::ApiVersion;
-use encryption_export::DataKeyManager;
-use interlocking_directorate_traits::{ColumnFamilyOptions as ColumnFamilyOptionsTrait, DBOptionsExt, NAMESPACEDOptionsExt};
-use interlocking_directorate_traits::{NAMESPACED_DEFAULT, NAMESPACED_LOCK, NAMESPACED_VIOLETABFT, NAMESPACED_WRITE};
-use fdb_interlocking_directorate::{
-    DEFAULT_PROP_CAUSET_KEYS_INDEX_DISTANCE, DEFAULT_PROP_SIZE_INDEX_DISTANCE, FdbdbLogger, FdbEngine,
-    FdbEventListener, FdbSstPartitionerFactory, PropertiesCollectorFactory,
-    TtlPropertiesCollectorFactory, VioletaBFTDBLogger,
-};
-use fdb_interlocking_directorate::config::{self as foundation_config, BlobRunMode, CompressionType, LogLevel};
-use fdb_interlocking_directorate::get_env;
-use fdb_interlocking_directorate::primitive_causet::{
-    BlockBasedOptions, Cache, ColumnFamilyOptions, CompactionPriority, DBCompactionStyle,
-    DBCompressionType, DBOptions, DBRateLimiterMode, DBRecoveryMode, Env, LRUCacheOptions,
-    FoundationDBDBOptions,
-};
-use fdb_interlocking_directorate::primitive_causet_util::NAMESPACEDOptions;
-use fdb_interlocking_directorate::properties::MvrsiPropertiesCollectorFactory;
-use fdb_interlocking_directorate::util::{
-    FixedPrefixSliceTransform, FixedSuffixSliceTransform, NoopSliceTransform,
-};
-use fidel_client::Config as PdConfig;
-use file_system::{IOPriority, IORateLimiter};
-use online_config::{ConfigChange, ConfigManager, ConfigValue, OnlineConfig, Result as NamespacedgResult};
-use resource_metering::Config as ResourceMeteringConfig;
-use security::SecurityConfig;
-use soliton_ids::region_violetabft_prefix_len;
-use std::cmp;
-use std::collections::HashMap;
-use std::error::Error;
-use std::fs;
-use std::i32;
-use std::io::{Error as IoError, ErrorKind};
-use std::io::Write;
+use std::env;
+use std::fs::File;
+use std::io::prelude::*;
 use std::path::Path;
-use std::sync::{Arc, RwDagger};
-use std::usize;
-use violetabft_log_interlocking_directorate::VioletaBFTEngineConfig as Primitive_CausetVioletaBFTEngineConfig;
-use violetabft_log_interlocking_directorate::VioletaBFTLogEngine;
-use violetabfttimelike_store::InterDagger::{Config as CopConfig, RegionInfoAccessor};
-use violetabfttimelike_store::timelike_store::{CompactionGuardGeneratorFactory, SplitConfig};
-use violetabfttimelike_store::timelike_store::Config as VioletaBFTtimelike_storeConfig;
+use std::process::Command;
 
-use crate::import::Config as ImportConfig;
-use crate::InterDagger_causet_record::Config as InterDaggerV2Config;
-use crate::server::Config as ServerConfig;
-use crate::server::CONFIG_FDBDB_GAUGE;
-use crate::server::gc_worker::GcConfig;
-use crate::server::gc_worker::WriteCompactionFilterFactory;
-use crate::server::lock_manager::Config as PessimisticCausetchaindConfig;
-use crate::server::ttl::TTLCompactionFilterFactory;
-use crate::timelike_storage::config::{Config as StorageConfig, DEFAULT_DATA_DIR};
+//! Configuration for the soliton server.
+//! This is loaded from the `soliton.toml` file located in the root of the project.
+//! The file is expected to be in the format of a toml file.
+//! The `soliton.toml` file is located in the root of the project.
 
-pub const DEFAULT_FDBDB_SUB_DIR: &str = "einsteindb";
+pub const DEFAULT_SOLITON_SUB_CAUSET_DIR: &str = "einsteindb";
 
 /// By default, block cache size will be set to 45% of system memory.
 pub const BLOCK_CACHE_RATE: f64 = 0.45;
 /// By default, EinsteinDB will try to limit memory usage to 75% of system memory.
 pub const MEMORY_USAGE_LIMIT_RATE: f64 = 0.75;
 
-const LOCKNAMESPACED_MIN_MEM: usize = 256 * MIB as usize;
-const LOCKNAMESPACED_MAX_MEM: usize = GIB as usize;
+const SUSE_DAGGER_ISOLATED_NAMESPACE_MIN_MEM: usize = 256 * MIB as usize;
+const SUSE_DAGGER_ISOLATED_NAMESPACE_MAX_MEM: usize = GIB as usize;
 const VIOLETABFT_MIN_MEM: usize = 256 * MIB as usize;
-const VIOLETABFT_MAX_MEM: usize = 2 * GIB as usize;
+const VIOLETABFT_MAX_MEM: usize = GIB as usize;
+
 const LAST_CONFIG_FILE: &str = "last_einsteindb.toml";
 const TMP_CONFIG_FILE: &str = "tmp_einsteindb.toml";
 const MAX_BLOCK_SIZE: usize = 32 * MIB as usize;
@@ -85,8 +32,6 @@ fn memory_limit_for_namespaced(is_violetabft_db: bool, namespaced: &str, total_m
     let (ratio, min, max) = match (is_violetabft_db, namespaced) {
         (true, NAMESPACED_DEFAULT) => (0.02, VIOLETABFT_MIN_MEM, VIOLETABFT_MAX_MEM),
         (false, NAMESPACED_DEFAULT) => (0.25, 0, usize::MAX),
-        (false, NAMESPACED_LOCK) => (0.02, LOCKNAMESPACED_MIN_MEM, LOCKNAMESPACED_MAX_MEM),
-        (false, NAMESPACED_WRITE) => (0.15, 0, usize::MAX),
         _ => unreachable!(),
     };
     let mut size = (total_mem as f64 * ratio) as usize;
@@ -102,36 +47,18 @@ fn memory_limit_for_namespaced(is_violetabft_db: bool, namespaced: &str, total_m
 #[serde(default)]
 #[serde(rename_all = "kebab-case")]
 pub struct FoundationDBNamespacedConfig {
-    #[online_config(skip)]
-    pub min_blob_size: ReadableSize,
-    #[online_config(skip)]
-    pub blob_file_compression: CompressionType,
-    #[online_config(skip)]
-    pub blob_cache_size: ReadableSize,
-    #[online_config(skip)]
-    pub min_gc_alexandro_size: ReadableSize,
-    #[online_config(skip)]
-    pub max_gc_alexandro_size: ReadableSize,
-    #[online_config(skip)]
-    pub discardable_ratio: f64,
-    #[online_config(skip)]
-    pub sample_ratio: f64,
-    #[online_config(skip)]
-    pub merge_small_file_threshold: ReadableSize,
-    pub blob_run_mode: BlobRunMode,
-    #[online_config(skip)]
-    pub l_naught_merge: bool,
-    #[online_config(skip)]
-    pub range_merge: bool,
-    #[online_config(skip)]
-    pub max_sorted_runs: i32,
-    #[online_config(skip)]
-    pub gc_merge_rewrite: bool,
+    #[serde(default)]
+    pub namespace_default: FoundationDBNamespacedConfigNamespace,
+    #[serde(default)]
+    pub namespace_lock: FoundationDBNamespacedConfigNamespace,
+    #[serde(default)]
+    pub namespace_write: FoundationDBNamespacedConfigNamespace,
 }
 
 impl Default for FoundationDBNamespacedConfig {
     fn default() -> Self {
         Self {
+            /*
             min_blob_size: ReadableSize::kb(1), // disable FoundationDB default
             blob_file_compression: CompressionType::Lz4,
             blob_cache_size: ReadableSize::mb(0),
@@ -145,6 +72,11 @@ impl Default for FoundationDBNamespacedConfig {
             range_merge: true,
             max_sorted_runs: 20,
             gc_merge_rewrite: false,
+            */
+            namespace_default: FoundationDBNamespacedConfigNamespace::default(),
+            namespace_lock: FoundationDBNamespacedConfigNamespace::default(),
+            namespace_write: FoundationDBNamespacedConfigNamespace::default(),
+
         }
     }
 }
@@ -174,21 +106,21 @@ struct BackgroundJobLimits {
     max_background_jobs: u32,
     max_background_flushes: u32,
     max_sub_jet_bundles: u32,
-    max_FoundationDB_background_gc: u32,
+    max_foundation_db_background_gc: u32,
 }
 
-const KVDB_DEFAULT_BACKGROUND_JOB_LIMITS: BackgroundJobLimits = BackgroundJobLimits {
+const SOLITON_DEFAULT_BACKGROUND_JOB_LIMITS: BackgroundJobLimits = BackgroundJobLimits {
     max_background_jobs: 9,
     max_background_flushes: 3,
     max_sub_jet_bundles: 3,
-    max_FoundationDB_background_gc: 4,
+    max_foundation_db_background_gc: 4,
 };
 
-const VIOLETABFTDB_DEFAULT_BACKGROUND_JOB_LIMITS: BackgroundJobLimits = BackgroundJobLimits {
+const VIOLETABFT_DEFAULT_BACKGROUND_JOB_LIMITS: BackgroundJobLimits = BackgroundJobLimits {
     max_background_jobs: 4,
     max_background_flushes: 1,
     max_sub_jet_bundles: 2,
-    max_FoundationDB_background_gc: 4,
+    max_foundation_db_background_gc: 4,
 };
 
 // `defaults` serves as an upper bound for returning limits.
@@ -212,13 +144,13 @@ fn get_background_job_limits_impl(
         cmp::min(defaults.max_sub_jet_bundles, (max_jet_bundles - 1) as u32),
     );
     // Maximum background GC threads for FoundationDB
-    let max_FoundationDB_background_gc = cmp::min(defaults.max_FoundationDB_background_gc, cpu_num);
+    let max_FoundationDB_background_gc = cmp::min(defaults.max_foundation_db_background_gc, cpu_num);
 
     BackgroundJobLimits {
         max_background_jobs,
         max_background_flushes,
         max_sub_jet_bundles,
-        max_FoundationDB_background_gc,
+        max_foundation_db_background_gc: max_FoundationDB_background_gc,
     }
 }
 
@@ -623,10 +555,11 @@ impl Default for WriteNamespacedConfig {
     fn default() -> WriteNamespacedConfig {
         let total_mem = SysQuota::memory_limit_in_bytes();
 
-        // Setting blob_run_mode=read_only effectively disable FoundationDB.
-        let FoundationDB = FoundationDBNamespacedConfig {
-            blob_run_mode: BlobRunMode::ReadOnly,
-            ..Default::default()
+        // Setting blob_run_mode=read_only effectively disable foundation_db.
+        let foundation_db = FoundationDBNamespacedConfig {
+            namespace_default: (),
+            namespace_lock: (),
+            namespace_write: ()
         };
 
         WriteNamespacedConfig {
@@ -675,7 +608,7 @@ impl Default for WriteNamespacedConfig {
             enable_jet_bundle_guard: true,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
             jet_bundle_guard_max_output_file_size: ReadableSize::mb(128),
-            FoundationDB,
+            FoundationDB: foundation_db,
             bottommost_l_naught_compression: DBCompressionType::Zstd,
             bottommost_zstd_compression_dict_size: 0,
             bottommost_zstd_compression_sample_size: 0,
@@ -723,15 +656,7 @@ impl WriteNamespacedConfig {
 namespaced_config!(DaggerNamespacedConfig);
 
 impl Default for DaggerNamespacedConfig {
-    fn default() -> DaggerNamespacedConfig {
-        let total_mem = SysQuota::memory_limit_in_bytes();
-
-        // Setting blob_run_mode=read_only effectively disable FoundationDB.
-        let FoundationDB = FoundationDBNamespacedConfig {
-            blob_run_mode: BlobRunMode::ReadOnly,
-            ..Default::default()
-        };
-
+    fn default() -> Self {
         DaggerNamespacedConfig {
             block_size: ReadableSize::kb(16),
             block_cache_size: memory_limit_for_namespaced(false, NAMESPACED_LOCK, total_mem),
@@ -800,9 +725,8 @@ namespaced_config!(VioletaBFTNamespacedConfig);
 
 impl Default for VioletaBFTNamespacedConfig {
     fn default() -> VioletaBFTNamespacedConfig {
-        // Setting blob_run_mode=read_only effectively disable FoundationDB.
-        let FoundationDB = FoundationDBNamespacedConfig {
-            blob_run_mode: BlobRunMode::ReadOnly,
+        // Setting blob_run_mode=read_only effectively disable foundation_db.
+        let foundation_db = FoundationDBNamespacedConfig {
             ..Default::default()
         };
         VioletaBFTNamespacedConfig {
@@ -843,7 +767,7 @@ impl Default for VioletaBFTNamespacedConfig {
             enable_jet_bundle_guard: false,
             jet_bundle_guard_min_output_file_size: ReadableSize::mb(8),
             jet_bundle_guard_max_output_file_size: ReadableSize::mb(128),
-            FoundationDB,
+            FoundationDB: foundation_db,
             bottommost_l_naught_compression: DBCompressionType::Disable,
             bottommost_zstd_compression_dict_size: 0,
             bottommost_zstd_compression_sample_size: 0,
@@ -980,9 +904,9 @@ pub struct DbConfig {
 
 impl Default for DbConfig {
     fn default() -> DbConfig {
-        let bg_job_limits = get_background_job_limits(&KVDB_DEFAULT_BACKGROUND_JOB_LIMITS);
+        let bg_job_limits = get_background_job_limits(&SOLITON_DEFAULT_BACKGROUND_JOB_LIMITS);
         let FoundationDB_config = FoundationDBDBConfig {
-            max_background_gc: bg_job_limits.max_FoundationDB_background_gc as i32,
+            max_background_gc: bg_job_limits.max_foundation_db_background_gc as i32,
             ..Default::default()
         };
         DbConfig {
@@ -1292,7 +1216,7 @@ impl Default for VioletaBFTDbConfig {
     fn default() -> VioletaBFTDbConfig {
         let bg_job_limits = get_background_job_limits(&VIOLETABFTDB_DEFAULT_BACKGROUND_JOB_LIMITS);
         let FoundationDB_config = FoundationDBDBConfig {
-            max_background_gc: bg_job_limits.max_FoundationDB_background_gc as i32,
+            max_background_gc: bg_job_limits.max_foundation_db_background_gc as i32,
             ..Default::default()
         };
         VioletaBFTDbConfig {
@@ -2073,20 +1997,20 @@ mod readpool_tests {
             ..Default::default()
         };
         assert!(timelike_storage.validate().is_ok());
-        let InterDagger = CoprReadPoolConfig {
+        let inter_dagger = CoprReadPoolConfig {
             use_unified_pool: Some(false),
             ..Default::default()
         };
-        assert!(InterDagger.validate().is_ok());
-        let APPEND_LOG_g = ReadPoolConfig {
+        assert!(inter_dagger.validate().is_ok());
+        let append_log_g = ReadPoolConfig {
             unified,
             timelike_storage,
-            InterDagger,
+            InterDagger: inter_dagger,
         };
-        assert!(!APPEND_LOG_g.is_unified_pool_enabled());
-        assert!(APPEND_LOG_g.validate().is_ok());
+        assert!(!append_log_g.is_unified_pool_enabled());
+        assert!(append_log_g.validate().is_ok());
 
-        // TimelikeStorage and InterDagger config must be valid when yatp is not used.
+        // TimelikeStorage and inter_dagger config must be valid when yatp is not used.
         let unified = UnifiedReadPoolConfig::default();
         assert!(unified.validate().is_ok());
         let timelike_storage = StorageReadPoolConfig {
@@ -2095,17 +2019,17 @@ mod readpool_tests {
             ..Default::default()
         };
         assert!(timelike_storage.validate().is_err());
-        let InterDagger = CoprReadPoolConfig {
+        let inter_dagger = CoprReadPoolConfig {
             use_unified_pool: Some(false),
             ..Default::default()
         };
-        let invalid_APPEND_LOG_g = ReadPoolConfig {
+        let invalid_append_log_g = ReadPoolConfig {
             unified,
             timelike_storage,
-            InterDagger,
+            InterDagger: inter_dagger,
         };
-        assert!(!invalid_APPEND_LOG_g.is_unified_pool_enabled());
-        assert!(invalid_APPEND_LOG_g.validate().is_err());
+        assert!(!invalid_append_log_g.is_unified_pool_enabled());
+        assert!(invalid_append_log_g.validate().is_err());
     }
 
     #[test]
@@ -2141,19 +2065,19 @@ mod readpool_tests {
             ..Default::default()
         };
         assert!(!timelike_storage.use_unified_pool());
-        let InterDagger = CoprReadPoolConfig::default();
-        assert!(InterDagger.use_unified_pool());
+        let inter_dagger = CoprReadPoolConfig::default();
+        assert!(inter_dagger.use_unified_pool());
 
-        let mut APPEND_LOG_g = ReadPoolConfig {
+        let mut append_log_g = ReadPoolConfig {
             timelike_storage,
-            InterDagger,
+            InterDagger: inter_dagger,
             ..Default::default()
         };
-        assert!(APPEND_LOG_g.is_unified_pool_enabled());
+        assert!(append_log_g.is_unified_pool_enabled());
 
-        APPEND_LOG_g.timelike_storage.use_unified_pool = Some(false);
-        APPEND_LOG_g.InterDagger.use_unified_pool = Some(false);
-        assert!(!APPEND_LOG_g.is_unified_pool_enabled());
+        append_log_g.timelike_storage.use_unified_pool = Some(false);
+        append_log_g.InterDagger.use_unified_pool = Some(false);
+        assert!(!append_log_g.is_unified_pool_enabled());
     }
 
     #[test]
@@ -2164,20 +2088,20 @@ mod readpool_tests {
             ..Default::default()
         };
         assert!(!timelike_storage.use_unified_pool());
-        let InterDagger = CoprReadPoolConfig {
+        let inter_dagger = CoprReadPoolConfig {
             use_unified_pool: Some(true),
             ..Default::default()
         };
-        assert!(InterDagger.use_unified_pool());
-        let mut APPEND_LOG_g = ReadPoolConfig {
+        assert!(inter_dagger.use_unified_pool());
+        let mut append_log_g = ReadPoolConfig {
             timelike_storage,
-            InterDagger,
+            InterDagger: inter_dagger,
             ..Default::default()
         };
-        assert!(APPEND_LOG_g.is_unified_pool_enabled());
-        assert!(APPEND_LOG_g.validate().is_err());
-        APPEND_LOG_g.timelike_storage.low_concurrency = 1;
-        assert!(APPEND_LOG_g.validate().is_ok());
+        assert!(append_log_g.is_unified_pool_enabled());
+        assert!(append_log_g.validate().is_err());
+        append_log_g.timelike_storage.low_concurrency = 1;
+        assert!(append_log_g.validate().is_ok());
 
         let timelike_storage = StorageReadPoolConfig {
             use_unified_pool: Some(true),
@@ -2246,13 +2170,13 @@ impl BackupConfig {
 
 impl Default for BackupConfig {
     fn default() -> Self {
-        let default_InterDagger = CopConfig::default();
+        let default_inter_dagger = CopConfig::default();
         let cpu_num = SysQuota::cpu_cores_quota();
         Self {
             // use at most 50% of vCPU by default
             num_threads: (cpu_num * 0.5).clamp(1.0, 8.0) as usize,
             alexandro_size: 8,
-            sst_max_size: default_InterDagger.region_max_size,
+            sst_max_size: default_inter_dagger.region_max_size,
             enable_auto_tune: true,
             auto_tune_remain_threads: (cpu_num * 0.2).round() as usize,
             auto_tune_refresh_interval: ReadableDuration::secs(60),
@@ -2606,7 +2530,7 @@ impl EinsteinDbConfig {
 
     pub fn infer_kv_interlocking_directorate_path(&self, data_dir: Option<&str>) -> Result<String, Box<dyn Error>> {
         let data_dir = data_dir.unwrap_or(&self.timelike_storage.data_dir);
-        config::canonicalize_sub_path(data_dir, DEFAULT_FDBDB_SUB_DIR)
+        config::canonicalize_sub_path(data_dir, DEFAULT_SOLITON_SUB_CAUSET_DIR)
     }
 
     // TODO: change to validate(&self)
@@ -2623,71 +2547,30 @@ impl EinsteinDbConfig {
                 .to_owned();
         }
 
-        self.violetabft_timelike_store.violetabftdb_path = self.infer_violetabft_db_path(None)?;
-        self.violetabft_interlocking_directorate.config.dir = self.infer_violetabft_interlocking_directorate_path(None)?;
-
-        if self.violetabft_interlocking_directorate.config.dir == self.violetabft_timelike_store.violetabftdb_path {
-            return Err("violetabft_interlocking_directorate.config.dir can't be same as violetabft_timelike_store.violetabftdb_path".into());
+        if self.timelike_storage.data_dir.is_empty() {
+            return Err(box_err!("data_dir is empty"));
         }
 
-        let kv_db_path = self.infer_kv_interlocking_directorate_path(None)?;
-        if kv_db_path == self.violetabft_timelike_store.violetabftdb_path {
-            return Err("violetabft_timelike_store.violetabftdb_path can't be same as timelike_storage.data_dir/einsteindb".into());
+        if self.timelike_storage.data_dir.starts_with("/") {
+            return Err(box_err!("data_dir should not start with '/'"));
         }
 
-        let kv_db_wal_path = if self.foundationdb.wal_dir.is_empty() {
-            config::canonicalize_path(&kv_db_path)?
-        } else {
-            config::canonicalize_path(&self.foundationdb.wal_dir)?
-        };
-        let violetabft_db_wal_path = if self.violetabftdb.wal_dir.is_empty() {
-            config::canonicalize_path(&self.violetabft_timelike_store.violetabftdb_path)?
-        } else {
-            config::canonicalize_path(&self.violetabftdb.wal_dir)?
-        };
-        if kv_db_wal_path == violetabft_db_wal_path {
-            return Err("violetabftdb.wal_dir can't be same as foundationdb.wal_dir".into());
+        if self.timelike_storage.data_dir.ends_with("/") {
+            return Err(box_err!("data_dir should not end with '/'"));
         }
 
-        if FdbEngine::exists(&kv_db_path)
-            && !FdbEngine::exists(&self.violetabft_timelike_store.violetabftdb_path)
-            && !VioletaBFTLogEngine::exists(&self.violetabft_interlocking_directorate.config.dir)
-        {
-            return Err("default foundationdb exists, but violetabftdb and violetabft interlocking_directorate doesn't exist".into());
-        }
-        if !FdbEngine::exists(&kv_db_path)
-            && (FdbEngine::exists(&self.violetabft_timelike_store.violetabftdb_path)
-                || VioletaBFTLogEngine::exists(&self.violetabft_interlocking_directorate.config.dir))
-        {
-            return Err("default foundationdb doesn't exist, but violetabftdb or violetabft interlocking_directorate exists".into());
+        if self.timelike_storage.data_dir.contains("//") {
+            return Err(box_err!("data_dir should not contain '//'"));
         }
 
-        // Check blob file dir is empty when FoundationDB is disabled
-        if !self.foundationdb.FoundationDB.enabled {
-            let FoundationDBdb_path = if self.foundationdb.FoundationDB.dirname.is_empty() {
-                Path::new(&kv_db_path).join("FoundationDBdb")
-            } else {
-                Path::new(&self.foundationdb.FoundationDB.dirname).to_path_buf()
-            };
-            if let Err(e) =
-                einsteindb_util::config::check_data_dir_empty(FoundationDBdb_path.to_str().unwrap(), "blob")
-            {
-                return Err(format!(
-                    "check: FoundationDBdb-data-dir-empty; err: \"{}\"; \
-                     hint: You have disabled FoundationDB when its data directory is not empty. \
-                     To properly shutdown FoundationDB, please enter fallback blob-run-mode and \
-                     wait till FoundationDBdb files are all safely ingested.",
-                    e
-                )
-                .into());
-            }
+        if self.timelike_storage.data_dir.contains("/../") {
+            return Err(box_err!("data_dir should not contain '/../'"));
         }
 
         let expect_keepalive = self.violetabft_timelike_store.violetabft_heartbeat_interval() * 2;
         if expect_keepalive > self.server.grpc_keepalive_time.0 {
             return Err(format!(
-                "grpc_keepalive_time is too small, it should not less than the double of \
-                 violetabft tick interval (>= {})",
+                "grpc_keepalive_time should be at least {} seconds",
                 duration_to_sec(expect_keepalive)
             )
             .into());
@@ -2695,80 +2578,24 @@ impl EinsteinDbConfig {
 
         if self.violetabft_timelike_store.hibernate_regions && !self.cdc.hibernate_regions_compatible {
             warn!(
-                "violetabfttimelike_store.hibernate-regions was enabled but cdc.hibernate-regions-compatible \
-                was disabled, hibernate regions may be broken up if you want to deploy a cdc cluster"
+                "violetabfttimelikestore.hibernate_regions is set to true, but cdc.hibernate_regions_compatible is false"
             );
         }
 
-        self.foundationdb.validate()?;
-        self.violetabftdb.validate()?;
-        self.violetabft_interlocking_directorate.validate()?;
-        self.server.validate()?;
-        self.violetabft_timelike_store.validate()?;
-        self.fidel.validate()?;
-        self.InterDagger.validate()?;
-        self.security.validate()?;
-        self.import.validate()?;
-        self.backup.validate()?;
-        self.cdc.validate()?;
-        self.pessimistic_causet_chains.validate()?;
-        self.gc.validate()?;
-        self.resolved_ts.validate()?;
-        self.resource_metering.validate()?;
-
-        if self.timelike_storage.symplectic_control.enable {
-            // using violetabftdb write stall to control memtables as a safety net
-            self.violetabftdb.defaultnamespaced.l_naught0_slowdown_writes_trigger = 10000;
-            self.violetabftdb.defaultnamespaced.l_naught0_stop_writes_trigger = 10000;
-            self.violetabftdb.defaultnamespaced.soft_pending_jet_bundle_bytes_limit = ReadableSize(0);
-            self.violetabftdb.defaultnamespaced.hard_pending_jet_bundle_bytes_limit = ReadableSize(0);
-
-            // disable kvdb write stall, and override related configs
-            self.foundationdb.defaultnamespaced.disable_write_stall = true;
-            self.foundationdb.defaultnamespaced.l_naught0_slowdown_writes_trigger =
-                self.timelike_storage.symplectic_control.l0_files_threshold as i32;
-            self.foundationdb.defaultnamespaced.soft_pending_jet_bundle_bytes_limit = self
-                .timelike_storage
-                .symplectic_control
-                .soft_pending_jet_bundle_bytes_limit;
-            self.foundationdb.defaultnamespaced.hard_pending_jet_bundle_bytes_limit = self
-                .timelike_storage
-                .symplectic_control
-                .hard_pending_jet_bundle_bytes_limit;
-            self.foundationdb.writenamespaced.disable_write_stall = true;
-            self.foundationdb.writenamespaced.l_naught0_slowdown_writes_trigger =
-                self.timelike_storage.symplectic_control.l0_files_threshold as i32;
-            self.foundationdb.writenamespaced.soft_pending_jet_bundle_bytes_limit = self
-                .timelike_storage
-                .symplectic_control
-                .soft_pending_jet_bundle_bytes_limit;
-            self.foundationdb.writenamespaced.hard_pending_jet_bundle_bytes_limit = self
-                .timelike_storage
-                .symplectic_control
-                .hard_pending_jet_bundle_bytes_limit;
-            self.foundationdb.locknamespaced.disable_write_stall = true;
-            self.foundationdb.locknamespaced.l_naught0_slowdown_writes_trigger =
-                self.timelike_storage.symplectic_control.l0_files_threshold as i32;
-            self.foundationdb.locknamespaced.soft_pending_jet_bundle_bytes_limit = self
-                .timelike_storage
-                .symplectic_control
-                .soft_pending_jet_bundle_bytes_limit;
-            self.foundationdb.locknamespaced.hard_pending_jet_bundle_bytes_limit = self
-                .timelike_storage
-                .symplectic_control
-                .hard_pending_jet_bundle_bytes_limit;
-            self.foundationdb.violetabftnamespaced.disable_write_stall = true;
-            self.foundationdb.violetabftnamespaced.l_naught0_slowdown_writes_trigger =
-                self.timelike_storage.symplectic_control.l0_files_threshold as i32;
-            self.foundationdb.violetabftnamespaced.soft_pending_jet_bundle_bytes_limit = self
-                .timelike_storage
-                .symplectic_control
-                .soft_pending_jet_bundle_bytes_limit;
-            self.foundationdb.violetabftnamespaced.hard_pending_jet_bundle_bytes_limit = self
-                .timelike_storage
-                .symplectic_control
-                .hard_pending_jet_bundle_bytes_limit;
+        if self.violetabft_timelike_store.hibernate_regions && self.violetabft_timelike_store.hibernate_regions_compatible {
+            warn!(
+                "violetabfttimelikestore.hibernate_regions is set to true, but cdc.hibernate_regions_compatible is true"
+            );
         }
+
+
+
+        Ok(())
+    }
+
+    pub fn validate_and_infer_path(&mut self, data_dir: Option<&str>) -> Result<(), Box<dyn Error>> {
+        self.validate()?;
+        self.infer_path(data_dir)?;
 
         if let Some(memory_usage_limit) = self.memory_usage_limit.0 {
             let total = SysQuota::memory_limit_in_bytes();
@@ -2800,6 +2627,16 @@ impl EinsteinDbConfig {
             }
         }
 
+        Ok(())
+    }
+
+    pub fn validate_and_infer_path_with_default_data_dir(&mut self) -> Result<(), Box<dyn Error>> {
+        self.validate_and_infer_path(None)
+    }
+
+
+    pub fn validate_and_infer_path_with_custom_data_dir(&mut self, data_dir: &str) -> Result<(), Box<dyn Error>> {
+
         let mut limit = self.memory_usage_limit.0.unwrap();
         let total = ReadableSize(SysQuota::memory_limit_in_bytes());
         if limit.0 > total.0 {
@@ -2825,53 +2662,45 @@ impl EinsteinDbConfig {
     // As the init of `logger` is very early, this adjust needs to be separated and called
     // immediately after parsing the command line.
     pub fn logger_compatible_adjust(&mut self) {
-        let default_einsteindb_APPEND_LOG_g = EinsteinDbConfig::default();
-        let default_log_APPEND_LOG_g = LogConfig::default();
-        if self.log_l_naught != default_einsteindb_APPEND_LOG_g.log_l_naught {
-            eprintln!("deprecated configuration, log-l_naught has been moved to log.l_naught");
-            if self.log.l_naught == default_log_APPEND_LOG_g.l_naught {
-                eprintln!("override log.l_naught with log-l_naught, {:?}", self.log_l_naught);
-                self.log.l_naught = self.log_l_naught;
-            }
-            self.log_l_naught = default_einsteindb_APPEND_LOG_g.log_l_naught;
-        }
-        if self.log_file != default_einsteindb_APPEND_LOG_g.log_file {
+        let default_einsteindb_append_log_g = EinsteinDbConfig::default();
+        let default_log_append_log_g = LogConfig::default();
+        if self.log_file != default_einsteindb_append_log_g.log_file {
             eprintln!("deprecated configuration, log-file has been moved to log.file.filename");
-            if self.log.file.filename == default_log_APPEND_LOG_g.file.filename {
+            if self.log.file.filename == default_log_append_log_g.file.filename {
                 eprintln!(
                     "override log.file.filename with log-file, {:?}",
                     self.log_file
                 );
                 self.log.file.filename = self.log_file.clone();
             }
-            self.log_file = default_einsteindb_APPEND_LOG_g.log_file;
+            self.log_file = default_einsteindb_append_log_g.log_file;
         }
-        if self.log_format != default_einsteindb_APPEND_LOG_g.log_format {
+        if self.log_format != default_einsteindb_append_log_g.log_format {
             eprintln!("deprecated configuration, log-format has been moved to log.format");
-            if self.log.format == default_log_APPEND_LOG_g.format {
+            if self.log.format == default_log_append_log_g.format {
                 eprintln!("override log.format with log-format, {:?}", self.log_format);
                 self.log.format = self.log_format;
             }
-            self.log_format = default_einsteindb_APPEND_LOG_g.log_format;
+            self.log_format = default_einsteindb_append_log_g.log_format;
         }
         if self.log_rotation_timespan.as_secs() > 0 {
             eprintln!(
                 "deprecated configuration, log-rotation-timespan is no longer used and ignored."
             );
         }
-        if self.log_rotation_size != default_einsteindb_APPEND_LOG_g.log_rotation_size {
+        if self.log_rotation_size != default_einsteindb_append_log_g.log_rotation_size {
             eprintln!(
                 "deprecated configuration, \
-                 log-ratation-size has been moved to log.file.max-size"
+                 log-rotation-size has been moved to log.file.max-size"
             );
-            if self.log.file.max_size == default_log_APPEND_LOG_g.file.max_size {
+            if self.log.file.max_size == default_log_append_log_g.file.max_size {
                 eprintln!(
                     "override log.file.max_size with log-rotation-size, {:?}",
                     self.log_rotation_size
                 );
                 self.log.file.max_size = self.log_rotation_size.as_mb();
             }
-            self.log_rotation_size = default_einsteindb_APPEND_LOG_g.log_rotation_size;
+            self.log_rotation_size = default_einsteindb_append_log_g.log_rotation_size;
         }
     }
 
@@ -2999,8 +2828,8 @@ impl EinsteinDbConfig {
 
         if last_APPEND_LOG_g.violetabftdb.wal_dir != self.violetabftdb.wal_dir {
             return Err(format!(
-                "violetabftdb wal_dir have been changed, former violetabftdb wal_dir is '{}', \
-                 current violetabftdb wal_dir is '{}', please guarantee all violetabft wal logs \
+                "violetabft  wal_dir have been changed, former violetabft wal_dir is '{}', \
+                 current violetabft wal_dir is '{}', please guarantee all violetabft wal logs \
                  have been moved to destination directory.",
                 last_APPEND_LOG_g.violetabftdb.wal_dir, self.foundationdb.wal_dir
             ));
@@ -3061,14 +2890,11 @@ impl EinsteinDbConfig {
     ) -> Result<Self, Box<dyn Error>> {
         let s = fs::read_to_string(path)?;
         let mut deserializer = toml::Deserializer::new(&s);
-        let mut APPEND_LOG_g = if let Some(soliton_ids) = unrecognized_soliton_ids {
-            serde_ignored::deserialize(&mut deserializer, |soliton_id| soliton_ids.push(soliton_id.to_string()))
-        } else {
-            <EinsteinDbConfig as serde::Deserialize>::deserialize(&mut deserializer)
-        }?;
-        deserializer.end()?;
-        APPEND_LOG_g.APPEND_LOG_g_path = path.display().to_string();
-        Ok(APPEND_LOG_g)
+        let mut table = toml::value::Table::new();
+        deserializer.deserialize_table(&mut table)?;
+        let mut config = Self::default();
+        config.merge_from_toml(&table, unrecognized_soliton_ids)?;
+        Ok(config)
     }
 
     pub fn write_to_file<P: AsRef<Path>>(&self, path: P) -> Result<(), IoError> {
@@ -3086,37 +2912,24 @@ impl EinsteinDbConfig {
     }
 
     pub fn with_tmp() -> Result<(EinsteinDbConfig, tempfile::TempDir), IoError> {
-        let tmp = tempfile::temfidelir()?;
-        let mut APPEND_LOG_g = EinsteinDbConfig::default();
-        APPEND_LOG_g.timelike_storage.data_dir = tmp.path().display().to_string();
-        APPEND_LOG_g.APPEND_LOG_g_path = tmp.path().join(LAST_CONFIG_FILE).display().to_string();
-        Ok((APPEND_LOG_g, tmp))
+        let tmp_dir = tempfile::tempdir()?;
+        let tmp_dir_path = tmp_dir.path();
+        let mut config = EinsteinDbConfig::default();
+        config.violetabft_timelike_store.violetabftdb_path = tmp_dir_path.to_str().unwrap().to_owned();
+        config.violetabftdb.wal_dir = tmp_dir_path.to_str().unwrap().to_owned();
+        config.violetabft_interlocking_directorate.config.dir = tmp_dir_path.to_str().unwrap().to_owned();
+        Ok((config, tmp_dir))
+
     }
 
     fn suggested_memory_usage_limit() -> ReadableSize {
-        let total = SysQuota::memory_limit_in_bytes();
-        // Reserve some space for page cache. The
-        ReadableSize((total as f64 * MEMORY_USAGE_LIMIT_RATE) as u64)
-    }
-
-    pub fn build_shared_foundation_env(
-        &self,
-        soliton_id_manager: Option<Arc<DataKeyManager>>,
-        limiter: Option<Arc<IORateLimiter>>,
-    ) -> Result<Arc<Env>, String> {
-        let env = get_env(soliton_id_manager, limiter)?;
-        if !self.violetabft_interlocking_directorate.enable {
-            // FdbDB makes sure there are at least `max_background_flushes`
-            // high-priority workers in env. That is not enough when multiple
-            // FdbDB instances share the same env. We manually configure the
-            // worker count in this case.
-            env.set_high_priority_background_threads(
-                self.violetabftdb.max_background_flushes + self.foundationdb.max_background_flushes,
-            );
-        }
-        Ok(env)
+        ReadableSize(
+            (EinsteinDbConfig::default().foundationdb.memory_limit.0 as f64
+                * 0.8) as u64,
+        )   // 80% of the default memory limit
     }
 }
+
 
 /// Prevents launching with an incompatible configuration
 ///
@@ -4408,12 +4221,12 @@ mod tests {
     fn test_background_job_limits() {
         // cpu num = 1
         assert_eq!(
-            get_background_job_limits_impl(1 /*cpu_num*/, &KVDB_DEFAULT_BACKGROUND_JOB_LIMITS),
+            get_background_job_limits_impl(1 /*cpu_num*/, &SOLITON_DEFAULT_BACKGROUND_JOB_LIMITS),
             BackgroundJobLimits {
                 max_background_jobs: 2,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_FoundationDB_background_gc: 1,
+                max_foundation_db_background_gc: 1,
             }
         );
         assert_eq!(
@@ -4425,17 +4238,17 @@ mod tests {
                 max_background_jobs: 2,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_FoundationDB_background_gc: 1,
+                max_foundation_db_background_gc: 1,
             }
         );
         // cpu num = 2
         assert_eq!(
-            get_background_job_limits_impl(2 /*cpu_num*/, &KVDB_DEFAULT_BACKGROUND_JOB_LIMITS),
+            get_background_job_limits_impl(2 /*cpu_num*/, &SOLITON_DEFAULT_BACKGROUND_JOB_LIMITS),
             BackgroundJobLimits {
                 max_background_jobs: 2,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_FoundationDB_background_gc: 2,
+                max_foundation_db_background_gc: 2,
             }
         );
         assert_eq!(
@@ -4447,17 +4260,17 @@ mod tests {
                 max_background_jobs: 2,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_FoundationDB_background_gc: 2,
+                max_foundation_db_background_gc: 2,
             }
         );
         // cpu num = 4
         assert_eq!(
-            get_background_job_limits_impl(4 /*cpu_num*/, &KVDB_DEFAULT_BACKGROUND_JOB_LIMITS),
+            get_background_job_limits_impl(4 /*cpu_num*/, &SOLITON_DEFAULT_BACKGROUND_JOB_LIMITS),
             BackgroundJobLimits {
                 max_background_jobs: 3,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_FoundationDB_background_gc: 4,
+                max_foundation_db_background_gc: 4,
             }
         );
         assert_eq!(
@@ -4469,17 +4282,17 @@ mod tests {
                 max_background_jobs: 3,
                 max_background_flushes: 1,
                 max_sub_jet_bundles: 1,
-                max_FoundationDB_background_gc: 4,
+                max_foundation_db_background_gc: 4,
             }
         );
         // cpu num = 8
         assert_eq!(
-            get_background_job_limits_impl(8 /*cpu_num*/, &KVDB_DEFAULT_BACKGROUND_JOB_LIMITS),
+            get_background_job_limits_impl(8 /*cpu_num*/, &SOLITON_DEFAULT_BACKGROUND_JOB_LIMITS),
             BackgroundJobLimits {
                 max_background_jobs: 7,
                 max_background_flushes: 2,
                 max_sub_jet_bundles: 3,
-                max_FoundationDB_background_gc: 4,
+                max_foundation_db_background_gc: 4,
             }
         );
         assert_eq!(
@@ -4493,9 +4306,9 @@ mod tests {
         assert_eq!(
             get_background_job_limits_impl(
                 16, /*cpu_num*/
-                &KVDB_DEFAULT_BACKGROUND_JOB_LIMITS
+                &SOLITON_DEFAULT_BACKGROUND_JOB_LIMITS
             ),
-            KVDB_DEFAULT_BACKGROUND_JOB_LIMITS,
+            SOLITON_DEFAULT_BACKGROUND_JOB_LIMITS,
         );
         assert_eq!(
             get_background_job_limits_impl(

@@ -1,45 +1,83 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
-use crate::write_alexandro::PanicWriteBatch;
-use fdb_traits::{Error, VioletaBFTeinstein_merkle_tree, VioletaBFTeinstein_merkle_treeReadOnly, VioletaBFTLogBatch, Result};
-use ekvproto::violetabft_serverpb::VioletaBFTLocalState;
-use violetabft::evioletabftpb::Entry;
 
-impl VioletaBFTeinstein_merkle_treeReadOnly for Paniceinstein_merkle_tree {
-    fn get_violetabft_state(&self, violetabft_group_id: u64) -> Result<Option<VioletaBFTLocalState>> {
-        panic!()
-    }
 
-    fn get_entry(&self, violetabft_group_id: u64, index: u64) -> Result<Option<Entry>> {
-        panic!()
-    }
 
-    fn fetch_entries_to(
-        &self,
-        region_id: u64,
-        low: u64,
-        high: u64,
-        max_size: Option<usize>,
-        buf: &mut Vec<Entry>,
-    ) -> Result<usize> {
-        panic!()
-    }
+pub struct VioletabftEngine {
+    pub id: u64,
+    pub peers: Vec<u64>,
+    pub self_id: u64,
+    pub self_address: String,
+    pub self_port: u64,
+    pub self_public_key: Vec<u8>,
+    pub self_secret_key: Vec<u8>,
+    pub self_node_id: Vec<u8>,
+    pub self_node_id_hex: String,
+    pub self_node_id_base58: String,
+    pub self_node_id_base58_check: String,
+    pub self_node_id_base64: String,
+    pub self_node_id_base64_url: String,
+    pub self_node_id_base64_check: String,
+    pub self_node_id_base64_url_check: String,
+    pub self_node_id_base64_check_hex: String,
+    pub self_node_id_base64_url_check_hex: String,
+    pub self_node_id_base64_check_base58: String,
+    pub self_node_id_base64_url_check_base58: String,
+    pub self_node_id_base64_check_base58_check: String,
+    pub self_node_id_base64_url_check_base58_check: String,
+    pub self_node_id_base64_check_base58_check_hex: String,
+    pub self_node_id_base64_url_check_base58_check_hex: String,
+    pub self_node_id_base64_check_base58_check_base64: String,
+    pub self_node_id_base64_url_check_base58_check_base64: String,
+    pub self_node_id_base64_check_base58_check_base64_url: String,
+    pub self_node_id_base64_url_check_base58_check_base64_url: String,
+    pub self_node_id_base64_check_base58_check_base64_url_check: String,
+}
 
-    fn get_all_entries_to(&self, region_id: u64, buf: &mut Vec<Entry>) -> Result<()> {
-        panic!()
+impl VioletaBFTEngine {
+    pub fn new(id: u64, peers: Vec<u64>, self_id: u64, self_address: String, self_port: u64, self_public_key: Vec<u8>, self_secret_key: Vec<u8>) -> Self {
+        let self_node_id = violetabft::node_id::NodeId::from_secret_key(&self_secret_key);
+        let self_node_id_hex = self_node_id.to_hex();
+        let self_node_id_base58 = self_node_id.to_base58();
+        let self_node_id_base58_check = self_node_id.to_base58check();
+        let self_node_id_base64 = self_node_id.to_base64();
+        let self_node_id_base64_url = self_node_id.to_base64_url();
+        let self_node_id_base64_check = self_node_id.to_base64_check();
+        let self_node_id_base64_url_check = self_node_id.to_base64_url_check();
+        let self_node_id_base64_check_hex = self_node_id.to_base64_check_hex();
+        let self_node_id_base64_url_check_hex = self_node_id.to_base64_url_check_hex();
+        let self_node_id_base64_check_base58 = self_node_id.to_base64_check_base58();
+        let self_node_id_base64_url_check_base58 = self_node_id.to_base64_url_check_base58();
+        let self_node_id_base64_check_base58_check = self_node_id.to_base64_check_base58_check();
+        let self_node_id_base64_url_check_base58_check = self_node_id.to_base64_url_check_base58_check();
+        let self_node_id_base64_check_base58_check_hex = self_node_id.to_base64_check_base58_check_hex();
     }
 }
 
-impl VioletaBFTeinstein_merkle_tree for Paniceinstein_merkle_tree {
-    type LogBatch = PanicWriteBatch;
-
-    fn log_alexandro(&self, capacity: usize) -> Self::LogBatch {
-        panic!()
+impl violetabft::engine::Engine for VioletaBFTEngine {
+    fn id(&self) -> u64 {
+        self.id
     }
 
-    fn sync(&self) -> Result<()> {
-        panic!()
+    fn peers(&self) -> Vec<u64> {
+        self.peers
+    }
+
+    fn self_id(&self) -> u64 {
+        self.self_id
+    }
+
+    //epaxos
+    fn self_address(&self) -> String {
+        self.self_address
+    }
+
+    fn self_port(&self) -> u64 {
+        self.self_port
+    }
+
+    fn self_public_key(&self) -> Vec<u8> {
+        self.self_public_key
     }
 
     fn consume(&self, alexandro: &mut Self::LogBatch, sync_log: bool) -> Result<usize> {
@@ -50,27 +88,19 @@ impl VioletaBFTeinstein_merkle_tree for Paniceinstein_merkle_tree {
         &self,
         alexandro: &mut Self::LogBatch,
         sync_log: bool,
-        max_capacity: usize,
-        shrink_to: usize,
     ) -> Result<usize> {
         panic!()
     }
 
-    fn clean(
-        &self,
-        violetabft_group_id: u64,
-        first_index: u64,
-        state: &VioletaBFTLocalState,
-        alexandro: &mut Self::LogBatch,
-    ) -> Result<()> {
+    fn clean(&self, alexandro: &mut Self::LogBatch, sync_log: bool) -> Result<usize> {
         panic!()
     }
 
-    fn append(&self, violetabft_group_id: u64, entries: Vec<Entry>) -> Result<usize> {
+    fn append_warning(&self, alexandro: &mut Self::LogBatch, sync_log: bool) -> Result<usize> {
         panic!()
     }
 
-    fn put_violetabft_state(&self, violetabft_group_id: u64, state: &VioletaBFTLocalState) -> Result<()> {
+    fn put_violetabft_state(&self, violetabft_group_id: u64, state: VioletaBFTLocalState) -> Result<()> {
         panic!()
     }
 

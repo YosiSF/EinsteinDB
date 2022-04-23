@@ -1,5 +1,47 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct CausetDefinition{
+    pub name: &'static str,
+    pub keyword: &'static str,
+    pub attributes: Vec<Keyword, Attribute>,
+    pub timelike: Vec<Keyword, Timelike>,
+    pub pre_order: fn(&mut Causet, &mut CausetDefinition, &mut CausetDefinition, &mut CausetDefinition),
+    pub post_order: fn(&mut Causet, &mut CausetDefinition, &mut CausetDefinition, &mut CausetDefinition),
+}
 
+impl CausetDefinition {
+    pub fn new(name: &'static str, keyword: &'static str, attributes: Vec<Keyword, Attribute>, timelike: Vec<Keyword, Timelike>, pre_order: fn(&mut Causet, &mut CausetDefinition, &mut CausetDefinition, &mut CausetDefinition), post_order: fn(&mut Causet, &mut CausetDefinition, &mut CausetDefinition, &mut CausetDefinition)) -> Self {
+        CausetDefinition {
+            name,
+            keyword,
+            attributes,
+            timelike,
+            pre_order,
+            post_order,
+        }
+    }
+
+    pub fn get_name(&self) -> &'static str {
+        self.name
+    }
+
+    pub fn get_keyword(&self) -> &'static str {
+        self.keyword
+    }
+
+    pub fn get_attributes(&self) -> &Vec<Keyword, Attribute> {
+        &self.attributes
+    }
+
+    fn pre_order(&self, in_progress: &mut Causet, left: &mut CausetDefinition, right: &mut CausetDefinition) {
+        (self.pre_order)(in_progress, left, right, self);
+    }
+
+    fn post_order(&self, in_progress: &mut Causet, left: &mut CausetDefinition, right: &mut CausetDefinition) {
+        (self.post_order)(in_progress, left, right, self);
+    }
+
+}
 use fdb_traits::{
     CausetCompressionType, CausetExt, CausetReader, CausetWriter, CausetWriterBuilder, Iterable, Iterator,
     IterOptions, lightlikeCausetFileInfo, NamespacedName, Result, SeekKey,

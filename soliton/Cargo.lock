@@ -31,7 +31,7 @@ checksum = "5e121dee8023ce33ab248d9ce1493df03c3b38a659b240096fcbd7048ff9c31f"
 dependencies = [
  "addr2line",
  "cc",
- "APPEND_LOG_g-if",
+ "append_log_g-if",
  "libc",
  "miniz_oxide",
  "object",
@@ -45,7 +45,7 @@ source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "2fff2a6927b3bb87f9595d67196a70493f627687a71d87a0d692242c33f58c11"
 
 [[package]]
-name = "APPEND_LOG_g-if"
+name = "append_log_g-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
@@ -139,7 +139,7 @@ version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-Index"
 checksum = "51b9bbe6c47d51fc3e1a9b945965946b4c44142ab8792c50835a980d362c2710"
 dependencies = [
- "APPEND_LOG_g-if",
+ "append_log_g-if",
 ]
 
 [[package]]
