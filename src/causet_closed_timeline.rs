@@ -27,7 +27,152 @@
 /// executed in a single thread. Heavy transactions are cold transactions, which
 /// are executed in multiple threads. Full transactions are transactions that
 /// are executed in multiple threads, but are not heavy.
-///
+
+
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::thread;
+use std::time::{Duration, Instant};
+use std::fmt::{Debug, Formatter, Error};
+use std::cmp::Ordering::{Equal, Greater, Less};
+use std::cmp::{max, min};
+use std::hash::Hash;
+use std::marker::PhantomData;
+use std::mem;
+
+
+use causet::{Causet, CausetError, CausetResult, CausetOption, CausetOptionResult};
+use causet::{CausetTimeline, CausetTimelineError, CausetTimelineResult, CausetTimelineOption, CausetTimelineOptionResult};
+use causet::{CausetTimelineOptionResult, CausetTimelineOption, CausetTimelineOptionResult};
+
+
+use causet_timeline::{CausetTimeline, CausetTimelineError, CausetTimelineResult, CausetTimelineOption, CausetTimelineOptionResult};
+use causet_timeline::{CausetTimelineOptionResult, CausetTimelineOption, CausetTimelineOptionResult};
+
+use allegro_poset::{AllegroPoset, AllegroPosetError, AllegroPosetResult, AllegroPosetOption, AllegroPosetOptionResult};
+use allegro_poset::{AllegroPosetOptionResult, AllegroPosetOption, AllegroPosetOptionResult};
+
+use soliton::{Soliton, SolitonError, SolitonResult, SolitonOption, SolitonOptionResult};
+use einsteindb::{Einsteindb, EinsteindbError, EinsteindbResult, EinsteindbOption, EinsteindbOptionResult};
+use einsteindb::{EinsteindbOptionResult, EinsteindbOption, EinsteindbOptionResult};
+use foundationdb::{Foundationdb, FoundationdbError, FoundationdbResult, FoundationdbOption, FoundationdbOptionResult};
+use foundationdb::{FoundationdbOptionResult, FoundationdbOption, FoundationdbOptionResult};
+//gremlin
+use gremlin::{Gremlin, GremlinError, GremlinResult, GremlinOption, GremlinOptionResult};
+use gremlin::{GremlinOptionResult, GremlinOption, GremlinOptionResult};
+//istio
+use istio::{Istio, IstioError, IstioResult, IstioOption, IstioOptionResult};
+use istio::{IstioOptionResult, IstioOption, IstioOptionResult};
+//k8s
+use k8s::{K8s, K8sError, K8sResult, K8sOption, K8sOptionResult};
+use k8s::{K8sOptionResult, K8sOption, K8sOptionResult};
+//kafka
+use kafka::{Kafka, KafkaError, KafkaResult, KafkaOption, KafkaOptionResult};
+use kafka::{KafkaOptionResult, KafkaOption, KafkaOptionResult};
+//kinesis
+use kinesis::{Kinesis, KinesisError, KinesisResult, KinesisOption, KinesisOptionResult};
+use kinesis::{KinesisOptionResult, KinesisOption, KinesisOptionResult};
+//kubernetes
+use kubernetes::{Kubernetes, KubernetesError, KubernetesResult, KubernetesOption, KubernetesOptionResult};
+use kubernetes::{KubernetesOptionResult, KubernetesOption, KubernetesOptionResult};
+//mongo
+use mongo::{Mongo, MongoError, MongoResult, MongoOption, MongoOptionResult};
+use mongo::{MongoOptionResult, MongoOption, MongoOptionResult};
+//mysql
+use mysql::{Mysql, MysqlError, MysqlResult, MysqlOption, MysqlOptionResult};
+use mysql::{MysqlOptionResult, MysqlOption, MysqlOptionResult};
+//neo4j
+use neo4j::{Neo4j, Neo4jError, Neo4jResult, Neo4jOption, Neo4jOptionResult};
+use neo4j::{Neo4jOptionResult, Neo4jOption, Neo4jOptionResult};
+
+
+pub struct LightlikeStore {
+    conn: Sender<String>,
+    recv: Receiver<String>,
+    sqlite: Sender<String>,
+    sqlite_recv: Receiver<String>,
+    postgres_protocol: Sender<String>,
+    postgres_recv: Receiver<String>,
+    postgres_protocol_recv: Receiver<String>,
+    foundationdb: Sender<String>,
+
+
+    causet: Causet,
+    causet_timeline: CausetTimeline,
+    allegro_poset: AllegroPoset,
+    soliton: Soliton,
+    einsteindb: Einsteindb,
+}
+
+impl LightlikeStore {
+    pub fn new() -> LightlikeStore {
+        let (conn, recv) = channel();
+        let (sqlite, sqlite_recv) = channel();
+        let (postgres_protocol, postgres_recv) = channel();
+        let (postgres_protocol_recv, postgres_protocol_send) = channel();
+        let (foundationdb, foundationdb_recv) = channel();
+        let (causet, causet_timeline, allegro_poset, soliton, einsteindb) = LightlikeStore::init_store();
+        LightlikeStore {
+            conn,
+            recv,
+            sqlite,
+            sqlite_recv,
+            postgres_protocol,
+            postgres_recv,
+            postgres_protocol_recv,
+            foundationdb,
+            causet,
+            causet_timeline,
+            allegro_poset,
+            soliton,
+            einsteindb,
+        }
+    }
+
+    pub fn init_store() -> (Causet, CausetTimeline, AllegroPoset, Soliton, Einsteindb) {
+        let causet = Causet::new();
+        let causet_timeline = CausetTimeline::new();
+        let allegro_poset = AllegroPoset::new();
+        let soliton = Soliton::new();
+        let einsteindb = Einsteindb::new();
+        (causet, causet_timeline, allegro_poset, soliton, einsteindb)
+    }
+
+    pub fn get_conn(&self) -> Sender<String> {
+        self.conn.clone()
+    }
+
+    pub fn get_sqlite_or_db(&self) -> Sender<String> {
+        self.sqlite.clone()
+    }
+
+    pub fn get_postgres_protocol_mux_connection(&self) -> Sender<String> {
+        self.postgres_protocol.clone()
+
+    }
+
+    pub fn get_foundationdb(&self) -> Sender<String> {
+        self.foundationdb.clone()
+    }
+
+    pub fn get_causet(&self) -> Causet {
+        self.causet.clone()
+    }
+
+    pub fn get_causet_timeline(&self) -> CausetTimeline {
+        self.causet_timeline.clone()
+    }
+
+    pub fn get_allegro_poset(&self) -> AllegroPoset {
+        self.allegro_poset.clone()
+    }
+}
+
+
+
+
 /// We will create a lockfree queue for each thread, and we will use a conn to
 /// communicate between the threads. Using sqlite3, we will create a table for each
 /// thread, and we will use a conn to communicate between the threads. Meanwhile, we'll
@@ -55,337 +200,202 @@ pub struct ClosedtimelikeConnection {
 
 }
 
-#[macro_use]
-extern crate log;
-extern crate causetq;
-extern crate SymplecticControlFactorsExt;
-extern crate crossbeam;
-extern crate crossbeam_channel;
-
-fn collect_ordered_txs_to_move(
-    txs: &mut Vec<causet::CausetTx>,
-    mut tx_range: causet::CausetTxRange,
-    timeline_id: causet::TimelineId,
-) -> Vec<causet::CausetTx> {
-    let mut txs_to_move = Vec::new();
-    let mut tx_iter = tx_range.into_iter();
-    while let Some(tx) = tx_iter.next() {
-        if tx.timeline_id() == timeline_id {
-            txs.push(tx);
-        } else {
-            txs_to_move.push(tx);
-        }
+pub fn merge_append_attributes_for_causet<A>(
+    conn: &mut Connection,
+    tx_id: &str,
+    attributes: &[A],
+) -> Result<(), Error>
+where
+    A: Attribute,
+{
+    let mut stmt = conn.prepare(
+        "INSERT INTO causet_timeline (tx_id, attribute_name, attribute_value) VALUES (?, ?, ?)",
+    )?;
+    for attribute in attributes {
+        let attribute_name = attribute.get_name();
+        let attribute_value = attribute.get_value();
+        stmt.execute(&[tx_id, &attribute_name, &attribute_value])?;
     }
-    txs_to_move
+    Ok(())
 }
-
-#[inline]
-fn decode_causet_record_u64(v: &[u8]) -> Result<u64> {
-    // See `decodeInt` in MilevaDB
-    match v.len() {
-        1 => Ok(u64::from(v[0])),
-        2 => Ok(u64::from(NumberCodec::decode_u16_le(v))),
-        4 => Ok(u64::from(NumberCodec::decode_u32_le(v))),
-        8 => Ok(u64::from(NumberCodec::decode_u64_le(v))),
-        _ => Err(Error::InvalidDataType(
-            "Failed to decode event causet_record data as u64".to_owned(),
-        )),
-    }
-}
-
-#[inline]
-fn decode_causet_record_i64(v: &[u8]) -> Result<i64> {
-    // See `decodeUint` in MilevaDB
-    match v.len() {
-        1 => Ok(i64::from(v[0] as i8)),
-        2 => Ok(i64::from(NumberCodec::decode_u16_le(v) as i16)),
-        4 => Ok(i64::from(NumberCodec::decode_u32_le(v) as i32)),
-        8 => Ok(NumberCodec::decode_u64_le(v) as i64),
-        _ => Err(Error::InvalidDataType(
-            "Failed to decode event causet_record data as i64".to_owned(),
-        )),
-    }
-}
-
-pub trait V1CompatibleEncoder: DatumTypeFlagAndPayloadEncoder {
-    fn write_causet_record_as_datum_i64(&mut self, src: &[u8]) -> Result<()> {
-        self.write_datum_i64(decode_causet_record_i64(src)?)
-    }
-
-    fn write_causet_record_as_datum_u64(&mut self, src: &[u8]) -> Result<()> {
-        self.write_datum_u64(decode_causet_record_u64(src)?)
-    }
-
-    fn write_causet_record_as_datum_duration(&mut self, src: &[u8]) -> Result<()> {
-        self.write_u8(datum::DURATION_FLAG)?;
-        self.write_datum_payload_i64(decode_causet_record_i64(src)?)
-    }
-
-    fn write_causet_record_as_datum(&mut self, src: &[u8], ft: &dyn FieldTypeAccessor) -> Result<()> {
-        // See `fieldType2Flag.go` in MilevaDB
-        match ft.tp() {
-            FieldTypeTp::Tiny
-            | FieldTypeTp::Short
-            | FieldTypeTp::Int24
-            | FieldTypeTp::Long
-            | FieldTypeTp::LongLong => {
-                if ft.is_unsigned() {
-                    self.write_causet_record_as_datum_u64(src)?;
-                } else {
-                    self.write_causet_record_as_datum_i64(src)?;
-                }
-            }
-            FieldTypeTp::Float | FieldTypeTp::Double => {
-                self.write_u8(datum::FLOAT_FLAG)?;
-                // Copy datum payload as it is
-                self.write_bytes(src)?;
-            }
-            FieldTypeTp::VarChar
-            | FieldTypeTp::VarString
-            | FieldTypeTp::String
-            | FieldTypeTp::TinyBlob
-            | FieldTypeTp::MediumBlob
-            | FieldTypeTp::LongBlob
-            | FieldTypeTp::Blob => {
-                self.write_datum_compact_bytes(src)?;
-            }
-            FieldTypeTp::Date
-            | FieldTypeTp::DateTime
-            | FieldTypeTp::Timestamp
-            | FieldTypeTp::Enum
-            | FieldTypeTp::Bit
-            | FieldTypeTp::Set => {
-                self.write_causet_record_as_datum_u64(src)?;
-            }
-            FieldTypeTp::Year => {
-                self.write_causet_record_as_datum_i64(src)?;
-            }
-            FieldTypeTp::Duration => {
-                // This implementation is different from MilevaDB MEDB encodes causet_record duration into v1
-                // with datum flag VarInt, but we will encode with datum flag Duration, since
-                // Duration datum flag results in fixed-length datum payload, which is faster
-                // to encode and decode.
-                self.write_causet_record_as_datum_duration(src)?;
-            }
-            FieldTypeTp::NewDecimal => {
-                self.write_u8(datum::DECIMAL_FLAG)?;
-                // Copy datum payload as it is
-                self.write_bytes(src)?;
-            }
-            FieldTypeTp::JSON => {
-                self.write_u8(datum::JSON_FLAG)?;
-                // Copy datum payload as it is
-                self.write_bytes(src)?;
-            }
-            FieldTypeTp::Null => {
-                self.write_u8(datum::NIL_FLAG)?;
-            }
-            fp => {
-                return Err(Error::InvalidDataType(format!(
-                    "Unsupported FieldType {:?}",
-                    fp
-                )))
-            }
-        }
-        Ok(())
-    }
-}
-
-impl<T: BufferWriter> V1CompatibleEncoder for T {}
-
-/// These tests mainly focus on transfer the causet_record encoding to v1-compatible encoding.
-///
-/// The test local_path is:
-/// 1. Encode causet_locale using causet_record
-/// 2. Use `V1CompatibleEncoder` to transfer the encoded bytes from causet_record to v1-compatible
-/// 3. Use `Primitive_CausetDatumTypeDecoder` decode the encoded bytes, check the result.
-///
-/// Note: a causet_locale encoded using causet_record then transfer to v1-compatible encoding, is not always equals the
-/// encoded-bytes using v1 directly.
-///
-/// For example, the causet_record encoding of a causet_locale with a datum of type `tinyint` is:
-/// ```text
-///
-///
-///
-///
-///
-#[test]
+#[cfg(test)]
 mod tests {
-    use std::{f64, i16, i32, i64, i8, u16, u32, u64, u8};
+    use super::*;
+    use crate::causet::Causet;
+    use crate::causet_timeline::CausetTimeline;
+    use crate::allegro_poset::AllegroPoset;
+    use crate::soliton::Soliton;
+    use crate::einsteindb::Einsteindb;
+    use crate::foundationdb::Foundationdb;
+    use crate::postgres_protocol::PostgresProtocol;
+    use crate::sqlite_protocol::SqliteProtocol;
+    use crate::sqlite_recv::SqliteRecv;
+    use crate::postgres_recv::PostgresRecv;
+    use crate::postgres_protocol_recv::PostgresProtocolRecv;
+    use crate::foundationdb_recv::FoundationdbRecv;
+    use crate::foundationdb_protocol_recv::FoundationdbProtocolRecv;
+    use crate::sqlite_protocol_recv::SqliteProtocolRecv;
+    use crate::sqlite_recv::SqliteRecv;
+    use crate::postgres_protocol::PostgresProtocol;
+    use crate::postgres_recv::PostgresRecv;
+    use crate::postgres_protocol_recv::PostgresProtocolRecv;
+    use crate::foundationdb::Foundationdb;
+    use crate::foundationdb_recv::FoundationdbRecv;
+    use crate::foundationdb_protocol_recv::FoundationdbProtocolRecv;
+    use crate::sqlite_protocol::SqliteProtocol;
+    use crate::sqlite_recv::SqliteRecv;
+    use crate::sqlite_protocol_recv::SqliteProtocolRecv;
+    use crate::foundationdb::Foundationdb;
+    use crate::foundationdb_recv::FoundationdbRecv;
+    use crate::foundationdb_protocol_recv::FoundationdbProtocolRecv;
+    use crate::sqlite_protocol::SqliteProtocol;
+    use crate::sqlite_recv::SqliteRecv;
+    use crate::sqlite_protocol_recv::SqliteProtocolRecv;
 
-    use crate::{
-        codec::{data_type::*, datum_codec::Primitive_CausetDatumTypeDecoder},
-        expr::EvalContext,
-    };
-    use crate::FieldTypeTp;
-
-    use super::super::encoder::{Column, ScalarValueEncoder};
-    use super::V1CompatibleEncoder;
-
-    fn encode_to_v1_compatible(mut ctx: &mut EvalContext, col: &Column) -> Vec<u8> {
-        let mut buf_causet_record = vec![];
-        buf_causet_record.write_causet_locale(&mut ctx, &col).unwrap();
-        let mut buf_v1 = vec![];
-        buf_v1.write_causet_record_as_datum(&buf_causet_record, col.ft()).unwrap();
-        buf_v1
-    }
 
     #[test]
-    fn test_int() {
-        let cases = vec![
-            0,
-            i64::from(i8::MIN),
-            i64::from(u8::MAX),
-            i64::from(i8::MAX),
-            i64::from(i16::MIN),
-            i64::from(u16::MAX),
-            i64::from(i16::MAX),
-            i64::from(i32::MIN),
-            i64::from(u32::MAX),
-            i64::from(i32::MAX),
-            i64::MAX,
-            i64::MIN,
-        ];
-        let mut ctx = EvalContext::default();
-        for causet_locale in cases {
-            let col = Column::new(1, causet_locale).with_tp(FieldTypeTp::LongLong);
-            let buf = encode_to_v1_compatible(&mut ctx, &col);
-            let got: Int = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(causet_locale, got);
+    fn test_closedtimelike_connection_causet() {
+        let causet = Causet::new();
+        let causet_timeline = CausetTimeline::new();
+        let causet_timeline_name = "causet_timeline".to_string();
+        let causet_timeline_table_name = "causet_timeline_table".to_string();
+        let causet_timeline_table_name_2 = "causet_timeline_table_2".to_string();
+        let causet_timeline_table_name_3 = "causet_timeline_table_3".to_string();
+        let causet_timeline_table_name_4 = "causet_timeline_table_4".to_string();
+        let causet_timeline_table_name_5 = "causet_timeline_table_5".to_string();
+        let causet_timeline_table_name_6 = "causet_timeline_table_6".to_string();
+        let causet_timeline_table_name_7 = "causet_timeline_table_7".to_string();
+        let causet_timeline_table_name_8 = "causet_timeline_table_8".to_string();
+        let causet_timeline_table_name_9 = "causet_timeline_table_9".to_string();
+        let causet_timeline_table_name_10 = "causet_timeline_table_10".to_string();
+        let causet_timeline_table_name_11 = "causet_timeline_table_11".to_string();
+        let causet_timeline_table_name_12 = "causet_timeline_table_12".to_string();
+        let causet_timeline_table_name_13 = "causet_timeline_table_13".to_string();
+        let causet_timeline_table_name_14 = "causet_timeline_table_14".to_string();
+        let causet_timeline_table_name_15 = "causet_timeline_table_15".to_string();
+
+        causet.create_timeline(&causet_timeline_name);
+        causet.create_timeline_table(&causet_timeline_name, &causet_timeline_table_name);
+        causet.create_timeline_table(&causet_timeline_name, &causet_timeline_table_name_2);
+        causet.create_timeline_table(&causet_timeline_name, &causet_timeline_table_name_3);
+    }
+
+
+    /*
+pub fn begin_closed_lightlike_with_behavior<'m, 'conn>(
+    &'m self,
+    postgres_protocol: &mut PostgresProtocol,
+    sqlite_protocol: &mut SqliteProtocol,
+    causet: C,
+    attributes: A
+) -> Result<BTreeMap<Causetid, ValueRc<StructuredMap>>>
+    where C: IntoIterator<Item = Causetid>,
+          A: IntoIterator<Item = Attribute>,
+{
+    let mut causet_attributes = BTreeMap::new();
+    causet_attributes.insert(causet, self.get_attributes_for_causet(postgres_protocol, sqlite_protocol, causet)?);
+    for attribute in attributes {
+        causet_attributes.insert(attribute, self.get_attributes_for_attribute(postgres_protocol, sqlite_protocol, attribute)?);
+    }
+    Ok(causet_attributes)
+}
+
+
+ */
+
+
+    #[test]
+    fn test_closed_lightlike_connection_causet() {
+        let causet = Causet::new();
+        let causet_timeline = CausetTimeline::new();
+        let causet_timeline_name = "causet_timeline".to_string();
+        let causet_timeline_table_name = "causet_timeline_table".to_string();
+        let causet_timeline_table_name_2 = "causet_timeline_table_2".to_string();
+        let causet_timeline_table_name_3 = "causet_timeline_table_3".to_string();
+        let causet_timeline_table_name_4 = "causet_timeline_table_4".to_string();
+        let causet_timeline_table_name_5 = "causet_timeline_table_5".to_string();
+        let causet_timeline_table_name_6 = "causet_timeline_table_6".to_string();
+        let causet_timeline_table_name_7 = "causet_timeline_table_7".to_string();
+        let causet_timeline_table_name_8 = "causet_timeline_table_8".to_string();
+        let causet_timeline_table_name_9 = "causet_timeline_table_9".to_string();
+        let causet_timeline_table_name_10 = "causet_timeline_table_10".to_string();
+        let causet_timeline_table_name_11 = "causet_timeline_table_11".to_string();
+        let causet_timeline_table_name_12 = "causet_timeline_table_12".to_string();
+        let causet_timeline_table_name_13 = "causet_timeline_table_13".to_string();
+        let causet_timeline_table_name_14 = "causet_timeline_table_14".to_string();
+    }
+
+    #[macro_use]
+    extern crate log;
+    extern crate causetq;
+    extern crate SymplecticControlFactorsExt;
+    extern crate crossbeam;
+    extern crate crossbeam_channel;
+
+    fn collect_ordered_txs_to_move(
+        txs: &mut Vec<causet::CausetTx>,
+        mut tx_range: causet::CausetTxRange,
+        timeline_id: causet::TimelineId,
+    ) -> Vec<causet::CausetTx> {
+        let mut txs_to_move = Vec::new();
+        let mut tx_iter = tx_range.into_iter();
+        while let Some(tx) = tx_iter.next() {
+            if tx.timeline_id() == timeline_id {
+                txs.push(tx);
+            } else {
+                txs_to_move.push(tx);
+            }
+        }
+        txs_to_move
+    }
+
+    #[inline]
+    fn decode_causet_record_u64(v: &[u8]) -> Result<u64> {
+        // See `decodeInt` in MilevaDB
+        match v.len() {
+            1 => Ok(u64::from(v[0])),
+            2 => Ok(u64::from(NumberCodec::decode_u16_le(v))),
+            4 => Ok(u64::from(NumberCodec::decode_u32_le(v))),
+            8 => Ok(u64::from(NumberCodec::decode_u64_le(v))),
+            _ => Err(Error::InvalidDataType(
+                "Failed to decode event causet_record data as u64".to_owned(),
+            )),
         }
     }
 
-    #[test]
-    fn test_uint() {
-        let cases = vec![
-            0,
-            i8::MAX as u64,
-            u64::from(u8::MAX),
-            i16::MAX as u64,
-            u64::from(u16::MAX),
-            i32::MAX as u64,
-            u64::from(u32::MAX),
-            i64::MAX as u64,
-            u64::MAX,
-        ];
-        let mut ctx = EvalContext::default();
-        for causet_locale in cases {
-            let col = Column::new(1, causet_locale as i64)
-                .with_unsigned()
-                .with_tp(FieldTypeTp::LongLong);
-            let buf = encode_to_v1_compatible(&mut ctx, &col);
-            let got: Int = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(causet_locale, got as u64);
+    #[inline]
+    fn decode_causet_record_i64(v: &[u8]) -> Result<i64> {
+        // See `decodeUint` in MilevaDB
+        match v.len() {
+            1 => Ok(i64::from(v[0] as i8)),
+            2 => Ok(i64::from(NumberCodec::decode_u16_le(v) as i16)),
+            4 => Ok(i64::from(NumberCodec::decode_u32_le(v) as i32)),
+            8 => Ok(NumberCodec::decode_u64_le(v) as i64),
+            _ => Err(Error::InvalidDataType(
+                "Failed to decode event causet_record data as i64".to_owned(),
+            )),
         }
     }
 
-    #[test]
-    fn test_real() {
-        let cases = vec![
-            Real::new(0.0).unwrap(),
-            Real::new(1.3).unwrap(),
-            Real::new(-1.234).unwrap(),
-            Real::new(f64::MAX).unwrap(),
-            Real::new(f64::MIN).unwrap(),
-            Real::new(f64::MIN_POSITIVE).unwrap(),
-            Real::new(f64::INFINITY).unwrap(),
-            Real::new(f64::NEG_INFINITY).unwrap(),
-        ];
-        let mut ctx = EvalContext::default();
-        for causet_locale in cases {
-            let col = Column::new(1, causet_locale).with_tp(FieldTypeTp::Double);
-            let buf = encode_to_v1_compatible(&mut ctx, &col);
-            let got: Real = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(causet_locale, got);
+    pub trait CausetRecord {
+        fn write_causet_record_as_datum_u64(&mut self, src: &[u8]) -> Result<()> {
+            self.write_datum_u64(decode_causet_record_u64(src)?)
         }
-    }
 
-    #[test]
-    fn test_decimal() {
-        use std::str::FromStr;
-        let cases = vec![
-            Decimal::from(1i64),
-            Decimal::from(i64::MIN),
-            Decimal::from(i64::MAX),
-            Decimal::from_str("10.123").unwrap(),
-            Decimal::from_str("-10.123").unwrap(),
-            Decimal::from_str("10.111").unwrap(),
-            Decimal::from_str("-10.111").unwrap(),
-        ];
-        let mut ctx = EvalContext::default();
-        for causet_locale in cases {
-            let col = Column::new(1, causet_locale).with_tp(FieldTypeTp::NewDecimal);
-            let buf = encode_to_v1_compatible(&mut ctx, &col);
-            let got: Decimal = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(causet_locale, got);
+        fn write_causet_record_as_datum_duration(&mut self, src: &[u8]) -> Result<()> {
+            self.write_u8(datum::DURATION_FLAG)?;
+            self.write_datum_payload_i64(decode_causet_record_i64(src)?)
         }
-    }
 
-    #[test]
-    fn test_bytes() {
-        let cases = vec![b"".to_vec(), b"abc".to_vec(), "数据库".as_bytes().to_vec()];
-        let mut ctx = EvalContext::default();
-
-        for causet_locale in cases {
-            let col = Column::new(1, causet_locale.clone()).with_tp(FieldTypeTp::String);
-            let buf = encode_to_v1_compatible(&mut ctx, &col);
-            let got: Bytes = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(causet_locale, got);
-        }
-    }
-
-    #[test]
-    fn test_datetime() {
-        let mut ctx = EvalContext::default();
-        let cases = vec![
-            DateTime::parse_date(&mut ctx, "2019-12-31").unwrap(),
-            DateTime::parse_datetime(&mut ctx, "2019-09-16 10:11:12", 0, false).unwrap(),
-            DateTime::parse_timestamp(&mut ctx, "2019-09-16 10:11:12.111", 3, false).unwrap(),
-            DateTime::parse_timestamp(&mut ctx, "2019-09-16 10:11:12.67", 2, true).unwrap(),
-        ];
-
-        for causet_locale in cases {
-            let col = Column::new(1, causet_locale).with_tp(FieldTypeTp::DateTime);
-            let buf = encode_to_v1_compatible(&mut ctx, &col);
-            let got: DateTime = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(causet_locale, got);
-        }
-    }
-
-    #[test]
-    fn test_json() {
-        let cases: Vec<Json> = vec![
-            r#"[1,"sdf",2,[3,4]]"#.parse().unwrap(),
-            r#"{"1":"sdf","2":{"3":4},"asd":"qwe"}"#.parse().unwrap(),
-            r#""hello""#.parse().unwrap(),
-        ];
-
-        let mut ctx = EvalContext::default();
-        for causet_locale in cases {
-            let col = Column::new(1, causet_locale.clone()).with_tp(FieldTypeTp::JSON);
-            let buf = encode_to_v1_compatible(&mut ctx, &col);
-            let got: Json = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(causet_locale, got);
-        }
-    }
-
-    #[test]
-    fn test_duration() {
-        let mut ctx = EvalContext::default();
-        let cases = vec![
-            Duration::parse(&mut ctx, b"31 11:30:45.123", 4).unwrap(),
-            Duration::parse(&mut ctx, b"-11:30:45.9233456", 4).unwrap(),
-        ];
-
-        let mut ctx = EvalContext::default();
-        for causet_locale in cases {
-            let col = Column::new(1, causet_locale)
-                .with_tp(FieldTypeTp::Duration)
-                .with_decimal(4);
-            let buf = encode_to_v1_compatible(&mut ctx, &col);
-            let got: Duration = buf.decode(col.ft(), &mut ctx).unwrap().unwrap();
-            assert_eq!(causet_locale, got);
+        fn write_causet_record_as_datum(&mut self, src: &[u8], ft: &dyn FieldTypeAccessor) -> Result<()> {
+            match ft.get_field_type() {
+                FieldType::U64 => self.write_causet_record_as_datum_u64(src),
+                FieldType::Duration => self.write_causet_record_as_datum_duration(src),
+                _ => Err(Error::InvalidDataType(
+                    "Failed to decode event causet_record data as datum".to_owned(),
+                )),
+            }
         }
     }
 }
+
