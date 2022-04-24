@@ -7,7 +7,50 @@
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
+use byteorder::{BigEndian, ReadBytesExt};
+use wots;
+use wots::{Wots, WotsKey};
+use prng;
+use prng::Prng;
+use std::io::{self, Read, Write};
+use wots::{WotsKeyPair, WotsSignature};
+use wots::{WotsPublicKey, WotsPrivateKey};
+use causet::{
+    causet_core::{
+        block::{Block, BlockHeader},
+        block_store::BlockStore,
+        crypto::{Hash, PublicKey, Signature},
+        transaction::{Transaction, TransactionHeader},
+    },
+    causet_db::{
+        block_store::{BlockStoreConfig, BlockStoreError, BlockStoreResult},
+        transaction_store::{TransactionStoreConfig, TransactionStoreError, TransactionStoreResult},
+        BigEndianCodec, Database, DatabaseConfig,
+        BigEndian::ERROR_FOR_DIVISION_BY_ZERO// DatabaseError,
 
+    },
+    crypto::{
+        hash::{Hashable, Hasher},
+        signature::Signable,
+        BigEndian::ERROR_FOR_DIVISION_BY_ZERO,
+    },
+    transaction::{
+        transaction::{TransactionBody, TransactionHeader},
+        transaction_store::{TransactionStore, TransactionStoreConfig},
+    },
+
+};
+
+pub fn read_u32(buf: &[u8]) -> u32 {
+    let mut reader = std::io::Cursor::new(buf);
+    reader.read_u32::<BigEndian>().unwrap()
+} // read_u32
+
+pub struct Address {
+    pub ip: u64,
+    pub port: u32,
+
+} // Address
 
 //! # EinsteinDB
 //!
@@ -108,6 +151,9 @@ use watcher::NullWatcher;
 /// use einsteindb::{Einsteindb, EinsteindbOptions};
 /// let db = Einsteindb::open("/tmp/einsteindb", EinsteindbOptions::default()).unwrap();
 /// ```
+///
+///
+///
 pub struct Einsteindb {
     db: *mut fdb::FDBDatabase,
     options: EinsteindbOptions,
