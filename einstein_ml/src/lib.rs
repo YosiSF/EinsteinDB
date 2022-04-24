@@ -21,7 +21,7 @@ extern crate time;
 pub use bootstrap::{
     TX0,
     USER0,
-    V1_PARTS,
+    EINSTEIN_DB__PARTS,
 };
 pub use bootstrap::CORE_SCHEMA_VERSION;
 pub use causetids::einsteindb_SCHEMA_CORE;
@@ -95,7 +95,7 @@ pub mod bootstrap
         CORE_SCHEMA_VERSION,
         TX0,
         USER0,
-        V1_PARTS,
+        EINSTEIN_DB__PARTS,
     };
 }
 

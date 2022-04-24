@@ -564,7 +564,7 @@ impl RowColsDict {
 /// `cut_row` cuts the encoded event into (col_id,offset,length)
 ///  and returns interested columns' meta in RowColsDict
 ///
-/// Encoded event can be either in event format v1 or causet_record.
+/// Encoded event can be either in event format EINSTEIN_DB or causet_record.
 ///
 /// `col_ids` must be consistent with `cols`. Otherwise the result is undefined.
 pub fn cut_row(
@@ -577,12 +577,12 @@ pub fn cut_row(
     }
     match data[0] {
         crate::codec::event::causet_record::CODEC_VERSION => cut_row_causet_record(data, cols),
-        _ => cut_row_v1(data, col_ids),
+        _ => cut_row_EINSTEIN_DB(data, col_ids),
     }
 }
 
-/// Cuts a non-empty event in event format v1.
-fn cut_row_v1(data: Vec<u8>, cols: &HashSet<i64>) -> Result<RowColsDict> {
+/// Cuts a non-empty event in event format EINSTEIN_DB.
+fn cut_row_EINSTEIN_DB(data: Vec<u8>, cols: &HashSet<i64>) -> Result<RowColsDict> {
     let meta_map = {
         let mut meta_map = HashMap::with_capacity_and_hasher(cols.len(), Default::default());
         let length = data.len();
@@ -601,10 +601,10 @@ fn cut_row_v1(data: Vec<u8>, cols: &HashSet<i64>) -> Result<RowColsDict> {
     Ok(RowColsDict::new(meta_map, data))
 }
 
-/// Cuts a non-empty event in event format causet_record and encodes into v1 format.
+/// Cuts a non-empty event in event format causet_record and encodes into EINSTEIN_DB format.
 fn cut_row_causet_record(data: Vec<u8>, cols: Arc<Vec<ColumnInfo>>) -> Result<RowColsDict> {
     use crate::codec::datum_codec::{ColumnIdDatumTypeEncoder, EvaluableDatumTypeEncoder};
-    use crate::codec::event::causet_record::{RowSlice, V1CompatibleEncoder};
+    use crate::codec::event::causet_record::{RowSlice, EINSTEIN_DB_CompatibleEncoder};
 
     let mut meta_map = HashMap::with_capacity_and_hasher(cols.len(), Default::default());
     let mut result = Vec::with_capacity(data.len() + cols.len() * 8);
@@ -757,7 +757,7 @@ mod tests {
         let res = if is_empty_row {
             RowColsDict::new(HashMap::default(), bs.to_vec())
         } else {
-            cut_row_v1(bs.to_vec(), col_id_set).unwrap()
+            cut_row_EINSTEIN_DB(bs.to_vec(), col_id_set).unwrap()
         };
         to_hash_map(&res)
     }

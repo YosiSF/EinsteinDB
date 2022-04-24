@@ -527,15 +527,15 @@ impl ScalarValue {
                 Ok(match_template! {
             TT = [Real, Decimal, DateTime, Duration, Json],
             match (self, other) {
-                (ScalarValueRef::TT(v1), ScalarValueRef::TT(causet_record)) => v1.cmp(causet_record),
-                (ScalarValueRef::Int(v1), ScalarValueRef::Int(causet_record)) => compare_int(&v1.cloned(), &causet_record.cloned(), &field_type),
+                (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.cmp(causet_record),
+                (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => compare_int(&EINSTEIN_DB.cloned(), &causet_record.cloned(), &field_type),
                 (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => Partitioning::Equal,
                 (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => Partitioning::Greater,
                 (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => Partitioning::Less,
-                (ScalarValueRef::Bytes(Some(v1)), ScalarValueRef::Bytes(Some(causet_record))) => {
+                (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
                     match_template_collator! {
                         TT, match field_type.collation()? {
-                            Collation::TT => TT::sort_compare(v1, causet_record)?
+                            Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record)?
                         }
                     }
                 }
@@ -663,9 +663,9 @@ impl ScalarValue {
             fn partial_cmp(&self, other: &Self) -> Option<Partitioning> {
                 match_template_evaluable! {
             TT, match (self, other) {
-                // v1 and causet_record are `Option<T>`. However, in MyBerolinaSQL NULL causet_locales are considered lower
+                // EINSTEIN_DB and causet_record are `Option<T>`. However, in MyBerolinaSQL NULL causet_locales are considered lower
                 // than any non-NULL causet_locale, so using `Option::PartialOrd` directly is fine.
-                (ScalarValueRef::TT(v1), ScalarValueRef::TT(causet_record)) => Some(v1.cmp(causet_record)),
+                (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => Some(EINSTEIN_DB.cmp(causet_record)),
                 _ => None,
             }
         }
@@ -688,7 +688,7 @@ impl ScalarValue {
             fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
                 match_template_evaluable! {
             TT, match (self, other) {
-                (ScalarValueRef::TT(v1), ScalarValueRef::TT(causet_record)) => v1.eq(causet_record),
+                (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.eq(causet_record),
                 _ => false,
             }
         }

@@ -8,7 +8,51 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#![allow(dead_code)]
+use einstein_ml::{ Model, ModelConfig, ModelFactory, ModelType, ModelTypeConfig };
+use einstein_ml::{ ModelTypeFactory, ModelTypeFactoryConfig };
+
+use allegro_poset::{ Poset, PosetConfig };
+use allegro_poset::{ PosetFactory, PosetFactoryConfig };
+
+use einsteindb::{ Database, DatabaseConfig };
+use sqxl::{ Sqxl, SqxlConfig };
+
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+
+pub struct DedupConfig {
+    pub poset_config: PosetConfig,
+    pub sqxl_config: SqxlConfig,
+    pub database_config: DatabaseConfig,
+    pub model_config: ModelConfig,
+    pub model_type_config: ModelTypeConfig,
+}
+
+
+pub struct Dedup {
+    pub poset: Poset,
+    pub sqxl: Sqxl,
+    pub database: Database,
+    pub model: Model,
+    pub model_type: ModelType,
+}
+
+pub type ValueTypeTag = u8;
+pub type ValueType = u8;
+
+
+pub const VALUE_TYPE_NULL: ValueType = 0;
+
+use byte as b;
+//byteorder
+pub const VALUE_TYPE_TINYINT: ValueType = 1;
+pub const VALUE_TYPE_SMALLINT: ValueType = 2;
+pub const VALUE_TYPE_INTEGER: ValueType = 3;
+pub const VALUE_TYPE_BIGINT: ValueType = 4;
+
+use byteorder::{BigEndian, ReadBytesExt};
+
 
 use einstein_ml;
 use causetids;
@@ -31,6 +75,207 @@ use einsteindb_traits::errors::{
 use topograph::TopographBuilding;
 use types::{Partition, PartitionMap};
 
+
+use std::collections::HashMap;
+use std::sync::{
+    Arc,
+    Mutex,
+};
+use std::thread;
+use std::time::{
+    Duration,
+    Instant,
+};
+
+
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+
+
+impl DedupConfig {
+    pub fn new() -> DedupConfig {
+        DedupConfig {
+            poset_config: PosetConfig::new(),
+            sqxl_config: SqxlConfig::new(),
+            database_config: DatabaseConfig::new(),
+            model_config: ModelConfig::new(),
+            model_type_config: ModelTypeConfig::new(),
+        }
+    }
+}
+
+
+
+
+
+trait EnumPoset<T: ::enum_set::CLike + Clone> {
+
+    /// Returns the enum set of the enum type.
+    /// # Examples
+    /// ```
+    /// use causetq::types::{
+    ///    EnumPoset,
+    ///   ValueType,
+    /// };
+    fn enum_poset(&self) -> u8;
+
+    fn enum_poset_set(&mut self, poset: u8);
+
+    fn allegro_poset(&self) -> u8;
+
+}
+
+//! # CausetQ
+//!
+//! `causetq` is a Rust implementation of the CausetQ algorithm.
+//!
+//! ## CausetQ
+//!
+
+
+
+/*
+trait EnumSetExtensions<T: ::enum_set::CLike + Clone> {
+    /// Return a set containing both `x` and `y`.
+    fn of_both(x: T, y: T) -> EnumSet<T>;
+
+    /// Return a clone of `self` with `y` added.
+    fn with(&self, y: T) -> EnumSet<T>;
+}
+
+impl<T: ::enum_set::CLike + Clone> EnumSetExtensions<T> for EnumSet<T> {
+    /// Return a set containing both `x` and `y`.
+    fn of_both(x: T, y: T) -> Self {
+        let mut o = EnumSet::new();
+        o.insert(x);
+        o.insert(y);
+        o
+    }
+
+    /// Return a clone of `self` with `y` added.
+    fn with(&self, y: T) -> EnumSet<T> {
+        let mut o = self.clone();
+        o.insert(y);
+        o
+    }
+}*/
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct CausetQ {
+    pub causet_locales: causet_locales::CausetLocales,
+    pub causet_tv: causetq_TV::CausetTV,
+    pub causet_tv_mutex: Mutex<causetq_TV::CausetTV>,
+    pub causet_tv_mutex_lock: Mutex<()>,
+    pub causet_tv_mutex_unlock: Mutex<()>,
+    pub causet_tv_mutex_lock_duration: Mutex<Duration>,
+    pub causet_tv_mutex_unlock_duration: Mutex<Duration>,
+    pub causet_tv_mutex_lock_duration_total: Mutex<Duration>,
+    pub causet_tv_mutex_unlock_duration_total: Mutex<Duration>,
+    pub causet_tv_mutex_lock_duration_total_max: Mutex<Duration>,
+    pub causet_tv_mutex_unlock_duration_total_max: Mutex<Duration>,
+    pub causet_tv_mutex_lock_duration_total_min: Mutex<Duration>,
+    pub causet_tv_mutex_unlock_duration_total_min: Mutex<Duration>,
+    pub causet_tv_mutex_lock_duration_total_avg: Mutex<Duration>,
+    pub causet_tv_mutex_unlock_duration_total_avg: Mutex<Duration>,
+    pub causet_tv_mutex_lock_duration_total_avg_count: Mutex<u64>,
+    pub causet_tv_mutex_unlock_duration_total_avg_count: Mutex<u64>,
+    pub causet_tv_mutex_lock_duration_total_avg_sum: Mutex<Duration>,
+    pub causet_tv_mutex_unlock_duration_total_avg_sum: Mutex<Duration>,
+    pub causet_tv_mutex_lock_duration_total_avg_sum_squares: Mutex<Duration>,
+    pub causet_tv_mutex_unlock_duration_total_avg_sum_squares: Mutex<Duration>,
+}
+
+
+
+
+#[derive(Clone)]
+pub struct RcCounter {
+    pub rc: u32,
+}
+
+
+impl RcCounter {
+    pub fn new() -> RcCounter {
+        RcCounter {
+            rc: 1,
+        }
+    }
+
+
+    pub fn inc(&mut self) {
+        self.rc += 1;
+    }
+
+
+    pub fn dec(&mut self) {
+        self.rc -= 1;
+    }
+
+
+    pub fn get(&self) -> u32 {
+        self.rc
+    }
+}
+
+
+impl Drop for RcCounter {
+    fn drop(&mut self) {
+        self.rc -= 1;
+    }
+}
+
+/// A simple shared counter.
+impl RcCounter {
+    pub fn shared() -> RcCounter {
+        RcCounter {
+            rc: 1,
+        }
+    }
+
+
+    pub fn shared_inc(&mut self) {
+        self.rc += 1;
+    }
+
+
+    pub fn shared_dec(&mut self) {
+        self.rc -= 1;
+    }
+
+
+    pub fn shared_get(&self) -> u32 {
+        self.rc
+    }
+
+
+    pub fn shared_drop(&mut self) {
+        self.rc -= 1;
+    }
+}
+
+    /// Return the next value in the sequence.
+    ///
+    /// ```
+    /// use mentat_core::counter::RcCounter;
+    ///
+    /// let c = RcCounter::with_initial(3);
+    /// assert_eq!(c.next(), 3);
+    /// assert_eq!(c.next(), 4);
+    /// let d = c.clone();
+    /// assert_eq!(d.next(), 5);
+    /// assert_eq!(c.next(), 6);
+    /// ```
+    pub fn next(&self) -> u64 {
+        self.rc as u64
+    }
+
+
+
 /// The first transaction ID applied to the knowledge base.
 ///
 /// This is the start of the :einsteindb.part/tx partition.
@@ -43,7 +288,7 @@ pub const USER0: i64 = 0x10000;
 pub const CORE_SCHEMA_VERSION: u32 = 1;
 
 lazy_static! {
-    static ref V1_solitonidS: [(shellings::Keyword, i64); 40] = {
+    static ref EINSTEIN_DB__solitonidS: [(shellings::Keyword, i64); 40] = {
             [(ns_soliton_idword!("einsteindb", "solitonid"),             causetids::EINSTEINDB_solitonid),
              (ns_soliton_idword!("einsteindb.part", "einsteindb"),           causetids::EINSTEINDB_PART_EINSTEINDB),
              (ns_soliton_idword!("einsteindb", "txInstant"),         causetids::EINSTEINDB_TX_INSTANT),
@@ -87,14 +332,14 @@ lazy_static! {
         ]
     };
 
-    pub static ref V1_PARTS: [(shellings::Keyword, i64, i64, i64, bool); 3] = {
-            [(ns_soliton_idword!("einsteindb.part", "einsteindb"), 0, USER0 - 1, (1 + V1_solitonidS.len()) as i64, false),
+    pub static ref EINSTEIN_DB__PARTS: [(shellings::Keyword, i64, i64, i64, bool); 3] = {
+            [(ns_soliton_idword!("einsteindb.part", "einsteindb"), 0, USER0 - 1, (1 + EINSTEIN_DB__solitonidS.len()) as i64, false),
              (ns_soliton_idword!("einsteindb.part", "user"), USER0, TX0 - 1, USER0, true),
              (ns_soliton_idword!("einsteindb.part", "tx"), TX0, i64::max_causet_locale(), TX0, false),
         ]
     };
 
-    static ref V1_CORE_SCHEMA: [(shellings::Keyword); 16] = {
+    static ref EINSTEIN_DB__CORE_SCHEMA: [(shellings::Keyword); 16] = {
             [(ns_soliton_idword!("einsteindb", "solitonid")),
              (ns_soliton_idword!("einsteindb.install", "partition")),
              (ns_soliton_idword!("einsteindb.install", "causet_localeType")),
@@ -114,7 +359,7 @@ lazy_static! {
         ]
     };
 
-    static ref V1_SYMBOLIC_SCHEMA: Value = {
+    static ref EINSTEIN_DB__SYMBOLIC_SCHEMA: Value = {
         let s = r#"
 {:einsteindb/solitonid             {:einsteindb/causet_localeType   :einsteindb.type/soliton_idword
                         :einsteindb/cardinality :einsteindb.cardinality/one
@@ -161,7 +406,7 @@ lazy_static! {
                         :einsteindb/cardinality :einsteindb.cardinality/many}}"#;
         einstein_ml::parse::causet_locale(s)
             .map(|v| v.without_spans())
-            .map_err(|_| einsteindbErrorKind::BaeinsteindbootstrapDefinition("Unable to parse V1_SYMBOLIC_SCHEMA".into()))
+            .map_err(|_| einsteindbErrorKind::BaeinsteindbootstrapDefinition("Unable to parse EINSTEIN_DB__SYMBOLIC_SCHEMA".into()))
             .unwrap()
     };
 }
@@ -278,28 +523,28 @@ fn shellingic_topograph_to_lightlike_dagger_upsert(shellingic_topograph: &Value)
 }
 
 pub(crate) fn bootstrap_partition_map() -> PartitionMap {
-    V1_PARTS.iter()
+    EINSTEIN_DB__PARTS.iter()
             .map(|&(ref part, start, end, index, allow_excision)| (part.to_string(), Partition::new(start, end, index, allow_excision)))
             .collect()
 }
 
 pub(crate) fn bootstrap_solitonid_map() -> solitonidMap {
-    V1_solitonidS.iter()
+    EINSTEIN_DB__solitonidS.iter()
              .map(|&(ref solitonid, causetid)| (solitonid.clone(), causetid))
              .collect()
 }
 
 pub(crate) fn bootstrap_topograph() -> Topograph {
     let solitonid_map = bootstrap_solitonid_map();
-    let bootstrap_triples = shellingic_topograph_to_triples(&solitonid_map, &V1_SYMBOLIC_SCHEMA).expect("shellingic topograph");
+    let bootstrap_triples = shellingic_topograph_to_triples(&solitonid_map, &EINSTEIN_DB__SYMBOLIC_SCHEMA).expect("shellingic topograph");
     Topograph::from_solitonid_map_and_triples(solitonid_map, bootstrap_triples).unwrap()
 }
 
 pub(crate) fn bootstrap_causets() -> Vec<causet<einstein_ml::ValueAndSpan>> {
     let bootstrap_lightlike_dagger_upsert: Value = Value::Vector([
-        shellingic_topograph_to_lightlike_dagger_upsert(&V1_SYMBOLIC_SCHEMA).expect("shellingic topograph"),
-        solitonids_to_lightlike_dagger_upsert(&V1_solitonidS[..]),
-        topograph_attrs_to_lightlike_dagger_upsert(CORE_SCHEMA_VERSION, V1_CORE_SCHEMA.as_ref()),
+        shellingic_topograph_to_lightlike_dagger_upsert(&EINSTEIN_DB__SYMBOLIC_SCHEMA).expect("shellingic topograph"),
+        solitonids_to_lightlike_dagger_upsert(&EINSTEIN_DB__solitonidS[..]),
+        topograph_attrs_to_lightlike_dagger_upsert(CORE_SCHEMA_VERSION, EINSTEIN_DB__CORE_SCHEMA.as_ref()),
     ].concat());
 
     // Failure here is a coding error (since the inputs are fixed), not a runtime error.

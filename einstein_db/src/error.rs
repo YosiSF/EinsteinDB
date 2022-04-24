@@ -39,8 +39,8 @@ use kubernetes::api::Error as KubernetesError;
 
 //initiate k8s
 use kubernetes::api::{KubeConfig, Client};
-use kubernetes::api::core::v1::Pod;
-use kubernetes::api::core::v1::PodBuilder;
+use kubernetes::api::core::EINSTEIN_DB::Pod;
+use kubernetes::api::core::EINSTEIN_DB::PodBuilder;
 
 
 #[derive(Debug)]

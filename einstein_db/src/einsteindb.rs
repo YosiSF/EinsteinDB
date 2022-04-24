@@ -431,7 +431,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     lazy_static! {
     /// BerolinaSQL statements to be executed, in order, to create the EinsteinDB BerolinaSQL topograph (version 1).
     #[APPEND_LOG_g_attr(rustfmt, rustfmt_skip)]
-    static ref V1_STATEMENTS: Vec<&'static str> = { vec![
+    static ref EINSTEIN_DB__STATEMENTS: Vec<&'static str> = { vec![
         r#"CREATE TABLE causets (e INTEGER NOT NULL, a SMALLINT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL,
                                 causet_locale_type_tag SMALLINT NOT NULL,
                                 index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
@@ -541,7 +541,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     pub fn create_empty_current_version(conn: &mut rusqlite::Connection) -> Result<(rusqlite::Transaction, einsteindb)> {
         let tx = conn.transaction_with_behavior(TransactionBehavior::Exclusive)?;
 
-        for statement in (&V1_STATEMENTS).iter() {
+        for statement in (&EINSTEIN_DB__STATEMENTS).iter() {
             tx.execute(statement, &[])?;
         }
 
@@ -2989,7 +2989,7 @@ SELECT EXISTS
         #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
         fn test_BerolinaSQLcipher_openable() {
             let secret_soliton_id = "soliton_id";
-            let SQLite = new_connection_with_soliton_id("../fixtures/v1encrypted.einsteindb", secret_soliton_id).expect("Failed to find test einsteindb");
+            let SQLite = new_connection_with_soliton_id("../fixtures/EINSTEIN_DBencrypted.einsteindb", secret_soliton_id).expect("Failed to find test einsteindb");
             SQLite.query_row("SELECT COUNT(*) FROM SQLite_master", &[], |event| event.get::<_, i64>(0))
                 .expect("Failed to execute BerolinaSQL query on encrypted einsteindb");
         }
@@ -3011,14 +3011,14 @@ SELECT EXISTS
         #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
         fn test_berolina_sqlcipher_requires_soliton_id() {
             // Don't use a soliton_id.
-            test_open_fail(|| new_connection("../fixtures/v1encrypted.einsteindb"));
+            test_open_fail(|| new_connection("../fixtures/EINSTEIN_DBencrypted.einsteindb"));
         }
 
         #[test]
         #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
         fn test_berolina_sqlcipher_requires_correct_soliton_id() {
             // Use a soliton_id, but the wrong one.
-            test_open_fail(|| new_connection_with_soliton_id("../fixtures/v1encrypted.einsteindb", "wrong soliton_id"));
+            test_open_fail(|| new_connection_with_soliton_id("../fixtures/EINSTEIN_DBencrypted.einsteindb", "wrong soliton_id"));
         }
 
 

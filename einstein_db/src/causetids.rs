@@ -16,7 +16,7 @@
 
 use einstein_db::Causetid;
 
-// Added in BerolinaSQL topograph v1.
+// Added in BerolinaSQL topograph EINSTEIN_DB.
 pub const EINSTEINDB_SOLITONID: Causetid = 1;
 pub const EINSTEINDB_PART_EINSTEINDB: Causetid = 2;
 pub const EINSTEINDB_TX_INSTANT: Causetid = 3;

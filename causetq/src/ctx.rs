@@ -1,6 +1,44 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
+use crate::{
+    causetq::{
+        config::Config,
+        error::{Error, Result},
+        metrics::{self, Metrics},
+        storage::{self, Storage},
 
+    },
+    config::Config as CausetQConfig,
+    storage::{self, Storage as CausetQStorage},
+};
+
+
+
+
+
+use std::{
+    collections::HashMap,
+    sync::{Arc, RwLock},
+};
+//grpc
+use grpc::{ChannelBuilder, EnvBuilder};
+//crossbeam
+use crossbeam::sync::MsQueue;
+//tokio
+use tokio::{
+    runtime::{Builder, Runtime},
+    sync::{mpsc, oneshot},
+};
+//tokio-timer
+use tokio_timer::{self, timer::Handle};
+//tokio-threadpool
+use tokio_threadpool::ThreadPool;
+//tokio-io
+use tokio_io::{AsyncRead, AsyncWrite};
+//k8s
+use k8s_openapi::api::core::EINSTEIN_DB::{
+    Endpoints, EndpointsList, EndpointsSubset, EndpointsUpdate,
+};
 use fdb::{FdbTransactional, FdbReadOnly};
 use std::sync::Arc;
 use std::time::Duration;
@@ -17,6 +55,174 @@ use gremlin_capnp::g_message_reader::{g_message_reader_get_message_body_as_text,
 //einstein_ml proto
 use einstein_ml_capnp::einstein_ml_message;
 use einstein_ml_capnp::einstein_ml_message_reader;
+
+
+/*
+#[derive(Debug, Deserialize, Clone, Copy, Eq, PartialEq)]
+pub enum AuthDomain {
+    #[serde(rename = "local")]
+    Local,
+    #[serde(rename = "external")]
+    External,
+}
+
+impl fmt::Display for AuthDomain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq)]
+pub struct Role {
+    #[serde(rename = "role")]
+    name: String,
+    bucket_name: Option<String>,
+}
+
+impl Role {
+    pub fn new(name: String, bucket_name: impl Into<Option<String>>) -> Self {
+        Self {
+            name,
+            bucket_name: bucket_name.into(),
+        }
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn bucket(&self) -> Option<&String> {
+        self.bucket_name.as_ref()
+    }
+}
+
+#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+pub struct RoleAndDescription {
+    #[serde(flatten)]
+    role: Role,
+    name: String,
+    desc: String,
+}
+
+impl RoleAndDescription {
+    pub fn role(&self) -> &Role {
+        self.role.borrow()
+    }
+
+    pub fn display_name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn description(&self) -> &str {
+        &self.desc
+    }
+}
+
+#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+pub struct Origin {
+    #[serde(rename = "type")]
+    origin_type: String,
+    name: Option<String>,
+}
+
+impl Origin {
+    pub fn new(origin_type: impl Into<String>, name: impl Into<Option<String>>) -> Self {
+        Self {
+            origin_type: origin_type.into(),
+            name: name.into(),
+        }
+    }
+
+    pub fn origin_type(&self) -> &str {
+        self.origin_type.as_str()
+    }
+
+    pub fn name(&self) -> Option<&String> {
+        self.name.as_ref()
+    }
+}*/
+
+
+
+
+///!AuthDomain is the domain of the authorization.
+///
+/// # Examples
+///
+/// ```
+/// use causetq::auth::AuthDomain;
+///
+/// let auth_domain = AuthDomain::Local;
+/// assert_eq!(auth_domain, AuthDomain::Local);
+/// ```
+///
+///
+
+
+///!Role is the role of the authorization.
+///
+/// # Examples
+///
+/// ```
+/// use causetq::auth::Role;
+///
+/// let role = Role::new("admin".to_string(), None);
+/// assert_eq!(role.name(), "admin");
+/// assert_eq!(role.bucket(), None);
+/// ```
+
+//k8s auth
+#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+pub struct Role {
+    #[serde(rename = "role")]
+    name: String,
+    bucket_name: Option<String>,
+}
+
+//kubernetes isolated namespace
+#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+pub struct IsolatedNamespace {
+    #[serde(rename = "namespace")]
+    name: String,
+    #[serde(rename = "namespace_id")]
+    namespace_id: String,
+}
+
+
+#[derive(Debug, Deserialize, Clone, Eq, PartialEq)]
+pub struct RoleAndDescription {
+    #[serde(rename = "role")]
+    name: String,
+    #[serde(rename = "description")]
+    description: String,
+}
+
+
+impl RoleAndDescription {
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /// #  Causetq Context
 ///

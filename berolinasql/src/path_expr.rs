@@ -58,9 +58,9 @@ use diesel::prelude::*;
 use diesel::sql_types::{Text, Nullable};
 use diesel::sql_query;
  //kubernetes specific
-use k8s_openapi::api::core::v1::{Pod, PodList, PodStatus, ContainerStatus, ContainerState, ContainerStateTerminated};
-use k8s_openapi::api::core::v1::{PodSpec, Container, ContainerStateRunning, ContainerStateWaiting};
-use k8s_openapi::apimachinery::pkg::apis::meta::v1::{ObjectMeta, LabelSelector};
+use k8s_openapi::api::core::EINSTEIN_DB::{Pod, PodList, PodStatus, ContainerStatus, ContainerState, ContainerStateTerminated};
+use k8s_openapi::api::core::EINSTEIN_DB::{PodSpec, Container, ContainerStateRunning, ContainerStateWaiting};
+use k8s_openapi::apimachinery::pkg::apis::meta::EINSTEIN_DB::{ObjectMeta, LabelSelector};
 use diesel::sql_query::SqlQuery;
  //use prost for protobuf
 use prost::Message;

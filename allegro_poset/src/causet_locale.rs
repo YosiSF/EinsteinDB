@@ -245,6 +245,6 @@ pub enum causet<V> {
         a: AttributePlace,
         v: ValuePlace<V>,
     },
-    // Like {:einsteindb/id "tempid" a1 v1 a2 causet_record}.
+    // Like {:einsteindb/id "tempid" a1 EINSTEIN_DB a2 causet_record}.
     MapNotation(MapNotation<V>),
 }
