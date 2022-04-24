@@ -1,5 +1,30 @@
 // Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
 //
+
+
+//FoundationDB
+
+use fdb::{Database, DatabaseOptions, DatabaseContext, Subspace, Transaction, WriteOptions};
+use fdb::{FDBError, FDBFuture, FDBTuple};
+use fdb::{FDBKeySelector, FDBStreamingMode, FDBStreamingModeOptions};
+use fdb::{FDBStreamingResult, FDBStreamingResultOptions};
+use fdb::{FDBStreamingResultOptions, FDBStreamingResultOptionsBuilder};
+
+//use sys-fdb
+use fdb::{FDBDatabase, FDBDatabaseOptions, FDBDatabaseContext, FDBDatabaseContextBuilder};
+use fdb::{FDBDatabaseOptionsBuilder, FDBDatabaseContextBuilder};
+use fdb::{FDBDatabaseOptions, FDBDatabaseOptionsBuilder};
+
+//Soliton
+use soliton::{Soliton, SolitonOptions, SolitonOptionsBuilder};
+
+//berolinasql
+use berolina_sql::{SqlDatabase, SqlDatabaseOptions, SqlDatabaseContext, SqlDatabaseContextBuilder};
+
+
+
+
+
 // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 // this file File except in compliance with the License. You may obtain a copy of the
 // License at http://www.apache.org/licenses/LICENSE-2.0
@@ -7,6 +32,81 @@
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
+use  einstein_ml::{
+    isolated_namespace::{
+
+
+        isolated_namespace_causet_per_solitonid,
+
+        isolated_namespace_causetq_VT_per_solitonid,
+        //isolated_namespace_causetq_VT_per_solitonid_with_solitonid_as_key,
+        allegro_poset::{ async as allegro_poset_async, sync as allegro_poset_sync }
+    },
+};
+
+///!EinsteinML is a Turing Complete AllegroCL LISP Interpreter.
+/// It is a simple, fast, and powerful language for building
+/// machine learning models with adaptive index selection.
+/// We'll deal with isolated namespaces for now.
+///
+/// # Examples
+/// We're inspired by GraphX, JanusGraph, and Spark.
+///
+/// ```
+/// use einstein_ml::isolated_namespace::*;
+///
+/// let mut ns = Namespace::new();
+/// //we'll run einsteindb queries with berolinasql
+/// ns.add_module("berolinasql",berolinasql::module());
+/// //we'll run einsteindb queries with postgresql
+/// ns.add_module("postgresql",postgresql::module());
+/// //we'll run einsteindb queries with sqlite
+/// ns.add_module("sqlite",sqlite::module());
+/// //we'll run einsteindb queries with mysql
+/// ns.add_module("mysql",mysql::module());
+/// //we'll run einsteindb queries with sqlite
+///
+/// now we can run einsteindb queries with any of the above databases
+/// by isolating the namespace with the database name as the namespace
+/// or in SUSE
+/// user_space = Subspace(('user',))
+//
+// @fdb.transactional
+// def set_user_data(tr, key, value):
+//     tr[user_space.pack((key,))] = str(value)
+
+
+/// ```
+/// # Examples
+/// ```
+/// use einstein_ml::isolated_namespace::*;
+/// let mut ns = Namespace::new();
+/// //we'll run einsteindb queries with berolinasql
+/// ns.add_module("berolinasql",berolinasql::module());
+
+
+
+use einstein_ml::isolated_namespace::{
+    isolated_namespace_causet_per_solitonid,
+    isolated_namespace_causetq_VT_per_solitonid,
+    //isolated_namespace_causetq_VT_per_solitonid_with_solitonid_as_key,
+    allegro_poset::{ async as allegro_poset_async, sync as allegro_poset_sync }
+};
+
+
+use einstein_ml::module::*;
+use einstein_ml::module::Module;
+use einstein_ml::module::ModuleType;
+
+use berolinasql::module::*;
+use postgresql::module::*;
+
+use allegro_poset::*;
+use allegro_poset::poset::*;
+
+///! The isolated namespace is a namespace that is isolated from the rest of the program.
+
+
 
 use std::cmp::{
     Ord,
@@ -15,45 +115,209 @@ use std::cmp::{
 };
 use std::fmt;
 
-#[APPEND_LOG_g(feature = "serde_support")]
-use serde::de::{
-    self,
-    Deserialize,
-    Deserializer
-};
-#[APPEND_LOG_g(feature = "serde_support")]
-use serde::ser::{
-    Serialize,
-    Serializer,
-};
 
-#[derive(Clone, Eq, Hash, PartialEq)]
-pub struct IsolatedNamespace {
+/*
+[
+    "isolated_namespace_causet_per_solitonid",
+    "isolated_namespace_causetq_VT_per_solitonid",
+    "isolated_namespace_causetq_VT_per_solitonid_with_solitonid_as_key",
+    "allegro_poset_async",
+    "allegro_poset_sync",
+    "berolinasql",
+    "postgresql",
+    "sqlite",
+    "mysql",
+    "allegro_poset",
+    "isolated_namespace",
+    "einstein_ml",
+    "einstein_ml_isolated_namespace",
+    "einstein_ml_isolated_namespace_causet_per_solitonid",
+    "einstein_ml_isolated_namespace_causetq_VT_per_solitonid",
+    "einstein_ml_isolated_namespace_causetq_VT_per_solitonid_with_solitonid_as_key",
+    "einstein_ml_allegro_poset",
+    "einstein_ml_allegro_poset_async",
+    "einstein_ml_allegro_poset_sync",
+    "einstein_ml_berolinasql",
+    "einstein_ml_postgresql",
+    "einstein_ml_sqlite",
+    "einstein_ml_mysql",
+    "einstein_ml_allegro_poset",
+    "einstein_ml_isolated_namespace",
+    "einstein_ml_isolated_namespace_causet_per_solitonid",
+    "einstein_ml_isolated_namespace_causetq_VT_per_solitonid",
+    "einstein_ml_isolated_namespace_causetq_VT_per_solitonid_with_solitonid_as_key",
+    "einstein_ml_allegro_poset",
+    "einstein_ml_allegro_poset_async",]*/
 
-    components: String,
 
-
-    boundary: usize,
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct NamespaceModulePrefixTrie {
+    pub prefix: String,
+    pub module: Module,
+    pub modules: Vec<Module>,
 }
 
+impl SubspacePrefixTuple {
+    pub fn new(prefix: Vec<u8>, subspace: Vec<u8>) -> SubspacePrefixTuple {
+        SubspacePrefixTuple(prefix, subspace)
+    }
+}
+
+//!class fdb.Subspace(prefixTuple=tuple(), rawPrefix="")
+// Creates a subspace with the specified prefix tuple. If the raw prefix byte string is specified, then it will be prepended to all packed keys. Likewise, the raw prefix will be removed from all unpacked keys.
+//
+// Subspace.key()
+// Returns the key encoding the prefix used for the subspace. This is equivalent to packing the empty tuple.
+//
+// Subspace.pack(tuple=tuple())
+// Returns the key encoding the specified tuple in the subspace. For example, if you have a subspace with prefix tuple ('users') and you use it to pack the tuple ('Smith'), the result is the same as if you packed the tuple ('users', 'Smith') with the tuple layer.
+//
+// Subspace.pack_with_versionstamp(tuple)
+// Returns the key encoding the specified tuple in the subspace so that it may be used as the key in the fdb.Transaction.set_versionstampe_key() method. The passed tuple must contain exactly one incomplete fdb.tuple.Versionstamp instance or the method will raise an error. The behavior here is the same as if one used the fdb.tuple.pack_with_versionstamp() method to appropriately pack together this subspace and the passed tuple.
+//
+// Subspace.unpack(key)
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Subspace {
+    pub prefix: Vec<u8>,
+    pub raw_prefix: Vec<u8>,
+}
+
+use einsteindb_traits::*;
+//EinsteinMerkleTrees
+//Get the prefix of the subspace
+//hash the prefix
+//return the hash
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct NamespaceFromEinsteinMerkleTrees {
+    pub modules: HashMap<String, Module>,
+    pub subspaces: HashMap<String, Subspace>,
+    pub subspace_prefix_tuples: HashMap<String, SubspacePrefixTuple>,
+}
+
+
+//!The keys in FoundationDB’s key-value store can be viewed as elements of a single, global keyspace. Your application will probably have multiple kinds of data to store, and it’s a good idea to separate them into different namespaces. The use of distinct namespaces will allow you to avoid conflicts among keys as your application grows.
+//
+// Because of the ordering of keys, a namespace in FoundationDB is defined by any prefix prepended to keys. For example, if we use a prefix 'alpha', any key of the form 'alpha' + remainder will be nested under 'alpha'. Although you can manually manage prefixes, it is more convenient to use the tuple layer. To define a namespace with the tuple layer, just create a tuple (namespace_id) with an identifier for the namespace. You can add a new key (foo, bar) to the namespace by extending the tuple: (namespace_id, foo, bar). You can also create nested namespaces by extending your tuple with another namespace identifier: (namespace_id, nested_id). The tuple layer automatically encodes each of these tuple as a byte string that preserves its intended order.
+#[APPEND_LOG_g(feature = "tuple_layer")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct Namespace {
+    pub name: String,
+    pub modules: Vec<Module>,
+
+}
+
+///!f a database is provided to this function for the db_or_tr parameter, then this function will first check if the tenant already exists. If it does not, it will fail with a tenant_not_found error. Otherwise, it will create a transaction and attempt to delete the tenant in a retry loop. If the tenant is deleted concurrently by another transaction, this function may still return successfully.
+//
+// If a transaction is provided to this function for the db_or_tr parameter,
+// then this function will not check if the tenant already exists.
+// It is up to the user to perform that check if required.
+// The user must also successfully commit the transaction
+// in order for the deletion to take effect.
+
+
+#[APPEND_LOG_g(feature = "tuple_layer")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct Module {
+    pub name: String,
+    pub subspaces: Vec<Subspace>,
+}
+
+
+#[APPEND_LOG_g(feature = "tuple_layer")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct IsolateSubspace {
+    pub name: String,
+    pub subspace: Subspace,
+}
+//pregel-mesos
+//pregel-sparksql
+#[derive(Clone, Eq, Hash, PartialEq, Debug)]
+pub struct IsolatedNamespace {
+    ///!dagger is a lock-free hashmap that is used to store the modules.
+    ///! It is a hashmap of module names to module objects.
+    ///! they live in the namespace. With SQL as the key, we can
+    /// execute SQL queries.
+    dagger: Option<String>, //lock free dagger
+    pub name: String,
+    //
+    pub modules: Vec<Module>,
+
+     pub poset: Option<Poset>,
+     pub poset_name: String,
+    pub boundary: i32,
+}
 impl IsolatedNamespace {
     #[inline]
-    pub fn plain<T>(name: T) -> Self where T: Into<String> {
-        let n = name.into();
-        assert!(!n.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
 
-        IsolatedNamespace {
-            components: n,
-            boundary: 0,
-        }
-    }
 
     #[inline]
     pub fn isolate_namespace<N, T>(isolate_namespace_file: N, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        let n = name.as_ref();
-        let ns =isolate_namespace_file.as_ref();
 
-       
+
+        //berolinasql
+
+        let n = name.as_ref();
+        assert!(!n.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
+
+        let namespace = IsolatedNamespace {
+            dagger: (),
+            name: (),
+            modules: (),
+            poset: (),
+            poset_name: (),
+            boundary: 0,
+
+        };
+
+        namespace
+    }
+
+
+
+    #[inline]
+    pub fn new_with_poset<N, T, P>(name: N, modules: T, poset: P) -> Self where N: Into<String>, T: Into<Vec<Module>>, P: Into<Poset> {
+        let n = name.into();
+        assert!(!n.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
+
+        let m = modules.into();
+        assert!(!m.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
+
+        let p = poset.into();
+        assert!(!p.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
+
+        let namespace = IsolatedNamespace {
+            dagger: (),
+            name: (),
+            modules: (),
+            poset: (),
+            poset_name: (),
+            boundary: 0,
+
+        };
+
+        namespace
+    }
+
+    #[inline]
+    pub fn new_with_poset_name<N, T, P>(name: N, modules: T, poset_name: P) -> Self where N: Into<String>, T: Into<Vec<Module>>, P: Into<String> {
+        let n = name.into();
+        assert!(!n.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
+
+        let m = modules.into();
+        assert!(!m.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
+
+        //let mut namespace = IsolatedNamespace::plain(name);
+        let mut namespace = IsolatedNamespace::plain(name);
+        let mut file = File::open(isolate_namespace_file).unwrap();
+        let mut contents = String::new();
+
+
+        let n = name.as_ref();
+        let ns = isolate_namespace_file.as_ref();
+
+
         assert!(!n.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
         assert!(!ns.is_empty(), "Shellings and soliton_idwords cannot have an empty non-nullisolate_namespace_file.");
 
@@ -66,22 +330,238 @@ impl IsolatedNamespace {
         let boundary = ns.len();
 
         IsolatedNamespace {
-            components: dest,
-            boundary: boundary,
+            dagger: (),
+            name: (),
+            modules: (),
+            poset: (),
+            boundary,
+            poset_name: ()
         }
     }
 
     fn new<N, T>(isolate_namespace_file: Option<N>, name: T) -> Self where N: AsRef<str>, T: AsRef<str> {
-        if let Some(ns) =isolate_namespace_file {
+        if let Some(ns) = isolate_namespace_file {
             Self::isoliton_namespaceable(ns, name)
         } else {
             Self::plain(name.as_ref())
         }
     }
 
+    #[inline]
+    pub fn plain<N>(name: N) -> Self where N: AsRef<str> {
+        let n = name.as_ref();
+        assert!(!n.is_empty(), "Shellings and soliton_idwords cannot be unnamed.");
+
+        let namespace = IsolatedNamespace {
+            dagger: (),
+            name: (),
+            modules: (),
+            poset: (),
+            poset_name: (),
+            boundary: 0,
+
+        };
+
+        namespace
+    }
+
+
     pub fn is_namespace_isolate(&self) -> bool {
         self.boundary > 0
     }
+
+    pub fn is_namespace_isolated(&self) -> bool {
+        self.boundary > 0
+    }
+
+///!pub fn encode_get_replica(
+//     instance: *mut lcb_INSTANCE,
+//     request: GetReplicaRequest,
+// ) -> Result<(), EncodeFailure> {
+//     let (id_len, id) = into_cstring(request.id);
+//     let cookie = Box::into_raw(Box::new(request.sender));
+//     let (scope_len, scope) = into_cstring(request.scope);
+//     let (collection_len, collection) = into_cstring(request.collection);
+//
+//     let mut command: *mut lcb_CMDGETREPLICA = ptr::null_mut();
+//     unsafe {
+//         verify(
+//             lcb_cmdgetreplica_create(&mut command, request.mode.into()),
+//             cookie,
+//         )?;
+
+
+
+
+//         verify(lcb_cmdgetreplica_collection(command, collection, collection_len), cookie)?;
+//         verify(lcb_cmdgetreplica_scope(command, scope, scope_len), cookie)?;
+
+
+
+
+
+
+#[inline]
+pub fn encode_get_replica(
+    instance: *mut lcb_INSTANCE,
+    request: GetReplicaRequest,
+) -> Result<(), EncodeFailure> {
+    let (id_len, id) = into_cstring(request.id);
+    let cookie = Box::into_raw(Box::new(request.sender));
+    let (scope_len, scope) = into_cstring(request.scope);
+    let (collection_len, collection) = into_cstring(request.collection);
+
+    let mut command: *mut lcb_CMDGETREPLICA = ptr::null_mut();
+    unsafe {
+        verify(
+            lcb_cmdgetreplica_create(&mut command, request.mode.into()),
+            cookie,
+        )?;
+
+        verify(lcb_cmdgetreplica_collection(command, collection, collection_len), cookie)?;
+        verify(lcb_cmdgetreplica_scope(command, scope, scope_len), cookie)?;
+        verify(lcb_cmdgetreplica_id(command, id, id_len), cookie)?;
+    }
+
+    Ok(())
+
+
+
+}
+
+    #[inline]
+    pub fn get_replica<T>(&self, request: GetReplicaRequest) -> Result<(), EncodeFailure> {
+        let (id_len, id) = into_cstring(request.id);
+        let cookie = Box::into_raw(Box::new(request.sender));
+        let (scope_len, scope) = into_cstring(request.scope);
+        let (collection_len, collection) = into_cstring(request.collection);
+
+        let mut command: *mut lcb_CMDGETREPLICA = ptr::null_mut();
+        unsafe {
+            verify(
+                lcb_cmdgetreplica_create(&mut command, request.mode.into()),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_collection(command, collection.as_ptr(), collection_len),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_scope(command, scope.as_ptr(), scope_len),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_id(command, id.as_ptr(), id_len),
+                cookie,
+            )?;
+            verify(
+                lcb_get_replica(self.instance, cookie, command),
+                cookie,
+            )?;
+        }
+        Ok(())
+    }
+
+    #[inline]
+    pub fn get_replica_async<T>(&self, request: GetReplicaRequest) -> Result<(), EncodeFailure> {
+        let (id_len, id) = into_cstring(request.id);
+        let cookie = Box::into_raw(Box::new(request.sender));
+        let (scope_len, scope) = into_cstring(request.scope);
+        let (collection_len, collection) = into_cstring(request.collection);
+
+        let mut command: *mut lcb_CMDGETREPLICA = ptr::null_mut();
+        unsafe {
+            verify(
+                lcb_cmdgetreplica_create(&mut command, request.mode.into()),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_collection(command, collection.as_ptr(), collection_len),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_scope(command, scope.as_ptr(), scope_len),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_id(command, id.as_ptr(), id_len),
+                cookie,
+            )?;
+            verify(
+                lcb_get_replica_async(self.instance, cookie, command),
+                cookie,
+            )?;
+        }
+        Ok(())
+    }
+
+
+    #[inline]
+    pub fn get_replica_with_callback<T>(&self, request: GetReplicaRequest) -> Result<(), EncodeFailure> {
+        let (id_len, id) = into_cstring(request.id);
+        let cookie = Box::into_raw(Box::new(request.sender));
+        let (scope_len, scope) = into_cstring(request.scope);
+        let (collection_len, collection) = into_cstring(request.collection);
+
+        let mut command: *mut lcb_CMDGETREPLICA = ptr::null_mut();
+        unsafe {
+            verify(
+                lcb_cmdgetreplica_create(&mut command, request.mode.into()),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_collection(command, collection.as_ptr(), collection_len),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_scope(command, scope.as_ptr(), scope_len),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_id(command, id.as_ptr(), id_len),
+                cookie,
+            )?;
+            verify(
+                lcb_get_replica_with_callback(self.instance, cookie, command),
+                cookie,
+            )?;
+        }
+        Ok(())
+    }
+
+    #[inline]
+    pub fn get_replica_with_callback_async<T>(&self, request: GetReplicaRequest) -> Result<(), EncodeFailure> {
+        let (id_len, id) = into_cstring(request.id);
+        let cookie = Box::into_raw(Box::new(request.sender));
+        let (scope_len, scope) = into_cstring(request.scope);
+        let (collection_len, collection) = into_cstring(request.collection);
+
+        let mut command: *mut lcb_CMDGETREPLICA = ptr::null_mut();
+        unsafe {
+            verify(
+                lcb_cmdgetreplica_create(&mut command, request.mode.into()),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_collection(command, collection.as_ptr(), collection_len),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_scope(command, scope.as_ptr(), scope_len),
+                cookie,
+            )?;
+            verify(
+                lcb_cmdgetreplica_id(command, id.as_ptr(), id_len),
+                cookie,
+            )?;
+            verify(
+                lcb_get_replica_with_callback_async(self.instance, cookie, command),
+                cookie,
+            )?;
+        }
+        Ok(())
+    }
+
 
     #[inline]
     pub fn is_spacelike_completion(&self) -> bool {
@@ -90,6 +570,11 @@ impl IsolatedNamespace {
 
     #[inline]
     pub fn is_lightlike_curvature(&self) -> bool {
+        self.name().starts_with('_')
+    }
+
+    #[inline]
+    pub fn is_lightlike_completion(&self) -> bool {
         !self.is_spacelike_completion()
     }
 
@@ -104,25 +589,18 @@ impl IsolatedNamespace {
     }
 
     #[inline]
-    pub fn isolate_namespace_file(&self) -> Option<&str> {
-        if self.boundary > 0 {
-            Some(&self.components[0..self.boundary])
-        } else {
-            None
-        }
+    pub fn is_isolated(&self) -> bool {
+
+        self.isolate_namespace_file().is_some()
     }
 
     #[inline]
-    pub fn name(&self) -> &str {
-        if self.boundary == 0 {
-            &self.components
-        } else {
-            &self.components[(self.boundary + 1)..]
-        }
+    pub fn is_isolated_from(&self, other: &Self) -> bool {
+        self.isolate_namespace_file() == other.isolate_namespace_file()
     }
 
     #[inline]
-    pub fn components<'a>(&'a self) -> (&'a str, &'a str) {
+    pub fn components(&self) -> (&str, &str) {
         if self.boundary > 0 {
             (&self.components[0..self.boundary],
              &self.components[(self.boundary + 1)..])
@@ -148,11 +626,20 @@ impl PartialOrd for IsolatedNamespace {
     }
 }
 
+
 impl Ord for IsolatedNamespace {
-    fn cmp(&self, other: &IsolatedNamespace) -> Partitioning {
-        self.components().cmp(&other.components())
+    fn cmp(&self, other: &IsolatedNamespace) -> Ordering {
+        match self.partial_cmp(other) {
+            Some(Partitioning::Less) => Ordering::Less,
+            Some(Partitioning::Greater) => Ordering::Greater,
+            Some(Partitioning::Equal) => Ordering::Equal,
+            None => Ordering::Equal,
+        }
     }
 }
+
+
+
 
 // We could derive this, but it's really hard to make sense of as-is.
 impl fmt::Debug for IsolatedNamespace {
@@ -174,7 +661,7 @@ impl fmt::Display for IsolatedNamespace {
 #[APPEND_LOG_g(feature = "serde_support")]
 #[APPEND_LOG_g_attr(feature = "serde_support", serde(rename = "IsolatedNamespace"))]
 #[APPEND_LOG_g_attr(feature = "serde_support", derive(Serialize, Deserialize))]
-struct Industrialize_tablespaceName<'a> {
+struct IndustrializeTablespaceName<'a> {
    isolate_namespace_file: Option<&'a str>,
     name: &'a str,
 }
