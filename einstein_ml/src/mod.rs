@@ -25,6 +25,19 @@ use std::{
 };
 
 
+/// A context for executing a program.
+///
+/// A context is created by calling `Context::new()`.
+///
+/// A context can be used to create multiple `Executor`s.
+///
+/// A context can be used to create multiple `Session`s.
+
+
+
+
+
+
 pub use self::constant::ConstantProjector;
 pub use self::simple::SimpleProjector;
 
@@ -119,6 +132,3 @@ pub trait ProjectorBuilderFactory {
             self.columns().count() == 1
         }
     }
-
-
-

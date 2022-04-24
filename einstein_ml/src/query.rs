@@ -129,12 +129,8 @@ impl Variable {
 }
 
 
-impl fmt::Display for Variable {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.as_ref().0)
 
-    }
-}
+
 
 
 impl fmt::Debug for Variable {
@@ -157,20 +153,6 @@ impl fmt::Debug for Variable {
         write!(f, "{}", self.0.as_ref().0)
     }
 }
-
-
-impl fmt::Display for Variable {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.as_ref().0)
-    }
-}
-
-
-impl fmt::Debug for Variable {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0.as_ref().0)
-    }
-    }
 
 
 impl fmt::Debug for Variable {
@@ -927,16 +909,16 @@ impl Pattern {
                 // Not every parseable causet_locale is suitable for the causet field!
                 // As such, this is a failable constructor.
                 let e_v = e.to_pattern_causet_locale_place();
-                if let Some(v_e) = v.to_pattern_non_causet_locale_place() {
-                    return Some(Pattern {
+                return if let Some(v_e) = v.to_pattern_non_causet_locale_place() {
+                    Some(Pattern {
                         source: src,
                         causet: v_e,
                         attribute: k.to_reversed().into(),
                         causet_locale: e_v,
-                        tx: tx,
-                    });
+                        tx,
+                    })
                 } else {
-                    return None;
+                    None
                 }
             }
         }
@@ -945,7 +927,7 @@ impl Pattern {
             causet: e,
             attribute: a,
             causet_locale: v,
-            tx: tx,
+            tx,
         })
     }
 }
@@ -1035,8 +1017,8 @@ pub struct NotJoin {
 impl NotJoin {
     pub fn new(unify_vars: UnifyVars, clauses: Vec<WhereClause>) -> NotJoin {
         NotJoin {
-            unify_vars: unify_vars,
-            clauses: clauses,
+            unify_vars,
+            clauses,
         }
     }
 }
@@ -1153,8 +1135,8 @@ impl ParsedQuery {
 impl OrJoin {
     pub fn new(unify_vars: UnifyVars, clauses: Vec<OrWhereClause>) -> OrJoin {
         OrJoin {
-            unify_vars: unify_vars,
-            clauses: clauses,
+            unify_vars,
+            clauses,
             mentioned_vars: None,
         }
     }
@@ -1193,6 +1175,103 @@ impl ContainsVariables for WhereClause {
     fn accumulate_mentioned_variables(&self, acc: &mut BTreeSet<Variable>) {
         use self::WhereClause::*;
         match self {
+            &Eq(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &In(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &NotIn(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &Lt(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &Gt(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &Lte(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &Gte(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &Like(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &NotLike(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &IsNull(ref x) => x.accumulate_mentioned_variables(acc),
+            &IsNotNull(ref x) => x.accumulate_mentioned_variables(acc),
+            &Exists(ref x) => x.accumulate_mentioned_variables(acc),
+            &NotExists(ref x) => x.accumulate_mentioned_variables(acc),
+            &And(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &Or(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &Not(ref x) => x.accumulate_mentioned_variables(acc),
+        }
+    }
+}
+
+///! A `WhereClause` is a boolean expression that can be used to filter
+/// rows from a table.
+///
+/// The expression is evaluated in the context of a row, and the result
+/// is either `true` or `false`.
+///
+/// The expression can be used to filter rows from a table.
+///
+impl ContainsVariables for Expr {
+    fn accumulate_mentioned_variables(&self, acc: &mut BTreeSet<Variable>) {
+        use self::Expr::*;
+        match self {
+            &Column(ref x) => x.accumulate_mentioned_variables(acc),
+            &Literal(ref x) => x.accumulate_mentioned_variables(acc),
+            &Function(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &Case(ref x, ref y, ref z) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+                z.accumulate_mentioned_variables(acc);
+            },
+            &Cast(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &In(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &NotIn(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
+            &Between(ref x, ref y, ref z) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+                z.accumulate_mentioned_variables(acc);
+            },
+            &Lt(ref x, ref y) => {
+                x.accumulate_mentioned_variables(acc);
+                y.accumulate_mentioned_variables(acc);
+            },
             &OrJoin(ref o)         => o.accumulate_mentioned_variables(acc),
             &Pred(ref p)           => p.accumulate_mentioned_variables(acc),
             &Pattern(ref p)        => p.accumulate_mentioned_variables(acc),
@@ -1231,7 +1310,7 @@ impl OrJoin {
         (self.clauses, self.unify_vars, vars)
     }
 
-    pub fn mentioned_variables<'a>(&'a mut self) -> &'a BTreeSet<Variable> {
+    pub fn mentioned_variables(&mut self) -> &BTreeSet<Variable> {
         if self.mentioned_vars.is_none() {
             let m = self.collect_mentioned_variables();
             self.mentioned_vars = Some(m);

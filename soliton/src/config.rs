@@ -635,7 +635,7 @@ impl WriteNamespacedConfig {
         // Collects user defined properties.
         namespaced_opts.add_table_properties_collector_factory(
             "einsteindb.causet_model-properties-collector",
-            MvrsiPropertiesCollectorFactory::default(),
+            Violetabft_oocPropertiesCollectorFactory::default(),
         );
         let f = PropertiesCollectorFactory {
             prop_size_index_distance: self.prop_size_index_distance,

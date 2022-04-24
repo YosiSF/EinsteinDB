@@ -159,5 +159,6 @@ pub enum Cmd {
         )]
         /// Column family names, combined from default/lock/write
         show_APPEND_LOG_: Vec<String>,
-    },
+    }
+}
 /// Print all raw soliton_ids in the range

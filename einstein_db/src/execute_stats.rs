@@ -232,13 +232,12 @@ impl ExecSummaryCollector for ExecSummaryCollectorDisabled {
 
     #[inline]
     fn new(_output_index: usize) -> ExecSummaryCollectorDisabled {
-
         ExecSummaryCollectorDisabled
     }
 
     #[inline]
     fn on_start_iterate(&mut self) -> Self::DurationRecorder {
-       self.on_start_iterate()  // This is a no-op.
+        self.on_start_iterate()  // This is a no-op.
         //     unimplemented!()
     }
 
@@ -249,20 +248,11 @@ impl ExecSummaryCollector for ExecSummaryCollectorDisabled {
     }
 
     #[inline]
-    fn collect(&mut self, _target: &mut [ExecSummary]) {
-
-    }
+    fn collect(&mut self, _target: &mut [ExecSummary]) {}
+}
 
 
 /// Combines an `ExecSummaryCollector` with another type. This inner type `T`
-/// typically `Executor`/`BatchExecutor`, such that `WithSummaryCollector<C, T>`
-/// would implement the same trait and collects the statistics into `C`.
-pub struct WithSummaryCollector<C: ExecSummaryCollector, T> {
-    pub summary_collector: C,
-    pub inner: T,
-    pub squuid: hex::encode(Uuid::new_v4()),
-    pub causet_locales: Vec<String>,
-    pub merkle: HashMap<String, String, BuildHasherDefault<FnvHasher>>,
+/// typically `Executor`/`BatchExecutor`, such that `with_summary_collector<C, T>`
 
-}
 
