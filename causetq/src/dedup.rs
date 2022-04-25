@@ -269,10 +269,6 @@ impl RcCounter {
     /// let d = c.clone();
     /// assert_eq!(d.next(), 5);
     /// assert_eq!(c.next(), 6);
-    /// ```
-    pub fn next(&self) -> u64 {
-        self.rc as u64
-    }
 
 
 

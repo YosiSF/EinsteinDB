@@ -41,6 +41,47 @@ use causet::{
 
 };
 
+//Optimistic lock options
+//!Using optimistic locks, a read-only node access (i.e., the majority of all operations in a B-tree) does not acquire the lock and does not increment the version counter. Instead, it performs the following steps:
+// 1. read dagger version (restart if dagger is not free)
+// 2. access node introduce a read lock
+// 3. read the version again and validate that it has not changed in the meantime
+// If the last step (the validation of the dagger) fails, the operation has to be restarted. Write operations
+// on the other hand, are more similar to traditional locking:
+// 1. acquire dagger and lock (wait if necessary)
+// 2. access/write to node
+// 3. increment version and unlock node (release dagger)
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct EinsteindbKey(pub [u8; 32]);
+
+
+impl EinsteindbKey {
+    pub fn new(key: [u8; 32]) -> Self {
+        EinsteindbKey(key)
+    }
+}
+
+
+impl Hashable for EinsteindbKey {
+    fn hash(&self) -> Hash {
+        let mut hasher = Hasher::new();
+        hasher.update(&self.0);
+        hasher.finalize()
+    }
+}
+
+
+impl Signable for EinsteindbKey {
+    fn sign(&self, private_key: &WotsPrivateKey) -> WotsSignature {
+        private_key.sign(&self.0)
+    }
+}
+
+
+
 pub fn read_u32(buf: &[u8]) -> u32 {
     let mut reader = std::io::Cursor::new(buf);
     reader.read_u32::<BigEndian>().unwrap()
@@ -132,7 +173,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::iter::{once, repeat};
 use std::local_path::local_path;
-use std::ops::;
+use std::ops::Deref;
 use topograph::TopographBuilding;
 use tx::transact;
 use types::{
@@ -1453,13 +1494,7 @@ SELECT EXISTS
             self.allocate_causetids(partition, 1).start
         }
 
-        /// Allocate `n` fresh causetids in the given `partition`.
-        pub(crate) fn allocate_causetids(&mut self, partition: &str, n: usize) -> <i64> {
-            match self.get_mut(partition) {
-                Some(partition) => partition.allocate_causetids(n),
-                None => panic!("Cannot allocate causetid from unCausetLocaleNucleon partition: {}", partition)
-            }
-        }
+
 
         pub(crate) fn contains_causetid(&self, causetid: Causetid) -> bool {
             self.causet_locales().any(|partition| partition.contains_causetid(causetid))
@@ -2849,6 +2884,9 @@ SELECT EXISTS
             [:einsteindb/add "zot" :page/ref "bar"]
             [:einsteindb/add "zot" :einsteindb/solitonid :other/solitonid]
         ]"#);
+
+            ///! This is the expected result.  The `:other/solitonid` is a tempid, and is not
+            /// resolved until the next round of upserts.
             assert_matches!(tempids(&report),
                         "{\"bar\" ?b
                           \"foo\" ?f
@@ -2908,6 +2946,7 @@ SELECT EXISTS
             assert_matches!(conn.last_transaction(),
                         "[[?tx :einsteindb/txInstant ?ms ?tx true]]");
         }
+
 
         #[test]
         fn test_term_typechecking_issue_663() {
@@ -3031,4 +3070,66 @@ SELECT EXISTS
         }
     }   // end of mod test_berolina_sqlcipher
 }
+
+///!Using optimistic locks, a read-only node access (i.e., the majority of all operations in a B-tree) does not acquire the lock and does not increment the version counter. Instead, it performs the following steps:
+// 1. read lock version (restart if lock is not free)
+// 2. access node
+// 3. read the version again and validate that it has not changed in the meantime
+// If the last step (the validation) fails, the operation has to be restarted. Write operations, on the other hand, are more similar to traditional locking:
+// 1. acquire lock (wait if necessary)
+// 2. access/write to node
+// 3. increment version and unlock node
+// 4. write version to node
+// 5. unlock node
+// The read-only node access is implemented by the following algorithm:
+// 1. read version
+// 2. read node
+// 3. read version again
+// 4. if version has changed, restart
+// 5. return node
+// The write operation is implemented by the following algorithm:
+
+#[cfg(test)]
+mod test_berolina_sqlcipher_optimistic_lock {
+    use super::*;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::thread;
+    use std::time::Duration;
+
+    #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
+    fn new_connection_with_soliton_id(db_path: &str, soliton_id: &str) -> rusqlite::Result<BerolinaSQL> {
+        let db_path = std::path::Path::new(db_path);
+        let db_path = db_path.to_str().expect("Failed to convert path to string");
+        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
+        let db_path = db_path.as_c_str();
+        let db_path = db_path.as_ptr();
+        let soliton_id = std::ffi::CString::new(soliton_id).expect("Failed to convert string to CString");
+        let soliton_id = soliton_id.as_c_str();
+        let soliton_id = soliton_id.as_ptr();
+        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
+        let db_path = db_path.as_c_str();
+        let db_path = db_path.as_ptr();
+        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
+        let db_path = db_path.as_c_str();
+        let db_path = db_path.as_ptr();
+        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
+        let db_path = db_path.as_c_str();
+        let db_path = db
+            .path()
+            .to_str()
+            .expect("Failed to convert path to string");
+        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
+        db_path.as_c_str();
+        db_path.as_ptr();
+        std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
+        db_path.as_c_str();
+        db_path.as_ptr();
+        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
+        db_path.as_c_str();
+        db_path.as_ptr();
+        std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
+    }
+    }
+
 

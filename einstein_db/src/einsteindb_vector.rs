@@ -3,6 +3,58 @@
 use std::fmt::Debug;
 use std::ops::Deref;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{cmp, mem, ptr};
+use einstein_ml::{
+    hash::{BuildHasher, Hash, Hasher},
+    vec::{IntoIter, Iter, IterMut, Vec},
+};
+
+use einsteindb::{
+    alloc::{Alloc, Global, Layout},
+    boxed::Box,
+    raw_vec::RawVec,
+    vec::{DVec, IntoIter as RawIntoIter, Iter as RawIter, IterMut as RawIterMut},
+};
+
+use berolina_sql::{
+    types::{
+        Array, ArrayBase, ArrayData, ArrayDataRef, ArrayRef, ArrayType, DataType,
+        DataType::Array,
+    },
+    ArrayRefMut,
+};
+
+use allegro_poset::{
+    einstein_db::{
+        einstein_db_vector::{EinsteinDBVector, EinsteinDBVectorRef, EinsteinDBVectorRefMut},
+        einstein_db_vector_ref::EinsteinDBVectorRefRef,
+    },
+    einstein_db_vector_ref::EinsteinDBVectorRefRefMut,
+};
+
+
+
+
+///! # EinsteinDB Vector
+///  A vector that is backed by a `EinsteinDBVector`.
+///  This is a wrapper around `EinsteinDBVector` that provides a `Vec` interface.
+/// This is useful for storing data in a `EinsteinDB` database.
+/// # Examples
+/// ```
+/// use einstein_db::{
+///    einstein_db_vector::EinsteinDBVector,
+///   einstein_db_vector::EinsteinDBVectorRef,
+///  einstein_db_vector::EinsteinDBVectorRefMut,
+/// !
+/// };
+/// use einstein_ml::{
+///   hash::{BuildHasher, Hash, Hasher},
+///  vec::{IntoIter, Iter, IterMut, Vec},
+/// };
+///
+/// let mut v = EinsteinDBVector::new();
+/// v.push(1);
 
 
 use allegro_poset::causet_locale::CausetLocale;
