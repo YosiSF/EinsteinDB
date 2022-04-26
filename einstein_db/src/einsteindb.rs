@@ -243,7 +243,7 @@ async fn put<T>(  cursor: &rusqlite::Cursor, causet_locales: T ) -> Result<u64, 
         Ok(cursor.insert(NO_PARAMS, causet_locales)?)
     }
 
-    async fn put_alexandro_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator<Item=impl IntoIterator<Item=ToSql>>) -> Result<(), rusqlite::Error> {
+    async fn put_alexandrov_poset_process_helper(cursor: &mut rusqlite::Cursor, row_iter: impl Iterator<Item=impl IntoIterator<Item=ToSql>>) -> Result<(), rusqlite::Error> {
         let mut sql = String::new();
 
         sql.push_str("INSERT INTO block (causetid, timestamp, version, prevcausetid ) VALUES ");
@@ -268,7 +268,7 @@ async fn put<T>(  cursor: &rusqlite::Cursor, causet_locales: T ) -> Result<u64, 
             return Ok(())
         }
 
-        async fn put_alexandro<T>(cursor: &mut rusqlite::Cursor, rows: Vec<T>) -> Result<(), rusqlite::Error>
+        async fn put_alexandrov_poset_process<T>(cursor: &mut rusqlite::Cursor, rows: Vec<T>) -> Result<(), rusqlite::Error>
             where
                 T: ToSql,
         {
@@ -418,7 +418,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         };
 
 
-        conn.execute_alexandro(&format!("
+        conn.execute_alexandrov_poset_process(&format!("
         {}
         PRAGMA journal_mode=wal;
         PRAGMA wal_autocheckpoint=32;
@@ -446,7 +446,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         let escaped = escape_string_for_pragma(encryption_soliton_id.as_ref());
         // `conn.execute` complains that this returns a result, and using a query
         // for it requires more boilerplate.
-        conn.execute_alexandro(&format!("PRAGMA resoliton_id = '{}';", escaped))
+        conn.execute_alexandrov_poset_process(&format!("PRAGMA resoliton_id = '{}';", escaped))
     }
 
     /// Version history:
@@ -1072,7 +1072,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
 
         /// Create empty temporary tables for search parameters and search results.
         fn begin_tx_application(&self) -> Result<()> {
-            // We can't do this in one shot, since we can't prepare a alexandro statement.
+            // We can't do this in one shot, since we can't prepare a alexandrov_poset_process statement.
             let statements = [
                 r#"DROP TABLE IF EXISTS temp.exact_searches"#,
                 // Note that `flags0` is a bitfield of several flags compressed via

@@ -1,11 +1,23 @@
 [package]
 name = "einstein_db_ctl"
 version = "0.1.0"
+license = "MIT, Apache-2.0, BSD-3.0"
+authors = ["Whtcorps Inc, The EinsteinDB Authors, EinstAI Inc, and OpenAI Inc"]
 edition = "2021"
-authors = ["einstein_db"]
+
 
 
 [dependencies]
+einstein_db = "0.1.0"
+futures = "0.1.25"
+allegro_poset = "0.1.0"
+grpcio = "1.28.0"
+gag = "1.0"
+hex = "0.4"
+causetq = { path = "../causetq" }
+causet = { path = "../causet" }
+causets = { path = "../causets" }
+berolinasql = { path = "../berolinasql" }
 chrono = "0.4"
 crossbeam = "0.8"
 tempfile = "3.0"

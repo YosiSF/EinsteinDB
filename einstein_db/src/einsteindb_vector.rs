@@ -1,6 +1,24 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use std::fmt::Debug;
+use std::io::{self, Write};
+use std::mem;
+use std::ops::{Deref, DerefMut};
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering::{Acquire, Release, SeqCst};
+use collections::HashMap;
+use einsteindb_util::collections::HashSet;
+use einsteindb_util::hash::{BuildHasher, Hash, Hasher};
+use einsteindb_util::slice::{self, Slice, SliceConcatExt};
+use prometheus::local::LocalHistogram;
+use rand::{self, Rng};
+use prometheus::{Self, proto, Encoder, HistogramOpts, HistogramTimer, HistogramTimerOpts, GaugeVec, Gauge, register_int_gauge_vec};
+use std::sync::Arc;
+
+use crate::sys::SysQuota;
+use crate::util::{self, cmp, cmp_opt, make_slice_hash};
+
+use time::Duration;
 use std::ops::Deref;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -25,39 +43,402 @@ use berolina_sql::{
     ArrayRefMut,
 };
 
+///!Making Sense of Relativistic Distributed Systems
 use allegro_poset::{
     einstein_db::{
         einstein_db_vector::{EinsteinDBVector, EinsteinDBVectorRef, EinsteinDBVectorRefMut},
         einstein_db_vector_ref::EinsteinDBVectorRefRef,
     },
     einstein_db_vector_ref::EinsteinDBVectorRefRefMut,
+    AllegroPoset,
+    causet_locale::CausetLocale,
+    causet_locale::CausetLocaleRef,
+    causet_locale::CausetLocaleRefMut
 };
 
 
 
+// // Alice is travelling at half the speed of light relative to Bob,
+// // but she sees an event at 0.5 seconds, while Bob sees an event
+// // at 1 second. We can use a similar calculation to compute Alice's
+// // timestamp:
+// // t_2 = t_0 - t_1.
+// // If we solve for t_0, we get t_0 = t_1 + t_1 - t_1 = 2 * t_1.
+// // We can use this equation to compute Alice's timestamp.
+// // We can use this equation to compute Bob's timestamp.
+// // Alice and Bob's timestamps are not equal. We can't say that Alice's
+// // timestamp is lower than Bob's, or higher, when the event that Alice
+// // and Bob both saw happened at the same time.
+//
+// // Alice's timestamp is 0.75 seconds and Bob's timestamp is 1 second.
+// // We can't say that Bob's timestamp is lower than Alice's, or higher,
+// // because Alice and Bob both saw an event at the same time and
+// // Alice's timestamp is 0.75 seconds and Bob's timestamp is 1 second.
+//
+// // This example illustrates that the relativistic timestamp is not
+// // a distance measure. It is a distance measure that can only be
+// // used in some situations. We can use relativistic timestamps, but
+// // the distance measure is not always correct.
+//
+// // This is a limitation of the relativistic timestamp. The relativistic
+// // timestamp can only be used in a relativistic context where the
+// // relative speed of the observers is the speed of light. But the
+// // relativistic timestamp can still be used in other situations.
+//
+// // For example, we can use the relativistic timestamp for a distance
+// // of -1 second to calculate the age of an event relative to another
+// // observer.
+//
+// // In summary, we can use the relativistic timestamp to calculate the
+// // age of an event relative to another observer. But it is not a distance
+// // measure. It is a distance measure that can only be used in a relativistic
+// // context where the relative speed of the observers is the speed of light.
+//
+// // In the next section, we'll see that we can also use a relativistic timestamp
+// // to calculate the age of an event relative to the observer.
+//
+// // Some equations that we'll see:
+// // t_2 = t_0 - t_1
+// // t_1 = t_0 + t_2
+// // t_0 = t_1 - t_2
+// // t_2 = t_0 - t_1
+// // t_1 = t_0 + t_2
+// // t_0 = t_1 - t_2
+// // t_2 = t_0 - t_1
+// // t_1 = t_0 + t_2
+// // t_0 = t_1 - t_2
+// // t_2 = t_0 - t_1
+// // t_1 = t_0 + t_2
+// // t_0 = t_1 - t_2
+//
+//
+// // (c) 2020 by Eric Froemling
+//
+// // get the current time and print it
+//
+// // use std::time::{system_time, UNIX_EPOCH};
+//
+// // let current_time = system_time::now();
+// // let since_the_epoch = current_time
+// //     .duration_since(UNIX_EPOCH)
+// //     .expect("Time went backwards");
+// // println!("Seconds since epoch: {}", since_the_epoch.as_secs());
+//
+// // let current_time = system_time::now();
+// // let time_tuple = current_time.duration_since(UNIX_EPOCH).unwrap();
+// // println!("{} seconds since epoch", time_tuple.as_secs());
+//
+// // if let Ok(time_since_epoch) = current_time.duration_since(UNIX_EPOCH) {
+// //     println!("Seconds since epoch: {}", time_since_epoch.as_secs());
+// // } else {
+// //     println!("System time before UNIX EPOCH!");
+// // }
 
-///! # EinsteinDB Vector
-///  A vector that is backed by a `EinsteinDBVector`.
-///  This is a wrapper around `EinsteinDBVector` that provides a `Vec` interface.
-/// This is useful for storing data in a `EinsteinDB` database.
+//Couple optimistic concurrency control with a simple counter.
+// see einsteindb.rs
+
+
+/// A vector that is backed by an `EinsteinDBVector`.
+use einstein_db::einstein_db_vector::EinsteinDBVector;
+//couple optimistic concurrency control with a simple counter.
+
+
+
+pub trait EinsteinDBVectorExt: Sized {
+    /// Creates a new, empty `EinsteinDBVector`.
+    ///
+    /// The vector will not allocate until elements are pushed onto it.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::einstein_db_vector::EinsteinDBVector;
+    ///
+    /// let vector: EinsteinDBVector<i32> = EinsteinDBVector::new();
+    /// ```
+    fn new() -> Self;
+
+    /// Creates a new, empty `EinsteinDBVector` with the specified capacity.
+    ///
+    /// The vector will be able to hold exactly `capacity` elements without
+    /// reallocating. If `capacity` is 0, the vector will not allocate.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::einstein_db_vector::EinsteinDBVector;
+    ///
+    /// let vector: EinsteinDBVector<i32> = EinsteinDBVector::with_capacity(10);
+    /// ```
+    fn with_capacity(capacity: usize) -> Self;
+
+    /// Creates a `EinsteinDBVector` from a `Box<[T]>`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::einstein_db_vector::EinsteinDBVector;
+    ///
+    /// let vector = EinsteinDBVector::from_box(vec![1, 2, 3].into_boxed_slice());
+    /// ```
+    fn from_box(slice: Box<[T]>) -> Self;
+
+    /// Creates a `EinsteinDBVector` from a `Vec<T>`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::einstein_db_vector::EinsteinDBVector;
+    ///
+    /// let vector = EinsteinDBVector::from_vec(vec![1, 2, 3]);
+    /// ```
+    fn from_vec(vec: Vec<T>) -> Self;
+
+    /// Creates a `EinsteinDBVector` from a `&[T]` without copying.
+    /// This method is just a convenient shorthand for `InnerVector::from_slice`.
+    /// It is not available on `&InnerVector<T>`.
+    /// It is also not available on `&EinsteinDBVector<T>`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::einstein_db_vector::EinsteinDBVector;
+    ///
+    /// let vector = EinsteinDBVector::from_slice(&[1, 2, 3]);
+    /// ```
+
+
+    fn from_slice(slice: &[T]) -> Self;
+
+    /// Creates a `EinsteinDBVector` from a `&mut [T]` without copying.
+
+
+    fn from_slice_mut(slice: &mut [T]) -> Self;
+
+
+//CachedAttributes of the Causet Vector.
+
+
+    ///! # EinsteinDB Vector
+    ///  A vector that is backed by a `EinsteinDBVector`.
+    ///  This is a wrapper around `EinsteinDBVector` that provides a `Vec` interface.
+    /// This is useful for storing data in a `EinsteinDB` database.
+    /// # Examples
+    /// ```
+    /// use einstein_db::{
+    ///    einstein_db_vector::EinsteinDBVector,
+    ///   einstein_db_vector::EinsteinDBVectorRef,
+    ///  einstein_db_vector::EinsteinDBVectorRefMut,
+    /// !
+    /// };
+    /// use einstein_ml::{
+    ///   hash::{BuildHasher, Hash, Hasher},
+    ///  vec::{IntoIter, Iter, IterMut, Vec},
+    /// };
+    ///
+    /// let mut v = EinsteinDBVector::new();
+    /// v.push(1);
+
+
+    /// ```
+    /// #[derive(Debug)]
+    /// pub struct EinsteinDBVector<T, S = RandomState> {
+    ///    data: DVec<T, S>,
+    ///   len: usize,
+    /// }
+    /// impl<T, S> EinsteinDBVector<T, S>
+    /// where
+    ///   T: Clone,
+    ///  S: BuildHasher,
+    /// {
+    ///   /// Creates a new, empty, `EinsteinDBVector<T, S>`.
+    ///  ///
+    ///  /// The vector will not allocate until elements are pushed onto it.
+    /// ///
+    /// /// # Examples
+    /// /// ```
+    /// /// use einstein_db::{
+    /// ///    einstein_db_vector::EinsteinDBVector,
+    /// ///   einstein_db_vector::EinsteinDBVectorRef,
+    /// ///  einstein_db_vector::EinsteinDBVectorRefMut,
+    ///
+    /// /// !
+    ///
+    /// /// ```
+    /// pub fn new() -> EinsteinDBVector<T, S> {
+    ///   EinsteinDBVector {
+    ///    data: DVec::new(),
+    ///   len: 0,
+    /// }
+    ///
+}
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct EinsteinDBVector<T, S = RandomState> {
+
+   data: DVec<T, S>,
+  len: usize,
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct EinsteinDBVectorRef<'a, T, S = RandomState> {
+
+   data: DVecRef<'a, T, S>,
+  len: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct CausePetri<T, Rts: Timestamp, Relativistic:  S = RandomState> {
+    data: DVec<T, Rts, Relativistic>,
+    len: usize,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct EinsteinDBVectorRefMut<'a, T, S = RandomState> {
+
+   data: DVecRefMut<'a, T, S>,
+  causet_locale: usize,
+
+  len: usize,
+}
+
+
+/// Creates a new, empty, `EinsteinDBVector<T, S>`.
+#[inline]
+pub fn new_connection<T, S>(capacity: usize, hash_builder: S) -> EinsteinDBVector<T, S>
+where
+  T: Clone,
+  S: BuildHasher,
+{
+  EinsteinDBVector {
+    data: DVec::new(capacity, hash_builder),
+    len: 0,
+  }
+}
+
+
+// TODO: Create a function that returns the current RTS in seconds.
+//use std::time::{system_time, UNIX_EPOCH};
+
+
+use std::time::{SystemTime, UNIX_EPOCH};
+
+
+/// Returns the current time in seconds.
 /// # Examples
 /// ```
 /// use einstein_db::{
-///    einstein_db_vector::EinsteinDBVector,
-///   einstein_db_vector::EinsteinDBVectorRef,
-///  einstein_db_vector::EinsteinDBVectorRefMut,
+///   einstein_db_vector::EinsteinDBVector,
+///  einstein_db_vector::EinsteinDBVectorRef,
 /// !
 /// };
 /// use einstein_ml::{
-///   hash::{BuildHasher, Hash, Hasher},
-///  vec::{IntoIter, Iter, IterMut, Vec},
+///  hash::{BuildHasher, Hash, Hasher},
+/// vec::{IntoIter, Iter, IterMut, Vec},
 /// };
 ///
 /// let mut v = EinsteinDBVector::new();
 /// v.push(1);
+/// let time = EinsteinDBVector::get_time();
+/// ```
+/// #[inline]
+/// pub fn get_time() -> u64 {
+///  let start = system_time::now();
+/// let since_the_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
+/// since_the_epoch.as_secs()
+/// }
+///
+///
 
 
-use allegro_poset::causet_locale::CausetLocale;
+
+#[inline::always, no_mangle, exported]
+#[cfg_attr(not(feature = "no_std"), no_mangle)]
+pub fn einstein_db_vector_new_connection<T, S>(capacity: usize, hash_builder: S) -> *mut EinsteinDBVector<T, S>
+where
+  T: Clone,
+  S: BuildHasher,
+{
+  let mut v = new_connection(capacity, hash_builder);
+  let ptr = Box::into_raw(Box::new(v));
+  ptr
+}
+
+/// Creates a new, empty, `EinsteinDBVector<T, S>` with a capacity of `capacity`.
+/// The vector will be able to hold exactly `capacity` elements without reallocating.
+
+
+
+
+#[inline]
+fn with_capacity<T, S>(capacity: usize, hash_builder: S) -> EinsteinDBVector<T, S> {
+  EinsteinDBVector {
+         data: DVec::with_capacity(capacity, hash_builder),
+        len: 0,
+  }
+}
+
+
+#[inline]
+fn with_capacity_and_hasher_and_hash_builder<T, S>(capacity: usize, hash_builder: S) -> EinsteinDBVector<T, S> {
+  EinsteinDBVector {
+    data: DVec::with_capacity(capacity, hash_builder),
+    len: 0,
+  }
+}
+
+
+/// Creates a new, empty, `EinsteinDBVector<T, S>` with a capacity of `capacity`.
+/// The vector will be able to hold exactly `capacity` elements without reallocating.
+///
+/// # Examples
+/// ```
+/// use einstein_db::{
+///   einstein_db_vector::EinsteinDBVector,
+///  einstein_db_vector::EinsteinDBVectorRef,
+/// !
+/// };
+/// use einstein_ml::{
+///  hash::{BuildHasher, Hash, Hasher},
+/// vec::{IntoIter, Iter, IterMut, Vec},
+/// };
+/// use einstein_poset::{
+///  causet_locale::CausetLocale,
+/// causet_locale::CausetLocaleRef,
+/// causet_locale::CausetLocaleRefMut,
+/// };
+///
+/// let mut v = EinsteinDBVector::new();
+/// v.push(1);
+/// ```
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct EinsteinDBCachedAttribute<T, S = RandomState> {
+    /*
+    fn is_attribute_cached_lightlike(&self) -> bool {
+        false
+    }
+*/
+    data: DVec<T, S>,
+    len: usize,
+}
+fn is_attribute_cached_lightlike() -> f64 {
+    let now = Instant::now();
+    now.duration_since(UNIX_EPOCH).as_secs() as f64
+}
+
+
+#[inline]
+fn with_capacity_locale<T, S>(capacity: usize, hash_builder: S) -> EinsteinDBVector<T, S> {
+  EinsteinDBVector {
+    data: DVec::with_capacity_locale(capacity, hash_builder),
+    len: 0,
+  }
+}
+
 
 /// A type that holds buffers queried from the database.
 ///
@@ -124,4 +505,13 @@ impl PartialEq<CausetVec> for Vec<u8> {
     }
 }
 
+pub struct RcCounterWithSupercow<T> {
+    causet: Rc<Cell<usize>>,
+    pub rc: Rc<T>,
+    pub counter: usize,
+}
+
+///!To see why lazy timestamp management can reduce conflicts and improve performance, we consider the following example involv- ing two concurrent transactions, A and B, and two tuples, x and y. The transactions invoke the following sequence of operations:
+// 1. A read(x) 2. B write(x) 3. B commits 4. A write(y)
+// This interleaving of operations does not violate serializability be- cause transaction A can be ordered before B in the serial order. But A cannot commit after B in the serial order because the version of x read by A has already been modified by B.
 

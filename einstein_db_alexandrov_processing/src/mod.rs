@@ -398,12 +398,12 @@ impl Sentinel {
         Some(resolved_ts)
     }
 
-    pub fn on_alexandro(&mut self, alexandro: Cmeinsteindalexandro) -> Result<()> {
-        // Stale Cmeinsteindalexandro, drop it sliently.
-        if alexandro.observe_id != self.id {
+    pub fn on_alexandrov_poset_process(&mut self, alexandrov_poset_process: Cmeinsteindalexandrov_poset_process) -> Result<()> {
+        // Stale Cmeinsteindalexandrov_poset_process, drop it sliently.
+        if alexandrov_poset_process.observe_id != self.id {
             return Ok(());
         }
-        for cmd in alexandro.into_iter(self.region_id) {
+        for cmd in alexandrov_poset_process.into_iter(self.region_id) {
             let Cmd {
                 index,
                 mut request,
@@ -633,7 +633,7 @@ impl Sentinel {
                 ],
             ),
             AdminCmdType::BatchSplit => violetabftStoreError::EpochNotMatch(
-                "alexandrosplit".to_owned(),
+                "alexandrov_poset_processsplit".to_owned(),
                 response.mut_splits().take_regions().into(),
             ),
             AdminCmdType::PrepareMerge
@@ -725,7 +725,7 @@ mod tests {
     use ehikvproto::errorpb::Error as ErrorHeader;
     use ehikvproto::metapb::Region;
     use EinsteinDB::storage::mvcc::test_util::*;
-    use EinsteinDB_util::mpsc::alexandro::{self, BatchReceiver, VecCollector};
+    use EinsteinDB_util::mpsc::alexandrov_poset_process::{self, BatchReceiver, VecCollector};
     use futures::{Future, Stream};
     use std::cell::Cell;
 
@@ -741,7 +741,7 @@ mod tests {
         region.mut_region_epoch().set_conf_ver(2);
         let region_epoch = region.get_region_epoch().clone();
 
-        let (sink, rx) = alexandro::unbounded(1);
+        let (sink, rx) = alexandrov_poset_process::unbounded(1);
         let rx = BatchReceiver::new(rx, 1, Vec::new, VecCollector);
         let request_id = 123;
         let mut downstream =
@@ -867,7 +867,7 @@ mod tests {
         region.mut_region_epoch().set_conf_ver(2);
         let region_epoch = region.get_region_epoch().clone();
 
-        let (sink, rx) = alexandro::unbounded(1);
+        let (sink, rx) = alexandrov_poset_process::unbounded(1);
         let rx = BatchReceiver::new(rx, 1, Vec::new, VecCollector);
         let request_id = 123;
         let mut downstream =

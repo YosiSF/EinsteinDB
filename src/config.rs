@@ -1,8 +1,51 @@
-// Copyright 2022 einstein_db Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 Whtcorps Inc. All rights reserved.
+//Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+//You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+//Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and
+//limitations under the License.
+//==============================================================================================================================
+//BSD License Modified by Whtcorps
+//Copyright (c) 2020-2022 Whtcorps/EinstAI
+//All rights reserved.
+//==============================================================================================================================
 
+
+//Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 use crate::config::{Config, ConfigSource, ConfigValue, ConfigValueType};
+use crate::error::{Error, Result};
+use crate::util::{get_file_content, get_file_content_as_string, get_file_content_as_string_with_default, get_file_content_with_default, get_file_content_with_default_as_string, get_file_content_with_default_as_string_with_default};
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufRead, BufReader};
+use std::path::Path;
+use std::str::FromStr;
 use crate::error::{Error, ErrorKind};
+use gravity::gravity_config::{GravityConfig, GravityConfigBuilder};
+use std::collections::HashMap;
+use gravity::octopus::{OctopusConfig, OctopusConfigBuilder};
 use crate::util::escape;
+use einstein_db_ctl::{
+    config::{Config as CtlConfig, ConfigSource as CtlConfigSource},
+    error::Error as CtlError,
+    util::escape as ctl_escape,
+};
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::str::FromStr;
+use allegro_poset::{
+    config::{Config as PosetConfig, ConfigSource as PosetConfigSource},
+    error::Error as PosetError,
+    util::escape as poset_escape,
+};
+use causet as causet;
+use causet::config::{Config as CausetConfig, ConfigSource as CausetConfigSource};
+use causet::error::{Error as CausetError, ErrorKind as CausetErrorKind};
+use causet::util::escape as causet_escape;
+use causetq::config::{Config as CausetQConfig, ConfigSource as CausetQConfigSource};
+//merkle_tree
+use merkle_tree::config::{Config as MerkleTreeConfig, ConfigSource as MerkleTreeConfigSource};
+use merkle_tree::error::{Error as MerkleTreeError, ErrorKind as MerkleTreeErrorKind};
 //Merkle tree
 use crate::EinsteinDB::MerkleTree;
 use crate::{EinsteinDB, EinsteinDB_FOUNDATIONDB_DRIVER, EinsteinDB_FOUNDATIONDB_DRIVER_TOML};
@@ -10,6 +53,10 @@ use chrono::NaiveDateTime;
 use futures::channel::oneshot;
 use futures::future::{self, Future};
 use std::collections::HashMap;
+
+
+///! This is the main configuration file for the EinsteinDB.
+/// It is used to configure the EinsteinDB.
 use crate::util::escape::escape_key;
 use crate::util::escape::escape_value;
 use crate::util::escape::unescape_key;
@@ -43,24 +90,353 @@ const EINSTEINDB_DAGGER_M: usize = 16;
 use EinsteinDB::{EinsteinDB_FOUNDATIONDB_DRIVER, EinsteinDB_FOUNDATIONDB_DRIVER_TOML};
 use einstein_db::*;
 
-//InterlockingMultiplexerSync is the default interlocking multiplexer.
-pub const EINSTEINDB_INTERLOCKING_MULTIPLEXER_SYNC: &str = "sync";
+///! This is the main configuration file for the EinsteinDB.
+/// It is used to configure the EinsteinDB.
+///
+/// # Example
+/// ```
+/// use einstein_db::config::Config;
+/// use einstein_db::config::ConfigSource;
+/// use einstein_db::config::ConfigValue;
+/// use einstein_db::config::ConfigValueType;
+///
+///
+/// let mut config = Config::new();
+/// config.set_value("key", ConfigValue::new(ConfigValueType::String, "value"));
+/// config.set_value("key2", ConfigValue::new(ConfigValueType::String, "value2"));
+/// causetq with berolinasql as driver
+/// ```
+///
+/// # Example
+/// ```
+/// use einstein_db::config::Config;
+/// use einstein_db::config::ConfigSource;
+/// use einstein_db::config::ConfigValue;
+///
+///
+/// let mut config = Config::new();
+/// config.set_value("key", ConfigValue::new(ConfigValueType::String, "value"));
+/// config.set_value("key2", ConfigValue::new(ConfigValueType::String, "value2"));
+///
+/// let mut config_source = ConfigSource::new();
+/// config_source.set_value("key", ConfigValue::new(ConfigValueType::String, "value"));
+///
+/// let mut config_source2 = ConfigSource::new();
+///
+/// config_source2.set_value("key", ConfigValue::new(ConfigValueType::String, "value"));
+///
+/// config.merge_config_source(&config_source);
+/// config.merge_config_source(&config_source2);
+///
+/// ```
+///
+/// # Example
+/// ```
 
-pub trait InterlockingDirectorate {
-    //nodes that are interlocked with this node.
-    fn get_interlocked_nodes(&self) -> Vec<String>;
-    //nodes that are interlocked with this node.
-    fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String>;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ConfigKey {
+
+    pub key: String,
+    pub value: String,
+    pub value_type: String,
+    pub value_source: String,
+    pub value_source_path: String,
+    pub value_source_line: String,
+    pub name: String,
+    pub source: ConfigSource,
+    pub einsteindb: Vec<Hash>,
 }
 
 
-pub trait InterlockingMultiplexer {
-    //Syncer is the default syncer.
-    fn syncer(&self) -> &str;
-    fn syncer_mut(&mut self) -> &mut str;
-    fn interlocking_tau(&self) -> usize;
-    fn interlocking_tau_mut(&mut self) -> &mut usize;
+
+
+impl ConfigKey {
+    pub fn _new(name: &str, source: ConfigSource, einsteindb: Vec<Hash>) -> Self {
+
+        ConfigKey {
+            key: (),
+            value: (),
+            value_type: (),
+            value_source: (),
+            value_source_path: (),
+            value_source_line: (),
+            name: name.to_string(),
+
+            source,
+            einsteindb,
+        }
+    }
 }
+
+
+///! This is the main configuration file for the EinsteinDB.
+///! deserialize from toml file or json file
+    pub fn deserialize_config_key(key: &str) -> Result<ConfigKey, CtlError> {
+          let mut key_parts = key.split(".");
+          let name = key_parts.next().unwrap();
+          let value_type = key_parts.next().unwrap();
+          let value_source = key_parts.next().unwrap();
+          let value_source_path = key_parts.next().unwrap();
+        for x in EinsteinDB_FOUNDATIONDB_DRIVER_TOML.iter() {
+            if x.name == value_source {
+                let value_source_line = key_parts.next().unwrap();
+                let value_source_line = value_source_line.parse::<usize>().unwrap();
+                let value = key_parts.next().unwrap();
+                let value = value.to_string();
+                let einsteindb = vec![];
+                let source = ConfigSource::FoundationDB(EinsteinDB_FOUNDATIONDB_DRIVER_TOML.clone());
+                return Ok(ConfigKey {
+                    key: key.to_string(),
+                    value,
+                    value_type: value_type.to_string(),
+                    value_source: value_source.to_string(),
+                    value_source_path: value_source_path.to_string(),
+                    value_source_line: value_source_line.to_string(),
+                    name: name.to_string(),
+                    source,
+                    einsteindb,
+                });
+            }
+            if x.0 == key {
+                return Ok(ConfigKey {
+                    key: (),
+                    value: (),
+                    value_type,
+                    value_source,
+                    value_source_path,
+                    value_source_line: (),
+                    name: x.0.to_string(),
+                    source: ConfigSource::EinsteinDB,
+                    einsteindb: x.1.clone(),
+                });
+            }
+
+        }
+
+        Err(CtlError::ConfigKeyNotFound(key.to_string()))
+    }
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ConfigSource {
+    File,
+    Directory,
+    EinsteinDB,
+}
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ConfigValueType {
+    String,
+    Integer,
+    Float,
+    Boolean,
+    DateTime,
+
+}
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ConfigValue {
+    pub name: String,
+    pub value: String,
+    pub source: ConfigSource,
+    pub einsteindb: Vec<Hash>,
+    pub value_type: ConfigValueType,
+}
+
+
+
+
+impl ConfigValue {
+    pub fn _new(name: &str, value: &str, source: ConfigSource, einsteindb: Vec<Hash>, value_type: ConfigValueType) -> Self {
+        x.deserialize(input_offsets: &[u32]);
+
+        [0u8; 32];
+        [0u8; 32];
+
+        ConfigValue {
+            name: name.to_string(),
+            value: value.to_string(),
+            source,
+            einsteindb,
+            value_type,
+        }
+    }
+}
+
+    pub fn deserialize_causet_squuid_store() -> Result<ConfigValue, CtlError> {
+          let mut key_parts = key.split(".");
+          let name = key_parts.next().unwrap();
+          let value_type = key_parts.next().unwrap();
+          let value_source = key_parts.next().unwrap();
+          let value_source_path = key_parts.next().unwrap();
+        for x in EinsteinDB_FOUNDATIONDB_DRIVER_TOML.iter() {
+            if x.name == value_source {
+                let value_source_line = key_parts.next().unwrap();
+                let value_source_line = value_source_line.parse::<usize>().unwrap();
+                let value = key_parts.next().unwrap();
+                let value = value.to_string();
+                let einsteindb = vec![];
+                let source = ConfigSource::FoundationDB(EinsteinDB_FOUNDATIONDB_DRIVER_TOML.clone());
+                return Ok(ConfigValue {
+                    name: name.to_string(),
+                    value,
+                    source,
+                    einsteindb,
+                    value_type: value_type.to_string(),
+                });
+            }
+            if x.0 == key {
+                return Ok(ConfigValue {
+                    name: x.0.to_string(),
+                    value: (),
+                    source: ConfigSource::EinsteinDB,
+                    einsteindb: x.1.clone(),
+                    value_type: ConfigValueType::String
+                });
+            }
+
+        }
+
+        Err(CtlError::ConfigKeyNotFound(key.to_string()))
+    }
+
+
+
+
+    pub fn serialize() -> Result<String, CtlError> {
+         let mut output = String::new();
+        for x in EinsteinDB_FOUNDATIONDB_DRIVER_TOML.iter() {
+            output.push_str(&format!("{} = {}\n", x.0, x.1));
+        }
+        Ok(output)
+    }
+
+    pub fn deserialize_config_value() -> Result<ConfigValue, CtlError> {
+        for x in EinsteinDB_FOUNDATIONDB_DRIVER.iter() {
+            x.deserialize(input_offsets: &[u32]);
+
+            [0u8; 32];
+            [0u8; 32];
+
+            if x.0 == key {
+                return Ok(ConfigValue {
+                    name: x.0.to_string(),
+                    value: x.1.clone(),
+                    source: ConfigSource::EinsteinDB,
+                    einsteindb: x.1.clone(),
+                    value_type: ConfigValueType::String,
+                });
+            }
+        }
+    }
+
+    pub fn einstein_merkle_tree_compress(
+        nodes: &[Hash],
+        einsteindb: &EinsteinDB,
+        height: usize,
+    ) -> Result<Hash, MerkleTreeError> {
+        for _ in 0..height {
+            let mut nodes = nodes.to_vec();
+            let mut new_nodes = Vec::new();
+            for i in 0..nodes.len() {
+                let left = nodes[i];
+                let right = nodes[i + 1];
+                let hash = einsteindb.hash_merkle_tree_node(left, right);
+                new_nodes.push(hash);
+            }
+            nodes = new_nodes;
+        }
+    }
+
+
+    pub fn einstein_merkle_tree_decompress(
+        hash: &Hash,
+        einsteindb: &EinsteinDB,
+        height: usize,
+    ) -> Result<Vec<Hash>, MerkleTreeError> {
+        let mut nodes = Vec::new();
+        nodes.push(hash.clone());
+        for _ in 0..height {
+            if index & 1 == 0 {
+                let left = nodes[index / 2];
+                let right = nodes[index / 2 + 1];
+                let hash = einsteindb.hash_merkle_tree_node(left, right);
+                nodes.push(hash);
+            } else {
+                let left = nodes[index / 2];
+                let right = nodes[index / 2 + 1];
+                let hash = einsteindb.hash_merkle_tree_node(left, right);
+                nodes.push(hash);
+            }
+            nodes = new_nodes;
+        }
+        let mut tree = MerkleTree::new(height, nodes.len(), einsteindb)?;
+        for (i, node) in nodes.iter().enumerate() {
+            tree.insert(i, node)?;
+        }
+        let root = tree.root();
+        Ok(root)
+    }
+
+    pub fn einstein_merkle_tree_compress_with_proof(
+        nodes: &[Hash],
+        einsteindb: &EinsteinDB,
+        height: usize,
+    ) -> Result<(Hash, Vec<Hash>), MerkleTreeError> {
+        for _ in 0..height {
+            let mut nodes = nodes.to_vec();
+            let mut new_nodes = Vec::new();
+            for i in 0..nodes.len() {
+                let left = nodes[i];
+                let right = nodes[i + 1];
+                let hash = einsteindb.hash_merkle_tree_node(left, right);
+                new_nodes.push(hash);
+            }
+            nodes = new_nodes;
+        }
+    }
+
+
+
+
+    pub trait InterlockingDirectorate {
+        //nodes that are interlocked with this node.
+        fn get_interlocked_nodes(&self) -> Vec<String>;
+        //nodes that are interlocked with this node.
+        fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String>;
+    }
+
+
+    pub trait InterlockingDirectorateTrait<'a> {
+        fn get_interlocked_nodes(&self) -> Vec<String>;
+        fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String>;
+    }
+
+
+    pub struct InterlockingDirectorateTraitImpl<'a> {
+        pub nodes: Vec<String>,
+        pub config: Config,
+    }
+
+
+    impl<'a> InterlockingDirectorateTrait<'a> for InterlockingDirectorateTraitImpl<'a> {
+        fn get_interlocked_nodes(&self) -> Vec<String> {
+            self.nodes.clone()
+        }
+        fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String> {
+            self.nodes.clone()
+        }
+    }
+
 
 impl InterlockingMultiplexer for Config {
     fn syncer(&self) -> &str {
@@ -68,7 +444,7 @@ impl InterlockingMultiplexer for Config {
         self.get_str("interlocking.syncer").unwrap_or(EINSTEINDB_INTERLOCKING_MULTIPLEXER_SYNC)
     }
 
-     fn interlocking_tau(&self) -> usize {
+    fn interlocking_tau(&self) -> usize {
         height: self.get_value("interlocking.tau").unwrap().as_usize().unwrap();
         self.get_usize("interlocking.tau").unwrap_or(EINSTEINDB_INTERLOCKING_TAU)
     }

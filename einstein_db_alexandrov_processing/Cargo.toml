@@ -1,10 +1,10 @@
 [package]
-name = "einstein_db_alexandrov_processing"
+name = "einstein_db_alexandrov_poset_processv_processing"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-#einstein_db_alexandrov_processing_core = { path = "../einstein_db_alexandrov_processing_core" }
+#einstein_db_alexandrov_poset_processv_processing_core = { path = "../einstein_db_alexandrov_poset_processv_processing_core" }
 

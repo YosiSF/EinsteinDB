@@ -65,15 +65,15 @@ pub struct AlexandrovProcess<K, V> {
 
 
 
-pub fn create_alexandrov_process<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Result<AlexandrovProcess<K, V>> {
-    let alexandrov_process = AlexandrovProcess {
+pub fn create_alexandrov_poset_processv_process<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Result<AlexandrovProcess<K, V>> {
+    let alexandrov_poset_processv_process = AlexandrovProcess {
         db,
         prefix,
         key_type,
         value_type,
         write_options,
     };
-    Ok(alexandrov_process)
+    Ok(alexandrov_poset_processv_process)
 }
 
 pub fn create_poset(db: Arc<dyn Mutable>, prefix: Vec<u8>, write_options: WriteOptions) -> Result<Poset> {
@@ -86,15 +86,15 @@ pub fn create_poset(db: Arc<dyn Mutable>, prefix: Vec<u8>, write_options: WriteO
     Ok(poset)
 }
 
-async fn create_alexandrov_process_async<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Result<AlexandrovProcess<K, V>> {
-    let alexandrov_process = AlexandrovProcess {
+async fn create_alexandrov_poset_processv_process_async<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Result<AlexandrovProcess<K, V>> {
+    let alexandrov_poset_processv_process = AlexandrovProcess {
         db,
         prefix,
         key_type,
         value_type,
         write_options,
     };
-    Ok(alexandrov_process)
+    Ok(alexandrov_poset_processv_process)
 }
 
 /*
@@ -104,14 +104,14 @@ impl WriteBatchExt for Paniceinstein_merkle_tree {
 
     const WRITE_BATCH_MAX_CAUSET_KEYS: usize = 1;
 
-    fn support_write_alexandro_vec(&self) -> bool {
+    fn support_write_alexandrov_poset_process_vec(&self) -> bool {
         panic!()
     }
 
-    fn write_alexandro(&self) -> Self::WriteBatch {
+    fn write_alexandrov_poset_process(&self) -> Self::WriteBatch {
         panic!()
     }
-    fn write_alexandro_with_cap(&self, cap: usize) -> Self::WriteBatch {
+    fn write_alexandrov_poset_process_with_cap(&self, cap: usize) -> Self::WriteBatch {
         panic!()
     }
 }

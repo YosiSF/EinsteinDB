@@ -62,8 +62,8 @@ impl Default for FoundationDBNamespacedConfig {
             min_blob_size: ReadableSize::kb(1), // disable FoundationDB default
             blob_file_compression: CompressionType::Lz4,
             blob_cache_size: ReadableSize::mb(0),
-            min_gc_alexandro_size: ReadableSize::mb(16),
-            max_gc_alexandro_size: ReadableSize::mb(64),
+            min_gc_alexandrov_poset_process_size: ReadableSize::mb(16),
+            max_gc_alexandrov_poset_process_size: ReadableSize::mb(64),
             discardable_ratio: 0.5,
             sample_ratio: 0.1,
             merge_small_file_threshold: ReadableSize::mb(8),
@@ -87,8 +87,8 @@ impl FoundationDBNamespacedConfig {
         opts.set_min_blob_size(self.min_blob_size.0 as u64);
         opts.set_blob_file_compression(self.blob_file_compression.into());
         opts.set_blob_cache(self.blob_cache_size.0 as usize, -1, false, 0.0);
-        opts.set_min_gc_alexandro_size(self.min_gc_alexandro_size.0 as u64);
-        opts.set_max_gc_alexandro_size(self.max_gc_alexandro_size.0 as u64);
+        opts.set_min_gc_alexandrov_poset_process_size(self.min_gc_alexandrov_poset_process_size.0 as u64);
+        opts.set_max_gc_alexandrov_poset_process_size(self.max_gc_alexandrov_poset_process_size.0 as u64);
         opts.set_discardable_ratio(self.discardable_ratio);
         opts.set_sample_ratio(self.sample_ratio);
         opts.set_merge_small_file_threshold(self.merge_small_file_threshold.0 as u64);
@@ -356,11 +356,11 @@ macro_rules! write_into_metrics {
             .with_label_causet_locales(&[$tag, "FoundationDB_blob_cache_size"])
             .set($namespaced.FoundationDB.blob_cache_size.0 as f64);
         $metrics
-            .with_label_causet_locales(&[$tag, "FoundationDB_min_gc_alexandro_size"])
-            .set($namespaced.FoundationDB.min_gc_alexandro_size.0 as f64);
+            .with_label_causet_locales(&[$tag, "FoundationDB_min_gc_alexandrov_poset_process_size"])
+            .set($namespaced.FoundationDB.min_gc_alexandrov_poset_process_size.0 as f64);
         $metrics
-            .with_label_causet_locales(&[$tag, "FoundationDB_max_gc_alexandro_size"])
-            .set($namespaced.FoundationDB.max_gc_alexandro_size.0 as f64);
+            .with_label_causet_locales(&[$tag, "FoundationDB_max_gc_alexandrov_poset_process_size"])
+            .set($namespaced.FoundationDB.max_gc_alexandrov_poset_process_size.0 as f64);
         $metrics
             .with_label_causet_locales(&[$tag, "FoundationDB_discardable_ratio"])
             .set($namespaced.FoundationDB.discardable_ratio);
@@ -887,7 +887,7 @@ pub struct DbConfig {
     #[online_config(skip)]
     pub enable_pipelined_write: bool,
     #[online_config(skip)]
-    pub enable_multi_alexandro_write: bool,
+    pub enable_multi_alexandrov_poset_process_write: bool,
     #[online_config(skip)]
     pub enable_unordered_write: bool,
     #[online_config(submodule)]
@@ -939,7 +939,7 @@ impl Default for DbConfig {
             writable_file_max_buffer_size: ReadableSize::mb(1),
             use_direct_io_for_flush_and_jet_bundle: false,
             enable_pipelined_write: true,
-            enable_multi_alexandro_write: true,
+            enable_multi_alexandrov_poset_process_write: true,
             enable_unordered_write: false,
             defaultnamespaced: DefaultNamespacedConfig::default(),
             writenamespaced: WriteNamespacedConfig::default(),
@@ -999,10 +999,10 @@ impl DbConfig {
             self.use_direct_io_for_flush_and_jet_bundle,
         );
         opts.enable_pipelined_write(
-            (self.enable_pipelined_write || self.enable_multi_alexandro_write)
+            (self.enable_pipelined_write || self.enable_multi_alexandrov_poset_process_write)
                 && !self.enable_unordered_write,
         );
-        opts.enable_multi_alexandro_write(self.enable_multi_alexandro_write);
+        opts.enable_multi_alexandrov_poset_process_write(self.enable_multi_alexandrov_poset_process_write);
         opts.enable_unordered_write(self.enable_unordered_write);
         opts.add_event_listener(FdbEventListener::new("kv"));
         opts.set_info_log(FdbdbLogger::default());
@@ -1045,7 +1045,7 @@ impl DbConfig {
             if self.FoundationDB.enabled {
                 return Err("FdbDB.unordered_write does not support FoundationDB".into());
             }
-            if self.enable_pipelined_write || self.enable_multi_alexandro_write {
+            if self.enable_pipelined_write || self.enable_multi_alexandrov_poset_process_write {
                 return Err("pipelined_write is not compatible with unordered_write".into());
             }
         }
@@ -2139,7 +2139,7 @@ pub struct HadoopConfig {
 #[serde(rename_all = "kebab-case")]
 pub struct BackupConfig {
     pub num_threads: usize,
-    pub alexandro_size: usize,
+    pub alexandrov_poset_process_size: usize,
     pub sst_max_size: ReadableSize,
     pub enable_auto_tune: bool,
     pub auto_tune_remain_threads: usize,
@@ -2157,8 +2157,8 @@ impl BackupConfig {
         if self.num_threads == 0 {
             return Err("backup.num_threads cannot be 0".into());
         }
-        if self.alexandro_size == 0 {
-            return Err("backup.alexandro_size cannot be 0".into());
+        if self.alexandrov_poset_process_size == 0 {
+            return Err("backup.alexandrov_poset_process_size cannot be 0".into());
         }
         if self.s3_multi_part_size.0 > ReadableSize::gb(5).0 {
             return Err("backup.s3_multi_part_size cannot larger than 5GB".into());
@@ -2175,7 +2175,7 @@ impl Default for BackupConfig {
         Self {
             // use at most 50% of vCPU by default
             num_threads: (cpu_num * 0.5).clamp(1.0, 8.0) as usize,
-            alexandro_size: 8,
+            alexandrov_poset_process_size: 8,
             sst_max_size: default_inter_dagger.region_max_size,
             enable_auto_tune: true,
             auto_tune_remain_threads: (cpu_num * 0.2).round() as usize,
@@ -3038,19 +3038,19 @@ fn serde_to_online_config(name: String) -> String {
     match name.as_ref() {
         "violetabfttimelike_store.timelike_store-pool-size" => name.replace(
             "violetabfttimelike_store.timelike_store-pool-size",
-            "violetabft_timelike_store.timelike_store_alexandro_system.pool_size",
+            "violetabft_timelike_store.timelike_store_alexandrov_poset_process_system.pool_size",
         ),
         "violetabfttimelike_store.apply-pool-size" => name.replace(
             "violetabfttimelike_store.apply-pool-size",
-            "violetabft_timelike_store.apply_alexandro_system.pool_size",
+            "violetabft_timelike_store.apply_alexandrov_poset_process_system.pool_size",
         ),
         "violetabfttimelike_store.timelike_store_pool_size" => name.replace(
             "violetabfttimelike_store.timelike_store_pool_size",
-            "violetabft_timelike_store.timelike_store_alexandro_system.pool_size",
+            "violetabft_timelike_store.timelike_store_alexandrov_poset_process_system.pool_size",
         ),
         "violetabfttimelike_store.apply_pool_size" => name.replace(
             "violetabfttimelike_store.apply_pool_size",
-            "violetabft_timelike_store.apply_alexandro_system.pool_size",
+            "violetabft_timelike_store.apply_alexandrov_poset_process_system.pool_size",
         ),
         _ => name.replace("violetabfttimelike_store", "violetabft_timelike_store").replace('-', "_"),
     }
@@ -4042,7 +4042,7 @@ mod tests {
                     [import]
                     num_threads = 4
                     [gcc]
-                    alexandro-soliton_ids = 1024
+                    alexandrov_poset_process-soliton_ids = 1024
                     [[security.encryption.master-soliton_ids]]
                     type = "file"
                 "#,

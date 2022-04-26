@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Qiang Yu", "einstein_db Authors"]
 
 [workspace]
-members = ["../einstein_db_ctl", "../einsteindb-server", "../berolinasql/codec", "../einstein_db_alexandrov_processing", "../def", "../fdb_traits", "../berolinasql/codec"]
+members = ["../einstein_db_ctl", "../einsteindb-server", "../berolinasql/codec", "../einstein_db_alexandrov_poset_processv_processing", "../def", "../fdb_traits", "../berolinasql/codec"]
 
 
 # See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

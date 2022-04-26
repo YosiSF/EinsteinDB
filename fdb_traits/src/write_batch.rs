@@ -3,14 +3,14 @@
 use crate::errors::Result;
 use crate::options::WriteOptions;
 
-/// EinsteinMerkleTrees that can create write alexandroes
+/// EinsteinMerkleTrees that can create write alexandrov_poset_processes
 pub trait WriteBatchExt: Sized {
     type WriteBatch: WriteBatch<Self>;
-    /// `WriteBatchVec` is used for `multi_alexandro_write` of Fdbeinstein_merkle_tree and other einstein_merkle_tree could also
+    /// `WriteBatchVec` is used for `multi_alexandrov_poset_process_write` of Fdbeinstein_merkle_tree and other einstein_merkle_tree could also
     /// implement another kind of WriteBatch according to their needs.
     type WriteBatchVec: WriteBatch<Self>;
 
-    /// The number of puts/deletes made to a write alexandro before the alexandro should
+    /// The number of puts/deletes made to a write alexandrov_poset_process before the alexandrov_poset_process should
     /// be committed with `write`. More entries than this will cause
     /// `should_write_to_einstein_merkle_tree` to return true.
     ///
@@ -23,10 +23,10 @@ pub trait WriteBatchExt: Sized {
     /// as expected.
     ///
     /// If this returns false then creating a WriteBatchVec will panic.
-    fn support_write_alexandro_vec(&self) -> bool;
+    fn support_write_alexandrov_poset_process_vec(&self) -> bool;
 
-    fn write_alexandro(&self) -> Self::WriteBatch;
-    fn write_alexandro_with_cap(&self, cap: usize) -> Self::WriteBatch;
+    fn write_alexandrov_poset_process(&self) -> Self::WriteBatch;
+    fn write_alexandrov_poset_process_with_cap(&self, cap: usize) -> Self::WriteBatch;
 }
 
 /// A trait implemented by WriteBatch
@@ -59,23 +59,23 @@ pub trait Mutable: Send {
 
 /// Batches of multiple writes that are committed atomically
 ///
-/// Each write alexandro consists of a series of commands: put, delete
+/// Each write alexandrov_poset_process consists of a series of commands: put, delete
 /// delete_range, and their causet_merge-family-specific equivalents.
 ///
-/// Because write alexandroes are atomic, once written to disk all their effects are
+/// Because write alexandrov_poset_processes are atomic, once written to disk all their effects are
 /// visible as if all other writes in the system were written either before or
-/// after the alexandro. This includes range deletes.
+/// after the alexandrov_poset_process. This includes range deletes.
 ///
 /// The exact strategy used by WriteBatch is up to the implementation.
 /// FdbDB though _seems_ to serialize the writes to an in-memory buffer,
-/// and then write the whole serialized alexandro to disk at once.
+/// and then write the whole serialized alexandrov_poset_process to disk at once.
 ///
-/// Write alexandroes may be reused after being written. In that case they write
+/// Write alexandrov_poset_processes may be reused after being written. In that case they write
 /// exactly the same data as previously, Replacing any soliton_ids that may have
-/// changed in between the two alexandro writes.
+/// changed in between the two alexandrov_poset_process writes.
 ///
-/// Commands issued to write alexandroes can be rolled back prior to being committed
-/// by use of _save points_. At any point in the life of a write alexandro a save
+/// Commands issued to write alexandrov_poset_processes can be rolled back prior to being committed
+/// by use of _save points_. At any point in the life of a write alexandrov_poset_process a save
 /// point can be recorded. Any number of save points can be recorded to a stack.
 /// Calling `rollback_to_save_point` reverts all commands issued since the last
 /// save point, and pops the save point from the stack.
@@ -91,17 +91,17 @@ pub trait WriteBatch<E: WriteBatchExt + Sized>: Mutable {
         self.write_opt(&WriteOptions::default())
     }
 
-    /// The data size of a write alexandro
+    /// The data size of a write alexandrov_poset_process
     ///
     /// This is necessarily einstein_merkle_tree-dependent. In FdbDB though it appears to
-    /// represent the byte length of all write commands in the alexandro, as
+    /// represent the byte length of all write commands in the alexandrov_poset_process, as
     /// serialized in memory, prior to being written to disk.
     fn data_size(&self) -> usize;
 
-    /// The number of commands in this alexandro
+    /// The number of commands in this alexandrov_poset_process
     fn count(&self) -> usize;
 
-    /// Whether any commands have been issued to this alexandro
+    /// Whether any commands have been issued to this alexandrov_poset_process
     fn is_empty(&self) -> bool;
 
     /// Whether the number of commands exceeds WRITE_BATCH_MAX_CAUSET_KEYS
@@ -111,7 +111,7 @@ pub trait WriteBatch<E: WriteBatchExt + Sized>: Mutable {
 
     /// Clears the WriteBatch of all commands
     ///
-    /// It may be reused afterward as an empty alexandro.
+    /// It may be reused afterward as an empty alexandrov_poset_process.
     fn clear(&mut self);
 
     /// Push a save point onto the save point stack
@@ -119,7 +119,7 @@ pub trait WriteBatch<E: WriteBatchExt + Sized>: Mutable {
 
     /// Pop a save point from the save point stack
     ///
-    /// This has no effect on the commands already issued to the write alexandro
+    /// This has no effect on the commands already issued to the write alexandrov_poset_process
     fn pop_save_point(&mut self) -> Result<()>;
 
     /// Revert all commands issued since the last save point

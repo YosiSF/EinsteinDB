@@ -165,11 +165,11 @@ pub trait BoxedExecSummaryCollectorWithDurationRecorder: ExecSummaryCollector {
 
     /// Returns an instance that will record elapsed duration and increase
     /// the iterations counter. The instance should be later passed back to
-    /// `on_finish_iterate` when processing of `next_alexandro` is completed.
+    /// `on_finish_iterate` when processing of `next_alexandrov_poset_process` is completed.
     fn on_start_iterate(&mut self) -> Self::DurationRecorder;
 
     // Increases the process time and produced rows counter.
-    // It should be called when `next_alexandro` is completed.
+    // It should be called when `next_alexandrov_poset_process` is completed.
     fn on_finish_iterate(&mut self, dr: Self::DurationRecorder, rows: usize);
 
     /// Takes and appends current execution summary into `target`.

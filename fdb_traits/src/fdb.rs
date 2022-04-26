@@ -444,7 +444,7 @@ mod tests {
         let mut conn = Store::open("").unwrap();
 
         let soliton_id = "Test Observer".to_string();
-        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_soliton_id, _alexandro| {});
+        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_soliton_id, _alexandrov_poset_process| {});
 
         conn.register_observer(soliton_id.clone(), Arc::new(tx_observer));
         assert!(conn.is_registered_as_observer(&soliton_id));
@@ -456,7 +456,7 @@ mod tests {
 
         let soliton_id = "Test Observer".to_string();
 
-        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_soliton_id, _alexandro| {});
+        let tx_observer = TxObserver::new(BTreeSet::new(), move |_obs_soliton_id, _alexandrov_poset_process| {});
 
         conn.register_observer(soliton_id.clone(), Arc::new(tx_observer));
         assert!(conn.is_registered_as_observer(&soliton_id));
@@ -536,11 +536,11 @@ mod tests {
         // because the TxObserver is in an Arc and is therefore Sync, we have to wrap the Sender in a Mutex to also
         // make it Sync.
         let thread_tx = Mutex::new(tx);
-        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_soliton_id, alexandro| {
+        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_soliton_id, alexandrov_poset_process| {
             if let Some(out) = mut_output.upgrade() {
                 let mut o = out.lock().unwrap();
                 o.called_soliton_id = Some(obs_soliton_id.to_string());
-                for (tx_id, changes) in alexandro.into_iter() {
+                for (tx_id, changes) in alexandrov_poset_process.into_iter() {
                     o.txids.push(*tx_id);
                     o.changes.push(changes.clone());
                 }
@@ -612,11 +612,11 @@ mod tests {
         let mut_output = Arc::downgrade(&output);
         let (tx, rx): (mpsc::Sender<()>, mpsc::Receiver<()>) = mpsc::channel();
         let thread_tx = Mutex::new(tx);
-        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_soliton_id, alexandro| {
+        let tx_observer = Arc::new(TxObserver::new(registered_attrs, move |obs_soliton_id, alexandrov_poset_process| {
             if let Some(out) = mut_output.upgrade() {
                 let mut o = out.lock().unwrap();
                 o.called_soliton_id = Some(obs_soliton_id.to_string());
-                for (tx_id, changes) in alexandro.into_iter() {
+                for (tx_id, changes) in alexandrov_poset_process.into_iter() {
                     o.txids.push(*tx_id);
                     o.changes.push(changes.clone());
                 }

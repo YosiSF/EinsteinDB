@@ -30,16 +30,16 @@
 //!   includes EinsteinMerkleTrees and lightlike_persistences.
 //!
 //! - [`SyncMutable`] and [`Mutable`] - types to which single soliton_id/causet_locale pairs
-//!   can be written. This includes EinsteinMerkleTrees and write alexandroes.
+//!   can be written. This includes EinsteinMerkleTrees and write alexandrov_poset_processes.
 //!
-//! - [`WriteBatch`] - types that can commit multiple soliton_id/causet_locale pairs in alexandroes.
+//! - [`WriteBatch`] - types that can commit multiple soliton_id/causet_locale pairs in alexandrov_poset_processes.
 //!   A `WriteBatchExt::WriteBtach` commits all pairs in one atomic transaction.
 //!   A `WriteBatchExt::WriteBatchVec` does not (FIXME: is this correct?).
 //!
 //! The `KV` instance generally acts as a factory for types that implement
 //! other traits in the crate. These factory methods, associated types, and
 //! other associated methods are defined in "extension" traits. For example, methods
-//! on EinsteinMerkleTrees related to alexandro writes are in the `WriteBatchExt` trait.
+//! on EinsteinMerkleTrees related to alexandrov_poset_process writes are in the `WriteBatchExt` trait.
 //!
 //!
 //! # Design notes

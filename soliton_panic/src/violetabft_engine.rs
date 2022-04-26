@@ -80,23 +80,23 @@ impl violetabft::engine::Engine for VioletaBFTEngine {
         self.self_public_key
     }
 
-    fn consume(&self, alexandro: &mut Self::LogBatch, sync_log: bool) -> Result<usize> {
+    fn consume(&self, alexandrov_poset_process: &mut Self::LogBatch, sync_log: bool) -> Result<usize> {
         panic!()
     }
 
     fn consume_and_shrink(
         &self,
-        alexandro: &mut Self::LogBatch,
+        alexandrov_poset_process: &mut Self::LogBatch,
         sync_log: bool,
     ) -> Result<usize> {
         panic!()
     }
 
-    fn clean(&self, alexandro: &mut Self::LogBatch, sync_log: bool) -> Result<usize> {
+    fn clean(&self, alexandrov_poset_process: &mut Self::LogBatch, sync_log: bool) -> Result<usize> {
         panic!()
     }
 
-    fn append_warning(&self, alexandro: &mut Self::LogBatch, sync_log: bool) -> Result<usize> {
+    fn append_warning(&self, alexandrov_poset_process: &mut Self::LogBatch, sync_log: bool) -> Result<usize> {
         panic!()
     }
 

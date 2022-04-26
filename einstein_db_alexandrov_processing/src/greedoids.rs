@@ -151,7 +151,7 @@ pub extern "C" fn greedoids_new(
     /// The returned `CString` must be freed with `ffi::c_free`
     /// # Example
     /// ```
-    /// use einstein_db_alexandrov_processing::greedoids::*;
+    /// use einstein_db_alexandrov_poset_processv_processing::greedoids::*;
     /// let request = GetReplicaRequest {
     ///    replica_id: "replica_id".to_string(),
     ///   replica_type: "replica_type".to_string(),
@@ -160,7 +160,7 @@ pub extern "C" fn greedoids_new(
     /// ```
     /// # Example
     /// ```
-    /// use einstein_db_alexandrov_processing::greedoids::*;
+    /// use einstein_db_alexandrov_poset_processv_processing::greedoids::*;
     /// let request = GetReplicaRequest {
     ///   replica_id: "replica_id".to_string(),
     ///  replica_type: "replica_type".to_string(),
