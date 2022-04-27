@@ -3,6 +3,7 @@ name = "allegro_poset"
 version = "0.1.0"
 edition = "2021"
 
+
 # See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
 name = "allegro_poset"
@@ -11,12 +12,54 @@ crate-type = ["cdylib"]
 
 
 [dependencies]
+soliton = "0.1.0"
+causet = "0.1.0"
+causetq = { path = "../causetq" }
+causet = { path = "../causet"}
+causets =  { path = "../causets"}
+einstein_ml = "0.1.0"
+einstein_db_ctl = "0.1.0"
+einstein_db_alexandrov_processing = { path = "../einstein_db_alexandrov_processing" }
+eingine_test = { path = "../engine_test" }
+einstein_db_server = { path = "../einsteindb-server" }
+einstein_db = { path = "../einstein_db" }
+berolinasql = { path = "../berolinasql" }
+soliton_panic= { path = "../soliton_panic" }
+
+byteorder = "1.2"
+error_code = "0.1.0"
+
 chrono = {version = "0.4.19", features=["serde"] }
+tokio = "0.2.0"
 enum-set = "0.0.8"
 lazy_static = "1.4.0"
 indexmap = "1.8.0"
 serde = {version = "1.0.99", features=["derive"] }
 uuid = "0.8.2"
+libc = "0.2.54"
+static_assertions = "1.0"
 
-[dependencies.ordered-float]
-version = "2.9.0"
+[dependencies.soliton]
+version = "0.1.0"
+
+
+[dependencies.causet]
+version = "0.1.0"
+
+[dependencies]
+soliton_panic = { path = "../soliton_panic" }
+panic_hook = "0.1"
+bytes = "1.0"
+rand = "0.8"
+parking_lot = "0.7.0"
+FoundationDB = "0.1.0"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = "1.0"
+serde_yaml = "1.0"
+serde_bytes = "1.0"
+serde_cbor = "1.0"
+serde_urlencoded = "1.0"
+serde_xml_rs = "1.0"
+serde_url = "1.0"
+serde_url_serde = "1.0"

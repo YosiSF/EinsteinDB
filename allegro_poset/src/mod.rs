@@ -79,3 +79,42 @@ use crate::{
         TransactionStateTransitionRef,
     },
 };
+
+
+
+
+
+
+///! #### `mod.rs`
+///! This is the main module of the crate.
+///! It contains the following modules:
+///!     - `merkle_tree`: contains the `MerkleTree` struct and its associated functions.
+///!     - `poset`: contains the `Poset` struct and its associated functions.
+///!     - `poset_state`: contains the `PosetState` struct and its associated functions.
+///!     - `poset_state_transition`: contains the `PosetStateTransition` struct and its associated functions.
+///!     - `transaction`: contains the `Transaction` struct and its associated functions.
+///!     - `transaction_state`: contains the `TransactionState` struct and its associated functions.
+///!     - `transaction_state_transition`: contains the `TransactionStateTransition` struct and its associated functions.
+///!     - `utils`: contains the `utils` module.
+///!     - `utils::hash`: contains the `hash` module.
+///!     - `utils::hash::hash_function`: contains the `hash_function` module.
+///!     - `utils::hash::hash_function::hash_function`: contains the `hash_function` module.
+
+
+
+
+pub mod alexandrov_process;
+pub mod causet_locale;
+pub mod convert;
+pub mod datum;
+pub mod datum_codec;
+pub mod spacetime;
+pub mod sync;
+pub mod types;
+
+
+///! #### `merkle_tree`
+/// ! This module contains the `MerkleTree` struct and its associated functions.
+///
+
+

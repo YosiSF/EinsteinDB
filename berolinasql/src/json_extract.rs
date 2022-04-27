@@ -8,13 +8,27 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
- use super::{Json, JsonRef, JsonType};
- use super::local_path_expr::{
-     local_path_EXPR_ARRAY_INDEX_ASTERISK, local_path_EXPR_ASTERISK, local_pathExpression, local_pathLeg,
- };
- use super::super::Result;
 
+ ///! This module is used to extract json from a string.
+ /// It is used to extract json from a string.
+ ///
+
+use std::str::Chars;
+use std::iter::Peekable;
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::fmt::{Display, Formatter, Result};
+use std::fmt;
+use std::error::Error;
+use std::result::Result as StdResult;
+use std::convert::From;
+
+
+
+/// This enum is used to represent the different types of json values.
+/// It is used to represent the different types of json values.
  impl<'a> JsonRef<'a> {
+    /// This function is used to get the type of the json value.
     /// `extract` receives several local_path expressions as arguments, matches them in j, and returns
     /// the target JSON matched any local_path expressions, which may be autowrapped as an array.
     /// If there is no any expression matched, it returns None.

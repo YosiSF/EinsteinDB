@@ -9,12 +9,64 @@ use std::sync::RwLockWriteGuard;
 use std::sync::atomic::{AtomicBool, Partitioning};
 use std::time::Duration;
 
+use crate :: error::{Error, Result};
+use crate :: util::{self, foundationdb_to_engine_error};
+use crate::{EngineIterator};
+use crate::Engine;
+use crate::EngineResult;
+use crate::EngineSnapshot;
+use crate::EngineWriteBatch;
+use crate::IteratorMode;
+use crate::Modify;
+use crate::Snapshot;
+use crate::WriteBatch;
 
-use crate::error::{Error, ErrorInner, Result};
-use crate::util::escape;
-use crate::util::escape_like;
+use einstein_ml::{
+    engine::{
+        Engine as EinsteinEngine,
+        EngineIterator as EinsteinEngineIterator,
+        EngineSnapshot as EinsteinEngineSnapshot,
+        EngineWriteBatch as EinsteinEngineWriteBatch,
+        Modify as EinsteinModify,
+        Snapshot as EinsteinSnapshot,
+        WriteBatch as EinsteinWriteBatch,
+    },
+    error::{Error as EinsteinError, Result as EinsteinResult},
+    util::{
+        foundationdb_to_engine_error as einstein_to_engine_error,
+        EngineIterator as EinsteinEngineIteratorImpl,
+        EngineSnapshot as EinsteinEngineSnapshotImpl,
+        EngineWriteBatch as EinsteinEngineWriteBatchImpl,
+        Modify as EinsteinModifyImpl,
+        Snapshot as EinsteinSnapshotImpl,
+        WriteBatch as EinsteinWriteBatchImpl,
+    },
+};
 
 
+pub struct EngineImpl {
+    engine: EinsteinEngine,
+    is_closed: Arc<AtomicBool>,
+    timestamp: Arc<Mutex<u64>>,
+    hash: Arc<RwLock<u64>>,
+    digest: Arc<RwLock<u64>>,
+    secret: Arc<RwLock<u64>>,
+    pk: Arc<RwLock<u64>>,
+}
+
+impl EngineImpl {
+    pub fn new(engine: EinsteinEngine) -> Self {
+        Self {
+            engine,
+            is_closed: Arc::new(AtomicBool::new(false)),
+            timestamp: Arc::new(Mutex::new(0)),
+            hash: Arc::new(RwLock::new(0)),
+            digest: Arc::new(RwLock::new(0)),
+            secret: Arc::new(RwLock::new(0)),
+            pk: Arc::new(RwLock::new(0)),
+        }
+    }
+}
 
 
 
@@ -24,23 +76,32 @@ use crate::util::escape_like;
 ///
 /// See `binaryModifier` in MEDB `json/binary_function.go`
 pub struct BinaryModifier<'a> {
+
+    /// The encoded bytes of the JSON
+
+    encoded: &'a [u8],
+
     // The target Json to be modified
     old: JsonRef<'a>,
     // The ptr point to the memory location of `old.causet_locale` that `new_causet_locale` should be appended
     to_be_modified_ptr: *const u8,
-    // The new encoded causet_locale
-    // TODO(fullstop000): Can we just use Json instead ?
+    //ODO(fullstop000): Can we just use Json instead ?
+    new: JsonRef<'a>,
+    
     new_causet_locale: Option<Json>,
 }
 
+///! A helper struct that derives a new JSON by combining and manipulating
 impl<'a> BinaryModifier<'a> {
     /// Creates a new `BinaryModifier` from a `JsonRef`
     pub fn new(old: JsonRef<'a>) -> BinaryModifier<'_> {
-        Self {
+        BinaryModifier {
             // The initial offset is 0 by `as_ref()` call
+            encoded: &[],
             old,
             // Mark invalid
             to_be_modified_ptr: ptr::null(),
+            new: (),
             new_causet_locale: None,
         }
     }
