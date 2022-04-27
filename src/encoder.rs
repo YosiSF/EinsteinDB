@@ -13,6 +13,13 @@ const R: usize = 32;
 
 pub const HASH_SIZE: usize = 32; //256 bits
 
+use einstein_db::{ DB, DB_OPEN_FLAG_CREATE, DB_OPEN_FLAG_RDONLY, DB_OPEN_FLAG_RDWR, DB_OPEN_FLAG_TRUNCATE, DB_OPEN_FLAG_WRITE_EMPTY, DB_OPEN_FLAG_WRITE_PREVENT, DB_OPEN_FLAG_WRITE_SAME};
+use einstein_ml::{ ML_OPEN_FLAG_CREATE, ML_OPEN_FLAG_RDONLY, ML_OPEN_FLAG_RDWR, ML_OPEN_FLAG_TRUNCATE, ML_OPEN_FLAG_WRITE_EMPTY, ML_OPEN_FLAG_WRITE_PREVENT, ML_OPEN_FLAG_WRITE_SAME};
+use causet::{ Causet, Causet_OPEN_FLAG_CREATE, Causet_OPEN_FLAG_RDONLY, Causet_OPEN_FLAG_RDWR, Causet_OPEN_FLAG_TRUNCATE, Causet_OPEN_FLAG_WRITE_EMPTY, Causet_OPEN_FLAG_WRITE_PREVENT, Causet_OPEN_FLAG_WRITE_SAME};
+use causetq::{  CausetQ, CausetQ_OPEN_FLAG_CREATE, CausetQ_OPEN_FLAG_RDONLY, CausetQ_OPEN_FLAG_RDWR, CausetQ_OPEN_FLAG_TRUNCATE, CausetQ_OPEN_FLAG_WRITE_EMPTY, CausetQ_OPEN_FLAG_WRITE_PREVENT, CausetQ_OPEN_FLAG_WRITE_SAME};
+use causets::{  Causets, Causets_OPEN_FLAG_CREATE, Causets_OPEN_FLAG_RDONLY, Causets_OPEN_FLAG_RDWR, Causets_OPEN_FLAG_TRUNCATE, Causets_OPEN_FLAG_WRITE_EMPTY, Causets_OPEN_FLAG_WRITE_PREVENT, Causets_OPEN_FLAG_WRITE_SAME};
+
+
 use std::io::{Read, Write};
 use std::io::{Error, ErrorKind};
 use std::fs::File;
@@ -43,13 +50,16 @@ use gremlin_capnp::message::{Message, MessageReader, MessageBuilder};
 use gremlin as g;
 
 pub struct GremlinCausetQuery{
+    pub causet_locale: String,
+    pub causet_db: CausetDB,
+    pub causet_db_type: CausetDBType,
+    pub gremlin_db_type: EinsteinDBType,
     pub db: CausetQDB,
     pub poset: Poset,
     pub soliton: Soliton,
     pub soliton_panic: SolitonPanic,
     pub einstein_db: EinsteinDB,
     pub gremlin_db: g::DB,
-    pub gremlin_db_type: g::DBType,
     pub gremlin_db_type_options: g::DBTypeOptions,
 
 
@@ -70,27 +80,50 @@ switch_to_einstein_db!(GremlinCausetQuery);
 /// The trait is sealed and cannot be implemented outside of `encoder` module.
 
 pub enum Encoder<'a> {
+
+
+    /// A value encoder.
+    /// This encoder encodes values to bytes.
+    /// The encoder is used to encode values to bytes.
+
+    /// A value encoder.
     AEVTrie(AEVTrie<'a>),
     /// A encoder that encodes values to bytes.
     /// The encoder is used to encode values to bytes.
-    Causetidb(Causetidb<'a>),
+    CausetA(dyn CausetAMinor<'a>),
+    /// A encoder that encodes values to bytes.
+    /// AEVTrie(AEVTrie<'a>, Causetidb<'a>),
 
-    EncoderBytes(&'a mut Vec<u8>),
 
-    Bytes(&'a mut [u8]),
-    Write(io::Write),
-    File(File),
-    DB(Database),
-    KV(KV),
-    Poset(Poset),
-    Soliton(Soliton),
-    SolitonPanic(SolitonPanic),
+
+}
+
+
+
+trait CausetAMinor<'a> {
+
+
+    fn encode(&self, key: &[u8], value: &[u8]) -> Result<Vec<u8>, Error> {
+        unimplemented!()
+
+
+    }
 }
 #[cfg(test)]
 #[derive(Debug, PartialEq)]
 pub enum EncoderBytes<'a> {
+    /// A value encoder.
+    /// This encoder encodes values to bytes.
+    /// The encoder is used to encode values to bytes.
+    /// A value encoder.
     Bytes(&'a mut [u8]),
+
     Write(io::Write),
+
+    Dagger(Lockfree),
+
+    FoundationDB(foundationdb::Database),
+
 }
 
 pub const EINSTEINDB_PORS_INTERLOCKING_TAU: usize = 16;
@@ -130,6 +163,8 @@ pub struct CausetRecordEncoderImpl {
 
 
 pub struct Column {
+    pub name: String,
+    pub field_type: FieldType,
     id: i64,
     causet_locale: ScalarValue,
     ft: FieldType,
@@ -138,6 +173,8 @@ pub struct Column {
 impl Column {
     pub fn new(id: i64, causet_locale: impl Into<ScalarValue>) -> Self {
         Column {
+            name: (),
+            field_type: (),
             id,
             ft: FieldType::default(),
             causet_locale: causet_locale.into(),
@@ -155,8 +192,6 @@ impl Column {
     }
 
     pub fn is_unsigned(&self) -> bool {
-
-        // TODO: this is not correct, we should use the field type
         self.ft.is_unsigned()
     }
 
@@ -189,6 +224,8 @@ pub trait RowEncoder: NumberEncoder {
                 non_null_cols.push(col);
             }
         }
+
+        // write null ids
         non_null_cols.sort_by_soliton_id(|c| c.id);
         null_ids.sort();
 
@@ -205,8 +242,8 @@ pub trait RowEncoder: NumberEncoder {
             is_big = true;
         }
 
-        // encode begins
-        self.write_u8(super::CODEC_VERSION)?;
+        let mut causet_locale_wtr_len = causet_locale_wtr.len();
+        let mut causet_locale_wtr_len_offset = causet_locale_wtr.len();
         self.write_flag(is_big)?;
         self.write_u16_le(non_null_ids.len() as u16)?;
         self.write_u16_le(null_ids.len() as u16)?;
