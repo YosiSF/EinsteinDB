@@ -4,10 +4,6 @@ version = "0.1.0"
 authors = ["Karl Whitford<karl@einst.ai>, Josh Leder<slushie@gmail.com>, and others"]
 edition = "2018"
 
-
-
-
-
 [einstein_db.server]
 # The port the server will listen on
 port = "8080"
@@ -18,6 +14,8 @@ database = "./db"
 # The path to the database
 
 [dependencies]
+postgres = "^0.1.0"
+rusqlite = "^0.1.0"
 cargo-make = "0.1.0"
 cargo-edit = "0.1.0"
 cargo-c = "0.1.0"
@@ -83,4 +81,5 @@ git = "https://www.github.com/YosiSF/EinsteinDB/berolina_sql"
 
 
 
-#[dependencies.foundation_namespaced_opts]
+#launch.sh
+#!/bin/bash
