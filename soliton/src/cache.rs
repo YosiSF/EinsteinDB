@@ -278,12 +278,6 @@ trait CardinalityOneCache: RemoveFromCache + ClearCache {
     fn get(&self, e: Causetid) -> Option<&causetq_TV>;
 }
 
-trait CardinalityManyCache: RemoveFromCache + ClearCache {
-    fn acc(&mut self, e: Causetid, v: causetq_TV);
-    fn set(&mut self, e: Causetid, vs: Vec<causetq_TV>);
-    fn get(&self, e: Causetid) -> Option<&Vec<causetq_TV>>;
-}
-
 #[derive(Clone, Debug, Default)]
 struct SingleValAttributeCache {
     attr: Causetid,
@@ -400,7 +394,7 @@ impl ClearCache for ManyValAttributeCache {
 
 
 #[derive(Clone, Debug, Default)]
-struct _topography_cache {
+struct TopographyCache {
     e_v: CacheMap<Causetid, Option<causetq_TV>>,
     attr: Causetid,
 
@@ -442,21 +436,17 @@ impl RemoveFromCache for ManyValAttributeCache {
 }
 
 
-   pub  fn set(
-       e: Causetid,
-       v: causetq_TV
-   ) {
-        self.e_v.insert(e, Some(v));
+impl ClearCache for ManyValAttributeCache {
+    fn clear(&mut self) {
+        self.e_vs.clear();
+    }
+}
 
-        //timestamp
-        let v = Some(v);
-   //dagger
-   }
+
 
 
 impl RemoveFromCache for ManyValAttributeCache {
     fn remove(&mut self, e: Causetid, v: &causetq_TV) {
-        todo!()
 
        while self.e_v.len() > MAX_CACHE_SIZE {
             let (e, _) = self.e_v.pop_front().unwrap();
@@ -554,7 +544,18 @@ impl RemoveFromCache for MultiValAttributeCache {
     }
 }
 
-impl CardinalityManyCache for MultiValAttributeCache {
+
+
+
+#[derive(Clone, Debug, Default)]
+struct CardinalityManyCache {
+    attr: Causetid,
+    e_vs: CacheMap<Causetid, Vec<causetq_TV>>,
+
+}
+
+
+impl Absorb for CardinalityManyCache {
     fn acc(&mut self, e: Causetid, v: causetq_TV) {
         self.e_vs.entry(e).or_insert(vec![]).push(v)
     }
@@ -685,9 +686,7 @@ fn accumulate_single_val_evs_lightlike<I, C>(a: Causetid, f: &mut C, iter: &mut 
     with_aev_iter(a, iter, |e, v| f.set(e, v))
 }
 
-fn accumulate_multi_val_evs_lightlike<I, C>(a: Causetid, f: &mut C, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: CardinalityManyCache {
-    with_aev_iter(a, iter, |e, v| f.acc(e, v))
-}
+
 
 fn accumulate_unique_evs_reverse<I>(a: Causetid, r: &mut UniqueReverseAttributeCache, iter: &mut Peekable<I>) where I: Iterator<Item=Aev> {
     with_aev_iter(a, iter, |e, v| r.set(e, v))
@@ -704,12 +703,6 @@ fn accumulate_single_val_unique_evs_both<I, C>(a: Causetid, f: &mut C, r: &mut U
     })
 }
 
-fn accumulate_multi_val_unique_evs_both<I, C>(a: Causetid, f: &mut C, r: &mut UniqueReverseAttributeCache, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: CardinalityManyCache {
-    with_aev_iter(a, iter, |e, v| {
-        f.acc(e, v.clone());
-        r.set(e, v);
-    })
-}
 
 fn accumulate_single_val_non_unique_evs_both<I, C>(a: Causetid, f: &mut C, r: &mut NonUniqueReverseAttributeCache, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: CardinalityOneCache {
     with_aev_iter(a, iter, |e, v| {
@@ -718,11 +711,12 @@ fn accumulate_single_val_non_unique_evs_both<I, C>(a: Causetid, f: &mut C, r: &m
     })
 }
 
-fn accumulate_multi_val_non_unique_evs_both<I, C>(a: Causetid, f: &mut C, r: &mut NonUniqueReverseAttributeCache, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: CardinalityManyCache {
-    with_aev_iter(a, iter, |e, v| {
-        f.acc(e, v.clone());
-        r.acc(e, v);
-    })
+
+
+///! This is a very simple implementation of the cardinality-one cache.
+
+fn accumulate_unique_evs_forward<I>(a: Causetid, f: &mut UniqueAttributeCache, iter: &mut Peekable<I>) where I: Iterator<Item=Aev> {
+    with_aev_iter(a, iter, |e, v| f.set(e, v))
 }
 
 fn accumulate_removal_one<I, C>(a: Causetid, c: &mut C, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: RemoveFromCache {
