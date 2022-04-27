@@ -86,8 +86,43 @@ use mysql::{MysqlOptionResult, MysqlOption, MysqlOptionResult};
 //neo4j
 use neo4j::{Neo4j, Neo4jError, Neo4jResult, Neo4jOption, Neo4jOptionResult};
 use neo4j::{Neo4jOptionResult, Neo4jOption, Neo4jOptionResult};
+/*
+pub enum TimelikeMsg {
 
+}
+    Quit,
+    Add(Instant, String),
+    Remove(Instant, String),
+    Clear,
+    FidelId: u64, //fidel id
 
+    RawCmd {
+        cmd: String,
+        args: Vec<String>,
+    },
+*/
+
+//! A `Timeline` is a causet of causets.
+//! It is a causet of causets, where causets are causets of append logs (causets of causets).
+pub enum TimelikeMsg {
+    LogBatch(Vec<LogBatch>),
+    Locks {lightlike_dagger_upsert: VectorValue, lightlike_dagger_delete: VectorValue},
+
+    Quit,
+    Add(Instant, String),
+    Remove(Instant, String),
+    Clear,
+    FidelId, //fidel id
+    RawCmd {
+        cmd: String,
+        args: Vec<String>,
+    },
+    CausetTimeline(CausetTimelineOption),
+    CausetTimelineResult(CausetTimelineOptionResult),
+    CausetTimelineError(CausetTimelineError),
+    AllegroPoset(AllegroPosetOption),
+    AllegroPosetResult(AllegroPosetOptionResult),
+}
 pub struct LightlikeStore {
     conn: Sender<String>,
     recv: Receiver<String>,

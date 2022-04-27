@@ -688,10 +688,219 @@ fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_loc
 
 
 
+/// Scheduler which schedules the execution of `storage::Command`s.
+pub struct Scheduler {
+    engine: Box<Engine>,
+
+    // cid -> context
+    cmd_ctxs: HashMap<u64, RunningCtx>,
+
+    schedule: SendCh<Msg>,
+
+    // cmd id generator
+    id_alloc: u64,
+
+    // write concurrency control
+    latches: Latches,
+
+    sched_too_busy_threshold: usize,
+
+    // worker pool
+    worker_pool: ThreadPool,
+}
+
+impl Scheduler {
+    /// Creates a scheduler.
+    pub fn new(engine: Box<Engine>, config: &Config) -> Scheduler {
+        let (schedule, precache) = mio::channel::channel();
+        let mut worker_pool = ThreadPool::new(config.num_threads);
+        let mut schedule = SendCh::new(schedule);
+        SendCh::new(precache);
+        SendCh::new(mio::channel::channel());
+        Latches::new();
+        let mut id_alloc = 0;
+        let sched_too_busy_threshold = config.sched_too_busy_threshold;
+        let engine = engine;
+
+        Scheduler {
+            engine,
+            cmd_ctxs: HashMap::new(),
+            schedule,
+            id_alloc: 0,
+            latches: Latches::new(concurrency),
+            sched_too_busy_threshold,
+            worker_pool,
+
+        }
+    }
+}
+
+/// Processes a read command within a worker thread, then posts `ReadFinished` message back to the
+/// event loop.
+fn process_read(cid: u64, mut cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) {
+    let mut ctx = RunningCtx::new(cid, cmd, ch, snapshot);
+    let mut cmd = ctx.cmd.take().unwrap();
+    let mut snapshot = ctx.snapshot.take().unwrap();
+    let res = cmd.read(&mut snapshot);
+    let mut cmd = ctx.cmd.take().unwrap();
+    cmd.finish(res);
+    ctx.cmd = Some(cmd);
+    ctx.snapshot = Some(snapshot);
+
+
+    let mut cmd = ctx.cmd.take().unwrap();
+
+    let res = cmd.read(&mut snapshot);
+
+        // Gets from the snapshot.
+        Command::finish(res);
+
+      /*
+        // Batch get from the snapshot.
+        Command::BatchGet { ref keys, start_ts, .. } => {
+                let res = snapshot.batch_get(keys, start_ts);
+                cmd.finish(res);
+        }
+*/
+
+    // Sends the result back to the event loop.
+    ctx.send_read_finished();
 
 
 
 
 
+}
 
 
+/// Processes a write command within a worker thread, then posts `WriteFinished` message back to the
+/// event loop.
+///
+
+
+fn process_write(cid: u64, mut cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) {
+    let mut ctx = RunningCtx::new(cid, cmd, ch, snapshot);
+    let mut cmd = ctx.cmd.take().unwrap();
+    let mut snapshot = ctx.snapshot.take().unwrap();
+    let res = cmd.write(&mut snapshot);
+    let mut cmd = ctx.cmd.take().unwrap();
+    cmd.finish(res);
+    ctx.cmd = Some(cmd);
+    ctx.snapshot = Some(snapshot);
+
+
+    let mut cmd = ctx.cmd.take().unwrap();
+
+    let res = cmd.write(&mut snapshot);
+
+        // Puts into the snapshot.
+        Command::finish(res);
+
+
+    // Sends the result back to the event loop.
+    ctx.send_write_finished();
+
+
+
+}
+
+
+
+
+#[derive(Debug)]
+pub struct RunningCtx {
+    cid: u64,
+    cmd: Option<Command>,
+    ch: SendCh<Msg>,
+    snapshot: Option<Box<Snapshot>>,
+}
+
+
+impl RunningCtx {
+    fn new(cid: u64, cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) -> RunningCtx {
+        RunningCtx {
+            cid,
+            cmd: Some(cmd),
+            ch,
+            snapshot: Some(snapshot),
+
+        }
+    }
+
+    fn send_read_finished(&mut self) {
+        let mut cmd = self.cmd.take().unwrap();
+        let res = cmd.read(&mut self.snapshot.take().unwrap());
+        cmd.finish(res);
+        self.cmd = Some(cmd);
+        self.ch.send(Msg::ReadFinished {
+            cid: self.cid,
+            cmd: self.cmd.take().unwrap(),
+        });
+    }
+
+    fn send_write_finished(&mut self) {
+        // Batch gets from the snapshot.
+        fn command(cid: u64, cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) {
+            let mut ctx = RunningCtx::new(cid, cmd, ch, snapshot);
+            let mut cmd = ctx.cmd.take().unwrap();
+            let mut snapshot = ctx.snapshot.take().unwrap();
+            let res = cmd.write(&mut snapshot);
+            let mut cmd = ctx.cmd.take().unwrap();
+            cmd.finish(res);
+            ctx.cmd = Some(cmd);
+            ctx.snapshot = Some(snapshot);
+
+            let mut cmd = ctx.cmd.take().unwrap();
+
+            let res = cmd.write(&mut snapshot);
+
+            // Puts into the snapshot.
+            Command::finish(res);
+        }
+    }
+
+
+    fn handle_read_finished<SolitonId>(c: Causetid, msg: Msg, s: &mut Soliton<SolitonId>) {
+        match msg {
+            Msg::ReadFinished { cid, cmd } => {
+                let ctx = s.get_ctx(cid).unwrap();
+                ctx.send_read_finished();
+                s.set_ctx(cid, ctx);
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    #[inline]
+    fn handle_write_finished<SolitonId>(c: Causetid, msg: Msg, s: &mut Soliton<SolitonId>) {
+        match msg {
+            Msg::WriteFinished { cid, cmd } => {
+                let ctx = s.get_ctx(cid).unwrap();
+                ctx.send_write_finished();
+                s.set_ctx(cid, ctx);
+            }
+            _ => unreachable!(),
+        }
+    }
+
+    #[inline]
+    fn handle_read_write_finished<SolitonId>(c: Causetid, msg: Msg, s: &mut Soliton<SolitonId>) {
+        // Scans keys with timestamp <= `max_ts`
+        // and returns the latest version of each key.
+        //
+        // If `max_ts` is 0, then all versions are returned.
+        //
+        // If `max_ts` is `u64::MAX`, then all versions are returned.
+        //
+        // If `max_ts` is `u64::MAX - 1`, then all versions are returned.
+
+        match msg {
+            Msg::ReadWriteFinished { cid, cmd } => {
+                let ctx = s.get_ctx(cid).unwrap();
+                ctx.send_read_finished();
+                s.set_ctx(cid, ctx);
+            }
+            _ => unreachable!(),
+        }
+    }
+}

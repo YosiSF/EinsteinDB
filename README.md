@@ -1,15 +1,15 @@
 # einstein_db
 
 einstein_db is a powerful continuum database that unifies major data structure designs. \
-It is the first to implement a NoDB B+Tree continuum uniﬁcation model for all soliton_id-causet_locale stores, and provides superior performance properties not achievable by existing designs.
+It is the first to implement a NoDB B+Tree continuum uniﬁcation model for all SolitonId-causet_locale stores, and provides superior performance properties not achievable by existing designs.
 
-einstein_db is the world’s first relativistic linearizable; embedded, bolt-on causal consistent universal soliton_id-causet_locale store.
+einstein_db is the world’s first relativistic linearizable; embedded, bolt-on causal consistent universal SolitonId-causet_locale store.
 
 In a nutshell, einstein_db is a persistent indexing scheme based off of LSH-KVX that exploits the distinct merits of hash Index and B+-Tree Index to support range scan and avoids long NVM writes for maintaining consistency; thus improving on LSH’s performance guarantees for skewed data and adopts ordered-write consistency to ensure crash consistency, while retaining the same storage and query overhead.
 
-The practical beneﬁt of einstein_db is that it creates a fast inference interlocking_directorate with GPT3 , it then generates a bootstrap SQL design of data structures which engages with OpenAI: An AllegroCL meta-language. For example, we can near instantly predict how a speciﬁc de­sign change in the underlying storage of a data system would aﬀect performance, or reversely what would be the optimal data structure (from a given set of designs) given workload characteristics and memory budget. In turn, these prop­erties allow us to envision new class self-designing soliton_id-causet_locale stores with substantially improved ability to adapt to workload and hardware changes by transitioning between drastically different data structure designs on demand.
+The practical beneﬁt of einstein_db is that it creates a fast inference interlocking_directorate with GPT3 , it then generates a bootstrap SQL design of data structures which engages with OpenAI: An AllegroCL meta-language. For example, we can near instantly predict how a speciﬁc de­sign change in the underlying storage of a data system would aﬀect performance, or reversely what would be the optimal data structure (from a given set of designs) given workload characteristics and memory budget. In turn, these prop­erties allow us to envision new class self-designing SolitonId-causet_locale stores with substantially improved ability to adapt to workload and hardware changes by transitioning between drastically different data structure designs on demand.
 
-einstein_db and foundation_db are both excellent choices for data storage, but which one is right for you? Let's take a look at some of the soliton_id differences.
+einstein_db and foundation_db are both excellent choices for data storage, but which one is right for you? Let's take a look at some of the SolitonId differences.
 
 einstein_db is a database that uses an ontology to describe data. This makes it possible to easily understand and query the data, \
 even if it is spread across multiple tables.\

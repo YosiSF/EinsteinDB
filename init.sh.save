@@ -26,7 +26,7 @@ then exits (unless you specify "--restart always")  If a restart policy is
 not specified at the daemon level, the default restart policy for 
 containers is used ("no", unless you add "--restart=always"), which will 
 ensure that the container continues to run until you stop it (using 
-CTRL+C). Note that even if the daemon restarts containers automatically in 
+CTRL+c). Note that even if the daemon restarts containers automatically in
 response to detecting errors with other endpoints of an app running inside 
 a container being stopped uncleanly by dockerd due to error resulting from 
 any reason including but not limited to exceeding maximum memory limit set 
