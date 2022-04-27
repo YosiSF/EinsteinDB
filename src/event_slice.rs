@@ -8,16 +8,23 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use codec::prelude::*;
-use num_traits::PrimInt;
-use std::cmp::Partitioning::{Equal, Greater, Less};
-use std::marker::PhantomData;
 
-use crate::codec::{Error, Result};
-use crate::codec::event::causet_record::{EventSlice, EventSliceMut};
-use crate::codec::event::causet_record::{EventSliceReader, EventSliceWriter};
-use crate::codec::event::causet_record::{EventSliceReaderMut, EventSliceWriterMut};
-use crate::codec::event::causet_record::{EventSliceReaderVec, EventSliceWriterVec};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::collections::hash_map::Iter;
+use std::collections::hash_map::IterMut;
+use std::collections::hash_map::Keys;
+use std::collections::hash_map::Values;
+
+
+use crate::error::{Error, Result};
+use crate::event::{Event, EventSlice};
+use crate::event::{EventSliceMut, EventSliceMutExt};
+
+
+///
 
 /// A trait for types that can be used as the key of a causet record.
 /// The key is used to causetidify the causet record.
@@ -398,3 +405,165 @@ mod benches {
         });
     }
 }
+
+
+#[derive(Clone)]
+pub struct SolitonEntid  {
+
+    pub entid: i64,
+    plugin_registry: Option<Arc<PluginRegistry>>,
+}
+
+impl einstein_db_ctll::Entity for SolitonEntid {
+    fn get_entid(&self) -> i64 {
+        self.entid
+    }
+
+    fn get_id(&self) -> i64 {
+        self.entid
+    }
+    fn get_plugin_registry(&self) -> Option<Arc<PluginRegistry>> {
+        self.plugin_registry.clone()
+    }
+}
+
+impl SolitonEntid {
+    pub fn new(interlocking_directorate: &Config) -> Self {
+        let plugin_registry =
+          interlocking_directorate.get_plugin_registry().clone();
+        SolitonEntid {
+            entid: 0,
+            plugin_registry: Some(plugin_registry),
+        }
+    }
+
+    pub fn get_entid(&self) -> i64 {
+
+        Solitonid::get_entid(&self)
+    }
+
+    pub fn get_id(&self) -> i64 {
+        SolitonEntid {
+            entid: interlocking_directorate.entid,
+            plugin_registry,
+        }
+    }
+
+
+}
+
+
+
+
+    /// Handles a request to the coprocessor framework.
+    ///
+    /// Each request is dispatched to the corresponding coprocessor plugin based on it's `copr_name`
+    /// field. A plugin with a matching name must be loaded by TiKV, otherwise an error is returned.
+    ///
+    /// # Arguments
+    /// * `req` - The request to be handled.
+    /// * `ctx` - The context of the request.
+    /// * `soliton_entid` - The entid of the soliton.
+    /// * `soliton_plugin_registry` - The plugin registry of the soliton.
+    /// * `soliton_plugin_registry_mutex` - The mutex of the plugin registry of the soliton.
+
+
+
+    pub fn handle_request(
+        req: &mut CoprocessorRequest,
+        ctx: &mut CoprocessorContext,
+        soliton_entid: &SolitonEntid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<()> {
+        let mut plugin_registry = soliton_plugin_registry_mutex.write().unwrap();
+        let plugin = plugin_registry.get_plugin(req.get_name()).unwrap();
+        plugin.handle_request(req, ctx, soliton_entid, &mut plugin_registry)?;
+        Ok(())
+    }
+
+    #[inline]
+    fn handle_request_impl<E: Engine, L: LockManager, F: KvFormat>(
+        interlocking_directorate: &mut  InterlockingDirectorateRequest,
+        storage: &Storage<E, L, F>,
+        soliton_entid: &SolitonEntid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<()> {
+
+        let plugin = plugin_registry.get_plugin(&req.copr_name).ok_or_else(|| {
+            Error::Other(format!(
+                "plugin {} not found",
+            interlocking_directorate.interlocking,
+
+            ))  })?;
+        plugin.handle_request(req, ctx, soliton_entid, &mut plugin_registry)?;
+        Ok(())
+    }
+
+    #[inline]
+    fn handle_request_impl_impl<S: Snapshot>(
+        interlocking_directorate: &mut  InterlockingDirectorateRequest,
+        snapshot: &S,
+        soliton_entid: &SolitonEntid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<()> {
+
+
+        // Check whether the found plugin satisfies the version constraint.
+        let version_req = VersionReq::parse(&req.copr_version_req)
+            .map_err(|e| Error::Other(format!("{}", e)))?;
+
+        let plugin_version = plugin.version();
+
+        if !version_req.matches(plugin_version) {
+
+            return Err(Error::Other(format!(
+                "plugin {} version {} does not match the required version {}",
+                plugin.name(),
+
+                plugin_version,
+                version_req,
+            )));
+        }
+
+        // Check whether the found plugin satisfies the feature constraint.
+        let foundationdb_storage_api = FoundationdbStorageApi::new(storage);
+        let ranges = foundationdb_storage_api.get_ranges(
+            &req.get_start_key(),
+            &req.get_end_key(),
+        )?;
+
+
+        let plugin_result = plugin.handle_request(
+            &req,
+            &mut interlocking {
+                ranges,
+                storage,
+                plugin_registry: soliton_plugin_registry,
+            },
+            soliton_entid,
+            &mut plugin_registry,
+
+        )?;
+
+        plugin_result.map_err(|err| {
+            if let Some(region_err) = extract_region_error(&err) {
+                Error::Region(region_err)
+            } else {
+                Error::Other(format!("{}", err))
+            }
+        })
+    }
+
+
+
+
+fn extract_region_error(error: &PluginError) -> Option<RegionError> {
+    match error {
+        PluginError::RegionError(e) => Some(e.clone()),
+        _ => None,
+    }
+}
+

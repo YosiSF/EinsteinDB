@@ -13,20 +13,56 @@ const R: usize = 32;
 
 pub const HASH_SIZE: usize = 32; //256 bits
 
-use crate::codec::{Error, Result};
-use crate::util::{escape_key, escape_value, escape_key_bytes, escape_value_bytes};
-use crate::util::escape_key_bytes::Escape;
-use crate::util::escape_value_bytes::Escape as EscapeValue;
-use crate::util::escape_key::Escape as EscapeKey;
+use std::io::{Read, Write};
+use std::io::{Error, ErrorKind};
+use std::fs::File;
+use std::path::Path;
+use std::fs::OpenOptions;
+use std::fs::create_dir_all;
+use std::fs::remove_file;
+use std::fs::metadata;
+use std::fs::OpenOptions;
+use std::fs::File;
+use std::io::Seek;
+use std::io::SeekFrom;
+use std::io::Cursor;
+use std::io::BufReader;
+//foundationdb
+use foundationdb::{Database, DatabaseOptions, DatabaseMode, DatabaseType, DatabaseTypeOptions};
+use EinsteinDB::storage::{DB, DBOptions, DBType, DBTypeOptions};
+use EinsteinDB::storage::{KV, KVEngine, KVOptions, KVEngineType, KVEngineTypeOptions};
+use Causet::{DB as CausetDB, DBOptions as CausetDBOptions, DBType as CausetDBType, DBTypeOptions as CausetDBTypeOptions};
+use einstein_ml::util::{HashMap, HashSet};
+use causets::{Database, DatabaseOptions, DatabaseMode, DatabaseType, DatabaseTypeOptions};
+use allegro_poset::{Poset, PosetOptions};
+use soliton::{Soliton, SolitonOptions};
+use soliton_panic::{SolitonPanic, SolitonPanicOptions};
+use einstein_db_ctl::{EinsteinDB, EinsteinDBOptions, EinsteinDBType, EinsteinDBTypeOptions};
+use gremlin_capnp::{gremlin_capnp, message};
+use gremlin_capnp::message::{Message, MessageReader, MessageBuilder};
+use gremlin as g;
+
+pub struct GremlinCausetQuery{
+    pub db: CausetQDB,
+    pub poset: Poset,
+    pub soliton: Soliton,
+    pub soliton_panic: SolitonPanic,
+    pub einstein_db: EinsteinDB,
+    pub gremlin_db: g::DB,
+    pub gremlin_db_type: g::DBType,
+    pub gremlin_db_type_options: g::DBTypeOptions,
 
 
-use std::io::{self, Write};
-use std::marker::PhantomData;
-use std::mem;
-use std::ops::Deref;
-use std::slice;
-use std::str;
+    ///! the following are for the gremlin_db
 
+    pub gremlin_db_options: g::DBOptions,
+    pub gremlin_db_path: String,
+    pub gremlin_db_name: String,
+
+}
+
+
+switch_to_einstein_db!(GremlinCausetQuery);
 
 /// A trait to encode values.
 /// This trait is used to encode values to bytes.
@@ -34,8 +70,21 @@ use std::str;
 /// The trait is sealed and cannot be implemented outside of `encoder` module.
 
 pub enum Encoder<'a> {
+    AEVTrie(AEVTrie<'a>),
+    /// A encoder that encodes values to bytes.
+    /// The encoder is used to encode values to bytes.
+    Causetidb(Causetidb<'a>),
+
+    EncoderBytes(&'a mut Vec<u8>),
+
     Bytes(&'a mut [u8]),
     Write(io::Write),
+    File(File),
+    DB(Database),
+    KV(KV),
+    Poset(Poset),
+    Soliton(Soliton),
+    SolitonPanic(SolitonPanic),
 }
 #[cfg(test)]
 #[derive(Debug, PartialEq)]
@@ -72,6 +121,10 @@ const MAX_U32: u64 = u32::MAX as u64;
 
 
 pub struct CausetRecordEncoderImpl {
+    pub db: CausetDB,
+    pub poset: Poset,
+    pub encoder: Encoder<'static>,
+
     field_type_accessor: FieldTypeAccessor,
 }
 
@@ -96,11 +149,14 @@ impl Column {
     }
 
     pub fn with_tp(mut self, tp: FieldTypeTp) -> Self {
+        self.ft.set_tp(tp);
         self.ft.as_mut_accessor().set_tp(tp);
         self
     }
 
     pub fn is_unsigned(&self) -> bool {
+
+        // TODO: this is not correct, we should use the field type
         self.ft.is_unsigned()
     }
 
