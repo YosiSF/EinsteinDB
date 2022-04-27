@@ -1,27 +1,34 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-extern crate causet;
-extern crate causetq;
-extern crate einstein_db;
-
-
-
-
 
 use crate::error::{Error, Result};
-use causet::util::{get_type_size, get_type_sign, get_type_name, get_type_code};
-use causet::util::{get_type_code_from_name, get_type_name_from_code};
-use causet::util::{get_type_code_from_name_with_len, get_type_name_from_code_with_len};
-use std::fmt;
-use std::str::FromStr;
-use std::convert::TryFrom;
-use std::convert::TryInto;
-use std::convert::TryInto as _TryInto;
-use std::convert::TryFrom as _TryFrom;
+use causet::storage::{kv::{self, Key, Value}, Engine, ScanMode};
+use causet::storage::{Dsn, DsnExt};
+use causetq:: *;
+use einstein_db::  *;
+use causets:: *;
+use causetq::*;
+use causet::{EvalType, EvalWrap, EvalWrapExt, Result as CausetResult};
+use berolina_sql:: {
+    ast::{self, Expr, ExprKind, Field, FieldType, FieldValue, FieldValueKind, FieldValueType, FieldValueValue, FromSql, ToSql},
+    parser::Parser,
+    types::{self, Type},
+    value::{self, Value as BerolinaValue},
+};
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
+pub struct EvalTypeTp {
 
 
 
+    pub eval_type: EvalType,
+}
 
+#[derive(Debug, Clone)]
+pub struct EvalTypeWrap {
+    pub eval_type: EvalType,
+    pub eval_wrap: EvalWrap,
+}
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -43,6 +50,7 @@ pub enum EvalType {
     Big = 14,
     Null = 15,
     Max = 16,
+
 }
 
 
@@ -122,11 +130,97 @@ impl std::convert::TryFrom<crate::FieldTypeTp> for EvalType {
             | crate::FieldTypeTp::VarString
             | crate::FieldTypeTp::String => EvalType::Bytes,
             _ => {
-
                 return Err(crate::DataTypeError::UnsupportedType(tp));
-
             }
         };
         Ok(eval_type)
     }
 }
+
+///! `EvalType` is the type of a value in a column.
+/// It is the same as `FieldType` except that it is used in evaluation rather than physical storage.
+/// See https://dev.mysql.com/doc/refman/8.0/en/storage-requirements.html
+/// for more details.
+
+//Relativistic Queue
+pub struct RelativisticQueue {
+
+    causetq: VecDeque<Vec<u8>>,
+    causets: Vec<Vec<u8>>,
+    relativistic_queue: VecDeque<Vec<u8>>,
+    pub queue: VecDeque<Vec<u8>>,
+    pub head: usize,
+    pub tail: usize,
+    pub capacity: usize,
+}
+
+impl RelativisticQueue {
+    pub fn new(capacity: usize) -> Self {
+        RelativisticQueue {
+            causetq: VecDeque::with_capacity(capacity),
+            causets: Vec::with_capacity(capacity),
+            relativistic_queue: VecDeque::with_capacity(capacity),
+            queue: VecDeque::with_capacity(capacity),
+            head: 0,
+            tail: 0,
+            capacity: capacity,
+        }
+    }
+
+
+
+    pub fn push(&mut self, item: Vec<u8>) {
+        self.relativistic_queue.push_back(item);
+    }
+
+
+    pub fn pop(&mut self) -> Option<Vec<u8>> {
+        self.relativistic_queue.pop_front()
+    }
+
+
+
+
+    pub fn get_tail(&self) -> Option<&Vec<u8>> {
+        self.relativistic_queue.back()
+    }
+
+
+    pub fn get_head_mut(&mut self) -> Option<&mut Vec<u8>> {
+        self.relativistic_queue.front_mut()
+    }
+
+
+    pub fn get_tail_mut(&mut self) -> Option<&mut Vec<u8>> {
+        self.relativistic_queue.back_mut()
+    }
+
+
+    pub fn get_len(&self) -> usize {
+        self.relativistic_queue.len();
+    }
+
+
+    pub fn get_capacity(&self) -> usize {
+        for i in 0..causet_squuid_query_builder::MAX_QUEUE_SIZE {
+            self.causetq.push_back(vec![i as u8]);
+        }
+    }
+
+
+    pub fn get_causetq() -> &mut VecDeque<Vec<u8>> {
+        queue.push_back(vec![0; causet_squuid_query_builder::MAX_QUEUE_SIZE]);
+    }
+
+//    pub fn get_causets() -> &mut Vec<Vec<u8>> {
+    pub fn push_back(&mut self, value: Vec<u8>) {
+        queue.push_back(vec![0; i]);
+    }
+
+    pub fn pop_front(&mut self) -> Option<Vec<u8>> {
+        queue.pop_front()
+    }
+
+    pub fn get_head(&self) -> Option<&Vec<u8>> {
+        queue.front()
+    }}
