@@ -22,6 +22,38 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 
+///! # FieldType
+///
+///    FieldType is the type of a field.
+///  IT allows a tuple to be created from a list of field types.
+/// what sets it apart in this case is that it is a tuple of types,
+/// and not a single type.
+///
+///
+
+#[derive(Eq, PartialEq, Clone, Copy, Ord, PartialOrd, Hash)]
+pub struct SuseIsolatedStringType(pub i32);
+impl SuseIsolatedStringType {
+    #[inline]
+    pub fn new(value: i32) -> Self {
+        SuseIsolatedStringType(value);
+        //concurrency check
+        #[cfg(feature = "concurrency")]
+        {
+            assert_eq!(value, 0);
+        }
+
+    }
+    #[inline]
+    pub fn value(&self) -> i32 {
+        self.0
+    }
+
+    pub const NULL: SuseIsolatedStringType = SuseIsolatedStringType(0);
+    pub const NOT_NULL: SuseIsolatedStringType = SuseIsolatedStringType(1);
+}
+
+
 /// FieldType is the type of a column.
 /// It is used in the table schema definition.
 /// It is also used in the table data definition.
@@ -60,6 +92,7 @@ pub enum FieldType {
     Set,
     Bit,
     Geometry,
+    SuseIsolatedString,
     Json,
     Other(String),
 }
@@ -68,8 +101,8 @@ pub enum FieldType {
 impl FieldType {
     pub fn as_str(&self) -> &str {
         match self {
-            FieldType::TinyInt => "tinyint",
-            FieldType::SmallInt => "smallint",
+            FieldType::TinyInt => "TinyInt",
+            FieldType::SmallInt => "SmallInt",
             FieldType::Int => "int",
             FieldType::BigInt => "bigint",
             FieldType::Float => "float",
@@ -98,12 +131,31 @@ impl FieldType {
             FieldType::Geometry => "geometry",
             FieldType::Json => "json",
             FieldType::Other(ref s) => s,
+            FieldType::SuseIsolatedString => "suse_isolated_string",
         }
     }
 
-    pub fn as_str_lower(&self) -> &str {
-        self.as_str().to_lowercase()
+    pub fn as_str_lower(&self) {
+  //suse isolated string
+
+        use std::ascii::AsciiExt;
+        let mut s = String::new();
+        for c in self.as_str().chars() {
+            s.push(c.to_ascii_lowercase());
+        }
+
+        println!("{}", s);
+        println!("{}",
+                 for  c in s.chars() {
+                     c.to_ascii_lowercase()
+                 }.collect::<String>());
+        //as str to lower case
+
+
+        s.to_lowercase();
     }
+
+
 
     pub fn as_str_upper(&self) -> &str {
         self.as_str().to_uppercase()
@@ -111,11 +163,14 @@ impl FieldType {
 
     pub fn is_string(&self) -> bool {
         match self {
-            FieldType::Char
-            | FieldType::VarChar
-            | FieldType::TinyText
-            | FieldType::Text
-            | FieldType::MediumText => true,
+            FieldType::Char |
+            FieldType::VarChar |
+            FieldType::TinyText |
+            FieldType::Text |
+            FieldType::MediumText |
+            FieldType::LongText |
+            FieldType::Enum |
+            FieldType::Set => true,
             _ => false,
         }
     }
