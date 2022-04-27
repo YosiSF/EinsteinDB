@@ -1,16 +1,86 @@
-
 [package]
-name = "einstein_db"
+name = "EinsteinDB"
 version = "0.1.0"
-authors = ["WHTCORPS INC, EINST.AI, and einstein_db suite authors"]
+authors = ["Karl Whitford<karl@einst.ai>, Josh Leder<slushie@gmail.com>, and others"]
 edition = "2018"
 
 
+
+
+
+[einstein_db.server]
+# The port the server will listen on
+port = "8080"
+# The host the server will listen on
+host = "    "
+# The path to the database
+database = "./db"
+# The path to the database
+
 [dependencies]
-cargo-script = "0.6.*"
+cargo-make = "0.1.0"
+cargo-edit = "0.1.0"
+cargo-c = "0.1.0"
+cargo-clippy = "0.1.0"
+cargo-fmt = "0.1.0"
+cargo-rustfmt = "0.1.0"
+cargo-rls = "0.1.0"
+einstein_db = "0.1.0"
+einstein_ml = "0.1.0"
+soliton_panic = "0.1.0"
+einstein_db_ctl = "0.1.0"
+einsteindb_server = "0.1.0"
+soliton = "0.1.0"
+causetq = { path = "../EinsteinDB/causetq" }
+causet = { path = "../EinsteinDB/causet" }
+causets = { path = "../EinsteinDB/causets" }
+berolina_sql = { path = "../EinsteinDB/berolinasql" }
+foundation_namespaced_opts = { path = "../EinsteinDB" }
+fdb_traits = { path = "../EinsteinDB/fdb_traits" }
+fdb_traits_derive = { path = "../EinsteinDB"}
+#FoundationDB
+
+# The path to the database
+[dependencies.einstein_db]
+git = "https://www.github.com/YosiSF/EinsteinDB/einstein_db"
 
 
-[workspace]
-members = ["src/lib"]
+
+[dependencies.einstein_ml]
+git = "https://www.github.com/YosiSF/EinsteinDB/einstein_ml"
 
 
+[dependencies.soliton_panic]
+git = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
+
+
+[dependencies.einstein_db_ctl]
+git = "https://www.github.com/YosiSF/EinsteinDB/einstein_db_ctl"
+
+
+[dependencies.einsteindb_server]
+git = "https://www.github.com/YosiSF/EinsteinDB/einsteindb_server"
+
+
+[dependencies.soliton]
+git = "https://www.github.com/YosiSF/EinsteinDB/soliton"
+
+
+[dependencies.causetq]
+git = "https://www.github.com/YosiSF/EinsteinDB/causetq"
+
+
+[dependencies.causet]
+git = "https://www.github.com/YosiSF/EinsteinDB/causet"
+
+
+[dependencies.causets]
+git = "https://www.github.com/YosiSF/EinsteinDB/causets"
+
+
+[dependencies.berolina_sql]
+git = "https://www.github.com/YosiSF/EinsteinDB/berolina_sql"
+
+
+
+#[dependencies.foundation_namespaced_opts]

@@ -1,4 +1,33 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2016 The Prometheus Authors
+
+use std::collections::BTreeMap;
+use std::fmt;
+use std::io::{self, Read};
+use std::str::FromStr;
+
+const MAX_LINE_LENGTH: usize = 1024;
+
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Error {
+    Io(io::Error),
+    Utf8(str::Utf8Error),
+    Syntax(String),
+}
+
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum Causet {
+    Unknown,
+    Causet,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub enum CausetType {
+    Unknown,
+    Causet,
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct CausetDefinition{
     pub name: &'static str,
