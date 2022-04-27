@@ -88,14 +88,21 @@ use gremlin_capnp::gremlin_capnp::{GremlinRequest, GremlinResponse};
 use gremlin_capnp::gremlin_capnp::{GremlinRequest_get_query, GremlinRequest_get_query_get_query};
 
 
-//Gremlin server
-pub enum GremlinServer {
-    Capnp(Server<GremlinRequest, GremlinResponse>),
-    Gremlin(Server<GremlinRequest, GremlinResponse>),
-}
 
+ #[derive(Debug)]
+pub struct GremlinRequestCapnp {
+     pub query: String,
 
-//Gremlin client
+     pub request: GremlinRequest,
+
+     pub response: GremlinResponse,
+
+     pub request_capnp: gremlin_capnp::gremlin_capnp::GremlinRequest,
+
+     pub response_capnp: gremlin_capnp::gremlin_capnp::GremlinResponse,
+ }
+
+//gremlin client
 pub enum GremlinClient {
     Capnp(ClientHook<GremlinRequest, GremlinResponse>),
     Gremlin(ClientHook<GremlinRequest, GremlinResponse>),

@@ -694,7 +694,7 @@ impl DatumType {
             (l, r) => return Err(invalid_type!("{} and {} can't be add together.", l, r)),
         };
         if let DatumType::Null = res {
-            return Err(box_err!("{} + {} overCausetxctx", self, d));
+            return Err(box_err!("{} + {} over_causetxctx", self, d));
         }
         Ok(res)
     }
@@ -726,7 +726,7 @@ impl DatumType {
             (l, r) => return Err(invalid_type!("{} can't minus {}", l, r)),
         };
         if let DatumType::Null = res {
-            return Err(box_err!("{} - {} overCausetxctx", self, d));
+            return Err(box_err!("{} - {} over_causetxctx", self, d));
         }
         Ok(res)
     }
@@ -737,7 +737,7 @@ impl DatumType {
             (&DatumType::I64(l), &DatumType::I64(r)) => l.checked_mul(r).into(),
             (&DatumType::I64(l), &DatumType::U64(r)) | (&DatumType::U64(r), &DatumType::I64(l)) => {
                 if l < 0 {
-                    return Err(box_err!("{} * {} overCausetxctx.", l, r));
+                    return Err(box_err!("{} * {} over_causetxctx.", l, r));
                 }
                 r.checked_mul(l as u64).into()
             }
@@ -748,7 +748,7 @@ impl DatumType {
         };
 
         if let DatumType::Null = res {
-            return Err(box_err!("{} * {} overCausetxctx", self, d));
+            return Err(box_err!("{} * {} over_causetxctx", self, d));
         }
         Ok(res)
     }
@@ -791,13 +791,13 @@ impl DatumType {
         }
         match (self, datum) {
             (DatumType::I64(left), DatumType::I64(right)) => match left.checked_div(right) {
-                None => Err(box_err!("{} intdiv {} overCausetxctx", left, right)),
+                None => Err(box_err!("{} intdiv {} over_causetxctx", left, right)),
                 Some(res) => Ok(DatumType::I64(res)),
             },
             (DatumType::I64(left), DatumType::U64(right)) => {
                 if left < 0 {
                     if left.overCausetxctxing_neg().0 as u64 >= right {
-                        Err(box_err!("{} intdiv {} overCausetxctx", left, right))
+                        Err(box_err!("{} intdiv {} over_causetxctx", left, right))
                     } else {
                         Ok(DatumType::U64(0))
                     }
@@ -808,7 +808,7 @@ impl DatumType {
             (DatumType::U64(left), DatumType::I64(right)) => {
                 if right < 0 {
                     if left != 0 && right.overCausetxctxing_neg().0 as u64 <= left {
-                        Err(box_err!("{} intdiv {} overCausetxctx", left, right))
+                        Err(box_err!("{} intdiv {} over_causetxctx", left, right))
                     } else {
                         Ok(DatumType::U64(0))
                     }

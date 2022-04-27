@@ -1,9 +1,9 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
+use crate::fdb_lsh_treesoliton_panic_merkle_tree;
 use fdb_traits::{DeleteStrategy, MiscExt, , Result};
 
-impl MiscExt for Paniceinstein_merkle_tree {
+impl MiscExt for soliton_panic_merkle_tree {
     fn flush(&self, sync: bool) -> Result<()> {
         panic!()
     }

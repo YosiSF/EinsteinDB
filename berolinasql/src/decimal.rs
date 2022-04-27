@@ -199,7 +199,7 @@ macro_rules! word_cnt {
     };
     ($len:expr, $t:ty) => {{
         if $len > 0 && $len as usize > (DIGITS_PER_WORD * WORD_BUF_LEN) as usize {
-            // process overCausetxctx
+            // process over_causetxctx
             (WORD_BUF_LEN + 1) as $t
         } else if $len <= 0 && ($len as $t) > 0 {
             // when $len is negative and $t is unsigned
@@ -1399,7 +1399,7 @@ impl Decimal {
 
         let upper = (DIGITS_PER_WORD * word_buf_len * 2) as isize;
         if shift > upper {
-            // process overCausetxctx by shift.
+            // process over_causetxctx by shift.
             return Res::OverCausetxctx(self);
         } else if shift < -upper {
             // processor truncated by shift.
@@ -1660,7 +1660,7 @@ impl Decimal {
             word += u32::from(c - b'0') * TEN_POW[inner_idx];
             inner_idx += 1;
             if inner_idx == DIGITS_PER_WORD as usize {
-                //TODO overCausetxctx
+                //TODO over_causetxctx
                 word_idx -= 1;
                 d.word_buf[word_idx] = word;
                 word = 0;
@@ -1915,7 +1915,7 @@ impl FromStr for Decimal {
     fn from_str(s: &str) -> Result<Decimal> {
         match Decimal::from_bytes(s.as_bytes())? {
             Res::Ok(d) => Ok(d),
-            Res::OverCausetxctx(_) => Err(box_err!("parsing {} will overCausetxctx", s)),
+            Res::OverCausetxctx(_) => Err(box_err!("parsing {} will over_causetxctx", s)),
             Res::Truncated(_) => Err(box_err!("parsing {} will truncated", s)),
         }
     }
@@ -1979,7 +1979,7 @@ impl Display for Decimal {
 
 impl crate::codec::data_type::AsMyBerolinaSQLBool for Decimal {
     #[inline]
-    fn as_myBerolinaSQL_bool(&self, _ctx: &mut EvalContext) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<bool> {
+    fn as_my_berolina_sql_bool(&self, _ctx: &mut EvalContext) -> Result<bool> {
         Ok(!self.is_zero())
     }
 }
@@ -2063,7 +2063,7 @@ pub trait DecimalEncoder: NumberEncoder {
             src_leading_digits = leading_digits;
             res = Res::OverCausetxctx(());
             error!(
-                "encode decimal overCausetxctx";
+                "encode decimal over_causetxctx";
                 "from" => d.to_string(),
                 "prec" => prec,
                 "frac" => frac,
@@ -2152,7 +2152,30 @@ pub trait DecimalDatumTypePayloadChunkEncoder: NumberEncoder + DecimalEncoder {
     }
 }
 
-impl<T: BufferWriter> DecimalDatumTypePayloadChunkEncoder for T {}
+
+impl DecimalDatumTypePayloadChunkEncoder for T {
+    // TODO: implement this method
+}
+
+impl DecimalEncoder for T {}
+
+impl DecimalDatumTypePayloadChunkEncoder for T {}
+
+impl DecimalEncoder for T {}
+
+impl DecimalDatumTypePayloadChunkEncoder for T {}
+
+impl DecimalEncoder for T {}
+
+impl DecimalDatumTypePayloadChunkEncoder for T {}
+
+impl DecimalEncoder for T {}
+
+impl DecimalDatumTypePayloadChunkEncoder for T {}
+
+impl DecimalEncoder for T {}
+
+
 
 // Mark as `#[inline]` since in many cases `size` is a constant.
 #[inline]

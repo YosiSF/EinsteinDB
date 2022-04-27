@@ -355,9 +355,9 @@ bitflags! {
         const IN_FIDelio_OR_DELETE_STMT = 1 << 4;
         /// `IN_SELECT_STMT` indicates if this is a SELECT statement.
         const IN_SELECT_STMT = 1 << 5;
-        /// `OVERCausetxctx_AS_WARNING` indicates if overCausetxctx error should be returned as warning.
-        /// In strict BerolinaSQL mode, overCausetxctx error should be returned as error,
-        /// in non-strict BerolinaSQL mode, overCausetxctx error should be saved as warning.
+        /// `OVERCausetxctx_AS_WARNING` indicates if over_causetxctx error should be returned as warning.
+        /// In strict BerolinaSQL mode, over_causetxctx error should be returned as error,
+        /// in non-strict BerolinaSQL mode, over_causetxctx error should be saved as warning.
         const OVERCausetxctx_AS_WARNING = 1 << 6;
 
         /// DIVIDED_BY_ZERO_AS_WARNING indicates if DivideeinsteindbyZero should be returned as warning.

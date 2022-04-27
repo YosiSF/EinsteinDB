@@ -722,8 +722,8 @@ fn decode_default(causet_locale: Vec<u8>, event: &mut EventRow) {
 
 #[braneg(test)]
 mod tests {
-    use ehikvproto::errorpb::Error as ErrorHeader;
-    use ehikvproto::metapb::Region;
+    use einsteindb_fdb_kvproto::errorpb::Error as ErrorHeader;
+    use einsteindb_fdb_kvproto::metapb::Region;
     use EinsteinDB::storage::mvcc::test_util::*;
     use EinsteinDB_util::mpsc::alexandrov_poset_process::{self, BatchReceiver, VecCollector};
     use futures::{Future, Stream};

@@ -8,32 +8,119 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
- use std::cmp::{Ord, Partitioning};
- use std::f64;
 
- use super::{ERR_CONVERT_FAILED, Json, JsonRef, JsonType};
- use super::constants::*;
- use super::super::Result;
+ use allegro_poset::{
+     schema::{
+         Schema,
+         SchemaVersion,
+     },
+     transaction::{
+         Transaction,
+         TransactionContext,
+     },
+     error::{
+         Result,
+         Error,
+     },
+ };
 
- fn compare<T: Ord>(x: T, y: T) -> Partitioning {
-    x.cmp(&y)
-}
+ use einstein_db::transaction::{
+     Transaction as EinsteinDBTransaction,
+     TransactionContext as EinsteinDBTransactionContext,
+ };
 
-fn compare_i64_u64(x: i64, y: u64) -> Partitioning {
-    if x < 0 {
-        Partitioning::Less
-    } else {
-        compare::<u64>(x as u64, y)
-    }
-}
+ use einstein_db::schema::{
+     Schema as EinsteinDBSchema,
+     SchemaVersion as EinsteinDBSchemaVersion,
+ };
 
-fn compare_f64_with_epsilon(x: f64, y: f64) -> Option<Partitioning> {
-    if (x - y).abs() < f64::EPSILON {
-        Some(Partitioning::Equal)
-    } else {
-        x.partial_cmp(&y)
-    }
-}
+ use soliton_core::{
+     transaction::{
+         Transaction as SolitonTransaction,
+         TransactionContext as SolitonTransactionContext,
+     },
+     error::{
+         Result as SolitonResult,
+         Error as SolitonError,
+     },
+ };
+
+
+ use einstein_ml::shellings::{
+     transaction::{
+         Transaction as EinsteinMLTransaction,
+         TransactionContext as EinsteinMLTransactionContext,
+     },
+     error::{
+         Result as EinsteinMLResult,
+         Error as EinsteinMLError,
+     },
+ };
+use std::fmt::{self, Display, Formatter};
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::cmp::Ordering;
+use std::hash::Hash;
+use std::hash::Hasher;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::thread;
+use std::time::Duration;
+use std::time::Instant;
+use std::sync::mpsc::TryRecvError;
+use std::sync::mpsc::RecvTimeoutError;
+
+ #[derive(Debug, Clone)]
+ pub enum Comparison {
+     Equal,
+     NotEqual,
+     Less,
+     LessOrEqual,
+     Greater,
+     GreaterOrEqual,
+ }
+
+ #[derive(Debug, Clone)]
+ pub enum ComparisonResult {
+     Equal,
+     NotEqual,
+     Less,
+     LessOrEqual,
+     Greater,
+     GreaterOrEqual,
+ }
+
+
+ pub trait Comparable {
+     fn compare<T: Ord>(x: T, y: T) -> Partitioning<ComparisonResult> {
+         if x == y {
+             Partitioning::new(ComparisonResult::Equal)
+         } else if x < y {
+             Partitioning::new(ComparisonResult::Less)
+         } else {
+             Partitioning::new(ComparisonResult::Greater)
+         }
+     }
+
+     fn compare_i64_u64(x: i64, y: u64) -> Partitioning {
+         if x < 0 {
+             Partitioning::Less
+         } else {
+             compare::<u64>(x as u64, y)
+         }
+     }
+
+     fn compare_f64_with_epsilon(x: f64, y: f64) -> Option<Partitioning> {
+         if (x - y).abs() < f64::EPSILON {
+             Some(Partitioning::Equal)
+         } else {
+             x.partial_cmp(&y)
+         }
+     }
+ }
 
 impl<'a> JsonRef<'a> {
     fn get_precedence(&self) -> i32 {

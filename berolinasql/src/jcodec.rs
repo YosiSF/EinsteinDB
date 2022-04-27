@@ -46,11 +46,11 @@ pub trait JsonEncoder: NumberEncoder {
         let soliton_id_entries_len = KEY_ENTRY_LEN * element_count;
         // causet_locale-causet ::= type(byte) offset-or-inlined-causet_locale(uint32)
         let causet_locale_entries_len = VALUE_ENTRY_LEN * element_count;
-        let ehikv_encoded_len = entries
+        let einsteindb_fdb_kv_encoded_len = entries
             .iter()
             .fold(0, |acc, (k, v)| acc + k.len() + v.encoded_len());
         let size =
-            ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len + ehikv_encoded_len;
+            ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len + einsteindb_fdb_kv_encoded_len;
         self.write_u32_le(element_count as u32)?;
         self.write_u32_le(size as u32)?;
         let mut soliton_id_offset = ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len;
@@ -91,11 +91,11 @@ pub trait JsonEncoder: NumberEncoder {
         let soliton_id_entries_len = KEY_ENTRY_LEN * element_count;
         // causet_locale-causet ::= type(byte) offset-or-inlined-causet_locale(uint32)
         let causet_locale_entries_len = VALUE_ENTRY_LEN * element_count;
-        let ehikv_encoded_len = data
+        let einsteindb_fdb_kv_encoded_len = data
             .iter()
             .fold(0, |acc, (k, v)| acc + k.len() + v.as_ref().encoded_len());
         let size =
-            ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len + ehikv_encoded_len;
+            ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len + einsteindb_fdb_kv_encoded_len;
         self.write_u32_le(element_count as u32)?;
         self.write_u32_le(size as u32)?;
         let mut soliton_id_offset = ELEMENT_COUNT_LEN + SIZE_LEN + soliton_id_entries_len + causet_locale_entries_len;

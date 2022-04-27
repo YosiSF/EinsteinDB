@@ -171,7 +171,7 @@ impl ConfigKey {
 
 
 ///! This is the main configuration file for the EinsteinDB.
-///! deserialize from toml file or json file
+///!
     pub fn deserialize_config_key(key: &str) -> Result<ConfigKey, CtlError> {
           let mut key_parts = key.split(".");
           let name = key_parts.next().unwrap();

@@ -3,9 +3,9 @@
 use fdb_traits::{Violetabft_oocGreedoids, Violetabft_oocGreedoidsExt, Result};
 use txn_types::TimeStamp;
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
+use crate::fdb_lsh_treesoliton_panic_merkle_tree;
 
-impl Violetabft_oocGreedoidsExt for Paniceinstein_merkle_tree {
+impl Violetabft_oocGreedoidsExt for soliton_panic_merkle_tree {
     fn get_mvcc_greedoids_namespaced(
         &self,
         namespaced: &str,

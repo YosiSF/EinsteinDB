@@ -541,7 +541,7 @@ mod tests {
             }
         }
 
-        // test overCausetxctx
+        // test over_causetxctx
         let mut ctx = EvalContext::default();
         let val: Result<bool> = f64::INFINITY
             .to_string()

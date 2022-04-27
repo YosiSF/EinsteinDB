@@ -98,7 +98,7 @@ async fn create_alexandrov_poset_processv_process_async<K, V>(db: Arc<dyn Mutabl
 }
 
 /*
-impl WriteBatchExt for Paniceinstein_merkle_tree {
+impl WriteBatchExt for soliton_panic_merkle_tree {
     type WriteBatch = PanicWriteBatch;
     type WriteBatchVec = PanicWriteBatch;
 
@@ -118,8 +118,8 @@ impl WriteBatchExt for Paniceinstein_merkle_tree {
 
 pub struct PanicWriteBatch;
 
-impl WriteBatch<Paniceinstein_merkle_tree> for PanicWriteBatch {
-    fn with_capacity(_: &Paniceinstein_merkle_tree, _: usize) -> Self {
+impl WriteBatch<soliton_panic_merkle_tree> for PanicWriteBatch {
+    fn with_capacity(_: &soliton_panic_merkle_tree, _: usize) -> Self {
         panic!()
     }
 

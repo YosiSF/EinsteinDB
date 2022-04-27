@@ -8,15 +8,41 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
- use codec::number::NumberCodec;
- use std::convert::TryInto;
 
- use crate::codec::Result;
+use std::io::{self, Read, Write};
+use std::mem;
+use std::cmp;
+use std::fmt;
 
- use super::{ERR_CONVERT_FAILED, JsonRef, JsonType};
- use super::constants::*;
+use byteorder::{ByteOrder, BigEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{LittleEndian, WriteBytesExt};
+use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 
- impl<'a> JsonRef<'a> {
+
+ //JsonRef
+ pub trait JsonRef {
+     fn as_str(&self) -> &str;
+     fn as_u64(&self) -> Option<u64>;
+     fn as_i64(&self) -> Option<i64>;
+     fn as_f64(&self) -> Option<f64>;
+     fn as_bool(&self) -> Option<bool>;
+     fn as_array(&self) -> Option<&[JsonRef]>;
+     fn as_object(&self) -> Option<&JsonObject>;
+ }
+
+ #[derive(Debug, Clone, PartialEq)]
+ pub struct JsonObject {
+     pub(crate) map: Vec<(String, JsonRef)>,
+ }
+
+ #[derive(Debug, Clone, PartialEq)]
+ pub struct JsonArray {
+     pub(crate) vec: Vec<JsonRef>,
+ }
+
+
+
+ impl<'a> dyn JsonRef<'a> {
     /// Gets the ith element in JsonRef
     ///
     /// See `arrayGetElem()` in MEDB `json/binary.go`

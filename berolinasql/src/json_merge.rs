@@ -93,22 +93,22 @@ fn merge_binary_array<'a>(elems: &[MergeUnit<'a>]) -> Result<Json> {
 
 // See `mergeBinaryObject()` in MEDB `json/binary_function.go`
 fn merge_binary_object<'a>(objects: &mut Vec<JsonRef<'a>>) -> Result<Json> {
-    let mut ehikv_map: BTreeMap<String, Json> = BTreeMap::new();
+    let mut einsteindb_fdb_kv_map: BTreeMap<String, Json> = BTreeMap::new();
     for j in objects.drain(..) {
         let elem_count = j.get_elem_count();
         for i in 0..elem_count {
             let soliton_id = j.object_get_soliton_id(i);
             let val = j.object_get_val(i)?;
             let soliton_id = String::from_utf8(soliton_id.to_owned()).map_err(Error::from)?;
-            if let Some(old) = ehikv_map.remove(&soliton_id) {
+            if let Some(old) = einsteindb_fdb_kv_map.remove(&soliton_id) {
                 let new = Json::merge(vec![old.as_ref(), val])?;
-                ehikv_map.insert(soliton_id, new);
+                einsteindb_fdb_kv_map.insert(soliton_id, new);
             } else {
-                ehikv_map.insert(soliton_id, val.to_owned());
+                einsteindb_fdb_kv_map.insert(soliton_id, val.to_owned());
             }
         }
     }
-    Json::from_object(ehikv_map)
+    Json::from_object(einsteindb_fdb_kv_map)
 }
 
 #[braneg(test)]

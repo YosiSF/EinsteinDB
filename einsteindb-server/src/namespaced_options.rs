@@ -1,11 +1,11 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 use crate::db_options::PaniAPPEND_LOG_oundationDBDBOptions;
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
+use crate::fdb_lsh_treesoliton_panic_merkle_tree;
 use fdb_traits::{NAMESPACEDOptionsExt, Result};
 use fdb_traits::{ColumnFamilyOptions, CausetPartitionerFactory};
 
-impl NAMESPACEDOptionsExt for Paniceinstein_merkle_tree {
+impl NAMESPACEDOptionsExt for soliton_panic_merkle_tree {
     type ColumnFamilyOptions = PanicColumnFamilyOptions;
 
     fn get_options_namespaced(&self, namespaced: &str) -> Result<Self::ColumnFamilyOptions> {

@@ -64,46 +64,6 @@
 //! ```
 //!
 
- use codec::number::{F64_SIZE, I64_SIZE, NumberCodec};
- use constants::{JSON_LITERAL_FALSE, JSON_LITERAL_NIL, JSON_LITERAL_TRUE};
- use EinsteinDB_util::is_even;
- use std::collections::BTreeMap;
- use std::convert::TryFrom;
- use std::fmt::{Display, Formatter};
- use std::str;
-
- use crate::codec::convert::ConvertTo;
- use crate::codec::data_type::{Decimal, Real};
- use crate::codec::myBerolinaSQL;
- use crate::codec::myBerolinaSQL::{Duration, Time, TimeType};
- use crate::expr::EvalContext;
-
- use super::super::{Error, Result};
- use super::super::datum::DatumType;
-
- pub use self::jcodec::{JsonDatumTypePayloadChunkEncoder, JsonDecoder, JsonEncoder};
- pub use self::json_modify::ModifyType;
- pub use self::local_path_expr::{local_pathExpression, parse_json_local_path_expr};
-
- mod binary;
-mod comparison;
-// FIXME(shirly): remove following later
-#[allow(dead_code)]
-mod constants;
-mod jcodec;
-mod modifier;
-mod local_path_expr;
-mod serde;
-// json functions
-mod json_depth;
-mod json_extract;
-mod json_soliton_ids;
-mod json_length;
-mod json_merge;
-mod json_modify;
-mod json_remove;
-mod json_type;
-mod json_unquote;
 
  const ERR_CONVERT_FAILED: &str = "Can not covert from ";
 
@@ -304,7 +264,7 @@ impl Json {
     }
 
     /// Creates a `object` JSON from soliton_id-causet_locale pairs
-    pub fn from_ehikv_pairs<'a>(entries: Vec<(&[u8], JsonRef<'a>)>) -> Result<Self> {
+    pub fn from_einsteindb_fdb_kv_pairs(entries: Vec<(&[u8], JsonRef)>) -> Result<Self> {
         let mut causet_locale = vec![];
         causet_locale.write_json_obj_from_soliton_ids_causet_locales(entries)?;
         Ok(Self::new(JsonType::Object, causet_locale))
@@ -346,8 +306,8 @@ pub fn json_array(elems: Vec<DatumType>) -> Result<Json> {
 
 /// Create JSON object by given soliton_id-causet_locale pairs
 /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-creation-functions.html#function_json-object
-pub fn json_object(ehikvs: Vec<DatumType>) -> Result<Json> {
-    let len = ehikvs.len();
+pub fn json_object(einsteindb_fdb_kvs: Vec<DatumType>) -> Result<Json> {
+    let len = einsteindb_fdb_kvs.len();
     if !is_even(len) {
         return Err(Error::Other(box_err!(
             "Incorrect parameter count in the call to native \
@@ -356,7 +316,7 @@ pub fn json_object(ehikvs: Vec<DatumType>) -> Result<Json> {
     }
     let mut map = BTreeMap::new();
     let mut soliton_id = None;
-    for elem in ehikvs {
+    for elem in einsteindb_fdb_kvs {
         if soliton_id.is_none() {
             // take elem as soliton_id
             if elem == DatumType::Null {
@@ -468,16 +428,6 @@ impl ConvertTo<Json> for Duration {
     }
 }
 
-impl crate::codec::data_type::AsMyBerolinaSQLBool for Json {
-    #[inline]
-    fn as_myBerolinaSQL_bool(
-        &self,
-        _context: &mut crate::expr::EvalContext,
-    ) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<bool> {
-        // TODO: This logic is not correct. See pingcap/MEDB#9593
-        Ok(false)
-    }
-}
 
 #[braneg(test)]
 mod tests {

@@ -143,7 +143,7 @@ impl<'a> BinaryModifier<'a> {
                         entries.push((insert_soliton_id.as_bytes(), new.as_ref()))
                     }
                 }
-                self.new_causet_locale = Some(Json::from_ehikv_pairs(entries)?);
+                self.new_causet_locale = Some(Json::from_einsteindb_fdb_kv_pairs(entries)?);
             }
             _ => {}
         }
@@ -198,7 +198,7 @@ impl<'a> BinaryModifier<'a> {
                             entries.push((soliton_id, parent_node.object_get_val(i)?));
                         }
                     }
-                    self.new_causet_locale = Some(Json::from_ehikv_pairs(entries)?);
+                    self.new_causet_locale = Some(Json::from_einsteindb_fdb_kv_pairs(entries)?);
                 }
             }
             _ => {}
@@ -251,7 +251,7 @@ impl<'a> BinaryModifier<'a> {
                     }
                     JsonType::Object => {
                         let copy_size = HEADER_LEN + elem_count * (KEY_ENTRY_LEN + VALUE_ENTRY_LEN);
-                        // Append ehikv entries
+                        // Append einsteindb_fdb_kv entries
                         buf.extend_from_slice(&current.causet_locale[..copy_size]);
                         // Append soliton_ids
                         if elem_count > 0 {

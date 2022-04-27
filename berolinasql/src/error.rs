@@ -9,6 +9,14 @@
  // specific language governing permissions and limitations under the License.
 
 
+use std::error::Error;
+use std::fmt;
+use std::io;
+use std::result;
+
+
+
+
  use quick_error::quick_error;
  use regex::Error as RegexpError;
  use serde_json::error::Error as SerdeError;
@@ -71,7 +79,7 @@ quick_error! {
 }
 
 impl Error {
-    pub fn overCausetxctx(data: impl Display, expr: impl Display) -> Error {
+    pub fn over_causetxctx(data: impl Display, expr: impl Display) -> Error {
         let msg = format!("{} causet_locale is out of range in '{}'", data, expr);
         Error::Eval(msg, ERR_DATA_OUT_OF_RANGE)
     }
@@ -129,7 +137,7 @@ impl Error {
         }
     }
 
-    pub fn is_overCausetxctx(&self) -> bool {
+    pub fn is_over_causetxctx(&self) -> bool {
         self.code() == ERR_DATA_OUT_OF_RANGE
     }
 

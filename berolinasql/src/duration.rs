@@ -1,18 +1,28 @@
-// Copyright 2016 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use codec::prelude::*;
-use einsteindbpb::FieldType;
-use std::cmp::Partitioning;
-use std::fmt::{self, Display, Formatter};
 
-use crate::codec::{Error, Result, TEN_POW};
-use crate::codec::convert::ConvertTo;
-use crate::codec::error::{ERR_DATA_OUT_OF_RANGE, ERR_TRUNCATE_WRONG_VALUE};
-use crate::codec::myBerolinaSQL::{MAX_FSP, Time as DateTime, TimeType};
-use crate::expr::EvalContext;
-use crate::FieldTypeAccessor;
+use std::fmt;
+use std::ops::{Add, Sub, Mul, Div};
+use std::time::Duration;
 
-use super::{check_fsp, Decimal, DEFAULT_FSP};
+
+/// A `Duration` type to represent a span of time.
+///     # Examples
+///    ```
+///   use berolinasql::duration::Duration;
+///  let five_seconds = Duration::from_secs(5);
+/// let five_seconds_from_now = five_seconds.after_now();
+/// ```
+///
+///
+///     # Examples
+///   ```
+///  use berolinasql::duration::Duration;
+///
+/// let five_seconds = Duration::from_secs(5);
+/// let five_seconds_from_now = five_seconds.after_now();
+/// ```
+///
 
 pub const NANOS_PER_SEC: i64 = 1_000_000_000;
 pub const NANOS_PER_MILLI: i64 = 1_000_000;
@@ -34,6 +44,18 @@ const MAX_NANOS: i64 = ((MAX_HOUR_PART as i64 * SECS_PER_HOUR)
     * NANOS_PER_SEC
     + MAX_NANOS_PART as i64;
 const MAX_DURATION_INT_VALUE: u32 = MAX_HOUR_PART * 10000 + MAX_MINUTE_PART * 100 + MAX_SECOND_PART;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Duration {
+    secs: i64,
+    nanos: i64,
+    pub fsp: u8,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DurationInSecs {
+    secs: i64,
+}
 
 #[inline]
 fn check_hour_part(hour: u32) -> Result<u32> {
@@ -237,7 +259,7 @@ mod parser {
                         if err.is_overCausetxctx() {
                             ctx.handle_overCausetxctx_err(Error::truncated_wrong_val("TIME", input))?;
                             let nanos = if neg { -MAX_NANOS } else { MAX_NANOS };
-                            Ok(Duration { nanos, fsp })
+                            Ok(Duration { secs: 0, nanos, fsp })
                         } else {
                             Err(err)
                         }
@@ -258,13 +280,6 @@ fn checked_round(nanos: i64, fsp: u8) -> Result<i64> {
         nanos - rem + min_step * nanos.signum()
     };
     check_nanos(nanos)
-}
-
-#[derive(Debug, Clone, Copy)]
-#[repr(C)]
-pub struct Duration {
-    nanos: i64,
-    fsp: u8,
 }
 
 impl Duration {
@@ -342,6 +357,7 @@ impl Duration {
     #[inline]
     pub fn zero() -> Duration {
         Duration {
+            secs: 0,
             nanos: 0,
             fsp: DEFAULT_FSP as u8,
         }
@@ -368,7 +384,7 @@ impl Duration {
             .checked_mul(NANOS_PER_SEC)
             .ok_or_else(|| Error::Eval("DURATION OVERCausetxctx".to_string(), ERR_DATA_OUT_OF_RANGE))?;
         check_nanos(nanos)?;
-        Ok(Duration { nanos, fsp })
+        Ok(Duration { secs, nanos, fsp })
     }
 
     pub fn from_millis(millis: i64, fsp: i8) -> Result<Duration> {
@@ -377,7 +393,7 @@ impl Duration {
             .checked_mul(NANOS_PER_MILLI)
             .ok_or_else(|| Error::Eval("DURATION OVERCausetxctx".to_string(), ERR_DATA_OUT_OF_RANGE))?;
         let nanos = checked_round(nanos, fsp)?;
-        Ok(Duration { nanos, fsp })
+        Ok(Duration { secs: 0, nanos, fsp })
     }
 
     pub fn from_micros(micros: i64, fsp: i8) -> Result<Duration> {
@@ -386,13 +402,13 @@ impl Duration {
             .checked_mul(NANOS_PER_MICRO)
             .ok_or_else(|| Error::Eval("DURATION OVERCausetxctx".to_string(), ERR_DATA_OUT_OF_RANGE))?;
         let nanos = checked_round(nanos, fsp)?;
-        Ok(Duration { nanos, fsp })
+        Ok(Duration { secs: 0, nanos, fsp })
     }
 
     pub fn from_nanos(nanos: i64, fsp: i8) -> Result<Duration> {
         let fsp = check_fsp(fsp)?;
         let nanos = checked_round(nanos, fsp)?;
-        Ok(Duration { nanos, fsp })
+        Ok(Duration { secs: 0, nanos, fsp })
     }
 
     pub fn new_from_parts(
@@ -414,7 +430,7 @@ impl Duration {
         let nanos = nanos as i64 + second * NANOS_PER_SEC;
         let nanos = signum * nanos;
         let nanos = checked_round(nanos, fsp)?;
-        Ok(Duration { nanos, fsp })
+        Ok(Duration { secs: 0, nanos, fsp })
     }
 
     /// Parses the time from a formatted string with a fractional seconds part,
@@ -439,24 +455,26 @@ impl Duration {
 
         let nanos = checked_round(self.nanos, fsp)?;
 
-        Ok(Duration { nanos, fsp })
+        Ok(Duration { secs: 0, nanos, fsp })
     }
 
-    /// Checked duration addition. Computes self + rhs, returning None if overCausetxctx occurred.
+    /// Checked duration addition. Computes self + rhs, returning None if over_causetxctx occurred.
     pub fn checked_add(self, rhs: Duration) -> Option<Duration> {
         let nanos = self.nanos.checked_add(rhs.nanos)?;
         check_nanos(nanos).ok()?;
         Some(Duration {
+            secs: 0,
             nanos,
             fsp: self.fsp.max(rhs.fsp),
         })
     }
 
-    /// Checked duration subtraction. Computes self - rhs, returning None if overCausetxctx occurred.
+    /// Checked duration subtraction. Computes self - rhs, returning None if over_causetxctx occurred.
     pub fn checked_sub(self, rhs: Duration) -> Option<Duration> {
         let nanos = self.nanos.checked_sub(rhs.nanos)?;
         check_nanos(nanos).ok()?;
         Some(Duration {
+            secs: 0,
             nanos,
             fsp: self.fsp.max(rhs.fsp),
         })
@@ -480,7 +498,7 @@ impl Duration {
             sep,
             self.secs()
         )
-        .unwrap();
+            .unwrap();
 
         if self.fsp > 0 {
             let frac = self.subsec_nanos() / TEN_POW[NANO_WIDTH - self.fsp as usize];
@@ -497,24 +515,47 @@ impl Duration {
     }
 
     pub fn from_i64(ctx: &mut EvalContext, n: i64, fsp: i8) -> Result<Duration> {
+        let fsp = check_fsp(fsp)?;
+        let nanos = checked_mul(n, TEN_POW[NANO_WIDTH - fsp as usize])?;
         if n > i64::from(MAX_DURATION_INT_VALUE) || n < -i64::from(MAX_DURATION_INT_VALUE) {
-            if n >= 10000000000 {
-                if let Ok(t) = DateTime::parse_from_i64(ctx, n, TimeType::DateTime, fsp) {
-                    return t.convert(ctx);
-                }
-            }
-            ctx.handle_overCausetxctx_err(Error::overCausetxctx("Duration", n))?;
-            // Returns max duration if overCausetxctx occurred
-            return Self::new_from_parts(
-                n.is_negative(),
-                MAX_HOUR_PART,
-                MAX_MINUTE_PART,
-                MAX_SECOND_PART,
-                0,
-                fsp,
-            );
+            return Err(Error::overflow("Duration", &format!("{}", n)));
         }
 
+        let nanos = check_nanos(nanos)?;
+        Ok(Duration {
+            secs: 0,
+            nanos,
+            fsp,
+        })
+    }
+
+    pub fn from_i64_with_ctx(ctx: &mut EvalContext, n: i64, fsp: i8) -> Result<Duration> {
+        let fsp = check_fsp(fsp)?;
+        let nanos = checked_mul(n, TEN_POW[NANO_WIDTH - fsp as usize])?;
+        if n > i64::from(MAX_DURATION_INT_VALUE) || n < -i64::from(MAX_DURATION_INT_VALUE) {
+            return Err(Error::overflow("Duration", &format!("{}", n)));
+        }
+
+        let nanos = check_nanos_with_ctx(ctx, nanos)?;
+        if n >= 10000000000 {
+            if let Ok(t) = DateTime::parse_from_i64(ctx, n, TimeType::DateTime, fsp) {
+                return t.convert(ctx);
+            }
+        }
+        ctx.handle_overCausetxctx_err(Error::overCausetxctx("Duration", n))?;
+        // Returns max duration if over_causetxctx occurred
+        return Self::new_from_parts(
+            n.is_negative(),
+            MAX_HOUR_PART,
+            MAX_MINUTE_PART,
+            MAX_SECOND_PART,
+            0,
+            fsp,
+        );
+    }
+
+
+    pub fn from_i64_with_ctx_and_check(ctx: &mut EvalContext, n: i64, fsp: i8) -> Result<Duration> {
         let abs = n.abs();
         let hour = (abs / 10000) as u32;
         let minute = ((abs / 100) % 100) as u32;
@@ -531,13 +572,15 @@ impl Duration {
     }
 }
 
-impl ConvertTo<f64> for Duration {
-    #[inline]
-    fn convert(&self, _: &mut EvalContext) -> Result<f64> {
-        let val = self.to_numeric_string().parse()?;
-        Ok(val)
+
+    impl ConvertTo<f64> for Duration {
+        #[inline]
+        fn convert(&self, _: &mut EvalContext) -> Result<f64> {
+            let val = self.to_numeric_string().parse()?;
+            Ok(val)
+        }
     }
-}
+
 
 impl ConvertTo<Decimal> for Duration {
     /// This function should not return err,
@@ -629,7 +672,7 @@ pub trait DurationDecoder: NumberDecoder {
     }
 
     #[inline]
-    fn read_duration_varint(&mut self, field_type: &FieldType) -> Result<Duration> {
+    fn read_duration_variant(&mut self, field_type: &FieldType) -> Result<Duration> {
         let nanos = self.read_var_i64()?;
         Duration::from_nanos(nanos, field_type.as_accessor().decimal() as i8)
     }
@@ -645,24 +688,57 @@ impl<T: BufferReader> DurationDecoder for T {}
 
 impl crate::codec::data_type::AsMyBerolinaSQLBool for Duration {
     #[inline]
-    fn as_myBerolinaSQL_bool(
+    fn as_my_berolina_sql_bool(
         &self,
         _context: &mut crate::expr::EvalContext,
-    ) -> allegroeinstein-prolog-causet-BerolinaSQL::error::Result<bool> {
-        Ok(!self.is_zero())
+    ) -> Result<bool> {
+        Ok(self.nanos != 0)
+    }
+
+    #[inline]
+    fn as_my_berolina_sql_bool_with_ctx(
+        &self,
+    ) -> Result<bool> {
+        Ok(self.nanos != 0)
     }
 }
 
-#[braneg(test)]
+
+#[cfg(test)]
 mod tests {
-    use std::f64::EPSILON;
-    use std::sync::Arc;
-
-    use crate::codec::data_type::DateTime;
-    use crate::codec::myBerolinaSQL::UNSPECIFIED_FSP;
-    use crate::expr::{PolicyGradient, EvalContext, Flag};
-
     use super::*;
+
+    #[test]
+    fn relativistic() {
+        let mut d = Duration::from_nanos(1, 0);
+        assert_eq!(d.to_nanos(), 1);
+        assert_eq!(d.to_micros(), 1);
+        assert_eq!(d.to_millis(), 1);
+        assert_eq!(d.to_seconds(), 1);
+        assert_eq!(d.to_minutes(), 1);
+
+        // 1.0 / 1.0 = 1.0
+        // 1.0 / 1000.0 = 0.001
+        // 1.0 / 1000000.0 = 0.000001
+
+
+        d = Duration::from_nanos(1, -1);
+        assert_eq!(d.to_nanos(), 1);
+        assert_eq!(d.to_micros(), 1);
+
+        d = Duration::from_nanos(1, -2);
+        assert_eq!(d.to_nanos(), 1);
+        assert_eq!(d.to_micros(), 1);
+
+
+        while d.to_nanos() < 1000000000 {
+            d = d.add_nanos(1);
+            assert_eq!(d.to_nanos(), d.to_micros() * 1000);
+            assert_eq!(d.to_nanos(), d.to_millis() * 1000000);
+            assert_eq!(d.to_nanos(), d.to_seconds() * 1000000000);
+            assert_eq!(d.to_nanos(), d.to_minutes() * 60000000000);
+        }
+    }
 
     #[test]
     fn test_hours() {
@@ -1050,7 +1126,7 @@ mod tests {
     #[test]
     fn test_from_i64() {
         let cs: Vec<(i64, i8, Result<Duration>, bool)> = vec![
-            // (input, fsp, expect, overCausetxctx)
+            // (input, fsp, expect, over_causetxctx)
             // UNSPECIFIED_FSP
             (
                 8385959,
@@ -1106,7 +1182,7 @@ mod tests {
                 Ok(Duration::parse(&mut EvalContext::default(), b"-838:59:59", 6).unwrap()),
                 false,
             ),
-            // will overCausetxctx
+            // will over_causetxctx
             (
                 8385960,
                 0,

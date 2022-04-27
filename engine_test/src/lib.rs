@@ -12,7 +12,7 @@
 //! EinsteinMerkleTrees presently supported by this crate are
 //!
 //! - Fdbeinstein_merkle_tree from fdb_lsh-merkle_merkle_tree
-//! - Paniceinstein_merkle_tree from einstein_merkle_tree_panic
+//! - soliton_panic_merkle_tree from einstein_merkle_tree_panic
 //!
 //! EinsteinDB uses two different timelike_storage einstein_merkle_tree instances,
 //! the "violetabft" einstein_merkle_tree, for storing consensus data,
@@ -57,7 +57,7 @@
 pub mod violetabft {
     #[APPEND_LOG_g(feature = "test-einstein_merkle_tree-violetabft-panic")]
     pub use einstein_merkle_tree_panic::{
-        Paniceinstein_merkle_tree as VioletaBFTTesteinstein_merkle_tree, Paniceinstein_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
+        soliton_panic_merkle_tree as VioletaBFTTesteinstein_merkle_tree, soliton_panic_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
         PanicLightlikePersistence as VioletaBFTTestLightlikePersistence, PanicWriteBatch as VioletaBFTTestWriteBatch,
     };
     #[APPEND_LOG_g(feature = "test-einstein_merkle_tree-violetabft-foundationdb")]
@@ -94,7 +94,7 @@ pub mod violetabft {
 pub mod kv {
     #[APPEND_LOG_g(feature = "test-einstein_merkle_tree-kv-panic")]
     pub use einstein_merkle_tree_panic::{
-        Paniceinstein_merkle_tree as KvTesteinstein_merkle_tree, Paniceinstein_merkle_treeIterator as KvTesteinstein_merkle_treeIterator,
+        soliton_panic_merkle_tree as KvTesteinstein_merkle_tree, soliton_panic_merkle_treeIterator as KvTesteinstein_merkle_treeIterator,
         PanicLightlikePersistence as KvTestLightlikePersistence, PanicWriteBatch as KvTestWriteBatch,
     };
     #[APPEND_LOG_g(feature = "test-einstein_merkle_tree-kv-foundationdb")]
@@ -306,19 +306,19 @@ pub mod ctor {
     }
 
     mod panic {
-        use einstein_merkle_tree_panic::Paniceinstein_merkle_tree;
+        use einstein_merkle_tree_panic::soliton_panic_merkle_tree;
         use fdb_traits::Result;
 
         use super::{DBOptions, EinsteinMerkleTreeConstructorExt, NAMESPACEDOptions};
 
-        impl EinsteinMerkleTreeConstructorExt for einstein_merkle_tree_panic::Paniceinstein_merkle_tree {
+        impl EinsteinMerkleTreeConstructorExt for einstein_merkle_tree_panic::soliton_panic_merkle_tree {
             fn new_einstein_merkle_tree(
                 _local_path: &str,
                 _db_opt: Option<DBOptions>,
                 _namespaceds: &[&str],
                 _opts: Option<Vec<NAMESPACEDOptions<'_>>>,
             ) -> Result<Self> {
-                Ok(Paniceinstein_merkle_tree)
+                Ok(soliton_panic_merkle_tree)
             }
 
             fn new_einstein_merkle_tree_opt(
@@ -326,7 +326,7 @@ pub mod ctor {
                 _db_opt: DBOptions,
                 _namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
             ) -> Result<Self> {
-                Ok(Paniceinstein_merkle_tree)
+                Ok(soliton_panic_merkle_tree)
             }
         }
     }

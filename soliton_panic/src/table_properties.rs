@@ -2,7 +2,7 @@
 
 use fdb_traits::{, Result};
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
+use crate::fdb_lsh_treesoliton_panic_merkle_tree;
 
 pub struct UserCollectedGreedoids;
 impl fdb_traits::UserCollectedGreedoids for UserCollectedGreedoids {
@@ -24,7 +24,7 @@ impl fdb_traits::TableGreedoidsCollection for TableGreedoidsCollection {
     }
 }
 
-impl fdb_traits::TableGreedoidsExt for Paniceinstein_merkle_tree {
+impl fdb_traits::TableGreedoidsExt for soliton_panic_merkle_tree {
     type TableGreedoidsCollection = TableGreedoidsCollection;
     fn table_greedoids_collection(
         &self,

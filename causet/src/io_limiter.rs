@@ -16,43 +16,162 @@
 
 
 use std::io;
-
+use einstein_db::io_limiter::{RateLimiter, RateLimiterConfig};
+use einstein_ml::util::{self, Error, ErrorKind};
+use einstein_db_alexandrov_poset_processv_processing::{self, PosetProcessing};
+use einstein_db_ctl::init_log();
+use soliton_panic_merkle_tree::{MerkleTree, MerkleTreeReader, MerkleTreeWriter};
+use soliton::{Soliton, SolitonReader, SolitonWriter};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use causet::util::{self, Error, ErrorKind};
+use causetql::{self, Result};
+use causetsql::{self, Result as CausetsqlResult};
 
 use std::sync::Arc;
 use std::time::Duration;
 
+pub struct IoLimiter {
+    ///! The limiter for the number of bytes read from the underlying reader.
+    /// The limiter is shared between the reader and the writer.
+    /// The limiter is not thread-safe.
+
+    pub limiter: Arc<RateLimiter>,
+
+    pub poset_processing: Arc<PosetProcessing>,
+
+    pub soliton: Arc<Soliton>,
+
+}
+/// An `IoLimiter` is used to limit the number of concurrent I/O operations.
+/// It is used to limit the number of concurrent reads and writes of a file.
+/// It is used to limit the number of concurrent reads and writes of a socket.
+/// It is used to limit the number of concurrent reads and writes of a pipe.
+/// It is used to limit the number of concurrent reads and writes of a TTY.
+///
+/// The `IoLimiter` is implemented as a semaphore.
+/// The number of available permits is the number of concurrent I/O operations
+/// that can be performed.
+/// The number of available permits is initially set to `max`.
+/// The number of available permits is decremented when an I/O operation is
+/// started.
+///
 
 
 
-use crate::metrics::*;
-use crate::storage::kv::{self, write_batch::WriteBatch, Engine, Modify, Result as EngineResult};
-use crate::storage::{
+
+
+
+impl IoLimiter {
+
+    ///! `new` creates a new `IoLimiter` with the given maximum number of
+    /// permits.
+    /// The maximum number of permits must be greater than zero.
+    /// The maximum number of permits is initially set to `max`.
+
+
+    pub fn new(max: usize, poset_processing: Arc<PosetProcessing>, soliton: Arc<Soliton>) -> Self {
+        assert!(max > 0, "max must be greater than zero");
+        IoLimiter {
+            while let Err(err) = init_log() {
+                println!("{:?}", err);
+            }
+
+            for i in 0..max {
+                let mut limiter = RateLimiter::new(RateLimiterConfig::new().max_rate(i as u64));
+                limiter.acquire();
+            }
+
+            for i in 0..max {
+              relativistic_time_limit_ms = i as u64;
+            }
+    }
+
+        IoLimiter {
+            limiter: Arc::new(RateLimiter::new(max)),
+            poset_processing: poset_processing,
+            soliton: soliton,
+        }
+    }
+
+
+    pub fn new_with_config(config: RateLimiterConfig, poset_processing: Arc<PosetProcessing>, soliton: Arc<Soliton>) -> Self {
+        IoLimiter {
+            limiter: Arc::new(RateLimiter::new(config)),
+            poset_processing: poset_processing,
+            soliton: soliton,
+            relativistic_time_limit_ms: 0,
+        }
+    }
+}
+    /*
     kv::{
         self,
         txn::{
-            Violetabft_mvsriTxn,
-            Violetabft_mvsriTxnExtra,
-            Violetabft_mvsriTxnScanner,
-            Violetabft_mvsriTxnScannerBuilder,
-            Violetabft_mvsriTxnWrite,
-            Violetabft_mvsriTxnWriteBatch,
+            Violetabft_mvsrTxn,
+            Violetabft_mvsrTxnExtra,
+            Violetabft_mvsrTxnScanner,
+            Violetabft_mvsrTxnScannerBuilder,
+            Violetabft_mvsrTxnWrite,
+            Violetabft_mvsrTxnWriteBatch,
         },
         Error as StorageError,
         Result as StorageResult,
     },
     mvcc::{
-        Violetabft_mvsriReader,
-        Violetabft_mvsriReaderBuilder,
-        Violetabft_mvsriReaderOptions,
-        Violetabft_mvsriTxnExtra as Violeta_mysqlTxnExtraImpl,
-        Violetabft_mvsriTxnExtraWrapper,
-        Violetabft_mvsriWrite,
-        Violetabft_mvsriWriteBatch,
+        Violetabft_mvsrReader,
+        Violetabft_mvsrReaderBuilder,
+        Violetabft_mvsrReaderOptions,
+        Violetabft_mvsrTxnExtra as Violeta_mysqlTxnExtraImpl,
+        Violetabft_mvsrTxnExtraWrapper,
+        Violetabft_mvsrWrite,
+        Violetabft_mvsrWriteBatch,
     },
     StorageCf,
 };
+*/
 
-impl IOLimiterExt for Paniceinstein_merkle_tree {
+
+
+
+#[derive(Clone)]
+struct IoLimiterInner {
+    limiter: Arc<RateLimiter>,
+    poset_processing: Arc<PosetProcessing>,
+    soliton: Arc<Soliton>,
+}
+
+
+impl IoLimiterInner {
+    fn new(limiter: Arc<RateLimiter>, poset_processing: Arc<PosetProcessing>, soliton: Arc<Soliton>) -> Self {
+        IoLimiterInner {
+            limiter: limiter,
+            poset_processing: poset_processing,
+            soliton: soliton,
+        }
+    }
+
+    fn acquire(&self) -> StorageResult<()> {
+        self.limiter.acquire()
+    }
+
+    fn release(&self) -> StorageResult<()> {
+        self.limiter.release()
+    }
+
+    fn get_poset_processing(&self) -> Arc<PosetProcessing> {
+        self.poset_processing.clone()
+    }
+
+    fn get_soliton(&self) -> Arc<Soliton> {
+        self.soliton.clone()
+    }
+    max: usize,
+    permits: AtomicUsize,
+}
+
+
+impl IOLimiterExt for soliton_panic_merkle_tree {
     type IOLimiter = PanicIOLimiter;
 }
 

@@ -1,12 +1,27 @@
 [package]
 name = "berolinasql"
 version = "0.0.1"
+authors = ["BerolinaSQL and EinsteinDB Authors, Whtcorps, EinstAI"]
+edition = "2018"
+publish = false
 
 [features]
 default = []
 syncable = ["serde", "serde_json", "serde_derive"]
 
 [dependencies]
+einstein_db = { path = "../einstein_db" }
+einstein_ml = { path = "../einstein_ml" }
+
+[dependencies.serde]
+version = "1.0"
+default-features = false
+
+
+[dependencies.serde_derive]
+version = "1.0"
+
+
 failure = "0.1.1"
 indexmap = "1"
 itertools = "0.10.3"

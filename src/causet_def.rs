@@ -48,9 +48,9 @@ use fdb_traits::{
 };
 use std::local_path::local_pathBuf;
 
-use crate::fdb_lsh_treePaniceinstein_merkle_tree;
+use crate::fdb_lsh_treesoliton_panic_merkle_tree;
 
-impl CausetExt for Paniceinstein_merkle_tree {
+impl CausetExt for soliton_panic_merkle_tree {
     type CausetReader = PanicCausetReader;
     type CausetWriter = PanicCausetWriter;
     type CausetWriterBuilder = PanicCausetWriterBuilder;
@@ -135,11 +135,11 @@ impl CausetWriter for PanicCausetWriter {
 
 pub struct PanicCausetWriterBuilder;
 
-impl CausetWriterBuilder<Paniceinstein_merkle_tree> for PanicCausetWriterBuilder {
+impl CausetWriterBuilder<soliton_panic_merkle_tree> for PanicCausetWriterBuilder {
     fn new() -> Self {
         panic!()
     }
-    fn set_db(self, einsteindb: &Paniceinstein_merkle_tree) -> Self {
+    fn set_db(self, einsteindb: &soliton_panic_merkle_tree) -> Self {
         panic!()
     }
     fn set_namespaced(self, namespaced: &str) -> Self {
