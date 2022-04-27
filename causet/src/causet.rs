@@ -83,7 +83,10 @@ use std::fmt::Debug;
 ///
 ///
 
-
+use einstein_ml::*;
+use einstein_ml::lisp::*;
+use einstein_ml::lisp::lisp_types::*;
+use super::*;
 
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -99,7 +102,9 @@ use berolina_sql::*;
 //ok, let's build the causet which is a set of causet_closures
 //
 
+#[derive(Debug, Clone)]
 pub trait CausetTrait {
+
     fn new() -> Self;
 
     fn add(&mut self, x: i32);
@@ -166,6 +171,9 @@ impl Display for Causet {
 /*
 https://franz.com/support/documentation/ansicl.94/section/dictio19.htm
 */
+
+
+
 
 
 

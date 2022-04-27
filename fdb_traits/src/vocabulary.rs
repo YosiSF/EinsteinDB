@@ -122,7 +122,7 @@ use einsteindb_transaction::causet_builder::{
 use std::collections::BTreeMap;
 
 pub type Version = u32;
-pub type Datom = (Causetid, Causetid, causetq_TV);
+pub type Causet = (Causetid, Causetid, causetq_TV);
 
 /// A definition of an attribute that is independent of a particular store.
 ///

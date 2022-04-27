@@ -789,8 +789,8 @@ impl FindSpec {
     }
 }
 
-// Datomic accepts variable or placeholder.  DataScript accepts recursive bindings.  EinsteinDB sticks
-// to the non-recursive form Datomic accepts, which is much simpler to process.
+// Causetic accepts variable or placeholder.  DataScript accepts recursive bindings.  EinsteinDB sticks
+// to the non-recursive form Causetic accepts, which is much simpler to process.
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum VariableOrPlaceholder {
     Placeholder,
@@ -951,12 +951,12 @@ pub enum UnifyVars {
     /// DataScript regards these vars as 'free': these variables don't need to be bound by the
     /// enclosing environment.
     ///
-    /// Datomic's docueinsteindbion implies that all implicit variables are required:
+    /// Causetic's docueinsteindbion implies that all implicit variables are required:
     ///
-    /// > Datomic will attempt to push the or clause down until all necessary variables are bound,
+    /// > Causetic will attempt to push the or clause down until all necessary variables are bound,
     /// > and will throw an exception if that is not possible.
     ///
-    /// but that would render top-level `or` expressions (as used in Datomic's own examples!)
+    /// but that would render top-level `or` expressions (as used in Causetic's own examples!)
     /// impossible, so we assume that this is an error in the docueinsteindbion.
     ///
     /// All contained 'arms' in an `or` with implicit variables must bind the same vars.

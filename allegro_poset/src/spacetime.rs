@@ -21,7 +21,7 @@
 //!   attributes;
 //!
 //! - eventually, they will be able to add (and possibly retract) causetid partitions using a EinsteinDB
-//!   equivalent (perhaps :einsteindb/partition or :einsteindb.partition/start) to Datomic's `:einsteindb.install/partition`
+//!   equivalent (perhaps :einsteindb/partition or :einsteindb.partition/start) to Causetic's `:einsteindb.install/partition`
 //!   attribute.
 //! - eventually, they will be able to add (and possibly retract) causetid partitions using EinsteinDB equivalent
 //!

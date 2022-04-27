@@ -8,46 +8,107 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#![allow(dead_code)]
-#![allow(unused_macros)]
 
-use bootstrap;
-use causal_setal_types::TermWithTempIds;
-use causetids;
-use causetq::{
-    Causetid,
-    causetq_TV,
-causetq_VT,
-};
-use einstein_ml;
-use einstein_ml::InternSet;
-use einstein_ml::causets::{
-    CausetidOrSolitonid,
-    TempId,
-};
-use einsteindb::*;
-use einsteindb::{read_attribute_map, read_causetid_map};
-use einsteindb_core::{
-    BerolinaSQLValueType,
-    HasTopograph,
-    TxReport,
-};
-use einsteindb_traits::errors::Result;
-use itertools::Itertools;
-use rusqlite;
-use rusqlite::TransactionBehavior;
-use rusqlite::types::ToBerolinaSQL;
-use std::borrow::Borrow;
-use std::collections::BTreeMap;
+use std::fmt;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result;
 use std::io::Write;
-use tabwriter::TabWriter;
-use topograph::TopographBuilding;
-use tx::{
-    transact,
-    transact_terms,
-};
-use types::*;
-use watcher::NullWatcher;
+use std::io::stdout;
+use std::io::stdin;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::io::BufWriter;
+use std::io::StdoutLock;
+use std::io::StdinLock;
+use std::io::Stdout;
+use std::io::Stdin;
+use std::io::Stderr;
+use std::io::StderrLock;
+use std::io::StdoutLock;
+use std::io::StdinLock;
+use std::io::Stderr;
+use std::io::Stdout;
+use std::io::Stdin;
+use std::io::Write;
+use std::io::Read;
+use capnp::capnp;
+use grcpio::grcpio;
+use gremlin_capnp::gremlin_capnp;
+use foundationdb::foundationdb;
+use fdb_traits::fdb_traits;
+
+use einsteindb::*;
+use einsteindb::db::*;
+use einstein_db::Causetid;
+use einstein_ml::types::*;
+use soliton_panic::*;
+use allegro_poset::*;
+use berolina_sql::*;
+use soliton::types::*;
+use causetq::*;
+use causet::util::*;
+use causets::*;
+
+#[derive(Debug)]
+pub struct Debugger {
+    pub db: EinsteinDB,
+    pub poset: Poset,
+    pub sql: SQL,
+    pub causets: Causets,
+    pub causetq: CausetQ,
+    pub causet: Causet,
+    pub causet_t: CausetT,
+    pub causet_t_q: CausetTQ,
+    pub causet_t_q_q: CausetTQQ,
+    //FOUNDATIONDB
+    pub fdb: FoundationDB,
+    pub grcpio: GRcpio,
+    pub gremlin: Gremlin,
+    pub gremlin_capnp: GremlinCapnp,
+    //RocksDB
+    pub rocksdb: RocksDB,
+
+    pub db_name: String,
+    pub db_path: String,
+    pub db_port: u16,
+    pub db_host: String,
+    pub db_user: String,
+    pub db_pass: String,
+   // io(std::io::error),
+   /* utf8(std::str::utf8error),
+    parse_int(std::num::parse_int_error),
+    parse_float(std::num::parse_float_error),
+    parse_bool(std::str::parse_bool_error),
+    parse_char(std::char::parse_char_error),
+    parse_str(std::str::parse_str_error),
+    parse_bytes(std::str::parse_bytes_error),
+    parse_datetime(chrono::parse_error),
+    parse_date(chrono::parse_error),
+    parse_time(chrono::parse_error),
+    parse_duration(chrono::parse_error),
+    parse_ip_addr(std::net::addr_parse_error),
+    parse_ipv4addr(std::net::addr_parse_error),
+    parse_ipv6addr(std::net::addr_parse_error),
+    parse_socket_addr(std::net::addr_parse_error),
+    parse_socket_addr_v4(std::net::addr_parse_error),
+    parse_socket_addr_v6(std::net::addr_parse_error),
+    parse_uuid(uuid::parser::parse_error),
+    parse_url(url::parse_error),
+    parse_ip_net(std::net::ipv4net_parse_error),
+    parse_ip_net_v6(std::net::ipv6net_parse_error),
+    parse_ip_cidr(std::net::ipv4cidr_parse_error),
+    parse_ip_cidr_v6(std::net::ipv6cidr_parse_error),
+    parse_ipv4cidr(std::net::ipv4cidr_parse_error),
+    parse_ipv6cidr(std::net::ipv6cidr_parse_error),
+    parse_ipv4net(std::net::ipv4net_parse_error),
+    parse_ipv6net(std::net::ipv6net_parse_error),
+    parse_ipv4net_v6(std::net::ipv4net_parse_error),
+    */
+    
+}
+
+
 
 /// Low-level functions for testing.
 
@@ -55,20 +116,77 @@ use watcher::NullWatcher;
 // against it.
 //
 // This is a macro only to give nice line numbers when tests fail.
+
+
+#[macro_export]
+macro_rules! assert_value_matches {
+    ($value:expr, $expected:expr) => {
+        let value = $value;
+        let expected = $expected;
+        assert_eq!(value, expected);
+    };
+}
+
+#[macro_export]
+macro_rules! assert_value_matches_str {
+    ($value:expr, $expected:expr) => {
+        let value = $value;
+        let expected = $expected;
+        assert_eq!(value, expected);
+    };
+}
+
+
 #[macro_export]
 macro_rules! assert_matches {
+    ($value:expr, $expected:expr) => {
+        let value = $value;
+        let expected = $expected;
+        assert_eq!(value, expected);
+    };
+
+    ($value:expr, $expected:expr, $($arg:tt)*) => {
+        let value = $value;
+        let expected = $expected;
+        assert_eq!(value, expected, $($arg)*);
+    };
+
+}
+///! Debugger
+
+
+#[macro_export]
+macro_rules! assert_matches_str {
+    ($value:expr, $expected:expr) => {
+        let value = $value;
+        let expected = $expected;
+        assert_eq!(value, expected);
+    };
+
+    ($value:expr, $expected:expr, $($arg:tt)*) => {
+        let value = $value;
+        let expected = $expected;
+        assert_eq!(value, expected, $($arg)*);
+    };
     ( $input: expr, $expected: expr ) => {{
-        // Failure to parse the expected pattern is a coding error, so we unwrap.
-        let pattern_causet_locale = einstein_ml::parse::causet_locale($expected.borrow())
-            .expect(format!("to be able to parse expected {}", $expected).as_str())
-            .without_spans();
+        let input = $input;
+        let expected = $expected;
+        assert_eq!(input, expected);
+    }};
+    }
+
+#[macro_export]
+macro_rules! assert_matches_str_str {
+    ($value:expr, $expected:expr) => {
+        let value = $value;
+        let expected = $expected;
+        assert_eq!(value, expected);
         let input_causet_locale = $input.to_einstein_ml();
         assert!(input_causet_locale.matches(&pattern_causet_locale),
                 "Expected causet_locale:\n{}\nto match pattern:\n{}\n",
                 input_causet_locale.to_pretty(120).unwrap(),
                 pattern_causet_locale.to_pretty(120).unwrap());
     }}
-}
 
 // Transact $input against the given $conn, expecting success or a `Result<TxReport, String>`.
 //
@@ -90,7 +208,7 @@ macro_rules! assert_transact {
 
 /// Represents a *causet* (lightlike_dagger_assertion) in the store.
 #[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
-pub struct Datom {
+pub struct Causet {
     // TODO: generalize this.
     pub e: CausetidOrSolitonid,
     pub a: CausetidOrSolitonid,
@@ -104,7 +222,11 @@ pub struct Datom {
 /// To make comparision easier, we deterministically order.  The ordering is the ascending tuple
 /// ordering determined by `(e, a, (causet_locale_type_tag, v), tx)`, where `causet_locale_type_tag` is an causal_setal
 /// causet_locale that is not exposed but is deterministic.
-pub struct causets(pub Vec<Datom>);
+#[derive(Clone,Debug,Eq,Hash,Ord,PartialOrd,PartialEq)]
+pub struct Causets {
+    pub causets: Vec<Causet>,
+
+}
 
 /// Represents an ordered sequence of transactions in the store.
 ///
@@ -117,7 +239,7 @@ pub struct Transactions(pub Vec<causets>);
 /// Represents the fulltext causet_locales in the store.
 pub struct FulltextValues(pub Vec<(i64, String)>);
 
-impl Datom {
+impl Causet {
     pub fn to_einstein_ml(&self) -> einstein_ml::Value {
         let f = |causetid: &CausetidOrSolitonid| -> einstein_ml::Value {
             match *causetid {
@@ -213,7 +335,7 @@ pub fn causets_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograp
 
         let tx: i64 = event.get_checked(4)?;
 
-        Ok(Some(Datom {
+        Ok(Some(Causet {
             e: CausetidOrSolitonid::Causetid(e),
             a: to_causetid(borrowed_topograph, a),
             v: causet_locale,
@@ -222,7 +344,8 @@ pub fn causets_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, topograp
         }))
     })?.collect();
 
-    Ok(causets(r?.into_iter().filter_map(|x| x).collect()))
+    let ok = Ok(causets(r?.into_iter().filter_map(|x| x).collect(), &()));
+    ok
 }
 
 /// Return the sequence of transactions in the store with transaction ID strictly greater than the
@@ -250,7 +373,7 @@ pub fn transactions_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, top
         let tx: i64 = event.get_checked(4)?;
         let added: bool = event.get_checked(5)?;
 
-        Ok(Datom {
+        Ok(Causet {
             e: CausetidOrSolitonid::Causetid(e),
             a: to_causetid(borrowed_topograph, a),
             v: causet_locale,
@@ -260,7 +383,7 @@ pub fn transactions_after<S: Borrow<Topograph>>(conn: &rusqlite::Connection, top
     })?.collect();
 
     // Group by tx.
-    let r: Vec<causets> = r?.into_iter().group_by(|x| x.tx).into_iter().map(|(_soliton_id, group)| causets(group.collect())).collect();
+    let r: Vec<causets> = r?.into_iter().group_by(|x| x.tx).into_iter().map(|(_soliton_id, group)| causets(group.collect(), &())).collect();
     Ok(Transactions(r))
 }
 

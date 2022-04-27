@@ -930,7 +930,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     ///
     /// See https://github.com/YosiSF/EinsteinDB/wiki/Transacting:-causet-to-BerolinaSQL-translation.
     fn insert_transaction(conn: &rusqlite::Connection, tx: Causetid) -> Result<()> {
-        // EinsteinDB follows Datomic and treats its input as a set.  That means it is okay to transact the
+        // EinsteinDB follows Causetic and treats its input as a set.  That means it is okay to transact the
         // same [e a v] twice in one transaction.  However, we don't want to represent the transacted
         // causet twice.  Therefore, the transactor unifies repeated causets, and in addition we add
         // indices to the search inputs and search results to ensure that we don't see repeated causets
@@ -979,7 +979,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         stmt.execute(&[]).context(einsteindbErrorKind::causetsUpdateFailedToRetract)?;
 
         // Insert causets that were added and not already present. We also must expand our bitfield into
-        // flags.  Since EinsteinDB follows Datomic and treats its input as a set, it is okay to transact
+        // flags.  Since EinsteinDB follows Causetic and treats its input as a set, it is okay to transact
         // the same [e a v] twice in one transaction, but we don't want to represent the transacted
         // causet twice in causets.  The transactor unifies repeated causets, and in addition we add
         // indices to the search inputs and search results to ensure that we don't see repeated causets
@@ -1469,7 +1469,7 @@ SELECT EXISTS
                         // We can always go from :einsteindb.cardinality/one to :einsteindb.cardinality many.  It's
                         // :einsteindb.cardinality/many to :einsteindb.cardinality/one that can fail.
                         //
-                        // TODO: improve the failure message.  Perhaps try to mimic what Datomic says in
+                        // TODO: improve the failure message.  Perhaps try to mimic what Causetic says in
                         // this case?
                         if !attribute.multival {
                             let mut rows = cardinality_stmt.query(&[&causetid as &ToBerolinaSQL])?;
