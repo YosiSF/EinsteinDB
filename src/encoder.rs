@@ -1,6 +1,51 @@
 //Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
 // AUTHORS: WHITFORD LEDER
 // Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+use std::io::{self, Write};
+use std::fmt;
+use std::str::FromStr;
+use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
+use std::sync::mpsc::{self, Sender, Receiver};
+use std::thread;
+use std::time::Duration;
+use std::sync::mpsc::TryRecvError;
+use std::sync::mpsc::RecvTimeoutError;
+use std::sync::mpsc::RecvError;
+use std::sync::mpsc::SendError;
+use std::sync::mpsc::TrySendError;
+use std::sync::mpsc::TryRecvTimeoutError;
+use std::sync::mpsc::RecvTimeoutError::Timeout;
+use std::sync::mpsc::RecvTimeoutError::Disconnected;
+use futures::{Future, Stream, Sink, Poll, Async, AsyncSink};
+use futures::future::{self, Either, Loop};
+use futures::stream::{self, StreamFuture, FuturesUnordered};
+use moonbeam_core::codec::{self, Codec, Compression};
+use moonbeam_core::codec::Compression::{NoCompression, Snappy};
+use capnproto::serialize::{self, Serialize, Serializer, Deserialize, Deserializer};
+use capnproto::traits::FromStructBuilder;
+use kubernetes::{self, api::v1::Pod, api::v1::PodSpec, api::v1::PodStatus, api::v1::PodStatusPhase};
+use kubernetes::api::v1::Pod as K8sPod;
+use kubernetes::api::v1::PodSpec as K8sPodSpec;
+use kubernetes::api::v1::PodStatus as K8sPodStatus;
+use istio::{self, api::v1alpha3::{self, DestinationRule, DestinationRuleSpec, VirtualService}};
+use istio::api::v1alpha3::{self, DestinationRule as IstioDestinationRule, DestinationRuleSpec as IstioDestinationRuleSpec, VirtualService as IstioVirtualService};
+use istio::api::v1alpha3::{VirtualService as IstioVirtualService, VirtualServiceSpec as IstioVirtualServiceSpec};
+use parquet::{self, file::reader::{FileReader, SerializedFileReader}, schema::types::Type, util::{self, Buffer}, writer::{SerializedFileWriter, SerializedPageWriter}};
+use parquet::file::writer::{FileWriter, SerializedFileWriter};
+use parquet::schema::types::{self, PrimitiveType, Type as ParquetType};
+use honeybadgerbft::*;
+use honeybadgerbft::encoder::{self, Encoder, EncoderError};
 
 //make compatible with mongodb, leveldb, and foundationdb
 
@@ -34,6 +79,9 @@ use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Cursor;
 use std::io::BufReader;
+use soliton_panic::{self, soliton_panic};
+use einstein_ml::{ML_OPEN_FLAG_CREATE, ML_OPEN_FLAG_RDONLY, ML_OPEN_FLAG_RDWR, ML_OPEN_FLAG_TRUNCATE, ML_OPEN_FLAG_WRITE_EMPTY, ML_OPEN_FLAG_WRITE_PREVENT, ML_OPEN_FLAG_WRITE_SAME};
+use einsteindb_server::{EinsteinDB, EinsteinDB_OPEN_FLAG_CREATE, EinsteinDB_OPEN_FLAG_RDONLY, EinsteinDB_OPEN_FLAG_RDWR, EinsteinDB_OPEN_FLAG_TRUNCATE, EinsteinDB_OPEN_FLAG_WRITE_EMPTY, EinsteinDB_OPEN_FLAG_WRITE_PREVENT, EinsteinDB_OPEN_FLAG_WRITE_SAME};
 //foundationdb
 use foundationdb::{Database, DatabaseOptions, DatabaseMode, DatabaseType, DatabaseTypeOptions};
 use EinsteinDB::storage::{DB, DBOptions, DBType, DBTypeOptions};
@@ -48,6 +96,30 @@ use einstein_db_ctl::{EinsteinDB, EinsteinDBOptions, EinsteinDBType, EinsteinDBT
 use gremlin_capnp::{gremlin_capnp, message};
 use gremlin_capnp::message::{Message, MessageReader, MessageBuilder};
 use gremlin as g;
+
+#[derive(Debug, Clone)]
+pub struct Config {
+    pub db_type: String,
+    pub db_path: String,
+    pub db_name: String,
+    pub db_mode: String,
+    pub db_options: String,
+
+}
+
+
+
+impl Config {
+    pub fn new(db_type: String, db_path: String, db_name: String, db_mode: String, db_options: String) -> Config {
+        Config {
+            db_type,
+            db_path,
+            db_name,
+            db_mode,
+            db_options,
+        }
+    }
+}
 
 pub struct GremlinCausetQuery{
     pub causet_locale: String,
@@ -81,6 +153,21 @@ switch_to_einstein_db!(GremlinCausetQuery);
 
 pub enum Encoder<'a> {
 
+
+
+    /// A value encoder for `bool`.
+
+    Bool(bool),
+
+    /// A value encoder for `i8`.
+
+    I8(i8),
+
+    /// A value encoder for `i16`.
+
+    I16(i16),
+
+    /// A value encoder for `i32`.
 
     /// A value encoder.
     /// This encoder encodes values to bytes.
@@ -206,6 +293,13 @@ impl Column {
     }
 }
 
+pub trait CausetEncoder {
+
+    fn encode_i8(&self, v: i8) -> Result<Vec<u8>, Error>;
+    fn encode_i16(&self, v: i16) -> Result<Vec<u8>, Error>;
+    fn encode(&self, key: &[u8], value: &[u8]) -> Result<Vec<u8>, Error>;
+}
+
 pub trait RowEncoder: NumberEncoder {
     fn write_row(&mut self, ctx: &mut EvalContext, columns: Vec<Column>) -> Result<()> {
         let mut is_big = false;
@@ -261,9 +355,13 @@ pub trait RowEncoder: NumberEncoder {
         self.write_bytes(&causet_locale_wtr)?;
         Ok(())
     }
+}
 
+
+pub trait RowDecoder: NumberDecoder {
     #[inline]
-    fn write_flag(&mut self, is_big: bool) -> codec::Result<()> {
+    ///! `is_big` is true if the row is encoded with big-endian.
+    fn read_row(&mut self, ctx: &mut EvalContext, columns: &mut Vec<Column>) -> Result<()> {
         let flag = if is_big {
             super::Flags::BIG
         } else {
@@ -272,24 +370,26 @@ pub trait RowEncoder: NumberEncoder {
         self.write_u8(flag.bits)
     }
 
+
     #[inline]
     fn write_id(&mut self, is_big: bool, id: i64) -> codec::Result<()> {
         if is_big {
+            self.write_u64_le(id as u64);
             self.write_u32_le(id as u32)
         } else {
+            self.write_u32_le(id as u32);
             self.write_u8(id as u8)
         }
     }
 
+
     #[inline]
-    fn write_offset(&mut self, is_big: bool, offset: usize) -> codec::Result<()> {
-        if is_big {
-            self.write_u32_le(offset as u32)
-        } else {
-            self.write_u16_le(offset as u16)
-        }
+    fn write_u16_le(&mut self, v: u16) -> codec::Result<()> {
+        self.write_u8((v & 0xff) as u8);
+        self.write_u8((v >> 8) as u8)
     }
 }
+
 
 impl<T: BufferWriter> RowEncoder for T {}
 
@@ -317,6 +417,7 @@ pub trait ScalarValueEncoder: NumberEncoder + DecimalEncoder + JsonEncoder {
         }
     }
 
+
     #[allow(clippy::match_overlapping_arm)]
     #[inline]
     fn encode_i64(&mut self, v: i64) -> codec::Result<()> {
@@ -337,88 +438,103 @@ pub trait ScalarValueEncoder: NumberEncoder + DecimalEncoder + JsonEncoder {
             0..=MAX_U32 => self.write_u32_le(v as u32),
             _ => self.write_u64_le(v),
         }
-    }
-}
-impl<T: BufferWriter> ScalarValueEncoder for T {}
 
-#[braneg(test)]
-mod tests {
-    use std::str::FromStr;
 
-    use crate::codec::{
-        data_type::ScalarValue,
-        myBerolinaSQL::{Decimal, Duration, duration::NANOS_PER_SEC, Json, Time},
-    };
-    use crate::expr::EvalContext;
+        impl<T: BufferWriter> ScalarValueEncoder for T {}
 
-    use super::{Column, RowEncoder};
+        pub trait RowEncoder: NumberEncoder + DecimalEncoder + JsonEncoder {
+            #[inline]
+            fn write_flag(&mut self, is_big: bool) -> codec::Result<()> {
+                let flag = if is_big {
+                    super::Flags::BIG
+                } else {
+                    super::Flags::default()
+                };
+                self.write_u8(flag.bits)
+            }
+        }
 
-    #[test]
-    fn test_encode_unsigned() {
-        let cols = vec![
-            Column::new(1, std::u64::MAX as i64).with_unsigned(),
-            Column::new(2, -1),
-        ];
-        let exp: Vec<u8> = vec![
-            128, 0, 2, 0, 0, 0, 1, 2, 8, 0, 9, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-        ];
-        let mut buf = vec![];
-        buf.write_row(&mut EvalContext::default(), cols).unwrap();
+        use super::*;
+        use crate::codec::mysql::{MAX_I8, MAX_I16, MAX_I32, MAX_I64, MAX_U8, MAX_U16, MAX_U32, MAX_U64};
 
-        assert_eq!(buf, exp);
+        #[test]
+        fn test_write_i8() {
+            let mut buf = BufferVec::new();
+            buf.write_i8(MAX_I8).unwrap();
+            buf.write_i8(MIN_I8).unwrap();
+            buf.write_i8(0).unwrap();
+            assert_eq!(buf.as_slice(), &[0x7f, 0x80, 0x00]);
+        }
     }
 
-    #[test]
-    fn test_encode() {
-        let cols = vec![
-            Column::new(1, 1000),
-            Column::new(12, 2),
-            Column::new(33, ScalarValue::Int(None)),
-            Column::new(3, 3).with_unsigned(),
-            Column::new(8, 32767),
-            Column::new(7, b"abc".to_vec()),
-            Column::new(9, 1.8),
-            Column::new(6, -1.8),
-            Column::new(
-                13,
-                Time::parse_datetime(&mut EvalContext::default(), "2022-01-19 03:14:07", 0, false)
-                    .unwrap(),
-            ),
-            Column::new(14, Decimal::from(1i64)),
-            Column::new(15, Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
-            Column::new(16, Duration::from_nanos(NANOS_PER_SEC, 0).unwrap()),
-        ];
 
-        let exp = vec![
-            128, 0, 11, 0, 1, 0, 1, 3, 6, 7, 8, 9, 12, 13, 14, 15, 16, 33, 2, 0, 3, 0, 11, 0, 14,
-            0, 16, 0, 24, 0, 25, 0, 33, 0, 36, 0, 65, 0, 69, 0, 232, 3, 3, 64, 3, 51, 51, 51, 51,
-            51, 50, 97, 98, 99, 255, 127, 191, 252, 204, 204, 204, 204, 204, 205, 2, 0, 0, 0, 135,
-            51, 230, 158, 25, 1, 0, 129, 1, 1, 0, 0, 0, 28, 0, 0, 0, 19, 0, 0, 0, 3, 0, 12, 22, 0,
-            0, 0, 107, 101, 121, 5, 118, 97, 108, 117, 101, 0, 202, 154, 59,
-        ];
+        #[test]
+        fn test_encode_unsigned() {
+            let cols = vec![
+                Column::new(1, std::u64::MAX as i64).with_unsigned(),
+                Column::new(2, -1),
+            ];
+            let exp: Vec<u8> = vec![
+                128, 0, 2, 0, 0, 0, 1, 2, 8, 0, 9, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+            ];
+            let mut buf = vec![];
+            buf.write_row(&mut EvalContext::default(), cols).unwrap();
 
-        let mut buf = vec![];
-        buf.write_row(&mut EvalContext::default(), cols).unwrap();
+            assert_eq!(buf, exp);
+        }
 
-        assert_eq!(exp, buf);
+
+        #[test]
+        fn test_encode() {
+            let cols = vec![
+                Column::new(1, 1000),
+                Column::new(12, 2),
+                Column::new(33, ScalarValue::Int(None)),
+                Column::new(3, 3).with_unsigned(),
+                Column::new(8, 32767),
+                Column::new(7, b"abc".to_vec()),
+                Column::new(9, 1.8),
+                Column::new(6, -1.8),
+                Column::new(
+                    13,
+                    Time::parse_datetime(&mut EvalContext::default(), "2022-01-19 03:14:07", 0, false)
+                        .unwrap(),
+                ),
+                Column::new(14, Decimal::from(1i64)),
+                Column::new(15, Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
+                Column::new(16, Duration::from_nanos(NANOS_PER_SEC, 0).unwrap()),
+            ];
+
+            let exp = vec![
+                128, 0, 11, 0, 1, 0, 1, 3, 6, 7, 8, 9, 12, 13, 14, 15, 16, 33, 2, 0, 3, 0, 11, 0, 14,
+                0, 16, 0, 24, 0, 25, 0, 33, 0, 36, 0, 65, 0, 69, 0, 232, 3, 3, 64, 3, 51, 51, 51, 51,
+                51, 50, 97, 98, 99, 255, 127, 191, 252, 204, 204, 204, 204, 204, 205, 2, 0, 0, 0, 135,
+                51, 230, 158, 25, 1, 0, 129, 1, 1, 0, 0, 0, 28, 0, 0, 0, 19, 0, 0, 0, 3, 0, 12, 22, 0,
+                0, 0, 107, 101, 121, 5, 118, 97, 108, 117, 101, 0, 202, 154, 59,
+            ];
+
+            let mut buf = vec![];
+            buf.write_row(&mut EvalContext::default(), cols).unwrap();
+
+            assert_eq!(exp, buf);
+        }
+
+        #[test]
+        fn test_encode_big() {
+            let cols = vec![
+                Column::new(1, 1000),
+                Column::new(12, 2),
+                Column::new(335, ScalarValue::Int(None)),
+                Column::new(3, 3),
+                Column::new(8, 32767),
+            ];
+            let exp = vec![
+                128, 1, 4, 0, 1, 0, 1, 0, 0, 0, 3, 0, 0, 0, 8, 0, 0, 0, 12, 0, 0, 0, 79, 1, 0, 0, 2, 0,
+                0, 0, 3, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 232, 3, 3, 255, 127, 2,
+            ];
+            let mut buf = vec![];
+            buf.write_row(&mut EvalContext::default(), cols).unwrap();
+
+            assert_eq!(exp, buf);
+        }
     }
-
-    #[test]
-    fn test_encode_big() {
-        let cols = vec![
-            Column::new(1, 1000),
-            Column::new(12, 2),
-            Column::new(335, ScalarValue::Int(None)),
-            Column::new(3, 3),
-            Column::new(8, 32767),
-        ];
-        let exp = vec![
-            128, 1, 4, 0, 1, 0, 1, 0, 0, 0, 3, 0, 0, 0, 8, 0, 0, 0, 12, 0, 0, 0, 79, 1, 0, 0, 2, 0,
-            0, 0, 3, 0, 0, 0, 5, 0, 0, 0, 6, 0, 0, 0, 232, 3, 3, 255, 127, 2,
-        ];
-        let mut buf = vec![];
-        buf.write_row(&mut EvalContext::default(), cols).unwrap();
-
-        assert_eq!(exp, buf);
-    }
-}
