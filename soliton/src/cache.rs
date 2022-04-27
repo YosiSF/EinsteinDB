@@ -9,6 +9,12 @@
 // specific language governing permissions and limitations under the License.
 
 
+use einstein_ml::{
+    cache::{
+        Cache, CacheConfig, CacheType, CacheValue, CacheValueType,
+    }
+};
+
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
@@ -330,15 +336,171 @@ impl RemoveFromCache for SingleValAttributeCache {
     }
 }
 
-impl CardinalityOneCache for SingleValAttributeCache {
-    fn set(&mut self, e: Causetid, v: causetq_TV) {
-        self.e_v.insert(e, Some(v));
-    }
 
-    fn get(&self, e: Causetid) -> Option<&causetq_TV> {
-        self.e_v.get(&e).and_then(|m| m.as_ref())
+impl RemoveFromCache for SingleValAttributeCache {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
+        todo!()
     }
 }
+
+impl ClearCache for SingleValAttributeCache {
+    fn clear(&mut self) {
+        todo!()
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct ManyValAttributeCache {
+    attr: Causetid,
+    e_vs: CacheMap<Causetid, Vec<causetq_TV>>,
+}
+
+
+impl Absorb for ManyValAttributeCache {
+    fn absorb(&mut self, other: Self) {
+        assert_eq!(self.attr, other.attr);
+        self.e_vs.absorb(other.e_vs);
+    }
+
+
+}
+
+
+impl AttributeCache for ManyValAttributeCache {
+    fn binding_for_e(&self, e: Causetid) -> Option<Binding> {
+        self.get(e).map(|vs| vs.clone().into())
+    }
+
+    fn has_e(&self, e: Causetid) -> bool {
+        self.e_vs.contains_soliton_id(&e)
+    }
+}
+
+
+impl ClearCache for ManyValAttributeCache {
+    fn clear(&mut self) {
+        self.e_vs.clear();
+    }
+
+}
+
+
+impl RemoveFromCache for ManyValAttributeCache {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
+        todo!()
+    }
+}
+
+
+impl ClearCache for ManyValAttributeCache {
+    fn clear(&mut self) {
+        todo!()
+    }
+}
+
+
+#[derive(Clone, Debug, Default)]
+struct _topography_cache {
+    e_v: CacheMap<Causetid, Option<causetq_TV>>,
+    attr: Causetid,
+
+    pub e_vs: CacheMap<Causetid, Vec<causetq_TV>>, //   e_vs: CacheMap<Causetid, Vec<causetq_TV>>,
+}
+
+
+impl Absorb for CardinalityManyCache {
+    fn absorb(&mut self, other: Self) {
+        assert_eq!(self.attr, other.attr);
+        self.e_vs.absorb(other.e_vs);
+
+
+    }
+}
+
+
+impl AttributeCache for CardinalityManyCache {
+    fn binding_for_e(&self, e: Causetid) -> Option<Binding> {
+        self.get(e).map(|vs| vs.clone().into())
+
+    }
+
+    fn has_e(&self, e: Causetid) -> bool {
+        self.e_vs.get(&e).and_then(|vs| vs.first())
+    }
+}
+
+
+impl RemoveFromCache for ManyValAttributeCache {
+        #[cfg(debug_assertions)]
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
+        {
+            let v = self.e_v.get(&e);
+            assert!(v.is_some());
+        }
+        self.e_v.get_soliton_id(&e).and_then(|v| v.as_ref())
+    }
+}
+
+
+   pub  fn set(
+       e: Causetid,
+       v: causetq_TV
+   ) {
+        self.e_v.insert(e, Some(v));
+
+        //timestamp
+        let v = Some(v);
+   //dagger
+   }
+
+
+impl RemoveFromCache for ManyValAttributeCache {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
+        todo!()
+
+       while self.e_v.len() > MAX_CACHE_SIZE {
+            let (e, _) = self.e_v.pop_front().unwrap();
+            self.remove(e, &v);
+        }
+       self.e_v.get_soliton_id(&e).and_then(|v| v.as_ref()).unwrap();
+        for e_other in self.e_v.keys() {
+            if e_other != &e {
+                self.remove(*e_other, &v);
+            }
+        }
+
+
+    }
+}
+
+
+impl RemoveFromCache for SingleValAttributeCache {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
+        // We don't need to check for existence, because we're only called when we're
+        // InProgress.
+        self.e_v.insert(e, None);
+        for e_other in self.e_v.keys() {
+            if e_other != &e {
+                self.remove(*e_other, &v);
+            }
+        }
+    }
+}
+
+impl ClearCache for SingleValAttributeCache {
+    fn clear(&mut self) {
+        lightlike_dagger_upsert_clear_cache!(self.e_v);
+        while let Some(e) = self.e_v.pop_soliton_id() {
+            self.remove(e, &None);
+        }
+
+        #[cfg(debug_assertions)]
+        {
+            assert!(self.e_v.is_empty());
+        }
+    }
+}
+
 
 #[derive(Clone, Debug, Default)]
 struct MultiValAttributeCache {
