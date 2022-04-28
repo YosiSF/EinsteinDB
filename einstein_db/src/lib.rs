@@ -7,41 +7,85 @@
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
+#![feature(llvm_asm)]
+#![feature(global_asm)]
+#![feature(const_fn)]
+#![feature(const_panic)]
+#![feature(const_fn_union)]
+#![feature(repr-simd)]
+#![feature(const_atomic_usize_new)]
 
-#![feature(proc_macro_hygiene)]
-#![feature(min_specialization)]
-#![feature(test)]
-#![feature(decl_macro)]
-#![feature(str_internals)]
-#![feature(ptr_offset_from)]
+use crate::EinsteinDB::causet::{Causet, CausetError};
+use allegro_poset::{Poset, Position, Proof, ProofError, ProofErrorType, ProofType,
+                    Root, RootError, RootErrorType, RootType,
+                    Vertex, VertexError, VertexErrorType, VertexType};
+use einstein_ml::{Dataset, DatasetError, DatasetErrorType, DatasetType,
+                  Feature, FeatureError, FeatureErrorType, FeatureType,
+                  Label, LabelError, LabelErrorType, LabelType,
+                  Model, ModelError, ModelErrorType, ModelType,
+                  Predictor, PredictorError, PredictorErrorType, PredictorType};
 
-#[allow(unused_extern_crates)]
-extern crate EinsteinDB_alloc;
-extern crate EinsteinDB_embedded;
-#[macro_use(box_err, box_try, try_opt)]
-extern crate EinsteinDB_util;
+use causetq::{CausetQ, CausetQError};
+use causets::{Causets, CausetsError};
+use berolina_sql::{BerolinaSql, BerolinaSqlError};
+use einstein_db_alexandrov_processing::{
+    alexandrov_processing, alexandrov_processing_error, alexandrov_processing_error_type,
+    alexandrov_processing_type,
+};
+use einstein_db_ctl::{EinsteinDB, EinsteinDBError};
+use einsteindb_server::{EinsteinDBClient, EinsteinDBClientError};
+use einsteindb_server::{EinsteinDBClientErrorType, EinsteinDBClientType};
+
+
+
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate lazy_static;
 #[macro_use]
 extern crate bitflags;
-extern crate einstein_ml;
 #[macro_use]
-extern crate embedded_promises;
+extern crate bit_field;
 #[macro_use]
-extern crate failure;
-extern crate failure;
+extern crate cfg_if;
 #[macro_use]
-extern crate num_derive;
-extern crate query_algebrizer_promises;
-#[macro_use(error, warn)]
-extern crate slog_global;
+extern crate bit_slice;
 #[macro_use]
-extern crate static_lightlike_dagger_upsert;
-#[braneg(test)]
-extern crate test;
+extern crate bit_set;
+#[macro_use]
+extern crate bit_vec;
+#[macro_use]
+extern crate bit_array;
+#[macro_use]
+extern crate bit_array_derive;
+#[macro_use]
+extern crate bit_array_macro;
+#[macro_use]
+extern crate bit_array_macro_derive;
 
 
 
-pub mod prelude {
-    pub use super::def::FieldTypeAccessor;
+
+///! # EinsteinDB Rust API
+/// This is the main API for EinsteinDB Rust.
+/// It is a Rust wrapper for the EinsteinDB C++ API.
+///
+///
+
+
+pub fn einstein_db_gravity_genpk(public:&mut [u8; 32], secret:&mut [u8; 64]) {
+    let mut rng = rand::thread_rng();
+    let mut public_key = [0u8; 32];
+    let mut secret_key = [0u8; 64];
+    *public = public_key;
+    unsafe {
+        llvm_asm!("
+        call einstein_db_gravity_genpk
+        ":
+        :
+        :"memory"
+        );
+    }
 }
 
 
@@ -73,13 +117,13 @@ impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
 /// This is `CachedAttrs`, but with handy generic parameters.
 /// Why not make the trait generic? Because then we can't use it as a trait object in `CausetLocaleNucleon`.
 impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
-    pub fn is_Attr_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
+    pub fn is_attr_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
         self.cache
             .map(|cache| cache.is_Attr_cached_reverse(causetid.into()))
             .unwrap_or(false)
     }
 
-    pub fn is_Attr_cached_lightlike<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
+    pub fn is_attr_cached_lightlike<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
         self.cache
             .map(|cache| cache.is_Attr_cached_lightlike(causetid.into()))
             .unwrap_or(false)
@@ -302,7 +346,7 @@ impl FindQuery {
             in_vars: BTreeSet::default(),
             in_sources: BTreeSet::default(),
             limit: Limit::None,
-            where_clauses: where_clauses,
+            where_clauses,
             order: None,
         }
     }
@@ -358,3 +402,11 @@ pub fn parse_find_string(string: &str) -> Result<FindQuery> {
         .and_then(|parsed| FindQuery::from_parsed_query(parsed))
 }
 
+pub fn einstein_db_gravity_sign(secret: &SecretKey, query: &FindQuery) -> Result<Signature> {
+    let mut db = EinsteinDB::new(secret);
+    let sign = db.gravity_sign(query)?;
+    let sk = secret.clone();
+    let mut sign_bytes = vec![];//sk.to_bytes();
+    db.add_query(query)?;
+    db.sign()
+}

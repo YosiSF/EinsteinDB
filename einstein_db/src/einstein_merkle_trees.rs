@@ -13,17 +13,271 @@ use std::time::Duration;
 use sqlx::sqlx_core::{Connection, Executor, Row, Statement, Transaction};
 use sqlx::{postgres::PgPool, postgres::PgPoolOptions};
 use crate::einstein_db::{EinsteinDB, EinsteinDBError, EinsteinDBResult};
-//gravity-rs
-use einstein_rpc::{RpcClient, RpcServer, RpcServerBuilder};
-use einstein_rpc_server::{RpcHandler, RpcHandlerContext};
-use einstein_rpc_server::jsonrpc::{Error, Id, Params, Response, Version};
-use einstein_rpc_server::jsonrpc_core::{MetaIoHandler, Metadata, Value};
+use crate::einstein_db::einstein_merkle_trees::{MerkleTree, MerkleTreeNode};
+use crate::einstein_db::einstein_merkle_trees::einstein_merkle_tree_node::EinsteinMerkleTreeNode;
+
+use crate::EinsteinDBError::{EinsteinDBError, DBError};
+use crate::EinsteinDBResult::{EinsteinDBResult, EinsteinDBError, EinsteinDBResult};
+
+use causetq::{Causetq, CausetqError};
+use causetq::CausetqError::{CausetqError, CausetqError};
+use causet::{Causet, CausetError};
+use soliton::Soliton;
+use soliton::SolitonError::{SolitonError, CausetError};
+use causets::{Causets, CausetsError};
+use einstein_ml::{EinsteinML, EinsteinMLError};
+use crate::EinsteinDB::LightLike;
 
 use allegro_poset::AllegroPoset;
 use soliton::Soliton;
 use einstein_merkle_tree::{MerkleTree, MerkleTreeNode};
 use gravity::gravity::{Gravity, GravityConfig};
 use einstein_db::{EinsteinDB, EinsteinDBError, EinsteinDBResult};
+
+
+///! The `EinsteinDB` trait is the interface for the EinsteinDB.
+/// It is implemented by the `EinsteinDB` struct.
+///
+///
+/// # Examples
+///
+/// ```
+/// use einstein_db::EinsteinDB;
+/// use einstein_db::EinsteinDBError;
+/// use einstein_db::EinsteinDBResult;
+/// use einstein_db::EinsteinDBResult::{Ok, Err};
+/// use einstein_db::EinsteinDBError::{EinsteinDBError, DBError};
+///
+/// let mut db = EinsteinDB::new("postgres://postgres:postgres@localhost:5432/einstein_db").unwrap();
+///
+/// for i in 0..10 {
+///    db.insert_block(i, "".to_string()).unwrap();
+/// }
+/// while db.get_block_height().unwrap() < 10 {
+///   db.insert_block(db.get_block_height().unwrap() + 1, "".to_string()).unwrap();
+/// }
+/// //relativistic time travel queries
+/// assert_eq!(db.get_block_height().unwrap(), 10);
+/// assert_eq!(db.get_block_height_by_hash("".to_string()).unwrap(), 10);
+///
+///
+/// //absolute time travel queries
+/// assert_eq!(db.get_block_height_by_hash("".to_string()).unwrap(), 10);
+/// assert_eq!(db.get_block_height_by_hash("".to_string()).unwrap(), 10);
+///
+///
+/// //insert a block with a different hash -- quantum secure hash
+/// db.insert_block(db.get_block_height().unwrap() + 1, "".to_string()).unwrap();
+/// assert_eq!(db.get_block_height().unwrap(), 10);
+/// assert_eq!(db.get_block_height_by_hash("".to_string()).unwrap(), 10);
+
+
+
+#[derive(Clone)]
+pub struct EinsteinDB {
+    pool: PgPool,
+    pub(crate) soliton: Soliton,
+    pub(crate) causetq: Causetq,
+    pub(crate) causet: Causet,
+    pub(crate) causets: Causets,
+    pub(crate) einstein_ml: EinsteinML,
+    pub(crate) allegro_poset: AllegroPoset,
+    pub(crate) gravity: Gravity,
+    pub(crate) merkle_tree: MerkleTree,
+    pub(crate) merkle_tree_nodes: HashMap<String, MerkleTreeNode>,
+    pub(crate) merkle_tree_node_counter: AtomicUsize,
+    pub(crate) merkle_tree_node_id_counter: AtomicUsize,
+    pub(crate) merkle_tree_node_id_counter_map: HashMap<String, usize>,
+}
+
+
+
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
+pub struct Address {
+    pub address: String,
+
+    pub balance: u64,
+
+    pub nonce: u64,
+
+    pub code: String,
+
+    pub causetid: String,
+
+    pub solitonid: String,
+
+    pub layer: i32,
+    pub instance: i32,
+}
+
+
+#[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
+pub struct CausetNet {
+    topography: String,
+    pub genesis_block: String, //hash of genesis block
+    instance: u64,
+    layer: u32,
+    pub height: u64,
+}
+
+impl fmt::Debug for Address {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Address: {}", self.address)
+    }
+}
+
+impl Address {
+    pub fn new(layer: u32, instance: u64) -> Self {
+        Address {
+            address: format!("{:x}:{:x}", layer, instance),
+            balance: 0,
+            nonce: 0,
+            code: (),
+            causetid: (),
+            solitonid: (),
+            layer: 0,
+            instance: 0
+        }
+    }
+
+    pub fn get_instance(&self) -> usize {
+        self.instance as usize
+    }
+
+    pub fn incr_instance(&mut self) {
+        self.instance += 1;
+    }
+
+    pub fn normalize_index(&self, mask: u64) -> (Address, usize) {
+        let index = self.instance & mask;
+        let address = Address {
+            address: (),
+            balance: 0,
+            nonce: 0,
+            code: (),
+            causetid: (),
+            solitonid: (),
+            layer: self.layer,
+            instance: self.instance - index,
+        };
+        (address, index as usize)
+    }
+
+    pub fn next_layer(&mut self) {
+        self.layer -= 1;
+    }
+
+    pub fn shift(&mut self, height: usize) {
+        self.instance >>= height;
+    }
+
+    pub fn to_block(&self, counter: u32) -> [u8; 16] {
+        let mut block = [0; 16];
+        BigEndian::write_u64(array_mut_ref![block, 0, 8], self.instance);
+        BigEndian::write_u32(array_mut_ref![block, 8, 4], self.layer);
+        BigEndian::write_u32(array_mut_ref![block, 12, 4], counter);
+        block
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_block() {
+        let address = Address::new(0x01020304, 0x05060708090a0b0c);
+        let block = address.to_block(0x0d0e0f00);
+        assert_eq!(
+            block,
+            [5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 13, 14, 15, 0]
+        );
+    }
+
+    #[test]
+    fn test_get_instance() {
+        let address = Address::new(0x01020304, 0x05060708090a0b0c);
+        let instance = address.get_instance();
+        assert_eq!(instance, 0x05060708090a0b0c);
+    }
+
+    #[test]
+    fn test_incr_instance() {
+        let mut address = Address::new(0x01020304, 0x05060708090a0b0c);
+        address.incr_instance();
+        assert_eq!(
+            address,
+            Address {
+                address,
+                balance: 0,
+                nonce: 0,
+                code: (),
+                causetid: (),
+                solitonid: (),
+                layer: 0x01020304,
+                instance: 0x05060708090a0b0d,
+            }
+        );
+    }
+
+    #[test]
+    fn test_next_layer() {
+        let mut address = Address::new(0x01020304, 0x05060708090a0b0c);
+        address.next_layer();
+        assert_eq!(
+            address,
+            Address {
+                address,
+                balance: 0,
+                nonce: 0,
+                code: (),
+                causetid: (),
+                solitonid: (),
+                layer: 0x01020303,
+                instance: 0x05060708090a0b0c,
+            }
+        );
+    }
+
+    #[test]
+    fn test_shift() {
+        let mut address = Address::new(0x01020304, 0x05060708090a0b0c);
+        address.shift(12);
+        assert_eq!(
+            address,
+            Address {
+                address,
+                balance: 0,
+                nonce: 0,
+                code: (),
+                causetid: (),
+                solitonid: (),
+                layer: 0x01020304,
+                instance: 0x05060708090a0,
+            }
+        );
+    }
+
+    #[test]
+    fn test_normalize_index() {
+        let address = Address::new(0x01020304, 0x05060708090a0b0c);
+        let (address, index) = address.normalize_index(0xFFF);
+        assert_eq!(index, 0xb0c);
+        assert_eq!(
+            address,
+            Address {
+                address,
+                balance: 0,
+                nonce: 0,
+                code: (),
+                causetid: (),
+                solitonid: (),
+                layer: 0x01020304,
+                instance: 0x05060708090a0000,
+            }
+        );
+    }
+}
 
 //Dedup is a struct that contains the merkle tree and the soliton
 //The merkle tree is used to store the data and the soliton is used to
