@@ -8,27 +8,101 @@
 //! Both `KV`s and `LightlikePersistence`s are `Iterable`.
 //!
 //!
-#![allow(clippy::type_complexity)]
+//!
+//!
+
+//! CONSTANTS AND STATIC FUNCTIONS
+//! ---------------------------
+//!
+//!
+//!  CONSTANTS AND STATIC FUNCTIONS
+
+const fn max_level_size(level: usize) -> usize {
+    1 << (level + 1)
+}
+
 pub struct SecKey<'a> {
     pub(crate) key: &'a [u8],
     pub(crate) sec_key: &'a [u8],
-
 }
 
-#[derive(Debug, Clone)]
+
+
+
+
+
+
+//WotsEllipsoidSize = 32
+//WOTS_LEN = 64
+//WOTS_LOG_LEN = 6
+//WOTS_LOG_WOTS_LEN = 5
+//WOTS_W = 8
+//WOTS_LOG_W = 3
+
+pub struct WotsEllipsoidSize([Hash; [u8; 32]]);
+
+ //WOTS_WOTS_LEN = 64
+ //WOTS_LOG_WOTS_LEN = 5
+
+ //WOTS_LOG_WOTS_LEN = 5
+ //WOTS_W = 8
+
+pub struct Wots([Hash; [u8; 8]]);
+
+ //WOTS_LOG_W = 3
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IterableCauset<'a, T: 'a> {
+
     /// The underlying data.
     /// This is a reference to the data, so it can be `&'a T` or `&'a mut T`.
     pub(crate) iterable: &'a T,
+    /// The key of the current item.
+    /// This is a reference to the data, so it can be `&'a [u8]` or `&'a mut [u8]`.
+    ///
+    pub key: &'a [u8],
+
+    prng: &'a [u8], //&'a [u8; 32],
+    pub h: Hash
 }
 
 
+impl<'a, T: Iterable> IterableCauset<'a, T> {
+    /// Creates a new `IterableCauset`.
+    pub fn new(iterable: &'a T, prng: &'a [u8], h: Hash) -> Self {
+        IterableCauset {
+            iterable,
+            key: &[],
+            prng,
+            h
+        }
+    }
+}
 
 
+impl<'a, T: Iterable> Iterator for IterableCauset<'a, T> {
+    type Item = SecKey<'a>;
 
-
-
-
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut key = self.key.to_vec();
+        let mut sec_key = self.prng.to_vec();
+        let mut h = self.h;
+        let mut next_key = self.iterable.next(&mut key, &mut sec_key, &mut h);
+        if next_key.is_none() {
+            return None;
+        }
+        let next_key = next_key.unwrap();
+        let sec_key = sec_key.to_vec();
+        Some(SecKey {
+            key: next_key,
+            sec_key
+        })
+    }
+}
 
 
 //!
@@ -46,12 +120,104 @@ pub struct IterableCauset<'a, T: 'a> {
 //! An invalid iterator cannot move lightlike or back, but may be returned to a
 //! valid state through a successful "seek" operation.
 //!
-//! As EinsteinDB inherits its iteration semantics from FdbDB,
-//! the FdbDB documentation is the ultimate reference:
-//!
-//! - [FdbDB iterator API](https://github.com/facebook/foundationdb/blob/master/include/foundationdb/iterator.h).
-//! - [FdbDB wiki on iterators](https://github.com/facebook/foundationdb/wiki/Iterator)
 
+
+//! Iteration over einstein_merkle_trees and lightlike_persistences.
+
+
+pub trait IterableCausetNetwork: Iterable {
+
+
+    fn next_causet_locale(&mut self, key: &mut [u8], prng: &mut [u8], h: &mut Hash) -> Option<&[u8]>;
+
+    fn next_causet_locale_network(&mut self, key: &mut [u8], prng: &mut [u8], h: &mut Hash) -> Option<&[u8]>;
+
+    fn next_causet_locale_network_with_key(&mut self, key: &mut [u8], prng: &mut [u8], h: &mut Hash) -> Option<&[u8]>;
+
+
+    /// Returns the next key/value pair in the iteration.
+    ///
+    /// The `key` is a reference to the data, so it can be `&'a [u8]` or `&'a mut [u8]`.
+    /// The `sec_key` is a reference to the data, so it can be `&'a [u8]` or `&'a mut [u8]`.
+    ///
+    /// The `h` is the hash of the current key.
+    ///
+    /// The `key` and `sec_key` are the key and secret key of the current item.
+    ///
+    /// The `h` is the hash of the current key.
+    ///
+    /// The `key` and `sec_key` are the key and secret key of the current item.
+
+    /// The `key` and `sec_key` are the key and secret key of the current item.
+    ///
+    /// The `h` is the hash of the current key.
+
+
+
+    fn next_causet_locale_network_with_key_and_sec_key(&mut self, key: &mut [u8], prng: &mut [u8], h: &mut Hash) -> Option<&[u8]>;
+
+
+    fn next(&mut self, key: &mut [u8], sec_key: &mut [u8], h: &mut [u8]) -> Option<[u8; 32]>;
+
+    /// Returns the next key/value pair in the iteration.
+    /// The `key` is a reference to the data, so it can be `&'a [u8]` or `&'a mut [u8]`.
+    /// The `sec_key` is a reference to the data, so it can be `&'a [u8]` or `&'a mut [u8]`.
+    /// The `h` is the hash of the current key.
+    /// The `key` and `sec_key` are the key and secret key of the current item.
+    /// The `h` is the hash of the current key.
+    /// The `key` and `sec_key` are the key and secret key of the current item.
+    /// The `h` is the hash of the current key.
+    /// The `key` and `sec_key` are the key and secret key of the current item.
+    /// The `h` is the hash of the current key.
+
+    fn next_with_hash(&mut self, key: &mut [u8], sec_key: &mut [u8], h: &mut [u8]) -> Option<[u8; 32]>;
+
+    /// Returns the next key/value pair in the iteration.
+    /// The `key` is a reference to the data, so it can be `&'a [u8]` or `&'a mut [u8]`.
+    /// The `sec_key` is a reference to the data, so it can be `&'a [u8]` or `&'a mut [u8]`.
+    /// The `h` is the hash of the current key.
+    /// The `key` and `sec_key` are the key and secret key of the current item.
+    /// The `h` is the hash of the current key.
+    /// The `key` and `sec_key` are the key and secret key of the current item.
+    /// The `h` is the hash of the current key.
+    /// The `key` and `sec_key` are the key and secret key of the current item.
+
+    fn next_with_hash_and_key(&mut self, key: &mut [u8], sec_key: &mut [u8], h: &mut [u8]) -> Option<[u8; 32]>;
+}
+    //! As EinsteinDB inherits its iteration semantics from FdbDB,
+    //! the FdbDB documentation is the ultimate reference:
+    //!
+    //! - [FdbDB iterator API](https://github.com/facebook/foundationdb/blob/master/include/foundationdb/iterator.h).
+    //! - [FdbDB wiki on iterators](https://github.com/facebook/foundationdb/wiki/Iterator)
+
+
+    /// An iterator over a `KV` or `LightlikePersistence`.
+    /// The iterator is positioned at the first item in the iteration.
+    /// The iterator may be invalid, in which case `next()` will return `None`.
+    /// An iterator is invalid if it has been moved out of its underlying data.
+
+
+
+impl<'a> Iterator for IterableCauset<'a, KV> {
+    type Item = SecKey<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut key = self.key.to_vec();
+        let mut sec_key = self.prng.to_vec();
+        let mut h = self.h;
+        let mut next_key = self.iterable.next(&mut key, &mut sec_key, &mut h);
+        if next_key.is_none() {
+            return None;
+
+        }
+        let next_key = next_key.unwrap();
+        let sec_key = sec_key.to_vec();
+        Some(SecKey {
+            key: next_key,
+            sec_key
+        })
+    }
+}
 
 
 use crate::*;
@@ -242,12 +408,24 @@ impl<'a> From<&'a [u8]> for SeekKey<'a> {
 ///
 /// If any errors occur during iterator.
 pub fn collect<I: Iterator>(mut it: I) -> Vec<(Vec<u8>, Vec<u8>)> {
+
     let mut v = Vec::new();
     let mut it_valid = it.valid().unwrap();
+
     while it_valid {
         let kv = (it.soliton_id().to_vec(), it.causet_locale().to_vec());
         v.push(kv);
         it_valid = it.next().unwrap();
     }
     v
+}
+
+
+
+pub fn get_soliton_id_from_key(key: &[u8]) -> &[u8] {
+    &key[0..FILE_CAUSET_PREFIX_LEN_FLUSH]
+}
+
+pub fn get_causet_locale_from_key(key: &[u8]) -> &[u8] {
+    &key[FILE_CAUSET_PREFIX_LEN_FLUSH..]
 }
