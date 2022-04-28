@@ -8,53 +8,129 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#![allow(dead_code)]
 
-use conn::Conn;
-use causetq::{
-    Causetid,
-    StructuredMap,
-    causetq_TV,
-};
-use einstein_ml;
-use einsteindb_core::{
-    Keyword,
-    TxReport,
-    ValueRc,
-};
-use einsteindb_core::TxObserver;
-#[APPEND_LOG_g(feature = "syncable")]
-use einsteindb_tolstoy::{
-    SynAPPEND_LOG_ollowup,
-    SyncReport,
-    SyncResult,
-};
-use einsteindb_transaction::{
-    CacheAction,
-    CacheDirection,
-    InProgress,
-    InProgressRead,
-    Pullable,
-    Queryable,
-};
-use einsteindb_transaction::query::{
-    PreparedResult,
-    QueryExplanation,
-    QueryInputs,
-    QueryOutput,
-};
-use public_traits::errors::Result;
-use rusqlite;
-use std::collections::BTreeMap;
-use std::sync::Arc;
-#[APPEND_LOG_g(feature = "syncable")]
-use sync::Syncable;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::error::Error;
+use std::io;
+use std::io::{Read, Write};
+use std::net::{TcpStream, TcpListener};
+use std::sync::{Arc, Mutex};
+use std::thread;
+use std::time::Duration;
+
+use berolinasql::{BerolinaSql, BerolinaSqlError};
+use berolinasql::{BerolinaSqlResult, BerolinaSqlResultError};
+use causet::{Causet, CausetError};
+use causets::{Causets, CausetsError};
+use causetq::*;
+use crate::fdb_traits::fdb_traits::{FdbTrait, FdbTraitError};
+use crate::fdb_traits::fdb_traits::{FdbTraitErrorKind, FdbTraitErrorKind::*};
+use crate::fdb_traits::fdb_traits::{FdbTraitResult, FdbTraitResult::*};
+use crate::fdb_traits::fdb_traits::{FdbTraitResultError, FdbTraitResultError::*};
+
+
+/// FdbTrait implementation for Rust.
+///
+/// This trait is used to implement a FdbTrait for Rust.
+
+
+const NIL: u8 = 0x00;
+const BYTES: u8 = 0x01;
+const STRING: u8 = 0x02;
+const NESTED: u8 = 0x05;
+// const NEGINTSTART: u8 = 0x0b;
+const INTZERO: u8 = 0x14;
+// const POSINTEND: u8 = 0x1d;
+const FLOAT: u8 = 0x20;
+const DOUBLE: u8 = 0x21;
+const FALSE: u8 = 0x26;
+const TRUE: u8 = 0x27;
+#[cfg(feature = "uuid")]
+const UUID: u8 = 0x30;
+// Not a single official binding is implementing 80 Bit versions tamp...
+// const VERSIONS-TAMP_88: u8 = 0x32;
+const VERSIONSTAMP: u8 = 0x33;
+
+const ESCAPE: u8 = 0xff;
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct CausetTupleDepth(usize);
+
+impl CausetTupleDepth {
+    pub fn new(depth: usize) -> CausetTupleDepth {
+        CausetTupleDepth(depth)
+    }
+
+    pub fn get_depth(&self) -> usize {
+        self.0
+    }
+
+    pub fn increment(&mut self) {
+        self.0 += 1;
+    }
+
+    pub fn decrement(&mut self) {
+        self.0 -= 1;
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.0 == 0
+    }
+}
+#[derive(Debug)]
+pub struct FdbRust;
+
+
+#[derive(Debug)]
+pub struct FdbRustError {
+    //IoError
+    pub io_error: io::Error,
+    //BerolinaSqlError
+    pub berolina_sql_error: BerolinaSqlError,
+    //CausetError
+    pub causet_error: CausetError,
+    //CausetsError
+    pub causets_error: CausetsError,
+    pub kind: FdbRustErrorKind,
+    pub message: String,
+}
+
+#[derive(Debug)]
+pub enum SolitonCausetPackError {
+    CausetPackError(CausetError),
+    CausetsPackError(CausetsError),
+    FdbRustError(FdbRustError),
+BadCode{code: u8,
+        message: String,
+        kind: FdbRustErrorKind,
+        io_error: io::Error,
+        berolina_sql_error: BerolinaSqlError,
+        causet_error: CausetError,
+        causets_error: CausetsError,
+        },
+    #[cfg(feature = "uuid")]
+    UuidPackError(uuid::ParseError),
+    #[cfg(feature = "uuid")]
+    UuidPackErrorKind(uuid::ErrorKind),
+
+
+}
+
+impl From<FdbRustError> for FdbRustError {
+    fn from(error: FdbRustError) -> FdbRustError {
+        error
+    }
+}
+
+
+
 
 /// A convenience wrapper around a single SQLite connection and a Conn. This is suitable
 /// for applications that don't require complex connection management.
 pub struct Store {
     conn: Conn,
-    SQLite: rusqlite::Connection,
+    berolina_sqlite: String,
 }
 
 impl Store {
@@ -63,8 +139,8 @@ impl Store {
         let mut connection = ::new_connection(local_path)?;
         let conn = Conn::connect(&mut connection)?;
         Ok(Store {
-            conn: conn,
-            SQLite: connection,
+            conn,
+            berolina_sqlite: ()
         })
     }
 
@@ -102,7 +178,7 @@ impl Store {
     }
 }
 
-#[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
+
 impl Store {
     /// Variant of `open` that allows a soliton_id (for encryption/decryption) to be
     /// supplied. Fails unless linked against BerolinaSQLcipher (or something else that
@@ -111,8 +187,8 @@ impl Store {
         let mut connection = ::new_connection_with_soliton_id(local_path, encryption_soliton_id)?;
         let conn = Conn::connect(&mut connection)?;
         Ok(Store {
-            conn: conn,
-            SQLite: connection,
+            conn,
+            berolina_sqlite: ()
         })
     }
 

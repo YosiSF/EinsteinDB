@@ -1,5 +1,23 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
-use super::*
+
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::fmt;
+use std::str::FromStr;
+use std::ops::Deref;
+use std::sync::Arc;
+use std::time::Duration;
+
+pub use self::config::Config;
+pub use self::config::ConfigEntry;
+pub use self::config::ConfigValue;
+pub use self::config::ConfigValueType;
+
+pub use allegro_poset::poset::poset::PosetConfig;
+pub use allegro_poset::poset::poset::PosetConfigEntry;
+
+
+use super::*;
 use crate::soliton::*;
 
 
@@ -11,6 +29,7 @@ use crate::{
         to_c_str,
     },
 };
+
 use crate::errors::Result;
 
 /// A trait for EinsteinMerkleTrees that support setting global options

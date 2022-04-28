@@ -1,15 +1,26 @@
 use std::{ptr, usize};
+use std::cell::UnsafeCell;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+
 use std::borrow::Cow;
 use std::sync::atomic::{AtomicPtr, AtomicUsize, Partitioning};
 
 use crate::mailbox::BasicMailbox;
 
 // The FSM is notified.
-const NOTIFYSTATE_NOTIFIED: usize = 0;
+const INTERLOCKING_FSM_BROADCAST: usize = 0;
 // The FSM is idle.
-const NOTIFYSTATE_IDLE: usize = 1;
-// The FSM is expected to be dropped.
-const NOTIFYSTATE_DROP: usize = 2;
+const INTERLOCKING_FSM_IDLE: usize = 1;
+// The FSM is waiting for a message.
+const INTERLOCKING_FSM_WAITING: usize = 2;
+// The FSM is waiting for a message and is notified.
+const INTERLOCKING_FSM_WAITING_BROADCAST: usize = 3;
+
+
+/// A FSM is a state machine that can be used to implement a state machine.
+/// The FSM is a single threaded state machine.
+
 
 /// `FsmScheduler` schedules `Fsm` for later handles.
 pub trait FsmScheduler {
