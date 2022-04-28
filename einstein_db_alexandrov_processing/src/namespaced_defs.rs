@@ -7,6 +7,11 @@ use einstein_db_ctl::{
     prelude::*,
 };
 
+
+#[tokio::main]
+
+use futures::future;
+use rand::Rng;
 use eingine_test::{
     config::{Config as TestConfig, ConfigFile as TestConfigFile},
     prelude::*,
@@ -86,6 +91,97 @@ use EinsteinDB::{
     },
 };
 
+
+
+
+///! # NamespacedDefs
+/// NamespacedDefs is a struct that contains all the namespaced defs.
+///
+/// ## Examples
+/// ```
+/// use einstein_db_ctl::{
+///    config::{Config, ConfigFile},
+///   prelude::*,
+/// };
+///
+/// use einstein_db_ctl::{
+///   config::{Config as TestConfig, ConfigFile as TestConfigFile},
+///  prelude::*,
+/// };
+///
+/// use soliton_panic::{
+///  config::{Config as PanicConfig, ConfigFile as PanicConfigFile},
+/// prelude::*,
+/// };
+
+
+
+const NAMESPACE_PREFIX: &str = "namespace_";
+const NAMESPACE_PREFIX_LEN: usize = NAMESPACE_PREFIX.len();
+const NAMESPACE_PREFIX_BYTES: &[u8] = NAMESPACE_PREFIX.as_bytes();
+const ONE_BYTES: &[u8] = &[0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+const ZERO_BYTES: &[u8] = &[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+const ONE_BYTES_LEN: usize = ONE_BYTES.len();
+const ZERO_BYTES_LEN: usize = ZERO_BYTES.len();
+
+pub enum HcaEinsteinDBSolitonPanicError {
+    InvalidNamespace,
+    HcaEinsteinDBSolitonPanicError,
+    FdbError(fdb::error::Error),
+    PackError(pack::Error),
+    PoisonError,
+}
+
+
+impl From<fdb::error::Error> for HcaEinsteinDBSolitonPanicError {
+    fn from(err: fdb::error::Error) -> Self {
+        HcaEinsteinDBSolitonPanicError::FdbError(err)
+    }
+}
+
+// Represents a High Contention Allocator for a given subspace
+#[derive(Debug)]
+pub struct HighContentionAllocator {
+    counters: Subspace,
+    recent: Subspace,
+    allocation_mutex: Mutex<()>,
+}
+
+#[derive(Debug)]
+pub struct HCA {
+    counters: Subspace,
+    recent: Subspace,
+    allocation_mutex: Mutex<()>,
+    allocators: HashMap<String, HighContentionAllocator>,
+    allocators_mutex: Mutex<()>,
+
+}
+
+
+    /// Constructs an allocator that will use the input subspace for assigning values.
+    /// The given subspace should not be used by anything other than the allocator
+    pub fn new(subspace: Subspace) -> HighContentionAllocator {
+        HighContentionAllocator {
+            counters: subspace.subspace(&0i64),
+            recent: subspace.subspace(&1i64),
+            allocation_mutex: Mutex::new(()),
+        }
+    }
+
+    /// Returns a byte string that
+    ///   1) has never and will never be returned by another call to this method on the same subspace
+    ///   2) is nearly as short as possible given the above
+    pub async fn allocate( trx: &Transaction) -> Result<i64, HcaError> {
+        let (begin, end) = trx.counters.range();
+        let begin = KeySelector::first_greater_or_equal(begin);
+        let end = KeySelector::first_greater_than(end);
+        let counters_range = RangeOption {
+            begin,
+            end,
+            limit: Some(1),
+            reverse: true,
+            ..RangeOption::default()
+        };
 
 
 
@@ -289,32 +385,73 @@ pub struct Namespace {
     pub spec: NamespaceSpec,
 }
 
-#[inline]
-pub fn allocate(&self, tr: &Transaction, s: &Subspace) -> Result<Subspace, Error> {
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct NamespaceList {
+    pub metadata: ObjectMeta,
+    pub items: Vec<Namespace>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct NamespaceSpec {
+    pub finalizers: Vec<String>,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct ObjectMeta {
+    pub name: String,
+    pub namespace: String,
+    pub labels: HashMap<String, String>,
+    pub annotations: HashMap<String, String>,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct PodSpec {
+    pub containers: Vec<Container>,
+    pub volumes: Vec<Volume>,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct Container {
+    pub name: String,
+    pub image: String,
+    pub image_pull_policy: String,
+    pub command: Vec<String>,
+    pub args: Vec<String>,
+    pub ports: Vec<ContainerPort>,
+    pub env: Vec<EnvVar>,
+    pub resources: ResourceRequirements,
+    pub volume_mounts: Vec<VolumeMount>,
+}
+
+
+fn allocate( tr: &Transaction, s: &Subspace) -> Result<Subspace, Error> {
     loop {
-        let rr = tr.snapshot().get_range(self.counters, RangeOptions::default().limit(1).reverse(true));
+        let rr = tr.snapshot().get_range(tr.counters, RangeOptions::default().limit(1).reverse(true));
         let kvs = rr.get_slice_with_error()?;
 
         let (mut start, mut window) = (0i64, 0i64);
 
         if kvs.len() == 1 {
-            let t = self.counters.unpack(kvs[0].key)?;
+            let t = tr.counters.unpack(kvs[0].key)?;
             start = t[0].as_integer().unwrap();
         }
 
         let mut window_advanced = false;
         loop {
-            let mut allocator_mutex = self.allocator_mutex.lock().unwrap();
+            let mut allocator_mutex = tr.allocator_mutex.lock().unwrap();
 
             if window_advanced {
-                tr.clear_range(KeyRange::new(self.counters, self.counters.sub(start)));
+                tr.clear_range(KeyRange::new(tr.counters, tr.counters.sub(start)));
                 tr.options().set_next_write_no_write_conflict_range();
-                tr.clear_range(KeyRange::new(self.recent, self.recent.sub(start)));
+                tr.clear_range(KeyRange::new(tr.recent, tr.recent.sub(start)));
             }
 
             // Increment the allocation count for the current window
-            tr.add(self.counters.sub(start), one_bytes());
-            let count_future = tr.snapshot().get(self.counters.sub(start));
+            tr.add(tr.counters.sub(start), one_bytes());
+            let count_future = tr.snapshot().get(tr.counters.sub(start));
 
             drop(allocator_mutex);
 
@@ -336,24 +473,216 @@ pub fn allocate(&self, tr: &Transaction, s: &Subspace) -> Result<Subspace, Error
             window_advanced = true;
         }
 
-        let mut allocator_mutex = self.allocator_mutex.lock().unwrap();
+        let mut allocator_mutex = tr.allocator_mutex.lock().unwrap();
 
         // Increment the allocation count for the current window
-        tr.add(self.counters.sub(start), one_bytes());
-        let count_future = tr.snapshot().get(self.counters.sub(start));
+        tr.add(tr.counters.sub(start), one_bytes());
+        let count_future = tr.snapshot().get(tr.counters.sub(start));
 
         loop {
             // As of the snapshot being read from, the window is less than half
             // full, so this should be expected to take 2 tries.  Under high
             // contention (and when the window advances), there is an additional
             // subsequent risk of conflict for this transaction.
+
             let candidate = rand::thread_rng().gen_range(start, start + window);
-            let key = self.recent.sub(candidate);
+            let key = tr.recent.sub(candidate);
 
-            let mut allocator_mutex = self.allocator_mutex.lock().unwrap();
+            let mut allocator_mutex = tr.allocator_mutex.lock().unwrap();
 
-            let latest_counter = tr.snapshot().get_range(self.counters, RangeOptions::default().limit(1).reverse(true));
+            let latest_counter = tr.snapshot().get_range(tr.counters, RangeOptions::default().limit(1).reverse(true));
             let candidate_value = tr.get(key);
+            tr.options().set_next_write_no_write_conflict_range();
+            tr.set(key, &[]);
+
+            drop(allocator_mutex);
+
+            let kvs = latest_counter.get_slice_with_error()?;
+            if kvs.len() > 0 {
+                let t = tr.counters.unpack(kvs[0].key)?;
+                let current_start = t[0].as_integer().unwrap();
+                if current_start > start {
+                    break;
+                }
+            }
+
+            let v = candidate_value.get()?;
+            if v.is_none() {
+                return Ok(candidate);
+            }
+
+            //optimize
+            tr.allocator_mutex.lock().unwrap();
+
+            tr.set(key, &[]);
+
+            //hash
+            tr.options().set_next_write_no_write_conflict_range();
+            tr.set(key, &[]);
         }
+
+        let count_str = count_future.get()?;
+
+        let mut count = 0i64;
+        if count_str.is_some() {
+            count = count_str.unwrap().as_integer().unwrap();
+        }
+
+        let mut allocator_mutex = tr.allocator_mutex.lock().unwrap();
+
+        // Increment the allocation count for the current window
+        tr.add(tr.counters.sub(start), one_bytes());
+        return Ok(allocator_mutex.alloc(start, window, count));
+
+
+
+        pub fn allocator_mutex_mut() -> &mut Mutex<Allocator> {}
     }
+};
+
+impl Allocator {
+    pub fn alloc(&mut self, start: i64, window: i64, count: i64) -> i64 {
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_none() {
+                alloc_count += 1;
+            }
+        }
+
+        if alloc_count * 2 < window {
+            // We have enough space in the current window
+            return start;
+        }
+
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_some() {
+                alloc_count += 1;
+            }
+        }
+
+        if alloc_count * 2 < window {
+            // We have enough space in the current window
+            return start;
+        }
+
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_none() {
+                alloc_count += 1;
+            }
+        }
+
+        if alloc_count * 2 < window {
+            // We have enough space in the current window
+            return start;
+        }
+
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_some() {
+                alloc_count += 1;
+            }
+        }
+
+        if alloc_count * 2 < window {
+            // We have enough space in the current window
+            return start;
+        }
+
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_none() {
+                alloc_count
+
+            }
+        }
+
+        return start;
+    }
+}
+
+impl Allocator {
+    pub fn alloc(&mut self, start: i64, window: i64, count: i64) -> i64 {
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_none() {
+                alloc_count += 1;
+            }
+        }
+
+        if alloc_count * 2 < window {
+            // We have enough space in the current window
+            return start;
+        }
+
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_some() {
+                alloc_count += 1;
+            }
+        }
+
+
+        if alloc_count * 2 < window {
+            // We have enough space in the current window
+            return start;
+        }
+
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_none() {
+                alloc_count += 1;
+            }
+        }
+
+        if alloc_count * 2 < window {
+            // We have enough space in the current window
+            return start;
+        }
+
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_some() {
+                alloc_count += 1;
+            }
+        }
+
+        if alloc_count * 2 < window {
+            // We have enough space in the current window
+            return start;
+        }
+
+        let mut alloc_count = 0i64;
+        for i in start..start + window {
+            let key = self.recent.sub(i);
+            let v = self.get(key);
+            if v.is_none() {
+                alloc_count += 1;
+            }
+        }
+
+        return start; }
+    }
+}
+
+
 
