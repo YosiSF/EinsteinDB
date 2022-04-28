@@ -27,10 +27,54 @@ pub struct SecKey<'a> {
 }
 
 
-
-
-
-
+//! ITERATOR TRAIT
+//! --------------
+//! All iterators implement this trait. The SecKey trait is used to iterate over the keys of a
+//! `KV` or `LightlikePersistence`. Causets and solitons are iterated over by iterating over the
+//! keys of the `KV`s.
+//! While iterating over the keys of a `KV`, the iterator will return a `SecKey` with the key
+//! and the secondary key.
+//! While iterating over the keys of a `LightlikePersistence`, the iterator will return a
+//! `SecKey` with the key and the secondary key.
+//!
+//!
+//! # Example
+//! ```
+//! use einstein_db_alexandrov_processing::iterable::{SecKey, Iterable};
+//! use einstein_db_alexandrov_processing::kv::KV;
+//! use einstein_db_alexandrov_processing::lightlike_persistence::LightlikePersistence;
+//! use einstein_db_alexandrov_processing::soliton_id::SolitonId;
+//!
+//! let kv = KV::new();
+//! let soliton_id = SolitonId::new();
+//! let lightlike_persistence = LightlikePersistence::new();
+//!
+//! let mut kv_iter = kv.iter();
+//! let mut soliton_id_iter = soliton_id.iter();
+//! let mut lightlike_persistence_iter = lightlike_persistence.iter();
+//!
+//! let mut kv_sec_key_iter = kv.iter_sec_key();
+//!
+//! let mut soliton_id_sec_key_iter = soliton_id.iter_sec_key();
+//!
+//! let mut lightlike_persistence_sec_key_iter = lightlike_persistence.iter_sec_key();
+//!
+//! ```
+//!
+//!
+//! # Example
+//! ```
+//! use einstein_db_alexandrov_processing::iterable::{SecKey, Iterable};
+//! use einstein_db_alexandrov_processing::kv::KV;
+//!
+//! let kv = KV::new();
+//!
+//! let mut kv_iter = kv.iter();
+//!
+//! let mut kv_sec_key_iter = kv.iter_sec_key();
+//!
+//! ```
+//!
 
 //WotsEllipsoidSize = 32
 //WOTS_LEN = 64
