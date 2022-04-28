@@ -327,7 +327,7 @@ impl Pullable for Store {
     }
 }
 
-#[APPEND_LOG_g(test)]
+
 mod tests {
     use QueryInputs;
     use ::vocabulary::{
