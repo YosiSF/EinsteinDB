@@ -1,6 +1,5 @@
-// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
-use einsteindb_util::numeric_enum_serializing_mod;
-
+// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
+//  Karl Whitford <karl@einst.ai>
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum PerfLevel {
     Uninitialized,

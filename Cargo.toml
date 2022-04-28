@@ -3,6 +3,8 @@ name = "EinsteinDB"
 version = "0.1.0"
 authors = ["Karl Whitford<karl@einst.ai>, Josh Leder<slushie@gmail.com>, and others"]
 edition = "2018"
+publish = false
+
 
 [lib]
 name = "einsteindb"
@@ -154,5 +156,7 @@ git = "https://www.github.com/YosiSF/EinsteinDB/causets"
 
 [dependencies.berolina_sql]
 git = "https://www.github.com/YosiSF/EinsteinDB/berolina_sql"
+
+
 
 
