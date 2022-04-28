@@ -6,6 +6,12 @@ use std::ptr;
 use std::slice::from_raw_parts;
 use std::str;
 use std::time::Duration;
+use haraka256::{Haraka256, Haraka256_Params};
+use haraka512::{Haraka512, Haraka512_Params};
+use sha3::{Shake128, Shake256};
+use sha3::digest::generic_array::GenericArray;
+use sha3::digest::FixedOutput;
+
 
 use crate::error::{Error, Result};
 use causet::causet_locale::{Locale, LocaleError};
@@ -20,6 +26,32 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Instant;
 use std::{thread, time};
+
+use crate::*;
+
+///! In combinatorics, a greedoid is a type of set system. It arises from the notion
+/// of the matroid,
+
+
+///! A greedoid is a set system, which is a set of sets.
+/// # Examples
+/// ```
+/// use einstein_db_alexandrov_processing::greedoids;
+/// let mut greedoids = greedoids::Greedoids::new();
+/// greedoids.add_set(vec![1,2,3]);
+/// greedoids.add_set(vec![4,5,6]);
+/// greedoids.add_set(vec![7,8,9]);
+/// greedoids.add_set(vec![10,11,12]);
+
+
+
+
+
+/// which was originally introduced by Whitney in 1935 to study planar graphs
+/// and was later used by Edmonds to characterize a class of optimization problems
+/// that can be solved by greedy algorithms. Around 1980, Korte and Lovász introduced the greedoid to further generalize this characterization of greedy algorithms; hence the name greedoid.
+/// Besides mathematical optimization,
+/// greedoids have also been connected to graph theory, language theory, order theory, and other areas of mathematics.
 
 #[no_mangle]
 pub extern "C" fn greedoids_new(
@@ -223,3 +255,181 @@ pub extern "C" fn greedoids_new(
         ) -> Option<&Self::TableGreedoidsCollection>;
     }
 }
+
+#[inline]
+pub fn einstein_db_ltree_table_greedoids(root: &mut Hash, buf: &mut[ Hash], start: &[u8], end: &[u8]) -> Option<&mut Hash> {
+    let mut i = 0;
+    let mut current = root;
+    let mut current_key = start;
+
+    while i < current_key.len() {
+        if current.zero() {
+            return None;
+        }
+        let mut next = current.get(&current_key[i]).unwrap();
+        if i == current_key.len() - 1 {
+            if next.zero() {
+                return None;
+            }
+            return Some(next);
+        }
+        current = next;
+        current_key = &current_key[i+1..];
+        i += 1;
+    }
+
+    while i < current_key.len() {
+        if current.zero() {
+            return None;
+        }
+        let mut next = current.get(&current_key[i]).unwrap();
+        if i == current_key.len() - 1 {
+            if next.zero() {
+                return None;
+            }
+            return Some(next);
+        }
+        current = next;
+        current_key = &current_key[i+1..];
+        i += 1;
+    }
+
+    return None;
+}
+
+
+#[inline]
+pub fn einstein_db_ltree_table_greedoids_collection(root: &mut Hash, buf: &mut[ Hash], start: &[u8], end: &[u8]) -> Option<&mut Hash> {
+    let mut i = 0;
+    let mut current = root;
+    let mut current_key = start;
+
+    while i < current_key.len() {
+        if current.zero() {
+            return None;
+        }
+        let mut next = current.get(&current_key[i]).unwrap();
+        if i == current_key.len() - 1 {
+            if next.zero() {
+                return None;
+            }
+            return Some(next);
+        }
+        current = next;
+        current_key = &current_key[i+1..];
+        i += 1;
+    }
+
+    unsafe {
+        einstein_db_alexandrov_poset_processv_processing_greedoids_einstein_db_ltree_table_greedoids(root, buf);
+    }
+}
+
+#[inline]
+pub fn einstein_db_alexandrov_poset_processv_processing_greedoids_einstein_db_ltree_table_greedoids(root: &mut Hash, buf: &mut[ Hash]) -> Option<&mut Hash> {
+    for fmt in buf.iter_mut() {
+        fmt.zero();
+    }
+
+
+    let mut i = 0;
+    let mut current = root;
+    let mut current_key = &buf[0];
+
+    while i < current_key.len() {
+
+        if current.zero() {
+
+            return None;
+
+        }
+        let mut next = current.get(&current_key[i]).unwrap();
+        if i == current_key.len() - 1 {
+
+            if next.zero() {
+
+                return None;
+            }
+            return Some(next);
+        }
+        current = next;
+
+        current_key = &buf[i+1];
+        i += 1;
+    }
+
+
+    return None;
+}
+
+
+//ltree leaves
+#[inline]
+pub fn einstein_db_ltree_leaves(root: &mut Hash, buf: &mut[ Hash], start: &[u8], end: &[u8]) -> Option<&mut Hash> {
+    let mut i = 0;
+    let mut current = root;
+    let mut current_key = start;
+
+    while i < current_key.len() {
+        if current.zero() {
+            return None;
+        }
+        let mut next = current.get(&current_key[i]).unwrap();
+        if i == current_key.len() - 1 {
+            if next.zero() {
+                return None;
+            }
+            return Some(next);
+        }
+        current = next;
+        current_key = &current_key[i+1..];
+        i += 1;
+    }
+
+    while i < current_key.len() {
+        if current.zero() {
+            return None;
+        }
+        let mut next = current.get(&current_key[i]).unwrap();
+        if i == current_key.len() - 1 {
+            if next.zero() {
+                return None;
+            }
+            return Some(next);
+        }
+        current = next;
+        current_key = &current_key[i+1..];
+        i += 1;
+    }
+
+    return None;
+}
+
+
+#[inline]
+pub fn einstein_db_ltree_leaves_collection(root: &mut Hash, buf: &mut[ Hash], start: &[u8], end: &[u8]) -> Option<&mut Hash> {
+    let mut i = 0;
+    let mut current = root;
+    let mut current_key = start;
+
+    while i < current_key.len() {
+        if current.zero() {
+            return None;
+        }
+        let mut next = current.get(&current_key[i]).unwrap();
+        if i == current_key.len() - 1 {
+            if next.zero() {
+                return None;
+            }
+            return Some(next);
+        }
+        current = next;
+        current_key = &current_key[i+1..];
+        i += 1;
+    }
+
+    unsafe {
+        einstein_db_alexandrov_poset_processv_processing_leaves_einstein_db_ltree_leaves(root, buf);
+    }
+}
+

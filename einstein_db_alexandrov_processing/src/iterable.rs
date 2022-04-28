@@ -7,6 +7,31 @@
 //!
 //! Both `KV`s and `LightlikePersistence`s are `Iterable`.
 //!
+//!
+#![allow(clippy::type_complexity)]
+pub struct SecKey<'a> {
+    pub(crate) key: &'a [u8],
+    pub(crate) sec_key: &'a [u8],
+
+}
+
+#[derive(Debug, Clone)]
+pub struct IterableCauset<'a, T: 'a> {
+    /// The underlying data.
+    /// This is a reference to the data, so it can be `&'a T` or `&'a mut T`.
+    pub(crate) iterable: &'a T,
+}
+
+
+
+
+
+
+
+
+
+
+//!
 //! Iteration is performed over consistent views into the database, even when
 //! iterating over the einstein_merkle_tree without creating a `LightlikePersistence`. That is, iterating
 //! over an einstein_merkle_tree behaves implicitly as if a lightlike_persistence was created first, and
@@ -27,7 +52,7 @@
 //! - [FdbDB iterator API](https://github.com/facebook/foundationdb/blob/master/include/foundationdb/iterator.h).
 //! - [FdbDB wiki on iterators](https://github.com/facebook/foundationdb/wiki/Iterator)
 
-use einsteindb_util::soliton_idbuilder::KeyBuilder;
+
 
 use crate::*;
 
