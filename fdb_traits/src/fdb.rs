@@ -180,9 +180,24 @@ impl Store {
 
 
 impl Store {
-    /// Variant of `open` that allows a soliton_id (for encryption/decryption) to be
-    /// supplied. Fails unless linked against BerolinaSQLcipher (or something else that
-    /// supports the SQLite Encryption Extension).
+    pub fn begin_transaction(&mut self) -> Result<InnerTx> {
+        let mut ip = InnerTx::new(self.conn.begin_transaction()?);
+        ip.set_causet_tuple_depth(CausetTupleDepth::new(0));
+        Ok(ip)
+    }
+
+    pub fn begin_transaction_with_depth(&mut self, depth: u8) -> Result<InnerTx> {
+        let mut ip = InnerTx::new(self.conn.begin_transaction()?);
+        ip.set_causet_tuple_depth(CausetTupleDepth::new(depth));
+        Ok(ip)
+    }
+
+    pub fn begin_transaction_with_depth_and_causet_tuple_depth(&mut self, depth: u8, causet_tuple_depth: CausetTupleDepth) -> Result<InnerTx> {
+        let mut ip = InnerTx::new(self.conn.begin_transaction()?);
+        ip.set_causet_tuple_depth(causet_tuple_depth);
+        Ok(ip)
+    }
+
     pub fn open_with_soliton_id(local_path: &str, encryption_soliton_id: &str) -> Result<Store> {
         let mut connection = ::new_connection_with_soliton_id(local_path, encryption_soliton_id)?;
         let conn = Conn::connect(&mut connection)?;
@@ -192,10 +207,15 @@ impl Store {
         })
     }
 
-    /// Change the soliton_id for a database that was opened using `open_with_soliton_id` (using `PRAGMA
-    /// resoliton_id`). Fails unless linked against BerolinaSQLcipher (or something else that supports the SQLite
-    /// Encryption Extension).
-    pub fn change_encryption_soliton_id(&mut self, new_encryption_soliton_id: &str) -> Result<()> {
+
+       pub fn open_with_soliton_id_and_causet_tuple_depth(local_path: &str, encryption_soliton_id: &str) -> Result<Store> {
+        let mut connection = ::new_connection_with_soliton_id(local_path, encryption_soliton_id)?;
+        let conn = Conn::connect(&mut connection)?;
+        Ok(Store {
+            conn,
+            berolina_sqlite: ()
+        })
+    } pub fn change_encryption_soliton_id(&mut self, new_encryption_soliton_id: &str) -> Result<()> {
         ::change_encryption_soliton_id(&self.SQLite, new_encryption_soliton_id)?;
         Ok(())
     }
@@ -214,20 +234,30 @@ impl Store {
 }
 
 impl Store {
-    pub fn dismantle(self) -> (rusqlite::Connection, Conn) {
-        (self.SQLite, self.conn)
+    pub fn dismantle(self) -> Result<()> {
+        self.conn.dismantle()
     }
 
     pub fn conn(&self) -> &Conn {
         &self.conn
     }
 
-    pub fn begin_read<'m>(&'m mut self) -> Result<InProgressRead<'m, 'm>> {
-        self.conn.begin_read(&mut self.SQLite)
+    pub fn begin_read(&mut self) -> Result<InProgressRead> {
+        let mut ip = InnerTx::new(self.conn.begin_transaction()?);
+        ip.set_causet_tuple_depth(CausetTupleDepth::new(0));
+        Ok(InProgressRead {
+            ip,
+            store: self,
+        })
     }
 
-    pub fn begin_transaction<'m>(&'m mut self) -> Result<InProgress<'m, 'm>> {
-        self.conn.begin_transaction(&mut self.SQLite)
+    pub fn begin_transaction(&mut self) -> Result<InProgress> {
+        let mut ip = InnerTx::new(self.conn.begin_transaction()?);
+        ip.set_causet_tuple_depth(CausetTupleDepth::new(0));
+        Ok(InProgress {
+            ip,
+            store: self,
+        })
     }
 
     pub fn cache(&mut self, attr: &Keyword, clock_vector: CacheDirection) -> Result<()> {
@@ -253,29 +283,34 @@ impl Store {
 }
 
 impl Queryable for Store {
-    fn q_once<T>(&self, query: &str, inputs: T) -> Result<QueryOutput>
-        where T: Into<Option<QueryInputs>> {
-        self.conn.q_once(&self.SQLite, query, inputs)
+    fn causetq_once<T>(&self, query: &str, inputs: T) -> Result<QueryOutput>
+        where T: IntoIterator<Item = (String, Value)>
+    {
+        self.conn.causetq_once(query, inputs)
     }
 
-    fn q_prepare<T>(&self, query: &str, inputs: T) -> PreparedResult
-        where T: Into<Option<QueryInputs>> {
-        self.conn.q_prepare(&self.SQLite, query, inputs)
+
+    fn causetq_prepare<T>(&self, query: &str, inputs: T) -> Result<QueryOutput>
+        where T: IntoIterator<Item = (String, Value)>
+    {
+        self.conn.causetq_prepare(query, inputs)
     }
 
-    fn q_explain<T>(&self, query: &str, inputs: T) -> Result<QueryExplanation>
-        where T: Into<Option<QueryInputs>> {
-        self.conn.q_explain(&self.SQLite, query, inputs)
+    fn causetq_explain<T>(&self, query: &str, inputs: T) -> Result<QueryOutput>
+        where T: IntoIterator<Item = (String, Value)>
+    {
+        self.conn.causetq_explain(query, inputs)
     }
 
     fn lookup_causet_locales_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Vec<causetq_TV>>
         where E: Into<Causetid> {
-        self.conn.lookup_causet_locales_for_attribute(&self.SQLite, causet.into(), attribute)
+        self.conn.lookup_causet_locales_for_attribute(&self.berolina_sqlite, causet.into(), attribute)
     }
 
     fn lookup_causet_locale_for_attribute<E>(&self, causet: E, attribute: &einstein_ml::Keyword) -> Result<Option<causetq_TV>>
         where E: Into<Causetid> {
-        self.conn.lookup_causet_locale_for_attribute(&self.SQLite, causet.into(), attribute)
+        self.conn.lookup_causet_locale_for_attribute(&self.berolina_sqlite, causet.into(), attribute)
+
     }
 }
 
