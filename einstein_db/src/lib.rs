@@ -15,6 +15,22 @@
 #![feature(repr-simd)]
 #![feature(const_atomic_usize_new)]
 
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::cell::UnsafeCell;
+use std::ptr::NonNull;
+use std::mem::{self, MaybeUninit};
+use std::ops::{Deref, DerefMut};
+use std::marker::PhantomData;
+use std::fmt::{self, Debug, Formatter};
+use std::hash::{Hash, Hasher};
+use std::cmp::{PartialEq, Eq};
+use std::collections::hash_map::DefaultHasher;
+use std::collections::hash_map::Entry::{Occupied, Vacant};
+use std::collections::HashMap;
+use std::collections::hash_map::Iter;
+use std::collections::hash_map::IterMut;
+use einstein_db_alexandrov_processing::{AlexandrovHash, Hashable, HashableRef, HashableRefMut};
 use crate::EinsteinDB::causet::{Causet, CausetError};
 use allegro_poset::{Poset, Position, Proof, ProofError, ProofErrorType, ProofType,
                     Root, RootError, RootErrorType, RootType,
@@ -74,6 +90,8 @@ extern crate bit_array_macro_derive;
 
 
 pub fn einstein_db_gravity_genpk(public:&mut [u8; 32], secret:&mut [u8; 64]) {
+    ///! Generate a Gravity public key and secret key.
+    /// This function generates a Gravity public key and secret key.
     let mut rng = rand::thread_rng();
     let mut public_key = [0u8; 32];
     let mut secret_key = [0u8; 64];
@@ -397,6 +415,7 @@ impl FindQuery {
 }
 
 pub fn parse_find_string(string: &str) -> Result<FindQuery> {
+
     parse_query(string)
         .map_err(|e| e.into())
         .and_then(|parsed| FindQuery::from_parsed_query(parsed))
@@ -409,4 +428,35 @@ pub fn einstein_db_gravity_sign(secret: &SecretKey, query: &FindQuery) -> Result
     let mut sign_bytes = vec![];//sk.to_bytes();
     db.add_query(query)?;
     db.sign()
+}
+
+pub fn einstein_db_gravity_sign_with_sources(secret: &SecretKey, query: &FindQuery, sources: &[Source]) -> Result<Signature> {
+    let mut db = EinsteinDB::new(secret);
+
+    let sign = db.gravity_sign_with_sources(query, sources)?;
+
+    let sk = secret.clone();
+    let mut sign_bytes = vec![];//sk.to_bytes();
+    db.add_query(query)?;
+    db.sign()
+}
+
+pub fn einstein_db_gravity_verify(public:&[u8;32], msg: &[u8], sig: &[u8], sign_bytes: Vec<u8>) -> bool {
+
+
+    //public key is the public key of the signer
+    let pk = public_key_from_slice(public).unwrap();
+    if pk {
+        h: AlexandrovHash::new(msg).verify(sig, &pk)
+    };
+    //msg is the message that was signed
+    let msg = msg.to_vec();
+    //sig is the signature
+    let sig = Signature::from_bytes(&sig).unwrap();
+    //let mut db = EinsteinDB::new_from_public(public);
+    let mut db = EinsteinDB::new_from_public(public);
+    db.add_query(&FindQuery::default()).unwrap();
+    db.add_signature(&sig).unwrap();
+    db.verify(&pk, &msg, &sig)
+
 }
