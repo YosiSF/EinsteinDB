@@ -6,12 +6,43 @@ edition = "2018"
 publish = false
 
 [features]
-default = []
-syncable = ["serde", "serde_json", "serde_derive"]
+#[cfg(feature = "sqlite")]
+#[cfg(feature = "mysql")]
+[features.sql]
+default = ["sqlite", "mysql"]
 
 [dependencies]
-einstein_db = { path = "../einstein_db" }
+#[cfg(feature = "sqlite")]
+#[cfg(feature = "mysql")]
+sql = { version = "0.0.1", default-features = false }
+[dependencies.sql]
+path = "../berolinasql"
+
+[dependencies.einsteindb]
+path = "https://www.einsteindb.
+
+
+serde = { version = "1.0", default-features = false }
+serde_json = { version = "1.0", default-features = false }
+serde_derive = { version = "1.0", default-features = false }
+FoundationDB = { version = "0.1.0", default-features = false }
+BerkeleyDB = { version = "0.1.0", default-features = false }
+rusqlite = { version = "0.1.0", default-features = false }
+ EinsteinDB = { version = "0.0.1", default-features = false }
+postgres = "0.1.0"
+
 einstein_ml = { path = "../einstein_ml" }
+causet = { path = "../causet" }
+causetq = { path = "../causetq" }
+causets = { path = "../causets" }
+soliton_panic = { path = "../soliton_panic" }
+soliton = { path = "../soliton" }
+einstein_ml = { path = "../einstein_ml" }
+fdb_traits = { path = "../fdb_traits" }
+einstein_db_alexandrov_processing = { path = "../einstein_db_alexandrov_processing" }
+engine_test = { path = "../engine_test" }
+allegro_poset = { path = "../allegro_poset" }
+einstein_db = { path = "../einstein_db" }
 
 [dependencies.serde]
 version = "1.0"
@@ -20,6 +51,7 @@ default-features = false
 
 [dependencies.serde_derive]
 version = "1.0"
+default-features = false
 
 
 failure = "0.1.1"
