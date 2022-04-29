@@ -9,23 +9,78 @@
 //! with your einstein_merkle_tree's own name; then fill in the implementations; remove
 //! the allow(unused) attribute;
 
-#![allow(unused)]
-
-mod causet;
-mod causetctx_control_factors;
-mod compact;
-mod db_vector;
-mod interlocking_directorate;
-mod einsteindb_options;
-mod mvrsi;
-mod namespaced_names;
-mod namespaced_options;
-mod perf_context;
-mod range_properties;
-mod snapshot;
-mod table_properties;
-mod ttl_properties;
-mod violetabft_interlocking_directorate;
+use std::collections::HashMap;
+use einstein_ml::{EinsteinMerkleTree, EINSTEIN_MERKLE_TREE_DEFAULT_HASH_ALGORITHM, EINSTEIN_MERKLE_TREE_DEFAULT_HASH_LEN};
+use allegro_poset::{AllegroPoset, PosetMember, PosetMemberId};
+use soliton_panic::{Panic, PanicId, PanicMember, PanicMemberId};
+use soliton::{Soliton, SolitonId, SolitonMember, SolitonMemberId};
+use fdb_traits::{FdbTransactional, FdbReadable, FdbWritable, FdbReadWriteable};
+use einstein_merkle_tree::{
+    einstein_merkle_tree::{EinsteinMerkleTree, Elem, ElemT, ElemWithKey, ElemWithKeyT, Key},
+    einstein_merkle_tree_db::{EinsteinMerkleTreeDB, ElemWithKeyDB, ElemDB, KeyDB},
+    einstein_merkle_tree_traits::{EinsteinMerkleTreeTrait, ElemWithKeyTrait, ElemTrait, ElemWithKeyDBTrait, ElemDBTrait, KeyDBTrait},
+    einstein_merkle_tree_types::{EinsteinMerkleTreeType, ElemWithKeyType, ElemType, ElemWithKeyDBType, ElemDBType, KeyDBType},
+    einstein_merkle_tree_utils::{EinsteinMerkleTreeUtils, ElemWithKeyUtils, ElemUtils, ElemWithKeyDBUtils, ElemDBUtils, KeyDBUtils},
+};
+use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicAccount {
+    pub address: String,
+    pub balance: u64,
+    pub nonce: u64,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicBlock {
+    pub number: u64,
+    pub parent_hash: String,
+    pub timestamp: u64,
+    pub transactions: Vec<String>,
+}
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicTransaction {
+    pub hash: String,
+    pub from: String,
+    pub to: String,
+    pub value: u64,
+    pub timestamp: u64,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicBlockHeader {
+    pub number: u64,
+    pub parent_hash: String,
+    pub timestamp: u64,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicBlockBody {
+    pub transactions: Vec<String>,
+}
+
+impl PanicBlockBody {
+    pub fn new(transactions: Vec<String>) -> PanicBlockBody {
+        PanicBlockBody {
+            transactions
+        }
+    }
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicBlockHeaderDB {
+    pub number: u64,
+    pub parent_hash: String,
+    pub timestamp: u64,
+}
 

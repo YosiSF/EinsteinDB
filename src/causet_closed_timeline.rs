@@ -29,6 +29,40 @@
 /// are executed in multiple threads, but are not heavy.
 
 
+#[macro_use]
+extern crate log;
+
+
+
+
+use einstein_ml::*;
+use EinsteinDB::einstein_db::{ DB, DBTransaction, DBIterator };
+use FoundationDB::{ FDB, FDBError };
+use futures::{ Future, Stream };
+use futures::future::{ ok, err };
+use allegro_poset::{ Poset, PosetError };
+use soliton::{ Soliton, SolitonError };
+use soliton_panic::{ SolitonPanic, SolitonPanicError };
+use einstein_db_alexandrov_processing::{
+    alexandrov_processing_light, alexandrov_processing_heavy, alexandrov_processing_full,
+    alexandrov_processing_light_with_tx, alexandrov_processing_heavy_with_tx,
+    alexandrov_processing_full_with_tx,
+};
+use einsteindb_server::{
+    einsteindb_server_light, einsteindb_server_heavy, einsteindb_server_full,
+    einsteindb_server_light_with_tx, einsteindb_server_heavy_with_tx,
+    einsteindb_server_full_with_tx,
+};
+
+use berolinasql::{
+    berolinasql_light, berolinasql_heavy, berolinasql_full,
+    berolinasql_light_with_tx, berolinasql_heavy_with_tx,
+    berolinasql_full_with_tx,
+};
+
+use std::sync::Arc;
+use std::sync::atomic::{ AtomicUsize, Ordering };
+
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicUsize, Partitioning};
@@ -86,6 +120,181 @@ use mysql::{MysqlOptionResult, MysqlOption, MysqlOptionResult};
 //neo4j
 use neo4j::{Neo4j, Neo4jError, Neo4jResult, Neo4jOption, Neo4jOptionResult};
 use neo4j::{Neo4jOptionResult, Neo4jOption, Neo4jOptionResult};
+
+///! A `Causet` is a causet of causets.
+/// It is a causet of causets, where causets are causets of causets, and so on.
+
+pub(crate) enum CausetType<T> {
+    Causet(Causet<T>),
+    CausetTimeline(CausetTimeline<T>),
+    AllegroPoset(AllegroPoset<T>),
+    Soliton(Soliton<T>),
+    Einsteindb(Einsteindb<T>),
+    Foundationdb(Foundationdb<T>),
+    Gremlin(Gremlin<T>),
+    Istio(Istio<T>),
+    K8s(K8s<T>),
+    Kafka(Kafka<T>),
+    Kinesis(Kinesis<T>),
+    Kubernetes(Kubernetes<T>),
+    Mongo(Mongo<T>),
+    Mysql(Mysql<T>),
+    Neo4j(Neo4j<T>),
+}
+
+/// Defines transactor's high level behaviour.
+pub(crate) enum TransactorAction {
+    /// Materialize transaction into 'datoms' and metadata
+    /// views, but do not commit it into 'transactions' table.
+    /// Use this if you need transaction's "side-effects", but
+    /// don't want its by-products to end-up in the transaction log,
+    /// e.g. when rewinding.
+    Materialize,
+
+    /// Commit transaction into 'transactions' table.
+    /// Use this if you need transaction's "side-effects",
+    /// and you want its by-products to end-up in the transaction log,
+    /// e.g. when rewinding.
+    /// This is the default action.
+    Commit,
+
+    /// Materialize transaction into 'datoms' and metadata
+    /// views, and also commit it into the 'transactions' table.
+    /// Use this for regular transactions.
+    MaterializeAndCommit,
+
+    /// Rollback transaction.
+    /// Use this if you need to rollback transaction's "side-effects",
+    /// but don't want its by-products to end-up in the transaction log,
+    /// e.g. when rewinding.
+    /// This is the default action.
+
+    Rollback,
+}
+
+/// A transaction on its way to being applied.
+#[derive(Debug)]
+pub struct Tx<'a, 'conn, T> {
+    /// The storage to apply against.  In the future, this will be an EinsteinDB connection
+    /// or a FoundationDB connection.
+    pub(crate) storage: &'conn mut dyn Storage<'a, W>,
+
+    /// The transaction to apply.
+    ///
+    /// This is a reference to the transaction, so that it can be modified
+    /// by the transactor.
+
+    pub(crate) tx: &'a mut T,
+
+    /// The action to take with the transaction.
+    /// This is a reference to the action, so that it can be modified
+    /// by the transactor.
+    pub(crate) action: &'a mut TransactorAction,
+
+    /// The partition map to allocate entids from.
+    ///
+    /// The partition map is volatile in the sense that every succesful transaction updates
+    /// allocates at least one tx ID, so we own and modify our own partition map.
+    partition_map: PartitionMap,
+
+    /// The schema to update from the transaction entities.
+    ///
+    /// Transactions only update the schema infrequently, so we borrow this schema until we need to
+    /// modify it.
+    schema_for_mutation: Cow<'a, Schema>,
+
+    /// The schema to use when interpreting the transaction entities.
+    ///
+    /// This schema is not updated, so we just borrow it.
+    schema: &'a Schema,
+
+    watcher: W,
+
+    /// The transaction ID of the transaction.
+    tx_id: Causetid,
+
+    /// The transaction's timestamp.
+    /// This is the timestamp of the transaction, not the timestamp of the transaction's first
+    /// causet
+    timestamp: Timestamp,
+
+
+}
+
+/// Remove any :db/id value from the given map notation, converting the returned value into
+/// something suitable for the entity position rather than something suitable for a value position.
+pub fn remove_db_id(map: &mut Map) -> Option<Entity> {
+    let db_id = map.remove(":db/id");
+    match db_id {
+        Some(Entity::Ref(ref e)) => Some(e.into()),
+        Some(Entity::Keyword(ref e)) => Some(e.into()),
+        Some(Entity::Unique(ref e)) => Some(e.into()),
+        Some(_) => panic!("unexpected value for :db/id"),
+        None => None,
+    }
+}
+
+
+
+
+
+
+/// A transaction on its way to being applied.
+/// This is a wrapper around the `Tx` struct, which is the real transaction.
+
+#[derive(Debug)]
+pub struct Transaction<'a, 'conn, T> {
+    /// The transaction to apply.
+    ///
+    /// This is a reference to the transaction, so that it can be modified
+    /// by the transactor.
+    pub(crate) tx: &'a mut T,
+
+    /// The action to take with the transaction.
+    /// This is a reference to the action, so that it can be modified
+    /// by the transactor.
+    pub(crate) action: &'a mut TransactorAction,
+
+    /// The partition map to allocate entids from.
+    ///
+    /// The partition map is volatile in the sense that every succesful transaction updates
+    /// allocates at least one tx ID, so we own and modify our own partition map.
+    partition_map: PartitionMap,
+
+    /// The schema to update from the transaction entities.
+    ///
+    /// Transactions only update the schema infrequently, so we borrow this schema until we need to
+    /// modify it.
+    schema_for_mutation: Cow<'a, Schema>,
+
+    /// The schema to use when interpreting the transaction entities.
+    ///
+    /// This schema is not updated, so we just borrow it.
+    schema: &'a Schema,
+
+    watcher: W,
+
+    /// The transaction ID of the transaction.
+    tx_id: Causetid,
+
+    /// The transaction's timestamp.
+    /// This is the timestamp of the transaction, not the timestamp of the transaction's first
+    /// causet
+    timestamp: Timestamp,
+}
+
+
+#[derive(Debug)]
+pub struct TransactionResult {
+    pub(crate) tx_id: Causetid,
+    pub(crate) timestamp: Timestamp,
+    pub(crate) partition_map: PartitionMap,
+    pub(crate) schema: Schema,
+    pub(crate) watcher: W,
+}
+
+
+
 /*
 pub enum TimelikeMsg {
 
@@ -101,6 +310,8 @@ pub enum TimelikeMsg {
         args: Vec<String>,
     },
 */
+
+
 
 //! A `Timeline` is a causet of causets.
 //! It is a causet of causets, where causets are causets of append logs (causets of causets).
