@@ -8,32 +8,91 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-#![allow(dead_code)]
 
-use causetq::{
-    attribute,
-    Attribute,
-    Causetid,
-    CausetLocaleNucleonCausetid,
-    causetq_TV,
-causetq_VT,
-};
-use einstein_ml;
-use einstein_ml::shellings;
-use einsteindb::TypedBerolinaSQLValue;
-use einsteindb_core::{
-    AttributeMap,
-    CausetidMap,
-    HasTopograph,
-    SolitonidMap,
-    Topograph,
-};
-use einsteindb_traits::errors::{
-    einsteindbErrorKind,
-    Result,
-};
-use spacetime;
-use spacetime::AttributeAlteration;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::fmt;
+use std::hash::Hash;
+use std::rc::Rc;
+use std::sync::Arc;
+
+
+use crate::fdb::{FdbError, FdbResult};
+use crate::fdb::{FdbKey, FdbKeySlice, FdbKeyValue, FdbKeyValueSlice, FdbKeyValueVersion};
+use crate::fdb::{FdbKeyValueVersionSlice, FdbKeyValueVersionSliceSlice};
+use crate::fdb::{FdbKeySliceSlice, FdbKeyValueSliceSlice};
+use crate::fdb::{FdbKeySliceVersion, FdbKeyValueSliceVersion, FdbKeyValueVersionSliceVersion};
+
+
+/// A schema is a set of named types.
+/// A type is a set of named fields.
+/// A field is a named type with a set of constraints.
+/// A constraint is a named type with a set of values.
+/// A value is a named type with a set of properties.
+/// A property is a named type with a set of values.
+///
+/// A schema is a set of named types.
+/// A type is a set of named fields.
+///
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FdbSchema {
+    pub types: HashMap<String, FdbType>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FdbType {
+    pub fields: HashMap<String, FdbField>,
+}
+
+impl FdbSchema {
+    pub fn new() -> FdbSchema {
+        FdbSchema {
+            types: HashMap::new(),
+        }
+    }
+
+    pub fn add_type(&mut self, name: String, type_: FdbType) {
+        self.types.insert(name, type_);
+    }
+
+    pub fn get_type(&self, name: &str) -> Option<&FdbType> {
+        self.types.get(name)
+    }
+
+    pub fn get_type_mut(&mut self, name: &str) -> Option<&mut FdbType> {
+        self.types.get_mut(name)
+    }
+
+    pub fn get_type_names(&self) -> Vec<String> {
+        self.types.keys().cloned().collect()
+    }
+
+    pub fn get_type_names_mut(&mut self) -> Vec<String> {
+        self.types.keys().cloned().collect()
+    }
+
+    pub fn get_type_names_ref(&self) -> Vec<&str> {
+        self.types.keys().map(|s| s.as_str()).collect()
+    }
+
+    pub fn get_type_names_ref_mut(&mut self) -> Vec<&str> {
+        self.types.keys().map(|s| s.as_str()).collect()
+    }
+
+    pub fn get_type_names_ref_mut_as_vec(&mut self) -> Vec<&str> {
+        self.types.keys().map(|s| s.as_str()).collect()
+    }
+
+    pub fn get_type_names_ref_mut_as_vec_as_vec(&mut self) -> Vec<Vec<&str>> {
+        self.types.keys().map(|s| s.as_str()).collect()
+    }
+
+    pub fn get_type_names_ref_mut_as_vec_as_vec_as_vec(&mut self) -> Vec<Vec<Vec<&str>>> {
+        self.types.keys().map(|s| s.as_str()).collect()
+    }
+}
 
 pub trait AttributeValidation {
     fn validate<F>(&self, solitonid: F) -> Result<()> where F: Fn() -> String;
@@ -105,22 +164,22 @@ impl AttributeBuilder {
         ab
     }
 
-    pub fn causet_locale_type<'a>(&'a mut self, causet_locale_type: ValueType) -> &'a mut Self {
+    pub fn causet_locale_type(&mut self, causet_locale_type: ValueType) -> &mut Self {
         self.causet_locale_type = Some(causet_locale_type);
         self
     }
 
-    pub fn multival<'a>(&'a mut self, multival: bool) -> &'a mut Self {
+    pub fn multival(&mut self, multival: bool) -> &mut Self {
         self.multival = Some(multival);
         self
     }
 
-    pub fn non_unique<'a>(&'a mut self) -> &'a mut Self {
+    pub fn non_unique(&mut self) -> &mut Self {
         self.unique = Some(None);
         self
     }
 
-    pub fn unique<'a>(&'a mut self, unique: attribute::Unique) -> &'a mut Self {
+    pub fn unique(&mut self, unique: attribute::Unique) -> &mut Self {
         if self.helpful && unique == attribute::Unique::Idcauset {
             self.index = Some(true);
         }
@@ -128,12 +187,12 @@ impl AttributeBuilder {
         self
     }
 
-    pub fn index<'a>(&'a mut self, index: bool) -> &'a mut Self {
+    pub fn index(&mut self, index: bool) -> &mut Self {
         self.index = Some(index);
         self
     }
 
-    pub fn fulltext<'a>(&'a mut self, fulltext: bool) -> &'a mut Self {
+    pub fn fulltext(&mut self, fulltext: bool) -> &mut Self {
         self.fulltext = Some(fulltext);
         if self.helpful && fulltext {
             self.index = Some(true);
@@ -141,12 +200,12 @@ impl AttributeBuilder {
         self
     }
 
-    pub fn component<'a>(&'a mut self, component: bool) -> &'a mut Self {
+    pub fn component(&mut self, component: bool) -> &mut Self {
         self.component = Some(component);
         self
     }
 
-    pub fn no_history<'a>(&'a mut self, no_history: bool) -> &'a mut Self {
+    pub fn no_history(&mut self, no_history: bool) -> &mut Self {
         self.no_history = Some(no_history);
         self
     }
@@ -240,23 +299,55 @@ impl AttributeBuilder {
 }
 
 pub trait TopographBuilding {
-    fn require_causetid(&self, causetid: Causetid) -> Result<&shellings::Keyword>;
+    fn build(&self) -> Topograph;
     fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<CausetLocaleNucleonCausetid>;
     fn require_attribute_for_causetid(&self, causetid: Causetid) -> Result<&Attribute>;
     fn from_causetid_map_and_attribute_map(causetid_map: SolitonidMap, attribute_map: AttributeMap) -> Result<Topograph>;
-    fn from_causetid_map_and_triples<U>(causetid_map: SolitonidMap, lightlike_dagger_upsert: U) -> Result<Topograph>
-        where U: IntoIterator<Item=(shellings::Keyword, shellings::Keyword, causetq_TV)>;
 }
 
-impl TopographBuilding for Topograph {
-    fn require_causetid(&self, causetid: Causetid) -> Result<&shellings::Keyword> {
-        self.get_causetid(causetid).ok_or(einsteindbErrorKind::UnrecognizedCausetid(causetid).into())
+
+impl TopographBuilding for TopographAlteration {
+    fn from_causetid_map_and_triples<U>() -> Result<Topograph>
+        where U: CausetidMapBuilding,
+    {
+        let mut causetid_map = U::build()?;
+        let mut attribute_map = AttributeMap::default();
+        let mut topograph = Topograph::default();
+
+        for (causetid, attribute) in causetid_map.iter() {
+            let attribute = attribute.build();
+            attribute_map.insert(causetid.clone(), attribute);
+        }
+
+        for (causetid, attribute) in attribute_map.iter() {
+            topograph.insert(causetid.clone(), attribute.clone());
+        }
+
+        Ok(topograph)
+    }
+
+    fn build(&self) -> Topograph {
+        let mut topograph = Topograph::default();
+
+        for (causetid, attribute) in self.causetid_map.iter() {
+            let attribute = attribute.build();
+            topograph.insert(causetid.clone(), attribute);
+        }
+
+        for (causetid, attribute) in self.attribute_map.iter() {
+            topograph.insert(causetid.clone(), attribute.clone());
+        }
+
+        topograph
     }
 
     fn require_causetid(&self, solitonid: &shellings::Keyword) -> Result<CausetLocaleNucleonCausetid> {
-        self.get_causetid(&solitonid).ok_or(einsteindbErrorKind::UnrecognizedSolitonid(solitonid.to_string()).into())
+        self.causetid_map.get(solitonid).ok_or(Error::MissingCausetid(solitonid.clone()))
     }
+}
 
+
+impl TopographBuilding for Topograph {
     fn require_attribute_for_causetid(&self, causetid: Causetid) -> Result<&Attribute> {
         self.attribute_for_causetid(causetid).ok_or(einsteindbErrorKind::UnrecognizedCausetid(causetid).into())
     }

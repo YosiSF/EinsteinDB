@@ -8,6 +8,31 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use std::collections::HashMap;
+use std::fmt;
+use std::hash::Hash;
+use std::ops::Deref;
+
+
+/// A vocabulary is a set of strings.
+/// It is used to map strings to integers.
+/// The integers are used to represent the strings in a vector.
+///
+
+use std::collections::hash_map::Entry;
+use std::collections::hash_map::Iter;
+use std::collections::hash_map::Keys;
+use std::collections::hash_map::Values;
+
+use causet::{Causet, CausetMut};
+use causet::CausetMut;
+use causetq::{CausetQ, CausetQMut};
+use causetq::CausetQMut;
+use soliton::{Soliton, SolitonMut};
+use soliton_panic::{SolitonPanic, SolitonPanicMut};
+use einstein_ml::{EinsteinMl, EinsteinMlMut};
+
+use EinsteinDB::einstein_db::{EinsteinDb, EinsteinDbMut};
 
 //! This module exposes an interface for programmatic management of vocabularies.
 //!
@@ -91,39 +116,6 @@
 //! [VocabularyProvider](einsteindb::vocabulary::VocabularyProvider) trait to handle migrations across
 //! multiple vocabularies.
 
-use ::{
-    Attribute,
-    Binding,
-    Causetid,
-    CORE_SCHEMA_VERSION,
-    HasSchema,
-    IntoResult,
-    Keyword,
-    causetq_TV,
-causetq_VT,
-};
-use ::errors::{
-    einsteindbError,
-    Result,
-};
-use causetq::CausetLocaleNucleonCausetid;
-use causetq::attribute::Unique;
-/// AttributeBuilder is how you build vocabulary definitions to apply to a store.
-pub use einsteindb_core::AttributeBuilder;
-use einsteindb_transaction::{
-    InProgress,
-    Queryable,
-};
-use einsteindb_transaction::causet_builder::{
-    BuildTerms,
-    TermBuilder,
-    Terms,
-};
-use std::collections::BTreeMap;
-
-pub type Version = u32;
-pub type Causet = (Causetid, Causetid, causetq_TV);
-
 /// A definition of an attribute that is independent of a particular store.
 ///
 /// `Attribute` instances not only aren't named, but don't even have causetids.
@@ -142,13 +134,46 @@ pub type Causet = (Causetid, Causetid, causetq_TV);
 /// upgraded. `pre` and `post` are run before and after the definition is transacted against the
 /// store. Each is called with the existing `Vocabulary` instance so that they can do version
 /// checks or employ more fine-grained logic.
-#[derive(Clone)]
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Definition {
-    pub name: Keyword,
-    pub version: Version,
-    pub attributes: Vec<(Keyword, Attribute)>,
-    pub pre: fn(&mut InProgress, &Vocabulary) -> Result<()>,
-    pub post: fn(&mut InProgress, &Vocabulary) -> Result<()>,
+    pub name: kw::Keyword,
+    pub version: u64,
+    pub attributes: Vec<(kw::Keyword, Attribute)>,
+    pub pre: Definition,
+    pub post: Definition,
+}
+
+
+impl Definition {
+    /// Create a definition that does nothing.
+    pub fn no_op() -> Definition {
+        Definition {
+            name: kw!(:noop),
+            version: 0,
+            attributes: Vec::new(),
+            pre: Definition::no_op(),
+            post: Definition::no_op(),
+        }
+    }
+}
+
+
+
+
+/// A vocabulary in a particular store.
+/// This is the concrete type that is returned by `VocabularyProvider::get_vocabulary`.
+/// It's also used to represent a vocabulary that is being installed.
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SolitonVocabularyForInterlock {
+
+    /// The name of the vocabulary.
+    pub name: kw::Keyword,
+    pub version: u64,
+    pub attributes: Vec<(kw::Keyword, Attribute)>,
 }
 
 /// ```

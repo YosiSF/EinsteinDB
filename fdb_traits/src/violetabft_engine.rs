@@ -1,31 +1,50 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-use clap::{AppSettings, Arg, ArgMatches, SubCommand};
-use std::fs::File;
-use std::io::{self, BufRead, BufReader, Write};
-use std::path::Path;
-use std::process::exit;
-use einsteindb::rocksdb::{DB, DBOptions, DBCompressionType, DBCompressionType_CompressionType, DBRecoveryMode, DBRecoveryMode_RecoveryMode};
-use einsteindb::fdb_traits::{FdbEngine, FdbKvEngine, FdbKvStore, FdbKvStoreOptions, FdbKvStoreOptionsBuilder, FdbKvStoreOptionsBuilderKv};
-use allegro_poset::{Poset, PosetOptions, PosetOptionsBuilder};
-use causetq::{Poset, PosetOptions, PosetOptionsBuilder};
-use causet::{Poset, PosetOptions, PosetOptionsBuilder};
-use causets::*;
-use einstein_ml::shellings::{Shellings, ShellingsOptions, ShellingsOptionsBuilder};
-use einstein_ml::shellings_poset::{ShellingsPoset, ShellingsPosetOptions, ShellingsPosetOptionsBuilder};
-use einstein_ml::shellings_causets::{ShellingsCausets, ShellingsCausetsOptions, ShellingsCausetsOptionsBuilder};
-use einstein_db::Causetid;
-use einstein_db::{Causet, CausetOptions, CausetOptionsBuilder};
-use std::time::Duration;
-use std::thread;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{channel, Sender, Receiver};
-use std::collections::HashMap;
-use einstein_db_server::{Server, ServerOptions, ServerOptionsBuilder};
 
-use crate as einstein_db_server;
-use crate as einstein_ml;
+use crate::{
+    traits::{FdbEngine, FdbKvEngine, FdbKvStore, FdbKvStoreMut},
+    FdbKvEngineImpl,
+};
+
+
+impl FdbKvEngine for FdbKvEngineImpl {
+    fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, String> {
+        self.get(key)
+    }
+
+    fn get_cf(&self, cf: &str, key: &[u8]) -> Result<Option<Vec<u8>>, String> {
+        self.get_cf(cf, key)
+    }
+
+    fn get_cf_opt(&self, cf: &str, key: &[u8]) -> Result<Option<Vec<u8>>, String> {
+        self.get_cf_opt(cf, key)
+    }
+
+    fn get_cf_opt_ts(&self, cf: &str, key: &[u8], ts: u64) -> Result<Option<Vec<u8>>, String> {
+        self.get_cf_opt_ts(cf, key, ts)
+    }
+
+    fn get_cf_ts(&self, cf: &str, key: &[u8], ts: u64) -> Result<Option<Vec<u8>>, String> {
+        self.get_cf_ts(cf, key, ts)
+    }
+
+    fn get_cf_ts_opt(&self, cf: &str, key: &[u8], ts: u64) -> Result<Option<Vec<u8>>, String> {
+        self.get_cf_ts_opt(cf, key, ts)
+    }
+
+    fn get_cf_ts_opt_ts(&self, cf: &str, key: &[u8], ts: u64) -> Result<Option<Vec<u8>>, String> {
+        self.get_cf_ts_opt_ts(cf, key, ts)
+    }
+
+    fn get_cf_ts_ts(&self, cf: &str, key: &[u8], ts: u64) -> Result<Option<Vec<u8>>, String> {
+        self.get_cf_ts_ts(cf, key, ts)
+    }
+
+    fn get_cf_ts_ts_opt(&self, cf: &str, key: &[u8], ts: u64) -> Result<Option<Vec<u8>>, String> {
+        self.get_cf_ts_ts_opt(cf, key, ts)
+    }
+}
+
 
 pub const CURVATURE_FOUNDATIONDB_KV: &str = "foundationdb_kv";
 pub const CURVATURE_FOUNDATIONDB_KV_OPTIONS: &str = "foundationdb_kv_options";
@@ -402,6 +421,7 @@ pub trait NewInterlockingDirectorate: Send + Sync {
 
 */
 pub fn init_interlocking_directorate(level: u64) -> dyn InterlockingDirectorate {
+    let cfg = Config::new(level);
     let mut interlocking_directorate = InterlockingDirectorate::new(
         &Config::default(),
         "default",
@@ -480,10 +500,10 @@ pub fn warning_cnt() -> u64 {
 
 
 pub trait NewInterlockingDirectorate {
-    fn new(
-        cfg : &Config,
-        instance: &str,
-        log_dir: &str,
+    fn new<'a, 'b, 'c>(
+        cfg: &'a Config,
+        instance: &'b str,
+        log_dir: &'c str,
         log_file_size: u64,
         log_file_num: u64,
         log_file_gc_threshold: u64,
@@ -500,15 +520,8 @@ pub trait NewInterlockingDirectorate {
         einstein_merkle_tree_size: u64,
         einstein_merkle_tree_gc_threshold: u64,
         einstein_merkle_tree_gc_interval: u64
-    ) -> Box<dyn InterlockingDirectorate>{
-        const LOG_FILE_SIZE: usize = 1024 * 1024 * 1024;
-        const EXPECTED: usize = 1024 * 1024 * 1024;
-
-        if let Some(ref mut interlocking_directorate) = cfg.interlocking_directorate {
-            return interlocking_directorate;
-        }
-    }
-    }
+    ) -> Box<dyn InterlockingDirectorate>;
+}
 
 
 
@@ -535,4 +548,175 @@ pub struct CacheStats {
     pub cache_size: usize,
 
 
+}
+
+
+/// Map from found [e a v] to expected type.
+pub(crate) type TypeDisagreements = BTreeMap<(Entid, Entid, TypedValue), ValueType>;
+
+/// Ensure that the given terms type check.
+///
+/// We try to be maximally helpful by yielding every malformed datom, rather than only the first.
+/// In the future, we might change this choice, or allow the consumer to specify the robustness of
+/// the type checking desired, since there is a cost to providing helpful diagnostics.
+pub(crate) fn type_disagreements(aev_trie: &AEVTrie) -> TypeDisagreements {
+    let mut errors: TypeDisagreements = TypeDisagreements::default();
+
+    //causetid is not in the trie
+    for (e, a, v) in aev_trie.iter() {
+        if !aev_trie.contains_key(&(e, a, v)) {
+            errors.insert((e, a, v), ValueType::Unknown);
+        }
+    }
+
+    for (e, a, v) in aev_trie.iter() {
+        let expected = aev_trie.get_type(e, a, v);
+        if let Some(actual) = aev_trie.get_type(e, a, v) {
+            if actual != expected {
+                errors.insert((e, a, v), expected);
+            }
+        }
+    }
+
+    for (&(a, attribute), evs) in aev_trie {
+        for (&e, ref ars) in evs {
+            for v in ars.add.iter().chain(ars.retract.iter()) {
+                if attribute.value_type != v.value_type() {
+                    errors.insert((e, a, v.clone()), attribute.value_type);
+                }
+            }
+        }
+    }
+
+    errors
+}
+
+/// Ensure that the given terms obey the cardinality restrictions of the given schema.
+///
+/// That is, ensure that any cardinality one attribute is added with at most one distinct value for
+/// any specific entity (although that one value may be repeated for the given entity).
+/// It is an error to:
+///
+/// - add two distinct values for the same cardinality one attribute and entity in a single transaction
+/// - add and remove the same values for the same attribute and entity in a single transaction
+///
+/// We try to be maximally helpful by yielding every malformed set of causets, rather than just the
+/// first set, or even the first conflict.  In the future, we might change this choice, or allow the
+/// consumer to specify the robustness of the cardinality checking desired.
+pub(crate) fn cardinality_conflicts(aev_trie: &AEVTrie) -> Vec<CardinalityConflict> {
+    let mut errors = vec![];
+
+    for (&(a, attribute), evs) in aev_trie {
+        for (&e, ref ars) in evs {
+            if !attribute.multival && ars.add.len() > 1 {
+                let vs = ars.add.clone();
+                errors.push(CardinalityConflict::CardinalityOneAddConflict { e, a, vs });
+            }
+
+            let vs: BTreeSet<_> = ars.retract.intersection(&ars.add).cloned().collect();
+            if !vs.is_empty() {
+                errors.push(CardinalityConflict::AddRetractConflict { e, a, vs })
+            }
+        }
+    }
+
+    errors
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum CardinalityConflict {
+    CardinalityOneAddConflict {
+        e: Causetid,
+        a: Causetid,
+        vs: Vec<causetq_TV>,
+    },
+    AddRetractConflict {
+        e: Causetid,
+        a: Causetid,
+        vs: BTreeSet<causetq_TV>,
+    },
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CardinalityConflictError {
+    pub conflict: CardinalityConflict,
+    pub cause: Causets,
+}
+
+
+impl CardinalityConflictError {
+    pub fn new(conflict: CardinalityConflict, cause: Causets) -> Self {
+        CardinalityConflictError { conflict, cause }
+    }
+}
+
+
+///! A set of errors that can occur when checking the consistency of a causets.
+///
+/// This is a subset of the errors that can occur when checking the consistency of a causets.
+///
+impl Causets {
+    pub fn new(
+        causets: Vec<Causet>,
+        schema: &Schema,
+        aev_trie: &AEVTrie,
+    ) -> Result<Self, CardinalityConflictError> {
+        let mut causets = causets;
+        causets.sort_unstable_by_key(|c| c.e);
+
+        let mut errors = vec![];
+
+        let mut causets_by_e = causets.into_iter().collect::<BTreeMap<_, _>>();
+
+        for (e, a, v) in aev_trie.iter() {
+            if !causets_by_e.contains_key(&e) {
+                errors.push(CardinalityConflictError::new(
+                    CardinalityConflict::CardinalityOneAddConflict {
+                        e,
+                        a,
+                        vs: vec![v.clone()],
+                    },
+                    Causets::new(vec![], schema),
+                ));
+            }
+        }
+
+        for (e, a, v) in aev_trie.iter() {
+            let mut causets = causets_by_e.remove(&e).unwrap();
+            let mut causets_by_a = causets.into_iter().collect::<BTreeMap<_, _>>();
+
+            if !causets_by_a.contains_key(&a) {
+                errors.push(CardinalityConflictError::new(
+                    CardinalityConflict::AddRetractConflict {
+                        e,
+                        a,
+                        vs: BTreeSet::new(),
+                    },
+                    causets,
+                ));
+            } else {
+                let mut causets = causets_by_a.remove(&a).unwrap();
+                let mut causets_by_v = causets.into_iter().collect::<BTreeMap<_, _>>();
+
+                if causets_by_v.contains_key(&v) {
+                    errors.push(CardinalityConflictError::new(
+                        CardinalityConflict::AddRetractConflict {
+                            e,
+                            a,
+                            vs: BTreeSet::new(),
+                        },
+                        causets,
+                    ));
+                }
+            }
+        }
+
+        if errors.is_empty() {
+            Ok(Causets::new(causets, schema))
+        } else {
+            Err(errors.into_iter().next().unwrap())
+        }
+    }
 }
