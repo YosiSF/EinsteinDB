@@ -455,9 +455,9 @@ impl SolitonEntid {
 
 
 
-    /// Handles a request to the coprocessor framework.
+    /// Handles a request to the interlock framework.
     ///
-    /// Each request is dispatched to the corresponding coprocessor plugin based on it's `copr_name`
+    /// Each request is dispatched to the corresponding interlock plugin based on it's `copr_name`
     /// field. A plugin with a matching name must be loaded by TiKV, otherwise an error is returned.
     ///
     /// # Arguments
@@ -470,8 +470,8 @@ impl SolitonEntid {
 
 
     pub fn handle_request(
-        req: &mut CoprocessorRequest,
-        ctx: &mut CoprocessorContext,
+        req: &mut InterlockingRequest,
+        ctx: &mut InterlockingContext,
         soliton_entid: &SolitonEntid,
         soliton_plugin_registry: &Arc<PluginRegistry>,
         soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
