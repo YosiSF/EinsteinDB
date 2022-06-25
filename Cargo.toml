@@ -3,6 +3,11 @@ name = "einstein-db"
 version = "1.0.0"
 authors = ["Whtcorps", "EinstAI"]
 edition = "2018"
+description = "EinsteinDB is a Distributed OLAP Semi-Relational Relativsitic Causal Consistent Database with Interlocking Directorate OLTP"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["OLAP", "OLTP", "MergeAppend", "Bulk Synchronization", "IPAM", "CRON", "SQLAgnostic", "Hybrid Key-Value"]
+categories = ["command-line-utilities", "development-tools::cargo-plugins"]
 
 
 [dependencies]
