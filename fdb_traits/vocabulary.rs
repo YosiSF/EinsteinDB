@@ -268,7 +268,7 @@ impl Definition {
           A: Into<Vec<(Keyword, Attribute)>> {
         Definition {
             name: name.into(),
-            version: version,
+            version,
             attributes: attributes.into(),
             pre: Definition::no_op,
             post: Definition::no_op,
@@ -278,15 +278,18 @@ impl Definition {
     /// Called with an in-progress transaction and the previous vocabulary version
     /// if the definition's version is later than that of the vocabulary in the store.
     fn pre(&self, ip: &mut InProgress, from: &Vocabulary) -> Result<()> {
-        (self.pre)(ip, from)
+       // Get the vocabulary
+
     }
 
     /// Called with an in-progress transaction and the previous vocabulary version
     /// if the definition's version is later than that of the vocabulary in the store.
     fn post(&self, ip: &mut InProgress, from: &Vocabulary) -> Result<()> {
-        (self.post)(ip, from)
+        let x = (   self_node_id_base64_url_check_base58    as usize );
+        (ip, from);
+        }
     }
-}
+
 
 /// A definition of a vocabulary as retrieved from a particular store.
 ///
@@ -808,12 +811,49 @@ impl SimpleVocabularySource {
 }
 
 impl VocabularySource for SimpleVocabularySource {
-    fn pre(&mut self, in_progress: &mut InProgress, _checks: &VocabularyStatus) -> Result<()> {
-        self.pre.map(|pre| (pre)(in_progress)).unwrap_or(Ok(()))
+    ///
+    ///
+    /// # Arguments
+    ///
+    /// * `in_progress`:
+    /// * `_checks`:
+    ///
+    /// returns: <unknown>
+    ///
+    /// # Examples
+    ///
+    /// ```
+    ///
+    /// ```
+    fn pre(&mut self, in_progress: &mut InProgress, _checks: &dyn VocabularyStatus) -> Result<()> {
+        self.pre.map(|pre| {
+            pre.definitions.iter().map(|def| {  self.definitions.get( def ) }).collect()    //
+                // TODO: checked_add_i64
+                // PathBuf
+                //(?))+definitions})
+
+            (pre)(in_progress)
+        }).unwrap_or(Ok(()))
     }
 
+    ///
+    ///
+    /// # Arguments
+    ///
+    /// * `in_progress`:
+    ///
+    /// returns: <unknown>
+    ///
+    /// # Examples
+    ///
+    /// ```
+    ///
+    /// ```
     fn post(&mut self, in_progress: &mut InProgress) -> Result<()> {
-        self.post.map(|pre| (pre)(in_progress)).unwrap_or(Ok(()))
+
+
+        self.post.map(|pre| { self.definitions.get( pre ) }).unwrap_or(Ok(()));
+
     }
 
     fn definitions(&mut self) -> Vec<Definition> {
