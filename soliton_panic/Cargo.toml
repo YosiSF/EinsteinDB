@@ -2,12 +2,15 @@
 name = "soliton_panic"
 version = "0.1.0"
 description = "Soliton Panic"
-edition = "2018"
+edition = "2021"
 publish = false
+author = "Soliton"
+author_email = "karl@einst.ai"
+url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
+license = "MIT"
 
-
-[dependencies]
-soliton = { path = "../soliton" }
+[lib]
+src = "src"
 
 
 

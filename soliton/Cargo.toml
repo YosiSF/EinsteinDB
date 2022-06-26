@@ -5,10 +5,30 @@ authors = ["YosiSF aka whtcorps inc and einst ai inc"]
 license = "MIT Licensed"
 edition = "2021"
 
-[[lib]]
-source = "lib/soliton.c"
+#target specs
+target_os = "windows"
+target_arch = "x86"
+target_cc = "gcc"
+target_cc_version = "4.9"
+target_cxx = "g++"
+target_cxx_version = "4.9"
+target_linker = "g++"
+target_linker_version = "4.9"
+target_linker_flags = "-lstdc++"
+
+
+
+
 
 [dependencies]
+soliton-core = "0.1.0"
+soliton-network = "0.1.0"
+soliton-wallet = "0.1.0"
+soliton-cli = "0.1.0"
+soliton-explorer = "0.1.0"
+soliton-miner = "0.1.0"
+soliton-wallet-gui = "0.1.0"
+
 failure = "0.1.1"
 indexmap = "1"
 itertools = "0.10.3"

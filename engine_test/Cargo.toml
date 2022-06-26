@@ -2,7 +2,16 @@
 name = "engine_test"
 version = "0.1.0"
 authors = [""]
-edition = "2018"
+edition = "2021"
+description = "Test engine"
+license = "MIT"
+tags = ["test"]
+
+
+[lib]
+name = "engine_test"
+version = "0.1.0"
+authors = ["Josh Leder, Karl Whitford Pollard"]
 
 
 [dependencies]

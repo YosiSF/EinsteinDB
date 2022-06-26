@@ -4,9 +4,20 @@ version = "0.1.0"
 authors = ["EinsteinDB Project Authors"]
 edition = "2021"
 publish = false
+description = "EinsteinDB Traits"
+tags = ["einstein", "db", "traits"]
 
+[lib]
+src = ["src/fdb_traits.cpp"]
+include = ["src"]
 
 [dependencies]
+fdb_core = "0.1.0"
+fdb_types = "0.1.0"
+fdb_utils = "0.1.0"
+fdb_log = "0.1.0"
+fdb_config = "0.1.0"
+fdb_error = "0.1.0"
 
 
 

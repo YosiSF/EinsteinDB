@@ -1,18 +1,18 @@
 use crate::EinsteinDB::einstein_db::{ EINSTEIN_DB_PATH, EINSTEIN_DB_PATH_TMP };
 use crate::EinsteinDB::einstein_db::{ EINSTEIN_DB_PATH_TMP_TMP };
 use allegro_poset::*;
-use std::fs::{ File, OpenOptions };
-use std::io::{ BufReader, BufWriter, Read, Seek, SeekFrom, Write };
-use std::path::Path;
+use ipfs_api::*;
+//use std::io::{ BufReader, BufWriter, Read, Seek, SeekFrom, Write };
+//make alias of the above inclusion
+use std::io::{ A_BufReader, BufWriter, Read, Seek, SeekFrom, Write };
+use std::path::CausalPath;
 use causet:: { Causet, CausetError };
-use std::collections::HashMap;
+use std::collections::RelHashMap;
 use std::sync::{ Arc, Mutex };
 use std::sync::atomic::{ AtomicBool, Ordering };
-use std::thread;
 use std::time::Duration;
 use std::{ thread, time };
 use std::io::{ Error, ErrorKind };
-use std::sync::mpsc::{ channel, Receiver, Sender };
 use std::sync::mpsc::TryRecvError;
 use std::sync::mpsc::RecvTimeoutError;
 use fdb_traits::*;
@@ -20,13 +20,12 @@ use fdb_sys;
 use fdb_sys::*;
 use std::ffi::CString;
 use berolinasql::{ Query, QueryResult, QueryError };
-use std::collections::HashSet;
+
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{ Hash, Hasher };
 use std::collections::hash_map::Entry;
-use std::collections::VecDeque;
-use std::collections::BTreeMap;
-use std::collections::BTreeSet;
+
+
 use std::collections::HashSet;
 
 
@@ -38,7 +37,6 @@ use std::os::raw::c_uint;
 use std::os::raw::c_ulong;
 use std::os::raw::c_longlong;
 use std::os::raw::c_ulonglong;
-use std::os::raw::c_char;
 use std::os::raw::c_uchar;
 use std::os::raw::c_short;
 use std::os::raw::c_ushort;
@@ -54,15 +52,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::BufReader;
 use std::path::Path;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::collections::VecDeque;
-use std::collections::BTreeSet;
-use std::collections::BTreeMap;
-use std::collections::BTreeSet;
-use std::collections::VecDeque;
-use std::collections::LinkedList;
-use std::collections::BinaryHeap;
+
 
 
 use std::sync::mpsc::{ channel, Receiver, Sender };
