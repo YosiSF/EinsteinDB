@@ -2,28 +2,11 @@
 name = "fdb_traits"
 version = "0.1.0"
 authors = ["EinsteinDB Project Authors"]
-edition = "2018"
+edition = "2021"
 publish = false
 
 
 [dependencies]
-fdb-sys = "0.1.0"
-fdb-sys-derive = "0.1.0"
-fdb-sys-derive-macros = "0.1.0"
-fdb-sys-derive-macros-derive = "0.1.0"
-fdb-sys-derive-macros-derive-traits = "0.1.0"
-einsteindb_server = "0.1.0"
-einstein_db = "0.1.0"
-EinsteinDB = "0.1.0"
-allegro_poset= "0.1.0"
-berolinasql = "0.1.0"
-causets = "0.1.0"
-causet ="0.1.0"
-causetq= "0.1.0"
-soliton = "0.1.0"
-soliton_panic = "0.1.0"
-engine_test = "0.1.0"
-einstein_ml = "0.1.0"
 
 
 
