@@ -11,3 +11,10 @@ repository = "https://github.com/YosiSF/EinsteinDB"
 [lib]
 src = ["src"]
 include = ["include"]
+
+[dependencies]
+
+[dependencies.einsteindb_client]
+version = "1.0.0"
+edition = "2021"
+path = "../einsteindb_client"

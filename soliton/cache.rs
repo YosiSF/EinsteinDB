@@ -545,6 +545,12 @@ impl RemoveFromCache for MultiValAttributeCache {
 }
 
 
+impl ClearCache for MultiValAttributeCache {
+    fn clear(&mut self) {
+        self.e_vs.clear();
+    }
+}
+
 
 
 #[derive(Clone, Debug, Default)]
@@ -556,6 +562,11 @@ struct CardinalityManyCache {
 
 
 impl Absorb for CardinalityManyCache {
+
+    fn absorb(&mut self, other: Self) {
+        assert_eq!(self.attr, other.attr);
+        self.e_vs.absorb(other.e_vs);
+    }
     fn acc(&mut self, e: Causetid, v: causetq_TV) {
         self.e_vs.entry(e).or_insert(vec![]).push(v)
     }
@@ -672,15 +683,163 @@ impl NonUniqueReverseAttributeCache {
     }
 }
 
-fn with_aev_iter<F, I>(a: Causetid, iter: &mut Peekable<I>, mut f: F)
-where I: Iterator<Item=Aev>,
-      F: FnMut(Causetid, causetq_TV) {
-    let check = Some(a);
-    while iter.peek().map(|&(a, _, _)| a) == check {
-        let (_, e, v) = iter.next().unwrap();
-        f(e, v);
+
+
+
+#[derive(Clone, Debug, Default)]
+struct CardinalityOneCachePublish {
+    attr: Causetid,
+    e_vs: CacheMap<Causetid, Vec<causetq_TV>>,
+    v_e: UniqueReverseAttributeCache,
+}
+
+
+impl Absorb for CardinalityOneCachePublish {
+    fn absorb(&mut self, other: Self) {
+        assert_eq!(self.attr, other.attr);
+        self.e_vs.absorb(other.e_vs);
+        self.v_e.absorb(other.v_e);
     }
 }
+
+
+impl ClearCache for CardinalityOneCachePublish {
+    fn clear(&mut self) {
+        self.e_vs.clear();
+        self.v_e.clear();
+    }
+}
+
+
+impl RemoveFromCache for CardinalityOneCachePublish {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
+        self.e_vs.remove(e, v);
+        self.v_e.remove(e, v);
+    }
+}
+
+
+impl CardinalityOneCachePublish {
+    fn set(&mut self, e: Causetid, v: causetq_TV) {
+        self.e_vs.insert(e, vec![v]);
+        self.v_e.set(e, v);
+    }
+
+    fn get_vs(&self, e: Causetid) -> Option<&Vec<causetq_TV>> {
+        self.e_vs.get(&e)
+    }
+
+    fn get_e(&self, v: &causetq_TV) -> Option<Causetid> {
+        self.v_e.get_e(v)
+    }
+}
+
+
+#[derive(Clone, Debug, Default)]
+struct CardinalityOneCacheSubscribe {
+    attr: Causetid,
+    e_vs: CacheMap<Causetid, Vec<causetq_TV>>,
+    v_e: NonUniqueReverseAttributeCache,
+}
+
+
+impl Absorb for CardinalityOneCacheSubscribe {
+    fn absorb(&mut self, other: Self) {
+        assert_eq!(self.attr, other.attr);
+        self.e_vs.absorb(other.e_vs);
+        self.v_e.absorb(other.v_e);
+    }
+}
+
+
+impl ClearCache for CardinalityOneCacheSubscribe {
+    fn clear(&mut self) {
+        self.e_vs.clear();
+        self.v_e.clear();
+    }
+}
+
+
+
+
+impl CardinalityOneCacheSubscribe {
+    fn set(&mut self, e: Causetid, v: causetq_TV) {
+        self.e_vs.insert(e, vec![v]);
+        self.v_e.set(e, v);
+    }
+
+    fn get_vs(&self, e: Causetid) -> Option<&Vec<causetq_TV>> {
+        self.e_vs.get(&e)
+    }
+
+    fn get_e(&self, v: &causetq_TV) -> Option<Causetid> {
+        self.v_e.get_e(v)
+    }
+}
+
+
+#[derive(Clone, Debug, Default)]
+struct CardinalityHotEncodingCache {
+    attr: Causetid,
+    e_vs: CacheMap<Causetid, Vec<causetq_TV>>,
+    v_e: UniqueReverseAttributeCache,
+}
+
+impl Absorb for CardinalityHotEncodingCache {
+    fn absorb(&mut self, other: Self) {
+        assert_eq!(self.attr, other.attr);
+        self.e_vs.absorb(other.e_vs);
+        self.v_e.absorb(other.v_e);
+    }
+}
+
+impl ClearCache for CardinalityHotEncodingCache {
+    fn clear(&mut self) {
+        self.e_vs.clear();
+        self.v_e.clear();
+    }
+}
+
+impl RemoveFromCache for CardinalityHotEncodingCache {
+    fn remove(&mut self, e: Causetid, v: &causetq_TV) {
+        self.e_vs.remove(&e);
+        self.v_e.remove(e, v);
+    }
+}
+
+impl CardinalityHotEncodingCache {
+    fn set(&mut self, e: Causetid, v: causetq_TV) {
+        self.e_vs.insert(e, vec![v]);
+        self.v_e.set(e, v);
+    }
+
+    fn get(&self, e: Causetid) -> Option<&Vec<causetq_TV>> {
+        self.e_vs.get(&e)
+    }
+
+    fn get_e(&self, v: &causetq_TV) -> Option<Causetid> {
+        self.v_e.get_e(v)
+    }
+}
+
+#[derive(Clone, Debug, Default)]
+struct CardinalityHotEncodingCache2 {
+    attr: Causetid,
+    e_vs: CacheMap<Causetid, Vec<causetq_TV>>,
+    v_e: UniqueReverseAttributeCache,
+}
+
+impl Absorb for CardinalityHotEncodingCache2 {
+    fn absorb(&mut self, attr: Causetid, e_v: CacheMap<Causetid, causetq_TV>) {
+        self.attr = attr;
+        self.e_vs.absorb(e_v);
+        for (e, v) in e_v.into_iter() {
+            self.v_e.set(e, v);
+        }
+    }
+}
+
+
 
 fn accumulate_single_val_evs_lightlike<I, C>(a: Causetid, f: &mut C, iter: &mut Peekable<I>) where I: Iterator<Item=Aev>, C: CardinalityOneCache {
     with_aev_iter(a, iter, |e, v| f.set(e, v))
