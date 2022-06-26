@@ -1,3 +1,6 @@
+mod fdb_traits;
+pub mod errors;
+
 //users
 use crate::*;
 use std::fs::{self, File};
