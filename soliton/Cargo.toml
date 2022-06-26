@@ -5,6 +5,9 @@ authors = ["YosiSF aka whtcorps inc and einst ai inc"]
 license = "MIT Licensed"
 edition = "2021"
 
+[[lib]]
+source = "lib/soliton.c"
+
 [dependencies]
 failure = "0.1.1"
 indexmap = "1"

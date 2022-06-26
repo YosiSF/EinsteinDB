@@ -14,6 +14,7 @@
       <sourceFolder url="file://$MODULE_DIR$/einstein_db_ctl/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/einsteindb-server/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/soliton_panic/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/einstein_db_alexandrov_processing/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
       <excludeFolder url="file://$MODULE_DIR$/einstein_db/target" />
       <excludeFolder url="file://$MODULE_DIR$/soliton/target" />
@@ -25,6 +26,7 @@
       <excludeFolder url="file://$MODULE_DIR$/soliton_panic/target" />
       <excludeFolder url="file://$MODULE_DIR$/einstein_db_ctl/target" />
       <excludeFolder url="file://$MODULE_DIR$/einsteindb-server/target" />
+      <excludeFolder url="file://$MODULE_DIR$/einstein_db_alexandrov_processing/target" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
