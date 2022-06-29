@@ -65,6 +65,17 @@ pub struct CausetQErrorKind {
     /// Here we define the type of the errors that can be returned by the `EinsteinOptions` trait.
     /// The `EinsteinOptions` trait is implemented for `EinsteinOptionsError` and `einstein_options_error_kind`.
     /// Here we define the type of the errors that can be returned by the `EinsteinOptions` trait.
+    ///
+    ///
+
+
+
+    pub kind: CausetQErrorKind,
+    /// Here we define the type of the errors that can be returned by the `EinsteinOptions` trait.
+
+
+
+    pub causet: Option<Box<dyn std::error::Error + Send + Sync>>,
 }
 
 

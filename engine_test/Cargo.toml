@@ -12,6 +12,7 @@ tags = ["test"]
 name = "engine_test"
 version = "0.1.0"
 authors = ["Josh Leder, Karl Whitford Pollard"]
+src = "src"
 
 
 [dependencies]
