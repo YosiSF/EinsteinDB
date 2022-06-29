@@ -76,8 +76,64 @@ pub struct PanicHeader {
 
 
 
+type Type = Type;
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+
 pub struct PanicTransaction {
+    pub nonce: u64,
+    pub gas_price: u64,
+    pub gas_limit: u64,
+    pub action: [u8; 32],
+    pub data: [u8; 32],
+    pub signature: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicReceipt {
+    pub state_root: [u8; 32],
+    pub gas_used: u64,
+    pub logs: [u8; 32],
+    pub bloom: [u8; 32],
+    pub error: [u8; 32],
+    pub output: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicLog {
+    pub address: [u8; 32],
+    pub topics: [u8; 32],
+    pub data: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicLogBloom {
+    pub bloom: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicLogEntry {
+    pub address: [u8; 32],
+    pub topics: [u8; 32],
+    pub data: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicLogEntryBloom {
+    pub bloom: [u8; 32],
+    pub hash: [u8; 32],
+}
+
 
     pub sender: Type,
     pub(crate) receiver: String,
