@@ -22,8 +22,7 @@ use einstein_merkle_tree::{
     einstein_merkle_tree_types::{EinsteinMerkleTreeType, ElemWithKeyType, ElemType, ElemWithKeyDBType, ElemDBType, KeyDBType},
     einstein_merkle_tree_utils::{EinsteinMerkleTreeUtils, ElemWithKeyUtils, ElemUtils, ElemWithKeyDBUtils, ElemDBUtils, KeyDBUtils},
 };
-use std::sync::Arc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time;
 
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
