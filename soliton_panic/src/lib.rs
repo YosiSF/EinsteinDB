@@ -8,26 +8,13 @@
 //! simply copy the entire directory structure and replace all "Panic*" names
 //! with your einstein_merkle_tree's own name; then fill in the implementations; remove
 //! the allow(unused) attribute;
-
-use std::collections::HashMap;
-use einstein_ml::{EinsteinMerkleTree, EINSTEIN_MERKLE_TREE_DEFAULT_HASH_ALGORITHM, EINSTEIN_MERKLE_TREE_DEFAULT_HASH_LEN};
-use allegro_poset::{AllegroPoset, PosetMember, PosetMemberId};
-use soliton_panic::{Panic, PanicId, PanicMember, PanicMemberId};
-use soliton::{Soliton, SolitonId, SolitonMember, SolitonMemberId};
-use fdb_traits::{FdbTransactional, FdbReadable, FdbWritable, FdbReadWriteable};
-use einstein_merkle_tree::{
-    einstein_merkle_tree::{EinsteinMerkleTree, Elem, ElemT, ElemWithKey, ElemWithKeyT, Key},
-    einstein_merkle_tree_db::{EinsteinMerkleTreeDB, ElemWithKeyDB, ElemDB, KeyDB},
-    einstein_merkle_tree_traits::{EinsteinMerkleTreeTrait, ElemWithKeyTrait, ElemTrait, ElemWithKeyDBTrait, ElemDBTrait, KeyDBTrait},
-    einstein_merkle_tree_types::{EinsteinMerkleTreeType, ElemWithKeyType, ElemType, ElemWithKeyDBType, ElemDBType, KeyDBType},
-    einstein_merkle_tree_utils::{EinsteinMerkleTreeUtils, ElemWithKeyUtils, ElemUtils, ElemWithKeyDBUtils, ElemDBUtils, KeyDBUtils},
-};
-use std::time;
+#![allow(unused)]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PanicAccount {
-    pub address: String,
+
     pub balance: u64,
     pub nonce: u64,
 }
@@ -36,21 +23,160 @@ pub struct PanicAccount {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PanicBlock {
     pub number: u64,
-    pub parent_hash: String,
-    pub timestamp: u64,
-    pub transactions: Vec<String>,
+    pub parent_hash: [u8; 32],
+    pub tx_hash: [u8; 32],
+    pub state_hash: [u8; 32],
+    pub receipts_hash: [u8; 32],
+    pub extra_data: [u8; 32],
+    pub logs_block_hash: [u8; 32],
+    pub proposer: [u8; 32],
+    pub seal: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicBlockHeader {
+    pub number: u64,
+    pub parent_hash: [u8; 32],
+    pub tx_hash: [u8; 32],
+    pub state_hash: [u8; 32],
+    pub receipts_hash: [u8; 32],
+    pub extra_data: [u8; 32],
+    pub logs_block_hash: [u8; 32],
+    pub proposer: [u8; 32],
+    pub seal: [u8; 32],
+    pub hash: [u8; 32],
 }
 
 
 
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicHeader {
+    pub number: u64,
+    pub parent_hash: [u8; 32],
+    pub tx_hash: [u8; 32],
+    pub state_hash: [u8; 32],
+    pub receipts_hash: [u8; 32],
+
+    pub extra_data: [u8; 32],
+    pub logs_block_hash: [u8; 32],
+
+
+    pub proposer: [u8; 32],
+    pub seal: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PanicTransaction {
-    pub hash: String,
-    pub from: String,
-    pub to: String,
+
+    pub sender: Type,
+    pub(crate) receiver: String,
     pub value: u64,
     pub timestamp: u64,
+}
+
+impl PanicTransaction {
+    
+    pub fn new(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn sender(&self) -> &Type {
+        &self.sender
+    }
+
+    pub fn receiver(&self) -> &String {
+        &self.receiver
+    }
+
+    pub fn value(&self) -> u64 {
+        self.value
+    }
+
+    pub fn timestamp(&self) -> u64 {
+        self.timestamp
+    }
+
+    pub fn into_raw(self) -> (Type, String, u64, u64) {
+        (self.sender, self.receiver, self.value, self.timestamp)
+    }
+
+    pub fn from_raw(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn into_raw_data(self) -> (Type, String, u64) {
+        (self.sender, self.receiver, self.value)
+    }
+
+    pub fn from_raw_data(sender: Type, receiver: String, value: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp: 0,
+        }
+    }
+
+    pub fn into_raw_data_with_timestamp(self) -> (Type, String, u64, u64) {
+        (self.sender, self.receiver, self.value, self.timestamp)
+    }
+
+    pub fn from_raw_data_with_timestamp(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn into_raw_data_with_timestamp_and_receiver(self) -> (Type, String, u64, u64, String) {
+        (self.sender, self.receiver, self.value, self.timestamp, self.receiver)
+    }
+
+    pub fn from_raw_data_with_timestamp_and_receiver(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn into_raw_data_with_timestamp_and_receiver_and_value(self) -> (Type, String, u64, u64, String, u64) {
+        (self.sender, self.receiver, self.value, self.timestamp, self.receiver, self.value)
+    }
+
+    pub fn from_raw_data_with_timestamp_and_receiver_and_value(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String, value: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
 }
 
 
