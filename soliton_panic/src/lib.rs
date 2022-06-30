@@ -377,10 +377,11 @@ impl PanicTransaction {
             receiver: self.receiver,
             value: self.value,
         }
+
+
     }
+    
 }
-
-
 
 impl PanicReceipt {
     
@@ -430,6 +431,31 @@ impl PanicBlockHeaderDB {
         }
     }
 }
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicBlockHeader {
+    pub number: u64,
+    pub parent_hash: String,
+    pub timestamp: u64,
+    pub state_root: [u8; 32],
+    pub transactions_root: [u8; 32],
+    pub receipts_root: [u8; 32],
+    pub logs_bloom: [u8; 32],
+    pub difficulty: u64,
+    pub gas_limit: u64,
+    pub gas_used: u64,
+    pub extra_data: String,
+    pub mix_hash: String,
+    pub nonce: String,
+    pub seal_fields: Vec<String>,
+    pub sha3_uncles: String,
+    pub size: u64,
+    pub total_difficulty: u64,
+    pub transactions: Vec<String>,
+    pub uncles: Vec<String>,
+}
+
 
 
 
