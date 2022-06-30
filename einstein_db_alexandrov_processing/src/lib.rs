@@ -17,7 +17,7 @@
 
 
 
-
+#![allow(unused)]
 
 
 
@@ -43,7 +43,38 @@ pub struct PanicBlock {
 }
 
 #[derive(Debug, Clone)]
-pub struct Workspace( EinsteinDB::einstein_db::Workspace );
+pub struct PanicBlockHeader {
+    pub number: u64,
+    pub parent_hash: [u8; 32],
+    pub tx_hash: [u8; 32],
+    pub state_hash: [u8; 32],
+    pub receipts_hash: [u8; 32],
+    pub extra_data: [u8; 32],
+    pub logs_block_hash: [u8; 32],
+    pub proposer: [u8; 32],
+    pub seal: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicHeader {
+    pub number: u64,
+    pub parent_hash: [u8; 32],
+    pub tx_hash: [u8; 32],
+    pub state_hash: [u8; 32],
+    pub receipts_hash: [u8; 32],
+    pub extra_data: [u8; 32],
+    pub logs_block_hash: [u8; 32],
+    pub proposer: [u8; 32],
+    pub seal: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[cfg(test)]
+
+
 
 
 impl Workspace {
