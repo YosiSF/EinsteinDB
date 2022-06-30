@@ -12,6 +12,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 
+
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PanicAccount {
 
@@ -68,19 +70,6 @@ pub struct PanicHeader {
     pub seal: [u8; 32],
     pub hash: [u8; 32],
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -176,7 +165,7 @@ impl PanicTransaction {
         }
     }
 
-    pub fn from_raw_data_with_timestamp(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+    pub(crate) fn from_raw_data_with_timestamp(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
         PanicTransaction {
             sender,
             receiver,
@@ -184,6 +173,7 @@ impl PanicTransaction {
             timestamp,
         }
     }
+}
 
     pub fn from_raw_data_with_timestamp_and_receiver(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String) -> Self {
         PanicTransaction {
@@ -276,6 +266,35 @@ impl PanicTransaction {
     pub fn receiver(&self) -> &String {
         &self.receiver
     }
+    pub fn value(&self) -> &u64 {
+        &self.value
+    }
+    pub fn timestamp(&self) -> &u64 {
+        &self.timestamp
+    }
+    pub fn set_sender(&mut self, sender: Type) {
+        self.sender = sender;
+    }
+    pub fn set_receiver(&mut self, receiver: String) {
+        self.receiver = receiver;
+    }
+
+    pub fn new_data_with_timestamp_and_receiver_and_value(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String, value: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn sender(&self) -> &Type {
+        &self.sender
+    }
+
+    pub fn receiver(&self) -> &String {
+        &self.receiver
+    }
 
     pub fn value(&self) -> &u64 {
         &self.value
@@ -288,10 +307,78 @@ impl PanicTransaction {
     pub fn set_sender(&mut self, sender: Type) {
         self.sender = sender;
     }
-
     pub fn set_receiver(&mut self, receiver: String) {
         self.receiver = receiver;
     }
+    pub fn set_value(&mut self, value: u64) {
+        self.value = value;
+    }
+    pub fn set_timestamp(&mut self, timestamp: u64) {
+        self.timestamp = timestamp;
+    }
+
+    pub fn with_sender(mut self, sender: Type) -> Self {
+        self.sender = sender;
+        self
+    }
+    pub fn with_receiver(mut self, receiver: String) -> Self {
+        self.receiver = receiver;
+        self
+    }
+    pub fn with_value(mut self, value: u64) -> Self {
+        self.value = value;
+        self
+    }
+    pub fn with_timestamp(mut self, timestamp: u64) -> Self {
+        self.timestamp = timestamp;
+        self
+    }
+
+    pub fn into_builder(self) -> PanicTransactionBuilder {
+        PanicTransactionBuilder {
+            sender: self.sender,
+            receiver: self.receiver,
+            value: self.value,
+            timestamp: self.timestamp,
+        }
+    }
+
+    pub fn into_builder_data(self) -> PanicTransactionBuilderData {
+        PanicTransactionBuilderData {
+            sender: self.sender,
+            receiver: self.receiver,
+            value: self.value,
+        }
+    }
+
+    pub fn into_builder_data_with_timestamp(self) -> PanicTransactionBuilderDataWithTimestamp {
+        PanicTransactionBuilderDataWithTimestamp {
+            sender: self.sender,
+            receiver: self.receiver,
+            value: self.value,
+            timestamp: self.timestamp,
+        }
+    }
+    pub fn into_builder_data_with_timestamp_and_receiver(self) -> PanicTransactionBuilderDataWithTimestampAndReceiver {
+        PanicTransactionBuilderDataWithTimestampAndReceiver {
+            sender: self.sender,
+            receiver: self.receiver,
+            value: self.value,
+            timestamp: self.timestamp,
+            receiver: self.receiver,
+        }
+    }
+    pub fn into_builder_data_with_timestamp_and_receiver_and_value(self) -> PanicTransactionBuilderDataWithTimestampAndReceiverAndValue {
+        PanicTransactionBuilderDataWithTimestampAndReceiverAndValue {
+            sender: self.sender,
+            receiver: self.receiver,
+            value: self.value,
+            timestamp: self.timestamp,
+            receiver: self.receiver,
+            value: self.value,
+        }
+    }
+}
 
 
 

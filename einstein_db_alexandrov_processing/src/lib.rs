@@ -559,20 +559,54 @@ pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
 
 
 pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+    let contents = String::from_utf8(contents.to_vec()).unwrap();
+    write_file(path, &contents);
+}
+
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+
+
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+
 
     if let Ok(mut file) = File::open(path) {
+        if let Ok(_) = file.write_all(contents) {
+            return;
+        }
         let mut contents = String::new();
         if let Ok(_) = file.read_to_string(&mut contents) {
             return contents;
+
         }
 
     }
+
+    panic!("Could not write file: {}", path.to_str().unwrap());
+}
+
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+
+
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
         if let Ok(_) = file.write_all(contents.as_bytes()) {
             return;
         }
     }
     panic!("Could not write file: {}", path.to_str().unwrap());
-}
+
+    String::new()
+    
+
+
+
 
 pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
     let contents = read_file(path);
