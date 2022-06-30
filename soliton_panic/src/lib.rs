@@ -8,6 +8,10 @@
 //! simply copy the entire directory structure and replace all "Panic*" names
 //! with your einstein_merkle_tree's own name; then fill in the implementations; remove
 //! the allow(unused) attribute;
+//! 
+
+
+
 #![allow(unused)]
 #![cfg_attr(not(feature = "std"), no_std)]
 

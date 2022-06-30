@@ -670,7 +670,36 @@ pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
     }
     panic!("Could not write file: {}", path.to_str().unwrap());
 
-    String::new()
+    //avoid expected BANG
+    pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+        let contents = read_file(path);
+        contents.into_bytes()
+    }
+
+    pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+        let contents = String::from_utf8(contents.to_vec()).unwrap();
+        write_file(path, &contents);
+    }
+
+    pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+        let contents = read_file(path);
+        contents.into_bytes()
+    }
+
+    pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+        let contents = String::from_utf8(contents.to_vec()).unwrap();
+        write_file(path, &contents);
+    }
+
+    pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+        let contents = read_file(path);
+        contents.into_bytes()
+    }
+    pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+        let contents = String::from_utf8(contents.to_vec()).unwrap();
+        write_file(path, &contents);
+    }
+    
 }
 
 

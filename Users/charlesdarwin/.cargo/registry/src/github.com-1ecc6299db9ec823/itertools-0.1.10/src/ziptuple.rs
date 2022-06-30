@@ -36,5 +36,80 @@ impl<I1, I2> IntoIterator for ZipTuple<I1, I2> where I1: IntoIterator, I2: IntoI
             iter1: self.iter1.into_iter(),
             iter2: self.iter2.into_iter(),
         }
+
+        //ZipTuple {
+        //    iter1: self.iter1.into_iter(),
+            
+        //    iter2: self.iter2.into_iter(),
+        //}
+    }
+
+    //fn into_iter(self) -> Self::IntoIter {
+    //    ZipTuple {
+    //        iter1: self.iter1.into_iter(),
+    //        iter2: self.iter2.into_iter(),
+    //    }
+
+    fn into_iter(self) -> Self::IntoIter {
+        ZipTuple {
+            iter1: self.iter1.into_iter(),
+            iter2: self.iter2.into_iter(),
+        }
+    }
+    
+}
+
+
+//impl<I1, I2> IntoIterator for ZipTuple<I1, I2> where I1: IntoIterator, I2: IntoIterator {
+//    type Item = (I1::Item, I2::Item);
+//    type IntoIter = ZipTuple<I1::IntoIter, I2::IntoIter>;
+//    fn into_iter(self) -> Self::IntoIter {
+//        ZipTuple {
+//            iter1: self.iter1.into_iter(),
+//            iter2: self.iter2.into_iter(),
+//        }
+//    }
+
+
+
+impl <I1, I2> FromIterator<(I1::Item, I2::Item)> for ZipTuple<I1, I2> where I1: Iterator, I2: Iterator {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (I1::Item, I2::Item)> {
+        ZipTuple {
+            iter1: iter.into_iter().map(|(x, _)| x),
+            iter2: iter.into_iter().map(|(_, y)| y),
+        }
     }
 }
+
+
+impl <I1, I2> IntoIterator for ZipTuple<I1, I2> where I1: IntoIterator, I2: IntoIterator {
+    type Item = (I1::Item, I2::Item);
+    type IntoIter = ZipTuple<I1::IntoIter, I2::IntoIter>;
+    fn into_iter(self) -> Self::IntoIter {
+        ZipTuple {
+            iter1: self.iter1.into_iter(),
+            iter2: self.iter2.into_iter(),
+        }
+    }
+}
+
+
+impl <I1, I2> FromIterator<(I1::Item, I2::Item)> for ZipTuple<I1, I2> where I1: Iterator, I2: Iterator {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (I1::Item, I2::Item)> {
+        ZipTuple {
+            iter1: iter.into_iter().map(|(x, _)| x),
+            iter2: iter.into_iter().map(|(_, y)| y),
+        }
+    }
+}
+
+
+
+
+pub struct ZipLongestTuple<I1, I2> {
+    iter1: I1,
+    iter2: I2,
+}
+
+
+

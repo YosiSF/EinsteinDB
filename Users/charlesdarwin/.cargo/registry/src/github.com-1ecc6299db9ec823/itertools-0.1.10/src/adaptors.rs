@@ -1,10 +1,16 @@
-
 use std::iter::Iterator;
-pub(crate) use std::iter::FromIterator;
 use std::iter::IntoIterator;
+pub(crate) use std::iter::FromIterator;
 use std::iter::Map;
 use std::iter::MapInto;
 use std::iter::Zip;
+use std::iter::ZipLongest;
+
+
+pub(crate) struct ZipTuple<I1, I2> {
+    iter1: I1,
+    iter2: I2,
+}
 
 
 pub(crate) struct PackageRegistry {
@@ -201,6 +207,23 @@ impl<I1, I2> Iterator for ZipTuple<I1, I2>
 /// 
 /// 
 
+
+
+
+///MongoDB is a NoSQL database. We use adapters to convert between iterators and collections.
+/// adaptors is a collection of adapters that convert between iterators and collections.
+/// EinsteinDB is compatible with MySQL, PostgreSQL, and MongoDB. Uses FoundationDB.
+/// 
+/// # Examples
+/// 
+/// ```
+/// use einsteindb::iter::adaptors;
+/// use einsteindb::iter::adaptors::{
+///   Adaptor,
+/// AdaptorMut,
+/// AdaptorMutRef,
+/// AdaptorRef,
+/// };
 
 
 

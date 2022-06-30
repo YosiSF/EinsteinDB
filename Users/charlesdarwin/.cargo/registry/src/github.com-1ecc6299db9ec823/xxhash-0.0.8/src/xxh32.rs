@@ -16,3 +16,10 @@
 
 
 mod tests;
+mod ziptuple;
+mod adaptors;
+mod xxh32;
+mod xxh64;
+mod xxh128;
+mod xxh256;
+
