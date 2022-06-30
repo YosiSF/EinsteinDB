@@ -76,7 +76,13 @@ pub struct PanicHeader {
 
 
 
-type Type = Type;
+
+
+
+
+
+
+
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 
@@ -135,15 +141,126 @@ pub struct PanicLogEntryBloom {
 }
 
 
-    pub sender: Type,
-    pub(crate) receiver: String,
-    pub value: u64,
-    pub timestamp: u64,
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicLogTopic {
+    pub topic: [u8; 32],
+    pub hash: [u8; 32],
 }
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicLogTopicBloom {
+    pub bloom: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
 
 impl PanicTransaction {
     
+    pub fn from_raw(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn from_raw_data(sender: Type, receiver: String, value: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp: 0,
+        }
+    }
+
+    pub fn from_raw_data_with_timestamp(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn from_raw_data_with_timestamp_and_receiver(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn from_raw_data_with_timestamp_and_receiver_and_value(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String, value: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn into_raw(self) -> (Type, String, u64, u64) {
+        (self.sender, self.receiver, self.value, self.timestamp)
+    }
+
+    pub fn into_raw_data(self) -> (Type, String, u64) {
+        (self.sender, self.receiver, self.value)
+    }
+
+    pub fn into_raw_data_with_timestamp(self) -> (Type, String, u64, u64) {
+        (self.sender, self.receiver, self.value, self.timestamp)
+    }
+
+    pub fn into_raw_data_with_timestamp_and_receiver(self) -> (Type, String, u64, u64, String) {
+        (self.sender, self.receiver, self.value, self.timestamp, self.receiver)
+    }
+
+    pub fn into_raw_data_with_timestamp_and_receiver_and_value(self) -> (Type, String, u64, u64, String, u64) {
+
+        (self.sender, self.receiver, self.value, self.timestamp, self.receiver, self.value)
+    }
+
     pub fn new(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn new_data(sender: Type, receiver: String, value: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp: 0,
+        }
+    }
+
+    pub fn new_data_with_timestamp(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn new_data_with_timestamp_and_receiver(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String) -> Self {
+        PanicTransaction {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        }
+    }
+
+    pub fn new_data_with_timestamp_and_receiver_and_value(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String, value: u64) -> Self {
         PanicTransaction {
             sender,
             receiver,
@@ -160,89 +277,39 @@ impl PanicTransaction {
         &self.receiver
     }
 
-    pub fn value(&self) -> u64 {
-        self.value
+    pub fn value(&self) -> &u64 {
+        &self.value
     }
 
-    pub fn timestamp(&self) -> u64 {
-        self.timestamp
+    pub fn timestamp(&self) -> &u64 {
+        &self.timestamp
     }
 
-    pub fn into_raw(self) -> (Type, String, u64, u64) {
-        (self.sender, self.receiver, self.value, self.timestamp)
+    pub fn set_sender(&mut self, sender: Type) {
+        self.sender = sender;
     }
 
-    pub fn from_raw(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
-        PanicTransaction {
-            sender,
-            receiver,
-            value,
-            timestamp,
-        }
+    pub fn set_receiver(&mut self, receiver: String) {
+        self.receiver = receiver;
     }
 
-    pub fn into_raw_data(self) -> (Type, String, u64) {
-        (self.sender, self.receiver, self.value)
-    }
 
-    pub fn from_raw_data(sender: Type, receiver: String, value: u64) -> Self {
-        PanicTransaction {
-            sender,
-            receiver,
-            value,
-            timestamp: 0,
-        }
-    }
 
-    pub fn into_raw_data_with_timestamp(self) -> (Type, String, u64, u64) {
-        (self.sender, self.receiver, self.value, self.timestamp)
-    }
-
-    pub fn from_raw_data_with_timestamp(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
-        PanicTransaction {
-            sender,
-            receiver,
-            value,
-            timestamp,
-        }
-    }
-
-    pub fn into_raw_data_with_timestamp_and_receiver(self) -> (Type, String, u64, u64, String) {
-        (self.sender, self.receiver, self.value, self.timestamp, self.receiver)
-    }
-
-    pub fn from_raw_data_with_timestamp_and_receiver(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String) -> Self {
-        PanicTransaction {
-            sender,
-            receiver,
-            value,
-            timestamp,
-        }
-    }
-
-    pub fn into_raw_data_with_timestamp_and_receiver_and_value(self) -> (Type, String, u64, u64, String, u64) {
-        (self.sender, self.receiver, self.value, self.timestamp, self.receiver, self.value)
-    }
-
-    pub fn from_raw_data_with_timestamp_and_receiver_and_value(sender: Type, receiver: String, value: u64, timestamp: u64, receiver: String, value: u64) -> Self {
-        PanicTransaction {
-            sender,
-            receiver,
-            value,
-            timestamp,
+impl PanicReceipt {
+    
+    pub fn new(state_root: [u8; 32], gas_used: u64, logs: [u8; 32], bloom: [u8; 32], error: [u8; 32], output: [u8; 32], hash: [u8; 32]) -> Self {
+        PanicReceipt {
+            state_root,
+            gas_used,
+            logs,
+            bloom,
+            error,
+            output,
+            hash,
         }
     }
 
 }
-
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct PanicBlockHeader {
-    pub number: u64,
-    pub parent_hash: String,
-    pub timestamp: u64,
-}
-
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PanicBlockBody {
@@ -264,4 +331,20 @@ pub struct PanicBlockHeaderDB {
     pub parent_hash: String,
     pub timestamp: u64,
 }
+
+
+impl PanicBlockHeaderDB {
+    pub fn new(number: u64, parent_hash: String, timestamp: u64) -> PanicBlockHeaderDB {
+        PanicBlockHeaderDB {
+            number,
+            parent_hash,
+            timestamp,
+
+        }
+    }
+}
+
+
+
+
 
