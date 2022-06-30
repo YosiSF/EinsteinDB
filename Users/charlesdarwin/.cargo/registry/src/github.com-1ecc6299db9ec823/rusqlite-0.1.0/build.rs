@@ -1,7 +1,4 @@
-//pkg_config::Config::new().statik(true).probe("sqlite3").unwrap();
-//
-//
-//
+// pkg_config::Config::new().statik(true).probe("sqlite3").unwrap();
 
 
 // Language: rust
