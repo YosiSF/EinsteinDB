@@ -15,6 +15,10 @@
 // #![cfg_attr(not(feature = "std"), no_std)]
 //
 
+//soliton_panic
+// Language: rust
+// Path: EinsteinDB/soliton_panic/src/lib.rs
+
 
 
 #![allow(unused)]
@@ -78,10 +82,10 @@ pub struct PanicHeader {
 pub struct Workspace {
     pub account: PanicAccount,
     pub block: PanicBlock,
-    pub block_header: PanicBlockHeader,
-    pub header: PanicHeader,
+   // pub header: PanicHeader,
+
 }
-    //pub header: PanicHeader,
+   
 
 
 
@@ -161,71 +165,260 @@ pub struct WorkspaceProposer {
 }
 
 
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceSeal {
+    pub seal: [u8; 32],
+}
 
 
-
-
-
-
-impl Workspace {
-    /* 
-    pub fn new(db_path: String, db_ctl_path: String, db_path_tmp: String, db_ctl_path_tmp: String) -> Workspace {
-        Workspace(EinsteinDB::einstein_db::Workspace::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp))
-    }
-
-    pub fn open(db_path: String, db_ctl_path: String, db_path_tmp: String, db_ctl_path_tmp: String) -> Workspace {
-        Workspace(EinsteinDB::einstein_db::Workspace::open(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp))
-    }
-
-    pub fn open_existing(db_path: String, db_ctl_path: String, db_path_tmp: String, db_ctl_path_tmp: String) -> Workspace {
-        Workspace(EinsteinDB::einstein_db::Workspace::open_existing(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp))
-    }
-
-    pub fn get_db_path(&self) -> String {
-        self.0.get_db_path()
-    }
-
-    pub fn get_db_ctl_path(&self) -> String {
-        self.0.get_db_ctl_path()
-    }
-
-    pub fn get_db_path_tmp(&self) -> String {
-        self.0.get_db_path_tmp()
-    }
-
-    pub fn get_db_ctl_path_tmp(&self) -> String {
-        self.0.get_db_ctl_path_tmp()
-    }
-
-    pub fn get_db_path_tmp_tmp(&self) -> String {
-        self.0.get_db_path_tmp_tmp()
-    }
-
-    pub fn get_db_ctl_path_tmp_tmp(&self) -> String {
-        self.0.get_db_ctl_path_tmp
-    } */
-
-
-
-    pub fn new(db_path: String, db_ctl_path: String, db_path_tmp: String, db_ctl_path_tmp: String) -> Workspace {
-        Workspace {
-            account: PanicAccount::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp),
-            block: PanicBlock::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp),
-            block_header: PanicBlockHeader::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp),
-            //header: PanicHeader::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp),
-        }
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceHash {
+    pub hash: [u8; 32],
 
 }
 
-//! # The Alexandrov Processing Library
-//!  This library provides a set of functions for processing data from the
-//! [EinsteinDB](https://www.github.com/YosiSF/EinsteinDB/).
-//!  The library is designed to be used with the [EinsteinDB](https://www.github.com/YosiSF/EinsteinDB/)
-//! library.
-//!
-//! ## The Library
-//!
-//!  The library is designed to be used with the [EinsteinDB](https://www.github.com/YosiSF/EinsteinDB/)
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceExtraData {
+    pub extra_data: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceLogsBlockHash {
+    pub logs_block_hash: [u8; 32],
+}
+
+
+impl Workspace {
+    pub fn new(account: PanicAccount, block: PanicBlock) -> Self {
+        Workspace {
+            account,
+            block,
+        }
+    }
+
+    pub fn new_header(header: PanicHeader) -> Self {
+        Workspace {
+            account: PanicAccount {
+                balance: 0,
+                nonce: 0,
+            },
+            block: PanicBlock {
+                number: header.number,
+                parent_hash: header.parent_hash,
+                tx_hash: header.tx_hash,
+                state_hash: header.state_hash,
+                receipts_hash: header.receipts_hash,
+                extra_data: header.extra_data,
+                logs_block_hash: header.logs_block_hash,
+                proposer: header.proposer,
+                seal: header.seal,
+                hash: header.hash,
+            },
+        }
+    }
+
+
+    pub fn new_header_with_account(header: PanicHeader, account: PanicAccount) -> Self {
+        Workspace {
+            account,
+            block: PanicBlock {
+                number: header.number,
+                parent_hash: header.parent_hash,
+                tx_hash: header.tx_hash,
+                state_hash: header.state_hash,
+                receipts_hash: header.receipts_hash,
+                extra_data: header.extra_data,
+                logs_block_hash: header.logs_block_hash,
+                proposer: header.proposer,
+                seal: header.seal,
+                hash: header.hash,
+            },
+        }
+    }
+
+    pub fn new_header_with_block(header: PanicHeader, block: PanicBlock) -> Self {
+        Workspace {
+            account: PanicAccount {
+                balance: 0,
+                nonce: 0,
+            },
+            block,
+        }
+    }
+
+    pub fn new_header_with_account_and_block(header: PanicHeader, account: PanicAccount, block: PanicBlock) -> Self {
+        Workspace {
+            account,
+            block,
+        }
+    }
+
+    pub fn new_header_with_account_and_block_with_account(header: PanicHeader, account: PanicAccount, block: PanicBlock, account2: PanicAccount) -> Self {
+        Workspace {
+            account,
+            block,
+        }
+    }
+}
+
+
+impl WorkspaceHeader {
+    pub fn new(number: u64, parent_hash: [u8; 32], tx_hash: [u8; 32], state_hash: [u8; 32], receipts_hash: [u8; 32], extra_data: [u8; 32], logs_block_hash: [u8; 32], proposer: [u8; 32], seal: [u8; 32], hash: [u8; 32]) -> Self {
+        WorkspaceHeader {
+            number,
+            parent_hash,
+            tx_hash,
+            state_hash,
+            receipts_hash,
+            extra_data,
+            logs_block_hash,
+            proposer,
+            seal,
+            hash,
+        }
+    }
+
+    pub fn new_with_account(number: u64, parent_hash: [u8; 32], tx_hash: [u8; 32], state_hash: [u8; 32], receipts_hash: [u8; 32], extra_data: [u8; 32], logs_block_hash: [u8; 32], proposer: [u8; 32], seal: [u8; 32], hash: [u8; 32], account: PanicAccount) -> Self {
+        WorkspaceHeader {
+            number,
+            parent_hash,
+            tx_hash,
+            state_hash,
+            receipts_hash,
+            extra_data,
+            logs_block_hash,
+            proposer,
+            seal,
+            hash,
+        }
+    }
+}
+
+
+impl WorkspaceBlock {
+    pub fn new(number: u64, parent_hash: [u8; 32], tx_hash: [u8; 32], state_hash: [u8; 32], receipts_hash: [u8; 32], extra_data: [u8; 32], logs_block_hash: [u8; 32], proposer: [u8; 32], seal: [u8; 32], hash: [u8; 32]) -> Self {
+        WorkspaceBlock {
+            number,
+            parent_hash,
+            tx_hash,
+            state_hash,
+            receipts_hash,
+            extra_data,
+            logs_block_hash,
+            proposer,
+            seal,
+            hash,
+        }
+    }
+
+    pub fn new_with_account(number: u64, parent_hash: [u8; 32], tx_hash: [u8; 32], state_hash: [u8; 32], receipts_hash: [u8; 32], extra_data: [u8; 32], logs_block_hash: [u8; 32], proposer: [u8; 32], seal: [u8; 32], hash: [u8; 32], account: PanicAccount) -> Self {
+        WorkspaceBlock {
+            number,
+            parent_hash,
+            tx_hash,
+            state_hash,
+            receipts_hash,
+            extra_data,
+            logs_block_hash,
+            proposer,
+            seal,
+            hash,
+        }
+    }
+
+    pub fn new_with_block(number: u64, parent_hash: [u8; 32], tx_hash: [u8; 32], state_hash: [u8; 32], receipts_hash: [u8; 32], extra_data: [u8; 32], logs_block_hash: [u8; 32], proposer: [u8; 32], seal: [u8; 32], hash: [u8; 32], block: PanicBlock) -> Self {
+        WorkspaceBlock {
+            number,
+            parent_hash,
+            tx_hash,
+            state_hash,
+            receipts_hash,
+            extra_data,
+            logs_block_hash,
+            proposer,
+            seal,
+            hash,
+        }
+    }
+
+    pub fn new_with_account_and_block(number: u64, parent_hash: [u8; 32], tx_hash: [u8; 32], state_hash: [u8; 32], receipts_hash: [u8; 32], extra_data: [u8; 32], logs_block_hash: [u8; 32], proposer: [u8; 32], seal: [u8; 32], hash: [u8; 32], account: PanicAccount, block: PanicBlock) -> Self {
+        WorkspaceBlock {
+            number,
+            parent_hash,
+            tx_hash,
+            state_hash,
+            receipts_hash,
+            extra_data,
+            logs_block_hash,
+            proposer,
+            seal,
+            hash,
+        }
+    }
+
+    pub fn new_with_account_and_block_with_account(number: u64, parent_hash: [u8; 32], tx_hash: [u8; 32], state_hash: [u8; 32], receipts_hash: [u8; 32], extra_data: [u8; 32], logs_block_hash: [u8; 32], proposer: [u8; 32], seal: [u8; 32], hash: [u8; 32], account: PanicAccount, block: PanicBlock, account2: PanicAccount) -> Self {
+        WorkspaceBlock {
+            number,
+            parent_hash,
+            tx_hash,
+            state_hash,
+            receipts_hash,
+            extra_data,
+            logs_block_hash,
+            proposer,
+            seal,
+            hash,
+        }
+    }
+}
+
+
+    /// Create a new workspace.
+    /// 
+    /// # Arguments
+    /// * `db_path` - The path to the database.
+    /// * `db_ctl_path` - The path to the database control file.
+    /// * `db_path_tmp` - The path to the temporary database.
+    /// * `db_ctl_path_tmp` - The path to the temporary database control file.
+    /// 
+    /// # Returns
+    /// * `Workspace` - The new workspace.
+    /// 
+    /// # Example
+    /// ```
+    /// use einstein_db::Workspace;
+    ///     
+    /// let workspace = Workspace::new("/tmp/einstein_db", "/tmp/einstein_db.ctl", "/tmp/einstein_db.tmp", "/tmp/einstein_db.tmp.ctl");
+    /// ```
+    ///     
+    /// # Panics
+    /// * `Panic` - If the workspace could not be created.
+    ///     
+    /// # Notes
+    /// * The workspace will be created if it does not exist.
+    /// * The workspace will be opened if it exists.
+    /// 
+    
+    /// Create a new workspace.
+    /// 
+    /// # Arguments
+    /// * `db_path` - The path to the database.
+    /// * `db_ctl_path` - The path to the database control file.
+    /// * `db_path_tmp` - The path to the temporary database.
+    /// * `db_ctl_path_tmp` - The path to the temporary database control file.
+    ///     
+    /// # Returns
+    /// * `Workspace` - The new workspace.
+    ///     
+    /// # Panics
+    /// * `Panic` - If the workspace could not be created.
+    /// 
+    
+    /// Create a new workspace.
+    
+
 
 
 pub struct EinsteinDB {
@@ -239,20 +432,17 @@ pub struct EinsteinDB {
     pub space_causets_hash: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct AlexandrovSpacesList {
-    pub spaces: Vec<AlexandrovSpaces>,
 
 
-}
 
-//! #FoundationDB and #EinsteinDB subspaces.
-//!
-//! subspaces are isolated spaces that are used to store data in the
-//! namespace of the EinsteinDB. Using FoundationDB subspaces, we can
-//! transmute the data from the EinsteinDB namespace to a namespace
-//! with less overhead and more flexibility. A cache-miss is a cost that is paid
+/*FoundationDB and #EinsteinDB subspaces.
 
+subspaces are isolated spaces that are used to store data in the
+namespace of the EinsteinDB. Using FoundationDB subspaces, we can
+transmute the data from the EinsteinDB namespace to a namespace
+with less overhead and more flexibility. A cache-miss is a cost that is paid
+
+*/
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FoundationDbSubspace {
@@ -267,18 +457,163 @@ pub struct FoundationDbSubspace {
 
 use std::collections::HashMap;
 
-pub fn read_file(path: &Path) -> String {
+pub(crate) fn read_file(path: &Path) -> String {
 
-    let file = File::open(path).expect("Failed to open file");
-    let mut buf_reader = BufReader::new(file);
+    if let Ok(mut file) = File::open(path) {
+        let mut contents = String::new();
+        if let Ok(_) = file.read_to_string(&mut contents) {
+            return contents;
+        }
+    
+    }
+    panic!("Could not read file: {}", path.to_str().unwrap());
+
+    String::new()
+}
+
+
+pub(crate) fn write_file(path: &Path, contents: &str) {
+    if let Ok(mut file) = File::create(path) {
+        if let Ok(_) = file.write_all(contents.as_bytes()) {
+            return;
+        }
+    }
+    panic!("Could not write file: {}", path.to_str().unwrap());
+}
+
+
+pub(crate) fn read_file_to_string(path: &Path) -> String {
+    let mut file = File::open(path).unwrap();
     let mut contents = String::new();
-    buf_reader.read_to_string(&mut contents).expect("Failed to read file");
+    file.read_to_string(&mut contents).unwrap();
     contents
 }
 
 
+pub(crate) fn write_file_from_string(path: &Path, contents: &str) {
+    let mut file = File::create(path).unwrap();
+    file.write_all(contents.as_bytes()).unwrap();
+}
+
+
+pub(crate) fn read_file_to_vec(path: &Path) -> Vec<u8> {
+    let mut file = File::open(path).unwrap();
+    let mut contents = Vec::new();
+    file.read_to_end(&mut contents).unwrap();
+    contents
+}
+
+
+pub(crate) fn write_file_from_vec(path: &Path, contents: &[u8]) {
+    let mut file = File::create(path).unwrap();
+    file.write_all(contents).unwrap();
+}
+
+
+pub(crate) fn read_file_to_vec_u8(path: &Path) -> Vec<u8> {
+    let mut file = File::open(path).unwrap();
+    let mut contents = Vec::new();
+    file.read_to_end(&mut contents).unwrap();
+    contents
+
+}
+
+
+pub(crate) fn write_file_from_vec_u8(path: &Path, contents: &[u8]) {
+    let mut file = File::create(path).unwrap();
+    file.write_all(contents).unwrap();
+}
+
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+
+
+pub(crate) fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> T {
+    let contents = read_file(path);
+    let json: T = serde_json::from_str(&contents).unwrap();
+    json
+}
+
+
+pub(crate) fn write_json<T: serde::ser::Serialize>(path: &Path, json: &T) {
+    let contents = serde_json::to_string(json).unwrap();
+    write_file(path, &contents);
+}
+
+
+pub(crate) fn read_json_from_string<T: serde::de::DeserializeOwned>(contents: &str) -> T {
+    let json: T = serde_json::from_str(&contents).unwrap();
+    json
+}
+
+//file
+
+
+pub(crate) fn read_file_from_string(contents: &str) -> String {
+    let json: String = serde_json::from_str(&contents).unwrap();
+    json
+}
+
+
+pub(crate) fn write_file_from_string(path: &Path, contents: &str) {
+    let json: String = serde_json::from_str(&contents).unwrap();
+    write_file(path, &json);
+}
+
+
+pub(crate) fn read_file_from_string_to_string(contents: &str) -> String {
+    let json: String = serde_json::from_str(&contents).unwrap();
+    json
+}
+
+
+pub(crate) fn write_file_from_string_to_string(path: &Path, contents: &str) {
+    let json: String = serde_json::from_str(&contents).unwrap();
+    write_file(path, &json);
+}
+
+
+
+
+
+
+pub(crate) fn read_json_from_string_to_string<T: serde::de::DeserializeOwned>(contents: &str) -> T {
+    let contents = read_file(&Path::new("/tmp/einstein_db.tmp"));
+    contents
+}
+
+pub fn write_json_from_string_to_string<T: serde::ser::Serialize>(path: &Path, contents: &str) {
+    let json: String = serde_json::from_str(&contents).unwrap();
+    write_file(path, &json);
+}
+
+
+pub(crate) fn read_json_from_string_to_string_to_string<T: serde::de::DeserializeOwned>(contents: &str) -> T {
+    let json: T = serde_json::from_str(&contents).unwrap();
+    json
+}
+
+
+pub(crate) fn write_file_from_vec(path: &Path, contents: &[u8]) {
+    let mut file = File::create(path).unwrap();
+    file.write_all(contents).unwrap();
+}
+
+
+pub(crate) fn read_file_to_vec_u8(path: &Path) -> Vec<u8> {
+    let mut file = File::open(path).unwrap();
+    let mut contents = Vec::new();
+    file.read_to_end(&mut contents).unwrap();
+    contents
+}
+
+
+
 pub fn read_file_lines(path: &Path) -> Vec<String> {
-    let file = File::open(path).expect("Failed to open file");
+    let mut file = File::open(path).unwrap();
     let mut buf_reader = BufReader::new(file);
     let mut contents = String::new();
     buf_reader.read_to_string(&mut contents).expect("Failed to read file");
