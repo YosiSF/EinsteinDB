@@ -9,8 +9,17 @@ author_email = "karl@einst.ai"
 url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
 license = "MIT"
 
+
 [lib]
-src = "src"
+name = "soliton_panic"
+version = "0.1.0"
+description = "Soliton Panic"
+
+
+[dependencies]
+serde = "*"
+
+
 
 
 

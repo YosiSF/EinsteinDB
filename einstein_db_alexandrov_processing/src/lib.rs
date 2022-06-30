@@ -20,11 +20,14 @@
 // Path: EinsteinDB/soliton_panic/src/lib.rs
 
 
-
+//add type path to scope
+// Language: rust
+// Path: EinsteinDB/soliton_panic/src/lib.rs
+// Compare this snippet from EinsteinDB/soliton_panic/src/lib.rs:
+//
+// //! An example EinsteinDB timelike_storage einstein_merkle_tree
 #![allow(unused)]
-
-
-
+#![cfg_attr(not(feature = "std"), no_std)]
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PanicAccount {
@@ -531,6 +534,68 @@ pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
 }
 
 
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+    let contents = String::from_utf8(contents.to_vec()).unwrap();
+    write_file(path, &contents);
+}
+
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+
+
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+    let contents = String::from_utf8(contents.to_vec()).unwrap();
+    write_file(path, &contents);
+}
+
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+
+
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+
+    if let Ok(mut file) = File::open(path) {
+        let mut contents = String::new();
+        if let Ok(_) = file.read_to_string(&mut contents) {
+            return contents;
+        }
+
+    }
+        if let Ok(_) = file.write_all(contents.as_bytes()) {
+            return;
+        }
+    }
+    panic!("Could not write file: {}", path.to_str().unwrap());
+}
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+
+
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+    let contents = String::from_utf8(contents.to_vec()).unwrap();
+    write_file(path, &contents);
+}
+
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+
+
+
+//undeclared type
+
+
 pub(crate) fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> T {
     let contents = read_file(path);
     let json: T = serde_json::from_str(&contents).unwrap();
@@ -579,7 +644,9 @@ pub(crate) fn write_file_from_string_to_string(path: &Path, contents: &str) {
 
 
 
-
+#[cfg(test)]
+//serde
+#[test]
 pub(crate) fn read_json_from_string_to_string<T: serde::de::DeserializeOwned>(contents: &str) -> T {
     let contents = read_file(&Path::new("/tmp/einstein_db.tmp"));
     contents
@@ -589,6 +656,8 @@ pub fn write_json_from_string_to_string<T: serde::ser::Serialize>(path: &Path, c
     let json: String = serde_json::from_str(&contents).unwrap();
     write_file(path, &json);
 }
+
+
 
 
 pub(crate) fn read_json_from_string_to_string_to_string<T: serde::de::DeserializeOwned>(contents: &str) -> T {
@@ -714,6 +783,9 @@ mod tests {
         assert_eq!(lines, read_file_lines_to_vec(path));
     }
 }
+
+
+
 
 
 
