@@ -79,9 +79,11 @@ pub struct Workspace {
     pub account: PanicAccount,
     pub block: PanicBlock,
     pub block_header: PanicBlockHeader,
+    pub header: PanicHeader,
+}
     //pub header: PanicHeader,
 
-}
+
 
 
 
