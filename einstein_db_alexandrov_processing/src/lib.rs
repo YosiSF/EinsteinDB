@@ -91,7 +91,15 @@ pub struct Workspace {
    
 
 
-
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicTransaction {
+    pub sender: [u8; 32],
+    pub receiver: [u8; 32],
+    pub amount: u64,
+    pub nonce: u64,
+    pub signature: [u8; 32],
+    pub hash: [u8; 32],
+}
 
 
 
@@ -130,6 +138,24 @@ pub struct WorkspaceBlock {
     pub seal: [u8; 32],
     pub hash: [u8; 32],
 }
+
+/// A merkle tree.
+/// This is a very simple implementation of a merkle tree.
+/// It is not a secure implementation.
+/// It is not a merkle tree.
+/// It is not a merkle proof.
+/// 
+
+
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -610,14 +636,24 @@ pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
 
 
 pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+    let contents = String::from_utf8(contents.to_vec()).unwrap();
+    write_file(path, &contents);
+}
+
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
         if let Ok(_) = file.write_all(contents.as_bytes()) {
             return;
         }
     }
     panic!("Could not write file: {}", path.to_str().unwrap());
 
-    String::new()
 }
+
 
     
 
