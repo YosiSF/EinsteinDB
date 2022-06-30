@@ -1,17 +1,46 @@
-#![(allow_unused)]
-use std::path::Path;
+//Allow unused and add module
+// Language: rust
+// Path: EinsteinDB/einstein_db_alexandrov_processing/src/lib.rs
+// Compare this snippet from EinsteinDB/soliton_panic/src/lib.rs:
+//
+// //! An example EinsteinDB timelike_storage einstein_merkle_tree.
+// //!
+// //! This project is intended to serve as a skeleton for other einstein_merkle_tree
+// //! implementations. It lays out the complex system of einstein_merkle_tree modules and traits
+// //! in a way that is consistent with other EinsteinMerkleTrees. To create a new einstein_merkle_tree
+// //! simply copy the entire directory structure and replace all "Panic*" names
+// //! with your einstein_merkle_tree's own name; then fill in the implementations; remove
+// //! the allow(unused) attribute;
+// #![allow(unused)]
+// #![cfg_attr(not(feature = "std"), no_std)]
+//
 
-use std::time::{Duration, SystemTime};
-use causets::{ Causets, CausetsError };
-use causets::causets_traits::*;
-use std::fs::File;
-use std::io::prelude::*;
-use std::io::BufReader;
-use std::path::Path;
 
 
 
-use std::sync::mpsc::{ channel, Receiver, Sender };
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicAccount {
+    pub balance: u64,
+    pub nonce: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct PanicBlock {
+    pub number: u64,
+    pub parent_hash: [u8; 32],
+    pub tx_hash: [u8; 32],
+    pub state_hash: [u8; 32],
+    pub receipts_hash: [u8; 32],
+    pub extra_data: [u8; 32],
+    pub logs_block_hash: [u8; 32],
+    pub proposer: [u8; 32],
+    pub seal: [u8; 32],
+    pub hash: [u8; 32],
+}
 
 #[derive(Debug, Clone)]
 pub struct Workspace( EinsteinDB::einstein_db::Workspace );
