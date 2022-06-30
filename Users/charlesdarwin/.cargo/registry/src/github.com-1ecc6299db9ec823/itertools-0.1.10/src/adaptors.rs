@@ -1,14 +1,10 @@
-//import 
+
 use std::iter::Iterator;
 pub(crate) use std::iter::FromIterator;
 use std::iter::IntoIterator;
 use std::iter::Map;
 use std::iter::MapInto;
 use std::iter::Zip;
-
-/*
-The registry for packages.
-*/
 
 
 pub(crate) struct PackageRegistry {
@@ -105,8 +101,6 @@ https://doc.rust-lang.org/std/iter/trait.Iterator.html#method.zip_longest
 //             I2: Iterator
 
 
-#![allow(dead_code)]
-#![allow(unused_imports)]
 #[allow(unused_variables)]
 #[allow(unused_mut)]
 #[allow(unused_assignments)]

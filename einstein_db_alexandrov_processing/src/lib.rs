@@ -26,6 +26,14 @@
 // Compare this snippet from EinsteinDB/soliton_panic/src/lib.rs:
 //
 // //! An example EinsteinDB timelike_storage einstein_merkle_tree
+
+///Alexandrov Topology Processing is a library that provides a way to process
+/// transactions in a topology. For example, EinsteinDB is hybrid OLAP and OLTP.
+/// The topology is a graph that represents the structure of the database.
+/// The transactions are processed in the topology in a partial order fashion.
+/// 
+/// The library is written in Rust.
+///
 #![allow(unused)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -473,6 +481,16 @@ with less overhead and more flexibility. A cache-miss is a cost that is paid
 
 */
 
+
+/*FoundationDB and #EinsteinDB subspaces.
+
+subspaces are isolated spaces that are used to store data in the
+namespace of the EinsteinDB. Using FoundationDB subspaces, we can
+transmute the data from the EinsteinDB namespace to a namespace
+with less overhead and more flexibility. A cache-miss is a cost that is paid
+
+*/
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FoundationDbSubspace {
     pub subspace_name: String,
@@ -652,11 +670,46 @@ pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
     }
     panic!("Could not write file: {}", path.to_str().unwrap());
 
+    String::new()
 }
 
 
-    
 
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+        if let Ok(_) = file.write_all(contents.as_bytes()) {
+            return;
+        }
+    }
+    panic!("Could not write file: {}", path.to_str().unwrap());
+    String::new()
+}
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+
+
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+    let contents = String::from_utf8(contents.to_vec()).unwrap();
+    write_file(path, &contents);
+}
+
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
+
+
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+    let contents = String::from_utf8(contents.to_vec()).unwrap();
+    write_file(path, &contents);
+}
 
 
 
@@ -679,7 +732,18 @@ pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
 
 
 
-//undeclared type
+
+pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
+    let contents = String::from_utf8(contents.to_vec()).unwrap();
+
+    write_file(path, &contents);
+}
+
+
+pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
+    let contents = read_file(path);
+    contents.into_bytes()
+}
 
 
 pub(crate) fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> T {
