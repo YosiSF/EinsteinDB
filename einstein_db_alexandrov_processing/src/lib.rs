@@ -42,6 +42,8 @@ pub struct PanicBlock {
     pub hash: [u8; 32],
 }
 
+
+
 #[derive(Debug, Clone)]
 pub struct PanicBlockHeader {
     pub number: u64,
@@ -72,12 +74,99 @@ pub struct PanicHeader {
 }
 
 
-#[cfg(test)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Workspace {
+    pub account: PanicAccount,
+    pub block: PanicBlock,
+    pub block_header: PanicBlockHeader,
+    //pub header: PanicHeader,
+
+}
+
+
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceHeader {
+    pub number: u64,
+    pub parent_hash: [u8; 32],
+    pub tx_hash: [u8; 32],
+    pub state_hash: [u8; 32],
+    pub receipts_hash: [u8; 32],
+    pub extra_data: [u8; 32],
+    pub logs_block_hash: [u8; 32],
+    pub proposer: [u8; 32],
+    pub seal: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceAccount {
+    pub balance: u64,
+    pub nonce: u64,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceBlock {
+    pub number: u64,
+    pub parent_hash: [u8; 32],
+    pub tx_hash: [u8; 32],
+    pub state_hash: [u8; 32],
+    pub receipts_hash: [u8; 32],
+    pub extra_data: [u8; 32],
+    pub logs_block_hash: [u8; 32],
+    pub proposer: [u8; 32],
+    pub seal: [u8; 32],
+    pub hash: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceReceipts {
+    pub receipts: Vec<[u8; 32]>,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceReceipt {
+    pub receipt: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceTx {
+    pub tx: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceState {
+    pub state: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceLogs {
+    pub logs: [u8; 32],
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WorkspaceProposer {
+    pub proposer: [u8; 32],
+}
+
+
+
+
 
 
 
 
 impl Workspace {
+    /* 
     pub fn new(db_path: String, db_ctl_path: String, db_path_tmp: String, db_ctl_path_tmp: String) -> Workspace {
         Workspace(EinsteinDB::einstein_db::Workspace::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp))
     }
@@ -112,7 +201,18 @@ impl Workspace {
 
     pub fn get_db_ctl_path_tmp_tmp(&self) -> String {
         self.0.get_db_ctl_path_tmp
-    }
+    } */
+
+
+
+    pub fn new(db_path: String, db_ctl_path: String, db_path_tmp: String, db_ctl_path_tmp: String) -> Workspace {
+        Workspace {
+            account: PanicAccount::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp),
+            block: PanicBlock::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp),
+            block_header: PanicBlockHeader::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp),
+            //header: PanicHeader::new(db_path, db_ctl_path, db_path_tmp, db_ctl_path_tmp),
+        }
+
 }
 
 //! # The Alexandrov Processing Library
