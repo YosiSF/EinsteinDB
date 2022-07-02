@@ -12,10 +12,29 @@ url = "https://github.com/YosiSF/EinsteinDB"
 
 
 [dependencies]
-foundationdb = "0.6"
-futures = "0.3"
-tokio = "1.19.2"
+itertools = "0.10.3"
 uuid = "1.1.2"
 num-bigint = "0.4.3"
+num-traits = "0.2.0"
+num-integer = "0.1.45"
+
+#foundationdb
+[dependencies.foundationdb]
+version = "0.6"
+features = ["fdb_record"]
+
+
+#futures
+[dependencies.futures]
+version = "0.3"
+features = ["futures-preview"]
+
+
+#tokio
+[dependencies.tokio]
+version = "1.19.2"
+features = ["tokio-preview"]
+
+
 
 
