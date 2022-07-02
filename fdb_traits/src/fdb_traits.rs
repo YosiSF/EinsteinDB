@@ -39,6 +39,10 @@
 #![allow(unused_mut)]
 #![allow(unused_assignments)]
 
+use std::fs::{self, File};
+use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
+use std::path::{Path, PathBuf};
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -120,15 +124,6 @@ fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> rusqlite::
 //It is a trait which is implemented by the FdbRecord struct
 //It is a trait which is implemented by the FdbRecordReader struct
 
-
-
-
-
-
-
-
-
-
     let page_size = 32768;
 
     let initial_pragmas = if let Some(encryption_key) = maybe_encryption_key {
@@ -168,29 +163,189 @@ fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> rusqlite::
         PRAGMA temp_store=2;
         PRAGMA synchronous=NORMAL;
         PRAGMA locking_mode=EXCLUSIVE;
+        PRAGMA read_uncommitted=OFF; // https://www.sqlite.org/pragma.html#read_uncommitted
     ", initial_pragmas))?;
 
     Ok(conn)
+
+
+pub fn new_connection<T>(uri: T) -> rusqlite::Result<rusqlite::Connection>
+where
+    T: AsRef<Path>,
+{
+    let uri = uri.as_ref();
+    let conn = make_connection(uri, None)?;
+    Ok(conn)
 }
 
-pub fn new_connection<T>(uri: T) -> rusqlite::Result<rusqlite::Connection> where T: AsRef<Path> {
-    make_connection(uri.as_ref(), None)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FdbRecordType {
+    String,
+    Integer,
+    Float,
+    Boolean,
+    Date,
+    DateTime,
+    Uuid,
+    Blob,
+    Null,
 }
+
 
 #[cfg(feature = "sqlcipher")]
 pub fn new_connection_with_key<P, S>(uri: P, encryption_key: S) -> rusqlite::Result<rusqlite::Connection>
 where P: AsRef<Path>, S: AsRef<str> {
+
     make_connection(uri.as_ref(), Some(encryption_key.as_ref()))
+
+    //let conn = make_connection(uri.as_ref(), Some(encryption_key.as_ref()))?;
+    //Ok(conn)
+
+    
 }
 
 #[cfg(feature = "sqlcipher")]
 pub fn change_encryption_key<S>(conn: &rusqlite::Connection, encryption_key: S) -> rusqlite::Result<()>
 where S: AsRef<str> {
+    conn.execute("PRAGMA key = ?", &[&encryption_key])?;
     let escaped = escape_string_for_pragma(encryption_key.as_ref());
     // `conn.execute` complains that this returns a result, and using a query
     // for it requires more boilerplate.
     conn.execute_batch(&format!("PRAGMA rekey = '{}';", escaped))
 }
 
+///Version History
+///
+/// 0.1.0 - Initial version
+pub const FOUNDATIONDB_RECORD_LAYER_VERSION: &str = "0.1.0";
+
+///MIN_SQLITE
+/// 0.1.0 - Initial version
+/// 
+const MIN_SQLITE_VERSION:I32 = 3007000;
+
+const TRUE: i32 = 1;
+const FALSE: i32 = 0;
+
+/// Turn an owned bool into a static reference to a bool for FoundationDB.
+/// Do the same for SQLite's `SQLITE_TRUE` and `SQLITE_FALSE`.
+/// 
+/// # Examples
+/// 
+/// ```
+/// use foundationdb_record_layer::{FOUNDATIONDB_RECORD_LAYER_VERSION, TRUE, FALSE};
+/// 
+/// assert_eq!(TRUE, foundationdb_record_layer::TRUE);
+/// assert_eq!(FALSE, foundationdb_record_layer::FALSE);
+/// ```
+/// 
+/// # Panics
+/// 
+/// This function will panic if the given bool is not `true` or `false`.
 
 
+
+#[inline(always)]
+fn bool_to_i32(b: bool) -> i32 {
+    if b {
+        TRUE
+    } else {
+        FALSE
+    }
+}
+
+
+#[inline(always)]
+fn i32_to_bool(i: i32) -> bool {
+    i == TRUE
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FdbRecordType {
+    String,
+    Integer,
+    Float,
+    Boolean,
+    Date,
+    DateTime,
+    Uuid,
+    Blob,
+    Null,
+}
+
+lazy_static! {
+    pub static ref FOUNDATIONDB_RECORD_LAYER_VERSION_STR: String = FOUNDATIONDB_RECORD_LAYER_VERSION.to_string();
+    [cfg_attr(feature = "sqlcipher", doc = "")]
+    pub static ref MIN_SQLITE_VERSION_STR: String = MIN_SQLITE_VERSION.to_string();
+    pub static ref TRUE_STR: String = TRUE.to_string();
+    pub static ref FALSE_STR: String = FALSE.to_string();
+
+    static ref FOUNDATIONDB_RECORD_LAYER_VERSION_REF: &'static str = FOUNDATIONDB_RECORD_LAYER_VERSION:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
+    static ref MIN_SQLITE_VERSION_REF: &'static str = MIN_SQLITE_VERSION:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
+    static ref TRUE_REF: &'static str = TRUE:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0, index_fulltext TINYINT NOT NULL DEFAULT 0, unique_value TINYINT NOT NULL DEFAULT 0)"#,
+
+                    // Opt-in index: only if a has :db/index true.
+        
+    static ref FALSE_REF: &'static str = FALSE:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0, index_fulltext TINYINT NOT NULL DEFAULT 0, unique_value TINYINT NOT NULL DEFAULT 0)"#,
+    static ref NULL_REF: &'static str = NULL:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0, index_fulltext TINYINT NOT NULL DEFAULT 0, unique_value TINYINT NOT NULL DEFAULT 0)"#,
+  
+        Opt-in index: only if a has :db/fulltext true; thus, it has :db/valueType :db.type/string,
+        // which is not :db/causetVT :db.causettype/ref.  That is, causetq_index_vaet and causetq_index_fulltext are mutually
+        // exclusive. The index is created if and only if causetq_index_fulltext is true.
+        //
+
+
+        r#"CREATE UNIQUE INDEX causets_index_fulltext ON causets(e, a, v, tx, index_fulltext)"#,
+        r#"CREATE UNIQUE INDEX(a, value_type_tag, v) WHERE index_fulltext = 1"#,
+        r#"CREATE INDEX causets_index_avet ON causets(e, a, v, tx, index_avet)"#,
+
+
+        // Fulltext indexing.
+        // A fulltext indexed value v is an integer rowid referencing fulltext_values.
+
+        // Optional settings:
+        // tokenize="porter"#,
+        // prefix='2,3'
+        //
+        // The tokenize setting is a comma-separated list of tokenizer names. The default is "porter".
+        // The prefix setting is a comma-separated list of prefix lengths. The default is "2,3".
+
+        // The tokenizer names are:
+        // "porter" (Porter stemmer)
+        // "english" (English stop words)
+        // "simple" (simple stop words)
+        // "unicode" (unicode stop words)
+        // "unicode_ci" (unicode case-insensitive stop words)
+        // "unicode_cs" (unicode case-sensitive stop words)
+        // "unicode_ci_ascii" (unicode case-insensitive ASCII stop words)
+        // "unicode_cs_ascii" (unicode case-sensitive ASCII stop words)
+
+
+        // By default we use Unicode-aware tokenizing (particularly for case folding), but preserve
+        // diacritics. This will render a compatible FDB index, but may not be compatible with other
+        //for safety, we use the default tokenizer.
+
+        r#"CREATE VIRTUAL TABLE fulltext_values USING fts5(e, a, v, tx, tokenize='unicode_ci', prefix='2,3')"#,
+
+        // This combination of view and triggers allows you to transparently
+        // update-or-insert into FTS. Just INSERT INTO fulltext_values_view (text, searchid).
+        // The searchid is a unique integer that is used to identify the row in the FTS table.
+        // The searchid is automatically incremented for each row.
+        
+
+
+}
