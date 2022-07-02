@@ -45,6 +45,49 @@ use std::thread;
 
 
 
+
+
+extern crate fdb_sys;
+extern crate fdb_traits;
+extern crate fdb_file_system;
+extern crate fdb_options;
+//itertools
+extern crate itertools;
+extern crate petgraph;
+extern crate petgraph_dot;
+extern crate petgraph_vis;
+//foundationdb
+extern crate foundationdb;
+extern crate foundationdb_sys;
+//fdb_traits
+extern crate fdb_traits;
+
+#[macro_use]
+extern crate log;
+extern crate simple_logger;
+extern crate serde;
+extern crate serde_json;
+
+mod fdb_opts;
+pub mod errors;
+pub mod fdb_traits;
+pub mod fdb_file_system;
+pub mod fdb_options;
+ 
+mod fdb_file_system_impl;
+mod fdb_options_impl;
+mod fdb_traits_impl;
+
+//spacetime schema
+mod spacetime_schema;
+mod spacetime_schema_impl;
+
+
+
+
+
+
+
 // Provide a default implementation of `Display` for `T`
 // if you want to use `println!` instead of `print!`
 // impl<T: fmt::Display> fmt::Display for T {
@@ -60,9 +103,66 @@ use std::thread;
 
 struct FileSystem {
     root_path: PathBuf,
+    file_path: PathBuf,
+    file_name: String,
+    file_extension: String,
 }
 
 
+
+
+impl FileSystem {
+    pub fn new(root_path: PathBuf, file_path: PathBuf, file_name: String, file_extension: String) -> FileSystem {
+        FileSystem {
+            root_path,
+            file_path,
+            file_name,
+            file_extension,
+        }
+    }
+}
+
+
+impl FileSystem {
+    pub fn get_root_path(&self) -> PathBuf {
+        self.root_path.clone()
+    }
+    pub fn get_file_path(&self) -> PathBuf {
+        self.file_path.clone()
+    }
+    pub fn get_file_name(&self) -> String {
+        self.file_name.clone()
+    }
+    pub fn get_file_extension(&self) -> String {
+        self.file_extension.clone()
+    }
+}
+
+
+impl FileSystem {
+    pub fn get_file_path_as_string(&self) -> String {
+        self.file_path.to_str().unwrap().to_string()
+    }
+    pub fn get_file_name_as_string(&self) -> String {
+        self.file_name.clone()
+    }
+    pub fn get_file_extension_as_string(&self) -> String {
+        self.file_extension.clone()
+    }
+}
+
+
+impl FileSystem {
+    pub fn get_file_path_as_path(&self) -> PathBuf {
+        self.file_path.clone()
+    }
+    pub fn get_file_name_as_path(&self) -> PathBuf {
+        self.file_path.clone()
+    }
+    pub fn get_file_extension_as_path(&self) -> PathBuf {
+        self.file_path.clone()
+    }
+}   //impl FileSystem
 
 
 
