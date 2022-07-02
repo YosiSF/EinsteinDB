@@ -286,17 +286,19 @@ lazy_static! {
         unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
     static ref MIN_SQLITE_VERSION_REF: &'static str = MIN_SQLITE_VERSION:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
         index_fulltext TINYINT NOT NULL DEFAULT 0,
-        unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
-    static ref TRUE_REF: &'static str = TRUE:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
-        index_fulltext TINYINT NOT NULL DEFAULT 0,
-        unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
-        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0, index_fulltext TINYINT NOT NULL DEFAULT 0, unique_value TINYINT NOT NULL DEFAULT 0)"#,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#, }; 
 
+    static ref TRUE_REF: &'static str = TRUE:Vector<u8> { vec![
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
                     // Opt-in index: only if a has :db/index true.
         
     static ref FALSE_REF: &'static str = FALSE:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
         index_fulltext TINYINT NOT NULL DEFAULT 0,
         unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
+
         r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0, index_fulltext TINYINT NOT NULL DEFAULT 0, unique_value TINYINT NOT NULL DEFAULT 0)"#,
     static ref NULL_REF: &'static str = NULL:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
         index_fulltext TINYINT NOT NULL DEFAULT 0,
@@ -411,6 +413,214 @@ lazy_static! {
                 END"#,  
 
         // Fulltext indexing.
+        // A fulltext indexed value v is an integer rowid referencing fulltext_values.
+        // The index is created if and only if causetq_index_fulltext is true.
+        //
+
+
+        // By default we use Unicode-aware tokenizing (particularly for case folding), but preserve
+        // diacritics. This will render a compatible FDB index, but may not be compatible with other
+        //for safety, we use the default tokenizer.
+
+        r#"CREATE VIRTUAL TABLE fulltext_values USING fts5(e, a, v, tx, tokenize='unicode_ci', prefix='2,3')"#,
+        r#"CREATE VIEW fulltext_values_view AS SELECT * FROM fulltext_values"#,
+
+        r#"CREATE TRIGGER replace_fulltext_searchid
+             INSTEAD OF INSERT ON fulltext_values_view
+             WHEN EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+             BEGIN
+               UPDATE fulltext_values SET searchid = new.searchid WHERE text = new.text;
+             END"#,
+
+        r#"CREATE TRIGGER insert_fulltext_searchid
+                INSTEAD OF INSERT ON fulltext_values_view
+                WHEN NOT EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+                BEGIN
+                INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
+                END"#,
+
+        r#"CREATE TRIGGER delete_fulltext_searchid
+                INSTEAD OF DELETE ON fulltext_values_view
+                BEGIN
+                DELETE FROM fulltext_values WHERE searchid = old.searchid;
+                END"#,
+
+        r#"CREATE TRIGGER update_fulltext_searchid
+                INSTEAD OF UPDATE ON fulltext_values_view
+                WHEN old.text <> new.text
+                BEGIN
+                DELETE FROM fulltext_values WHERE searchid = old.searchid;
+                INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
+                END"#,
+                
 
 
 }
+
+// A view transparently interpolating all entities (fulltext and non-fulltext) into the causet q table.
+// This view is used to query the causetq table.
+// The view is created if and only if causetq_index_fulltext is true.
+
+r#"CREATE VIEW all_causets AS SELECT e, a, v, tx, searchid FROM causetq UNION SELECT e, a, v, tx, searchid FROM fulltext_values"#,
+    SELECT e, a, v, tx, searchid FROM causetq UNION SELECT e, a, v, tx, searchid FROM fulltext_values
+    WHERE text MATCH '%' || ? || '%'
+    UNION ALL SELECT e, a, v, tx, searchid FROM fulltext_values WHERE text MATCH '%' || ? || '%'
+    FROM all_causets
+    WHERE text MATCH '%' || ? || '%'
+
+    // Materialized views of the metadata as spacetime.
+    // The view is created if and only if causetq_index_fulltext is true.
+
+
+
+    r#"CREATE TABLE solitonid (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
+    r#"CREATE TABLE solitonid_view AS SELECT * FROM solitonid"#,
+    r#"CREATE TRIGGER replace_solitonid
+             INSTEAD OF INSERT ON solitonid
+             WHEN EXISTS (SELECT 1 FROM solitonid WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+             BEGIN
+               UPDATE solitonid SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
+             END"#,
+
+    r#"CREATE TRIGGER insert_solitonid
+                INSTEAD OF INSERT ON solitonid
+                WHEN NOT EXISTS (SELECT 1 FROM solitonid WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+                BEGIN
+                INSERT INTO solitonid (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
+                END"#,
+
+    r#"CREATE TRIGGER delete_solitonid
+
+                INSTEAD OF DELETE ON solitonid
+                BEGIN
+                DELETE FROM solitonid WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
+                END"#,
+
+    r#"CREATE TRIGGER update_solitonid
+
+                INSTEAD OF UPDATE ON solitonid
+                WHEN old.e <> new.e OR old.a <> new.a OR old.v <> new.v OR old.tx <> new.tx
+                BEGIN
+                DELETE FROM solitonid WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
+                INSERT INTO solitonid (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
+                END"#,
+
+    r#"CREATE TABLE solitonid_values (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
+    r#"CREATE TABLE solitonid_values_view AS SELECT * FROM solitonid_values"#,
+    r#"CREATE TRIGGER replace_solitonid_values
+             INSTEAD OF INSERT ON solitonid_values
+             WHEN EXISTS (SELECT 1 FROM solitonid_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+             BEGIN
+               UPDATE solitonid_values SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
+             END"#,
+    r#"CREATE TRIGGER insert_solitonid_values
+                INSTEAD OF INSERT ON solitonid_values
+                WHEN NOT EXISTS (SELECT 1 FROM solitonid_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+                BEGIN
+                INSERT INTO solitonid_values (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
+                END"#,
+    r#"CREATE TABLE soliton_idx (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
+    r#"CREATE TABLE soliton_idx_view AS SELECT * FROM soliton_idx"#,
+
+    //store causetid instead of solitonid for partition name.
+    r#"CREATE TABLE causetid (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
+    r#"CREATE TABLE causetid_view AS SELECT * FROM causetid"#,
+    r#"CREATE TRIGGER replace_causetid
+             INSTEAD OF INSERT ON causetid
+             WHEN EXISTS (SELECT 1 FROM causetid WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+             BEGIN
+               UPDATE causetid SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
+             END"#,
+             r#"CREATE INDEX causetid_e_a_v_tx ON causetid (e, a, v, tx)"#,
+    r#"CREATE TRIGGER insert_causetid
+                INSTEAD OF INSERT ON causetid
+                WHEN NOT EXISTS (SELECT 1 FROM causetid WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+                BEGIN
+                INSERT INTO causetid (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
+                END"#,
+    r#"CREATE TRIGGER delete_causetid
+                INSTEAD OF DELETE ON causetid
+                BEGIN
+                DELETE FROM causetid WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
+                END"#,
+    r#"CREATE TRIGGER update_causetid
+                INSTEAD OF UPDATE ON causetid
+                WHEN old.e <> new.e OR old.a <> new.a OR old.v <> new.v OR old.tx <> new.tx
+                BEGIN
+                DELETE FROM causetid WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
+                INSERT INTO causetid (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
+                END"#,
+    r#"CREATE TABLE causetid_values (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
+    r#"CREATE TABLE causetid_values_view AS SELECT * FROM causetid_values"#,    
+    r#"CREATE TRIGGER replace_causetid_values
+             INSTEAD OF INSERT ON causetid_values
+             WHEN EXISTS (SELECT 1 FROM causetid_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+             BEGIN
+               UPDATE causetid_values SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
+             END"#,
+
+    r#"CREATE TRIGGER insert_causetid_values
+                INSTEAD OF INSERT ON causetid_values
+                WHEN NOT EXISTS (SELECT 1 FROM causetid_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+                BEGIN
+                INSERT INTO causetid_values (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
+                END"#,
+
+
+    r#"CREATE TABLE causetid_idx (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
+    r#"CREATE TABLE causetid_idx_view AS SELECT * FROM causetid_idx"#,
+
+    r#"CREATE TABLE causetid_idx_values (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
+    r#"CREATE TABLE causetid_idx_values_view AS SELECT * FROM causetid_idx_values"#,
+    r#"CREATE TRIGGER replace_causetid_idx_values
+             INSTEAD OF INSERT ON causetid_idx_values
+             WHEN EXISTS (SELECT 1 FROM causetid_idx_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+             BEGIN
+               UPDATE causetid_idx_values SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
+             END"#, 
+
+    r#"CREATE TRIGGER insert_causetid_idx_values
+                INSTEAD OF INSERT ON causetid_idx_values
+                WHEN NOT EXISTS (SELECT 1 FROM causetid_idx_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
+                BEGIN
+                INSERT INTO causetid_idx_values (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
+                END"#,
+    r#"CREATE TRIGGER delete_causetid_idx_values    
+                INSTEAD OF DELETE ON causetid_idx_values
+                BEGIN
+                DELETE FROM causetid_idx_values WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
+                END"#,
+    r#"CREATE TRIGGER update_causetid_idx_values
+                INSTEAD OF UPDATE ON causetid_idx_values
+                WHEN old.e <> new.e OR old.a <> new.a OR old.v <> new.v OR old.tx <> new.tx
+                BEGIN
+                DELETE FROM causetid_idx_values WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
+                INSERT INTO causetid_idx_values (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
+                END"#,
+
+    };
+    for s in sql {
+
+
+        let mut stmt = conn.prepare(s).unwrap();
+        
+        stmt.execute(&[]).unwrap();
+    }
+}
+
+
+fn main() {
+    let conn = Connection::open("sqlite.db").unwrap();
+    create_tables(&conn);
+    let mut stmt = conn.prepare("SELECT * FROM causetid_values").unwrap();
+    let rows = stmt.query(&[]).unwrap();
+    for row in rows {
+        println!("{:?}", row);
+    }
+}
+
+
+#[cfg(test)]
+
+
+
