@@ -1,9 +1,41 @@
 use std::{str, u64};
 use std::borrow::ToOwned;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::collections::VecDeque;
+use std::fmt::Debug;
 use std::lazy::SyncLazy;
 use std::string::ToString;
-
+use linefeed::{Interface, ReadResult};
+use linefeed::complete::{Completer, Completion};
+use linefeed::complete::word::WordCompleter;
+use linefeed::complete::line::LineCompleter;
 use structopt::StructOpt;
+
+mod completer;
+mod command;
+mod error;
+mod executor;
+mod line;
+mod prompt;
+mod table;
+mod util;
+
+
+use crate::completer::Completer as EinsteinCompleter;
+use crate::command::Command as EinsteinCommand;
+use crate::error::Error as EinsteinError;
+use crate::executor::Executor as EinsteinExecutor;
+use crate::line::Line as EinsteinLine;
+use crate::prompt::Prompt as EinsteinPrompt;
+
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "einstein_db_ctl")]
+struct Opt {
+    #[structopt(subcommand)]
+    cmd: Command,
+}
 
 const BI_KEY_HINT: &str = "Bimap soliton_ids(generally starts with \"einst\") in delimiter";
 static VERSION_INFO: SyncLazy<String> = SyncLazy::new(|| {
@@ -45,9 +77,7 @@ pub struct Opt {
     /// Set the private soliton_id path
     pub soliton_id_path: Option<String>,
 
-    #[structopt(long)]
-    /// TiKV config path, by default it's <deploy-dir>/conf/tikv.toml
-    pub config: Option<String>,
+
 
     #[structopt(long)]
     /// TiKV data-dir, check <deploy-dir>/scripts/run.sh to get it
@@ -155,10 +185,395 @@ pub enum Cmd {
         use_delimiter = true,
         require_delimiter = true,
         causet_locale_delimiter = ",",
-        default_causet_locale = APPEND_LOG__DEFAULT,
+        default_causet_locale = "default,write,lock"
         )]
+        default_causet_locale = APPEND_LOG__DEFAULT,
+        /// Set the APPEND_LOG_ name, if not specified, print all APPEND_LOG_
+        /// If specified, only print the APPEND_LOG_ specified
+        /// If specified multiple times, print the APPEND_LOG_ specified multiple times
+        APPEND_LOG_: Vec<String>,
+    },
+    /// Print the range db range
+    Range {
+        #[structopt(
+        short = "f",
+        long,
+        help = RAW_KEY_HINT,
+        )]
+        from: String,
+
         /// Column family names, combined from default/lock/write
         show_APPEND_LOG_: Vec<String>,
+    },
+
+
+/// Print the range db range
+    RangeWith {
+        #[structopt(
+        short = "f",
+        long,
+        help = RAW_KEY_HINT,
+        )]
+        from: String,
+
+        #[structopt(
+        short = "t",
+        long,
+        help = RAW_KEY_HINT,
+        )]
+        to: Option<String>,
+
+        #[structopt(long)]
+        /// Set the scan limit
+        limit: Option<u64>,
+
+        #[structopt(long)]
+        /// Set the scan start_ts as filter
+        start_ts: Option<u64>,
+
+        #[structopt(long)]
+        /// Set the scan commit_ts as filter
+        commit_ts: Option<u64>,
+
+        #[structopt(
+        long,
+        use_delimiter = true,
+        require_delimiter = true,
+        causet_locale_delimiter = ",",
+        default_causet_locale = "default,write,lock"
+        )]
+        default_causet_locale = APPEND_LOG__DEFAULT,
+        /// Set the APPEND_LOG_ name, if not specified, print all APPEND_LOG_
+        /// If specified, only print the APPEND_LOG_ specified
+        /// If specified multiple times, print the APPEND_LOG_ specified multiple times
+        APPEND_LOG_: Vec<String>,
+    },
+    /// Print the range db range
+    RangeWith2 {
+        #[structopt(
+        short = "f",
+        long,
+    }
+
+/// Starting prompt
+const DEFAULT_PROMPT: &'static str = "EinsteinDB=> ";
+/// Prompt when further input is being read
+// TODO: Should this actually reflect the current open brace?
+const MORE_PROMPT: &'static str = "EinsteinDB.> ";
+//reflect the current open brace
+const MORE_PROMPT_2: &'static str = "EinsteinDB.> ";
+
+
+#[derive(StructOpt)]
+pub enum VioletaBFTPaxosCmd {
+    /// Print a violetabft log entry
+    Print {
+        #[structopt(long)]
+        /// Set the log id
+        id: u64,
+    },
+    /// Print a violetabft log entry
+    PrintAll,
+}
+
+
+#[derive(StructOpt)]
+pub enum ScanCmd {
+    /// Print a violetabft log entry
+    Print {
+        #[structopt(long)]
+        /// Set the log id
+        id: u64,
+    },
+    /// Print a violetabft log entry
+    PrintAll,
+}
+
+
+/// Possible results from reading input from `InputReader`
+#[derive(Clone, Debug)]
+pub enum InputResult {
+    /// mentat command as input; (name, rest of line)
+    MetaCommand(Command),
+    /// An empty line
+    Empty,
+    /// Needs more input
+    More,
+    /// End of file reached
+    Eof,
+}
+
+/// Reads input from `stdin`
+pub struct InputReader {
+    buffer: String,
+    interface: Option<Interface<DefaultTerminal>>,
+    in_process_cmd: Option<Command>,
+}
+
+enum UserAction {
+    // We've received some text that we should interpret as a new command, or
+    // as part of the current command.
+    TextInput(String),
+    // We were interrupted, if we have a current command we should clear it,
+    // otherwise we should exit. Currently can only be generated by reading from
+    // a terminal (and not by reading from stdin).
+    Interrupt,
+    // We hit the end of the file, there was an error getting user input, or
+    // something else happened that means we should exit.
+    Quit,
+
+    // We've received a signal that we should exit.
+    Signal(Signal),
+    
+
+}
+
+
+impl InputReader {
+    /// Constructs a new `InputReader` reading from `stdin`.
+    pub fn new(interface: Option<Interface<DefaultTerminal>>) -> InputReader {
+        if let Some(ref interface) = interface {
+            // It's fine to fail to load history.
+            let p = ::history_file_path();
+            let loaded = interface.load_history(&p);
+            debug!("history read from {}: {}", p.display(), loaded.is_ok());
+
+            let mut r = interface.lock_reader();
+            // Handle SIGINT (Ctrl-C)
+            r.set_report_signal(Signal::Interrupt, true);
+            r.set_word_break_chars(" \t\n!\"#$%&'(){}*+,-./:;<=>?@[\\]^`");
+        }
+
+        InputReader{
+            buffer: String::new(),
+            interface,
+            in_process_cmd: None,
+        }
+    }
+
+
+    /// Returns whether the `InputReader` is reading from a TTY.
+    pub fn is_tty(&self) -> bool {
+        self.interface.is_some()
+    }
+
+    /// Reads a single command, item, or statement from `stdin`.
+    /// Returns `More` if further input is required for a complete result.
+    /// In this case, the input received so far is buffered internally.
+    pub fn read_input(&mut self) -> Result<InputResult, Error> {
+        let prompt = if self.in_process_cmd.is_some() { MORE_PROMPT } else { DEFAULT_PROMPT };
+        let mut r = self.interface.as_mut().unwrap().lock_reader();
+        let mut line = String::new();
+
+        let action = match r.read_line(&prompt) {
+            Ok(line) => {
+                if line.is_empty() {
+                    UserAction::TextInput(line)
+                } else {
+                    UserAction::TextInput(line)
+                }
+            }
+            Err(ReadlineError::Interrupted) => UserAction::Interrupt,
+            Err(ReadlineError::Eof) => UserAction::Quit,
+            Err(e) => {
+                error!("{}", e);
+                UserAction::Quit
+            }
+        };
+
+        match action {
+            UserAction::TextInput(line) => {
+                self.buffer.push_str(&line);
+                if self.in_process_cmd.is_some() {
+                    self.in_process_cmd = Some(self.in_process_cmd.unwrap().clone());
+                    Ok(InputResult::More)
+                } else {
+                    self.in_process_cmd = Some(Command::parse(&self.buffer)?);
+                    self.buffer.clear();
+                    Ok(InputResult::MetaCommand(self.in_process_cmd.unwrap()))
+                }
+            }
+            UserAction::Interrupt => {
+                if self.in_process_cmd.is_some() {
+                    self.in_process_cmd = None;
+                    self.buffer.clear();
+                    Ok(InputResult::More)
+                } else {
+                    Ok(InputResult::Quit)
+                }
+            }
+            UserAction::Quit => Ok(InputResult::Quit),
+            UserAction::Signal(sig) => {
+                error!("Got signal {}", sig);
+                Ok(InputResult::Quit)
+            }
+        }
+
+    }
+
+    /// Returns the current command being processed, if any.
+    /// This is useful for displaying the prompt.
+    /// If there is no command being processed, returns `None`.
+    /// If there is a command being processed, returns the command.
+    /// If there is a command being processed, but it is not complete, returns `None`.
+    /// 
+    
+    pub fn current_command(&self) -> Option<Command> {
+        self.in_process_cmd.clone()
+    }
+
+    let prompt = format!("{blue}{prompt}{reset}",
+                             blue = color::Fg(::BLUE),
+                             prompt = prompt,
+                             reset = color::Fg(color::Reset));
+        let line = match self.read_line(prompt.as_str()) {
+            UserAction::TextInput(s) => s,
+            UserAction::Interrupt if self.in_process_cmd.is_some() => {
+                self.in_process_cmd = None;
+                self.buffer.clear();
+                // Move to the next line, so that our next prompt isn't on top
+                // of the previous.
+                println!();
+                String::new()
+            },
+            _ => return Ok(Eof),
+        };
+
+        if !self.buffer.is_empty() {
+            self.buffer.push('\n');
+        }
+
+        self.buffer.push_str(&line);
+
+        if self.buffer.is_empty() {
+            return Ok(Empty);
+        }
+
+
+
+        // if we have a command in process (i.e. an incomplete query or transaction),
+        // then we already know which type of command it is and so we don't need to parse the
+        // command again, only the content, which we do later.
+        // Therefore, we add the newly read in line to the existing command args.
+        // If there is no in process command, we parse the read in line as a new command.
+        let cmd = match &self.in_process_cmd {
+            &Some(Command::QueryPrepared(ref args)) => {
+                Ok(Command::QueryPrepared(args.clone() + "\n" + &line))
+            },
+            &Some(Command::Query(ref args)) => {
+                Ok(Command::Query(args.clone() + "\n" + &line))
+            },
+            &Some(Command::Transact(ref args)) => {
+                Ok(Command::Transact(args.clone() + "\n" + &line))
+            },
+            _ => {
+                command(&self.buffer)
+            },
+        };
+
+        match cmd {
+            Ok(cmd) => {
+                self.in_process_cmd = Some(cmd);
+                self.buffer.clear();
+                Ok(More)
+            },
+            Err(e) => {
+                error!("{}", e);
+                self.buffer.clear();
+                Ok(More)
+            },
+        }
+    }
+
+    /// Returns the current buffer.
+    /// This is useful for displaying the prompt.
+    /// If there is no command being processed, returns `None`.
+
+    pub fn current_buffer(&self) -> Option<String> {
+        self.buffer.clone()
+    }
+
+    match cmd {
+        Ok(cmd) => {
+            self.in_process_cmd = Some(cmd);
+            self.buffer.clear();
+            Ok(More)
+        },
+        Err(e) => {
+            error!("{}", e);
+            self.buffer.clear();
+            Ok(More)
+        },
+    },
+    _ => {
+        self.buffer.clear();
+        Ok(More)
+    },
+}
+    
+fn read_stdin(&self) -> UserAction {
+    let mut s = String::new();
+
+    match stdin().read_line(&mut s) {
+        Ok(0) | Err(_) => UserAction::Quit,
+        Ok(_) => {
+            if s.ends_with("\n") {
+                let len = s.len() - 1;
+                s.truncate(len);
+            }
+            UserAction::TextInput(s)
+        },
     }
 }
-/// Print all raw soliton_ids in the range
+
+fn add_history(&self, line: String) {
+    if let Some(ref interface) = self.interface {
+        interface.add_history(line);
+    }
+    self.save_history();
+}
+
+pub fn save_history(&self) -> () {
+    if let Some(ref interface) = self.interface {
+        let p = ::history_file_path();
+        // It's okay to fail to save history.
+        let saved = interface.save_history(&p);
+        debug!("history saved to {}: {}", p.display(), saved.is_ok());
+    }
+}
+
+
+pub fn load_history(&self) -> () {
+    if let Some(ref interface) = self.interface {
+        let p = ::history_file_path();
+        // It's okay to fail to load history.
+        let loaded = interface.load_history(&p);
+        debug!("history loaded from {}: {}", p.display(), loaded.is_ok());
+    }
+}
+
+
+pub fn clear_history(&self) -> () {
+    if let Some(ref interface) = self.interface {
+        interface.clear_history();
+    }
+}
+
+
+pub fn history_size(&self) -> usize {
+    if let Some(ref interface) = self.interface {
+        interface.history_size()
+    } else {
+        0
+    }
+}
+
+
+pub fn history_is_empty(&self) -> bool {
+    if let Some(ref interface) = self.interface {
+        interface.history_is_empty()
+    } else {
+        true
+    }
+}
+
