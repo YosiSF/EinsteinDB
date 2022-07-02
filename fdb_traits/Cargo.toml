@@ -3,14 +3,19 @@ name = "fdb_traits"
 version = "0.1.0"
 authors = ["EinsteinDB Project Authors"]
 edition = "2021"
-description = "EinsteinDB Traits"
+description = "EinsteinDB Traits for FoundationDB Record Layer"
 license = "MIT"
 copyright = "Copyright (c) 2020-2021 EinsteinDB Project Authors"
 url = "https://github.com/YosiSF/EinsteinDB"
 
-[lib]
-src = ["src/fdb_traits.rs"]
+
 
 
 [dependencies]
-fdb_sys = "0.1.0"
+foundationdb = "0.6"
+futures = "0.3"
+tokio = "1.19.2"
+uuid = "1.1.2"
+num-bigint = "0.4.3"
+
+
