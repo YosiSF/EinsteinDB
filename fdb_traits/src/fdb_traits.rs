@@ -332,7 +332,7 @@ lazy_static! {
         // "unicode_ci" (unicode case-insensitive stop words)
         // "unicode_cs" (unicode case-sensitive stop words)
         // "unicode_ci_ascii" (unicode case-insensitive ASCII stop words)
-        // "unicode_cs_ascii" (unicode case-sensitive ASCII stop words)
+
 
 
         // By default we use Unicode-aware tokenizing (particularly for case folding), but preserve
@@ -345,7 +345,72 @@ lazy_static! {
         // update-or-insert into FTS. Just INSERT INTO fulltext_values_view (text, searchid).
         // The searchid is a unique integer that is used to identify the row in the FTS table.
         // The searchid is automatically incremented for each row.
-        
+
+        r#"CREATE VIEW fulltext_values_view AS SELECT * FROM fulltext_values"#,
+        r#"CREATE TRIGGER replace_fulltext_searchid
+             INSTEAD OF INSERT ON fulltext_values_view
+             WHEN EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+             BEGIN
+               UPDATE fulltext_values SET searchid = new.searchid WHERE text = new.text;
+             END"#,
+        r#"CREATE TRIGGER insert_fulltext_searchid
+             INSTEAD OF INSERT ON fulltext_values_view
+             WHEN NOT EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+             BEGIN
+               INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
+             END"#,
+        r#"CREATE TRIGGER delete_fulltext_searchid
+                INSTEAD OF DELETE ON fulltext_values_view
+                BEGIN
+                DELETE FROM fulltext_values WHERE searchid = old.searchid;
+                END"#,
+        r#"CREATE TRIGGER update_fulltext_searchid
+                INSTEAD OF UPDATE ON fulltext_values_view
+                WHEN old.text <> new.text
+                BEGIN
+                DELETE FROM fulltext_values WHERE searchid = old.searchid;
+                INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
+                END"#,
+
+        // Fulltext indexing.
+        // A fulltext indexed value v is an integer rowid referencing fulltext_values.
+        // The index is created if and only if causetq_index_fulltext is true.
+
+
+        // By default we use Unicode-aware tokenizing (particularly for case folding), but preserve
+        // diacritics. This will render a compatible FDB index, but may not be compatible with other
+        //for safety, we use the default tokenizer.
+
+        r#"CREATE VIRTUAL TABLE fulltext_values USING fts5(e, a, v, tx, tokenize='unicode_ci', prefix='2,3')"#,
+        r#"CREATE VIEW fulltext_values_view AS SELECT * FROM fulltext_values"#,
+        r#"CREATE TRIGGER replace_fulltext_searchid
+             INSTEAD OF INSERT ON fulltext_values_view
+             WHEN EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+             BEGIN
+               UPDATE fulltext_values SET searchid = new.searchid WHERE text = new.text;
+             END"#,
+        r#"CREATE TRIGGER insert_fulltext_searchid
+                INSTEAD OF INSERT ON fulltext_values_view
+                WHEN NOT EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+                BEGIN
+                INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
+                END"#,
+
+        r#"CREATE TRIGGER delete_fulltext_searchid
+                INSTEAD OF DELETE ON fulltext_values_view
+                BEGIN
+                DELETE FROM fulltext_values WHERE searchid = old.searchid;
+                END"#,
+
+        r#"CREATE TRIGGER update_fulltext_searchid
+                INSTEAD OF UPDATE ON fulltext_values_view
+                WHEN old.text <> new.text
+                BEGIN
+                DELETE FROM fulltext_values WHERE searchid = old.searchid;
+                INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
+                END"#,  
+
+        // Fulltext indexing.
 
 
 }
