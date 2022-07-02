@@ -7,7 +7,7 @@ description = "EinsteinDB is a Distributed OLAP Semi-Relational Relativsitic Cau
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 keywords = ["OLAP", "OLTP", "MergeAppend", "Bulk Synchronization", "IPAM", "CRON", "SQLAgnostic", "Hybrid Key-Value"]
-categories = ["htap", "cc", "ACID", "DB4AI", command-line-utilities", "development-tools::cargo-plugins"]
+categories = ["htap", "cc", "ACID", "DB4AI",command-line-utilities", "development-tools::cargo-plugins"]
 
 
 [dependencies]
