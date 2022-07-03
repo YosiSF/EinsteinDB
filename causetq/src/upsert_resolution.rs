@@ -8,17 +8,38 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-
-
-use causal_setal_types::{
-    Population,
-    TempIdHandle,
-    TempIdMap,
-    Term,
-    TermWithoutTempIds,
-    TermWithTempIds,
-    TypedValueOr,
+use crate::{
+    causet::{
+        causet_query::{CausetQuery, CausetQueryBuilder},
+        causet_query_builder::CausetQueryBuilderImpl,
+    },
+    causetq::{
+        causetq_query::{CausetqQuery, CausetqQueryBuilder},
+        causetq_query_builder::CausetqQueryBuilderImpl,
+    },
+    common::{
+        error::{Error, Result},
+        schema::{FieldType, FieldTypeBuilder},
+        value::Value,
+    },
+    gremlin::{
+        gremlin_query::{GremlinQuery, GremlinQueryBuilder},
+        gremlin_query_builder::GremlinQueryBuilderImpl,
+    },
+    upsert_resolution::{
+        upsert_resolution::{UpsertResolution, UpsertResolutionBuilder},
+        upsert_resolution_builder::UpsertResolutionBuilderImpl,
+    },
 };
+
+
+
+
+
+
+
+
+
 use causetq::{
     attribute,
     Attribute,

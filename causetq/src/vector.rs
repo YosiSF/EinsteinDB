@@ -9,31 +9,99 @@
 // specific language governing permissions and limitations under the License.
 
 
+use crate::error::{Error, Result};
+use crate::schema::{FieldType, FieldTypeBuilder};
+use crate::{
+    causet::{
+        causet_query::{CausetQuery, CausetQueryBuilder},
+        causet_query_builder::CausetQueryBuilderImpl,
+    },
+    causetq::{
+        causetq_query::{CausetqQuery, CausetqQueryBuilder},
+        causetq_query_builder::CausetqQueryBuilderImpl,
+    },
+    gremlin::{
+        ctx::{Context, ContextBuilder},
+        dedup::dedup,
+    },
+};
 
-use crate::{EvalType, FieldTypeAccessor};
-use crate::codec::myBerolinaSQL::decimal::DECIMAL_STRUCT_SIZE;
-use crate::codec::Result;
 
-use super::*;
-use super::scalar::ScalarValueRef;
+pub mod causet;
+pub mod causet_query;
+pub mod causet_query_builder;
+pub mod causetq;
+pub mod causetq_query;
+pub mod causetq_query_builder;
+pub mod gremlin;
+//FoundationDB Record Layer Thread
+pub mod thread; //FoundationDB Record Layer Thread
 
 /// A vector causet_locale container, a.k.a. causet_merge, for all concrete eval types.
 ///
 /// The inner concrete causet_locale is immutable. However it is allowed to push and remove causet_locales from
 /// this vector container.
+/// 
+/// # Examples
+/// ```
+/// use causet::vector::Vector;
+/// use causet::causet_locale::CausetLocale;
+/// use causet::causet_query::CausetQuery;
+/// use causet::causet_query_builder::CausetQueryBuilder;
+/// use causet::causetq_query::CausetqQuery;
+/// 
+/// 
+/// let mut vector = Vector::new();
+/// vector.push(CausetLocale::new(CausetQuery::new(CausetQueryBuilder::new().build())));
+/// 
+/// let causet_query = CausetQuery::new(CausetQueryBuilder::new().build());
+/// 
+/// vector.push(CausetLocale::new(causet_query));
 #[derive(Debug, PartialEq, Clone)]
 pub enum VectorValue {
+    Causet(CausetLocale),
+    Causetq(CausetqLocale),
+}
+
+
+impl VectorValue {
+    /// Creates a new `VectorValue` from a `CausetLocale`.
+    ///     
+    /// # Examples
+    /// ```
+    /// use causet::vector::VectorValue;
+    /// use causet::causet_locale::CausetLocale;
+    /// use causet::causet_query::CausetQuery;
+    /// 
+    /// let causet_locale = CausetLocale::new(CausetQuery::new(CausetQueryBuilder::new().build()));
+    /// let vector_value = VectorValue::from(causet_locale);
     Int(NotChunkedVec<Int>),
     Real(NotChunkedVec<Real>),
     Decimal(NotChunkedVec<Decimal>),
-    // TODO: We need to improve its performance, i.e. store strings in adjacent memory places
+    //store strings in adjacent memory places
     Bytes(NotChunkedVec<Bytes>),
+    //store strings in adjacent memory places
+    String(NotChunkedVec<String>),
+    //store strings in adjacent memory places
+    Boolean(NotChunkedVec<Boolean>),
     DateTime(NotChunkedVec<DateTime>),
     Duration(NotChunkedVec<Duration>),
     Json(NotChunkedVec<Json>),
     Enum(NotChunkedVec<Enum>),
     Set(NotChunkedVec<Set>),
     BitSet(NotChunkedVec<BitSet>),
+    List(NotChunkedVec<List>),
+    //Gremlin Janusgraph supports
+    Vertex(NotChunkedVec<Vertex>),
+    Edge(NotChunkedVec<Edge>),
+    //Gremlin Janusgraph supports
+    Path(NotChunkedVec<Path>),
+    //Gremlin Janusgraph supports
+    //mongodb transaction log
+    TransactionLog(NotChunkedVec<TransactionLog>),
+    //Gremlin Janusgraph supports
+    //mongodb transaction log
+    TransactionLogV2(NotChunkedVec<TransactionLogV2>),
 
     IntSet(ChunkedVec<Int>),
     RealSet(ChunkedVec<Real>),

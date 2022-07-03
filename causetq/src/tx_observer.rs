@@ -8,14 +8,135 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use crate::{
+    causet::{
+        causet_query::{CausetQuery, CausetQueryBuilder},
+        causet_query_builder::CausetQueryBuilderImpl,
+    },
+    causetq::{
+        causetq_query::{CausetqQuery, CausetqQueryBuilder},
+        causetq_query_builder::CausetqQueryBuilderImpl,
+    },
+    common::{
+        error::{Error, Result},
+        field_type::FieldType,
+        field_type_builder::FieldTypeBuilder,
+        gremlin::{
+            gremlin_query::{GremlinQuery, GremlinQueryBuilder},
+            gremlin_query_builder::GremlinQueryBuilderImpl,
+        },
+        schema::{
+            schema::{Schema, SchemaBuilder},
+            schema_builder::SchemaBuilderImpl,
+        },
+        transaction::{
+            transaction::{Transaction, TransactionBuilder},
+            transaction_builder::TransactionBuilderImpl,
+        },
+    },
+    schema::{
+        schema::{Schema, SchemaBuilder},
+        schema_builder::SchemaBuilderImpl,
+    },
+    transaction::{
+        transaction::{Transaction, TransactionBuilder},
+        transaction_builder::TransactionBuilderImpl,
+    },
+};
+
+
+pub mod causet;
+pub mod causet_query;
+pub mod causet_query_builder;
+
 
 
 pub struct TxObserver {
+    pub schema: Schema,
+    pub transaction: Transaction,
+}
+
+
+impl TxObserver {
+    pub fn new(schema: Schema, transaction: Transaction) -> Self {
+        Self {
+            schema,
+            transaction,
+        }
+    }
+
+    pub fn causet_query(&self) -> CausetQuery {
+        CausetQueryBuilderImpl::new(self).build()
+    }
+
+    pub fn causetq_query(&self) -> CausetqQuery {
+        CausetqQueryBuilderImpl::new(self).build()
+    }
+
+    pub fn gremlin_query(&self) -> GremlinQuery {
+        GremlinQueryBuilderImpl::new(self).build()
+    }
+
+    pub fn gremlin_query_with_query(&self, query: &str) -> GremlinQuery {
+        GremlinQueryBuilderImpl::new(self).with_query(query).build()
+    }
+
+    pub fn gremlin_query_with_query_and_params(&self, query: &str, params: &[&str]) -> GremlinQuery {
+        GremlinQueryBuilderImpl::new(self).with_query_and_params(query, params).build()
+    }
     notify_fn: Arc<Box<dyn Fn(&str, IndexMap<&Causetid, &AttributeSet>) + Send + Sync>>,
     attributes: AttributeSet,
+    pub fn notify(&self, query: &str, attributes: AttributeSet) {
+        (self.notify_fn)(query, attributes);
+    }
+
+    pub fn notify_with_params(&self, query: &str, attributes: AttributeSet, params: IndexMap<&Causetid, &AttributeSet>) {
+        (self.notify_fn)(query, attributes);
+    }
+
+    pub fn notify_with_params_and_params(&self, query: &str, attributes: AttributeSet, params: IndexMap<&Causetid, &AttributeSet>, params2: IndexMap<&Causetid, &AttributeSet>) {
+        (self.notify_fn)(query, attributes);
+    }
 }
 
 impl TxObserver {
+    pub fn new_with_notify_fn(schema: Schema, transaction: Transaction, notify_fn: Arc<Box<dyn Fn(&str, IndexMap<&Causetid, &AttributeSet>) + Send + Sync>>) -> Self {
+        Self {
+            schema,
+            transaction,
+            notify_fn,
+        }
+    }
+}
+
+
+pub struct CausetQueryBuilderImpl {
+    observer: TxObserver,
+    query: String,
+    params: IndexMap<&Causetid, &AttributeSet>,
+}   
+
+
+impl CausetQueryBuilderImpl {
+    pub fn new(observer: &TxObserver) -> Self {
+        Self {
+            observer: observer.clone(),
+            query: String::new(),
+            params: IndexMap::new(),
+        }
+    }
+}
+
+
+impl CausetQueryBuilder for CausetQueryBuilderImpl {
+    fn with_query(&mut self, query: &str) -> &mut Self {
+        self.query = query.to_string();
+        self
+    }
+    fn with_params(&mut self, params: IndexMap<&Causetid, &AttributeSet>) -> &mut Self {
+        self.params = params;
+        self
+    }
     pub fn new<F>(attributes: AttributeSet, notify_fn: F) -> TxObserver where F: Fn(&str, IndexMap<&Causetid, &AttributeSet>) + 'static + Send + Sync {
         TxObserver {
             notify_fn: Arc::new(Box::new(notify_fn)),
@@ -34,31 +155,97 @@ impl TxObserver {
     }
 }
 
+
+impl CausetQuery for CausetQueryBuilderImpl {
+    fn build(&self) -> CausetQuery {
+        CausetQueryImpl {
+            observer: self.observer.clone(),
+            query: self.query.clone(),
+            params: self.params.clone(),
+        }
+    }
+}
+
+
+pub struct CausetQueryImpl {
+    observer: TxObserver,
+    query: String,
+    params: IndexMap<&Causetid, &AttributeSet>,
+}
+
 pub trait Command {
-    fn execute(&mut self);
+    fn execute(&self, observer: &TxObserver) -> Result<()>;
+
 }
 
 pub struct TxCommand {
-    reports: IndexMap<Causetid, AttributeSet>,
-    observers: Weak<IndexMap<String, Arc<TxObserver>>>,
+    pub command: String,
+    pub params: IndexMap<&Causetid, &AttributeSet>,
+}
+
+
+impl Command for TxCommand {
+    pub command: String,
+
+    pub params: IndexMap<&Causetid, &AttributeSet>,
+
+    pub observer: TxObserver,
+
+    pub soliton_id: String,
+
+    pub reports: IndexMap<Causetid, AttributeSet>,
+
+    pub error: Option<Error>,
 }
 
 impl TxCommand {
-    fn new(observers: &Arc<IndexMap<String, Arc<TxObserver>>>, reports: IndexMap<Causetid, AttributeSet>) -> Self {
-        TxCommand {
-            reports,
-            observers: Arc::downgrade(observers),
+    pub fn new(command: String, params: IndexMap<&Causetid, &AttributeSet>, observer: TxObserver) -> Self {
+        Self {
+            command,
+            params,
+            observer,
+            soliton_id: String::new(),
+            reports: IndexMap::new(),
+            error: None,
         }
     }
+
+    pub fn with_soliton_id(&mut self, soliton_id: &str) -> &mut Self {
+        self.soliton_id = soliton_id.to_string();
+        self
+    }
+
+    pub fn with_reports(&mut self, reports: IndexMap<Causetid, AttributeSet>) -> &mut Self {
+        self.reports = reports;
+        self
+    }
+
+    pub fn with_error(&mut self, error: Error) -> &mut Self {
+        self.error = Some(error);
+        self
+    }
+
+    pub fn execute(&self) -> Result<()> {
+        if let Some(error) = &self.error {
+            return Err(error.clone());
+        }
+        self.observer.notify(&self.soliton_id, self.reports.clone());
+        Ok(())
+    }
+    
+    
 }
 
 impl Command for TxCommand {
     fn execute(&mut self) {
         self.observers.upgrade().map(|observers| {
+            observers.notify(&self.soliton_id, self.reports.clone());
             for (soliton_id, observer) in observers.iter() {
+                observer.notify(&self.soliton_id, self.reports.clone());
                 let applicable_reports = observer.applicable_reports(&self.reports);
                 if !applicable_reports.is_empty() {
-                    observer.notify(&soliton_id, applicable_reports);
+                    observer.notify(soliton_id, applicable_reports);
+                  
                 }
             }
         });
