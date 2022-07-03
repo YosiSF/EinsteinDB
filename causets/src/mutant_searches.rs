@@ -8,24 +8,124 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use crate::error::StorageError;
 
-use super::{OwnedHikvPair, Storage};
-use super::range::*;
-use super::ranges_iter::*;
+//use failure::Fail;
+//use std::fmt::{self, Display, Formatter};
+//use std::io;
+//use std::result;
+//
+
+
+//#[derive(Debug)]
+//pub struct Error {
+//    inner: Box<dyn Fail>,
+//
+
+
+
+use std::fmt::{self, Display, Formatter};
+use std::io;
+use std::result;
+
+use failure::Fail;
+use std::fmt::Debug;
+use std::fmt::Error;
+
+mod error;
+pub use self::error::Error;
+
+
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+    #[fail(display = "{}", _0)]
+    Gremlin(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ2(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ3(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ4(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ5(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ6(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ7(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ8(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ9(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ10(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ11(String),
+}
+
+
+
+
+impl Display for Error {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match *self {
+            Error::Causet(ref s) => write!(f, "{}", s),
+            Error::CausetQ(ref s) => write!(f, "{}", s),
+            Error::EinsteinML(ref s) => write!(f, "{}", s),
+            Error::Gremlin(ref s) => write!(f, "{}", s),
+            Error::GremlinQ(ref s) => write!(f, "{}", s),
+            Error::GremlinQ2(ref s) => write!(f, "{}", s),
+            Error::GremlinQ3(ref s) => write!(f, "{}", s),
+            Error::GremlinQ4(ref s) => write!(f, "{}", s),
+            Error::GremlinQ5(ref s) => write!(f, "{}", s),
+            Error::GremlinQ6(ref s) => write!(f, "{}", s),
+            Error::GremlinQ7(ref s) => write!(f, "{}", s),
+            Error::GremlinQ8(ref s) => write!(f, "{}", s),
+            Error::GremlinQ9(ref s) => write!(f, "{}", s),
+            Error::GremlinQ10(ref s) => write!(f, "{}", s),
+            Error::GremlinQ11(ref s) => write!(f, "{}", s),
+        }
+    }
+}
+
+
+
+
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Self {
+        Error::Causet(format!("{}", err))
+    }
+}
+
 
 const KEY_BUFFER_CAPACITY: usize = 64;
 
 /// A mutant_searchner that mutant_searchs over multiple ranges. Each range can be a point range containing only
 /// one event, or an interval range containing multiple rows.
-pub struct sScanner<T> {
-    storage: T,
-    ranges_iter: sIterator,
+pub struct MutantSearcher {
+    /// The ranges to mutant_search.
+    /// The ranges are sorted by start time.
+    /// The ranges are merged if they overlap.
+    /// The ranges are merged if they are adjacent.
+    /// The ranges are merged if they are adjacent and have the same direction.
+    /// 
+    
 
-    mutant_search_spacelike_completion_in_range: bool,
-    is_soliton_id_only: bool,
+    /// The ranges to mutant_search.
+    
+    ranges: Vec<Range>, // sorted by start time
+    
 
-    mutant_searchned_rows_per_range: Vec<usize>,
+    timelike: bool, // true if the ranges are timelike, false if the ranges are spacelike
+    direction: Direction, // the direction of the ranges
+    key_buffer: Vec<u8>, // a buffer to store the key
+    key_buffer_capacity: usize, // the capacity of the key buffer
 
     // The following fields are only used for calculating mutant_searchned range. Scanned range is only
     // useful in streaming mode, where the client need to know the underlying physical data range

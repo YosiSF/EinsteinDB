@@ -22,6 +22,10 @@ use std::collections::VecDeque;
 
 
 
+
+
+
+
 // Concrete eval types without a nullable wrapper.
 pub type Int = i64;
 pub type Real = ordered_float::NotNan<f64>;
@@ -33,6 +37,11 @@ pub type DurationRef<'a> = &'a [u8];
 pub type JsonRef<'a> = &'a [u8];
 pub type Time = DateTime;
 pub type TimeRef<'a> = &'a [u8];
+pub type TimestampRef<'a> = &'a [u8];
+pub type UuidRef<'a> = &'a [u8];
+pub type StringRef<'a> = &'a [u8];
+pub type Nullable<T> = Option<T>;
+pub type NullableRef<'a, T> = Option<&'a [u8]>;
 
 
 /// A trait for types that can be converted to a `VectorValue`.
@@ -68,6 +77,33 @@ pub type TimeRef<'a> = &'a [u8];
 /// `VectorValueConvertible` so that we can use `as_any` to convert
 /// them to `VectorValue`.
 ///
+/// 
+/// 
+
+
+
+
+pub trait VectorValueConvertible {
+    fn as_vector_value(&self) -> VectorValue;
+}
+
+
+
+//Causetq is a trait for types that can be converted to a `VectorValue`.
+//This trait is implemented for all `VectorValue` types.
+//It is implemented for `VectorValue` and `VectorValueRef`
+//so that we can use `as_any` to convert them to `VectorValue`.
+//It is also implemented for `ScalarValue` and `ScalarValueRef`
+//so that we can use `as_any` to convert them to `VectorValue`.
+//It is also implemented for `Option<T>` where `T` implements
+//`VectorValueConvertible` so that we can use `as_any` to convert
+
+
+impl VectorValueConvertible for VectorValueRef {
+    fn as_vector_value(&self) -> VectorValue {
+        self.clone().to_owned()
+    }
+}
 
 
 pub trait VectorValueConvertible {
@@ -84,11 +120,50 @@ impl VectorValueConvertible for VectorValue {
 
 pub trait AsMyBerolinaSQLBool {
 
+    fn as_my_berolina_sql_bool(&self) -> bool;
+
+
+
     //causetq error
+    //impl<T> AsMyBerolinaSQLBool for T where T: AsMyBerolinaSQLBool {
+    //    fn as_my_berolina_sql_bool(&self) -> bool {
+    //        self.as_my_berolina_sql_bool()
+    //    }
+    //}
+}
+
+
+impl AsMyBerolinaSQLBool for bool {
+    fn as_my_berolina_sql_bool(&self) -> bool {
+        *self
+    }
+}
+
+
+impl AsMyBerolinaSQLBool for Option<bool> {
+    fn as_my_berolina_sql_bool(&self) -> bool {
+        match self {
+            Some(x) => x,
+            None => false,
+        }
+    }
+
+
+
+    //causetq error
+    //impl<T> AsMyBerolinaSQLBool for Option<T> where T: AsMyBerolinaSQLBool {
+    //    fn as_my_berolina_sql_bool(&self) -> bool {
+    //        self.as_my_berolina_sql_bool()
+    //    }
+    //}
+}
 
     /// Evaluates into a MyBerolinaSQL logic causet_locale.
-    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool>;
-}
+    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool>{   
+        // TODO: implement this
+        Ok(true)
+    }
+
 
 impl AsMyBerolinaSQLBool for Int {
     #[inline]

@@ -9,9 +9,184 @@
 // specific language governing permissions and limitations under the License.
 
 use failure::Fail;
+use std::fmt::{self, Display, Formatter};
+use std::io;
+use std::result;
+
+
+#[derive(Debug)]
+pub struct Error {
+    inner: Box<dyn Fail>,
+
+    // The source location of the error.
+    source: Option<Box<dyn Fail>>,
+
+    // The source location of the error.
+    cause: Option<Box<dyn Fail>>,
+}
+
+
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+    #[fail(display = "{}", _0)]
+    Gremlin(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ2(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ3(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ4(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ5(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ6(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ7(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ8(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ9(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ10(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ11(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ12(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ13(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ14(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ15(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ16(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ17(String),
+    #[fail(display = "{}", _0)]
+    
+    #[fail(display = "{}", _0)]
+    GremlinQ18(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ19(String),
+}
+
+
+//FoundationDB error
+#[derive(Debug, Fail)]
+pub enum FDBError {
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+    #[fail(display = "{}", _0)]
+    Gremlin(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ2(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ3(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ4(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ5(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ6(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ7(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ8(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ9(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ10(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ11(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ12(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ13(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ14(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ15(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ16(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ17(String),
+    #[fail(display = "{}", _0)]
+}
+
+
+//FoundationDB error
+#[derive(Debug, Fail)]
+pub enum FDBError2 {
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+    #[fail(display = "{}", _0)]
+    Gremlin(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ2(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ3(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ4(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ5(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ6(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ7(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ8(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ9(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ10(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ11(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ12(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ13(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ14(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ15(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ16(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ17(String),
+}
 
 #[derive(Fail, Debug)]
 pub enum EvaluateError {
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+    #[fail(display = "{}", _0)]
+    Gremlin(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ(String),
     #[fail(display = "Execution terminated due to exceeding the deadline")]
     DeadlineExceeded,
 
@@ -23,9 +198,16 @@ pub enum EvaluateError {
     #[fail(display = "{}", msg)]
     Custom { code: i32, msg: String },
 
+
+
+
     #[fail(display = "{}", _0)]
     Other(String),
 }
+
+
+
+ 
 
 impl EvaluateError {
     /// Returns the error code.
@@ -114,3 +296,69 @@ impl<T: Into<EvaluateError>> From<T> for Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+
+#[derive(Fail, Debug)]
+pub enum ErrorKind {
+    #[fail(display = "Storage error: {}", _0)]
+    Storage(#[fail(cause)] StorageError),
+
+    #[fail(display = "Evaluate error: {}", _0)]
+    Evaluate(#[fail(cause)] EvaluateError),
+}
+
+
+impl From<StorageError> for ErrorKind {
+    #[inline]
+    fn from(e: StorageError) -> Self {
+        ErrorKind::Storage(e)
+    }
+}
+
+
+impl From<EvaluateError> for ErrorKind {
+    #[inline]
+    fn from(e: EvaluateError) -> Self {
+        ErrorKind::Evaluate(e)
+    }
+}
+
+
+impl From<ErrorKind> for Error {
+    #[inline]
+    fn from(e: ErrorKind) -> Self {
+        Error(Box::new(ErrorInner::Evaluate(e.into())))
+    }
+}
+
+
+impl From<ErrorKind> for EvaluateError {
+    #[inline]
+    fn from(e: ErrorKind) -> Self {
+        match e {
+            ErrorKind::Storage(e) => EvaluateError::Storage(e),
+            ErrorKind::Evaluate(e) => e,
+        }
+    }
+}
+
+// Any error that turns to `EvaluateError` can be turned to `Error` as well.
+impl<T: Into<EvaluateError>> From<T> for ErrorKind {
+    #[inline]
+    default fn from(err: T) -> Self {
+        let eval_error = err.into();
+        eval_error.into()
+    }
+}
+
+// FoundationDB is not thread-safe, but with EinsteinDB's Interlocking Directorate
+// (ID), we can guarantee that only one thread can access the same storage at the same time.
+// Therefore, we can use the same storage for all threads.
+//
+
+//an interlocking directorate's TransactionLogV2(NotChunkedVec<TransactionLogV2>)
+pub enum TransactionLogV2 {
+    Chunked(NotChunkedVec<TransactionLogV2>),
+    Transaction(TransactionLogV2),
+}
+
