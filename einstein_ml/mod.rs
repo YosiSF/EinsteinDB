@@ -11,18 +11,23 @@
 
 use super::*;
 use crate::error::{Error, Result};
-use crate::util::{
-    get_default_cuda_device, get_default_tensor_type, get_device_count, get_device_name,
-    get_device_type, get_tensor_type,
-};
+use crate::parser::{Parser, ParserError};
+use crate::value::{Value, ValueType};
+use crate::{ValueRef, ValueRefMut};
+use itertools::Itertools;
+use pretty;
 use std::{
     collections::HashMap,
+    fmt::{self, Display},
+    io,
     convert::{TryFrom, TryInto},
-    fmt,
-    io::{self, Write},
     ops::{Deref, DerefMut},
     sync::{Arc, Mutex},
 };
+
+
+/// A `Value` is a wrapper around a `Doc`.
+
 
 
 /// A context for executing a program.
@@ -35,19 +40,152 @@ use std::{
 
 
 
-
-
-
-pub use self::constant::ConstantProjector;
-pub use self::simple::SimpleProjector;
-
-pub mod constant;
-pub mod simple;
-pub mod two_pronged_crown;
-
-pub trait Projector: fmt::Debug + Send + Sync {
-    fn project(&self, input: &Tensor) -> Result<Tensor>;
+pub struct Context {
+    pub(crate) allocator: pretty::BoxAllocator,
+    pub(crate) variables: HashMap<String, Value>,
+    pub(crate) inner: Arc<Mutex<ContextInner>>,
 }
+
+pub struct ContextInner {
+    pub(crate) executors: Vec<Executor>,
+    pub(crate) sessions: Vec<Session>,
+}
+
+
+impl Context {
+    /// Create a new context.
+    pub fn new() -> Self {
+        Self {
+            allocator: pretty::BoxAllocator,
+            variables: HashMap::new(),
+            inner: Arc::new(Mutex::new(ContextInner {
+                executors: Vec::new(),
+                sessions: Vec::new(),
+            })),
+
+
+        }
+        /// Create a new context.
+        /// This is a convenience function that calls `Context::new()`.
+    }
+
+
+}
+
+
+/// A session is a context for executing a program.
+/// It is created by calling `Session::new()`.
+/// A session can be used to create multiple `Executor`s.
+/// A session can be used to create multiple `Session`s.
+/// 
+/// 
+/// 
+
+
+
+
+   #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct Session {
+         pub(crate) inner: Arc<Mutex<SessionInner>>,
+
+    }
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct SessionInner {
+        pub(crate) executors: Vec<Executor>,
+        pub(crate) variables: HashMap<String, Value>,
+    }
+    impl Session {
+        /// Create a new session.
+        pub fn new() -> Self {
+            Self {
+                inner: Arc::new(Mutex::new(SessionInner {
+                    executors: Vec::new(),
+                    variables: HashMap::new(),
+                })),
+            }
+        }
+        /// Create a new session.
+        /// This is a convenience function that calls `Session::new()`.
+    }
+
+   /// 
+   /// 
+   /// 
+
+    /// Create a new executor.
+    pub fn new_executor(&self) -> Executor {
+        let inner = self.inner.clone();
+        let mut inner = inner.lock().unwrap();
+        let executor = Executor {
+            inner: inner.executors.len(),
+            inner: inner.executors.push(ExecutorInner {
+                context: self.clone(),
+                variables: HashMap::new(),
+            }).unwrap(),
+        };
+        executor
+    }
+
+    /// Create a new session.
+    pub fn new_session(&self) -> Session {
+        let inner = self.inner.clone();
+        let mut inner = inner.lock().unwrap();
+        let session = Session {
+            inner: inner.sessions.len(),
+            inner: inner.sessions.push(SessionInner {
+                context: self.clone(),
+                variables: HashMap::new(),
+            }).unwrap(),
+        };
+        session
+    }
+    /// This is a convenience function that calls `Context::sessions_len()`.
+    pub fn sessions_len(&self) -> usize {
+        let inner = self.inner.clone();
+        let inner = inner.lock().unwrap();
+        inner.sessions.len()
+    }
+    /// Get the number of executors.
+    /// This is a convenience function that calls `Context::executors_len()`.
+    pub fn executors_len(&self) -> usize {
+        let inner = self.inner.clone();
+        let inner = inner.lock().unwrap();
+        inner.executors.len()
+    }
+    /// Get the number of sessions.
+    /// This is a convenience function that calls `Context::sessions_len()`.
+    pub fn executors(&self) -> Vec<Executor> {
+        let inner = self.inner.clone();
+        let inner = inner.lock().unwrap();
+        inner.executors.clone()
+    }
+    /// Get the number of sessions.
+    /// This is a convenience function that calls `Context::sessions_len()`.
+    pub fn sessions(&self) -> Vec<Session> {
+        let inner = self.inner.clone();
+        let inner = inner.lock().unwrap();
+        inner.sessions.clone()
+    }
+    /// Get the number of sessions.
+    /// This is a convenience function that calls `Context::sessions_len()`.
+    pub fn session(&self, index: usize) -> Session {
+        let inner = self.inner.clone();
+        let inner = inner.lock().unwrap();
+        inner.sessions[index].clone()
+    }
+    /// Get the number of sessions.
+    /// This is a convenience function that calls `Context::sessions_len()`.
+    pub fn executor(&self, index: usize) -> Executor {
+        let inner = self.inner.clone();
+        let inner = inner.lock().unwrap();
+        inner.executors[index].clone()
+    }
+  
+
+
+
+
+
 
 
 pub trait EinsteinMlToString {

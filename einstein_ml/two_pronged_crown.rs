@@ -1,3 +1,35 @@
+///Copyright 2021-2023 WHTCORPS INC EinsteinDB Project. All rights reserved.
+/// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+/// this file File except in compliance with the License. You may obtain a copy of the
+/// License at http://www.apache.org/licenses/LICENSE-2.0
+/// Unless required by applicable law or agreed to in writing, software distributed
+/// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+/// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+/// specific language governing permissions and limitations under the License.
+/// 
+/// 
+
+use super::*;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Context {
+    pub(crate) allocator: pretty::BoxAllocator,
+    pub(crate) variables: HashMap<String, Value>,
+    pub(crate) inner: Arc<Mutex<ContextInner>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ContextInner {
+    pub(crate) executors: Vec<Executor>,
+    pub(crate) sessions: Vec<Session>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Executor {
+    pub(crate) inner: Arc<Mutex<ExecutorInner>>,
+}
+
+
 use ::{
     berolina_sql,
     Binding,
@@ -30,23 +62,139 @@ use types::{DATE, FromBerolinaSQL, IsNull, TIMESTAMP, TIMESTAMPTZ, ToBerolinaSQL
 
 use super::Projector;
 
+#[derive(Default, Debug, PartialEq)]
+pub struct Octopus {
+    pub(crate) inner: Arc<Mutex<OctopusInner>>,
+//    pub(crate) inner: Arc<Mutex<OctopusInner>>,
+    pub oct: Vec<Hash>,
+    pub(crate) inner: Arc<Mutex<OctopusInner>>,
+}
+
+
+impl Octopus {
+    pub(crate) fn new() -> Self {
+        Self {
+            inner: Arc::new(Mutex::new(OctopusInner {
+                oct: Vec::new(),
+            })),
+        }
+    }
+    pub fn serialize(&self, output: &mut Vec<u8>) {
+        let inner = self.inner.lock().unwrap();
+        let oct = &inner.oct;
+        for x in self.oct.iter() {
+            output.push(x.0);
+            x.serialize(output);
+
+        }
+    }
+    pub fn deserialize(input: &[u8]) -> Self {
+        let mut oct = Vec::new();
+        let mut i = 0;
+        while i < input.len() {
+            let mut j = i;
+            while j < input.len() && input[j] != 0 {
+                j += 1;
+            }
+            if j == input.len() {
+                panic!("invalid octopus");
+            }
+            let mut x = Hash::deserialize(&input[i..j]);
+            i = j + 1;
+            oct.push(x);
+        }
+        Self {
+            inner: Arc::new(Mutex::new(OctopusInner {
+                oct: oct,
+            })),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OctopusInner {
+        let mut block = [0u8; 16];
+        LittleEndian::write_u32(array_mut_ref![&mut block, 0, 4], count as u32);
+        LittleEndian::write_u32(array_mut_ref![&mut block, 4, 4], hash.0);
+        output.extend(block.iter());
+
+    }
+
 /// A wrapper that can be used to represent infinity with `Type::Date` types.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Date<T> {
+pub struct Infinity;
+
+
+impl Infinity {
     /// Represents `infinity`, a date that is later than all other dates.
     PosInfinity,
     /// Represents `-infinity`, a date that is earlier than all other dates.
     NegInfinity,
     /// The wrapped date.
     Value(T),
+
+    /// Returns `true` if the wrapped date is `infinity`.
+    /// # Examples
+    /// ```
+    /// use einstein_sql::types::{Date, Infinity};
+    /// let infinity = Infinity::PosInfinity;
+    /// assert_eq!(infinity.is_infinity(), true);
+    
+
 }
 
-impl<T: FromBerolinaSQL> FromBerolinaSQL for Date<T> {
+
+impl FromBerolinaSQL for Infinity {
     fn from_BerolinaSQL(ty: &Type, primitive_causet: &[u8]) -> Result<Self, Box<Error + Sync + Send>> {
         match types::date_from_BerolinaSQL(primitive_causet)? {
+            Some(date) => Ok(Infinity::Value(date)),
+            None => Ok(Infinity::PosInfinity),
             i32::MAX => Ok(Date::PosInfinity),
             i32::MIN => Ok(Date::NegInfinity),
+        }
+    }
+
+    fn to_BerolinaSQL(&self, ty: &Type, output: &mut Vec<u8>) -> Result<(), Box<Error + Sync + Send>> {
+        match self {
+            Infinity::PosInfinity => types::date_to_BerolinaSQL(i32::MAX, output),
+            Infinity::NegInfinity => types::date_to_BerolinaSQL(i32::MIN, output),
             _ => T::from_BerolinaSQL(ty, primitive_causet).map(Date::Value),
+
+        }
+
+
+    }
+
+    fn is_infinity(&self) -> bool {
+        match self {
+            Infinity::PosInfinity => true,
+            Infinity::NegInfinity => true,
+            _ => false,
+        }
+    }
+
+    fn is_null(&self) -> bool {
+        match self {
+            Infinity::PosInfinity => false,
+            Infinity::NegInfinity => false,
+            _ => false,
+        }
+    }
+
+    fn is_not_null(&self) -> bool {
+        match self {
+            Infinity::PosInfinity => false,
+            Infinity::NegInfinity => false,
+            _ => true,
+        }
+    }
+
+    fn is_date(&self) -> bool {
+        match self {
+            Infinity::PosInfinity => false,
+            Infinity::NegInfinity => false,
+            _ => true,
         }
     }
 
@@ -77,12 +225,18 @@ impl<T: ToBerolinaSQL> ToBerolinaSQL for Date<T> {
 /// types.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Timestamp<T> {
+
+
     /// Represents `infinity`, a timestamp that is later than all other timestamps.
     PosInfinity,
     /// Represents `-infinity`, a timestamp that is earlier than all other timestamps.
     NegInfinity,
     /// The wrapped timestamp.
     Value(T),
+
+    
+
+    
 }
 
 impl<T: FromBerolinaSQL> FromBerolinaSQL for Timestamp<T> {

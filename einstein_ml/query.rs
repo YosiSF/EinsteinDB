@@ -9,6 +9,13 @@
 // specific language governing permissions and limitations under the License.
 
 
+use super::*;
+use crate::error::{Error, Result};
+use crate::parser::{Parser, ParserError};
+use crate::value::{Value, ValueType};
+use crate::{ValueRef, ValueRefMut};
+use itertools::Itertools;
+
 use std;
 use std::collections::{
     BTreeSet,
@@ -36,12 +43,292 @@ use ::causet_locale_rc::{
     ValueRc,
 };
 use FnArg::CausetidOrInteger;
+use FnArg::CausetidOrString;
+use FnArg::CausetidOrValue;
+use FnArg::CausetidOrValueRef;
 
-use crate::{FromRc, kSpannedCausetValue, NamespacedShelling, ValueAndSpan, ValueRc};
-use crate::causets::ValuePlace::Vector;
-use crate::kSpannedCausetValue::PancakeInt;
-use crate::Value::{BigInteger, Boolean, Float, Integer, List, Map, Set, Text};
 
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    io,
+    sync::{Arc, Mutex},
+};
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Context {
+    pub(crate) allocator: pretty::BoxAllocator,
+    pub(crate) variables: HashMap<String, Value>,
+    pub(crate) inner: Arc<Mutex<ContextInner>>,
+}
+
+
+#[derive(Clone, Copy, Default, PartialEq)]
+pub struct Hash {
+
+    pub h: [u8; config::HASH_SIZE],
+
+    pub(crate) hash_type: HashType,
+
+    pub(crate) hash_size: usize,
+
+    pub(crate) hash_bits: usize,
+
+    pub(crate) hash_bytes: usize,
+}
+
+impl fmt::Debug for Hash {
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_string())
+    }
+
+    fn fmt_display(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.to_string())
+        
+
+    }
+}
+
+
+impl Hash {
+    pub fn new(hash_type: HashType, hash_size: usize, hash_bits: usize, hash_bytes: usize) -> Self {
+        Self {
+            h: [0; config::HASH_SIZE],
+            hash_type,
+            hash_size,
+            hash_bits,
+            hash_bytes,
+        }
+    }
+
+    pub fn from_bytes(hash_type: HashType, hash_size: usize, hash_bits: usize, hash_bytes: usize, h: [u8; config::HASH_SIZE]) -> Self {
+        Self {
+            h,
+            hash_type,
+            hash_size,
+            hash_bits,
+            hash_bytes,
+        }
+    }
+
+
+    pub fn from_string(hash_type: HashType, hash_size: usize, hash_bits: usize, hash_bytes: usize, s: &str) -> Self {
+        let mut h = [0; config::HASH_SIZE];
+        let mut i = 0;
+        for b in s.bytes() {
+            h[i] = b;
+            i += 1;
+        }
+        Self {
+            h,
+            hash_type,
+            hash_size,
+            hash_bits,
+            hash_bytes,
+        }
+    }
+
+    pub fn from_hex(hash_type: HashType, hash_size: usize, hash_bits: usize, hash_bytes: usize, s: &str) -> Self {
+        let mut h = [0; config::HASH_SIZE];
+        let mut i = 0;
+        for b in s.bytes() {
+            if b >= b'0' && b <= b'9' {
+                h[i] = b - b'0';
+            } else if b >= b'a' && b <= b'f' {
+                h[i] = b - b'a' + 10;
+            } else if b >= b'A' && b <= b'F' {
+                h[i] = b - b'A' + 10;
+            } else {
+                panic!("invalid hex string");
+            }
+            i += 1;
+        }
+        Self {
+            h,
+            hash_type,
+            hash_size,
+            hash_bits,
+            hash_bytes,
+        }
+    }
+
+    pub fn from_base64(hash_type: HashType, hash_size: usize, hash_bits: usize, hash_bytes: usize, s: &str) -> Self {
+        let mut h = [0; config::HASH_SIZE];
+        let mut i = 0;
+        for b in s.bytes() {
+            if b >= b'A' && b <= b'Z' {
+                h[i] = b - b'A';
+            } else if b >= b'a' && b <= b'z' {
+                h[i] = b - b'a' + 26;
+            } else if b >= b'0' && b <= b'9' {
+                h[i] = b - b'0' + 52;
+            } else if b == b'+' {
+                h[i] = 62;
+            } else if b == b'/' {
+                h[i] = 63;
+            } else if b == b'=' {
+                h[i] = 0;
+            } else {
+                panic!("invalid base64 string");
+            }
+            i += 1;
+        }
+        Self {
+            h,
+            hash_type,
+            hash_size,
+            hash_bits,
+            hash_bytes,
+        }
+    }
+
+    pub fn from_base58(hash_type: HashType, hash_size: usize, hash_bits: usize, hash_bytes: usize, s: &str) -> Self {
+        let mut h = [0; config::HASH_SIZE];
+        let mut i = 0;
+        for b in s.bytes() {
+            if b >= b'A' && b <= b'Z' {
+                h[i] = b - b'A';
+            } else if b >= b'a' && b <= b'z' {
+                h[i] = b - b'a' + 26;
+            } else if b >= b'0' && b <= b'9' {
+                h[i] = b - b'0' + 52;
+            } else if b == b'_' {
+                h[i] = 62;
+            } else {
+                panic!("invalid base58 string");
+            }
+            i += 1;
+        }
+        Self {
+            h,
+            hash_type,
+            hash_size,
+            hash_bits,
+            hash_bytes,
+        }
+    }
+
+    where
+        I: Iterator<Item = &'a u8>,
+        I: DoubleEndedIterator<Item = &'a u8>,
+        I: ExactSizeIterator<Item = &'a u8>,
+    {
+        let mut hash: Hash = Default::default();
+        let mut i = 0;
+        for x in hash.h.iter_mut() {
+            *x = 0;
+        }
+        for b in s.bytes() {
+            hash.h[i] = b;
+            *x = *it.next()?;
+            i += 1;
+        }
+        hash.hash_type = hash_type;
+        hash.hash_size = hash_size;
+        hash.hash_bits = hash_bits;
+        Some(hash)
+    }
+
+    pub fn to_string(&self) -> String {
+        let mut s = String::new();
+        for b in self.h.iter() {
+            s.push(*b as char);
+        }
+        s
+    }
+}
+
+pub fn hash_to_hex(hash: &Hash) -> String {
+    let mut s = String::new();
+    for b in hash.h.iter() {
+        s.push(format!("{:02x}", b).as_bytes()[0] as char);
+        s.push(format!("{:02x}", b).as_bytes()[1] as char);
+    }
+    let digest = Sha256::digest(src);
+    Hash {
+        h: digest.as_slice(),
+        hash_type: HashType::SHA256,
+        hash_size: 32,
+        h: *array_ref![digest, 0, config::HASH_SIZE],
+
+    }
+}
+
+pub fn hash_n_to_n(dst: &mut Hash, src: &Hash) {
+    let mut h = [0; config::HASH_SIZE];
+    for i in 0..config::HASH_SIZE {
+        h[i] = src.h[i];
+    }
+    dst.h = h;
+}
+
+
+pub fn hash_n_to_n_mut(dst: &mut Hash, src: &Hash) {
+    haraka256::haraka256::<6>(&mut dst.h, &src.h)
+}
+
+#[cfg(test)]
+pub fn hash_n_to_n_ret(src: &Hash) -> Hash {
+    let mut dst = Default::default();
+    hash_n_to_n(&mut dst, src);
+    dst
+}
+
+pub fn hash_2n_to_n(dst: &mut Hash, src0: &Hash, src1: &Hash) {
+    haraka512::haraka512::<6>(&mut dst.h, &src0.h, &src1.h)
+}
+
+#[inline(always)]
+pub fn hash_2n_to_n_ret(src0: &Hash, src1: &Hash) -> Hash {
+    let mut dst = Default::default();
+    hash_2n_to_n(&mut dst, src0, src1);
+    dst
+}
+
+#[inline(always)]
+pub fn hash_n_to_n_chain(dst: &mut Hash, src: &Hash, count: usize) {
+    *dst = *src;
+    for _ in 0..count {
+        let tmp = *dst;
+        hash_n_to_n(dst, &tmp);
+    }
+}
+
+#[cfg(test)]
+pub fn hash_n_to_n_chain_ret(src: &Hash, count: usize) -> Hash {
+    let mut dst = Default::default();
+    hash_n_to_n_chain(&mut dst, src, count);
+    dst
+}
+
+#[inline(always)]
+pub fn hash_parallel(dst: &mut [Hash], src: &[Hash], count: usize) {
+    for i in 0..count {
+        hash_n_to_n(&mut dst[i], &src[i]);
+    }
+}
+
+#[inline(always)]
+pub fn hash_parallel_all(dst: &mut [Hash], src: &[Hash]) {
+    let count = dst.len();
+    hash_parallel(dst, src, count);
+}
+
+#[inline(always)]
+fn hash_parallel_chains(dst: &mut [Hash], src: &[Hash], count: usize, chainlen: usize) {
+    dst[..count].copy_from_slice(&src[..count]);
+    for _ in 0..chainlen {
+        for i in 0..count {
+            let tmp = dst[i];
+            hash_n_to_n(&mut dst[i], &tmp);
+        }
+    }
+}
 pub type SrcVarName = String;          // Do not include the required syntactic '$'.
 
 #[derive(Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
