@@ -543,18 +543,68 @@ fn main() {
         pub ts_rel: u64, //relativistic timestamp
     }
 
+
+///! Test Connect
+/// FoundationDB with EinsteinDB Wrapper via Allegro
+/// Use Gremlin to test Connect
+/// Test Connect
+/// FoundationDB with EinsteinDB Wrapper via Allegro
+/// 
+
+
+    let mut db = einsteindb::Einsteindb::new();
+
+    let mut db_name = String::from("test_connect");
+
+    db.create_db(&mut db_name);
+
     impl Timestamp {
-        pub fn new(ts: u64) -> Timestamp {
-            Timestamp { ts }
+        pub fn new(
+            timelike_bucket_id: u64,
+            timelike_bucket_offset: u64,
+            spacelike_bucket_id: u64,
+            spacelike_bucket_offset: u64,
+            ts: u64,
+            ts_rel: u64
+        ) -> Timestamp {
+            Timestamp {
+                timelike_bucket_id,
+                timelike_bucket_offset,
+                spacelike_bucket_id,
+                spacelike_bucket_offset,
+                ts,
+                ts_rel
+            }
+        }
+       
+        pub fn get_ts(&self) -> u64 {
+            self.ts
+        }
+
+        pub fn get_ts_rel(&self) -> u64 {
+            self.ts_rel
+        }
+
+        pub fn get_timelike_bucket_id(&self) -> u64 {
+            self.timelike_bucket_id
         }
     }
 
+    let mut timestamp = Timestamp::new(
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+    );
 
-    //timestamp
-    let mut timestamp = 0;
 
     if let Err(e) = db.set_timestamp(&mut db_name, &mut timestamp) {
+
         println!("{:?}", e);
+
+
     }
 
     /// If a timestamp is a distance measure, then it can be converted to
@@ -565,19 +615,55 @@ fn main() {
     /// -0.5 seconds is not a timestamp.
 
 
-    // // If a timestamp is a distance measure, then it can be converted to
-    // // a relativistic timestamp. For example, a timestamp of 0.5 seconds
-    // // is 0.5 seconds. A timestamp of 1 second is 1 second. A timestamp
-    // // of 0 seconds is 0 seconds. A timestamp of -1 second? We can't
-    // // say it's -1 second. We can say that it's -0.5 seconds, but
-    // // -0.5 seconds is not a timestamp.
+    /// If a timestamp is a distance measure, then it can be converted to
+    ///a relativistic timestamp. For example, a timestamp of 0.5 seconds
+    
+
+    let rel_tuple_ts = timestamp.get_ts_rel();
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    struct RelTimestamp {
+
+        pub timelike_bucket_id: u64,
+
+        pub timelike_bucket_offset: u64,
+
+        pub spacelike_bucket_id: u64,
+
+        pub spacelike_bucket_offset: u64,
+
+        pub ts: u64,
+
+        pub ts_rel: u64, //relativistic timestamp
+    }
+
+
+    ///is 0.5 seconds. A timestamp of 1 second is 1 second. A timestamp
+    /// of 0 seconds is 0 seconds. A timestamp of -1 second? We can't
+    /// say it's -1 second. We can say that it's -0.5 seconds, but
+    /// -0.5 seconds is not a timestamp.
     let mut rts = 0;
 
+    let mut rts_rel = 0;
+
+    let mut rts_rel_ts = 0;
+
     if let Err(e) = db.set_rts(&mut db_name, &mut rts) {
+        
+
+
         println!("{:?}", e);
     }
 
     while timestamp < 100 {
+
+        let mut rng = rand::thread_rng();
+
+        let mut sec_key = SecKey::new(Hash::default(), Hash::default());
+
+        let mut pub_key = sec_key.genpk();
+
+        let mut sign = sec_key.sign_hash(&Hash::default());
 
         let mut causet_topology = Vec::new();
 
@@ -585,23 +671,62 @@ fn main() {
 
         let mut causet_topology_index_u64 = Vec::new();
 
+        let mut causet_topology_index_u64_rev = Vec::new();
+
         timestamp += 1;
-        if let Err(e) = db.set_timestamp(&mut db_name, &mut timestamp) { //set timestamp
+
+        rts += 1;
+
+        rts_rel += 1;
+
+        rts_rel_ts += 1;
+
+        if let Err(e) = db.set_timestamp(&mut db_name, &mut timestamp) {
+            //println!("{:?}", e);
+            println!("{:?}", e);
+
             // println!("{:?}", e);
 
             while causet_topology_index.len() < 10 {
+                let mut rng = rand::thread_rng();
                 if let Err(e) = db.get_causet_topology(&mut db_name, &mut causet_topology_index) {
+
+
                     println!("{:?}", e);
                 }
                 for x in 0..fsm.get_states().len() {
+                    let mut rng = rand::thread_rng();
                     for y in 0..fsm.get_states().len() {
+                        let mut rng = rand::thread_rng();
                         if causet_topology_index.contains(&(x, y)) {
+                            continue;
+                        }
+                        causet_topology_index.push((x, y));
+
                             causet_topology_index_u64.push(x as u64);
                             causet_topology_index_u64.push(y as u64);
                         }
+
+
                     }
-                    causet_topology_index.push(x);
+
                 }
+                    causet_topology_index.push(x);
+
+                    causet_topology_index_u64.push(x as u64);
+
+                    causet_topology_index_u64_rev.push(x as u64);
+                }
+
+                causet_topology_index.push(y);
+
+                causet_topology_index_u64.push(y as u64);
+
+                causet_topology_index_u64_rev.push(y as u64);
+            }
+        
+        if let Err(e) = db.set_causet_topology(&mut db_name, &mut causet_topology_index) {
+
 
                 if causet_topology_index.len() > 10 {
                     causet_topology_index.truncate(10);
@@ -612,16 +737,31 @@ fn main() {
                 }
             }
             println!("{:?}", e);
+        
+
+        if let Err(e) = db.set_causet_topology_index(&mut db_name, &mut causet_topology_index) {
+            println!("{:?}", e);
+        }
+
+        if let Err(e) = db.set_causet_topology_index_u64(&mut db_name, &mut causet_topology_index_u64) {
+            println!("{:?}", e);
         }
 
         timestamp += 1;
         if let Err(e) = db.set_timestamp(&mut db_name, &mut timestamp) {    //set timestamp
             println!("{:?}", e);
         }
-    }
+    
+        if let Err(e) = db.set_rts(&mut db_name, &mut rts) {
+            println!("{:?}", e);
+        }
+
+        if let Err(e) = db.set_rts_rel(&mut db_name, &mut rts_rel) {
+            println!("{:?}", e);
+        }
     //A causet is a causet topology that is a directed acyclic graph.
     // The causet topology is a graph that is a directed acyclic graph.
-
+    }
 
     let age = rt_str_vec_2[0].parse::<i32>().unwrap();
 
@@ -647,7 +787,8 @@ fn main() {
     rts = rts.add(offset * 1_000_000_000 as u64); //  nanoseconds or microseconds
 
     let mut rt_str_vec_2: Vec<&str> = rts.elapsed().unwrap().as_secs().to_string().split(".").collect();
-}
+
+    
 
 
 fn process_matches() -> clap::ArgMatches<'static> {
