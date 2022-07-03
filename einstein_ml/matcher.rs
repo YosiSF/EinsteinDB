@@ -7,7 +7,7 @@
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
-
+use super::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
@@ -15,23 +15,136 @@ use itertools::diff_with;
 
 use types::Value;
 
-use crate::{shellings, Value};
-use crate::causets::ValuePlace::Vector;
+use crate::causet::{
+    causet::{Causet, CausetQuery},
+    causet_query::CausetQueryBuilder,
+};
+
+use crate::causetq::{
+    causetq::{CausetQ, CausetQQuery},
+    causetq_query::CausetQQueryBuilder,
+};
+
+
+
+
+
+
+
+
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+    #[fail(display = "{}", _0)]
+    Gremlin(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ2(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ3(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ4(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ5(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ6(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ7(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ8(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ9(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ10(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ11(String),
+}
+
+
+impl<'a, T: Evaluable + EvaluableRet> ChunkRef<'a, &'a T> for &'a NotChunkedVec<T> {
+    fn get_option_ref(self, idx: usize) -> Option<&'a T> {
+        self.data[idx].as_ref()
+    }
+
+    fn phantom_data(self) -> Option<&'a T> {
+        None
+    }
+}
 
 /// A trait defining pattern matching rules for any given pattern of type `T`.
-trait PatternMatchingRules<'a, T> {
+pub trait Pattern<T> {
+    /// Returns a `Vec` of `T`s that match the pattern.
+    /// The `Vec` is empty if no matches are found.
+    /// The `Vec` is empty if the pattern is empty.
     /// Return true if the given pattern matches an arbitrary causet_locale.
+    
+    fn matches(&self, causet_locale: &CausetLocale<T>) -> bool;
+    /// Returns a `Vec` of `T`s that match the pattern.
     fn matches_any(pattern: &T) -> bool;
-
+    /// Returns a `Vec` of `T`s that match the pattern.
     /// Return the placeholder name if the given pattern matches a placeholder.
     fn matches_placeholder(pattern: &'a T) -> Option<(&'a String)>;
+    
 }
 
 /// A default type implementing `PatternMatchingRules` specialized on
 /// EML causet_locales using plain shellings as patterns. These patterns are:
 /// * `_` matches arbitrary sub-EML;
 /// * `?name` matches sub-EML, which must be causetidical each place `?name` appears;
-struct DefaultPatternMatchingRules;
+/// * `?name:type` matches sub-EML, which must be causetidical each place `?name` appears;
+/// * `?name:type:value` matches sub-EML, which must be causetidical each place `?name` appears;
+/// * `?name:type:value:value` matches sub-EML, which must be causetidical each place `?name` appears;
+/// 
+/// # Examples
+/// ```
+/// use einstein_ml::{
+///    causet::{Causet, CausetQuery},
+///   causet_query::CausetQueryBuilder,
+///  causetq::{CausetQ, CausetQQuery},
+/// causetq_query::CausetQQueryBuilder,
+/// 
+/// };
+/// 
+/// let causet = Causet::new();
+/// let causet_query = CausetQueryBuilder::new();
+/// let causetq = CausetQ::new();
+/// let causetq_query = CausetQQueryBuilder::new();
+/// 
+/// let causet_locale = causet.query(&causet_query).unwrap();
+/// let causetq_locale = causetq.query(&causetq_query).unwrap();
+/// 
+/// let causet_locale_pattern = causet_locale.pattern_matching_rules();
+
+/// if causet_locale_pattern.matches(&causet_locale) {
+///    println!("CausetLocale matches causet_locale");
+/// } else {
+///   println!("CausetLocale does not match causet_locale");
+/// }
+/// 
+
+
+
+pub struct CausetLocalePattern<T> {
+    pub causet_locale: CausetLocale<T>,
+    pub causet_locale_pattern: CausetLocalePattern<T>,
+}
+
+
+
+
+
+
+
+
+
+
+
 
 impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
     fn matches_any(pattern: &Value) -> bool {

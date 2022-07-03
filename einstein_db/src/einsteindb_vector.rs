@@ -215,6 +215,15 @@ pub trait EinsteinDBVectorExt: Sized {
 
     fn from_slice_mut(slice: &mut [T]) -> Self;
 
+    /// Creates a `EinsteinDBVector` from a `&mut [T]` without copying.
+    /// This method is just a convenient shorthand for `InnerVector::from_slice`.
+    /// It is not available on `&InnerVector<T>`.
+    /// It is also not available on `&EinsteinDBVector<T>`.
+    
+
+    fn from_slice_mut_ref(slice: &mut [T]) -> Self;
+
+
 
 //CachedAttributes of the Causet Vector.
 
@@ -273,25 +282,32 @@ pub trait EinsteinDBVectorExt: Sized {
     ///
 }
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct EinsteinDBVector<T, S = RandomState> {
-
-   data: DVec<T, S>,
-  len: usize,
-}
-
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct EinsteinDBVectorRef<'a, T, S = RandomState> {
-
-   data: DVecRef<'a, T, S>,
-  len: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct CausePetri<T, Rts: Timestamp, Relativistic:  S = RandomState> {
-    data: DVec<T, Rts, Relativistic>,
+pub struct EinsteinDBVectorRef<'a, T: 'a> {
+    data: &'a EinsteinDBVector<T>,
     len: usize,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct EinsteinDBVectorRefMut<'a, T: 'a> {
+    data: &'a mut EinsteinDBVector<T>,
+    len: usize,
+}
+
+
+
+pub struct EinsteinDBVectorIter<'a, T: 'a> {
+    data: &'a EinsteinDBVector<T>,
+    len: usize,
+    index: usize,
+}
+
+
+pub struct EinsteinDBVectorIterMut<'a, T: 'a> {
+    data: &'a mut EinsteinDBVector<T>,
+    len: usize,
+    index: usize,
+}
 }
 
 
@@ -471,14 +487,16 @@ impl Causet for CausetVec {
 
 impl CausetVec {
     pub fn new(data: Vec<u8>) -> Self {
-        CausetVec { data, len: 0 }
+        CausetVec {
+            data,
+            len: data.len(),
+        }
     }
 }
 
 
 impl Deref for CausetVec {
     type Target = [u8];
-
     fn deref(&self) -> &Self::Target {
         &self.data
     }
@@ -511,7 +529,136 @@ pub struct RcCounterWithSupercow<T> {
     pub counter: usize,
 }
 
-///!To see why lazy timestamp management can reduce conflicts and improve performance, we consider the following example involv- ing two concurrent transactions, A and B, and two tuples, x and y. The transactions invoke the following sequence of operations:
+///To see why lazy timestamp management can reduce conflicts and improve performance, we consider the following example involv- ing two concurrent transactions, A and B, and two tuples, x and y. The transactions invoke the following sequence of operations:
 // 1. A read(x) 2. B write(x) 3. B commits 4. A write(y)
-// This interleaving of operations does not violate serializability be- cause transaction A can be ordered before B in the serial order. But A cannot commit after B in the serial order because the version of x read by A has already been modified by B.
+/// This interleaving of operations does not violate serializability be- cause transaction A can be ordered before B in the serial order. But A cannot commit after B in the serial order because the version of x read by A has already been modified by B.
+/// The solution to this problem is to use a timestamp. A timestamp is a number that is incremented by one each time a transaction commits. A transaction can only commit if its timestamp is equal to the timestamp of the last committed transaction.
+/// The timestamp is stored in the database. When a transaction commits, it increments its timestamp and stores the new timestamp in the database. When a transaction reads a tuple, it reads the timestamp from the database and compares it to its own timestamp. If the timestamps are equal, the transaction can read the tuple. If the timestamps are not equal, the transaction aborts.
+///     
+
+/// A type that holds buffers queried from the database.
+/// The database may optimize this type to be a view into
+/// its own cache.
+/// 
+/// # Examples  
+/// ```
+/// use einstein_db::{
+///  einstein_db_vector::EinsteinDBVector,
+/// einstein_db_vector::EinsteinDBVectorRef,
+/// !
+/// };
+/// use einstein_ml::{
+/// hash::{BuildHasher, Hash, Hasher},
+/// vec::{IntoIter, Iter, IterMut, Vec},
+/// };
+/// use einstein_poset::{
+/// causet_locale::CausetLocale,
+/// causet_locale::CausetLocaleRef,
+/// causet_locale::CausetLocaleRefMut,
+/// 
+/// 
+/// };
+/// 
+/// let mut v = EinsteinDBVector::new();
+/// v.push(1);
+/// ```
+/// 
+/// # Examples
+/// ```
+/// use einstein_db::{
+/// einstein_db_vector::EinsteinDBVector,
+/// einstein_db_vector::EinsteinDBVectorRef,
+/// 
+/// ! 
+/// };
+/// 
+
+
+
+
+/// Collects a supplied tx range into an DESC ordered Vec of valid txs,
+/// ensuring they all belong to the same timeline.
+/// 
+
+fn collect_causets_ordered_by_timeline(
+    causet_locale: &CausetLocale,
+
+    tx_range: &TxRange,
+) -> Result<Vec<CausetLocaleRef>, Error> {
+    let mut causets = Vec::new();
+    let mut tx_range = tx_range.clone();
+    let mut tx_range_iter = tx_range.into_iter();
+    let mut tx_range_iter_mut = tx_range.into_iter();
+    let mut tx_range_iter_mut_next = tx_range_iter_mut.next();
+
+
+    let mut causet_locale_ref = causet_locale.borrow_ref();
+    let mut causet_locale_ref_mut = causet_locale.borrow_mut();
+
+
+    let mut causet_locale_ref_next = causet_locale_ref_mut.next();
+
+while let Some(tx) = tx_range_iter.next() {
+    let causet_locale_ref = causet_locale_ref_next.ok_or(Error::NoCausetLocale)?;
+    let causet_locale_ref_next = causet_locale_ref_mut.next();
+    let causet_locale_ref_next = causet_locale_ref_next.ok_or(Error::NoCausetLocale)?;
+    let causet_locale_ref_next = causet_locale_ref_next.borrow_ref();
+    let causet_locale_ref_next = causet_locale_ref_next.borrow_mut();
+    let causet_locale_ref_next = causet_locale_ref_next.next();
+
+    let causet_locale_ref = causet_locale_ref.borrow_ref() {
+        /// The causet_locale_ref is the causet_locale of the tx.
+        /// The causet_locale_ref_next is the causet_locale of the next tx.
+        /// 
+        /// # Examples
+        /// ```
+        /// use einstein_db::{
+        /// einstein_db_vector::EinsteinDBVector,
+        /// einstein_db_vector::EinsteinDBVectorRef,
+        /// 
+        /// !
+        /// };
+        /// use einstein_ml::{
+        /// hash::{BuildHasher, Hash, Hasher},
+        /// vec::{IntoIter, Iter, IterMut, Vec},
+        /// };
+        /// use einstein_poset::{
+        /// causet_locale::CausetLocale,
+        /// causet_locale::CausetLocaleRef,
+        /// causet_locale::CausetLocaleRefMut,
+        /// 
+        /// 
+    }
+
+
+
+
+    let causet_locale_ref = causet_locale_ref.borrow_ref();
+
+}
+
+    
+        Ok(causets)
+    }
+
+    /// Collects a supplied tx range into an DESC ordered Vec of valid txs,
+    /// ensuring they all belong to the same timeline.
+    /// 
+
+    fn collect_causets_ordered_by_timeline(
+        causet_locale: &CausetLocale,
+
+        tx_range: &TxRange,
+    ) -> Result<Vec<CausetLocaleRef>, Error> {
+        let mut causets = Vec::new();
+        let mut tx_range = tx_range.clone();
+        let mut tx_range_iter = tx_range.into_iter();
+        let mut tx_range_iter_mut = tx_range.into_iter();
+        let mut tx_range_iter_mut_next = tx_range_iter_mut.next();
+
+
+        let mut causet_locale_ref = causet_locale.borrow_ref();
+    }
+}
+
 

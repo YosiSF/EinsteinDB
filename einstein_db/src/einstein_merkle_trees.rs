@@ -35,7 +35,13 @@ use gravity::gravity::{Gravity, GravityConfig};
 use einstein_db::{EinsteinDB, EinsteinDBError, EinsteinDBResult};
 
 
-///! The `EinsteinDB` trait is the interface for the EinsteinDB.
+/// ##############################################################################################
+/// ##############################################################################################
+/// ##############################################################################################
+/// ##############################################################################################
+/// 
+///
+/// [`EinsteinMerkleTree`] is a wrapper of [`MerkleTree`] which is used to store the data of EinsteinDB.
 /// It is implemented by the `EinsteinDB` struct.
 ///
 ///
@@ -72,6 +78,34 @@ use einstein_db::{EinsteinDB, EinsteinDBError, EinsteinDBResult};
 /// assert_eq!(db.get_block_height_by_hash("".to_string()).unwrap(), 10);
 
 
+/// ##############################################################################################
+/// 
+/// 
+/// 
+/// 
+
+
+
+#[derive(Clone, Debug)]
+pub struct EinsteinMerkleTree {
+    pub merkle_tree: MerkleTree,
+    pub db: EinsteinDB,
+    pub gravity: Gravity,
+    pub soliton: Soliton,
+    pub causetq: Causetq,
+    pub causets: Causets,
+    pub einstein_ml: EinsteinML,
+    pub allegro_poset: AllegroPoset,
+    pub merkle_tree_node_cache: HashMap<String, MerkleTreeNode>,
+    pub merkle_tree_node_cache_height: AtomicUsize,
+    pub merkle_tree_node_cache_height_by_hash: HashMap<String, usize>,
+    pub merkle_tree_node_cache_height_by_hash_height: HashMap<String, usize>,
+    pub merkle_tree_node_cache_height_by_hash_height_by_hash: HashMap<String, usize>,
+    pub merkle_tree_node_cache_height_by_hash_height_by_hash_height: HashMap<String, usize>,
+    pub merkle_tree_node_cache_height_by_hash_height_by_hash_height_by_hash: HashMap<String, usize>,
+    pub merkle_tree_node_cache_height_by_hash_height_by_hash_height_by_hash_height: HashMap<String, usize>,
+}
+
 
 #[derive(Clone)]
 pub struct EinsteinDB {
@@ -92,9 +126,15 @@ pub struct EinsteinDB {
 
 
 
+
+
+
 #[derive(PartialEq, Debug, Clone, Serialize, Deserialize)]
 pub struct Address {
-    pub address: String,
+
+    pub(crate) address: String,
+    pub(crate) address_type: String,
+    pub(crate) address_type_id: usize,
 
     pub balance: u64,
 
