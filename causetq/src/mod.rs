@@ -25,6 +25,26 @@ crate use self::dedup::dedup;
 
 
 //gremlin queries for causet
+//Peek, Obtain Lease, Complete, and Enqueue operations.
+mod causet;
+mod causet_query;
+mod causet_query_builder;
+mod causet_query_builder_impl;
+
+
+//gremlin queries for causetq
+//Peek, Obtain Lease, Complete, and Enqueue operations.
+mod causetq;
+mod causetq_query;
+mod causetq_query_builder;
+
+
+
+
+
+
+
+
 
 
 
