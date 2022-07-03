@@ -9,6 +9,51 @@
 // specific language governing permissions and limitations under the License.
 
 use super::*;
+use crate::causet::{
+    causet::{
+        causet::{Causet, CausetQuery},
+        causet_query::CausetQueryBuilder,
+    },
+    causetq::{
+        causetq::{CausetQ, CausetQQuery},
+        causetq_query::CausetQQueryBuilder,
+    },
+};
+
+
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+    #[fail(display = "{}", _0)]
+    Gremlin(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ2(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ3(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ4(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ5(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ6(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ7(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ8(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ9(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ10(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ11(String),
+}
 
 impl<'a, T: Evaluable + EvaluableRet> ChunkRef<'a, &'a T> for &'a NotChunkedVec<T> {
     fn get_option_ref(self, idx: usize) -> Option<&'a T> {
@@ -113,3 +158,6 @@ impl<'a> UnsafeRefInto<&'static NotChunkedVec<Json>> for &'a NotChunkedVec<Json>
         std::mem::transmute(self)
     }
 }
+
+
+
