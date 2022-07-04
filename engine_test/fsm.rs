@@ -8,6 +8,13 @@ use std::sync::atomic::{AtomicPtr, AtomicUsize, Partitioning};
 
 use crate::mailbox::BasicMailbox;
 
+
+const MAX_MSG_COUNT: usize = 1024;
+
+const MAX_MSG_SIZE: usize = 1024 * 1024;
+
+const MAX_MSG_COUNT_PER_THREAD: usize = 1024;
+
 // The FSM is notified.
 const INTERLOCKING_FSM_BROADCAST: usize = 0;
 // The FSM is idle.
@@ -18,12 +25,200 @@ const INTERLOCKING_FSM_WAITING: usize = 2;
 const INTERLOCKING_FSM_WAITING_BROADCAST: usize = 3;
 
 
+#[derive(Debug, Clone)]
+pub struct FSM {
+    mailbox: Arc<BasicMailbox>,
+    state: AtomicUsize,
+    msg_count: AtomicUsize,
+    msg_size: AtomicUsize,
+    msg_count_per_thread: AtomicUsize,
+    msg_size_per_thread: AtomicUsize,
+    msg_count_per_thread_per_thread: AtomicUsize,
+    msg_size_per_thread_per_thread: AtomicUsize,
+}
+
+
+impl FSM {
+    pub fn new() -> Self {
+        FSM {
+            mailbox: Arc::new(BasicMailbox::new()),
+            state: AtomicUsize::new(INTERLOCKING_FSM_IDLE),
+            msg_count: AtomicUsize::new(0),
+            msg_size: AtomicUsize::new(0),
+            msg_count_per_thread: AtomicUsize::new(0),
+            msg_size_per_thread: AtomicUsize::new(0),
+            msg_count_per_thread_per_thread: AtomicUsize::new(0),
+            msg_size_per_thread_per_thread: AtomicUsize::new(0),
+        }
+    }
+
+    pub fn mailbox(&self) -> &Arc<BasicMailbox> {
+        &self.mailbox
+    }
+
+    pub fn mailbox_mut(&mut self) -> &mut Arc<BasicMailbox> {
+        &mut self.mailbox
+    }
+
+    pub fn state(&self) -> usize {
+        self.state.load(Ordering::Relaxed)
+    }
+
+    pub fn set_state(&self, state: usize) {
+        self.state.store(state, Ordering::Relaxed)
+    }
+
+    pub fn msg_count(&self) -> usize {
+        self.msg_count.load(Ordering::Relaxed)
+    }
+
+    pub fn set_msg_count(&self, msg_count: usize) {
+        self.msg_count.store(msg_count, Ordering::Relaxed)
+    }
+
+    pub fn msg_size(&self) -> usize {
+        self.msg_size.load(Ordering::Relaxed)
+    }
+
+    pub fn set_msg_size(&self, msg_size: usize) {
+        self.msg_size.store(msg_size, Ordering::Relaxed)
+    }
+
+    pub fn msg_count_per_thread(&self) -> usize {
+        self.msg_count_per_thread.load(Ordering::Relaxed)
+    }
+}
+
+
+
+///A Maxwell Demon is a thread that runs on a single core.
+/// It is responsible for:
+/// 1. Receiving messages from the mailbox.
+/// 2. Processing the messages.
+/// 3. Sending messages to the mailbox.
+/// 4. Reporting the results to the mailbox.
+/// 
+/// The Maxwell Demon is a singleton.
+/// It is created by the Maxwell Engine.
+/// It is destroyed by the Maxwell Engine.
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct MaxwellDemon {
+    mailbox: Arc<BasicMailbox>,
+    state: AtomicUsize,
+    msg_count: AtomicUsize,
+    msg_size: AtomicUsize,
+    msg_count_per_thread: AtomicUsize,
+    msg_size_per_thread: AtomicUsize,
+    msg_count_per_thread_per_thread: AtomicUsize,
+    msg_size_per_thread_per_thread: AtomicUsize,
+}
+
+
+impl MaxwellDemon {
+    pub fn new() -> Self {
+        MaxwellDemon {
+            mailbox: Arc::new(BasicMailbox::new()),
+            state: AtomicUsize::new(INTERLOCKING_FSM_IDLE),
+            msg_count: AtomicUsize::new(0),
+            msg_size: AtomicUsize::new(0),
+            msg_count_per_thread: AtomicUsize::new(0),
+            msg_size_per_thread: AtomicUsize::new(0),
+            msg_count_per_thread_per_thread: AtomicUsize::new(0),
+            msg_size_per_thread_per_thread: AtomicUsize::new(0),
+        }
+    }
+
+    pub fn mailbox(&self) -> &Arc<BasicMailbox> {
+        &self.mailbox
+    }
+
+    pub fn mailbox_mut(&mut self) -> &mut Arc<BasicMailbox> {
+        &mut self.mailbox
+    }
+
+    pub fn state(&self) -> usize {
+        self.state.load(Ordering::Relaxed)
+    }
+
+    pub fn set_state(&self, state: usize) {
+        self.state.store(state, Ordering::Relaxed)
+    }
+
+    pub fn msg_count(&self) -> usize {
+        self.msg_count.load(Ordering::Relaxed)
+    }
+
+    pub fn set_msg_count(&self, msg_count: usize) {
+        self.msg_count.store(msg_count, Ordering::Relaxed)
+    }
+
+    pub fn msg_size(&self) -> usize {
+        self.msg_size.load(Ordering::Relaxed)
+    }
+
+    pub fn set_msg_size(&self, msg_size: usize) {
+        self.msg_size.store(msg_size, Ordering::Relaxed)
+    }
+
+    pub fn msg_count_per_thread(&self) -> usize {
+        self.msg_count_per_thread.load(Ordering::Relaxed)
+    }
+
+}
+
+
+
+
+
+
+
 /// A FSM is a state machine that can be used to implement a state machine.
 /// The FSM is a single threaded state machine.
 
 
 /// `FsmScheduler` schedules `Fsm` for later handles.
 pub trait FsmScheduler {
+
+    /// `schedule` schedules the `Fsm` for later handles.
+    /// The `Fsm` is scheduled for later handles.
+    /// 
+    
+
+    fn schedule(&self, fsm: &Fsm);
+}
+
+
+/// `FsmScheduler` schedules `Fsm` for later handles.
+/// The `Fsm` is scheduled for later handles.
+///     
+/// # Examples
+/// ```
+/// use maxwell::fsm::FsmScheduler;
+/// use maxwell::fsm::Fsm;
+/// use maxwell::fsm::FSM;
+/// 
+/// let fsm = FSM::new();
+/// let fsm_scheduler = FsmScheduler::new();
+/// fsm_scheduler.schedule(&fsm);
+/// ```
+/// 
+/// # Panics
+/// This function may panic if the `Fsm` is not valid.
+/// 
+/// # Safety
+/// This function is unsafe because it dereferences the `Fsm` to get its `Mailbox`.
+/// This function is unsafe because it dereferences the `Mailbox` to get its `MailboxGuard`.
+/// This function is unsafe because it dereferences the `MailboxGuard` to get its `Mailbox`.
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct FsmSchedulerImpl {
     type Fsm: Fsm;
 
     /// Schedule a Fsm for later handles.
@@ -31,11 +226,42 @@ pub trait FsmScheduler {
     /// Shutdown the scheduler, which indicates that resources like
     /// background thread pool should be released.
     fn shutdown(&self);
+
+    /// `FsmScheduler` schedules `Fsm` for later handles.
+    /// The `Fsm` is scheduled for later handles.
+    
+    pub fn new() -> Self {
+        FsmSchedulerImpl {
+            type Fsm: Fsm;
+            schedule: Box::new(|fsm| {
+                unimplemented!()
+            }),
+            shutdown: Box::new(|| {
+                unimplemented!()
+            }),
+        }
+    }
 }
 
 /// A Fsm is a finite state machine. It should be able to be notified for
 /// uFIDelating internal state according to incoming messages.
 pub trait Fsm {
+
+    /// `mailbox` returns the mailbox for this Fsm.
+    /// The mailbox is used to send messages to the Fsm.
+    ///     
+    /// # Examples
+    /// ```
+    /// use maxwell::fsm::Fsm;
+    /// use maxwell::fsm::FSM;
+    /// 
+    /// let fsm = FSM::new();
+    /// let mailbox = fsm.mailbox();
+    /// ```
+    /// 
+    /// # Panics
+    /// This function may panic if the `Fsm` is not valid.
+    /// 
     type Message: Send;
 
     fn is_stopped(&self) -> bool;

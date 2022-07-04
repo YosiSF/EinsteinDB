@@ -8,15 +8,125 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+
+#[macro_export]
+macro_rules! einsteindb_macro {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+/// #[macro_export]
+/// macro_rules! einsteindb_macro_impl {
+
+    #[macro_export]
+    macro_rules! einsteindb_macro_impl {
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einsteindb_macro_impl!($($tokens)*)
+        };
+        ($($tokens:tt)*) => {
+            $crate::einstein_macro_impl!($($tokens)*)
+        }
+    }
+
+
+
 use std::fmt::{
     Display,
     Formatter,
     Write,
 };
 
-use isolated_namespace::IsolatedNamespace;
 
-use crate::isolated_namespace::IsolatedNamespace;
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    io,
+    convert::{TryFrom, TryInto},
+    ops::{Deref, DerefMut},
+    sync::{Arc, Mutex},
+};
+
+
+use pretty::{
+    BoxAllocator,
+    Doc,
+    DocBuilder,
+    DocIter,
+    DocWriter,
+    Line,
+    LineWriter,
+    Pretty,
+    RenderMode,
+    RenderSpan,
+    Spanned,
+    SpannedIter,
+    SpannedWriter,
+    SpannedWriterIter,
+    Span,
+    SpanIter,
+    SpanWriter,
+    SpanWriterIter,
+    StyledDoc,
+    StyledDocBuilder,
+    StyledDocIter,
+    StyledDocWriter,
+    StyledLine,
+    StyledLineWriter,
+    StyledSpanned,
+    StyledSpannedIter,
+    StyledSpannedWriter,
+    StyledSpannedWriterIter,
+    StyledSpan,
+    StyledSpanIter,
+    StyledSpanWriter,
+    StyledSpanWriterIter,
+    StyledWriteMode,
+};
+
+
+
+
+
+
+
+
 
 #[macro_export]
 macro_rules! ns_soliton_idword {

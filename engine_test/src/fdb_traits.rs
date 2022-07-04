@@ -1,45 +1,186 @@
-use std::sync::atomic::AtomicU8;
-use std::sync::atomic::Ordering;
-use std::time::{Duration, Instant};
-use std::{cmp, u64};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::thread;
-use std::thread::JoinHandle;
-use std::sync::Mutex;
-use std::sync::atomic::AtomicUsize;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::AtomicU32;
-use std::sync::atomic::AtomicU8;
+/// Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
+/// 
+/// Licensed under the Apache License, Version 2.0 (the "License");
+/// you may not use this file except in compliance with the License.
+/// You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0.
+/// Unless required by applicable law or agreed to in writing, software
+/// distributed under the License is distributed on an "AS IS" BASIS,
+/// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+/// See the License for the specific language governing permissions and limitations under the License.
+///     
+/// 
 
 
+// #[macro_export]
+// macro_rules! einsteindb_macro {
+//     ($($tokens:tt)*) => {
+//         $crate::einsteindb_macro_impl!($($tokens)*)
+//     };
+// }
+//
+//
 
-//suffix_tree    is a structure that holds a suffix tree.
 
-#[derive(Debug, Clone, Default, Eq, PartialEq)]
+#[macro_export]
+macro_rules! einsteindb_macro {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+}
 
-struct SuffixTree<T> {
-    pub root: Node<T>,
-    pub alphabet: Vec<T>,
-    pub alphabet_size: usize,
-    pub alphabet_map: HashMap<T, usize>,
-    pub alphabet_map_rev: HashMap<usize, T>,
-    pub alphabet_map_rev_size: usize,
-    pub alphabet_map_rev_size_max: usize,
-    pub alphabet_map_rev_size_min: usize,
-    pub alphabet_map_rev_size_avg: usize,
-    pub alphabet_map_rev_size_median: usize,
-    pub alphabet_map_rev_size_mode: usize,
-    pub alphabet_map_rev_size_variance: usize,
-
-    pub alphabet_map_rev_size_min_max_diff: usize,
-    pub alphabet_map_rev_size_min_max_diff_abs: usize,
-    pub alphabet_map_rev_size_min_max_diff_percent: usize,
-    pub alphabet_map_rev_size_min_max_diff_percent_abs: usize,
-    pub alphabet_map_rev_size_min_max_diff_percent_abs_percent: usize,
+#[macro_export]
+macro_rules! einsteindb_macro_impl {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
 }
 
 
 
+/// here we can use the macro to define the trait
+/// #[einsteindb_macro]
+/// trait FdbTrait {
+///    fn fdb_trait_method(&self) -> i32;
+/// }
+/// 
+/// #[einsteindb_macro]
+/// 
+/// impl FdbTrait for i32 {
+///    fn fdb_trait_method(&self) -> i32 {
+///       *self
+///   }
+/// }
+/// 
+/// let x = 1;
+/// let y = x.fdb_trait_method();
+/// assert_eq!(y, 1);
+/// 
+/// #[einsteindb_macro]
+/// trait FdbTrait2 {
+///   fn fdb_trait_method(&self) -> i32;
+/// }
+/// 
+/// #[einsteindb_macro]
+/// impl FdbTrait2 for i32 {
+///  fn fdb_trait_method(&self) -> i32 {
+///   *self
+/// }
+/// 
+/// let x = 1;
+/// let y = x.fdb_trait_method();
+/// assert_eq!(y, 1);
+
+
+
+/// here we can use the macro to define the trait
+/// 
+#[einsteindb_macro]
+trait FdbTrait {
+   fn fdb_trait_method(&self) -> i32;
+}
+
+
+#[einsteindb_macro]
+impl FdbTrait for i32 {
+   fn fdb_trait_method(&self) -> i32 {
+      *self
+   }
+}
+
+
+let x = 1;
+let y = x.fdb_trait_method();
+
+
+assert_eq!(y, 1);
+
+
+#[einsteindb_macro]
+trait FdbTrait2 {
+   fn fdb_trait_method(&self) -> i32;
+}
+
+
+#[einsteindb_macro]
+impl FdbTrait2 for i32 {
+   fn fdb_trait_method(&self) -> i32 {
+      *self
+   }
+}
+
+
+let x = 1;
+let y = x.fdb_trait_method();
+
+
+assert_eq!(y, 1);
 
