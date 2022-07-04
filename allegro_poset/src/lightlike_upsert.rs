@@ -12,6 +12,17 @@
 // 4. nullable lightlike upsert
 
 
+// #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+// pub enum causetPlace<V> {
+//     Causetid(CausetidOrSolitonid),
+//     TempId(ValueRc<TempId>),
+//     LookupRef(LookupRef<V>),
+//     TxFunction(TxFunction),
+//     Vector(Vec<ValuePlace<V>>),
+//     Atom(V),
+//     MapNotation(MapNotation<V>),
+// }
+
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -78,6 +89,7 @@ use std::collections::btree_map::Keys as BTreeKeys;
 
 #[derive(Debug)]
 pub struct ConicalMap<K: Key, V: Value> {
+    
     map: HashMap<K, V>,
     //    map: BTreeMap<K, V>,
     lightlike_asserted: HashMap<K, V>, //future and now are the same

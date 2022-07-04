@@ -1,10 +1,327 @@
 version: '3.4'
 
-services:
-  einsteindb:
+services: 
+ - name: 
+ image:
+      name: ubuntu
+      tag: latest
+      pull_always: true
+      pull_if_not_present: false
+      pull_newer: false
+      pull_cached: false
+      pull_cached_only: false
+      pull_if_not_present: false
+  
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
+      - "8083:8083"
+      - "8084:8084"
+  
+    volumes:
+      - "/var/www/html:/var/www/html" 
+      - "/var/www/html/wp-content:/var/www/html/wp-content"
+      - "/var/www/html/wp-content/uploads:/var/www/html/wp-content/uploads"
+      - "/var/www/html/wp-content/plugins:/var/www/html/wp-content/plugins"
+  
+    environment:
+      - "WP_ENV=production"
+      - "WP_DEBUG=true"
+      - "WP_DEBUG_LOG=true"
+      - "WP_DEBUG_DISPLAY=true"
+      - "WP_DEBUG_LOG_DATE_FORMAT=Y-m-d H:i:s"
+      - "WP_DEBUG_LOG_FILE=/var/www/html/wp-content/debug.log"
+
+    restart: always
+    expose:
+      - "80"
+      - "443"
+      - "8080"
+      - "8081"
+      - "8082"
+      - "8083"
+      - "8084"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        path: "/var/www/html/wp-content/debug.log"
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:80/wp-admin/"]
+      interval: "10s"
+      timeout: "1s"
+      retries: "3"  
+    networks:
+      - wordpress
+    depends_on:
+      - wordpress-db
+  image: 
+    name: wordpress
+    tag: latest
+    pull_always: true
+    pull_if_not_present: false
+    pull_newer: false
+    pull_cached: false
+    pull_cached_only: false
+    pull_if_not_present: false
+  ports:
+    - "80:80"
+    - "443:443"
+    - "8080:8080"
+    - "8081:8081"
+    - "8082:8082"
+    - "8083:8083"
+    - "8084:8084"
+  volumes:
+    - "/var/www/html:/var/www/html" 
+    - "/var/www/html/wp-content:/var/www/html/wp-content"
+    - "/var/www/html/wp-content/uploads:/var/www/html/wp-content/uploads"
+    - "/var/www/html/wp-content/plugins:/var/www/html/wp-content/plugins" 
+  environment:
+    - "WP_ENV=production"
+    - "WP_DEBUG=true"
+    - "WP_DEBUG_LOG=true"
+    - "WP_DEBUG_DISPLAY=true"
+    - "WP_DEBUG_LOG_DATE_FORMAT=Y-m-d H:i:s"
+    - "WP_DEBUG_LOG_FILE=/var/www/html/wp-content/debug.log"
+  'k8s.gcr.io/hyperkube:v1.18.4'
+    container_name: 'kube-apiserver'
+     command:
+      - /hyperkube
+      - apiserver
+      - --bind-address=
+      - $(POD_IP)
+      - --secure-port=6443
+      - --advertise-address=$(POD_IP)
+      - --allow-privileged=true
+      - --service-cluster-ip-range=${SERVICE_CLUSTER_IP_RANGE}
+      - --service-node-port-range=${SERVICE_NODE_PORT_RANGE}
+      - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,NodeRestriction
+      - --admission-control-config-file=/etc/kubernetes/admission-control.yaml
+      - --client-ca-file=/etc/kubernetes/certs/ca.crt
+      - --tls-cert-file=/etc/kubernetes/certs/apiserver.crt
+      - --tls-private-key-file=/etc/kubernetes/certs/apiserver.key
+
+    ports: 
+      - containerPort: 6443
+        name: 'https'
+        protocol: TCP
+      - containerPort: 8080
+        name: 'metrics'
+        protocol: TCP
+      - containerPort: 10250
+        name: 'metrics-server'
+        protocol: TCP
+      - containerPort: 10255
+        name: 'pprof'
+        protocol: TCP
+      - containerPort: 30000
+        name: 'kubelet-api'
+        protocol: TCP
+      - containerPort: 80
+        name: 'http'
+        protocol: TCP
+      - containerPort: 443
+        name: 'https'
+        protocol: TCP
+      - containerPort: 10250
+        name: 'kube-apiserver'
+        protocol: TCP
+      - containerPort: 10255
+        name: 'kube-apiserver'
+        protocol: TCP
+      - containerPort: 30000
+        name: 'kubelet-api'
+        protocol: TCP
+      - containerPort: 80
+        name: 'http'
+        protocol: TCP
+      - containerPort: 443
+        name: 'https'
+        protocol: TCP
+      - containerPort: 10250
+        name: 'kube-apiserver'
+        protocol: TCP
+      - containerPort: 10255
+        name: 'kube-apiserver'
+        protocol: TCP
+      - containerPort: 30000
+        name: 'kubelet-api'
+        protocol: TCP
+      - containerPort: 80
+        name: 'http'
+        protocol: TCP
+      - containerPort: 443
+        name: 'https'
+        protocol: TCP
+      - containerPort: 10250
+        name: 'kube-apiserver'
+        protocol: TCP
+      - containerPort: 10255
+        name: 'kube-apiserver'
+        protocol: TCP
+      - containerPort: 30000
+        name: 'kubelet-api'
+        protocol: TCP
+      - containerPort: 80
+        name: 'http'
+        protocol: TCP
+      - containerPort: 443
+        name: 'https'
+        protocol: TCP
+      - containerPort: 10250
+        name: 'kube-
+        protocol: TCP
+      - containerPort: 10255
+        name: 'kube-apiserver'
+        protocol: TCP
+      - containerPort: 30000
+        name: 'kubelet-api'
+        protocol: TCP
+      - containerPort: 80
+        name: 'http'
+        protocol: TCP
+      - containerPort: 443
+        name: 'https'
+        protocol: TCP
+      - containerPort: 10250
+
+    volumes:
+
+      - name: 'etc-kubernetes'
+        hostPath:
+          path: /etc/kubernetes
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-certs'
+        hostPath:
+          path: /etc/kubernetes/certs
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki'
+        hostPath:
+          path: /etc/kubernetes/pki
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki-ca'
+        hostPath:
+          path: /etc/kubernetes/pki/ca
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki-sa'
+        hostPath:
+          path: /etc/kubernetes/pki/sa
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki-front-proxy-ca'
+        hostPath:
+          path: /etc/kubernetes/pki/front-proxy-ca
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki-front-proxy-sa'
+        hostPath:
+          path: /etc/kubernetes/pki/front-proxy-sa
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki-service-account-ca'
+        hostPath:
+          path: /etc/kubernetes/pki/service-account-ca
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki-service-account-sa'
+        hostPath:
+          path: /etc/kubernetes/pki/service-account-sa
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki-service-account-key'
+        hostPath:
+          path: /etc/kubernetes/pki/service-account-key
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki-service-account
+        hostPath:
+          path: /etc/kubernetes/pki/service-account
+          type: DirectoryOrCreate
+      - name: 'etc-kubernetes-pki-front-proxy-key'
+        hostPath:
+          path: /etc/kubernetes/pki/front-proxy-key
+          type: DirectoryOrCreate
+
+    livenessProbe:
+      httpGet:  # HTTP GET request
+        path: /healthz
+        port: 10250
+        scheme: HTTP
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+      successThreshold: 1
+      failureThreshold: 3
+      periodSeconds: 15
+      successThreshold: 1
+      failureThreshold: 3
+      periodSeconds: 15
+
+    readinessProbe:
+      httpGet:  # HTTP GET request
+        path: /healthz
+        port: 10250
+        scheme: HTTP
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+      successThreshold: 1
+      failureThreshold: 3
+      periodSeconds: 15
+      
+        einsteindb:
     image: einsteindb
+    imagePullPolicy: Always
+    name: einsteindb
+    resources:
+      limits:
+        cpu: 100m
+        memory: 100Mi
+      requests:
+        cpu: 100m
+        memory: 100Mi
+    volumeMounts: 
+    
     build:
-      context: .
+      contextDir: /einsteindb
+   
+      context:
+
       dockerfile: ./Dockerfile
     ports:
       - 3000:3000
+    env:
+
+
+    - name: "NODE_NAME"
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: "NODE_IP"
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.addresses[0].address
+    - name: "NODE_PORT"
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodePort
+    - name: "NODE_HOSTNAME"
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodeName
+    - name: "NODE_HOST"
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.addresses[0].address
+    - name: "NODE_IP"
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: status.addresses[0].address
+    - name: "NODE_PORT"
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: spec.nodePort

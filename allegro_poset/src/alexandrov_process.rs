@@ -61,31 +61,179 @@ pub struct AlexandrovProcess<K, V> {
 //now we abstract the lshp-tree into a poset so that it is lisp-like
 //source: https://franz.com/support/documentation/ansicl.94/section/dictio19.htm
 
+#[derive(Clone, Debug)]
+pub struct PosetNode {
+    //the id of the node
+    id: u64,
+    //the hash of the node
+    hash: Arc<BlockHash>,
+    //the body of the node
+    body: Arc<BlockBody>,
+    //the parent of the node
+    parent: Option<Arc<PosetNode>>,
+    //the children of the node
+    children: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+    children_reverse: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+    children_reverse_reverse: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+    children_reverse_reverse_reverse: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+}
+
+
+impl PosetNode {
+    pub fn new(id: u64, hash: Arc<BlockHash>, body: Arc<BlockBody>) -> Self {
+        Self {
+            id,
+            hash,
+            body,
+            parent: None,
+            children: HashMap::new(),
+            children_reverse: HashMap::new(),
+            children_reverse_reverse: HashMap::new(),
+            children_reverse_reverse_reverse: HashMap::new(),
+        }
+    }
+}
 
 
 
+#[derive(Clone, Debug)]
+pub struct BlockHash {
+    //the id of the node
+    id: u64,
+    //the hash of the node
+    hash: Arc<Vec<u8>>,
+    //the body of the node
+    body: Arc<BlockBody>,
+    //the parent of the node
+    parent: Option<Arc<PosetNode>>,
+    //the children of the node
+    children: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+    children_reverse: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+    children_reverse_reverse: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+    children_reverse_reverse_reverse: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+}
 
-pub fn create_alexandrov_poset_processv_process<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Result<AlexandrovProcess<K, V>> {
-    let alexandrov_poset_processv_process = AlexandrovProcess {
+
+impl BlockHash {
+    pub fn new(id: u64, hash: Arc<Vec<u8>>, body: Arc<BlockBody>) -> Self {
+        Self {
+            id,
+            hash,
+            body,
+            parent: None,
+            children: HashMap::new(),
+            children_reverse: HashMap::new(),
+            children_reverse_reverse: HashMap::new(),
+            children_reverse_reverse_reverse: HashMap::new(),
+        }
+    }
+}
+
+
+#[derive(Clone, Debug)]
+pub struct BlockBody {
+    //the id of the node
+    id: u64,
+    //the hash of the node
+    hash: Arc<Vec<u8>>,
+    //the body of the node
+    body: Arc<Vec<u8>>,
+    //the parent of the node
+    parent: Option<Arc<PosetNode>>,
+    //the children of the node
+    children: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+    children_reverse: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+    children_reverse_reverse: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+    children_reverse_reverse_reverse: HashMap<u64, Arc<PosetNode>>,
+    //the children of the node
+}
+
+pub fn new_alexandrov_process<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V) -> Result<AlexandrovProcess<K, V>> {
+    let write_options = WriteOptions::new();
+    Ok(AlexandrovProcess {
         db,
         prefix,
         key_type,
         value_type,
         write_options,
+    })
+}
+
+
+
+
+impl<K, V> AlexandrovProcess<K, V> {
+    let alexandrov_poset_processv_process = AlexandrovProcess {
+        db: Arc::new(Mutable::new(db_path)),
+        prefix: vec![],
+        key_type: K,
+        value_type: V,
+        write_options: WriteOptions::new(),
+
     };
     Ok(alexandrov_poset_processv_process)
+
+}
+
+
+impl<K, V> Poset {
+    pub fn new(fdb: Arc<dyn Mutable>) -> Self {
+        Self {
+            fdb,
+            root: Arc::new(PosetNode::new(0, Arc::new(BlockHash::new(0, Arc::new(vec![0; 32]), Arc::new(BlockBody::new(0, Arc::new(vec![0; 32]), None, HashMap::new(), HashMap::new(), HashMap::new(), HashMap::new()))))),
+            leaves: HashMap::new(),
+            soft_index: HashMap::new(),
+        }
+    }
+}
+
+
+impl Poset {
+    pub fn get_node(&self, id: u64) -> Result<Arc<PosetNode>> {
+        let node = self.leaves.get(&id);
+        if node.is_none() {
+            return Err(Error::new(ErrorKind::NotFound, "Node not found"));
+        }
+        Ok(node.unwrap().clone())
+    }
 }
 
 pub fn create_poset(db: Arc<dyn Mutable>, prefix: Vec<u8>, write_options: WriteOptions) -> Result<Poset> {
+    let poset = Poset::new(db);
     let poset = Poset {
+        //the database that is used to store the poset
         fdb: db,
+        //the root of the poset
         root: Arc::new(PosetNode::new(db, prefix, write_options)?),
         leaves: HashMap::new(),
         soft_index: HashMap::new(),
     };
+    
     Ok(poset)
+
 }
 
+
+
+///The main function of the poset. It is used to create a new poset.
+/// # Arguments
+/// * `db` - The database that is used to store the poset.
+/// * `prefix` - The prefix that is used to store the poset.
+/// * `write_options` - The write options that are used to store the poset.
+/// # Returns
+/// * `Result` - A `Result` containing the `Poset` or an `Error` if an error occured.
+/// # Example
 async fn create_alexandrov_poset_processv_process_async<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Result<AlexandrovProcess<K, V>> {
     let alexandrov_poset_processv_process = AlexandrovProcess {
         db,
@@ -96,6 +244,9 @@ async fn create_alexandrov_poset_processv_process_async<K, V>(db: Arc<dyn Mutabl
     };
     Ok(alexandrov_poset_processv_process)
 }
+
+
+
 
 /*
 impl WriteBatchExt for soliton_panic_merkle_tree {
@@ -200,12 +351,38 @@ pub fn unwrap_index_bytes(index_bytes: &[u8]) -> (&[u8], &[u8]) {
 }
 
 
+pub fn wrap_index_bytes_with_namespaced(index_bytes: &[u8], namespaced: &str, soliton_id: &[u8], causet_locale: &[u8]) -> Vec<u8> {
+    let mut index_bytes_vec = index_bytes.to_vec();
+    index_bytes_vec.extend_from_slice(soliton_id);
+    index_bytes_vec.extend_from_slice(causet_locale);
+    index_bytes_vec.extend_from_slice(namespaced.as_bytes());
+    index_bytes_vec
+}
 
 
+pub fn unwrap_index_bytes_with_namespaced(index_bytes: &[u8]) -> (&[u8], &[u8], &str) {
+    let mut index_bytes_vec = index_bytes.to_vec();
+    let soliton_id = index_bytes_vec.split_off(index_bytes.len());
+    let causet_locale = index_bytes_vec.split_off(index_bytes.len());
+    let namespaced = std::str::from_utf8(&index_bytes_vec).unwrap();
+    (soliton_id, causet_locale, namespaced)
+}
 
 
+pub fn wrap_index_bytes_with_namespaced_and_key(index_bytes: &[u8], namespaced: &str, key: &[u8]) -> Vec<u8> {
+    let mut index_bytes_vec = index_bytes.to_vec();
+    index_bytes_vec.extend_from_slice(key);
+    index_bytes_vec.extend_from_slice(namespaced.as_bytes());
+    index_bytes_vec
+}
 
 
-
+pub fn unwrap_index_bytes_with_namespaced_and_key(index_bytes: &[u8]) -> (&[u8], &[u8], &str) {
+    let mut index_bytes_vec = index_bytes.to_vec();
+    let key = index_bytes_vec.split_off(index_bytes.len());
+    let namespaced = index_bytes_vec.split_off(index_bytes.len());
+    let namespaced = std::str::from_utf8(&namespaced).unwrap();
+    (key, namespaced)
+}
 
 
