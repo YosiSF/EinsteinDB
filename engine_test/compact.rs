@@ -1,13 +1,45 @@
 // Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and limitations under the License.
+//
 
+//! # Compact
+//! 
+//! ## Overview
+//! 
+//! This module provides the `Compact` trait and its implementations.
 //! compaction-related with bloom filter
 //! and indexing.
 
+
+use einstein_db_alexandrov_processing::{
+    index::{
+        Index,
+        IndexIterator,
+        IndexIteratorOptions,
+        IndexIteratorOptionsBuilder,
+    }
+};
+
+
+/// `Compact` is a trait that provides compacting operations.
+/// It is implemented by `Engine` and `Directory`.
+/// `Compact` is used by `Engine` to compacting operations.
+/// `Compact` is used by `Directory` to compacting operations.
+/// `Compact` is used by `Snapshot` to compacting operations.
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use std::{cmp, u64};
+
+
 
 
 use fdb_traits::Result;

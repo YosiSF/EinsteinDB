@@ -1,4 +1,4 @@
-// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
+/// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
 //! EinsteinMerkleTrees for use in the test suite, implementing both the KV
 //! and VioletaBFT einstein_merkle_tree traits.
@@ -52,6 +52,32 @@
 //! that this module is _the only_ module within EinsteinDB that knows about concrete
 //! timelike_storage EinsteinMerkleTrees, and that it be extracted into its own crate for use in
 //! EinsteinDB, once the full requirements are better understood.
+//! 
+
+/// The `ctor` module contains constructor methods appropriate for constructing timelike_storage
+/// EinsteinMerkleTrees of any type. It is intended that this module is _the only_ module within
+/// EinsteinDB that knows about concrete timelike_storage EinsteinMerkleTrees, and that it be
+/// extracted into its own crate for use in EinsteinDB, once the full requirements are better
+/// understood.
+/// 
+/// # Examples
+/// 
+/// ```
+/// use einsteindb::engine_test::einstein_merkle_tree::ctor::*;
+/// use einsteindb::engine_test::einstein_merkle_tree::*;
+/// use einsteindb::engine_test::*;
+/// use einsteindb::*;
+/// 
+/// 
+/// let mut kv_tree = ctor::new_kv_einstein_merkle_tree(
+///    &mut einsteindb::engine_test::einstein_merkle_tree::kv::Fdbeinstein_merkle_tree::new(
+///       &mut einsteindb::engine_test::einstein_merkle_tree::kv::Fdbeinstein_merkle_tree::default_config(),
+/// 
+
+
+use einsteindb::engine_test::einstein_merkle_tree::kv::*;
+use einsteindb::engine_test::einstein_merkle_tree::violetabft::*;
+use einsteindb::*;
 
 /// Types and constructors for the "violetabft" einstein_merkle_tree
 pub mod violetabft {

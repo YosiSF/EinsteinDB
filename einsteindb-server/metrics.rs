@@ -378,5 +378,40 @@ lazy_static::lazy_static! {
         auto_flush_from!(INTERLOCK_EXECUTOR_COUNT_TOTAL, LocalCoprExecutorCount);
 }
 
+
+
 ///CHANGELOG: 
 /// - Added `EinsteindbServerRequestsTotal` and `EinsteindbServerRequestsDurationSeconds`
+/// - Added `OpenaiServerRequestsTotal` and `OpenaiServerRequestsDurationSeconds`
+/// - Added `KubeServerRequestsTotal` and `KubeServerRequestsDurationSeconds`
+/// - Added `OpenaiServerRequestsDurationSecondsHistogram` and `OpenaiServerRequestsDurationSecondsHistogramBucket`
+/// - Added `OpenaiServerRequestsDurationSecondsHistogramCount` and `OpenaiServerRequestsDurationSecondsHistogramSum`
+/// - Added `OpenaiServerRequestsDurationSecondsHistogramBucketLowerBound`
+
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]    
+pub enum CausetQueryType {
+    Einsteindb,
+    Openai,
+    Kube,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CausetQueryTypeMetric {
+    EinsteindbServerRequestsTotal,
+    EinsteindbServerRequestsDurationSeconds,
+    OpenaiServerRequestsTotal,
+    OpenaiServerRequestsDurationSeconds,
+    KubeServerRequestsTotal,
+    KubeServerRequestsDurationSeconds,
+    OpenaiServerRequestsDurationSecondsHistogram,
+    OpenaiServerRequestsDurationSecondsHistogramBucket,
+    OpenaiServerRequestsDurationSecondsHistogramCount,
+    OpenaiServerRequestsDurationSecondsHistogramSum,
+    OpenaiServerRequestsDurationSecondsHistogramBucketLowerBound,
+}
+
+
+

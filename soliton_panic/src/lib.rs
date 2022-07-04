@@ -1,4 +1,5 @@
-// Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
+/// Copyright 2019 EinsteinDB Project Authors. 
+/// Licensed under Apache-2.0.
 
 //! An example EinsteinDB timelike_storage einstein_merkle_tree.
 //!
@@ -14,6 +15,44 @@
 
 #![allow(unused)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(not(feature = "std"), feature(alloc))]
+#![cfg_attr(not(feature = "std"), feature(allocator_api))]
+#![cfg_attr(not(feature = "std"), feature(core_intrinsics))]
+#![cfg_attr(not(feature = "std"), feature(lang_items))]
+#![cfg_attr(not(feature = "std"), feature(panic_info_message))]
+
+
+use einstein_db_alexandrov_processing::{
+    index::{
+        Index,
+        IndexIterator,
+        IndexIteratorOptions,
+        IndexIteratorOptionsBuilder,
+    }
+};
+
+use berolina_sql::{
+    parser::Parser,
+    value::{Value, ValueType},
+    error::{Error, Result},
+    parser::ParserError,
+    value::{ValueRef, ValueRefMut},
+    fdb_traits::FdbTrait,
+    fdb_traits::FdbTraitImpl,
+    pretty,
+    io,
+    convert::{TryFrom, TryInto},
+    ops::{Deref, DerefMut},
+    sync::{Arc, Mutex},
+};
+
+
+use itertools::Itertools;
+use std::local_path::local_path;
+
+
+use super::*;
+
 
 
 

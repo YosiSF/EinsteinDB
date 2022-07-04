@@ -4,20 +4,24 @@ version = "0.1.0"
 description = "Soliton Panic"
 edition = "2021"
 publish = false
-author = "Soliton"
+author = "@CavHack""
 author_email = "karl@einst.ai"
 url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
 license = "MIT"
 
 
-[lib]
-name = "soliton_panic"
-version = "0.1.0"
-description = "Soliton Panic"
-
-
 [dependencies]
+
 serde = "*"
+serde_json = "*"
+serde_yaml = "*"
+serde_derive = "*"
+serde_bytes = "*"
+
+
+
+
+
 
 
 

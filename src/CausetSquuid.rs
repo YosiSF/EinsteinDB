@@ -8,6 +8,112 @@
 //This is a macro because it is called at compile time.
 
 
+
+
+//==============================================================================
+
+
+//==============================================================================
+
+
+//==============================================================================
+
+
+
+
+#[macro_export]
+macro_rules! einsteindb_macro_impl {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+}
+
+
+//==============================================================================
+//==============================================================================
+//==============================================================================
+// Here we define the macro. For each collection, we define a macro that takes
+// the collection name and the collection type. The macro then defines a new
+// type that is an instance of the collection type. The macro then defines a
+// new function that takes the collection name and the collection type. The
+// function then returns a new instance of the collection type.
+
+
+
+#[macro_export]
+macro_rules! einsteindb_macro_impl {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+}
+
+
 #[macro_export]
 macro_rules! causets {
     ($($name:soliton_id),*) => {

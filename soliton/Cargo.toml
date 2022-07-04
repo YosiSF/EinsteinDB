@@ -1,11 +1,13 @@
 [package]
 name = "soliton"
 version = "0.1.0"
-authors = ["YosiSF aka whtcorps inc and einst ai inc"]
+authors = ["EinsteinDB Project"] # ["EinsteinDB Project"]
 license = "MIT Licensed"
+description = "Soliton is a distributed database system embedded to the EinsteinDB."
 edition = "2021"
 
 #target specs
+
 target_os = "windows"
 target_arch = "x86"
 target_cc = "gcc"
@@ -17,29 +19,18 @@ target_linker_version = "4.9"
 target_linker_flags = "-lstdc++"
 
 
-
-
-
 [dependencies]
-soliton-core = "0.1.0"
-soliton-network = "0.1.0"
-soliton-wallet = "0.1.0"
-soliton-cli = "0.1.0"
-soliton-explorer = "0.1.0"
-soliton-miner = "0.1.0"
-soliton-wallet-gui = "0.1.0"
-
 failure = "0.1.1"
 indexmap = "1"
 itertools = "0.10.3"
 lazy_static = "1.4.0"
 log = "0.4"
-ordered-float = "2.10.0"
+ordered-float = "3.0.0"
 time = "0.3.7"
 petgraph = "0.6.0"
 serde = { version = "1.0", optional = true }
 serde_json = { version = "1.0", optional = true }
 serde_derive = { version = "1.0", optional = true }
-serde_yaml = { version = "1.0", optional = true }
+serde_yaml = { version = "0.8.24", optional = true }
 
 

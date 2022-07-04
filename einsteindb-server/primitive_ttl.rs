@@ -1,8 +1,26 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
-
+use super::*;
+use crate::error::{Error, Result};
+use crate::parser::{Parser, ParserError};
+use crate::value::{Value, ValueType};
+use crate::{ValueRef, ValueRefMut};
+use itertools::Itertools;
 use crate::fdb_traits::FdbTrait;
 use crate::fdb_traits::FdbTraitImpl;
+use pretty;
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    io,
+    convert::{TryFrom, TryInto},
+    ops::{Deref, DerefMut},
+    sync::{Arc, Mutex},
+};
+
+
+///ttl for primitive type in EinsteinDB
+/// time to live for primitive type in EinsteinDB
 
 pub fn ttl_current_ts() -> u64 {
     fail_point!("ttl_current_ts", |r| r.map_or(2, |e| e.parse().unwrap()));
