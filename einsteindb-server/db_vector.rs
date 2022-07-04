@@ -34,6 +34,16 @@ use std::ops::Deref;
 use soliton::{SolitonImpl};
 use soliton_panic::{SolitonPanicImpl, SolitonPanic, SolitonPanicTrait};
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DBVectorImpl {
+    pub(crate) inner: Arc<DBVectorInner>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DBVectorInner {
+    pub(crate) inner: Arc<DBVectorInnerInner>,
+}
+
 ///! A vector that can be safely shared between threads.
 ///  This is a wrapper around `Vec<T>` that is safe to share between threads.
 /// It is safe to use in concurrent code because it uses atomic operations.
@@ -56,15 +66,53 @@ use soliton_panic::{SolitonPanicImpl, SolitonPanic, SolitonPanicTrait};
 
 
 pub struct DBVector<T> {
+    inner: Arc<DBVectorInner<T>>,
+}
+
+
+impl<T> DBVector<T> {
+    /// Create a new vector.
+    /// This is a convenience function that calls `DBVector::new()`.
+    /// # Examples
+    /// ```
+    /// use einsteindb_server::db_vector::DBVector;
+    /// let v = DBVector::new();
+    /// ```
+    /// # Panics
+    /// This function will panic if the vector is created on a thread that
+    /// is not the main thread.
     data: Arc<DBVectorInner<T>>,
+
+    /// Create a new vector.
+    /// # Examples
+    /// ```
+    /// use einsteindb_server::db_vector::DBVector;
+    /// let v = DBVector::new();
+    /// ```
+    /// 
+
 }
 
 #[derive(Debug)]
 struct DBVectorInner<T> {
-    data: Vec<T>,
-    len: AtomicUsize,
-    cap: AtomicUsize,
-    lock: AtomicPtr<()>,
+
+    /// The vector of elements.
+    /// This is a vector of elements.
+    /// It is safe to use in concurrent code because it uses atomic operations.
+    /// It is also safe to use in single-threaded code because it uses a spinlock
+    
+    pub data: Vec<T>,
+    /// The number of elements in the vector.   
+    /// This is the number of elements in the vector.
+    /// It is safe to use in concurrent code because it uses atomic operations.
+    
+    pub len: usize,
+   
+    pub poset: Poset<T>,
+
+    pub processing: Processing<T>,
+
+    pub causet: CausetImpl<T>,
 }
 
 ///! Collects a supplied tx range into an DESC ordered Vec of valid txs,
@@ -85,7 +133,38 @@ struct DBVectorInner<T> {
 ///
 #[inline]
 pub fn collect_causet_preorder(conn: &Connection, range: &Range<u64>) -> Vec<u64> {
-    conn.prepare("SELECT tx_id FROM causet_preorder WHERE tx_id >= ? AND tx_id <= ?").unwrap();
+    let mut v = Vec::new();
+    let mut cursor = conn.get_cursor().unwrap();
+    cursor.seek(range).unwrap();
+
+    // Collect the txs into a Vec in DESC order
+    while let Some(tx) = cursor.next().unwrap() {
+        v.push(tx);
+    }
+
+    // Check that the txs are in DESC order
+    for i in 1..v.len() {
+        assert!(v[i] < v[i - 1]);
+    }
+
+    v   // Return the Vec of txs
+
+
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct DBVectorInnerInner {
+        pub(crate) inner: Arc<DBVectorInnerInnerInner>,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct DBVectorInnerInnerInner {
+        pub(crate) inner: Arc<DBVectorInnerInnerInnerInner>,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct DBVectorInnerInnerInnerInner {
+        pub(crate) inner: Arc<DBVectorInnerInnerInnerInnerInner>,
+    
     Vec::new();
    //.query_and_then(&[&txs_from.start, &timeline], |row: &rusqlite::Row| -> Result<(Entid, Entid)>{
 
@@ -104,7 +183,33 @@ pub fn collect_causet_preorder(conn: &Connection, range: &Range<u64>) -> Vec<u64
         return txs;
     }
     };
+    let mut brane = brane;
+    let mut brane_txs = Vec::new();
 
+    for t in rows {
+        let t = t?;
+        if t.1 == brane {
+            brane_txs.push(t.0);
+        } else {
+            break;
+        }
+    }
+
+    txs.extend(brane_txs);
+
+    txs
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RepeatableRead {
+    pub(crate) inner: Arc<RepeatableReadInner>,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RepeatableReadInner {
+    pub(crate) inner: Arc<RepeatableReadInnerInner>,
     while let Some(t) = rows.next() {
         let t = t?;
          txs.push.push(t);
@@ -113,8 +218,15 @@ pub fn collect_causet_preorder(conn: &Connection, range: &Range<u64>) -> Vec<u64
         }
     }
 
+
+
     txs
+
+    pub(crate) inner: Arc<RepeatableReadInnerInner>,
+    pub(crate) inner: Arc<RepeatableReadInnerInnerInner>,
 }
+
+
 
 ///! relativistic version of collect_causet_preorder using worldline_id
 /// ! in this case, the worldline_id is the same as the tx_id
