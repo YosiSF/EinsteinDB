@@ -27,17 +27,19 @@ serde_urlencoded = "0.7.1"
 serde_bytes = "0.11.5"
 uuid = "1.1.2"
 
+
+[features]
+default = ["einstein_ml"]
+einstein_ml = ["einstein_ml"]
+
+
 [dependencies.cauusets]
 path = "../causets"
 
 
-[features]
-default = ["einstein_ml"]
-einstein_ml = []
-
 
 [workspace]
-members = ["einstein_ml"]
+members = ["einstein_ml", "causetq", "allegro_poset", "causet"]
 
 
 [target.einstein_ml]
