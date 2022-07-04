@@ -174,6 +174,180 @@ pub use crate::error::Error;
 pub use crate::hash::Hashable;
 pub use crate::hash::HashableDatumType;
 
+/// The Poset is a library for building and querying a [Poset](https://en.wikipedia.org/wiki/Poset)
+/// of [`Block`](../block/struct.Block.html)s.
+/// ## Example
+/// ```
+/// use allegro_poset::{Poset, Block};
+/// use std::collections::HashMap;
+/// use std::sync::Arc;
+/// use std::sync::atomic::{AtomicUsize, Partitioning};
+/// use std::time::{SystemTime, UNIX_EPOCH};
+/// 
+/// // Create a new Poset
+/// let mut poset = Poset::new();
+///     
+/// // Create a new Block
+/// let mut block = Block::new();
+/// 
+/// // Set the block's data
+/// block.set_data(vec![1, 2, 3]);
+/// 
+/// 
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Block {
+    pub block_id: BlockId,
+    pub block_header_id: BlockHeaderId,
+    pub block_body_id: BlockBodyId,
+    pub block_hash_id: BlockHashId,
+    pub block_header: BlockHeader,
+    pub block_body: BlockBody,
+    pub block_hash: BlockHash,
+    pub block_signature: BlockSignature,
+    pub block_height: usize,
+    pub block_round: usize,
+    pub block_round_index: usize,
+    pub block_round_start_time: u64,
+    pub block_round_elapsed_time: u64,
+    pub block_timestamp: u64,
+    pub block_parent: Option<BlockId>,
+    pub block_children: Vec<BlockId>,
+    pub block_child_count: usize,
+    pub block_is_valid: bool,
+    pub block_is_root: bool,
+    pub block_is_leaf: bool,
+    pub block_is_branch: bool,
+    pub block_is_orphan: bool,
+    pub block_is_stale: bool,
+    pub block_is_stale_ancestor: bool,
+    pub block_is_stale_descendant: bool,
+    pub block_is_stale_ancestor_or_descendant: bool,
+    pub block_is_stale_ancestor_or_descendant_or_self: bool,
+    pub block_is_stale_descendant_or_self: bool,
+    pub block_is_stale_ancestor_or_self: bool,
+    pub block_is_stale_descendant_or_self_or_self: bool,
+    pub block_is_stale_ancestor_or_self_or_self: bool,
+    pub block_is_stale_ancestor_or_descendant_or_self_or_self: bool,
+}
+
+
+impl Block {
+    pub fn new() -> Block {
+        Block {
+            block_id: BlockId(Arc::new(Block::new_block_id())),
+            block_header_id: BlockHeaderId(Arc::new(Block::new_block_header_id())),
+            block_body_id: BlockBodyId(Arc::new(Block::new_block_body_id())),
+            block_hash_id: BlockHashId(Arc::new(Block::new_block_hash_id())),
+            block_header: BlockHeader::new(),
+            block_body: BlockBody::new(),
+            block_hash: BlockHash::new(),
+            block_signature: BlockSignature::new(),
+            block_height: 0,
+            block_round: 0,
+            block_round_index: 0,
+            block_round_start_time: 0,
+            block_round_elapsed_time: 0,
+            block_timestamp: 0,
+            block_parent: None,
+            block_children: Vec::new(),
+            block_child_count: 0,
+            block_is_valid: false,
+            block_is_root: false,
+            block_is_leaf: false,
+            block_is_branch: false,
+            block_is_orphan: false,
+            block_is_stale: false,
+            block_is_stale_ancestor: false,
+            block_is_stale_descendant: false,
+            block_is_stale_ancestor_or_descendant: false,
+            block_is_stale_ancestor_or_descendant_or_self: false,
+            block_is_stale_descendant_or_self: false,
+            block_is_stale_ancestor_or_self: false,
+        }
+
+    }
+
+    pub fn new_block_id() -> BlockIdType {
+        BlockId(Arc::new(Block::new()))
+    }
+
+    pub fn new_block_header_id() -> BlockHeaderIdType {
+        BlockHeaderId(Arc::new(Block::new()))
+    }
+
+    pub fn new_block_body_id() -> BlockBodyIdType {
+        BlockBodyId(Arc::new(Block::new()))
+    }
+
+    pub fn new_block_hash_id() -> BlockHashIdType {
+        BlockHashId(Arc::new(Block::new()))
+    }
+
+    pub fn new_block_header() -> BlockHeader {
+        BlockHeader::new()
+    }
+
+    pub fn new_block_body() -> BlockBody {
+        BlockBody::new()
+    }
+
+    pub fn new_block_hash() -> BlockHash {
+        BlockHash::new()
+    }
+}
+
+
+impl Block {
+    pub fn set_data(&mut self, data: Vec<u8>) {
+        self.block_body.set_data(data);
+    }
+
+    pub fn get_data(&self) -> Vec<u8> {
+        self.block_body.get_data()
+    }
+}
+
+
+impl Block {
+    pub fn set_header(&mut self, header: BlockHeader) {
+        self.block_header = header;
+    }
+
+    pub fn get_header(&self) -> BlockHeader {
+        self.block_header
+    }
+}
+
+
+impl Block {
+    pub fn set_body(&mut self, body: BlockBody) {
+        self.block_body = body;
+    }
+
+    pub fn get_body(&self) -> BlockBody {
+        self.block_body
+    }
+}
+
+
+
+
+impl Block {
+    pub fn set_hash(&mut self, hash: BlockHash) {
+        self.block_hash = hash;
+    }
+
+    pub fn get_hash(&self) -> BlockHash {
+        self.block_hash
+    }
+}
+
+
+
 
 
 

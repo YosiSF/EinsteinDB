@@ -1,3 +1,44 @@
+//Copyright (c) 2022 EinsteinDB contributors
+//! # Poset
+//! Poset is a library for building and querying a [Poset](https://en.wikipedia.org/wiki/Poset)
+//! of [`Block`](../block/struct.Block.html)s.
+//! ## Example
+//! ```
+//! use allegro_poset::{Poset, Block};
+//! use std::collections::HashMap;
+//! use std::sync::Arc;
+//! use std::sync::atomic::{AtomicUsize, Partitioning};
+//! use std::time::{SystemTime, UNIX_EPOCH};
+//! 
+//! // Create a new Poset
+//! let mut poset = Poset::new();
+//!     
+//! // Create a new Block
+//! let mut block = Block::new();
+//! 
+//! // Set the block's data
+//! block.set_data(vec![1, 2, 3]);
+//! 
+//! // Set the block's parent
+//! block.set_parent(Some(Arc::new(Block::new())));
+//! 
+//! // Set the block's timestamp
+//! block.set_timestamp(SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs());
+
+
+//! // Set the block's signature
+//! block.set_signature(vec![1, 2, 3]);
+//! 
+//! // Set the block's hash
+//! block.set_hash(vec![1, 2, 3]);
+//!     
+//! // Set the block's height
+//! block.set_height(0);
+//! 
+//! // Set the block's round
+//! block.set_round(0);
+//! 
+
 // Root level. Merkle-tree must be created here. Write the LSH-KV with a stateless hash tree of `Node`,
 // where each internal node contains two child nodes and is associating with another key (a => b) in merkle_tree_map().
 // We need to make sure that whatever algorithm we use for this hash function gives us even distribution so
@@ -11,7 +52,25 @@
 // for a good explanation of universal hashing functions.
 //
 // The hash function used here is the one from [this post](https://yosisf/EinsteinDB)
-//
+
+
+
+#[macro_use]
+extern crate log;
+extern crate log4rs;
+extern crate log4rs_derive;
+
+
+#[macro_use]
+extern crate lazy_static;
+
+
+#[macro_use]
+extern crate serde_derive;
+
+
+
+
 ///! This is the main module of the crate.
 ///! It contains the following modules:
 ///!     - `merkle_tree`: contains the `MerkleTree` struct and its associated functions.
@@ -26,27 +85,20 @@
 ///!     - `utils::hash::hash_function`: contains the `hash_function` module.
 ///!     - `utils::hash::hash_function::hash_function`: contains the `hash_function` module.
 
+mod merkle_tree;
+mod poset;
 
 
-
-// Language: rust
-// Path: EinsteinDB/allegro_poset/src/mod.rs
-// Compare this snippet from EinsteinDB/allegro_poset/src/allegro_causet_value.rs:
-pub mod alexandrov_process;
-pub mod alexandrov_process_state;
-pub mod causet_locale;
-pub mod convert;
-pub mod datum;
-pub mod datum_codec;
-pub mod spacetime;
-pub mod sync;
-pub mod types;
+pub use crate::merkle_tree::MerkleTree;
+pub use crate::poset::Poset;
 
 
-
-
-///! #### `merkle_tree`
-/// ! This module contains the `MerkleTree` struct and its associated functions.
-///
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
+}
 
 

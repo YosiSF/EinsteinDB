@@ -9,6 +9,28 @@ use std::mem;
 use std::ops::{Deref, DerefMut};
 use std::ptr;
 use std::slice;
+use std::str;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::{fmt::Debug, io::Write};
+use crate::error::{Error, Result};
+use crate::parser::{Parser, ParserError};
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DatumId(Arc<Datum>);
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DatumHeaderId(Arc<DatumHeader>);
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DatumBodyId(Arc<DatumBody>);
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DatumBodyRef(Arc<DatumBody>);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct AllegroPoset<T: DatumType> {

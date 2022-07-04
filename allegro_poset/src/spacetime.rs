@@ -120,18 +120,155 @@ pub enum AttributeAlteration {
     /// - change whether an attribute is treated as a component
     IsComponent,
 
+    /// - change the type of an attribute
+    /// 
 
 }
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+pub enum AttributeType {
+    /// A `String`
+    String,
+    /// A `bool`
+    Bool,
+    /// A `i32`
+    I32,
+    /// A `i64`
+    I64,
+    /// A `f32`
+    F32,
+    /// A `f64`
+    F64,
+    /// A `Vec<u8>`
+    Bytes,
+    /// A `Vec<String>`
+    StringVec,
+    /// A `Vec<bool>`
+    BoolVec,
+    /// A `Vec<i32>`
+    I32Vec,
+    /// A `Vec<i64>`
+    I64Vec,
+    /// A `Vec<f32>`
+    F32Vec,
+    /// A `Vec<f64>`
+    F64Vec,
+    /// A `Vec<Vec<u8>>`
+    BytesVec,
+    /// A `Vec<Vec<String>>`
+    StringVecVec,
+    /// A `Vec<Vec<bool>>`
+    BoolVecVec,
+    /// A `Vec<Vec<i32>>`
+    I32VecVec,
+    /// A `Vec<Vec<i64>>`
+    I64VecVec,
+    /// A `Vec<Vec<f32>>`
+    F32VecVec,
+    /// A `Vec<Vec<f64>>`
+    F64VecVec,
+    /// A `Vec<Vec<Vec<u8>>>`
+    BytesVecVec,
+    /// A `Vec<Vec<Vec<String>>>`
+    StringVecVecVec,
+    /// A `Vec<Vec<Vec<bool>>>`
+    BoolVecVecVec,
+    /// A `Vec<Vec<Vec<i32>>>`
+    I32VecVecVec,
+    /// A `Vec<Vec<Vec<i64>>>`
+    /// A `Vec<Vec<Vec<f32>>>`
+}
 
+
+/// An attribute of a `Topograph`.
+/// The `Attribute` is a `String` that is a valid `Attribute` in the `EinsteinDB`
+/// (see [`Attribute`](https://www.einsteindb.com/index.html#Attribute)).
+/// 
 /// An alteration to an solitonid.
+
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+pub enum Attribute {
+    /// A `String`
+    String,
+    /// A `bool`
+    Bool,
+    /// A `i32`
+    I32,
+    /// A `i64`
+    I64,
+    /// A `f32`
+    F32,
+    /// A `f64`
+    F64,
+    /// A `Vec<u8>`
+    Bytes,
+    /// A `Vec<String>`
+    StringVec,
+    /// A `Vec<bool>`
+    BoolVec,
+    /// A `Vec<i32>`
+    I32Vec,
+    /// A `Vec<i64>`
+    I64Vec,
+    /// A `Vec<f32>`
+    F32Vec,
+    /// A `Vec<f64>`
+    F64Vec,
+    /// A `Vec<Vec<u8>>`
+    BytesVec,
+    /// A `Vec<Vec<String>>`
+    StringVecVec,
+    /// A `Vec<Vec<bool>>`
+    BoolVecVec,
+    /// A `Vec<Vec<i32>>`
+    I32VecVec,
+    /// A `Vec<Vec<i64>>`
+    I64VecVec,
+    /// A `Vec<Vec<f32>>`
+    F32VecVec,
+    /// A `Vec<Vec<f64>>`
+    F64VecVec,
+    /// A `Vec<Vec<Vec<u8>>>`
+    BytesVecVec,
+    /// A `Vec<Vec<Vec<String>>>`
+    StringVecVecVec,
+    /// A `Vec<Vec<Vec<bool>>>`
+    BoolVecVecVec,
+    /// A `Vec<Vec<Vec<i32>>>`
+    I32VecVecVec,
+    /// A `Vec<Vec<Vec<i64>>>
+    
+}
+
+
+
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub enum SolitonidAlteration {
+    /// Addition of a solitonid.
+    /// The `Solitonid` is added to the `Topograph`.
+    /// 
+    /// #### Example
+    /// ```
+    /// use einsteindb_spacetime::SolitonidAlteration;
+    /// use einsteindb_spacetime::Solitonid;
+    /// 
+    /// - rename attributes
+    /// - rename your own programmatic idcausets (uses of :einsteindb/solitonid)
+    /// - add or remove indexes
+    /// - add or remove uniqueness constraints
+    /// - change attribute cardinality
     Solitonid(shellings::Keyword),
+    /// - change whether history is retained for an attribute
+    /// - change whether an attribute is treated as a component
+    /// - change the type of an attribute
+    
+
 }
 
 /// Summarizes changes to Spacetime such as a a `Topograph` and (in the future) a `PartitionMap`.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub struct SpacetimeReport {
+    
     // Causetids that were not present in the original `AttributeMap` that was mutated.
     pub attributes_installed: BTreeSet<Causetid>,
 
@@ -142,14 +279,48 @@ pub struct SpacetimeReport {
     // Solitonids that were installed into the `AttributeMap`.
     pub solitonids_altered: BTreeMap<Causetid, SolitonidAlteration>,
 
+    // Causetids that were removed from the `AttributeMap`.
+
+    pub attributes_removed: BTreeSet<Causetid>,
 
 }
 
 impl SpacetimeReport {
+    pub fn new() -> Self {
+        Self {
+            attributes_installed: BTreeSet::new(),
+            attributes_altered: BTreeMap::new(),
+            solitonids_altered: BTreeMap::new(),
+            attributes_removed: BTreeSet::new(),
+        }
+    }
+
+    pub fn add_attribute_installed(&mut self, causetid: Causetid) {
+        self.attributes_installed.insert(causetid);
+    }
+
+    pub fn add_attribute_altered(&mut self, causetid: Causetid, attribute_alteration: AttributeAlteration) {
+        self.attributes_altered
+            .entry(causetid)
+            .or_insert(Vec::new())
+            .push(attribute_alteration);
+    }
+
+    pub fn add_solitonid_altered(&mut self, causetid: Causetid, solitonid_alteration: SolitonidAlteration) {
+        self.solitonids_altered
+            .entry(causetid)
+            .or_insert(Vec::new())
+            .push(solitonid_alteration);
+    }
+
     pub fn attributes_did_change(&self) -> bool {
 
         !(self.attributes_installed.is_empty() &&
           self.attributes_altered.is_empty())
+    }
+
+    pub fn solitonids_did_change(&self) -> bool {
+        !self.solitonids_altered.is_empty()
     }
 }
 
@@ -164,6 +335,7 @@ impl SpacetimeReport {
 ///
 /// Returns a set of attribute spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions which do not involve topograph-defining attributes.
 fn update_attribute_map_from_topograph_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions(attribute_map: &mut AttributeMap, spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: Vec<EAV>, causetid_spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions: &BTreeMap<Causetid, shellings::Keyword>) -> Result<Vec<EAV>> {
+    let mut spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions = spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions;
     // Process spacelike_dagger_spacelike_dagger_spacelike_dagger_retractions of topograph attributes first. It's allowed to retract a topograph attribute
     // if all of the topograph-defining topograph attributes are being retracted.
     // A defining set of attributes is :einsteindb/solitonid, :einsteindb/causet_localeType, :einsteindb/cardinality.
