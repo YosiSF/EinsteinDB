@@ -9,7 +9,54 @@ url = "https://github.com/YosiSF/EinsteinDB.git"
 [lib]
 src = ["src/lib.rs"]
 
-#target
+[dependencies]
+
+
+[features]
+default = ["einstein_db_alexandrov_processv_processing"]
+einstein_db_alexandrov_processv_processing = []
+
+
+[default]
+features = ["default"]
+
+
+[dev-dependencies]
+einstein_db_alexandrov_processv_processing = { path = "../einstein_db_alexandrov_processv_processing" }
+
+
+
+[build]
+rustflags = ["-lm"]
+link-args = ["-lm"]
+rustc-link-lib = ["static=lm"]
+rustc-link-search = ["/usr/lib/x86_64-linux-gnu/"]
+
+
+[profile.release]
+opt-level = "3"
+lto = true
+lto-codegen = true
+lto-pre-link = true
+lto-thin = true
+lto-thin-lto = true
+
+
+
+
+[profile.dev]
+opt-level = "0"
+lto = false
+lto-codegen = false
+
+
+
+[profile.test]
+opt-level = "0"
+lto = false
+lto-codegen = false
+test = true
+
 
 
 
