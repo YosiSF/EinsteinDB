@@ -12,80 +12,6 @@
 //
 // The hash function used here is the one from [this post](https://yosisf/EinsteinDB)
 //
-
-
-use crate::{
-    merkle_tree::{
-        MerkleTree,
-        MerkleTreeMap,
-        MerkleTreeMapMut,
-        MerkleTreeMapMutRef,
-        MerkleTreeMapRef,
-        MerkleTreeMut,
-        MerkleTreeRef,
-    },
-    poset::{
-        Poset,
-        PosetMap,
-        PosetMapMut,
-        PosetMapMutRef,
-        PosetMapRef,
-        PosetMut,
-        PosetRef,
-    },
-    poset_state::{
-        PosetState,
-        PosetStateMap,
-        PosetStateMapMut,
-        PosetStateMapMutRef,
-        PosetStateMapRef,
-        PosetStateMut,
-        PosetStateRef,
-    },
-    poset_state_transition::{
-        PosetStateTransition,
-        PosetStateTransitionMap,
-        PosetStateTransitionMapMut,
-        PosetStateTransitionMapMutRef,
-        PosetStateTransitionMapRef,
-        PosetStateTransitionMut,
-        PosetStateTransitionRef,
-    },
-    transaction::{
-        Transaction,
-        TransactionMap,
-        TransactionMapMut,
-        TransactionMapMutRef,
-        TransactionMapRef,
-        TransactionMut,
-        TransactionRef,
-    },
-    transaction_state::{
-        TransactionState,
-        TransactionStateMap,
-        TransactionStateMapMut,
-        TransactionStateMapMutRef,
-        TransactionStateMapRef,
-        TransactionStateMut,
-        TransactionStateRef,
-    },
-    transaction_state_transition::{
-        TransactionStateTransition,
-        TransactionStateTransitionMap,
-        TransactionStateTransitionMapMut,
-        TransactionStateTransitionMapMutRef,
-        TransactionStateTransitionMapRef,
-        TransactionStateTransitionMut,
-        TransactionStateTransitionRef,
-    },
-};
-
-
-
-
-
-
-///! #### `mod.rs`
 ///! This is the main module of the crate.
 ///! It contains the following modules:
 ///!     - `merkle_tree`: contains the `MerkleTree` struct and its associated functions.
@@ -103,7 +29,11 @@ use crate::{
 
 
 
+// Language: rust
+// Path: EinsteinDB/allegro_poset/src/mod.rs
+// Compare this snippet from EinsteinDB/allegro_poset/src/allegro_causet_value.rs:
 pub mod alexandrov_process;
+pub mod alexandrov_process_state;
 pub mod causet_locale;
 pub mod convert;
 pub mod datum;
@@ -111,6 +41,8 @@ pub mod datum_codec;
 pub mod spacetime;
 pub mod sync;
 pub mod types;
+
+
 
 
 ///! #### `merkle_tree`

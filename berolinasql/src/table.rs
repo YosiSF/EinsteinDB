@@ -1,10 +1,67 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
 
+
+use super::*;
+use crate::error::{Error, Result};
+use crate::parser::{Parser, ParserError};
+use crate::value::{Value, ValueType};
+use crate::{ValueRef, ValueRefMut};
+use itertools::Itertools;
+
+
+use crate::fdb_traits::FdbTrait;
+use crate::fdb_traits::FdbTraitImpl;
+use crate::fdb_traits_impl::FdbTraitImplImpl;
+
+
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    io,
+    convert::{TryFrom, TryInto},
+    ops::{Deref, DerefMut},
+    sync::{Arc, Mutex},
+};
+
+
+///ttl for primitive type in EinsteinDB
+/// time to live for primitive type in EinsteinDB
+/// 
+/// # Arguments
+/// * `ttl` - ttl for primitive type in EinsteinDB
+/// 
+/// # Returns
+/// * `Option<u64>` - expire_ts for primitive type in EinsteinDB
+/// 
+/// # Example
+/// 
+/// ```rust
+/// use einsteindb_sql::table::ttl_to_expire_ts;
+/// 
+/// let ttl = 0;
+/// 
+/// let expire_ts = ttl_to_expire_ts(ttl);
+/// 
+/// assert_eq!(expire_ts, None);
+/// 
+/// let ttl = 1;
+/// 
+/// let expire_ts = ttl_to_expire_ts(ttl);
+/// 
+/// assert_eq!(expire_ts, Some(2));
+/// 
 use berolina_sql::{
+    ttl_current_ts,
+    ttl_to_expire_ts,
+    ttl_expire_ts,
     ast::{self, Expr, ExprKind, Field, FieldType, FieldTypeTp, FieldTypeVisitor},
     Column,
     EvalContext,
+    EvalContextImpl,
     Result,
+    Row,
+    Rows,
+    RowsIter,
     ScalarFunc,
     ScalarFuncArgs,
     ScalarFuncCall,
@@ -15,17 +72,6 @@ use berolina_sql::{
     Value,
 };
 
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    convert::TryFrom,
-    fmt,
-    hash::{Hash, Hasher},
-    iter::FromIterator,
-    ops::{Deref, DerefMut},
-    str::FromStr,
-    sync::Arc,
-};
-
 use einsteindb::{ColumnInfo, ColumnInfo_Type, IndexInfo, IndexInfo_Type, IndexInfo_Unique};
 use einsteindb::{IndexType, IndexTypeTp, IndexTypeTpFlag, TableInfo, TableInfo_Type};
 use einstein_db::Causetid;
@@ -33,6 +79,47 @@ use soliton::types::{
     ColumnType, ColumnTypeFlag, ColumnTypeTp, ColumnTypeTpFlag, ColumnTypeTpFlagVec,
     ColumnTypeTpVec,
 };
+
+
+use einsteindb_util::time::UnixSecs;
+use einsteindb_util::time::{Duration, DurationSecs};
+
+
+use einsteindb_util::time::{DurationSecs, DurationSecs as DurationSecsT};
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Table {
+    pub name: String,
+    pub columns: Vec<Column>,
+    pub indexes: Vec<Index>,
+    pub primary_key: Vec<String>,
+    pub ttl: u64,
+    pub ttl_column: String,
+    pub ttl_column_type: ColumnType,
+    pub ttl_column_type_flag: ColumnTypeFlag,
+    pub ttl_column_type_tp: ColumnTypeTp,
+}
+
+
+impl Table {
+    pub fn new(name: String, columns: Vec<Column>, indexes: Vec<Index>, primary_key: Vec<String>, ttl: u64, ttl_column: String, ttl_column_type: ColumnType, ttl_column_type_flag: ColumnTypeFlag, ttl_column_type_tp: ColumnTypeTp) -> Self {
+        Table {
+            name,
+            columns,
+            indexes,
+            primary_key,
+            ttl,
+            ttl_column,
+            ttl_column_type,
+            ttl_column_type_flag,
+            ttl_column_type_tp,
+        }
+    }
+}
 
 // handle or Index id
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -47,6 +134,18 @@ impl Id {
     pub fn as_u64(&self) -> u64 {
         self.0
     }
+
+    pub fn as_i64(&self) -> i64 {
+        self.0 as i64
+    }
+
+    pub fn as_usize(&self) -> usize {
+        self.0 as usize
+    }
+
+    pub fn as_isize(&self) -> isize {
+        self.0 as isize
+    }
 }
 
 
@@ -54,21 +153,53 @@ impl fmt::Display for Id {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
+
+    fn fmt_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
 }
 
 
 impl FromStr for Id {
-    type Err = ();
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        let id = s.parse::<u64>()?;
+        Ok(Id::new(id))
+    }
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Id(s.parse()?))
     }
+
+    fn from_str_radix(s: &str, radix: u32) -> Result<Self, Self::Err> {
+        Ok(Id(s.parse_radix(radix)?))
+    }
+    
 }
 
 
 impl Hash for Id {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.0.hash(state);
+    }
+
+    fn hash_slice<H: Hasher>(data: &[Self], state: &mut H) {
+        for id in data {
+            id.hash(state);
+        }
+    }
+
+    fn hash_to_bytes(data: &[Self]) -> Vec<u8> {
+        let mut hasher = DefaultHasher::new();
+        Self::hash_slice(data, &mut hasher);
+        hasher.finish().to_be_bytes().to_vec()
+    }
+
+    fn hash_to_hex(data: &[Self]) -> String {
+        let mut hasher = DefaultHasher::new();
+        Self::hash_slice(data, &mut hasher);
+        format!("{:x}", hasher.finish())
     }
 }
 

@@ -9,6 +9,10 @@
 // specific language governing permissions and limitations under the License.
 
 #![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+#![allow(unused_mut)]
+#![allow(unused_assignments)]
 
 //! Most transactions can mutate the EinsteinDB Spacetime by transacting lightlike_upsert:
 //!  - `lightlike_upsert`: inserts or updates a value in the spacetime or cone of spacetime.

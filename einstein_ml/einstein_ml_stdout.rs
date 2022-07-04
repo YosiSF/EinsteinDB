@@ -8,6 +8,70 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+
+// #[macro_export]
+// macro_rules! einsteindb_macro {
+//     ($($tokens:tt)*) => {
+//         $crate::einsteindb_macro_impl!($($tokens)*)
+//     };
+
+
+// #[macro_export]
+// macro_rules! einsteindb_macro_impl {
+//     ($($tokens:tt)*) => {
+//         $crate::einsteindb_macro_impl!($($tokens)*)
+//     };
+
+
+#[macro_export]
+macro_rules! einsteindb_macro {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+}
+
+#[macro_export]
+macro_rules! einsteindb_macro_impl {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+}
+
+
+
 use std::borrow::Cow;
 use std::io;
 
@@ -15,11 +79,122 @@ use chrono::SecondsFormat;
 use itertools::Itertools;
 use pretty;
 
-use types::Value;
+use einstein_db_alexandrov_processing::{
+    index::{
+        Index,
+        IndexIterator,
+        IndexIteratorOptions,
+        IndexIteratorOptionsBuilder,
+    },
+};
 
-use crate::Value;
+
+use berolina_sql::{
+    parser::Parser,
+    value::{Value, ValueType},
+    error::{Error, Result},
+    parser::ParserError,
+    value::{ValueRef, ValueRefMut},
+    fdb_traits::FdbTrait,
+    fdb_traits::FdbTraitImpl,
+    pretty,
+    io,
+    convert::{TryFrom, TryInto},
+    ops::{Deref, DerefMut},
+    sync::{Arc, Mutex},
+};
+
+
+
+pub struct EinsteinDb<T: FdbTrait> {
+    db: T,
+}
+
+
+impl<T: FdbTrait> EinsteinDb<T> {
+    pub fn new(db: T) -> Self {
+        EinsteinDb { db }
+    }
+}
+
+
+impl<T: FdbTrait> Deref for EinsteinDb<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.db
+    }
+}
+
+
+impl<T: FdbTrait> DerefMut for EinsteinDb<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.db
+    }
+}
+
+
+impl<T: FdbTrait> FdbTraitImpl for EinsteinDb<T> {
+    fn get_db(&self) -> &T {
+        &self.db
+    }
+}
+
+
+impl<T: FdbTrait> EinsteinDb<T> {
+    pub fn get_db(&self) -> &T {
+        &self.db
+    }
+}
+
+/// #### EinsteinDB
+/// `EinsteinDb` is a wrapper around `FdbTrait` that provides a simple interface to the EinsteinDB database.
+/// 
+/// ## Examples
+/// ```rust
+/// use einstein_db_alexandrov_processing::{
+///    index::{
+///       Index,
+///      IndexIterator,
+///     IndexIteratorOptions,
+/// 
+///   },    
+/// 
+/// };  
+/// 
+/// let db = EinsteinDb::new(Fdb::new());
+/// 
+/// let mut index = Index::new(&db, "test");
+/// 
+/// index.insert("test", "test");
+/// 
+/// let mut iter = index.iter(IndexIteratorOptions::new());
+/// 
+/// while let Some(value) = iter.next() {
+///    println!("{:?}", value);
+/// }
+
+
+
+///Define Value with a type parameter, which is the type of the value. Not the type of the index.
+/// #### Value
+
+
+
+pub struct Value<T> {
+    value: T,
+}
+
+
 
 impl Value {
+    pub fn new<T>(value: T) -> Self {
+        Value { value }
+    }
+
+    pub fn get_value(&self) -> &T {
+        &self.value
+    }
     /// Return a pretty string representation of this `Value`.
     pub fn to_pretty(&self, width: usize) -> Result<String, io::Error> {
         let mut out = Vec::new();
@@ -27,9 +202,57 @@ impl Value {
         Ok(String::from_utf8_lossy(&out).into_owned())
     }
 
+    /// Write a pretty string representation of this `Value` to the given `Write`.
+    /// Returns the number of bytes written.
+    /// #### Example
+    /// ```rust
+    /// use einstein_db_alexandrov_processing::{
+    ///   index::{
+    ///    Index,
+    ///   IndexIterator,
+    /// IndexIteratorOptions,
+    /// 
+    /// },
+    /// 
+    /// };
+    /// 
+    /// 
+    /// let db = EinsteinDb::new(Fdb::new());
+    /// 
+    /// let mut index = Index::new(&db, "test");
+    /// 
+    /// index.insert("test", "test");
+    /// 
+    /// let mut iter = index.iter(IndexIteratorOptions::new());
+    /// 
+    /// while let Some(value) = iter.next() {
+    ///   println!("{:?}", value);
+    /// }
+    /// ```
+    /// ### Output
+    /// ```text
+    /// Value {
+    ///    value: "test",
+    /// }
+    /// ```
+
     /// Write a pretty representation of this `Value` to the given writer.
     fn write_pretty<W>(&self, width: usize, out: &mut W) -> Result<(), io::Error> where W: io::Write {
+        let mut writer = pretty::Writer::new(out, width);
+        writer.write_value(&self.value)?;
+        Ok(())
+    }
+
+    /// Write a pretty representation of this `Value` to the given writer.
+    /// Returns the number of bytes written.
+    /// 
+
+    fn write_pretty_to_vec(&self, width: usize) -> Result<Vec<u8>, io::Error> {
+        let mut out = Vec::new();
+        self.write_pretty(width, &mut out)?;
         self.as_doc(&pretty::BoxAllocator).1.render(width, out)
+
+        Ok(out)
     }
 
     /// Bracket a collection of causet_locales.
@@ -40,8 +263,22 @@ impl Value {
     /// [1,
     ///  2,
     ///  3].
-    fn bracket<'a, A, T, I>(&'a self, allocator: &'a A, open: T, vs: I, close: T) -> pretty::DocBuilder<'a, A>
+    fn bracket<'a, I>(&self, iter: I) -> String where I: IntoIterator<Item = &'a str> {
+        let mut iter = iter.into_iter();
+        let first = iter.next().unwrap();
+        let mut out = String::new();
+        out.push_str(first);
         where A: pretty::DocAllocator<'a>, T: Into<Cow<'a, str>>, I: IntoIterator<Item=&'a Value> {
+            let mut iter = iter.into_iter();
+            let first = iter.next().unwrap();
+            let mut out = String::new();
+            out.push_str(first);
+            while let Some(value) = iter.next() {
+                out.push_str(", ");
+                out.push_str(value);
+            }
+            out
+        }
         let open = open.into();
         let n = open.len();
         let i = vs.into_iter().map(|v| v.as_doc(allocator)).intersperse(allocator.space());

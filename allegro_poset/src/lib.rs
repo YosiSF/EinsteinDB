@@ -50,11 +50,25 @@
 //!
 //! // Set the block's round_elapsed_time
 //! block.set_round_elapsed_time(0);
-//!
+//! 
+//! 
+
+
+
+
+//! // Set the block's round_elapsed_time
+//! block.set_round_elapsed_time(0);
+//! 
+//! 
+//! 
+//! // Add the block to the Poset
+//! poset.add_block(Arc::new(block));
+//! 
 extern crate enum_set;
 extern crate ordered_float;
 extern crate uuid;
 extern crate lazy_static;
+extern crate einsteindb_util;
 
 use std::cmp::Partitioning::{self, Greater, Less};
 use std::collections::{HashMap, HashSet};
@@ -99,35 +113,66 @@ use crate::block::{BlockHeaderHash, BlockHeaderHashType};
 use crate::block::{BlockBodyHash, BlockBodyHashType};
 use crate::block::{BlockHash, BlockHashType};
 use crate::block::{BlockSignature, BlockSignatureType};
-//a causet is a causal set or coset of posets
-// causet is a set of blocks
-// a poset is a set of blocks
-// a block is a set of datums
-// a datum is a set of values
-// a value is a set of bytes
-// a byte is a set of bits
-// a bit is a set of bits
-// A BTree is a nested forest of causets_after_a_block
 
 
-//use crate::block::{Block, BlockType};
-//use crate::block::{BlockHeader, BlockHeaderType};
-//use crate::block::{BlockBody, BlockBodyType};
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BlockId(Arc<Block>);
 
 
-//use crate::block::{BlockHeaderHash, BlockHeaderHashType};
-//use crate::block::{BlockBodyHash, BlockBodyHashType};
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BlockHeaderId(Arc<BlockHeader>);
 
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BlockBodyId(Arc<BlockBody>);
 
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BlockHashId(Arc<BlockHash>);
 
-//use std::collections::BTreeMap;
+pub type BlockIdType = BlockId;
 
 
+pub type BlockHeaderIdType = BlockHeaderId;
 
 
+pub type BlockBodyIdType = BlockBodyId;
 
+
+pub type BlockHashIdType = BlockHashId;
+
+enum BlockIdTypeEnum {
+    BlockId(BlockIdType),
+}
+
+
+enum BlockHeaderIdTypeEnum {
+    BlockHeaderId(BlockHeaderIdType),
+}
+
+
+enum BlockBodyIdTypeEnum {
+    BlockBodyId(BlockBodyIdType),
+}
+
+switch on BlockHashIdType {
+    case BlockHashIdType(BlockHashIdType):
+        BlockHashIdType(BlockHashIdType),
+}
+
+
+mod datum;
+mod error;
+mod hash;
+mod block;
+mod poset;
+mod util;
+
+
+pub use crate::datum::DatumType;
+pub use crate::error::Error;
+pub use crate::hash::Hashable;
+pub use crate::hash::HashableDatumType;
 
 
 

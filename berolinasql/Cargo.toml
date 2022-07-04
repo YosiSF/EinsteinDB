@@ -2,8 +2,10 @@
 name = "berolinasql"
 version = "0.0.1"
 authors = ["BerolinaSQL and EinsteinDB Authors, Whtcorps, EinstAI"]
-edition = "2018"
+edition = "2021"
 publish = false
+
+
 
 [features]
 #[cfg(feature = "sqlite")]
@@ -11,25 +13,28 @@ publish = false
 [features.sql]
 default = ["sqlite", "mysql"]
 
+
+[features.sql.sqlite]
+default = "sqlite"
+
+
+[features.sql.mysql]
+default = "mysql"
+
+#FoundationDB
+[features.foundationdb]
+default = "foundationdb"
+
+#
+
 [dependencies]
 #[cfg(feature = "sqlite")]
 #[cfg(feature = "mysql")]
-sql = { version = "0.0.1", default-features = false }
-[dependencies.sql]
-path = "../berolinasql"
-
-[dependencies.einsteindb]
-path = "https://www.einsteindb.
-
-
+sql = { version = "0.4.3", default-features = false }
 serde = { version = "1.0", default-features = false }
 serde_json = { version = "1.0", default-features = false }
 serde_derive = { version = "1.0", default-features = false }
-FoundationDB = { version = "0.1.0", default-features = false }
-BerkeleyDB = { version = "0.1.0", default-features = false }
-rusqlite = { version = "0.1.0", default-features = false }
- EinsteinDB = { version = "0.0.1", default-features = false }
-postgres = "0.1.0"
+FoundationDB = { version = "0.6.0", default-features = false }
 
 einstein_ml = { path = "../einstein_ml" }
 causet = { path = "../causet" }
@@ -37,33 +42,12 @@ causetq = { path = "../causetq" }
 causets = { path = "../causets" }
 soliton_panic = { path = "../soliton_panic" }
 soliton = { path = "../soliton" }
-einstein_ml = { path = "../einstein_ml" }
 fdb_traits = { path = "../fdb_traits" }
 einstein_db_alexandrov_processing = { path = "../einstein_db_alexandrov_processing" }
 engine_test = { path = "../engine_test" }
 allegro_poset = { path = "../allegro_poset" }
 einstein_db = { path = "../einstein_db" }
 
-[dependencies.serde]
-version = "1.0"
-default-features = false
-
-
-[dependencies.serde_derive]
-version = "1.0"
-default-features = false
-
-
-failure = "0.1.1"
-indexmap = "1"
-itertools = "0.10.3"
-lazy_static = "1.4.0"
-log = "0.4.14"
-ordered-float = "2.10.0"
-time = "0.3.6"
-petgraph = "0.6.0"
-serde = { version = "1.0", optional = true }
-serde_derive = { version = "1.0", optional = true }
 
 
 [dependencies.rusqlite]
@@ -77,9 +61,17 @@ version = "1.0.3"
 [dev-dependencies]
 env_logger = "0.9.0"
 
-[dependencies.allegro_poset]
-path = "../allegro_poset"
 
+[dev-dependencies.serde]
+version = "1.0"
+
+
+[dev-dependencies.serde_json]
+version = "1.0"
+
+
+[dev-dependencies.serde_derive]
+version = "1.0"
 
 
 

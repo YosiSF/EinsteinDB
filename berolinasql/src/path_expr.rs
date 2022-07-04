@@ -89,6 +89,46 @@ use gremlin_capnp::gremlin_capnp::{GremlinRequest_get_query, GremlinRequest_get_
 
 
 
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LocalPathExpression {
+    pub scope: Option<String>,
+    pub legs: Vec<LocalPathLeg>,
+
+    // The following fields are used for cacheing.
+    // The cacheing is used to avoid repeated SQL queries.
+    pub cached_pod_list: Option<PodList>,
+    pub cached_pod_list_timestamp: Option<std::time::Instant>,
+    pub cached_pod_list_error: Option<String>,
+
+    pub cached_pod_list_by_label: Option<HashMap<String, PodList>>,
+    pub cached_pod_list_by_label_timestamp: Option<std::time::Instant>,
+
+    pub cached_pod_list_by_label_and_namespace: Option<HashMap<String, HashMap<String, PodList>>>,
+    pub cached_pod_list_by_label_and_namespace_timestamp: Option<std::time::Instant>,
+
+    pub cached_pod_list_by_label_and_namespace_and_status: Option<HashMap<String, HashMap<String, HashMap<String, PodList>>>>,
+    pub cached_pod_list_by_label_and_namespace_and_status_timestamp: Option<std::time::Instant>,
+} // LocalPathExpression
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LocalPathLeg {
+    pub member: Option<String>,
+    pub array_index: Option<usize>,
+} // LocalPathLeg
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LocalPath {
+    pub expression: LocalPathExpression,
+} // LocalPath
+
+
+
+
  #[derive(Debug)]
 pub struct GremlinRequestCapnp {
      pub query: String,
@@ -108,6 +148,23 @@ pub enum GremlinClient {
     Gremlin(ClientHook<GremlinRequest, GremlinResponse>),
 }
 
+///berolinasql pushdown query engine
+/// # Examples
+/// ```
+/// use berolina_sql::*;
+/// use diesel::prelude::*;
+/// use diesel::pg::PgConnection;
+/// 
+/// let connection = PgConnection::establish("postgres://postgres:postgres@localhost:5432/postgres")
+///    .expect("Error connecting to Postgres");
+/// 
+/// let mut berolina_sql = BerolinaSql::new(connection);
+/// 
+/// let query = "select * from pods where name = 'test'";
+/// let result = berolina_sql.query(query);
+/// 
+/// println!("{:?}", result);
+
 
  pub const GREMLIN_SERVER_PORT: u16 = 8182;
 
@@ -117,7 +174,12 @@ pub enum GremlinClient {
 
  pub const GREMLIN_SERVER_MAX_REQUEST_TIME: u64 = 10;
 
- pub const LOCAL_PATH_EXPR_ASTERISK: &str = "*";
+pub const GREMLIN_SERVER_MAX_REQUEST_SIZE: usize = 1024;
+
+pub const LOCAL_PATH_EXPR_ASTERISK: &str = "*";
+
+pub const LOCAL_PATH_EXPR_DOT: &str = ".";
+    
 
 // [a-zA-Z_][a-zA-Z0-9_]* matches any causetidifier;
 // "[^"\\]*(\\.[^"\\]*)*" matches any string literal which can carry escaped quotes.

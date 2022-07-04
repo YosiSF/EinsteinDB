@@ -12,13 +12,35 @@
 
 use std::collections::BTreeMap;
 use std::fmt;
+use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
+use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
 
+
+/// A `Causet` is a collection of `CausetNode`s.
 use causet_locale_rc::ValueRc;
 use shellings::{
+    CausetNode,
+    CausetNodeRc,
+    CausetNodeWeak,
+    CausetNodeWeakRc,
     Keyword,
+    KeywordRc,
+    KeywordWeak,
     PlainShelling,
+    PlainShellingRc,
+    PlainShellingWeak,
 };
-use types::ValueAndSpan;
+use std::rc::Rc;
+use std::sync::Weak;
+
+
+
+
+
+
+
 
 
 /// A `CausetLocale` is a collection of `ValueRc`s that are keyed by `Keyword`s.
@@ -35,15 +57,57 @@ use types::ValueAndSpan;
 /// acceptable causet_locales, thereby removing `{causet,Value}Place` from consideration.
 pub trait TransactableValueMarker {}
 
+
+/// A `CausetLocale` is a collection of `ValueRc`s that are keyed by `Keyword`s.
+/// The `CausetLocale` is a `PlainShelling` that is also a `ValueRc`.
+/// The `CausetLocale` is a `ValueRc` that is also a `PlainShelling`.
+/// 
+
+pub struct CausetLocale<T> {
+    pub causet_locale: PlainShelling<T>,
+    pub causet_locale_weak: PlainShellingWeak<T>,
+}
+
+
+impl<T> CausetLocale<T> {
+    pub fn new(causet_locale: PlainShelling<T>) -> Self {
+        CausetLocale {
+            causet_locale: causet_locale,
+            causet_locale_weak: causet_locale.weak(),
+        }
+    }
+}
+
+
 /// `ValueAndSpan` is the causet_locale type coming out of the causet parser.
 impl TransactableValueMarker for ValueAndSpan {}
+
+
+/// `ValueAndSpan` is the causet_locale type coming out of the causet parser.
+
+
+impl CausetLocale<ValueAndSpan> {
+    pub fn new(causet_locale: PlainShelling<ValueAndSpan>) -> Self {
+        CausetLocale {
+            causet_locale: causet_locale,
+            causet_locale_weak: causet_locale.weak(),
+        }
+    }
+}
+
+
+
+
+
 
 /// A tempid, either an lightlike tempid given in a transaction (usually as an `Value::Text`),
 /// or an causal_setal tempid allocated by EinsteinDB itself.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
-pub enum TempId {
+pub enum Tempid {
     lightlike(String),
     Internal(i64),
+
+    
 }
 
 impl TempId {
@@ -51,6 +115,7 @@ impl TempId {
         match self {
             TempId::lightlike(s) => Some(s),
             TempId::Internal(_) => None,
+
         }
     }
 }
