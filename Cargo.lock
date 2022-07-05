@@ -206,7 +206,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "088a21be787c96a6de7b9a43a3d87533a851b8fcad9956c01ecf735f2867de22"
 dependencies = [
  "cargo_metadata",
- "cbindgen",
+ "cargo-deps",
  "log 0.4.17",
  "pretty_env_logger",
  "regex 1.5.6",
