@@ -6,10 +6,16 @@ edition = "2021"
 license = "MIT Licensed"
 url = "https://github.com/YosiSF/EinsteinDB.git"
 
-[lib]
-src = ["src/lib.rs"]
 
 [dependencies]
+einstein_db = { path = "../einstein_db" }
+berolina_sql = { path = "../berolina_sql" }
+causet = { path = "../causet" }
+crate = { path = "../crate" }
+crate_sql = { path = "../crate_sql" }
+crate_sql_parser = { path = "../crate_sql_parser" }
+
+
 
 
 [features]
@@ -18,6 +24,7 @@ einstein_db_alexandrov_processv_processing = []
 
 
 [default]
+
 features = ["default"]
 
 
@@ -31,32 +38,4 @@ rustflags = ["-lm"]
 link-args = ["-lm"]
 rustc-link-lib = ["static=lm"]
 rustc-link-search = ["/usr/lib/x86_64-linux-gnu/"]
-
-
-[profile.release]
-opt-level = "3"
-lto = true
-lto-codegen = true
-lto-pre-link = true
-lto-thin = true
-lto-thin-lto = true
-
-
-
-
-[profile.dev]
-opt-level = "0"
-lto = false
-lto-codegen = false
-
-
-
-[profile.test]
-opt-level = "0"
-lto = false
-lto-codegen = false
-test = true
-
-
-
 

@@ -1,8 +1,9 @@
 version: '3.4'
 
-services: 
- - name: 
- image:
+
+  services: 
+   - name: 
+   image:
       name: ubuntu
       tag: latest
       pull_always: true
@@ -11,7 +12,7 @@ services:
       pull_cached: false
       pull_cached_only: false
       pull_if_not_present: false
-  
+
     ports:
       - "80:80"
       - "443:443"
@@ -26,8 +27,6 @@ services:
       - "/var/www/html/wp-content:/var/www/html/wp-content"
       - "/var/www/html/wp-content/uploads:/var/www/html/wp-content/uploads"
       - "/var/www/html/wp-content/plugins:/var/www/html/wp-content/plugins"
-  
-    environment:
       - "WP_ENV=production"
       - "WP_DEBUG=true"
       - "WP_DEBUG_LOG=true"

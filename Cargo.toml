@@ -11,7 +11,9 @@ categories = ["HTAP", "CAUSETS", "ACID", "DB4AI", "command-line-utilities", "dev
 
 
 [dependencies]
+
 anyhow = "1.0.58"
+
 async-stream = "0.3.3"
 async-std = "1.12.0"
 async-trait = "0.1.0"
@@ -54,4 +56,8 @@ tokio-tls="0.3.1"
 tokio-codec="0.1.2"
 tokio-io="0.1.13"
 tokio-process="0.2.5"
+
+[features]
+default = ["einstein-db"]
+einstein-db = ["einstein-db"]
 

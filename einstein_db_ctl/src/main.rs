@@ -33,9 +33,11 @@ use tokio::prelude::*;
 #[derive(StructOpt, Debug)]
 #[structopt(name = "einstein_db_ctl")]
 struct Opt {
-    #[structopt(subcommand)]
-    cmd: Command,
+    #[structopt(short = "p", long = "port", default_value = "8080")]
+    port: u16,
 }
+
+
 
 
 /// Commands
@@ -313,8 +315,5 @@ fn main(){
 
     }
 }
-
-
-
-
+}
 

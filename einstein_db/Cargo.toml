@@ -11,16 +11,19 @@ members = ["../einstein_db_ctl", "../einsteindb-server", "../berolinasql/codec",
 # See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
 chrono = "0.4"
 failure = "0.1.1"
 lazy_static = "1.4.0"
 time = "0.3.7"
 log = "0.4"
+serde = "1.0"
 uuid = { version = "1.1.2", features = ["v4", "serde"] }
 anyhow = "1.0"
 async-stream = "0.3.3"
 async-trait = "0.1"
 backtrace = "0.3"
+byteorder = "1.3.0"
 byteorder = "1.2"
 crc32fast = "1.2"
 crc64fast = "1.0.0"
@@ -48,7 +51,6 @@ regex = "1.3"
 num-traits = "0.2.14"
 rev_lines = "0.2.1"
 semver = "1.0.6"
-serde = { version = "1.0", features = ["derive"] }
 serde_derive = "1.0"
 serde_ignored = "0.1"
 serde_json = "1.0"
@@ -66,3 +68,52 @@ tokio = { version = "1.17", features = ["full"] }
 tokio-openssl = "0.6.3"
 toml = "0.5"
 url = "2.2.2"
+
+
+[features]
+default = ["serde"]
+serde = ["serde"]
+
+
+[target.'$TARGET'.dependencies]
+# See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+
+[target.'$TARGET'.features]
+serde = ["serde"]
+
+
+
+[target.'$TARGET'.link-args]
+-L/usr/local/lib
+
+
+[target.'$TARGET'.libraries]
+-lssl
+-lcrypto
+-lz
+-lm
+-lpthread
+-ldl
+-lutil
+-lresolv
+
+[target.'$TARGET'.rustflags]
+-C link-arg=-L/usr/local/lib
+-C link-arg=-lssl
+-C link-arg=-lcrypto
+-C link-arg=-lz
+-C link-arg=-lm
+-C link-arg=-lpthread
+
+
+[target.'$TARGET'.rustflags]
+-C link-arg=-L/usr/local/lib
+-C link-arg=-lssl
+-C link-arg=-lcrypto
+-C link-arg=-lz
+
+
+
+

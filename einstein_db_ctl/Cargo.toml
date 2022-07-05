@@ -21,7 +21,6 @@ serde = "1.0.138"
 structopt = "0.3"
 futures = "0.3"
 tokio = { version = "1.5", features = ["rt-multi-thread", "time"] }
-grpcio = { version = "0.10",  default-features = false, features = ["openssl-vendored", "protobuf-codec"] }
 libc = "0.2"
 nix = "0.24.1"
 rand = "0.8.5"
@@ -37,7 +36,3 @@ serde_yaml = ["serde"]
 serde_toml = ["serde"]
 serde_json_derive = ["serde"]
 
-
-
-[dependencies.serde_yaml]
-version = "0.8.24"
