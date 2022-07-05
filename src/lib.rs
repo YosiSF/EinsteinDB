@@ -19,7 +19,14 @@
 ///!
 
 
-
+/// CHANGELOG:  
+/// - [0.1.0]( 
+///  - Initial version
+/// - [0.1.1](
+/// - Add `einsteindb_macro` macro
+/// - [0.1.2](
+/// - Add `einsteindb_macro_impl` macro
+/// 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
