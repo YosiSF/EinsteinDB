@@ -7,10 +7,20 @@ description = "AllegroCL Poset"
 license = "MIT"
 
 
+
+
+
+[lib]
+src = "src"
+include = "include"
+
+
+
 [dependencies]
 einstein_db_alexandrov_processing = { path = "../einstein_db_alexandrov_processing" }
-eingine_test = { path = "../engine_test" }
 einstein_db = { path = "../einstein_db" }
+eingine_test = { path = "../engine_test" }
+einstein_db_allegro_poset = { path = "../einstein_db_allegro_poset" }
 berolinasql = { path = "../berolinasql" }
 soliton_panic= { path = "../soliton_panic" }
 
@@ -22,13 +32,17 @@ lazy_static = "1.4.0"
 indexmap = "1.8.0"
 serde = {version = "1.0.99", features=["derive"] }
 uuid = "1.1.2"
+
 libc = "0.2.54"
 static_assertions = "1.0"
+
 
 
 [dependencies.soliton]
 version = "0.0.0"
 features = ["serde"]
+
+
 
 
 
