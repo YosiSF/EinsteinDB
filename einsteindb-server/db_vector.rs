@@ -34,14 +34,47 @@ use std::ops::Deref;
 use soliton::{SolitonImpl};
 use soliton_panic::{SolitonPanicImpl, SolitonPanic, SolitonPanicTrait};
 
+pub struct PerfContext {
+    name: String,
+    start_time: Instant,
+    end_time: Instant,
+    parent: Option<Arc<PerfContext>>,
+    children: Vec<Arc<PerfContext>>,
+    child_count: AtomicUsize,
+    child_count_mutex: Mutex<usize>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DBVectorImpl {
+    db: Arc<DB>,
+    cf: CFHandle,
+    key: Vec<u8>,
+    value: Vec<u8>,
+    version: u64,
     pub(crate) inner: Arc<DBVectorInner>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DBVectorInner {
-    pub(crate) inner: Arc<DBVectorInnerInner>,
+    db: Arc<DB>,
+    cf: CFHandle,
+    key: Vec<u8>,
+    value: Vec<u8>,
+    version: u64,
+    pub(crate) inner: Arc<DBVectorInner>,
+
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DBVectorIteratorImpl {
+    db: Arc<DB>,
+    cf: CFHandle,
+    key: Vec<u8>,
+    value: Vec<u8>,
+    version: u64,
+    pub(crate) inner: Arc<DBVectorIteratorInner>,
 }
 
 ///! A vector that can be safely shared between threads.
@@ -66,11 +99,175 @@ pub struct DBVectorInner {
 
 
 pub struct DBVector<T> {
+
     inner: Arc<DBVectorInner<T>>,
+
+    // This is a pointer to the inner vector.
+    // It is stored here so that we can easily get a reference to the inner vector.
+    // This is necessary because the inner vector is not safe to share between threads.
+    // The inner vector is only safe to share between threads if it is wrapped in an Arc.
+    // This is done in the `new` function.
+    inner_ptr: *const DBVectorInner<T>,
+    
+
+
+
 }
 
 
 impl<T> DBVector<T> {
+    /// Creates a new, empty vector.
+    /// # Examples
+    /// ```
+    /// use einsteindb_server::db_vector::DBVector;
+    /// let v = DBVector::new();
+    /// ```
+    /// # Panics
+    /// Panics if the vector cannot be created.
+    /// This can only happen if the vector is created in a single-threaded code.
+    /// If the vector is created in concurrent code, then it is safe to panic.
+    /// ```
+    /// use einsteindb_server::db_vector::DBVector;
+    /// let v = DBVector::new();
+    /// let v2 = DBVector::new();
+    /// ```
+    /// # Panics
+    /// Panics if the vector cannot be created.
+    
+
+
+    pub fn new() -> DBVector<T> {
+        let inner = Arc::new(DBVectorInner {
+            db: Arc::new(DB::new()),
+            cf: CFHandle::new(0),
+            key: Vec::new(),
+            value: Vec::new(),
+            version: 0,
+            inner: Arc::new(DBVectorInner {
+                db: Arc::new(DB::new()),
+                cf: CFHandle::new(0),
+                key: Vec::new(),
+                value: Vec::new(),
+                version: 0,
+                inner: Arc::new(DBVectorInner {
+                    db: Arc::new(DB::new()),
+                    cf: CFHandle::new(0),
+                    key: Vec::new(),
+                    value: Vec::new(),
+                    version: 0,
+                    inner: Arc::new(DBVectorInner {
+                        db: Arc::new(DB::new()),
+                        cf: CFHandle::new(0),
+                        key: Vec::new(),
+                        value: Vec::new(),
+                        version: 0,
+                        inner: Arc::new(DBVectorInner {
+                            db: Arc::new(DB::new()),
+                            cf: CFHandle::new(0),
+                            key: Vec::new(),
+                            value: Vec::new(),
+                            version: 0,
+                            inner: Arc::new(DBVectorInner {
+                                db: Arc::new(DB::new()),
+                                cf: CFHandle::new(0),
+                                key: Vec::new(),
+                                value: Vec::new(),
+                                version: 0,
+                                inner: Arc::new(DBVectorInner {
+                                    db: Arc::new(DB::new()),
+                                    cf: CFHandle::new(0),
+                                    key: Vec::new(),
+                                    value: Vec::new(),
+                                    version: 0,
+                                    inner: Arc::new(DBVectorInner {
+                                        db: Arc::new(DB::new()),
+                                        cf: CFHandle::new(0),
+                                        key: Vec::new(),
+                                        value: Vec:: new(),
+                                        version: 0,
+                                    }),
+                                }),
+                            }),
+                        }),
+                    }),
+                }),
+            }),
+        });
+        DBVector {
+            inner: inner.clone(),
+            inner_ptr: &*inner,
+        }
+    }
+}
+
+
+impl<T> DBVector<T> {
+    /// Creates a new, empty vector.
+    /// 
+    /// 
+    
+
+    pub fn new_with_capacity(capacity: usize) -> DBVector<T> {
+        let inner = Arc::new(DBVectorInner {
+            db: Arc::new(DB::new()),
+            cf: CFHandle::new(0),
+            key: Vec::new(),
+            value: Vec::new(),
+            version: 0,
+            inner: Arc::new(DBVectorInner {
+                db: Arc::new(DB::new()),
+                cf: CFHandle::new(0),
+                key: Vec::new(),
+                value: Vec::new(),
+                version: 0,
+                inner: Arc::new(DBVectorInner {
+                    db: Arc::new(DB::new()),
+                    cf: CFHandle::new(0),
+                    key: Vec::new(),
+                    value: Vec::new(),
+                    version: 0,
+                    inner: Arc::new(DBVectorInner {
+                        db: Arc::new(DB::new()),
+                        cf: CFHandle::new(0),
+                        key: Vec::new(),
+                        value: Vec:: new(),
+                        version: 0,
+                        inner: Arc::new(DBVectorInner {
+                            db: Arc::new(DB::new()),
+                            cf: CFHandle::new(0),
+                            key: Vec::new(),
+                            value: Vec:: new(),
+                            version: 0,
+                            inner: Arc::new(DBVectorInner {
+                                db: Arc::new(DB::new()),
+                                cf: CFHandle::new(0),
+                                key: Vec::new(),
+                                value: Vec:: new(),
+                                version: 0,
+                                inner: Arc::new(DBVectorInner {
+                                    db: Arc::new(DB::new()),
+                                    cf: CFHandle::new(0),
+                                    key: Vec::new(),
+                                    value: Vec:: new(),
+                                    version: 0,
+                                    inner: Arc::new(DBVectorInner {
+                                        db: Arc::new(DB::new()),
+                                        cf: CFHandle::new(0),
+                                        key: Vec::new(),
+                                    }),
+                                }),
+                            }),
+                        }),
+                    }),
+                }),
+            }),
+        });
+        DBVector {
+            inner: inner.clone(),
+            inner_ptr: &*inner,
+        }
+    }
+
     /// Create a new vector.
     /// This is a convenience function that calls `DBVector::new()`.
     /// # Examples
@@ -153,22 +350,25 @@ pub fn collect_causet_preorder(conn: &Connection, range: &Range<u64>) -> Vec<u64
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub struct DBVectorInnerInner {
-        pub(crate) inner: Arc<DBVectorInnerInnerInner>,
+        pub(crate) inner: Arc<DBVectorInnerInnerInner>
     }
 
-    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-    pub struct DBVectorInnerInnerInner {
-        pub(crate) inner: Arc<DBVectorInnerInnerInnerInner>,
-    }
-
-    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-    pub struct DBVectorInnerInnerInnerInner {
-        pub(crate) inner: Arc<DBVectorInnerInnerInnerInnerInner>,
+    
     
     Vec::new();
    //.query_and_then(&[&txs_from.start, &timeline], |row: &rusqlite::Row| -> Result<(Entid, Entid)>{
 
+    //let mut cursor = conn.get_cursor().unwrap();
+    //cursor.seek(&txs_from.start).unwrap();
+    //let mut v = Vec::new();
+    //while let Some(tx) = cursor.next().unwrap() {
+    //    v.push(tx);
+    //}
+    //v
+    //let mut v = Vec::new();
+    //let mut cursor = conn.get_cursor().unwrap();
     let row = conn.query_row(&[&range.start, &range.end], |row: &rusqlite::Row| -> Result<u64>{
+
         Ok(row.get(0)?)
     })?;
 
@@ -636,3 +836,7 @@ impl<'a> PartialEq<&'a [u8]> for &'a [u8] {
         let mut iter_mut = db.iter_mut(key).unwrap();
     }
 }
+
+///CHANGELOG: 
+/// - Added tests for iter_mut
+/// - Added tests for iter_mut_panic
