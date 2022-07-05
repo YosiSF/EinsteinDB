@@ -31,6 +31,13 @@ use std::{thread, time};
 //mod for causal_set
 pub mod causal_set;
 
+
+//mod for einsteindb_macro
+pub mod einsteindb_macro;
+
+
+//mod for einsteindb_macro_impl
+pub mod einsteindb_macro_impl;
 pub mod causet;
 
 
@@ -38,6 +45,11 @@ pub mod causet;
 //TODO: test the causal_set module  and the causet module  in the same time  and the causet module is not used in the causal_set module
 //mod for causal_set_test
 
+
+//mod for einsteindb_macro_test
+
+
+//mod for einsteindb_macro_impl_test
 
 
 

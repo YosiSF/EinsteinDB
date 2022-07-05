@@ -1,5 +1,5 @@
 [package]
-name = "einstein-db"
+name = " EinsteinDB"
 version = "1.0.0"
 authors = ["Whtcorps", "EinstAI", "Josh Leder slushie@gmail.com", "Karl Whitford (karl@einst.ai)", "Jared Smith (jared@amazon.com)"]     
 edition = "2021"
@@ -55,35 +55,4 @@ tokio-codec="0.1.2"
 tokio-io="0.1.13"
 tokio-process="0.2.5"
 tokio-threadpool="0.1.0"
-
-
-
-
-
-[features]
-default = ["einstein-db"]
-einstein-db = ["einstein-db"]
-
-
-[workspace]
-members = ["einstein-db", "einstein-db-cli", "einstein-db-server", "einstein-db-client"]
-
-
-
-
-[target.x86_64-unknown-linux-gnu.dependencies]
-
-
-[target.x86_64-unknown-linux-gnu.features]
-default = ["einstein-db"]
-einstein-db = ["einstein-db"]
-
-
-[target.x86_64-unknown-linux-gnu.workspace]
-members = ["einstein-db", "einstein-db-cli", "einstein-db-server", "einstein-db-client"]
-
-
-
-
-
 

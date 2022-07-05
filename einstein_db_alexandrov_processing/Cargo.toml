@@ -8,34 +8,24 @@ url = "https://github.com/YosiSF/EinsteinDB.git"
 
 
 [dependencies]
+
 einstein_db = { path = "../einstein_db" }
+
 berolina_sql = { path = "../berolina_sql" }
+
+
 causet = { path = "../causet" }
 crate = { path = "../crate" }
 crate_sql = { path = "../crate_sql" }
 crate_sql_parser = { path = "../crate_sql_parser" }
+crate_sql_syntax = { path = "../crate_sql_syntax" }
+crate_sql_syntax_parser = { path = "../crate_sql_syntax_parser" }
+
+
+crate_sql_syntax_parser_rust = { path = "../crate_sql_syntax_parser_rust" }
 
 
 
 
-[features]
-default = ["einstein_db_alexandrov_processv_processing"]
-einstein_db_alexandrov_processv_processing = []
-
-
-[default]
-
-features = ["default"]
-
-
-[dev-dependencies]
-einstein_db_alexandrov_processv_processing = { path = "../einstein_db_alexandrov_processv_processing" }
-
-
-
-[build]
-rustflags = ["-lm"]
-link-args = ["-lm"]
-rustc-link-lib = ["static=lm"]
-rustc-link-search = ["/usr/lib/x86_64-linux-gnu/"]
+crate_sql_syntax_parser_rust_syntax = { path = "../crate_sql_syntax_parser_rust_syntax" }
 
