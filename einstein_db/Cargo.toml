@@ -24,7 +24,6 @@ async-stream = "0.3.3"
 async-trait = "0.1"
 backtrace = "0.3"
 byteorder = "1.3.0"
-byteorder = "1.2"
 crc32fast = "1.2"
 crc64fast = "1.0.0"
 crossbeam = "0.8"
@@ -55,7 +54,6 @@ serde_derive = "1.0"
 serde_ignored = "0.1"
 serde_json = "1.0"
 slog = "2.7.0"
-slog-global = { version = "0.1", git = "https://github.com/breeswish/slog-global.git", rev = "d592f88e4dbba5eb439998463054f1a44fbf17b9" }
 strum = { version = "0.24.0", features = ["derive"] }
 parking_lot = "0.12"
 prometheus = { version = "0.13", features = ["nightly"] }
@@ -67,53 +65,7 @@ thiserror = "1.0"
 tokio = { version = "1.17", features = ["full"] }
 tokio-openssl = "0.6.3"
 toml = "0.5"
+tokio-tls = "0.3.1"
 url = "2.2.2"
 
-
-[features]
-default = ["serde"]
-serde = ["serde"]
-
-
-[target.'$TARGET'.dependencies]
-# See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-
-
-[target.'$TARGET'.features]
-serde = ["serde"]
-
-
-
-[target.'$TARGET'.link-args]
--L/usr/local/lib
-
-
-[target.'$TARGET'.libraries]
--lssl
--lcrypto
--lz
--lm
--lpthread
--ldl
--lutil
--lresolv
-
-[target.'$TARGET'.rustflags]
--C link-arg=-L/usr/local/lib
--C link-arg=-lssl
--C link-arg=-lcrypto
--C link-arg=-lz
--C link-arg=-lm
--C link-arg=-lpthread
-
-
-[target.'$TARGET'.rustflags]
--C link-arg=-L/usr/local/lib
--C link-arg=-lssl
--C link-arg=-lcrypto
--C link-arg=-lz
-
-
-
-
+#
