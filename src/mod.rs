@@ -32,13 +32,9 @@ use std::{thread, time};
 pub mod causal_set;
 
 
-//mod for einsteindb_macro
-pub mod einsteindb_macro;
 
 
-//mod for einsteindb_macro_impl
-pub mod einsteindb_macro_impl;
-pub mod causet;
+
 
 
 //mod for causal_set_test

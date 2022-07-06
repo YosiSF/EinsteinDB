@@ -19,9 +19,48 @@ use std::collections::hash_map::Keys;
 use std::collections::hash_map::Values;
 
 
-use crate::error::{Error, Result};
-use crate::event::{Event, EventSlice};
-use crate::event::{EventSliceMut, EventSliceMutExt};
+use std::time::Instant;
+use std::time::Duration;
+use std::thread;
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
+use std::sync::RwLockReadGuard;
+use std::sync::RwLockWriteGuard;
+use std::sync::RwLockReadGuard;
+
+
+use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
+use std::sync::mpsc::channel;
+
+
+use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
+
+#[derive(Clone, Debug)]
+pub struct EventSlice {
+    pub events: Arc<RwLock<HashMap<usize, Event>>>,
+    pub event_id: Arc<AtomicUsize>,
+    pub event_sender: Sender<Event>,
+    pub event_receiver: Receiver<Event>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Event {
+    pub id: usize,
+    pub timestamp: Instant,
+    pub data: Arc<RwLock<Vec<u8>>>,
+}
+
+#[derive(Clone, Debug)]
+pub struct EventSliceBuilder {
+    pub events: Arc<RwLock<HashMap<usize, Event>>>,
+    pub event_id: Arc<AtomicUsize>,
+    pub event_sender: Sender<Event>,
+    pub event_receiver: Receiver<Event>,
+}
 
 
 ///
@@ -175,7 +214,7 @@ where
         return Err(Error::unexpected_eof());
     }
     let slice = &buf[..bytes_len];
-    buf.advance(bytes_len);
+    buf = &buf[bytes_len..];
     Ok(LEBytes::new(slice))
 }
 

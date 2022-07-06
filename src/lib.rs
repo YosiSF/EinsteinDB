@@ -21,6 +21,13 @@
 
 
 #[macro_use]
+extern crate soliton_panic;
+
+
+extern crate soliton;
+
+
+#[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
@@ -47,6 +54,8 @@ extern crate failure_derive_recover;
 
 
 
+
+
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -68,6 +77,17 @@ use std::collections::HashSet;
 use std::collections::hash_set::Iter as HashSetIter;
 use std::collections::hash_set::IterMut as HashSetIterMut;
 
+
+use std::collections::BTreeSet;
+use std::collections::btree_set::Iter as BTreeSetIter;
+use std::collections::btree_set::IterMut as BTreeSetIterMut;
+
+
+
+
+#[macro_use]
+extern crate soliton_macro;
+
 #[derive(Debug)]
 pub enum BerolinaSqlError {
     IoError(io::Error),
@@ -88,6 +108,25 @@ pub struct BerolinaSqlErrorInfo {
 
 pub struct BerolinaSqlErrorInfoList {
     pub error_info_list: Vec<BerolinaSqlErrorInfo>,
+}
+
+
+impl BerolinaSqlErrorInfoList {
+    pub fn new() -> BerolinaSqlErrorInfoList {
+        BerolinaSqlErrorInfoList {
+            error_info_list: Vec::new(),
+        }
+    }
+}
+
+
+impl BerolinaSqlError {
+    pub fn new(error_type: BerolinaSqlErrorType, error_msg: String) -> BerolinaSqlError {
+        BerolinaSqlError {
+            error_type: error_type,
+            error_msg: error_msg,
+        }
+    }
 }
 
 pub const EINSTEIN_DB_VERSION: u32 = 0x0101;
@@ -139,6 +178,37 @@ macro_rules! einsteindb_macro_impl_with_args {
 }
 
 
+#[macro_export]
+macro_rules! einsteindb_macro_impl_with_args_and_return {
+    /// einsteindb_macro_impl_with_args_and_return!(
+    ///    "Hello, {}!",
+    ///   "world"
+    /// );
+    ($($x:tt)*) => {
+        {
+            let mut _einsteindb_macro_result = String::new();
+            write!(_einsteindb_macro_result, $($x)*).unwrap();
+            _einsteindb_macro_result
+        }
+    };
+}
+
+
+#[macro_export]
+macro_rules! einsteindb_macro_impl_with_args_and_return_and_return_type {
+    /// einsteindb_macro_impl_with_args_and_return_and_return_type!(
+    ///    "Hello, {}!",
+    ///   "world"
+    /// );
+    ($($x:tt)*) => {
+        {
+            let mut _einsteindb_macro_result = String::new();
+            write!(_einsteindb_macro_result, $($x)*).unwrap();
+            _einsteindb_macro_result
+        }
+    };
+}
+
 /// # About
 ///
 /// This is a library for the [EinsteinDB](https://einsteindb.com
@@ -158,6 +228,24 @@ impl EinsteinDBVersion {
     }
 }
 
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct EinsteinDBMLVersion {
+    pub version: u32,
+    pub version_str: String,
+}
+
+
+impl EinsteinDBMLVersion {
+    pub fn new(version: u32, version_str: String) -> EinsteinDBMLVersion {
+        EinsteinDBMLVersion {
+            version: version,
+            version_str: version_str,
+        }
+    }
+}
 
 pub struct EinsteinDB {
     pub version: u32,
@@ -187,6 +275,17 @@ macro_rules! einstein_db_macro {
         }
     };
 
+}
+
+
+macro_rules! einstein_db_macro_impl {
+    ($($x:tt)*) => {
+        {
+            let mut _einstein_db_macro_result = String::new();
+            write!(_einstein_db_macro_result, $($x)*).unwrap();
+            _einstein_db_macro_result
+        }
+    };
 }
 
 #[macro_export]

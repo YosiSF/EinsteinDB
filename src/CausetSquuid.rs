@@ -8,6 +8,18 @@
 //This is a macro because it is called at compile time.
 
 
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Partitioning};
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::thread;
+use std::time::Duration;
+use std::time::Instant;
+use std::{thread, time};
+
+use causal_set::CausalSet;
+
+
 
 
 //==============================================================================
@@ -18,6 +30,58 @@
 
 //==============================================================================
 
+
+
+#[macro_export]
+macro_rules! causet {
+    ($name:ident, $($key:expr => $value:expr),*) => {
+        pub struct $name {
+            inner: CausalSet<Arc<HashMap<$($key),*>>>,
+        }
+        impl $name {
+            pub fn new() -> $name {
+                $name {
+                    inner: CausalSet::new(),
+                }
+            }
+            pub fn get(&self, $($key: $value),*) -> Option<Arc<HashMap<$($key),*>>> {
+                self.inner.get($($key),*)
+            }
+            pub fn insert(&mut self, $($key: $value),*) {
+                self.inner.insert($($key),*);
+            }
+            pub fn remove(&mut self, $($key: $value),*) {
+                self.inner.remove($($key),*);
+            }
+        }
+    };
+}
+
+
+#[macro_export]
+macro_rules! causet_test {
+    ($name:ident, $($key:expr => $value:expr),*) => {
+        pub struct $name {
+            inner: CausalSet<Arc<HashMap<$($key),*>>>,
+        }
+        impl $name {
+            pub fn new() -> $name {
+                $name {
+                    inner: CausalSet::new(),
+                }
+            }
+            pub fn get(&self, $($key: $value),*) -> Option<Arc<HashMap<$($key),*>>> {
+                self.inner.get($($key),*)
+            }
+            pub fn insert(&mut self, $($key: $value),*) {
+                self.inner.insert($($key),*);
+            }
+            pub fn remove(&mut self, $($key: $value),*) {
+                self.inner.remove($($key),*);
+            }
+        }
+    };
+}
 
 
 

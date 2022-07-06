@@ -48,7 +48,66 @@ use honeybadgerbft::*;
 use honeybadgerbft::encoder::{self, Encoder, EncoderError};
 use honeybadgerbft::encoder::EncoderError::*;
 
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EncoderError(pub String);
+
+
+impl fmt::Display for EncoderError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+
+impl error::Error for EncoderError {
+    fn description(&self) -> &str {
+        &self.0
+    }
+}
+
+
+impl From<io::Error> for EncoderError {
+    fn from(err: io::Error) -> Self {
+        EncoderError(format!("{}", err))
+    }
+}
+
+
+impl From<encoder::EncoderError> for EncoderError {
+    fn from(err: encoder::EncoderError) -> Self {
+        EncoderError(format!("{}", err))
+    }
+}
+
+
+impl From<parquet::Error> for EncoderError {
+    fn from(err: parquet::Error) -> Self {
+        EncoderError(format!("{}", err))
+    }
+}
+
+
+impl From<kubernetes::Error> for EncoderError {
+    fn from(err: kubernetes::Error) -> Self {
+        EncoderError(format!("{}", err))
+    }
+}
+
+
+impl From<istio::Error> for EncoderError {
+    fn from(err: istio::Error) -> Self {
+        EncoderError(format!("{}", err))
+    }
+}
 //make compatible with mongodb, leveldb, and foundationdb
+
+
+
+const MAX_THREADS: usize = 8;
+const MAX_QUEUE_SIZE: usize = 1024;
+const MAX_QUEUE_TIMEOUT: Duration = Duration::from_secs(10);
+const MAX_QUEUE_TIMEOUT_RETRY: Duration = Duration::from_secs(1);
 
 
 const TAU: usize= 16;
@@ -56,14 +115,11 @@ const K: usize = 24;
 const N: usize = 16;
 //32 bits of entropy
 const R: usize = 32;
+const S: usize = 32;
+const T: usize = 32;
+const U: usize = 32;
 
 pub const HASH_SIZE: usize = 32; //256 bits
-
-use einstein_db::{ DB, DB_OPEN_FLAG_CREATE, DB_OPEN_FLAG_RDONLY, DB_OPEN_FLAG_RDWR, DB_OPEN_FLAG_TRUNCATE, DB_OPEN_FLAG_WRITE_EMPTY, DB_OPEN_FLAG_WRITE_PREVENT, DB_OPEN_FLAG_WRITE_SAME};
-use einstein_ml::{ ML_OPEN_FLAG_CREATE, ML_OPEN_FLAG_RDONLY, ML_OPEN_FLAG_RDWR, ML_OPEN_FLAG_TRUNCATE, ML_OPEN_FLAG_WRITE_EMPTY, ML_OPEN_FLAG_WRITE_PREVENT, ML_OPEN_FLAG_WRITE_SAME};
-use causet::{ Causet, Causet_OPEN_FLAG_CREATE, Causet_OPEN_FLAG_RDONLY, Causet_OPEN_FLAG_RDWR, Causet_OPEN_FLAG_TRUNCATE, Causet_OPEN_FLAG_WRITE_EMPTY, Causet_OPEN_FLAG_WRITE_PREVENT, Causet_OPEN_FLAG_WRITE_SAME};
-use causetq::{  CausetQ, CausetQ_OPEN_FLAG_CREATE, CausetQ_OPEN_FLAG_RDONLY, CausetQ_OPEN_FLAG_RDWR, CausetQ_OPEN_FLAG_TRUNCATE, CausetQ_OPEN_FLAG_WRITE_EMPTY, CausetQ_OPEN_FLAG_WRITE_PREVENT, CausetQ_OPEN_FLAG_WRITE_SAME};
-use causets::{  Causets, Causets_OPEN_FLAG_CREATE, Causets_OPEN_FLAG_RDONLY, Causets_OPEN_FLAG_RDWR, Causets_OPEN_FLAG_TRUNCATE, Causets_OPEN_FLAG_WRITE_EMPTY, Causets_OPEN_FLAG_WRITE_PREVENT, Causets_OPEN_FLAG_WRITE_SAME};
 
 
 use std::io::{Read, Write};
@@ -83,7 +139,6 @@ use std::io::BufReader;
 use soliton_panic::{self, soliton_panic};
 use einstein_ml::{ML_OPEN_FLAG_CREATE, ML_OPEN_FLAG_RDONLY, ML_OPEN_FLAG_RDWR, ML_OPEN_FLAG_TRUNCATE, ML_OPEN_FLAG_WRITE_EMPTY, ML_OPEN_FLAG_WRITE_PREVENT, ML_OPEN_FLAG_WRITE_SAME};
 use einsteindb_server::{EinsteinDB, EinsteinDB_OPEN_FLAG_CREATE, EinsteinDB_OPEN_FLAG_RDONLY, EinsteinDB_OPEN_FLAG_RDWR, EinsteinDB_OPEN_FLAG_TRUNCATE, EinsteinDB_OPEN_FLAG_WRITE_EMPTY, EinsteinDB_OPEN_FLAG_WRITE_PREVENT, EinsteinDB_OPEN_FLAG_WRITE_SAME};
-//foundationdb
 use foundationdb::{Database, DatabaseOptions, DatabaseMode, DatabaseType, DatabaseTypeOptions};
 use EinsteinDB::storage::{DB, DBOptions, DBType, DBTypeOptions};
 use EinsteinDB::storage::{KV, KVEngine, KVOptions, KVEngineType, KVEngineTypeOptions};
@@ -98,13 +153,22 @@ use gremlin_capnp::{gremlin_capnp, message};
 use gremlin_capnp::message::{Message, MessageReader, MessageBuilder};
 use gremlin as g;
 
+
+
+
+
+
+
+
 #[derive(Debug, Clone)]
 pub struct Config {
+
     pub db_type: String,
     pub db_path: String,
     pub db_name: String,
     pub db_mode: String,
     pub db_options: String,
+    pub db_type_options: String,
 
 }
 
@@ -118,9 +182,16 @@ impl Config {
             db_name,
             db_mode,
             db_options,
+            db_type_options: "".to_string(),
         }
+
+
     }
+
+
 }
+
+
 
 pub struct GremlinCausetQuery{
     pub causet_locale: String,
@@ -155,6 +226,12 @@ switch_to_einstein_db!(GremlinCausetQuery);
 pub enum Encoder<'a> {
 
 
+    /// A `Encoder` that encodes values to bytes.
+    /// The `Encoder` is implemented by `EncoderBytes`.
+    /// The `Encoder` is sealed and cannot be implemented outside of `encoder` module.
+    /// The `Encoder` is used to encode values to bytes.
+
+    EncoderBytes(EncoderBytes<'a>),
 
     /// A value encoder for `bool`.
 
@@ -183,9 +260,88 @@ pub enum Encoder<'a> {
     /// AEVTrie(AEVTrie<'a>, Causetidb<'a>),
 
 
+    /// A value encoder for `u8`.
+    U8(u8),
+
+    /// A value encoder for `i64`.
+
+    I64(i64),
+
 
 }
 
+
+impl<'a> Encoder<'a> {
+    /// Encodes a value to bytes.
+    /// This method encodes a value to bytes.
+    /// The method is used to encode values to bytes.
+    /// The method is implemented by `EncoderBytes`.
+    /// The method is sealed and cannot be implemented outside of `encoder` module.
+    pub fn encode<T: ?Sized + Encodable>(&self, value: &T) -> Result<Vec<u8>, Error> {
+        match self {
+            Encoder::EncoderBytes(encoder) => encoder.encode(value),
+            Encoder::I8(value) => value.encode(),
+            Encoder::I16(value) => value.encode(),
+            Encoder::I64(value) => value.encode(),
+            Encoder::AEVTrie(value) => value.encode(),
+            Encoder::CausetA(value) => value.encode(),
+        }
+    }
+}
+
+
+impl<'a> EncoderBytes<'a> {
+    /// Encodes a value to bytes.
+    /// This method encodes a value to bytes.
+    /// The method is used to encode values to bytes.
+    /// The method is implemented by `EncoderBytes`.
+    /// The method is sealed and cannot be implemented outside of `encoder` module.
+    pub fn encode<T: ?Sized + Encodable>(&self, value: &T) -> Result<Vec<u8>, Error> {
+        value.encode()
+    }
+}
+
+
+impl<'a> EncoderBytes<'a> {
+    /// Encodes a value to bytes.
+    /// This method encodes a value to bytes.
+    /// The method is used to encode values to bytes.
+    /// The method is implemented by `EncoderBytes`.
+    /// The method is sealed and cannot be implemented outside of `encoder` module.
+    pub fn encode<T: ?Sized + Encodable>(&self, value: &T) -> Result<Vec<u8>, Error> {
+        value.encode()
+    }
+}
+
+
+impl<'a> EncoderBytes<'a> {
+    /// Encodes a value to bytes.
+    /// This method encodes a value to bytes.
+    /// The method is used to encode values to bytes.
+    /// The method is implemented by `EncoderBytes`.
+    /// The method is sealed and cannot be implemented outside of `encoder` module.
+    pub fn encode<T: ?Sized + Encodable>(&self, value: &T) -> Result<Vec<u8>, Error> {
+        value.encode()
+    }
+}
+
+
+
+
+
+
+
+
+impl<'a> EncoderBytes<'a> {
+    /// Encodes a value to bytes.
+    /// This method encodes a value to bytes.
+    /// The method is used to encode values to bytes.
+    /// The method is implemented by `EncoderBytes`.
+    /// The method is sealed and cannot be implemented outside of `encoder` module.
+    pub fn encode_to_bytes<T: ?Sized + Encodable>(&self) -> Result<Vec<u8>, Error> {
+        self.encode(self)
+    }
+}
 
 
 trait CausetAMinor<'a> {
