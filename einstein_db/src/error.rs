@@ -28,6 +28,16 @@
 //! let err = Error::from(Error::Io(io::Error::new(io::ErrorKind::Other, "oh no!")));
 //!
 
+
+// -----------------------------------------------------------------------------
+
+
+use std::cmp;
+use std::collections::HashMap;
+
+
+
+
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -36,11 +46,54 @@ use std::string;
 use serde_json::error::Error as JsonError;
 use capnp::json::Error as JsonCapnpError;
 use kubernetes::api::Error as KubernetesError;
+use kubernetes::api::v1::Error as KubernetesV1Error;
+use kubernetes::api::v1::ErrorKind as KubernetesV1ErrorKind;
 
 //initiate k8s
 use kubernetes::api::{KubeConfig, Client};
 use kubernetes::api::core::EINSTEIN_DB::Pod;
 use kubernetes::api::core::EINSTEIN_DB::PodBuilder;
+
+
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "{}", _0)]
+    Io(#[cause] io::Error),
+    #[fail(display = "{}", _0)]
+    Json(#[cause] JsonError),
+    #[fail(display = "{}", _0)]
+    JsonCapnp(#[cause] JsonCapnpError),
+    #[fail(display = "{}", _0)]
+    Kubernetes(#[cause] KubernetesError),
+    #[fail(display = "{}", _0)]
+    KubernetesV1(#[cause] KubernetesV1Error),
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+}
+
+#[derive(Debug, Fail)]
+pub enum ErrorKind {
+    #[fail(display = "{}", _0)]
+    Io(#[cause] io::Error),
+    #[fail(display = "{}", _0)]
+    Json(#[cause] JsonError),
+    #[fail(display = "{}", _0)]
+    JsonCapnp(#[cause] JsonCapnpError),
+    #[fail(display = "{}", _0)]
+    Kubernetes(#[cause] KubernetesError),
+    #[fail(display = "{}", _0)]
+    KubernetesV1(#[cause] KubernetesV1Error),
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+}
 
 
 #[derive(Debug)]
@@ -76,39 +129,38 @@ impl fmt::Display for EinsteinDBError {
 
 }
 
+pub type Result<T> = result::Result<T, Error>;
 
-impl Error for EinsteinDBError {
-    fn description(&self) -> &str {
-        match *self {
-            EinsteinDBError::Io(ref err) => err.description(),
-            EinsteinDBError::Codec(ref err) => err.description(),
-            EinsteinDBError::Other(ref s) => s,
-        }
-    }
 
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            EinsteinDBError::Io(ref err) => write!(f, "IO error: {}", err),
-
-            EinsteinDBError::Codec(ref err) => write!(f, "Codec error: {}", err),
-            EinsteinDBError::Other(ref s) => write!(f, "Other error: {}", s),
-        }
-    }
-}
-use failure::Fail;
-
-#[derive(Debug, Fail)]
-pub enum DataTypeError {
-    #[fail(display = "Unsupported type: {}", name)]
-
-    UnsupportedType { name: String },
+trait ErrorExt {
+    fn cause(&self) -> Option<&Error>;
 }
 
 
-impl From<io::Error> for EinsteinDBError {
-    fn from(err: io::Error) -> EinsteinDBError {
-        EinsteinDBError::Io(err)
+#[derive(Debug)]
+pub enum ErrorKindExt {
+    Io(io::Error),
+    Json(JsonError),
+    JsonCapnp(JsonCapnpError),
+    Kubernetes(KubernetesError),
+    KubernetesV1(KubernetesV1Error),
+    Causet(String),
+    CausetQ(String),
+    EinsteinML(String),
+}
+
+
+impl ErrorKindExt {
+    pub fn as_str(&self) -> &str {
+        match *self {
+            ErrorKindExt::Io(ref err) => err.description(),
+            ErrorKindExt::Json(ref err) => err.description(),
+            ErrorKindExt::JsonCapnp(ref err) => err.description(),
+            ErrorKindExt::Kubernetes(ref err) => err.description(),
+            ErrorKindExt::KubernetesV1(ref err) => err.description(),
+            ErrorKindExt::Causet(ref s) => s,
+            ErrorKindExt::CausetQ(ref s) => s,
+            ErrorKindExt::EinsteinML(ref s) => s,
+        }
     }
-
-
 }

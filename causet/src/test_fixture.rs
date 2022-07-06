@@ -10,9 +10,61 @@
 
 use std::collections::{btree_map, BTreeMap};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
-use super::range::*;
-use super::Result;
+
+use crate::causet::*;
+use crate::causets::*;
+use crate::einstein_db_alexandrov_processing::*;
+
+
+
+
+
+
+pub struct Causet {
+    pub events: Vec<String>,
+    pub edges: Vec<(String, String)>,
+}
+
+
+impl Causet {
+    pub fn new() -> Causet {
+        Causet {
+            events: Vec::new(),
+            edges: Vec::new(),
+        }
+    }
+
+    pub fn add_event(&mut self, event: String) {
+        self.events.push(event);
+    }
+
+    pub fn add_edge(&mut self, event1: String, event2: String) {
+        self.edges.push((event1, event2));
+    }
+}
+
+
+pub struct Causets {
+    pub causets: Vec<Causet>,
+}
+
+
+impl Causets {
+    pub fn new() -> Causets {
+        Causets {
+            causets: Vec::new(),
+        }
+    }
+
+    pub fn add_causet(&mut self, causet: Causet) {
+        self.causets.push(causet);
+    }
+}
+
+
+
 
 type ErrorBuilder = Box<dyn Send + Sync + Fn() -> crate::error::StorageError>;
 

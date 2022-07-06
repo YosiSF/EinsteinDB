@@ -46,6 +46,7 @@ use parquet::file::writer::{FileWriter, SerializedFileWriter};
 use parquet::schema::types::{self, PrimitiveType, Type as ParquetType};
 use honeybadgerbft::*;
 use honeybadgerbft::encoder::{self, Encoder, EncoderError};
+use honeybadgerbft::encoder::EncoderError::*;
 
 //make compatible with mongodb, leveldb, and foundationdb
 

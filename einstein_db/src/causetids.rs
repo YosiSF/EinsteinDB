@@ -107,6 +107,38 @@ pub fn might_update_spacetime_with_partition_map(attribute: Causetid, partition_
 }
 
 
+/// Return `false` if the given attribute will not change the spacetime: recognized solitonids, topograph,
+/// partitions in the partition map. This is a more general version of `might_update_spacetime` that can be used to check if an attribute
+/// will change the spacetime. This is useful for checking if an attribute will change the spacetime, but not if it will not.
+/// This function is similar to `might_update_spacetime_with_partition_map`, but it takes a partition map as an argument.
+///
+/// # Arguments
+/// * `attribute` - The attribute to check.
+/// * `partition_map` - The partition map to check.
+/// * `partition_map_size` - The size of the partition map.
+/// * `partition_map_capacity` - The capacity of the partition map.
+///
+/// # Returns
+/// `true` if the attribute will change the spacetime, `false` otherwise.
+/// # Errors
+/// If the partition map is not large enough to hold the partition map, an error is returned.
+///
+///
+
+
+
+
+pub fn might_update_spacetime_with_partition_map_and_size(attribute: Causetid, partition_map: &[Causetid], partition_map_size: usize, partition_map_capacity: usize) -> Result<bool, CausetidError> {
+    if partition_map_size >= partition_map_capacity {
+        return Err(CausetidError::new(CausetidErrorKind::PartitionMapTooSmall));
+    }
+    if partition_map[attribute as usize] != 0 {
+        return Ok(true);
+    }
+    Ok(false)
+}
+
+
 
 pub fn attribute_check(attribute: Causetid) -> Result<(), CausetidError> {
     if attribute < 0 || attribute >= EINSTEINDB_SCHEMA_CORE_CARDINALITY {
@@ -120,13 +152,22 @@ pub fn attribute_check(attribute: Causetid) -> Result<(), CausetidError> {
 }
 
 
+
+
+
+
+
+
 pub fn attribute_check_with_partition_map(attribute: Causetid, partition_map: &[Causetid], partition_map_size: usize, partition_map_capacity: usize) -> Result<(), CausetidError> {
-       
-    if attribute < 0 || attribute >= EINSTEINDB_SCHEMA_CORE_CARDINALITY {
+
+
+    /// Check if the given attribute is a valid attribute.
+    /// This function is similar to `attribute_check`, but it takes a partition map as an argument.
+
+
+if attribute < 0 || attribute >= EINSTEINDB_SCHEMA_CORE_CARDINALITY {
         return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
-
-
-    
+    }
     if attribute >= EINSTEINDB_DOC {
         return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
     }
@@ -139,6 +180,29 @@ pub fn attribute_check_with_partition_map(attribute: Causetid, partition_map: &[
         return Ok(());
     }
 
+    Err(CausetidError::new(CausetidErrorKind::InvalidAttribute))
+}
+
+
+pub fn attribute_check_with_partition_map_and_size(attribute: Causetid, partition_map: &[Causetid], partition_map_size: usize, partition_map_capacity: usize) -> Result<(), CausetidError> {
+
+    /// Check if the given attribute is a valid attribute.
+    /// This function is similar to `attribute_check_with_partition_map`, but it takes a partition map as an argument.
+
+    if attribute < 0 || attribute >= EINSTEINDB_SCHEMA_CORE_CARDINALITY {
+        return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
+    }
+
+    if attribute >= EINSTEINDB_DOC {
+        return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
+    }
+    if partition_map_size >= partition_map_capacity {
+
+        return Err(CausetidError::new(CausetidErrorKind::PartitionMapTooSmall));
+    }
+    if partition_map[attribute as usize] != 0 {
+        return Ok(());
+    }
     Err(CausetidError::new(CausetidErrorKind::InvalidAttribute))
 }
 
@@ -181,18 +245,19 @@ pub fn attribute_check_with_partition_map_and_spacetime(attribute: Causetid, par
 
 /// Return 'false' if the given attribute might be used to describe a topograph attribute.
 pub fn is_a_topograph_attribute(attribute: Causetid) -> bool {
-    attribute == EINSTEINDB_CARDINALITY ||
-    attribute == EINSTEINDB_FULLTEXT ||
-    attribute == EINSTEINDB_INDEX ||
-    attribute == EINSTEINDB_PART_EINSTEINDB ||
-    attribute == EINSTEINDB_PART_USER ||
-    attribute == EINSTEINDB_IS_COMPONENT ||
     match attribute {
-        EINSTEINDB_UNIQUE => true,
+        // Topograph.
+        EINSTEINDB_CARDINALITY |
+        EINSTEINDB_FULLTEXT |
+        EINSTEINDB_INDEX |
+        EINSTEINDB_PART_EINSTEINDB |
+        EINSTEINDB_PART_USER |
+        EINSTEINDB_IS_COMPONENT |
+        EINSTEINDB_UNIQUE |
+        EINSTEINDB_VALUE_TYPE =>
+            true,
         _ => false,
     }
-
-    attribute == EINSTEINDB_VALUE_TYPE
 }
 
 
@@ -208,17 +273,26 @@ pub fn is_a_topograph_attribute(attribute: Causetid) -> bool {
 /// 
 
 
-pub fn is_a_topograph_attribute_with_partition_map(attribute: Causetid, partition_map: &[Causetid], partition_map_size: usize) -> bool {
-        EINSTEINDB_SOLITONID |
-        EINSTEINDB_CARDINALITY |
-        EINSTEINDB_FULLTEXT |
-        EINSTEINDB_INDEX |
-        EINSTEINDB_IS_COMPONENT |
-        EINSTEINDB_UNIQUE |
-        EINSTEINDB_VALUE_TYPE =>
-            true,
-        _ => false,
+pub fn is_a_topograph_attribute_with_partition_map(attribute: Causetid, partition_map: &[Causetid], partition_map_size: usize, partition_map_capacity: usize) -> Result<bool, CausetidError> {
+    if attribute < 0 || attribute >= EINSTEINDB_SCHEMA_CORE_CARDINALITY {
+        return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
     }
+
+    if attribute >= EINSTEINDB_DOC {
+        return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
+    }
+
+    if partition_map_size >= partition_map_capacity {
+        return Err(CausetidError::new(CausetidErrorKind::PartitionMapTooSmall));
+    }
+
+    if partition_map[attribute as usize] != 0 {
+        return Ok(());
+    }
+
+    Err(CausetidError::new(CausetidErrorKind::InvalidAttribute))
+
+
 }
 
 lazy_static! {
@@ -241,47 +315,104 @@ lazy_static! {
         "doc_value_type_id",
         "doc_value_type_name",
         "doc_value_type_value_type",
-        "doc_value_type_value_type_id",
-        "doc_value_type_value_type_name",
-};
-
-    pub static ref ATTRIBUTE_NAMES_WITH_PARTITION_MAP: [&'static str; EINSTEINDB_SCHEMA_CORE_CARDINALITY] = [
-        "solitonid",
-        "cardinality",
-        "fulltext",
-        "index",
-        "part_einsteindb",
-        "part_user",
-        "is_component",
-        "unique",
-        "value_type",
-        "doc",
-        "doc_id",
-        "doc_type",
-        "doc_value",
-        "doc_value_type",
-        "doc_value_type_id",
-        "doc_value_type_name",
-        "doc_value_type_value_type",
-        "doc_value_type_value_type_id",
-        "doc_value_type_value_type_name",
+        "doc_value_type_value_type_id"];
 }
-    /// Attributes that are "solitonid related".  These might change the "solitonids" materialized view.
-    pub static ref SOLITONIDS_BerolinaSQL_LIST: String = {
-        let mut s = String::new();
-        for i in 0..EINSTEINDB_SCHEMA_CORE_CARDINALITY {
-            if i == EINSTEINDB_SOLITONID {
-                s.push_str("solitonid, ");
-            }
-        }
 
+
+/// Return the name of the given attribute.
+/// # Arguments
+/// * `attribute` - The attribute to get the name of.
+/// * `partition_map` - The partition map to check.
+/// * `partition_map_size` - The size of the partition map.
+/// * `partition_map_capacity` - The capacity of the partition map.
+/// * `partition_map_capacity` - These might change the spacetime_schema_impl.rs file.
+///
+
+
+
+
+
+
+
+/// Return the name of the given attribute.
+/// # Arguments
+/// * `attribute` - The attribute to get the name of.
+/// * `partition_map` - The partition map to check.
+    /// Attributes that are "solitonid related".  These might change the "solitonids" materialized view.
+    /// Attributes that are "topograph related".  These might change the "topograph" materialized view.
+/// * `partition_map_size` - The size of the partition map.
+/// * `partition_map_capacity` - The capacity of the partition map.
+///
+
+
+
+
+
+/// Return the name of the given attribute.
+/// # Arguments
+/// * `attribute` - The attribute to get the name of.
+/// * `partition_map` - The partition map to check.
+/// * `partition_map_size` - The size of the partition map.
+
+
+pub fn attribute_name(attribute: Causetid, partition_map: &[Causetid], partition_map_size: usize, partition_map_capacity: usize) -> Result<&'static str, CausetidError> {
+    if attribute < 0 || attribute >= EINSTEINDB_SCHEMA_CORE_CARDINALITY {
+        return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
+
+
+    }
+
+
+    if attribute >= EINSTEINDB_DOC {
+        return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
+
+    }
+
+
+    if partition_map_size >= partition_map_capacity {
+        return Err(CausetidError::new(CausetidErrorKind::PartitionMapTooSmall));
+
+    }
+
+    if partition_map[attribute as usize] != 0 {
+        return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
+
+    }
+
+    Ok(ATTRIBUTE_NAMES[attribute as usize])
+}
+
+
+/// Return the name of the given attribute.
+/// This is a more general version of `attribute_name` that can be used to get the name of an attribute.
+/// # Arguments
+/// * `attribute` - The attribute to get the name of.
+/// * `partition_map` - The partition map to check.
+/// * `partition_map_size` - The size of the partition map.
+/// * `partition_map_capacity` - The capacity of the partition map.
+///
+///
+/// # Examples
+/// ```
+/// use einsteindb::schema::attribute_name_with_partition_map;
+/// let partition_map = [0; EINSTEINDB_SCHEMA_CORE_CARDINALITY];
+///
+/// let result = attribute_name_with_partition_map(EINSTEINDB_SOLITONID, &partition_map, 0, 0);
+/// assert_eq!(result.unwrap(), "solitonid");
+///
+
+
+
+
+pub fn attribute_name_with_partition_map(attribute: Causetid, partition_map: &[Causetid], partition_map_size: usize, partition_map_capacity: usize) -> Result<&'static str, CausetidError> {
+    if attribute < 0 || attribute >= EINSTEINDB_SCHEMA_CORE_CARDINALITY {
         s.pop();
         format!("({})",
             s
         )   // Remove the last comma.
     };
 
-    pub static ref SOLITONIDS_BerolinaSQL_LIST_WITH_PARTITION_MAP: String = {
+    if attribute >= EINSTEINDB_DOC {
         let mut s = String::new();
         for i in 0..EINSTEINDB_SCHEMA_CORE_CARDINALITY {
             if i == EINSTEINDB_SOLITONID {
@@ -296,60 +427,54 @@ lazy_static! {
 
     };
 
-    /// Attributes that are "topograph related".  These might change the "topograph" materialized view.
-    pub static ref SCHEMA_BerolinaSQL_LIST: String = {
-        format!("({}, {}, {}, {}, {}, {})",
-                EINSTEINDB_CARDINALITY,
-                EINSTEINDB_FULLTEXT,
-                EINSTEINDB_INDEX,
-                EINSTEINDB_IS_COMPONENT,
-                EINSTEINDB_UNIQUE,
-                EINSTEINDB_VALUE_TYPE)
-    };
+    if partition_map_size >= partition_map_capacity {
+        return Err(CausetidError::new(CausetidErrorKind::PartitionMapTooSmall));
+
+    }
+
+    if partition_map[attribute as usize] != 0 {
+        return Err(CausetidError::new(CausetidErrorKind::InvalidAttribute));
+
+    }
+}
+
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::causetid::Causetid;
+    use crate::causetid::CausetidError;
+
+
+    #[test]
+    fn test_attribute_name() {
+        let partition_map = [0; EINSTEINDB_SCHEMA_CORE_CARDINALITY];
+        let result = attribute_name(EINSTEINDB_SOLITONID, &partition_map, 0, 0);
+        assert_eq!(result.unwrap(), "solitonid");
+    }
 
     /// Attributes that are "spacetime" related.  These might change one of the materialized views.
-    pub static ref Spacetime_BerolinaSQL_LIST: String = {
-        format!("({}, {}, {}, {}, {}, {}, {})",
-                EINSTEINDB_CARDINALITY,
-                EINSTEINDB_FULLTEXT,
-                EINSTEINDB_SOLITONID,
-                EINSTEINDB_INDEX,
-                EINSTEINDB_IS_COMPONENT,
-                EINSTEINDB_UNIQUE,
-                EINSTEINDB_VALUE_TYPE)
-    };
+    #[test]
+    fn test_attribute_name_with_partition_map() {
+        let partition_map = [0; EINSTEINDB_SCHEMA_CORE_CARDINALITY];
+        let result = attribute_name_with_partition_map(EINSTEINDB_SOLITONID, &partition_map, 0, 0);
+        assert_eq!(result.unwrap(), "solitonid");
+    }
 
-    /// Attributes that are "spacetime"  
-    /// These might change one of the materialized views.
-    /// This is a more general version of `Spacetime_BerolinaSQL_LIST` that can be used to check if an attribute
-    /// might be used to describe a topograph attribute.
-    /// 
+    #[test]
+    fn test_attribute_name_with_partition_map_with_partition_map_too_small() {
+        let partition_map = [0; EINSTEINDB_SCHEMA_CORE_CARDINALITY];
+        let result = attribute_name_with_partition_map(EINSTEINDB_SOLITONID, &partition_map, 1, 0);
+        assert_eq!(result.unwrap_err().kind(), CausetidErrorKind::PartitionMapTooSmall);
+    }
 
-
-    pub static ref Spacetime_BerolinaSQL_LIST_WITH_PARTITION_MAP: String = {
-        format!("({}, {}, {}, {}, {}, {}, {})",
-                EINSTEINDB_CARDINALITY,
-                EINSTEINDB_FULLTEXT,
-                EINSTEINDB_SOLITONID,
-                EINSTEINDB_INDEX,
-                EINSTEINDB_IS_COMPONENT,
-                EINSTEINDB_UNIQUE,
-                EINSTEINDB_VALUE_TYPE)
-    };
-
-
-    /// Attributes that are "spacetime"
-    /// These might change one of the materialized views.
-    /// This is a more general version of `Spacetime_BerolinaSQL_LIST` that can be used to check if an attribute
-    
-
-    pub static ref Spacetime_BerolinaSQL_LIST_WITH_PARTITION_MAP: String = {
-        format!("({}, {}, {}, {}, {}, {}, {})",
-                EINSTEINDB_CARDINALITY,
-                EINSTEINDB_FULLTEXT,
-                EINSTEINDB_SOLITONID,
-                EINSTEINDB_INDEX,
-                EINSTEINDB_IS_COMPONENT,
-                EINSTEINDB_UNIQUE,
-                EINSTEINDB_VALUE_TYPE)
-    };
+    #[test]
+    fn test_attribute_name_with_partition_map_with_invalid_attribute() {
+        let partition_map = [0; EINSTEINDB_SCHEMA_CORE_CARDINALITY];
+        let result = attribute_name_with_partition_map(EINSTEINDB_SOLITONID + 1, &partition_map, 0, 0);
+        assert_eq!(result.unwrap_err().kind(), CausetidErrorKind::InvalidAttribute);
+    }
+}

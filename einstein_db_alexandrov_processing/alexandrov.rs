@@ -1,12 +1,20 @@
 //Copyright 2021 EinsteinDB Project Authors, WHTCORPS INC; EINST.AI -- LICENSED UNDER APACHE 2.0
-
+#![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
 
 use super::*;
-use crate::EinsteinDB::einstein_db::*;
+use std::error::Error;
 use crate::error::{Error, Result};
 use crate::meta::{Meta, MetaStore};
 use crate::storage::{Storage, StorageReader, StorageWriter};
 use crate::{EINSTEIN_DB_META_STORE_PATH, EINSTEIN_DB_STORAGE_PATH};
+
+
+
+use crate::einsteindb::{Einsteindb, EinsteindbOptions};
+
+
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
@@ -24,6 +32,18 @@ use std::sync::atomic::AtomicU64;
 use std::sync::atomic::AtomicU32;
 use std::sync::atomic::AtomicU8;
 use allegro_poset::*;
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct HyperCausetConfig {
+    pub cache_rate: f64,
+    pub max_cache_size: usize,
+    pub max_cache_num: usize,
+    pub max_cache_num_per_db: usize,
+    pub max_cache_num_per_db_per_thread: usize,
+    pub max_cache_num_per_db_per_thread_per_table: usize,
+}
 
 
 //! A storage engine for EinsteinDB.

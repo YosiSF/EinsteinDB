@@ -2,32 +2,27 @@
 name = "causet"
 version = "0.1.0"
 edition = "2021"
+author = "@CavHack"
+description = "A simple cause-effect system for AllegroCL"
+license = "MIT"
+workspace = "causet"
 
 
-# See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+path ="../causet/src"
+
+[target]
+name = "causet"
+
 [dependencies]
-soliton = "0.0.0"
 
-chrono = "0.4"
+
+chrono = "0.4.19"
 itertools = "0.10.3"
 num = "0.4.0"
-serde = "1.0"
-
+serde = "1.0.138"
+serde_json = "1.0.82"
+serde_yaml = "0.8.24"
+serde_derive = "1.0.82"
+serde_bytes = "1.0.82"
 uuid = "1.1.2"
-serde_derive = { version = "1.0", optional = true }
-
-[dev-dependencies]
-serde_test = "1.0"
-serde_json = "1.0"
-
-[features]
-serde_support = ["serde", "serde_derive"]
-
-
-
-
-
-
-
-
-

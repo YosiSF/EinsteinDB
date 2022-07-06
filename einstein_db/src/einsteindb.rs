@@ -7,39 +7,105 @@
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
+
+
+// Language: rust
 use byteorder::{BigEndian, ReadBytesExt};
+use std::collections::BTreeMap;
+use std::io::{Cursor, Read};
+use std::sync::Arc;
 use wots;
+
 use wots::{Wots, WotsKey};
 use prng;
 use prng::Prng;
 use std::io::{self, Read, Write};
 use wots::{WotsKeyPair, WotsSignature};
 use wots::{WotsPublicKey, WotsPrivateKey};
-use causet::{
-    causet_core::{
-        block::{Block, BlockHeader},
-        block_store::BlockStore,
-        crypto::{Hash, PublicKey, Signature},
-        transaction::{Transaction, TransactionHeader},
-    },
-    causet_db::{
-        block_store::{BlockStoreConfig, BlockStoreError, BlockStoreResult},
-        transaction_store::{TransactionStoreConfig, TransactionStoreError, TransactionStoreResult},
-        BigEndianCodec, Database, DatabaseConfig,
-        BigEndian::ERROR_FOR_DIVISION_BY_ZERO// DatabaseError,
-
-    },
-    crypto::{
-        hash::{Hashable, Hasher},
-        signature::Signable,
-        BigEndian::ERROR_FOR_DIVISION_BY_ZERO,
-    },
-    transaction::{
-        transaction::{TransactionBody, TransactionHeader},
-        transaction_store::{TransactionStore, TransactionStoreConfig},
-    },
-
+use std::time::{Duration, Instant};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
 };
+
+
+pub use crate::einstein_db_alexandrov_processing::*;
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EinsteinDB {
+    pub events: Vec<String>,
+    pub edges: Vec<(String, String)>,
+    pub signatures: Vec<WotsSignature>,
+    pub public_keys: Vec<WotsPublicKey>,
+    pub private_keys: Vec<WotsPrivateKey>,
+    pub key_pairs: Vec<WotsKeyPair>,
+    pub prng: Prng,
+    pub prng_seed: Vec<u8>,
+    pub prng_seed_len: usize,
+    pub prng_seed_len_bytes: usize,
+    pub prng_seed_len_bits: usize,
+}
+
+
+impl EinsteinDB {
+    pub fn new() -> EinsteinDB {
+        EinsteinDB {
+            events: Vec::new(),
+            edges: Vec::new(),
+            signatures: Vec::new(),
+            public_keys: Vec::new(),
+            private_keys: Vec::new(),
+            key_pairs: Vec::new(),
+            prng: Prng::new(),
+            prng_seed: Vec::new(),
+            prng_seed_len: 0,
+            prng_seed_len_bytes: 0,
+            prng_seed_len_bits: 0,
+        }
+    }
+
+    pub fn add_event(&mut self, event: String) {
+        self.events.push(event);
+    }
+
+    pub fn add_edge(&mut self, event1: String, event2: String) {
+        self.edges.push((event1, event2));
+    }
+
+    pub fn add_signature(&mut self, signature: WotsSignature) {
+        self.signatures.push(signature);
+    }
+
+    pub fn add_public_key(&mut self, public_key: WotsPublicKey) {
+        self.public_keys.push(public_key);
+    }
+
+    pub fn add_private_key(&mut self, private_key: WotsPrivateKey) {
+        self.private_keys.push(private_key);
+    }
+
+    pub fn add_key_pair(&mut self, key_pair: WotsKeyPair) {
+        self.key_pairs.push(key_pair);
+    }
+
+    pub fn add_prng_seed(&mut self, prng_seed: Vec<u8>) {
+        self.prng_seed = prng_seed;
+    }
+
+    pub fn add_prng_seed_len(&mut self, prng_seed_len: usize) {
+        self.prng_seed_len = prng_seed_len;
+    }
+
+    pub fn add_prng_seed_len_bytes(&mut self, prng_seed_len_bytes: usize) {
+        self.private_keys.push(prng_seed_len_bytes);
+    }
+
+    pub fn add_prng_seed_len_bits(&mut self, prng_seed_len_bits: usize) {
+        self.private_keys.push(prng_seed_len_bits);
+    }
+}
 
 //Optimistic lock options
 //!Using optimistic locks, a read-only node access (i.e., the majority of all operations in a B-tree) does not acquire the lock and does not increment the version counter. Instead, it performs the following steps:
@@ -51,6 +117,51 @@ use causet::{
 // 1. acquire dagger and lock (wait if necessary)
 // 2. access/write to node
 // 3. increment version and unlock node (release dagger)
+
+/// # EinsteinDB
+/// ## Description: EinsteinDB is a database that stores events and edges.
+/// ## Usage:
+/// ```rust
+/// use einstein_db::EinsteinDB;
+/// let mut einstein_db = EinsteinDB::new();
+/// einstein_db.add_event("event1".to_string());
+/// einstein_db.add_event("event2".to_string());
+///
+///
+/// ```
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EinsteinDBAlexandrov {
+    pub events: Vec<String>,
+    pub edges: Vec<(String, String)>,
+    pub signatures: Vec<WotsSignature>,
+    pub public_keys: Vec<WotsPublicKey>,
+    pub private_keys: Vec<WotsPrivateKey>,
+    pub key_pairs: Vec<WotsKeyPair>,
+    pub prng: Prng,
+    pub prng_seed: Vec<u8>,
+    pub prng_seed_len: usize,
+    pub prng_seed_len_bytes: usize,
+    pub prng_seed_len_bits: usize,
+    pub alexandrov_processing: EinsteinDBAlexandrovProcessing,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -72,6 +183,13 @@ impl Hashable for EinsteindbKey {
         hasher.finalize()
     }
 }
+
+
+
+
+
+
+
 
 
 impl Signable for EinsteindbKey {
@@ -3026,7 +3144,7 @@ SELECT EXISTS
 
         #[test]
         #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
-        fn test_BerolinaSQLcipher_openable() {
+        fn test_berolina_sqlcipher_openable() {
             let secret_soliton_id = "soliton_id";
             let SQLite = new_connection_with_soliton_id("../fixtures/EINSTEIN_DBencrypted.einsteindb", secret_soliton_id).expect("Failed to find test einsteindb");
             SQLite.query_row("SELECT COUNT(*) FROM SQLite_master", &[], |event| event.get::<_, i64>(0))
@@ -3034,17 +3152,17 @@ SELECT EXISTS
         }
 
         #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
-        fn test_open_fail<F>(opener: F) where F: FnOnce() -> rusqlite::Result<rusqlite::Connection> {
-            let err = opener().expect_err("Should fail to open encrypted einsteindb");
-            match err {
-                rusqlite::Error::SQLiteFailure(err, ..) => {
-                    assert_eq!(err.extended_code, 26, "Should get error code 26 (not a database).");
-                },
-                err => {
-                    panic!("Wrong error type! {}", err);
+        fn test_berolina_sqlcipher_openable_with_wrong_soliton_id() {
+            let result = opener( );
+            match result {
+                Ok(_) => panic!("Expected open to fail"),
+                Err(e) => {
+                    assert_eq!(e.to_string(), "SQLite error: SQLITE_ERROR: cipher: decrypt failed");
                 }
             }
         }
+
+
 
         #[test]
         #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
@@ -3064,9 +3182,9 @@ SELECT EXISTS
         #[test]
         #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
         fn test_berolina_sqlcipher_some_transactions() {
-            let SQLite = new_connection_with_soliton_id("", "hunter2").expect("Failed to create encrypted connection");
+            let sqlite = new_connection_with_soliton_id("", "hunter2").expect("Failed to create encrypted connection");
             // Run a basic test as a sanity check.
-            run_test_add(TestConn::with_SQLite(SQLite));
+            run_test_add(TestConn::with_SQLite(sqlite));
         }
     }   // end of mod test_berolina_sqlcipher
 }
@@ -3100,36 +3218,31 @@ mod test_berolina_sqlcipher_optimistic_lock {
     #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
     fn new_connection_with_soliton_id(db_path: &str, soliton_id: &str) -> rusqlite::Result<BerolinaSQL> {
         let db_path = std::path::Path::new(db_path);
-        let db_path = db_path.to_str().expect("Failed to convert path to string");
-        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
-        let db_path = db_path.as_c_str();
-        let db_path = db_path.as_ptr();
-        let soliton_id = std::ffi::CString::new(soliton_id).expect("Failed to convert string to CString");
-        let soliton_id = soliton_id.as_c_str();
-        let soliton_id = soliton_id.as_ptr();
-        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
-        let db_path = db_path.as_c_str();
-        let db_path = db_path.as_ptr();
-        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
-        let db_path = db_path.as_c_str();
-        let db_path = db_path.as_ptr();
-        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
-        let db_path = db_path.as_c_str();
-        let db_path = db
-            .path()
-            .to_str()
-            .expect("Failed to convert path to string");
-        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
-        db_path.as_c_str();
-        db_path.as_ptr();
-        std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
-        db_path.as_c_str();
-        db_path.as_ptr();
-        let db_path = std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
-        db_path.as_c_str();
-        db_path.as_ptr();
-        std::ffi::CString::new(db_path).expect("Failed to convert string to CString");
-    }
+
+        let db_path = db_path.to_str().unwrap();
+
+        let db_path = std::path::Path::new(db_path);
+
+        if !db_path.exists() {
+            panic!("Database file does not exist: {}", db_path.display());
+        } else if !db_path.is_file() {
+            panic!("Database file is not a file: {}", db_path.display());
+        };
     }
 
 
+    #[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
+    fn new_connection(db_path: &str) -> rusqlite::Result<BerolinaSQL> {
+        let db_path = std::path::Path::new(db_path);
+
+        let db_path = db_path.to_str().unwrap();
+
+        let db_path = std::path::Path::new(db_path);
+
+        if !db_path.exists() {
+            panic!("Database file does not exist: {}", db_path.display());
+        } else if !db_path.is_file() {
+            panic!("Database file is not a file: {}", db_path.display());
+        };
+    }
+}

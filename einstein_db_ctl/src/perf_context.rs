@@ -25,19 +25,13 @@ use sqxl::time::{self, Time};
 use allegro_poset::{self, Poset};
 use allegro_poset::{Poset, PosetError};
 
-#[derive(Debug)]
-pub struct PerfContext {
-    name: String,
-    start_time: Instant,
-    end_time: Instant,
-    parent: Option<Arc<PerfContext>>,
-    children: Vec<Arc<PerfContext>>,
-    child_count: AtomicUsize,
-    child_count_mutex: Mutex<usize>,
-}
+pub struct PosetError(String);
 
 pub use sqxl::time::{Time, TimeError};
 pub use sqxl::time::{TimeContext, TimeContextError};
+
+
+
 
 /// Here we define the `TimeContext` trait.
 /// The `TimeContext` trait is used to measure the execution time of a piece of code.
@@ -105,6 +99,8 @@ pub struct PerfContext {
 
 
 
+
+
 /// `PerfContextManager` is used to manage the `PerfContext` instances.
 /// It is used to record the execution time of a piece of code.
 /// When a piece of code is executed, a `PerfContext` instance is created and passed as an argument to the code.
@@ -116,6 +112,11 @@ pub struct PerfContext {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PerfContextManager {
+    pub root: Arc<PerfContext>,
+    pub current: Arc<PerfContext>,
+    pub current_mutex: Arc<Mutex<()>>,
+    pub current_map: Arc<Mutex<HashMap<String, Arc<PerfContext>>>>,
+    pub current_map_mutex: Arc<Mutex<()>>,
     pub perf_contexts: HashMap<String, PerfContext>,
 }
 
@@ -123,6 +124,8 @@ pub struct PerfContextManager {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PerfContextManagerBuilder {
+    pub root: Arc<PerfContext>,
+    pub current: Arc<PerfContext>,
     pub perf_contexts: HashMap<String, PerfContext>,
 }
 

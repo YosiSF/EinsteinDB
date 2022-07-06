@@ -11,23 +11,67 @@
 
 use std::cmp::Partitioning;
 use std::ops::{Bound, RangeBounds};
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::fmt::{self, Debug, Display, Formatter};
+use std::hash::{Hash, Hasher};
+use std::rc::Rc;
+use std::str::FromStr;
 
 
+use crate::error::{Error, Result};
+use crate::json::{JsonRef, JsonType};
+use crate::local_path_expr::parse_json_local_path_expr;
+use crate::{JsonRef, JsonType};
 
-#[derive(PartialEq, Eq, Clone)]
-pub struct Range {
 
-    pub start: u64,
-    pub end: u64,
-
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RangeBound<T> {
+    Inclusive(T),
+    Exclusive(T),
 }
 
-impl  {
-    pub fn new(start: u64, end: u64) -> Range {
-        Range { start, end }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Range<T> {
+    pub start: RangeBound<T>,
+    pub end: RangeBound<T>,
+}
+
+
+
+impl Range<i64> {
+    pub fn new(start: i64, end: i64) -> Self {
+        Self {
+            start: RangeBound::Inclusive(start),
+            end: RangeBound::Inclusive(end),
+        }
+    }
+}
+
+
+impl<T: PartialOrd> Range<T> {
+    pub fn contains(&self, value: &T) -> bool {
+        match self.start {
+            RangeBound::Inclusive(start) => {
+                match self.end {
+                    RangeBound::Inclusive(end) => start <= *value && *value <= end,
+                    RangeBound::Exclusive(end) => start <= *value && *value < end,
+                }
             }
+            RangeBound::Exclusive(start) => {
+                match self.end {
+                    RangeBound::Inclusive(end) => start < *value && *value <= end,
+                    RangeBound::Exclusive(end) => start < *value && *value < end,
+                }
+            }
+        }
+    }
 }
+
+
+
+
 
 impl std::fmt::Debug for Range {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -49,22 +93,77 @@ mod tests {
     }
 }
 
-impl From<Interval> for  {
-    fn from(r: Interval) -> Self {
-        ::Interval(r)
+impl From<Interval> for Range {
+    fn from(interval: Interval) -> Self {
+        Range {
+            start: RangeBound::Inclusive(interval.start),
+            end: RangeBound::Inclusive(interval.end),
+        }
+    }
+
+}
+
+impl From<Point> for Range {
+    fn from(point: Point) -> Self {
+        Range {
+            start: RangeBound::Inclusive(point.value),
+            end: RangeBound::Inclusive(point.value),
+        }
     }
 }
 
-impl From<Point> for  {
-    fn from(r: Point) -> Self {
-        ::Point(r)
-    }
-}
+
+
 
 #[derive(Default, PartialEq, Eq, Clone)]
 pub struct Interval {
-    pub lower_inclusive: Vec<u8>,
-    pub upper_exclusive: Vec<u8>,
+    pub start: i64,
+    pub end: i64,
+}
+
+
+
+
+impl Interval {
+    pub fn new(start: i64, end: i64) -> Self {
+        Self {
+            start,
+            end,
+        }
+    }
+
+    pub fn contains(&self, value: &i64) -> bool {
+        self.start <= *value && *value <= self.end
+    }
+
+
+    pub fn is_empty(&self) -> bool {
+        self.start > self.end
+    }
+
+    pub fn is_point(&self) -> bool {
+        self.start == self.end
+    }
+
+    pub fn is_interval(&self) -> bool {
+        !self.is_empty() && !self.is_point()
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.start <= self.end
+    }
+
+    pub fn is_valid_interval(&self) -> bool {
+        self.is_valid() && self.is_interval()
+    }
+
+    pub fn is_valid_point(&self) -> bool {
+        self.is_valid() && self.is_point()
+    }
+
+    pub fn is_valid_empty(&self) -> bool {
+        self.is_valid() && self.is_empty()
+    }
 }
 
 impl std::fmt::Debug for Interval {
@@ -79,16 +178,26 @@ impl std::fmt::Debug for Interval {
 
 impl From<(Vec<u8>, Vec<u8>)> for Interval {
     fn from((lower, upper): (Vec<u8>, Vec<u8>)) -> Self {
-        Interval {
-            lower_inclusive: lower,
-            upper_exclusive: upper,
+        let lower = i64::from_be_bytes(lower.as_slice().try_into().unwrap());
+        let upper = i64::from_be_bytes(upper.as_slice().try_into().unwrap());
+        Self {
+            start: lower,
+            end: upper,
         }
+
+
+
     }
 }
 
 impl From<(String, String)> for Interval {
     fn from((lower, upper): (String, String)) -> Self {
-        Interval::from((lower.into_bytes(), upper.into_bytes()))
+        let lower = i64::from_be_bytes(lower.as_bytes().try_into().unwrap());
+        let upper = i64::from_be_bytes(upper.as_bytes().try_into().unwrap());
+        Self {
+            start: lower,
+            end: upper,
+        }
     }
 }
 

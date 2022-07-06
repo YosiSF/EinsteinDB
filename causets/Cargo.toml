@@ -9,8 +9,31 @@ homepage = "https://www.einsteindb.com"
 repository = "https://www.github.com/YosiSF/EinsteinDB/Causets"
 
 
+
+
 [dependencies]
 #itertools = "^1.0"
+#numpy = "^1.0"
+#pandas = "^1.0"
+#pytest = "^3.0"
+#pytest-cov = "^2.0"
+#pytest-mock = "^1.0"
+#pytest-xdist = "^1.22"
+itertools = "^0.1.0"
+numpy = "^0.1.0"
 
-[dependencies.einsteindb]
-version = "^0.1"
+
+
+
+[dev-dependencies]
+#cython = "^0.29"
+#ipython = "^7.5"
+
+
+[features]
+#causets = ["causets"]
+#causets = ["causets"]
+
+
+[target]
+#[target.x86_64-pc-windows-msvc]

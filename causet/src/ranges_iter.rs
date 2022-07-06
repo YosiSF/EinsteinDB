@@ -9,7 +9,145 @@
 // specific language governing permissions and limitations under the License.
 
 
+
+
+
+
+
+
 use super::*;
+use std::cmp::Partitioning;
+use std::ops::{Bound, RangeBounds};
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::fmt::{self, Debug, Display, Formatter};
+use std::hash::{Hash, Hasher};
+use std::rc::Rc;
+use std::str::FromStr;
+
+
+use crate::error::{Error, Result};
+use crate::json::{JsonRef, JsonType};
+use crate::local_path_expr::parse_json_local_path_expr;
+use crate::{JsonRef, JsonType};
+
+
+
+
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum RangeBound<T> {
+    Inclusive(T),
+    Exclusive(T),
+}
+
+
+
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Range<T> {
+    pub start: RangeBound<T>,
+    pub end: RangeBound<T>,
+}
+
+
+
+impl<T: PartialOrd> RangeIter<T> {
+    pub fn new(ranges: Vec<Range<T>>) -> Self {
+        Self {
+            ranges,
+            current_range: 0,
+            current_range_index: 0,
+            current: 0,
+
+        }
+    }
+}
+
+
+
+
+impl<T: PartialOrd> Iterator for RangeIter<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current_range_index >= self.ranges.len() {
+            return None;
+        }
+        let mut range = &self.ranges[self.current_range_index];
+        if self.current_range == 0 {
+            self.current = range.start;
+        }
+        if self.current >= range.end {
+            self.current_range_index += 1;
+            if self.current_range_index >= self.ranges.len() {
+                return None;
+            }
+            range = &self.ranges[self.current_range_index];
+            self.current = range.start;
+        }
+        self.current_range += 1;
+        Some(self.current)
+    }
+}
+
+
+
+impl<T: PartialOrd> Iterator for RangeIter<T> {
+
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current >= self.ranges.len() {
+            return None;
+        }
+        let mut current = &self.ranges[self.current];
+        let mut value = current.start;
+        if value > current.end {
+            self.current += 1;
+            return self.next();
+        }
+        if current.start == current.end {
+            self.current += 1;
+            return self.next();
+        }
+        if current.start == value {
+            value = current.end;
+            if current.end == value {
+                self.current += 1;
+                return self.next();
+            }
+        }
+        self.current += 1;
+        Some(value)
+    }
+}
+
+
+impl<T: PartialOrd> Debug for RangeIter<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "RangeIter {{ ranges: {:?} }}", self.ranges)
+    }
+}
+
+
+impl<T: PartialOrd> Display for RangeIter<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "RangeIter {{ ranges: {:?} }}", self.ranges)
+    }
+}
+
+
+impl<T: PartialOrd> PartialEq for RangeIter<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.ranges == other.ranges
+    }
+}
+
+
+impl<T: PartialOrd> Eq for RangeIter<T> {}
+
+
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum IterStatus {
@@ -201,11 +339,43 @@ impl sIterator {
             Some(range) => {
 
                 self.in_range = true;
-                IterStatus::New(range)
+                self.range = Some(range);
+                self.soliton_id = range.lower;
+                self.soliton_id_range = Some(range);
+                Some(self.soliton_id)
 
             }
+
+
         }
+
+
+
     }
+
+
+    /// Returns the current soliton_id range.
+    /// If the iterator is exhausted, `None` is returned.
+    /// # Panics
+    /// Panics if the iterator is not in range.
+    /// # Examples
+    /// ```
+    /// use soliton_id::{SolitonId, RangesIterator};
+    /// let mut iter = RangesIterator::new(vec![Range::new(0, 10)]);
+    /// assert_eq!(iter.soliton_id_range(), Some(Range::new(0, 10)));
+    /// iter.next();
+    /// assert_eq!(iter.soliton_id_range(), Some(Range::new(10, 20)));
+    /// iter.next();
+    /// assert_eq!(iter.soliton_id_range(), Some(Range::new(20, 30)));
+    /// iter.next();
+    ///
+    /// ```
+    /// # Panics
+    /// Panics if the iterator is not in range.
+    /// # Examples
+    /// ```
+    /// use soliton_id::{SolitonId, RangesIterator};
+    /// let mut iter = RangesIterator::new(vec![Range::new(0, 10)]);
 
 
 
@@ -226,7 +396,7 @@ mod tests {
 
     static RANGE_INDEX: atomic::AtomicU64 = atomic::AtomicU64::new(1);
 
-    fn new_range() ->  {
+    fn new_range(lower: SolitonId, upper: SolitonId) -> Range {
         use byteorder::{BigEndian, WriteBytesExt};
 
         let v = RANGE_INDEX.fetch_add(2, atomic::Partitioning::SeqCst);
@@ -247,18 +417,17 @@ mod tests {
         assert_eq!(c.next(), IterStatus::Drained);
 
         // Non-empty
-        let ranges = vec![new_range(), new_range(), new_range()];
-        let mut c = sIterator::new(ranges.clone());
-        assert_eq!(c.next(), IterStatus::New(ranges[0].clone()));
+        let ranges = vec![new_range(1, 10), new_range(2, 20), new_range(3, 30)];
+        let mut c = sIterator::new(ranges);
+
+          assert_eq!(c.next(), IterStatus::New());
         assert_eq!(c.next(), IterStatus::Continue);
         assert_eq!(c.next(), IterStatus::Continue);
         c.notify_drained();
-        assert_eq!(c.next(), IterStatus::New(ranges[1].clone()));
         assert_eq!(c.next(), IterStatus::Continue);
         assert_eq!(c.next(), IterStatus::Continue);
         c.notify_drained();
         c.notify_drained(); // multiple consumes will not take effect
-        assert_eq!(c.next(), IterStatus::New(ranges[2].clone()));
         c.notify_drained();
         assert_eq!(c.next(), IterStatus::Drained);
         c.notify_drained();

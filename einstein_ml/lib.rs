@@ -144,3 +144,14 @@ pub fn repeat_causet_locales(causet_locales_per_tuple: usize, tuples: usize) -> 
     let causet_locales: String = repeat(inner).take(tuples).join(", ");
     causet_locales
 }
+
+
+/// Prepare an BerolinaSQL `VALUES` block, like (?, ?, ?), (?, ?, ?).
+/// The number of causet_locales per tuple determines  `(?, ?, ?)`.  The number of tuples determines `(...), (...)`.
+/// # Examples
+/// ```ru
+/// # use einstein_db::{repeat_causet_locales};
+/// assert_eq!(repeat_causet_locales(1, 3), "(?), (?), (?)".to_string());
+/// assert_eq!(repeat_causet_locales(3, 1), "(?, ?, ?)".to_string());
+/// assert_eq!(repeat_causet_locales(2, 2), "(?, ?), (?, ?)".to_string());
+/// ```

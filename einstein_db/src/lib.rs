@@ -54,6 +54,9 @@ use einsteindb_server::{EinsteinDBClientErrorType, EinsteinDBClientType};
 
 
 
+
+
+
 #[macro_use]
 extern crate log;
 #[macro_use]
@@ -110,31 +113,125 @@ pub fn einstein_db_gravity_genpk(public:&mut [u8; 32], secret:&mut [u8; 64]) {
 
 
 
+
+pub fn einstein_db_gravity_genpk_from_seed(public:&mut [u8; 32], secret:&mut [u8; 64], seed:&[u8; 32]) {
+    ///! Generate a Gravity public key and secret key from a seed.
+    /// This function generates a Gravity public key and secret key from a seed.
+    let mut public_key = [0u8; 32];
+    let mut secret_key = [0u8; 64];
+    *public = public_key;
+    *secret = secret_key;
+    unsafe {
+        llvm_asm!("
+        call einstein_db_gravity_genpk_from_seed
+        ":
+        :"{rdi}"(seed.as_ptr() as *const u8),
+         "{rsi}"(public.as_mut_ptr() as *mut u8),
+         "{rdx}"(secret.as_mut_ptr() as *mut u8)
+        :"memory"
+        );
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GravityPublicKey(pub [u8; 32]);
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GravitySecretKey(pub [u8; 64]);
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GravityPublicKeyHash(pub [u8; 32]);
+
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GravitySecretKeyHash(pub [u8; 32]);
+
 #[derive(Clone, Copy)]
 pub struct CausetLocaleNucleon<'s, 'c> {
+    pub locale: &'s str,
+    pub nucleon: &'c str,
+}
+
+
+#[derive(Clone, Copy)]
+pub struct CausetLocaleNucleonHash<'s, 'c> {
+    pub locale: &'s str,
     pub topograph: &'s Topograph,
     pub cache: Option<&'c CachedAttrs>,
+
 }
 
 impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
     pub fn for_topograph(s: &'s Topograph) -> CausetLocaleNucleon<'s, 'static> {
         CausetLocaleNucleon {
-            topograph: s,
-            cache: None,
+            locale: "",
+            nucleon: "",
         }
+
+
     }
 
     pub fn new(s: &'s Topograph, c: Option<&'c CachedAttrs>) -> CausetLocaleNucleon<'s, 'c> {
         CausetLocaleNucleon {
+            locale: "",
+            nucleon: "",
+        }
+
+
+    }
+
+
+    pub fn new_from_hash(s: &'s Topograph, c: Option<&'c CachedAttrs>) -> CausetLocaleNucleonHash<'s, 'c> {
+        CausetLocaleNucleonHash {
+            locale: "",
             topograph: s,
             cache: c,
         }
+
+
     }
 }
+
+
+
+
 
 /// This is `CachedAttrs`, but with handy generic parameters.
 /// Why not make the trait generic? Because then we can't use it as a trait object in `CausetLocaleNucleon`.
 impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
+    pub fn new_from_hash(s: &'s Topograph, c: Option<&'c CachedAttrs>) -> CausetLocaleNucleonHash<'s, 'c> {
+        CausetLocaleNucleonHash {
+            locale: "",
+            topograph: s,
+            cache: c,
+        }
+
+    }
+
+
+    pub fn new_from_hash_with_locale(s: &'s Topograph, c: Option<&'c CachedAttrs>, locale: &'s str) -> CausetLocaleNucleonHash<'s, 'c> {
+        CausetLocaleNucleonHash {
+            locale: locale,
+            topograph: s,
+            cache: c,
+        }
+
+    }
+
+
+    pub fn new_from_hash_with_locale_and_nucleon(s: &'s Topograph, c: Option<&'c CachedAttrs>, locale: &'s str, nucleon: &'s str) -> CausetLocaleNucleonHash<'s, 'c> {
+        CausetLocaleNucleonHash {
+            locale: locale,
+            topograph: s,
+            cache: c,
+        }
+
+    }
     pub fn is_attr_cached_reverse<U>(&self, causetid: U) -> bool where U: Into<Causetid> {
         self.cache
             .map(|cache| cache.is_Attr_cached_reverse(causetid.into()))
@@ -168,6 +265,22 @@ impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Causetid(pub [u8; 32]);
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CausetqTV(pub [u8; 32]);
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CausetqTVHash(pub [u8; 32]);
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct CausetqTVHashHash(pub [u8; 32]);
+
+
 #[derive(Debug)]
 pub struct AlgebraicQuery {
     default_source: SrcVar,
@@ -193,10 +306,20 @@ pub struct AlgebraicQuery {
 
 impl AlgebraicQuery {
     #[inline]
-    pub fn is_CausetLocaleNucleon_empty(&self) -> bool {
+    pub fn is_causet_locale_nucleon_empty(&self) -> bool {
         self.cc.is_CausetLocaleNucleon_empty()
     }
 
+
+    #[inline]
+    pub fn is_causet_locale_nucleon_nonempty(&self) -> bool {
+        self.cc.is_CausetLocaleNucleon_nonempty()
+    }
+
+    #[inline]
+    pub fn is_causet_locale_nucleon_nonempty_with_locale(&self, locale: &str) -> bool {
+        self.cc.is_CausetLocaleNucleon_nonempty_with_locale(locale)
+    }
     /// Return true if every variable in the find spec is fully bound to a single causet_locale.
     pub fn is_fully_bound(&self) -> bool {
         self.find_spec
@@ -230,12 +353,12 @@ impl AlgebraicQuery {
     }
 }
 
-pub fn algebrize_with_counter(CausetLocaleNucleon: CausetLocaleNucleon, parsed: FindQuery, counter: usize) -> Result<AlgebraicQuery> {
-    algebrize_with_inputs(CausetLocaleNucleon, parsed, counter, QueryInputs::default())
+pub fn algebrize_with_counter(causet_locale_nucleon: CausetLocaleNucleon, parsed: FindQuery, counter: usize) -> Result<AlgebraicQuery> {
+    algebrize_with_inputs(causet_locale_nucleon, parsed, counter, QueryInputs::default())
 }
 
-pub fn algebrize(CausetLocaleNucleon: CausetLocaleNucleon, parsed: FindQuery) -> Result<AlgebraicQuery> {
-    algebrize_with_inputs(CausetLocaleNucleon, parsed, 0, QueryInputs::default())
+pub fn algebrize(causet_locale_nucleon: CausetLocaleNucleon, parsed: FindQuery) -> Result<AlgebraicQuery> {
+    algebrize_with_inputs(causet_locale_nucleon, parsed, 0, QueryInputs::default())
 }
 
 /// Take an ordering list. Any variables that aren't fixed by the query are used to produce
@@ -458,5 +581,29 @@ pub fn einstein_db_gravity_verify(public:&[u8;32], msg: &[u8], sig: &[u8], sign_
     db.add_query(&FindQuery::default()).unwrap();
     db.add_signature(&sig).unwrap();
     db.verify(&pk, &msg, &sig)
+
+}
+
+
+
+
+pub fn einstein_db_gravity_verify_with_sources(public:&[u8;32], msg: &[u8], sig: &[u8], sign_bytes: Vec<u8>, sources: &[Source]) -> bool {
+
+    //public key is the public key of the signer
+    let pk = public_key_from_slice(public).unwrap();
+    if pk {
+        h: AlexandrovHash::new(msg).verify(sig, &pk)
+    };
+    //msg is the message that was signed
+    let msg = msg.to_vec();
+    //sig is the signature
+    let sig = Signature::from_bytes(&sig).unwrap();
+    //let mut db = EinsteinDB::new_from_public(public);
+    let mut db = EinsteinDB::new_from_public(public);
+    db.add_query(&FindQuery::default()).unwrap();
+    db.add_signature(&sig).unwrap();
+    db.verify_with_sources(&pk, &msg, &sig, sources)
+
+
 
 }

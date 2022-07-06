@@ -4,19 +4,28 @@ version = "0.1.0"
 description = "Soliton Panic"
 edition = "2021"
 publish = false
-author = "@CavHack""
 author_email = "karl@einst.ai"
 url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
 license = "MIT"
 
 
 [dependencies]
-
 serde = "*"
 serde_json = "*"
 serde_yaml = "*"
 serde_derive = "*"
 serde_bytes = "*"
+
+[build]
+rustflags = ["-C", "panic=abort"]
+
+
+[dependencies.soliton]
+version = "0.1.0"
+
+
+[dependencies.einstein_db]
+version = "0.1.0"
 
 
 

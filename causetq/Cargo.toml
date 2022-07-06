@@ -3,37 +3,6 @@ name = "causetq"
 version = "0.1.0"
 edition = "2021"
 
-# See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies.causet]
-path = "../causet"
-
-[dependencies.berolinasql]
-path = "../berolinasql"
-
-[dependencies.einstein_db]
-path = "../edb-crate"
-
-
-[dependencies.serde]
-version = "1.0"
-features = ["derive"]
-
-
-[dependencies.serde_json]
-version = "1.0"
-features = ["derive"]
-
-
-[dependencies.serde_derive]
-version = "1.0"
-features = ["derive"]
-
-
-[dependencies.serde_yaml]
-version = "0.8.23"
-features = ["derive"]
-
-
-
-
+[dependencies.causetq]
+version = "0.1.0"

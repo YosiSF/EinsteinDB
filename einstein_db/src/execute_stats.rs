@@ -27,6 +27,9 @@ use crate::EinsteinDB::LightLike;
 use crate::EinsteinDB::EinsteinDB;
 use crate::EinsteinDB::EinsteinDBError;
 
+
+
+
 use crate::FoundationDB::FdbError;
 use crate::FoundationDB::FdbResult;
 use crate::FoundationDB::FdbDatabase;
@@ -34,6 +37,65 @@ use crate::FoundationDB::FdbDatabaseOptions;
 use crate::postgres_protocol::PostgresProtocol;
 use crate::postgres_protocol::PostgresProtocolError;
 use crate::postgres_protocol::PostgresProtocolResult;
+
+
+
+
+
+/// Error type for EinsteinDB.
+/// This is an enum of various possible errors that can occur when using EinsteinDB.
+/// # Example
+/// ```
+/// use EinsteinDB::error::Error;
+/// use EinsteinDB::error::ErrorKind;
+/// use EinsteinDB::error::Error::Io;
+///
+/// // An error returned by a function.
+/// let err = Error::from(Error::Io(io::Error::new(io::ErrorKind::Other, "oh no!")));
+/// assert_eq!(err.kind, ErrorKind::
+/// ```
+/// # Example
+/// ```
+/// use EinsteinDB::error::Error;
+/// use EinsteinDB::error::ErrorKind;
+/// use EinsteinDB::error::Error::Io;
+
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "{}", _0)]
+    Io(#[cause] io::Error),
+    #[fail(display = "{}", _0)]
+    Json(#[cause] JsonError),
+    #[fail(display = "{}", _0)]
+    JsonCapnp(#[cause] JsonCapnpError),
+    #[fail(display = "{}", _0)]
+    Kubernetes(#[cause] KubernetesError),
+    #[fail(display = "{}", _0)]
+    KubernetesV1(#[cause] KubernetesV1Error),
+    #[fail(display = "{}", _0)]
+    Fdb(#[cause] FdbError),
+    #[fail(display = "{}", _0)]
+    PostgresProtocol(#[cause] PostgresProtocolError),
+    #[fail(display = "{}", _0)]
+    EinsteinDB(#[cause] EinsteinDBError),
+    #[fail(display = "{}", _0)]
+    FoundationDB(#[cause] FdbError),
+    #[fail(display = "{}", _0)]
+    FoundationDBResult(#[cause] FdbResult),
+    #[fail(display = "{}", _0)]
+    FoundationDBDatabase(#[cause] FdbDatabase),
+    #[fail(display = "{}", _0)]
+    FoundationDBDatabaseOptions(#[cause] FdbDatabaseOptions),
+    #[fail(display = "{}", _0)]
+    FoundationDBDatabaseOptionsBuilder(#[cause] FdbDatabaseOptionsBuilder),
+    #[fail(display = "{}", _0)]
+    FoundationDBDatabaseOptionsBuilderBuilder(#[cause] FdbDatabaseOptionsBuilderBuilder),
+    #[fail(display = "{}", _0)]
+    FoundationDBDatabaseOptionsBuilderBuilderBuilder(#[cause] FdbDatabaseOptionsBuilderBuilderBuilder),
+    #[fail(display = "{}", _0)]
+    FoundationDBDatabaseOptionsBuilderBuilderBuilderBuilder(#[cause] FdbDatabaseOptionsBuilderBuilderBuilderBuilder),
+}
+
 
 
 /// Execution summaries to support `EXPLAIN ANALYZE` statements. We don't use
@@ -120,17 +182,27 @@ pub trait ExecSummaryCollector: Send {
 
 pub trait BoxedExecSummaryCollector: ExecSummaryCollector {
 
-    /// Collects the execution summary.
+    /// Creates a `Box<dyn ExecSummaryCollector>` from this `BoxedExecSummaryCollector`.
+    /// This is useful for collecting execution summaries in a `Box<dyn ExecSummaryCollector>`.
     ///
-    /// # Arguments
     ///
-    /// * `summary` - The execution summary to collect.
     ///
-    /// # Return
-    ///
-    /// The collected execution summary.
-    ///
-    type DurationRecorder;
+
+
+
+    fn boxed(self: Box<Self>) -> Box<dyn ExecSummaryCollector>;
+
+}
+
+
+impl<T: ExecSummaryCollector> BoxedExecSummaryCollector for T {
+
+    fn boxed(self: Box<Self>) -> Box<dyn ExecSummaryCollector> {
+        Box::new(self)
+    }
+
+
+
 
     fn collect_summary(&mut self, summary: ExecuteStats) -> Self::DurationRecorder {
         self.collect(&summary)

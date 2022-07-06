@@ -21,6 +21,19 @@
 
 
 
+
+pub struct EinsteindbIteratorItemOptions {
+    pub item_type: EinsteindbIteratorItemType,
+    pub item_type_options: EinsteindbIteratorItemTypeOptions,
+}
+
+
+pub struct EinsteindbIteratorItemTypeOptions {
+    pub item_type: EinsteindbIteratorItemType,
+    pub item_type_options: EinsteindbIteratorItemTypeOptions,
+}
+
+
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
@@ -32,28 +45,9 @@ use std::collections::BTreeSet;
 pub fn einsteindb_macro_impl(
     input: &str,
     output: &str,
-    options: &HashMap<String, String>,
-    macros: &HashMap<String, String>,
-    macros_options: &HashMap<String, HashMap<String, String>>,
-    macros_options_default: &HashMap<String, HashMap<String, String>>,
-    macros_options_required: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_one: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_all: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_none: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_some: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_every: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_any: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_none_of: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_some_of: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_every_of: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_any_of: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_none_of_all: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_some_of_all: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_every_of_all: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_any_of_all: &HashMap<String, HashMap<String, String>>,
-    macros_options_required_none_of_any: &HashMap<String, HashMap<String, String
-) {
-    let mut input_file = std::fs::File::open(input).unwrap();
+    options: &EinsteindbOptions,
+) -> Result<(), Box<dyn Error>> {
+    input_file = std::fs::File::open(input).unwrap();
     let mut output_file = std::fs::File::create(output).unwrap();
     let mut input_file_content = String::new();
     input_file.read_to_string(&mut input_file_content).unwrap();
@@ -65,66 +59,7 @@ pub fn einsteindb_macro_impl(
     let mut output_file_content_lines_iter_next_clone = output_file_content_lines_iter_next.clone();
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_einsteindb_macro_impl() {
-        let input = "./tests/einstein_db_alexandrov_processing/test_einsteindb_macro_impl.txt";
-        let output = "./tests/einstein_db_alexandrov_processing/test_einsteindb_macro_impl_output.txt";
-        let options = HashMap::new();
-        let macros = HashMap::new();
-        let macros_options = HashMap::new();
-        let macros_options_default = HashMap::new();
-        let macros_options_required = HashMap::new();
-        let macros_options_required_one = HashMap::new();
-        let macros_options_required_all = HashMap::new();
-        let macros_options_required_none = HashMap::new();
-        let macros_options_required_some = HashMap::new();
-        let macros_options_required_every = HashMap::new();
-        let macros_options_required_any = HashMap::new();
-        let macros_options_required_none_of = HashMap::new();
-        let macros_options_required_some_of = HashMap::new();
-        let macros_options_required_every_of = HashMap::new();
-        let macros_options_required_any_of = HashMap::new();
-        let macros_options_required_none_of_all = HashMap::new();
-        let macros_options_required_some_of_all = HashMap::new();
-        let macros_options_required_every_of_all = HashMap::new();
-        let macros_options_required_any_of_all = HashMap::new();
-        let macros_options_required_none_of_any = HashMap::new();
-        let macros_options_required_some_of_any = HashMap::new();
-        let macros_options_required_every_of_any = HashMap::new();
-        let macros_options_required_any_of_any = HashMap::new();
 
-        einsteindb_macro_impl(
-            input,
-            output,
-            &options,
-            &macros,
-            &macros_options,
-            &macros_options_default,
-            &macros_options_required,
-            &macros_options_required_one,
-            &macros_options_required_all,
-            &macros_options_required_none,
-            &macros_options_required_some,
-            &macros_options_required_every,
-            &macros_options_required_any,
-            &macros_options_required_none_of,
-            &macros_options_required_some_of,
-            &macros_options_required_every_of,
-            &macros_options_required_any_of,
-            &macros_options_required_none_of_all,
-            &macros_options_required_some_of_all,
-            &macros_options_required_every_of_all,
-            &macros_options_required_any_of_all,
-            &macros_options_required_none_of_any,
-            &macros_options_required_some_of_any,
-            &macros_options_required_every_of_any,
-            &macros_options_required_any_of_any,
-        );
-    }
-}
 
 
 

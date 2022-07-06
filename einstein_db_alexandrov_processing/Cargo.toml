@@ -7,25 +7,14 @@ license = "MIT Licensed"
 url = "https://github.com/YosiSF/EinsteinDB.git"
 
 
+[lib]
+name = "einstein_db_alexandrov_processv_processing"
+
+
 [dependencies]
+serde = { version = "0.1.0", features = ["derive"] }
 
-einstein_db = { path = "../einstein_db" }
+[dev-dependencies.cargo-test]
+version = "0.1.0"
 
-berolina_sql = { path = "../berolina_sql" }
-
-
-causet = { path = "../causet" }
-crate = { path = "../crate" }
-crate_sql = { path = "../crate_sql" }
-crate_sql_parser = { path = "../crate_sql_parser" }
-crate_sql_syntax = { path = "../crate_sql_syntax" }
-crate_sql_syntax_parser = { path = "../crate_sql_syntax_parser" }
-
-
-crate_sql_syntax_parser_rust = { path = "../crate_sql_syntax_parser_rust" }
-
-
-
-
-crate_sql_syntax_parser_rust_syntax = { path = "../crate_sql_syntax_parser_rust_syntax" }
 

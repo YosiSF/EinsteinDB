@@ -288,11 +288,98 @@ pub struct EinsteinDBVectorRef<'a, T: 'a> {
 }
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct EinsteinDBVectorRefMut<'a, T: 'a> {
-    data: &'a mut EinsteinDBVector<T>,
-    len: usize,
+impl<'a, T> EinsteinDBVectorRef<'a, T> {
+    /// Creates a new `EinsteinDBVectorRef` from a `EinsteinDBVector`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::{
+    ///    einstein_db_vector::EinsteinDBVector,
+    ///   einstein_db_vector::EinsteinDBVectorRef,
+    ///  einstein_db_vector::EinsteinDBVectorRefMut,
+    /// !
+    /// };
+    /// use einstein_ml::{
+    ///   hash::{BuildHasher, Hash, Hasher},
+    ///  vec::{IntoIter, Iter, IterMut, Vec},
+    /// };
+    ///
+    /// let mut v = EinsteinDBVector::new();
+    /// v.push(1);
+    /// let v_ref: EinsteinDBVectorRef<i32> = EinsteinDBVectorRef::from_einstein_db_vector(v);
+    /// ```
+    pub fn from_einstein_db_vector(v: EinsteinDBVector<T>) -> EinsteinDBVectorRef<T> {
+        EinsteinDBVectorRef {
+            data: &v,
+            len: v.len(),
+        }
+    }
 }
+
+
+
+
+impl<'a, T> EinsteinDBVectorRef<'a, T> {
+    /// Returns the number of elements in the vector, also referred to as its 'length'.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::{
+    ///    einstein_db_vector::EinsteinDBVector,
+    ///   einstein_db_vector::EinsteinDBVectorRef,
+    ///  einstein_db_vector::EinsteinDBVectorRefMut,
+    /// !
+    /// };
+    /// use einstein_ml::{
+    ///   hash::{BuildHasher, Hash, Hasher},
+    ///  vec::{IntoIter, Iter, IterMut, Vec},
+    /// };
+    ///
+    /// let mut v = EinsteinDBVector::new();
+    /// v.push(1);
+    /// let v_ref: EinsteinDBVectorRef<i32> = EinsteinDBVectorRef::from_einstein_db_vector(v);
+    /// assert_eq!(v_ref.len(), 1);
+    /// ```
+    pub fn len(&self) -> usize {
+        self.len
+    }
+}
+
+
+
+
+impl<'a, T> EinsteinDBVectorRef<'a, T> {
+    /// Returns `true` if the vector contains no elements.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::{
+    ///    einstein_db_vector::EinsteinDBVector,
+    ///   einstein_db_vector::EinsteinDBVectorRef,
+    ///  einstein_db_vector::EinsteinDBVectorRefMut,
+    /// !
+    /// };
+    /// use einstein_ml::{
+    ///   hash::{BuildHasher, Hash, Hasher},
+    ///  vec::{IntoIter, Iter, IterMut, Vec},
+    /// };
+    ///
+    /// let mut v = EinsteinDBVector::new();
+    /// assert_eq!(v.is_empty(), true);
+    /// v.push(1);
+    /// assert_eq!(v.is_empty(), false);
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+}
+
+
+
+
 
 
 
@@ -308,6 +395,92 @@ pub struct EinsteinDBVectorIterMut<'a, T: 'a> {
     len: usize,
     index: usize,
 }
+
+
+impl<'a, T> EinsteinDBVectorIter<'a, T> {
+    /// Creates a new iterator over the vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::{
+    ///    einstein_db_vector::EinsteinDBVector,
+    ///   einstein_db_vector::EinsteinDBVectorRef,
+    ///  einstein_db_vector::EinsteinDBVectorRefMut,
+    /// !
+    /// };
+    /// use einstein_ml::{
+    ///   hash::{BuildHasher, Hash, Hasher},
+    ///  vec::{IntoIter, Iter, IterMut, Vec},
+    /// };
+    ///
+    /// let mut v = EinsteinDBVector::new();
+    /// v.push(1);
+    /// let v_ref: EinsteinDBVectorRef<i32> = EinsteinDBVectorRef::from_einstein_db_vector(v);
+    /// let mut v_iter = v_ref.iter();
+    /// assert_eq!(v_iter.next(), Some(&1));
+    /// assert_eq!(v_iter.next(), None);
+    /// ```
+    pub fn iter(&self) -> EinsteinDBVectorIter<T> {
+        EinsteinDBVectorIter {
+            data: self.data,
+            len: self.len,
+            index: 0,
+        }
+    }
+}
+
+
+
+
+impl<'a, T> EinsteinDBVectorIterMut<'a, T> {
+    /// Creates a new iterator over the vector.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use einstein_db::{
+    ///    einstein_db_vector::EinsteinDBVector,
+    ///   einstein_db_vector::EinsteinDBVectorRef,
+    ///  einstein_db_vector::EinsteinDBVectorRefMut,
+    /// !
+    /// };
+    /// use einstein_ml::{
+    ///   hash::{BuildHasher, Hash, Hasher},
+    ///  vec::{IntoIter, Iter, IterMut, Vec},
+    /// };
+    ///
+    /// let mut v = EinsteinDBVector::new();
+    /// v.push(1);
+    /// let v_ref: EinsteinDBVectorRef<i32> = EinsteinDBVectorRef::from_einstein_db_vector(v);
+    /// let mut v_iter = v_ref.iter_mut();
+    /// assert_eq!(v_iter.next(), Some(&mut 1));
+    /// assert_eq!(v_iter.next(), None);
+    /// ```
+    pub fn iter_mut(&mut self) -> EinsteinDBVectorIterMut<T> {
+        EinsteinDBVectorIterMut {
+            data: self.data,
+            len: self.len,
+            index: 0,
+        }
+    }
+}
+
+
+
+
+impl<'a, T> Iterator for EinsteinDBVectorIter<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<&'a T> {
+        if self.index >= self.len {
+            None
+        } else {
+            let result = unsafe { self.data.get_unchecked(self.index) };
+            self.index += 1;
+            Some(result)
+        }
+    }
 }
 
 
@@ -580,16 +753,13 @@ pub struct RcCounterWithSupercow<T> {
 /// ensuring they all belong to the same timeline.
 /// 
 
-fn collect_causets_ordered_by_timeline(
-    causet_locale: &CausetLocale,
-
+fn collect_tx_range_into_vec(
     tx_range: &TxRange,
-) -> Result<Vec<CausetLocaleRef>, Error> {
-    let mut causets = Vec::new();
-    let mut tx_range = tx_range.clone();
-    let mut tx_range_iter = tx_range.into_iter();
-    let mut tx_range_iter_mut = tx_range.into_iter();
-    let mut tx_range_iter_mut_next = tx_range_iter_mut.next();
+    causet_locale: &CausetLocale,
+    causet_locale_ref: &CausetLocaleRef,
+) -> Result<Vec<Tx>, Error> {
+    tx_range.into_iter();
+    Vec::new();
 
 
     let mut causet_locale_ref = causet_locale.borrow_ref();
@@ -604,9 +774,13 @@ while let Some(tx) = tx_range_iter.next() {
     let causet_locale_ref_next = causet_locale_ref_next.ok_or(Error::NoCausetLocale)?;
     let causet_locale_ref_next = causet_locale_ref_next.borrow_ref();
     let causet_locale_ref_next = causet_locale_ref_next.borrow_mut();
-    let causet_locale_ref_next = causet_locale_ref_next.next();
+    causet_locale_ref_next.next();
 
-    let causet_locale_ref = causet_locale_ref.borrow_ref() {
+    let causet_locale_ref = causet_locale_ref.borrow_ref();
+    let causet_locale_ref_mut = causet_locale_ref.borrow_mut();
+
+
+    causet_locale_ref_mut.next();
         /// The causet_locale_ref is the causet_locale of the tx.
         /// The causet_locale_ref_next is the causet_locale of the next tx.
         /// 
@@ -630,16 +804,23 @@ while let Some(tx) = tx_range_iter.next() {
         /// 
     }
 
-
-
-
-    let causet_locale_ref = causet_locale_ref.borrow_ref();
+    causet_locale_ref.borrow_ref();
+    causet_locale_ref.borrow_mut();
 
 }
 
-    
-        Ok(causets)
-    }
+
+
+
+
+    /// The causet_locale_ref is the causet_locale of the tx.
+    /// The causet_locale_ref_next is the causet_locale of the next tx.
+    ///
+    /// # Examples
+    /// ```
+    /// use einstein_db::{
+    ///
+    /// einstein_db_vector::EinsteinDBVector,
 
     /// Collects a supplied tx range into an DESC ordered Vec of valid txs,
     /// ensuring they all belong to the same timeline.
@@ -659,6 +840,39 @@ while let Some(tx) = tx_range_iter.next() {
 
         let mut causet_locale_ref = causet_locale.borrow_ref();
     }
-}
+
+    /// Collects a supplied tx range into an DESC ordered Vec of valid txs,
+    /// ensuring they all belong to the same timeline.
+    /// This function is used to collect the causet_locale of the next tx.
+    ///
+    /// # Examples
+    /// ```
+    /// use einstein_db::{*}
+    /// use einstein_ml::{*}
+    ///
+
+    fn collect_causet_locale_of_next_tx(
+        causet_locale: &CausetLocale,
+        tx_range: &TxRange,
+    ) -> Result<CausetLocaleRef, Error> {
+        let mut causets = Vec::new();
+        let mut tx_range = tx_range.clone();
+        let mut tx_range_iter = tx_range.into_iter();
+        let mut tx_range_iter_mut = tx_range.into_iter();
+        let mut tx_range_iter_mut_next = tx_range_iter_mut.next();
+
+        let mut causet_locale_ref = causet_locale.borrow_ref();
+    }
+
+    /// Collects a supplied tx range into an DESC ordered Vec of valid txs,
+    /// ensuring they all belong to the same timeline.
+    /// This function is used to collect the causet_locale of the next tx.
+
+
+
+
+
+
+
 
 

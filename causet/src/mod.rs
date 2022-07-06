@@ -9,17 +9,98 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use EinsteinDB::Database::Storage;
-use EinsteinDB::Database::Storage::Memtable;
-use soliton::storage::{KV, KVEngine, KVStorage};
-use causet::*;
-use FoundationDB as fdb;
-use fdb_traits::*;
+
+
+
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct JsonRef<'a> {
+    pub json: &'a Json,
+    pub path: Vec<JsonRef<'a>>,
+}
+
+
+
+
+impl<'a> JsonRef<'a> {
+    pub fn new(json: &'a Json, path: Vec<JsonRef<'a>>) -> Self {
+        Self { json, path }
+    }
+
+    pub fn get_type(&self) -> JsonType {
+        self.json.get_type()
+    }
+
+    pub fn get_elem_count(&self) -> usize {
+        self.json.get_elem_count()
+    }
+
+    pub fn get_elem(&self, index: usize) -> Option<JsonRef<'a>> {
+        self.json.get_elem(index).map(|json| JsonRef::new(json, self.path.clone()))
+    }
+
+    pub fn get_elem_by_key(&self, key: &str) -> Option<JsonRef<'a>> {
+        self.json.get_elem_by_key(key).map(|json| JsonRef::new(json, self.path.clone()))
+    }
+
+    pub fn get_elem_by_key_path(&self, key_path: &[&str]) -> Option<JsonRef<'a>> {
+        self.json.get_elem_by_key_path(key_path).map(|json| JsonRef::new(json, self.path.clone()))
+    }
+
+    pub fn get_elem_by_path(&self, path: &[&str]) -> Option<JsonRef<'a>> {
+        self.json.get_elem_by_path(path).map(|json| JsonRef::new(json, self.path.clone()))
+    }
+
+    pub fn get_elem_by_path_expr(&self, path_expr: &str) -> Option<JsonRef<'a>> {
+        self.json.get_elem_by_path_expr(path_expr).map(|json| JsonRef::new(json, self.path.clone()))
+    }
+
+    pub fn get_elem_by_path_exp(&self, path_exp: &str) -> Option<JsonRef<'a>> {
+        self.json.get_elem_by_path_exp(path_exp).map(|json| JsonRef::new(json, self.path.clone()))
+    }
+}
+
+
+
+
+impl<'a> fmt::Display for JsonRef<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.json.fmt(f)
+    }
+}
+
+
+
+
+
 
 pub use hex::{FromHex, ToHex};
 pub use std::collections::HashMap;
 pub use std::collections::HashSet;
 pub use std::collections::VecDeque;
+
+
+
+
+pub use std::collections::BTreeMap;
+pub use std::collections::BTreeSet;
+pub use std::collections::HashMap;
+
+
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct Json {
+    pub json_type: JsonType,
+    pub json_value: JsonValue,
+}
+
+
+pub type JsonValue = JsonValue_<Json>;
+
+
+
 
 //! This module contains the causet-specific types and functions.
 //! Traits for conversions between types.
@@ -84,9 +165,29 @@ use crate::mem;
 use crate::ops::CoerceUnsized;
 
 
+use std::borrow::Borrow;
+use std::fmt::{self, Debug, Display};
+
+
+use std::hash::{Hash, Hasher};
+
+
 
 #[unstable(feature = "convert_float_to_int", issue = "67057")]
 pub use num::FloatToInt;
+
+
+use std::ops::{Deref, DerefMut};
+use std::ptr::NonNull;
+
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+
+
+
+
 
 
 /// The identity function.
@@ -149,6 +250,10 @@ pub const fn identity<T>(x: T) -> T {
     x
 }
 
+
+
+
+
 /// Used to do a cheap reference-to-reference conversion.
 ///
 /// This trait is similar to [`AsMut`] which is used for converting between mutable references.
@@ -205,6 +310,17 @@ pub trait AsRef<T: ?Sized> {
     #[stable(feature = "rust1", since = "1.0.0")]
     fn as_ref(&self) -> &T;
 }
+
+
+
+#[stable(feature = "rust1", since = "1.0.0")]
+impl<T: ?Sized> AsRef<T> for T {
+    fn as_ref(&self) -> &T {
+        self
+    }
+}
+
+
 
 /// Used to do a cheap mutable-to-mutable reference conversion.
 ///

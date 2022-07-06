@@ -170,6 +170,8 @@ impl Address {
     pub fn new(layer: u32, instance: u64) -> Self {
         Address {
             address: format!("{:x}:{:x}", layer, instance),
+            address_type: (),
+            address_type_id: 0,
             balance: 0,
             nonce: 0,
             code: (),
@@ -190,17 +192,85 @@ impl Address {
 
     pub fn normalize_index(&self, mask: u64) -> (Address, usize) {
         let index = self.instance & mask;
-        let address = Address {
-            address: (),
-            balance: 0,
-            nonce: 0,
-            code: (),
-            causetid: (),
-            solitonid: (),
-            layer: self.layer,
-            instance: self.instance - index,
-        };
-        (address, index as usize)
+    (Address {
+        address: format!("{:x}:{:x}", self.layer, index),
+        address_type: (),
+        address_type_id: 0,
+        balance: 0,
+        nonce: 0,
+        code: (),
+        causetid: (),
+        solitonid: (),
+        layer: self.layer,
+        instance: index
+    }, index as usize)
+    }
+}
+
+
+impl EinsteinDB {
+    pub fn new(url: &str) -> Result<Self, EinsteinDBError> {
+        let pool = PgPool::new(url)?;
+        Soliton::new(&pool);
+        Causetq::new(&pool);
+        Causet::new(&pool);
+
+
+        Causets::new(&pool);
+        EinsteinML::new(&pool);
+
+        AllegroPoset::new(&pool);
+        Gravity::new(&pool);
+
+        MerkleTree::new(&pool);
+
+        Ok(EinsteinDB {
+            pool: pool,
+            soliton: Soliton::new(&pool),
+            causetq: Causetq::new(&pool),
+            causet: Causet::new(&pool),
+            causets: Causets::new(&pool),
+            einstein_ml: (),
+            allegro_poset: (),
+            gravity: (),
+            merkle_tree: (),
+            merkle_tree_nodes: (),
+            merkle_tree_node_counter: (),
+            merkle_tree_node_id_counter: (),
+            merkle_tree_node_id_counter_map: (),
+        })
+    }
+
+    pub fn get_pool(&self) -> &PgPool {
+        &self.pool
+    }
+
+    pub fn get_soliton(&self) -> &Soliton {
+        &self.soliton
+    }
+
+    pub fn get_causetq(&self) -> &Causetq {
+        &self.causetq
+    }
+
+    pub fn get_causet(&self) -> &Causet {
+        &self.causet
+    }
+
+    pub fn get_causets(&self) -> &Causets {
+        &self.causets
+    }
+
+    pub fn get_einstein_ml(&self) -> &EinsteinML {
+        &self.einstein_ml
+    }
+
+    pub fn get_allegro_poset(&self) -> &AllegroPoset {
+        &self.allegro_poset
+    }
+
+    pub fn get_gravity(&self) -> &Gravity {
+        &self.gravity
     }
 
     pub fn next_layer(&mut self) {
@@ -249,6 +319,8 @@ mod tests {
             address,
             Address {
                 address,
+                address_type: (),
+                address_type_id: 0,
                 balance: 0,
                 nonce: 0,
                 code: (),
@@ -268,6 +340,8 @@ mod tests {
             address,
             Address {
                 address,
+                address_type: (),
+                address_type_id: 0,
                 balance: 0,
                 nonce: 0,
                 code: (),
@@ -287,6 +361,8 @@ mod tests {
             address,
             Address {
                 address,
+                address_type: (),
+                address_type_id: 0,
                 balance: 0,
                 nonce: 0,
                 code: (),
@@ -307,6 +383,8 @@ mod tests {
             address,
             Address {
                 address,
+                address_type: (),
+                address_type_id: 0,
                 balance: 0,
                 nonce: 0,
                 code: (),
@@ -970,83 +1048,32 @@ impl MerkleProof {
                     }
                 }
             }
+Ok(())
+        }
 
+        pub(crate) fn validate_or_join_list(or_join_list: &Vec<OrJoin>) -> Result<()> {
+            for or_join in or_join_list {
+                Self::validate_or_join(or_join)?;
+            }
 
+            Ok(())
+        }
 
-            // Ensure that the variables are all mentioned in the or_join.
-            impl<K: KV, R: EinsteinMerkleTree> OrJoin<K, R> {
-                pub(crate) fn validate_or_join(or_join: &OrJoin) -> Result<()> {
-                    // Grab our mentioned variables and ensure that the rules are followed.
-                    #[derive(Default)]
-                    pub struct Signature {
-                        pub(crate) mentioned_vars: HashSet<String>,
-                        pub(crate) unify_vars: Option<Vec<String>>,
-                    }
+        pub(crate) fn validate_or_join_list_list(or_join_list_list: &Vec<Vec<OrJoin>>) -> Result<()> {
+            for or_join_list in or_join_list_list {
+                Self::validate_or_join_list(or_join_list)?;
+            }
 
-                    impl<K: KV, R: EinsteinMerkleTree> Signature<K, R> {
-                        pub(crate) fn new() -> Self {
-                            Self {
-                                mentioned_vars: HashSet::new(),
-                                unify_vars: None,
-                            }
-                        }
-                    }
+            Ok(())
+        }
 
-                    impl<K: KV, R: EinsteinMerkleTree> Signature<K, R> {
-                        /*
-                pors_sign: pors::Signature,
-                subtrees: [subtree::Signature; GRAVITY_D],
-                auth_c: [Hash; GRAVITY_C],
-                */
-                        pub(crate) fn validate_or_join(
-                            &self,
-                            or_join: &OrJoin,
-                            tree: &R,
-                            key: &K,
-                        ) -> Result<()> {
-                            // Ensure that the variables are all mentioned in the or_join.
-                            for var in &self.mentioned_vars {
-                                if !or_join.mentioned_vars.contains(var) {
-                                    return Err(Error::new(
-                                        ErrorKind::InvalidData,
-                                        format!(
-                                            "The variable {} is not mentioned in the or_join.",
-                                            var
-                                        ),
-                                    ));
-                                }
-                            }
+        pub(crate) fn validate_or_join_list_list_list(or_join_list_list_list: &Vec<Vec<Vec<OrJoin>>>) -> Result<()> {
+            for or_join_list_list in or_join_list_list_list {
+                Self::validate_or_join_list_list(or_join_list_list)?;
+            }
 
-
-                            // Ensure that the variables are all mentioned in the or_join.
-                            if let Some(unify_vars) = &self.unify_vars {
-                                for var in unify_vars {
-                                    if !or_join.mentioned_vars.contains(var) {
-                                        return Err(Error::new(
-                                            ErrorKind::InvalidData,
-                                            format!(
-                                                "The variable {} is not mentioned in the or_join.",
-                                                var
-                                            ),
-                                        ));
-                                    }
-                                }
-
-
-                                // Ensure that the variables are all mentioned in the or_join.
-                                for var in &or_join.mentioned_vars {
-                                    if !self.mentioned_vars.contains(var) {
-                                        return Err(Error::new(
-                                            ErrorKind::InvalidData,
-                                            format!(
-                                                "The variable {} is not mentioned in the or_join.",
-                                                var
-                                            ),
-                                        ));
-                                    }
-                                }
-
-
+            Ok(())
+        }
                                 impl SecKey {
                                     pub fn new(random: &[u8; 64]) -> Self {
                                         let mut sk = SecKey {
@@ -1089,201 +1116,70 @@ impl MerkleProof {
                                         pk
                                     }
                                 }
-                            }
-                        }
-                    }
 
-                    impl<K: KV, R: EinsteinMerkleTree> OrJoin<K, R> {
-                        pub(crate) fn validate_or_join(or_join: &OrJoin) -> Result<()> {
-                            // Grab our mentioned variables and ensure that the rules are followed.
-                            #[derive(Default)]
-                            pub struct Signature {
-                                pub(crate) mentioned_vars: HashSet<String>,
-                                pub(crate) unify_vars: Option<Vec<String>>,
-                            }
-
-                            impl<K: KV, R: EinsteinMerkleTree> signature<K, R> {
-                                pub fn new(or_join: &OrJoin) -> Self {
-                                    let mut signature = Signature {
-                                        mentioned_vars: HashSet::new(),
-                                        unify_vars: None,
-                                    };
-
-                                    for rule in &or_join.rules {
-                                        match rule {
-                                            Rule::Unify(unify) => {
-                                                if signature.unify_vars.is_some() {
-                                                    return Err(Error::new(
-                                                        ErrorKind::InvalidData,
-                                                        "The or_join can only have one unify rule.",
-                                                    ));
-                                                }
-
-                                                signature.unify_vars = Some(unify.vars.clone());
-                                            }
-                                            Rule::OrJoin(or_join) => {
-                                                for var in &or_join.mentioned_vars {
-                                                    signature.mentioned_vars.insert(var.clone());
-                                                }
-                                            }
-                                        }
+                                impl PubKey {
+                                    pub fn new(h: Hash) -> Self {
+                                        PubKey { h }
                                     }
-
-                                    signature
                                 }
-                            }
-                        }
-                    }
+                                impl PubKey {
+                                    pub fn genpk(&self) -> PubKey {
+                                        self.clone()
+                                    }
+                                }
+                                impl PubKey {
+                                    pub fn genpk_with_vars(&self, vars: &[u8]) -> PubKey {
+                                        let mut pk = self.clone();
+                                        for var in vars {
+                                            pk.h = self.cache.get_leaf(var).unwrap();
+                                        }
+                                        pk
+                                    }
+                                }
+
+                                impl PubKey {
+                                    pub fn genpk_with_vars_and_layer(&self, vars: &[u8], layer: u32) -> PubKey {
+                                        let mut pk = self.clone();
+                                        for var in vars {
+                                            pk.h = self.cache.get_leaf_with_layer(var, layer).unwrap();
+                                        }
+                                        pk
+                                    }
+                                }
+
+                                impl PubKey {
+                                    pub fn genpk_with_vars_and_layer_and_subtree(&self, vars: &[u8], layer: u32, subtree_layer: u32) -> PubKey {
+                                        let mut pk = self.clone();
+                                        for var in vars {
+                                            pk.h = self.cache.get_leaf_with_layer_and_subtree(var, layer, subtree_layer).unwrap();
+                                        }
+                                        pk
+                                    }
+                                }
+
+                                impl PubKey {
+                                    pub fn genpk_with_vars_and_layer_and_subtree_and_prng(&self, vars: &[u8], layer: u32, subtree_layer: u32, prng: &prng::Prng) -> PubKey {
+                                        let mut pk = self.clone();
+                                        for var in vars {
+                                            pk.h = self.cache.get_leaf_with_layer_and_subtree_and_prng(var, layer, subtree_layer, prng).unwrap();
+                                        }
+                                        pk
+                                    }
+                                }
 
 
 
 
-                    /*
-                    pub(crate) fn validate_or_join(or_join: &OrJoin) -> Result<()> {
-                        let mut signature = signature::new();
-                        for rule in or_join.rules.iter() {
-                            signature.validate_rule(rule)?;
-                        }
-                        Ok(())
+                                impl PubKey {
+                                    pub fn genpk_with_vars_and_layer_and_subtree_and_prng_and_address(&self, vars: &[u8], layer: u32, subtree_layer: u32, prng: &prng::Prng, address: &address::Address) -> PubKey {
+                                        let mut pk = self.clone();
+                                        for var in vars {
+                                            pk.h = self.cache.get_leaf_with_layer_and_subtree_and_prng_and_address(var, layer, subtree_layer, prng, address).unwrap();
+                                        }
+                                        pk
+                                    }
+                                }
 
-
-            impl<K: KV, R: EinsteinMerkleTree> signature<K, R> {
-
-                pors_sign: pors::signature,
-                subtrees: [subtree::signature; GRAVITY_D],
-                auth_c: [Hash; GRAVITY_C],
-                */
-                }
-            }
-
-            impl<K: KV, R: EinsteinMerkleTree> Signature<K, R> {
-                pub fn validate_rule(signature: &mut Signature, rule: &Rule) -> Result<()> {
-                    // Ensure that the rule is valid.
-                    let mut rule_signature = Signature::new();
-                    rule_signature.validate_rule(rule)?;
-                    signature.mentioned_vars.extend(rule_signature.mentioned_vars);
-                    signature.unify_vars = rule_signature.unify_vars;
-                    Ok(())
-                }
-                pub fn genpk(&self) -> PubKey {
-                    PubKey {
-                        h: self.cache.root(),
-                    }
-                }
-
-                pub fn meromorphic_pk_exchange_from_pk(&self, pk: &PubKey) -> PubKey {
-                    PubKey {
-                        h: pk.h,
-                    }
-                }
-
-                pub fn new(random: &[u8; 64]) -> Self {
-                    let mut pk = PubKey {
-                        h: Hash {
-                            h: *array_ref![random, 0, 32],
-                        },
-                    };
-
-                    let layer = 0u32;
-                    let prng = prng::Prng::new(&pk.h);
-                    let subtree_pk = subtree::PubKey::new(&prng);
-
-                    for (i, leaf) in pk.cache.leaves().iter_mut().enumerate() {
-                        let address = address::Address::new(layer, (i << MERKLE_H) as u64);
-                        let sk = subtree_pk.gensec(&address);
-                        *leaf = sk.h;
-                    }
-
-                    pk.cache.generate();
-                    pk
-                }
-
-
-                pub fn gensec(&self) -> SecKey {
-                    SecKey {
-                        seed: Hash {
-                            h: self.h.h,
-                        },
-                        salt: Hash {
-                            h: self.h.h,
-                        },
-                        cache: merkle::MerkleTree::new(GRAVITY_C),
-                    }
-                }
-
-
-                pub fn genpk_from_sk(&self, sk: &SecKey) -> PubKey {
-                    let mut pk = PubKey {
-                        h: Hash {
-                            h: sk.seed.h,
-                        },
-                        cache: merkle::MerkleTree::new(GRAVITY_C),
-                    };
-
-                    let layer = 0u32;
-                    let prng = prng::Prng::new(&pk.h);
-                    let subtree_pk = subtree::PubKey::new(&prng);
-
-
-                    pk.cache.generate();
-                    pk
-                }
-
-
-                pub fn genpk_from_sk_and_pk(&self, sk: &SecKey, pk: &PubKey) -> PubKey {
-                    let mut pk = PubKey {
-                        h: Hash {
-                            h: sk.seed.h,
-                        },
-                        cache: merkle::MerkleTree::new(GRAVITY_C),
-                    };
-
-                    let layer = 0u32;
-                    let prng = prng::Prng::new(&pk.h);
-                    let subtree_pk = subtree::PubKey::new(&prng);
-
-                    pk.cache.generate();
-                    pk
-                }
-
-
-                ///! Generate a signature for a rule.
-                ///! The rule is validated and the signature is generated.
-                /// TODO: This is a temporary function.
-                pub fn generate_signature(&mut self, rule: &Rule) -> Result<(), String> {
-                    let mut signature = Signature {
-                        mentioned_vars: (),
-                        unify_vars: (),
-                        pors_sign: pors::Signature::new(&self.h.h),
-                        subtrees: [subtree::Signature::new(&self.h.h); GRAVITY_D],
-                        auth_c: [Hash {
-                            h: self.h.h,
-                        }; GRAVITY_C],
-/*
-                        let layer = 0u32;
-                        let prng = prng::Prng::new( & signature.pors_sign.h);
-                        let subtree_sig = subtree::Signature::new( & prng);
-                        let causetid = rule.causetid;
-                        let solitonid = rule.solitonid;
-
-
-        signature.cache.generate();
-
-        let rule_signature = RuleSignature::new(rule);
-        signature.validate_rule(rule)?;
-        signature.mentioned_vars.extend(rule_signature.mentioned_vars);
-        signature.unify_vars = rule_signature.unify_vars;
-
-        self.signatures.push(signature);
-        Ok(())
-
-*/
-                    };
-
-                    signature.cache.generate();
-                    self.signatures.push(signature);
-                    Ok(())
-                }
 
                     ///! Generate a signature for a rule.
                     ///! The rule is validated and the signature is generated.
@@ -1295,111 +1191,26 @@ impl MerkleProof {
                     ///   * `sig` - The signature to be generated.
                     /// # Return
                     /// Returns the number of variables that are mentioned in the or_join.
-                    pub fn generate_signature_from_rule(&mut self, rule: &Rule, random: &mut prng::Prng, pk: &PubKey, sig: &mut Signature) -> Result<(), String> {
-                        let mut signature = Signature {
-                            mentioned_vars: (),
-                            unify_vars: (),
-                            pors_sign: pors::Signature::new(&pk.h.h),
-                            subtrees: [subtree::Signature::new(&pk.h.h); GRAVITY_D],
-                            auth_c: [Hash {
-                                h: pk.h.h,
-                            }; GRAVITY_C],
-                        };
-
-                        let layer = 0u32;
-                        let prng = prng::Prng::new(&sig.pors_sign.h);
-                        let subtree_sig = subtree::Signature::new(&prng);
 
 
-                        let client = EinsteinDBGrpcClient::new_plain(
-                            "
-                [
-                    {
-                        \"host\": \"\
-                        .
-                        \"port\": \"
-                        .
-                        \"use_ssl\": false
-                    }
-                ]
-                ",
-                            "localhost",
-                            "50051",
-                            50051,
-                            Default::default(),
-                        );
-                        let mut sig = Signature {
-                            kv_einstein_merkle_tree,
-                            masstree,
-                            cache: merkle::MerkleTree::new(GRAVITY_C),
-                        };
+///avoid using self
+/// # Arguments for the signature
+///    * `rule` - The rule to be signed.
+/// * `random` - The randomness used to generate the signature
+/// * `pk` - The public key used to generate the signature
+/// * `sig` - The signature to be generated.
+/// # Return
+/// Returns the number of variables that are mentioned in the or_join.
+/// # Arguments for the signature
+///    * `rule` - The rule to be signed.
+/// * `random` - The randomness used to generate the signature
+/// * `pk` - The public key used to generate the signature
+/// * `sig` - The signature to be generated.
+/// # Return
+/// Returns the number of variables that are mentioned in the or_join.
+///
+///
 
-                        let layer = 0u32;
-                        let prng = prng::Prng::new(&sig.pors_sign.h);
-                        let subtree_sig = subtree::Signature::new(&prng);
-
-                        for (i, leaf) in sig.cache.leaves().iter_mut().enumerate() {
-                            let address = address::Address::new(layer, (i << MERKLE_H) as u64);
-                            let pors_sig = subtree_sig.genpors(&address);
-                            *leaf = pors_sig.h;
-                        }
-
-                            .unwrap();
-                        let db_name = "einstein_merkle_tree".to_string();
-                        let collection_name = "einstein_merkle_tree".to_string();
-                        EinsteinMerkleTrees {
-                            key: (),
-                            value: (),
-                            client,
-                            db_name,
-                            collection_name,
-                            key_type: kv_einstein_merkle_tree,
-                            value_type: masstree,
-                        }
-                    }
-                }
-            }
-
-            /*
-    pub fn generate_subtree_signature(&mut self, random: &[u8; 64]) {
-        self.subtrees = [subtree::Signature::new(random); GRAVITY_D];
-    }
-
-    pub fn generate_auth_c(&mut self, random: &[u8; 64]) {
-        self.auth_c = [Hash {
-            h: *array_ref![random, 32, 32],
-        }; GRAVITY_C];
-    }
-
-
- */
-
-            impl<K: KV, R: EinsteinMerkleTree> OrJoin<K, R> {
-                /// Returns the number of variables that are mentioned in the or_join.
-                /// pub fn get_num_vars(&self) -> usize {
-                ///    self.vars.len()
-                /// }
-                /// pub fn get_vars(&self) -> &Vec<String> {
-                ///   &self.vars
-                /// }
-                /// pub fn get_vars_mut(&mut self) -> &mut Vec<String> {
-                ///  &mut self.vars
-                /// }
-                /// pub fn get_vars_ref(&self) -> &Vec<String> {
-                ///  &self.vars
-                /// }
-                ///
-                ///
-                ///
-
-                /// pub fn get_vars_ref(&self) -> &Vec<String> {
-                /// &self.vars
-                /// }
-                /// pub fn get_vars_mut(&mut self) -> &mut Vec<String> {
-                /// &mut self.vars
-                /// }
-                /// pub fn get_vars(&self) -> &Vec<String> {
-                /// &self.vars
 
                 pub fn new(kv_einstein_merkle_tree: K, masstree: R) -> Self {
                     let mut sig = Signature {
@@ -1416,28 +1227,9 @@ impl MerkleProof {
                     let prng = prng::Prng::new(&sig.pors_sign.h);
                     let subtree_sig = subtree::Signature::new(&prng);
                 }
-            }
 
 
 
-    impl<K: KV, R: EinsteinMerkleTree> EinsteinMerkleTrees<K, R> {
-        pub fn new(
-            client: Client,
-            db_name: String,
-            collection_name: String,
-            key_type: K,
-            value_type: R,
-        ) -> Self {
-            EinsteinMerkleTrees {
-                key: (),
-                value: (),
-                client,
-                db_name,
-                collection_name,
-                key_type,
-                value_type,
-            }
-        }
 
 
         /// pub fn get_vars_ref(&self) -> &Vec<String> {
@@ -1506,27 +1298,9 @@ impl MerkleProof {
             let clauses = valid_or_join(parsed, UnifyVars::Explicit(::std::iter::once(Variable::from_valid_name("?artist")).collect()));
             assert!(clauses.is_ok());
         }
-    }
 
 
-    impl<K: KV, R: EinsteinMerkleTree> OrJoin<K, R> {
-
-
-
-        /// Returns the number of variables that are mentioned in the or_join.
-        pub fn get_num_vars(&self) -> usize {
-           self.vars.len()
-         }
-        pub fn get_vars(&self) -> &Vec<String> {
-          &self.vars
-         }
-        pub fn get_vars_mut(&mut self) -> &mut Vec<String> {
-         &mut self.vars
-        }
-        pub fn get_vars_ref(&self) -> &Vec<String> {
-          &self.vars
-        }
-}
+        #[test]
 
 
 pub fn delete_einstein_merkle_tree(buf: &mut [Hash], mut count: usize) {

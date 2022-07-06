@@ -4,74 +4,8 @@ version = "0.0.1"
 authors = ["BerolinaSQL and EinsteinDB Authors, Whtcorps, EinstAI"]
 edition = "2021"
 publish = false
+description = "BerolinaSQL is a SQL engine that is based on the BerolinaDB database system."
+tags = ["sql", "database", "berolindb", "berolina"]
 
-
-
-[features]
-#[cfg(feature = "sqlite")]
-#[cfg(feature = "mysql")]
-[features.sql]
-default = ["sqlite", "mysql"]
-
-
-[features.sql.sqlite]
-default = "sqlite"
-
-
-[features.sql.mysql]
-default = "mysql"
-
-#FoundationDB
-[features.foundationdb]
-default = "foundationdb"
-
-#
-
-[dependencies]
-#[cfg(feature = "sqlite")]
-#[cfg(feature = "mysql")]
-sql = { version = "0.4.3", default-features = false }
-serde = { version = "1.0", default-features = false }
-serde_json = { version = "1.0", default-features = false }
-serde_derive = { version = "1.0", default-features = false }
-FoundationDB = { version = "0.6.0", default-features = false }
-
-einstein_ml = { path = "../einstein_ml" }
-causet = { path = "../causet" }
-causetq = { path = "../causetq" }
-causets = { path = "../causets" }
-soliton_panic = { path = "../soliton_panic" }
-soliton = { path = "../soliton" }
-fdb_traits = { path = "../fdb_traits" }
-einstein_db_alexandrov_processing = { path = "../einstein_db_alexandrov_processing" }
-engine_test = { path = "../engine_test" }
-allegro_poset = { path = "../allegro_poset" }
-einstein_db = { path = "../einstein_db" }
-
-
-
-[dependencies.rusqlite]
-version = "0.27.0"
-features = ["limits"]
-
-# Should be dev-dependencies.
-[dependencies.tabwriter]
-version = "1.0.3"
-
-[dev-dependencies]
-env_logger = "0.9.0"
-
-
-[dev-dependencies.serde]
-version = "1.0"
-
-
-[dev-dependencies.serde_json]
-version = "1.0"
-
-
-[dev-dependencies.serde_derive]
-version = "1.0"
-
-
-
+[bin]
+berolinasql = "bin/berolinasql"

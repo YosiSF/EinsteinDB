@@ -5,18 +5,24 @@ edition = "2021"
 license = "MIT"
 
 
+[lib]
+name = "einstein_db"
+
+[bin]
+name = "einstein_db"
+path = "../einstein_db/src/einsteindb.rs"
+
 
 # See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-
 chrono = "0.4.19"
 failure = "0.1.8"
 lazy_static = "1.4.0"
 time = "0.3.11"
 log = "0.4.17"
 serde = "1.0.138"
-uuid = { version = "1.1.2", features = ["v4", "serde"] }
+serde_json = "1.0.138"
 anyhow = "1.0.58"
 async-stream = "0.3.3"
 async-trait = "0.1.56"
@@ -66,4 +72,32 @@ toml = "0.5"
 tokio-tls = "0.3.1"
 url = "2.2.2"
 
-#
+
+
+
+
+
+
+
+[features]
+
+
+[profile.release]
+optimization = "speed"
+lto = "on"
+debug = "false"
+doc = "false"
+
+
+[profile.debug]
+optimization = "speed"
+lto = "off"
+debug = "true"
+doc = "false"
+
+
+[profile.doc]
+optimization = "speed"
+lto = "off"
+debug = "false"
+doc = "true"

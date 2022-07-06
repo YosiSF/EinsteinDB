@@ -1,16 +1,34 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+
     "version": "0.2.0",
     "configurations": [
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug",
-            "program": "${workspaceFolder}/<your program>",
-            "args": [],
-            "cwd": "${workspaceFolder}"
+
+        { "type": "node",
+          "name": "default",
+          "request": "launch",
+          "program": "${workspaceRoot}/index.js",
+          "args": [],
+          "stopOnEntry": true,
+          "cwd": "${workspaceRoot}",
+          "env": {
+            "NODE_ENV": "development"
+          },
+          "preLaunchTask": "build"
+        },
+
+        { "type": "node",
+          "name": "test",
+          "request": "launch",
+          "program": "${workspaceRoot}/index.js",
+          "args": [],
+          "stopOnEntry": true,
+          "cwd": "${workspaceRoot}",
+          "env": {
+            "NODE_ENV": "test"
+          },
+          "preLaunchTask": "build"
+
         }
-    ]
+    ],
+    "compounds": []
 }

@@ -9,6 +9,19 @@
 // specific language governing permissions and limitations under the License.
 
 #![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
+#![allow(unused_mut)]
+#![allow(unused_assignments)]
+
+
+use std::cmp;
+use std::collections::HashMap;
+use std::error::Error;
+use std::fs;
+use std::i32;
+use std::io::Write;
+use std::io::{Error as IoError, ErrorKind};
 
 pub use causetq::{
     Attribute,
@@ -74,8 +87,77 @@ use std::sync::{
     Mutex,
 };
 
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetLocaleNucleonCausetid {
+    pub causetid: Causetid,
+    pub locale: String,
+    pub nucleon: String,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetLocaleNucleon {
+    pub causetid: Causetid,
+    pub locale: String,
+    pub nucleon: String,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetLocale {
+    pub causetid: Causetid,
+    pub locale: String,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Causet {
+    pub causetid: Causetid,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetLocaleNucleonCausetidAttribute {
+    pub causetid: Causetid,
+    pub locale: String,
+    pub nucleon: String,
+    pub attribute: Attribute,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetLocaleNucleonAttribute {
+    pub causetid: Causetid,
+    pub locale: String,
+    pub nucleon: String,
+    pub attribute: Attribute,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetLocaleAttribute {
+    pub causetid: Causetid,
+    pub locale: String,
+    pub attribute: Attribute,
+}
+
 /// A mutable, safe reference to the current einsteindb store.
 pub struct Conn {
+
+    /// The current einsteindb store.
+    /// This is a mutable reference to the current einsteindb store.
+
+    pub einsteindb: Arc<Mutex<einsteindb::Einsteindb>>,
+
+    /// The current einsteindb store.
+
+    pub einsteindb_read: Arc<Mutex<einsteindb::Einsteindb>>,
+
+    /// The current einsteindb store.
+    ///
+
+    pub einsteindb_write: Arc<Mutex<einsteindb::Einsteindb>>,
 
     spacetime: Mutex<Spacetime>,
 
@@ -84,24 +166,98 @@ pub struct Conn {
     // TODO: maintain cache of query plans that could be shared across threads and invalidated when
     // the schema changes. #315.
     pub(crate) tx_observer_service: Mutex<TxObservationService>,
+
+    pub(crate) tx_observer_transact_watcher: Mutex<InProgressObserverTransactWatcher>,
+
+    pub(crate) sqlite_attribute_cache: Mutex<SQLiteAttributeCache>,
+
+    pub(crate) sqlite_attribute_cache_read: Mutex<SQLiteAttributeCache>,
 }
 
 impl Conn {
     // Intentionally not public.
     fn new(partition_map: PartitionMap, schema: Schema) -> Conn {
+        let einsteindb = einsteindb::Einsteindb::new(partition_map, schema);
+        let einsteindb_read = einsteindb::Einsteindb::new(partition_map, schema);
+        let einsteindb_write = einsteindb::Einsteindb::new(partition_map, schema);
+        let spacetime = Spacetime::new();
+        let tx_observer_service = TxObservationService::new();
+        let tx_observer_transact_watcher = InProgressObserverTransactWatcher::new();
+        let sqlite_attribute_cache = SQLiteAttributeCache::new();
+        let sqlite_attribute_cache_read = SQLiteAttributeCache::new();
+
         Conn {
+            einsteindb,
+            einsteindb_read,
+            einsteindb_write,
             spacetime: Mutex::new(Spacetime::new(0, partition_map, Arc::new(schema), Default::default())),
             tx_observer_service: Mutex::new(TxObservationService::new()),
+            tx_observer_transact_watcher,
+            sqlite_attribute_cache,
+            sqlite_attribute_cache_read
         }
     }
 
-    pub fn connect(SQLite: &mut rusqlite::Connection) -> Result<Conn> {
-        let einsteindb = einsteindb::ensure_current_version(SQLite)?;
+    pub fn connect(partition_map: PartitionMap, schema: Schema) -> Result<Conn> {
+        Ok(Conn::new(partition_map, schema))
+    }
+
+    pub fn connect_read(partition_map: PartitionMap, schema: Schema) -> Result<Conn> {
+        Ok(Conn::new(partition_map, schema))
+    }
+
+    pub fn connect_write(partition_map: PartitionMap, schema: Schema) -> Result<Conn> {
+        Ok(Conn::new(partition_map, schema))
+    }
+
+    pub fn connect_read_write(partition_map: PartitionMap, schema: Schema) -> Result<Conn> {
+        Ok(Conn::new(partition_map, schema))
+    }
+
+
+
+    pub fn connect_read_write_with_transaction_watcher(partition_map: PartitionMap, schema: Schema) -> Result<Conn> {
+        let einsteindb = einsteindb::ensure_current_version(sqlite)?;
         Ok(Conn::new(einsteindb.partition_map, einsteindb.schema))
     }
 
+
+    pub fn connect_read_write_with_transaction_watcher_and_attribute_cache(partition_map: PartitionMap, schema: Schema) -> Result<Conn> {
+        let einsteindb = einsteindb::ensure_current_version(sqlite)?;
+        Ok(Conn::new(einsteindb.partition_map, einsteindb.schema))
+    }
+
+    pub fn connect_read_write_with_transaction_watcher_and_attribute_cache_and_sqlite_attribute_cache(partition_map: PartitionMap, schema: Schema) -> Result<Conn> {
+        let einsteindb = einsteindb::ensure_current_version(sqlite)?;
+        Ok(Conn::new(einsteindb.partition_map, einsteindb.schema))
+    }
+
+
+
+
+
     /// Yield a clone of the current `Schema` instance.
     pub fn current_schema(&self) -> Arc<Schema> {
+
+        self.einsteindb.lock().unwrap().schema.clone()
+
+    }
+
+    /// Yield a clone of the current `Schema` instance.
+    /// This is a read-only connection.
+
+
+    pub fn current_schema_read(&self) -> Arc<Schema> {
+
+        self.einsteindb_read.lock().unwrap().schema.clone() as Arc<Schema>
+    }
+
+
+    /// Yield a clone of the current `Schema` instance.
+    /// This is a write-only connection.
+
+
+    pub fn current_schema_write(&self) -> Arc<Schema> {
         // We always unwrap the mutex lock: if it's poisoned, this will propogate panics to all
         // accessing threads.  This is perhaps not reasonable; we expect the mutex to be held for
         // very short intervals, but a panic during a critical update section is possible, since the
@@ -115,6 +271,9 @@ impl Conn {
         //
         // Improving this is tracked by https://github.com/YosiSF/einsteindb/issues/356.
         self.spacetime.lock().unwrap().schema.clone()
+
+
+
     }
 
     pub fn current_cache(&self) -> SQLiteAttributeCache {
@@ -130,16 +289,18 @@ impl Conn {
 
     /// Query the einsteindb store, using the given connection and the current spacetime.
     pub fn q_once<T>(&self,
-                     SQLite: &rusqlite::Connection,
-                     query: &str,
+                        conn: &Conn,
+                        query: &str,
+                     sqlite: &rusqlite::Connection,
                      inputs: T) -> Result<QueryOutput>
         where T: Into<Option<QueryInputs>> {
+        let mut spacetime = conn.spacetime.lock().unwrap();
+        let query_inputs = inputs.into();
 
         // Doesn't clone, unlike `current_schema`.
-        let spacetime = self.spacetime.lock().unwrap();
-        let CausetLocaleNucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        q_once(SQLite,
-               CausetLocaleNucleon,
+        let causet_locale_nucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        q_once(sqlite,
+               causet_locale_nucleon,
                query,
                inputs)
     }
@@ -147,66 +308,106 @@ impl Conn {
     /// Query the einsteindb store, using the given connection and the current spacetime,
     /// but without using the cache.
     pub fn q_uncached<T>(&self,
-                         SQLite: &rusqlite::Connection,
+                        conn: &Conn,
+                         sqlite: &rusqlite::Connection,
+
                          query: &str,
+
                          inputs: T) -> Result<QueryOutput>
         where T: Into<Option<QueryInputs>> {
 
         let spacetime = self.spacetime.lock().unwrap();
-        q_uncached(SQLite,
-                   &*spacetime.schema,        // Doesn't clone, unlike `current_schema`.
+        q_uncached(sqlite,
+                     &spacetime.schema,
+
                    query,
+
                    inputs)
     }
 
-    pub fn q_prepare<'SQLite, 'query, T>(&self,
-                        SQLite: &'SQLite rusqlite::Connection,
-                        query: &'query str,
-                        inputs: T) -> PreparedResult<'SQLite>
+    pub fn q_prepare<'sqlite, 'query, T>(&self,
+                                         sqlite: &'sqlite rusqlite::Connection,
+                                         query: &'query str,
+                                         inputs: T) -> PreparedResult<'sqlite>
         where T: Into<Option<QueryInputs>> {
 
         let spacetime = self.spacetime.lock().unwrap();
-        let CausetLocaleNucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        q_prepare(SQLite,
-                  CausetLocaleNucleon,
+        let causet_locale_nucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        q_prepare(sqlite,
+                  causet_locale_nucleon,
                   query,
                   inputs)
     }
 
     pub fn q_explain<T>(&self,
-                        SQLite: &rusqlite::Connection,
+                        sqlite: &rusqlite::Connection,
                         query: &str,
                         inputs: T) -> Result<QueryExplanation>
         where T: Into<Option<QueryInputs>>
     {
         let spacetime = self.spacetime.lock().unwrap();
-        let CausetLocaleNucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
-        q_explain(SQLite,
-                  CausetLocaleNucleon,
+        let causet_locale_nucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        q_explain(sqlite,
+                  causet_locale_nucleon,
                   query,
                   inputs)
     }
 
-    pub fn pull_attributes_for_causets<E, A>(&self,
-                                              SQLite: &rusqlite::Connection,
-                                              causets: E,
-                                              attributes: A) -> Result<BTreeMap<Causetid, ValueRc<StructuredMap>>>
-        where E: IntoIterator<Item=Causetid>,
-              A: IntoIterator<Item=Causetid> {
+    pub fn pull_attributes_for_causets<E, A>(&self, sqlite: &rusqlite::Connection, causet_ids: &[Causetid]) -> Result<Vec<A>>
+        where E: From<rusqlite::Error> + Send + 'static,
+              A: Attribute + Send + 'statically {
+        let spacetime = self.spacetime.lock().unwrap();
+        let causet_locale_nucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        pull_attributes_for_causets(sqlite, causet_locale_nucleon, causet_ids)
+
+
+    }
+
+    pub fn pull_attributes_for_causets_read<E, A>(&self, sqlite: &rusqlite::Connection, causet_ids: &[Causetid]) -> Result<Vec<A>>
+        where E: From<rusqlite::Error> + Send + 'static,
+              A: Attribute + Send + 'statically {
+        let spacetime = self.spacetime.lock().unwrap();
+        let causet_locale_nucleon = CausetLocaleNucleon::new(&*spacetime.schema, Some(&spacetime.attribute_cache));
+        pull_attributes_for_causets_read(sqlite, causet_locale_nucleon, causet_ids)
+
+    }
+
+
+
+    pub fn pull_attributes_for_causets_write<E, A>(&self, sqlite: &rusqlite::Connection, causet_ids: &[Causetid]) -> Result<Vec<A>>
+        where E: From<rusqlite::Error> + Send + 'static,
+              A: Attribute + Send + 'statically {
         let spacetime = self.spacetime.lock().unwrap();
         let schema = &*spacetime.schema;
-        pull_attributes_for_causets(schema, SQLite, causets, attributes)
+        pull_attributes_for_causets(schema, sqlite, causets, attributes)
+    }
+
+
+    pub fn pull_attributes_for_causets_write_read<E, A>(&self, sqlite: &rusqlite::Connection, causet_ids: &[Causetid]) -> Result<Vec<A>>
+        where E: From<rusqlite::Error> + Send + 'static,
+              A: Attribute + Send + 'statically {
+        let spacetime = self.spacetime.lock().unwrap();
+        let schema = &*spacetime.schema;
+        pull_attributes_for_causets_read(schema, sqlite, causets, attributes)
+    }
+
+    pub fn pull_attributes_for_causets_write_read_write<E, A>(&self, sqlite: &rusqlite::Connection, causet_ids: &[Causetid]) -> Result<Vec<A>>
+        where E: From<rusqlite::Error> + Send + 'static,
+              A: Attribute + Send + 'statically {
+        let spacetime = self.spacetime.lock().unwrap();
+        let schema = &*spacetime.schema;
+        pull_attributes_for_causets_read_write(schema, sqlite, causets, attributes)
             .map_err(|e| e.into())
     }
 
     pub fn pull_attributes_for_causet<A>(&self,
-                                         SQLite: &rusqlite::Connection,
+                                         sqlite: &rusqlite::Connection,
                                          causet: Causetid,
                                          attributes: A) -> Result<StructuredMap>
         where A: IntoIterator<Item=Causetid> {
         let spacetime = self.spacetime.lock().unwrap();
         let schema = &*spacetime.schema;
-        pull_attributes_for_causet(schema, SQLite, causet, attributes)
+        pull_attributes_for_causet(schema, sqlite, causet, attributes)
             .map_err(|e| e.into())
     }
 
@@ -258,13 +459,13 @@ impl Conn {
 
     // Helper to avoid passing connections around.
     // Make both args mutable so that we can't have parallel access.
-    pub fn begin_read<'m, 'conn>(&'m mut self, SQLite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
-        self.begin_transaction_with_behavior(SQLite, TransactionBehavior::Deferred)
+    pub fn begin_read<'m, 'conn>(&'m mut self, sqlite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
+        self.begin_transaction_with_behavior(sqlite, TransactionBehavior::Deferred)
             .map(|ip| InProgressRead { in_progress: ip })
     }
 
-    pub fn begin_uncached_read<'m, 'conn>(&'m mut self, SQLite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
-        self.begin_transaction_with_behavior(SQLite, TransactionBehavior::Deferred)
+    pub fn begin_uncached_read<'m, 'conn>(&'m mut self, sqlite: &'conn mut rusqlite::Connection) -> Result<InProgressRead<'m, 'conn>> {
+        self.begin_transaction_with_behavior(sqlite, TransactionBehavior::Deferred)
             .map(|mut ip| {
                 ip.use_caching(false);
                 InProgressRead { in_progress: ip }
@@ -275,22 +476,22 @@ impl Conn {
     /// connections from taking immediate or exclusive transactions. This is appropriate for our
     /// writes and `InProgress`: it means we are ready to write whenever we want to, and nobody else
     /// can start a transaction that's not `DEFERRED`, but we don't need exclusivity yet.
-    pub fn begin_transaction<'m, 'conn>(&'m mut self, SQLite: &'conn mut rusqlite::Connection) -> Result<InProgress<'m, 'conn>> {
-        self.begin_transaction_with_behavior(SQLite, TransactionBehavior::Immediate)
+    pub fn begin_transaction<'m, 'conn>(&'m mut self, sqlite: &'conn mut rusqlite::Connection) -> Result<InProgress<'m, 'conn>> {
+        self.begin_transaction_with_behavior(sqlite, TransactionBehavior::Immediate)
     }
 
     /// Transact causets against the einsteindb store, using the given connection and the current
     /// spacetime.
     pub fn transact<B>(&mut self,
-                    SQLite: &mut rusqlite::Connection,
-                    transaction: B) -> Result<TxReport> where B: Borrow<str> {
+                       sqlite: &mut rusqlite::Connection,
+                       transaction: B) -> Result<TxReport> where B: Borrow<str> {
         // Parse outside the BerolinaSQL transaction. This is a tradeoff: we are limiting the scope of the
         // transaction, and indeed we don't even create a BerolinaSQL transaction if the provided input is
-        // invalid, but it means SQLite errors won't be found until the parse is complete, and if
+        // invalid, but it means sqlite errors won't be found until the parse is complete, and if
         // there's a race for the database (don't do that!) we are less likely to win it.
         let causets = einstein_ml::parse::causets(transaction.borrow())?;
 
-        let mut in_progress = self.begin_transaction(SQLite)?;
+        let mut in_progress = self.begin_transaction(sqlite)?;
         let report = in_progress.transact_causets(causets)?;
         in_progress.commit()?;
 
