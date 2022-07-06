@@ -85,12 +85,11 @@ extern crate serde_derive;
 ///!     - `utils::hash::hash_function`: contains the `hash_function` module.
 ///!     - `utils::hash::hash_function::hash_function`: contains the `hash_function` module.
 
-mod merkle_tree;
-mod poset;
 
 
 pub use crate::merkle_tree::MerkleTree;
 pub use crate::poset::Poset;
+
 
 
 #[cfg(test)]

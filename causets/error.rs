@@ -8,22 +8,15 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+
+
+use std::error::Error as StdError;
+use std::io::Error as IoError;
 use failure::Fail;
 use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::result;
 
-
-#[derive(Debug)]
-pub struct Error {
-    inner: Box<dyn Fail>,
-
-    // The source location of the error.
-    source: Option<Box<dyn Fail>>,
-
-    // The source location of the error.
-    cause: Option<Box<dyn Fail>>,
-}
 
 
 #[derive(Debug, Fail)]
@@ -124,7 +117,7 @@ pub enum FDBError {
     GremlinQ16(String),
     #[fail(display = "{}", _0)]
     GremlinQ17(String),
-    #[fail(display = "{}", _0)]
+
 }
 
 
@@ -258,7 +251,7 @@ pub enum ErrorInner {
     Evaluate(#[fail(cause)] EvaluateError),
 }
 
-pub struct Error(pub Box<ErrorInner>);
+
 
 impl std::fmt::Debug for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

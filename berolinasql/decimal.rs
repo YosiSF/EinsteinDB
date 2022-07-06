@@ -20,6 +20,79 @@ use std::{u32, u64};
 use std::{f32, f64};
 
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct HyperCausetConfig {
+    pub cache_rate: f64,
+    pub max_cache_size: usize,
+    pub max_cache_num: usize,
+    pub max_cache_num_per_db: usize,
+    pub max_cache_num_per_db_per_thread: usize,
+    pub max_cache_num_per_db_per_thread_per_table: usize,
+}
+
+
+//! A storage engine for EinsteinDB.
+//!
+//! # Examples
+//!
+//! ```
+//! use einstein_db_alexandrov_processing::*;
+//!
+//! let mut alexandrov = Alexandrov::new(HyperCausetConfig {
+//!    cache_rate: 0.5,
+//!   max_cache_size: 100,
+//!  max_cache_num: 100,
+//! max_cache_num_per_db: 100,
+//! max_cache_num_per_db_per_thread: 100,
+//! max_cache_num_per_db_per_thread_per_table: 100,
+//!
+//! });
+//! ```
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Alexandrov {
+    pub hash: u64,
+    pub version: u32,
+}
+
+
+impl fmt::Debug for Alexandrov {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for _ in 0..self.version {
+            write!(f, "0")?;
+        }
+        write!(f, "Alexandrov(hash: {}, version: {})", self.hash, self.version)
+    }
+}
+
+
+impl From<u64> for Alexandrov {
+    fn from(hash: u64) -> Self {
+        Alexandrov {
+            hash,
+            version: 0,
+
+        }
+
+    }
+}
+
+
+impl From<Alexandrov> for u64 {
+    fn from(hash: Alexandrov) -> Self {
+        hash.hash
+    }
+}
+
+
+impl From<Alexandrov> for u32 {
+    fn from(hash: Alexandrov) -> Self {
+        hash.version
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PointFreeError {
     DivisionByZero,
@@ -58,45 +131,87 @@ impl<T> Res<T> {
             Res::Err(e) => e,
         }
     }
-    pub fn map<U, F: FnOnce(T) -> U>(self, f: F) -> Res<U> {
-        match self {
+}
+
+
+impl<T> From<T> for Res<T> {
+    fn from(t: T) -> Self {
+        Res::Ok(t)
+    }
+}
+
+
+impl<T> From<PointFreeError> for Res<T> {
+    fn from(e: PointFreeError) -> Self {
+        match e {
             Res::Ok(t) => Res::Ok(f(t)),
             Res::Truncated(t) => Res::Truncated(f(t)),
             Res::OverCausetxctx(t) => Res::OverCausetxctx(f(t)),
         }
     }
 
-    pub fn unwrap(self) -> T {
-        match self {
-            Res::Ok(t) => t,
-            Res::Truncated(t) => t,
-            Res::OverCausetxctx(t) => t,
+    fn from_err(e: PointFreeError) -> Self {
+        match e {
+            Res::Ok(t) => Res::Ok(f(t)),
+            Res::Truncated(t) => Res::Truncated(f(t)),
+            Res::OverCausetxctx(t) => Res::OverCausetxctx(f(t)),
         }
-        match self {
-            Res::Ok(t) => t,
-            Res::Ok(t) | Res::Truncated(t) | Res::OverCausetxctx(t) => t,
+    }
+}
+
+
+impl<T> From<PointFreeError> for Res<T> {
+    fn from(e: PointFreeError) -> Self {
+        match e {
+            Res::Ok(t) => Res::Ok(f(t)),
+            Res::Truncated(t) => Res::Truncated(f(t)),
+            Res::OverCausetxctx(t) => Res::OverCausetxctx(f(t)),
         }
     }
 
-    pub fn is_ok(&self) -> bool {
-        match *self {
+    fn from_err(e: PointFreeError) -> Self {
+        match e {
+            Res::Ok(t) => Res::Ok(f(t)),
+            Res::Truncated(t) => Res::Truncated(f(t)),
+            Res::OverCausetxctx(t) => Res::OverCausetxctx(f(t)),
+        }
+    }
+}
 
-            Res::Ok(_) => true,
-            _ => false,
+
+impl<T> From<PointFreeError> for Res<T> {
+    fn from(e: PointFreeError) -> Self {
+        match e {
+            Res::Ok(t) => Res::Ok(f(t)),
+            Res::Truncated(t) => Res::Truncated(f(t)),
+            Res::OverCausetxctx(t) => Res::OverCausetxctx(f(t)),
         }
     }
 
-    pub fn is_overCausetxctx(&self) -> bool {
-        match *self {
-            Res::OverCausetxctx(_) => true,
-            _ => false,
+    fn from_err(e: PointFreeError) -> Self {
+        match e {
+            Res::Ok(t) => Res::Ok(f(t)),
+            Res::Truncated(t) => Res::Truncated(f(t)),
+            Res::OverCausetxctx(t) => Res::OverCausetxctx(f(t)),
+        }
+    }
+}
+
+
+impl<T> From<PointFreeError> for Res<T> {
+    fn from(e: PointFreeError) -> Self {
+        match e {
+            Res::Ok(t) => Res::Ok(f(t)),
+            Res::Truncated(t) => Res::Truncated(f(t)),
+            Res::OverCausetxctx(t) => Res::OverCausetxctx(f(t)),
         }
     }
 
-    pub fn is_truncated(&self) -> bool {
-        match *self {
-            Res::Truncated(_) => true,
-            _ => false,
+fn from_err(e: PointFreeError) -> Self {
+        match e {
+            Res::Ok(t) => Res::Ok(f(t)),
+            Res::Truncated(t) => Res::Truncated(f(t)),
+            Res::OverCausetxctx(t) => Res::OverCausetxctx(f(t)),
         }
     }
 
@@ -127,21 +242,9 @@ impl<T> Res<T> {
             .map(|()| t),
         }
     }
-
-    pub fn into_result_with_over_causetxctx_err(
-        self,
-        ctx: &mut EvalContext,
-        over_causetxctx_err: Error,
-    ) -> Result<T> {
-        self.into_result_impl(ctx, None, Some(over_causetxctx_err))
-    }
-
-    pub fn into_result(self, ctx: &mut EvalContext) -> Result<T> {
-        /// If `truncated_err` is None, `ctx` will try to handle the default truncated error: `Error::truncated()`,
-        /// otherwise handle the specified error inside `truncated_err`.
-        self.into_result_impl(ctx, None, None)
-    }
 }
+
+
 
 impl<T> Into<Result<T>> for Res<T> {
     

@@ -21,11 +21,6 @@ use std::collections::VecDeque;
 
 
 
-
-
-
-
-
 // Concrete eval types without a nullable wrapper.
 pub type Int = i64;
 pub type Real = ordered_float::NotNan<f64>;
@@ -83,10 +78,6 @@ pub type NullableRef<'a, T> = Option<&'a [u8]>;
 
 
 
-pub trait VectorValueConvertible {
-    fn as_vector_value(&self) -> VectorValue;
-}
-
 
 
 //Causetq is a trait for types that can be converted to a `VectorValue`.
@@ -106,9 +97,10 @@ impl VectorValueConvertible for VectorValueRef {
 }
 
 
-pub trait VectorValueConvertible {
-    /// Convert this value to a `VectorValue`.
-    fn to_vector_value(&self) -> VectorValue;
+impl VectorValueConvertible for VectorValue {
+    fn as_vector_value(&self) -> VectorValue {
+        self.clone()
+    }
 }
 
 
@@ -158,12 +150,20 @@ impl AsMyBerolinaSQLBool for Option<bool> {
     //}
 }
 
-    /// Evaluates into a MyBerolinaSQL logic causet_locale.
-    fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool>{   
-        // TODO: implement this
-        Ok(true)
-    }
+    /// Evaluates into a MyBerolinaSQLBool.
+    /// This is a convenience function for `as_my_berolina_sql_bool`.
+    /// It is implemented for `VectorValue` and `VectorValueRef`
+    /// so that we can use `as_any` to convert them to `VectorValue`.
+    /// It is also implemented for `ScalarValue` and `ScalarValueRef`
+    /// so that we can use `as_any` to convert them to `VectorValue`.
 
+
+impl AsMyBerolinaSQLBool for VectorValueRef {
+    fn as_my_berolina_sql_bool(&self) -> bool {
+        self.as_any().as_my_berolina_sql_bool()
+
+    }
+}
 
 impl AsMyBerolinaSQLBool for Int {
     #[inline]

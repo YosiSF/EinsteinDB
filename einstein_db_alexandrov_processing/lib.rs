@@ -37,11 +37,22 @@
 #![allow(unused)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[macro_use]
+extern crate lazy_static;
+
+
+//add type path to scope
+// Language: rust
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PanicAccount {
     pub balance: u64,
     pub nonce: u64,
 }
+
+
+
+
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PanicBlock {
@@ -537,242 +548,7 @@ pub(crate) fn read_file_to_string(path: &Path) -> String {
 }
 
 
-pub(crate) fn write_file_from_string(path: &Path, contents: &str) {
-    let mut file = File::create(path).unwrap();
-    file.write_all(contents.as_bytes()).unwrap();
-}
 
-
-pub(crate) fn read_file_to_vec(path: &Path) -> Vec<u8> {
-    let mut file = File::open(path).unwrap();
-    let mut contents = Vec::new();
-    file.read_to_end(&mut contents).unwrap();
-    contents
-}
-
-
-pub(crate) fn write_file_from_vec(path: &Path, contents: &[u8]) {
-    let mut file = File::create(path).unwrap();
-    file.write_all(contents).unwrap();
-}
-
-
-pub(crate) fn read_file_to_vec_u8(path: &Path) -> Vec<u8> {
-    let mut file = File::open(path).unwrap();
-    let mut contents = Vec::new();
-    file.read_to_end(&mut contents).unwrap();
-    contents
-
-}
-
-
-pub(crate) fn write_file_from_vec_u8(path: &Path, contents: &[u8]) {
-    let mut file = File::create(path).unwrap();
-    file.write_all(contents).unwrap();
-}
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-    let contents = String::from_utf8(contents.to_vec()).unwrap();
-    write_file(path, &contents);
-}
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-    let contents = String::from_utf8(contents.to_vec()).unwrap();
-    write_file(path, &contents);
-}
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-    let contents = String::from_utf8(contents.to_vec()).unwrap();
-    write_file(path, &contents);
-}
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-
-
-    if let Ok(mut file) = File::open(path) {
-        if let Ok(_) = file.write_all(contents) {
-            return;
-        }
-        let mut contents = String::new();
-        if let Ok(_) = file.read_to_string(&mut contents) {
-            return contents;
-
-        }
-
-    }
-
-    panic!("Could not write file: {}", path.to_str().unwrap());
-}
-
-
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-    let contents = String::from_utf8(contents.to_vec()).unwrap();
-    write_file(path, &contents);
-}
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-    let contents = String::from_utf8(contents.to_vec()).unwrap();
-    write_file(path, &contents);
-}
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-        if let Ok(_) = file.write_all(contents.as_bytes()) {
-            return;
-        }
-    }
-    panic!("Could not write file: {}", path.to_str().unwrap());
-
-    //avoid expected BANG
-    pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-        let contents = read_file(path);
-        contents.into_bytes()
-    }
-
-    pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-        let contents = String::from_utf8(contents.to_vec()).unwrap();
-        write_file(path, &contents);
-    }
-
-    pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-        let contents = read_file(path);
-        contents.into_bytes()
-    }
-
-    pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-        let contents = String::from_utf8(contents.to_vec()).unwrap();
-        write_file(path, &contents);
-    }
-
-    pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-        let contents = read_file(path);
-        contents.into_bytes()
-    }
-    pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-        let contents = String::from_utf8(contents.to_vec()).unwrap();
-        write_file(path, &contents);
-    }
-    
-}
-
-
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-        if let Ok(_) = file.write_all(contents.as_bytes()) {
-            return;
-        }
-    }
-    panic!("Could not write file: {}", path.to_str().unwrap());
-    String::new()
-}
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-    let contents = String::from_utf8(contents.to_vec()).unwrap();
-    write_file(path, &contents);
-}
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-    let contents = String::from_utf8(contents.to_vec()).unwrap();
-    write_file(path, &contents);
-}
-
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-    let contents = String::from_utf8(contents.to_vec()).unwrap();
-    write_file(path, &contents);
-}
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
-
-
-
-
-pub(crate) fn write_file_from_vec_u8_from_string(path: &Path, contents: &[u8]) {
-    let contents = String::from_utf8(contents.to_vec()).unwrap();
-
-    write_file(path, &contents);
-}
-
-
-pub(crate) fn read_file_to_vec_u8_from_string(path: &Path) -> Vec<u8> {
-    let contents = read_file(path);
-    contents.into_bytes()
-}
 
 
 pub(crate) fn read_json<T: serde::de::DeserializeOwned>(path: &Path) -> T {

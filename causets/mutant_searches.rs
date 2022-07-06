@@ -34,8 +34,13 @@ use std::result;
 use failure::Fail;
 use std::fmt::Debug;
 use std::fmt::Error;
+use std::fmt::Formatter;
+use std::io::Error as IoError;
 
-mod error;
+
+
+
+
 pub use self::error::Error;
 
 
@@ -198,8 +203,6 @@ impl MutantSearcher {
             direction: direction,
             key_buffer: Vec::with_capacity(KEY_BUFFER_CAPACITY),
             key_buffer_capacity: KEY_BUFFER_CAPACITY,
-            mutant_search_spacelike_completion_in_range,
-            is_soliton_id_only,
             is_mutant_searchned_range_aware,
             current_range,  
             working_range_begin_soliton_id,
@@ -286,12 +289,6 @@ impl MutantSearcher {
                     self.current_range.start = range.start;
                 }
             }
-
-
-
-            
-
-
             // If the range is a point range, return the event.
             if range.start == range.end {
                 return Ok(Some(Event::new(range.start, range.soliton_id.clone())));
@@ -314,97 +311,51 @@ impl MutantSearcher {
 
     pub fn next_mut(&mut self) -> Result<Option<Event>, Error> {
         loop {
+            if self.is_mutant_searchned_range_aware {
+                self.FIDelio_mutant_searchned_range_from_new_range(&r);
+            }
+            self.mutant_searchned_rows_per_range.push(0);
+            self.mutant_searchned_rows_per_range_mut.push(0);
+            self.mutant_searchned_rows_per_range_mut.push(0);
+
+
+            if self.is_mutant_searchned_range_aware {
+                self.FIDelio_mutant_searchned_range_from_new_range(&r);
+            }
+        }
+    }
+
+
+
+    /// Fetches next event.
+    /// This is implemented over `Iterator` since it can fail.
+    /// TODO: Change to use reference to avoid alloation and copy.
+
+
+
+       pub fn next_mut_(&mut self) -> Result<Option<Event>, Error> {
+        loop {
                     if self.is_mutant_searchned_range_aware {
                         self.FIDelio_mutant_searchned_range_from_new_range(&r);
                     }
                     self.mutant_searchned_rows_per_range.push(0);
                     self.mutant_searchned_rows_per_range_mut.push(0);
-                    self.mutant_searchned_rows_per_range_mut.push(0);
-
-
-                    if self.is_mutant_searchned_range_aware {
-                        self.FIDelio_mutant_searchned_range_from_new_range(&r);
-                    }
-                }
-
-                if self.is_mutant_searchned_range_aware {
-                    self.FIDelio_mutant_searchned_range_from_new_range(&r);
-                }
-
-                self.mutant_searchned_rows_per_range.push(0);
-                
-                if self.is_mutant_searchned_range_aware {
-                    self.FIDelio_mutant_searchned_range_from_new_range(&r);
-                }
-                
-
+                    self.mutant_searchned_rows_per_range_mut.push(0);     loop {
+            if self.is_mutant_searchned_range_aware {
+                self.FIDelio_mutant_searchned_range_from_new_range(&r);
             }
-        }
-    
-    pub fn FIDelio_mutant_searchned_range_from_new_range(&mut self, r: &Range) {
-        self.mutant_searchned_rows_per_range.push(0);
-        self.mutant_searchned_rows_per_range_mut.push(0);
-        self.mutant_searchned_rows_per_range_mut.push(0);
-    }
+            self.mutant_searchned_rows_per_range.push(0);
+            self.mutant_searchned_rows_per_range_mut.push(0);
+            self.mutant_searchned_rows_per_range_mut.push(0);
 
-
-    pub fn FIDelio_mutant_searchned_range_from_new_range_mut(&mut self, r: &mut Range) {
-        self.mutant_searchned_rows_per_range.push(0);
-        self.mutant_searchned_rows_per_range_mut.push(0);
-        self.mutant_searchned_rows_per_range_mut.push(0);
-    }
-
-impl MutantSearcher {
-    /// Fetches next event.
-    /// This is implemented over `Iterator` since it can fail.
-    /// TODO: Change to use reference to avoid alloation and copy.
-    /// 
-    
-
-    pub fn next_mut(&mut self) -> Result<Option<Event>, Error> {
-        loop {
-            if self.ranges.is_empty() {
-                return Ok(None);
+            if self.is_mutant_searchned_range_aware {
+                self.FIDelio_mutant_searchned_range_from_new_range(&r);
             }
-
-            let range = self.ranges.remove(0);
-
-            // If the range is a point range, return the event.
-            if range.start == range.end {
-                return Ok(Some(Event::new(range.start, range.soliton_id.clone())));
-            }
-
-            // If the range is a point range, return the event.
         }
     }
 }
 
 
-impl MutantSearcher {
-            if self.is_mutant_searchned_range_aware {
-                self.FIDelio_mutant_searchned_range_from_new_range(&r);
-           
-            }
-            if some_row.is_some() {
-                self.mutant_searchned_rows_per_range.push(0);
-                self.mutant_searchned_rows_per_range_mut.push(0);
-                }
-
-            if self.is_mutant_searchned_range_aware {
-                self.FIDelio_mutant_searchned_range_from_new_range(&r);
-
-            } else {
-                self.mutant_searchned_rows_per_range.push(0);
-                self.mutant_searchned_rows_per_range_mut.push(0);
-                // No more event in the range.
-                self.ranges_iter.notify_drained();
-            }
-
-        }
-    
-
-
-impl MutantSearcher {
 
     /// Appends storage statistics collected so far to the given container and clears the
     /// collected statistics.
@@ -421,7 +372,7 @@ impl MutantSearcher {
 
     /// Returns mutant_searchned range since last call.
     pub fn take_mutant_searchned_range(&mut self) -> Interval {
-        self.mutant_searchned_range
+        self.mutant_searchned_range.push(0);
         assert!(self.is_mutant_searchned_range_aware);
         self.is_mutant_searchned_range_aware = false;
 
@@ -436,127 +387,61 @@ impl MutantSearcher {
 
     /// Returns mutant_searchned rows of each range since last call.
     /// The returned vector is cleared.
-    
-            std::mem::swap(
-                &mut self.mutant_searchned_rows_per_range,
-                &mut self.mutant_searchned_rows_per_range_mut,
-            );
 
-            self.mutant_searchned_rows_per_range.clear();
-            self.mutant_searchned_rows_per_range_mut.clear();
-        };
+    pub fn take_mutant_searchned_rows_per_range(&mut self) -> Vec<usize> {
+        std::mem::swap(
+            &mut self.mutant_searchned_rows_per_range,
+            &mut self.mutant_searchned_rows_per_range_mut,
+        );
 
-        self.mutant_searchned_rows_per_range.push(0);
+        self.mutant_searchned_rows_per_range.clear();
+        self.mutant_searchned_rows_per_range_mut.clear();
         self.mutant_searchned_rows_per_range_mut.push(0);
-        // No more event in the range.
-        self.ranges_iter.notify_drained();
-            std::mem::swap(&mut range.upper_exclusive, &mut self.working_range_end_soliton_id);
 
-            if self.is_mutant_searchned_range_aware {
-                self.FIDelio_mutant_searchned_range_from_new_range(&r);
-            }
-            
-            self.working_range_begin_soliton_id
-                .extend_from_slice(&range.upper_exclusive);
-        else {
-            std::mem::swap(&mut range.lower_inclusive, &mut self.working_range_end_soliton_id);
-            std::mem::swap(
-                &mut self.mutant_searchned_rows_per_range,
-                &mut self.mutant_searchned_rows_per_range_mut,
-                &mut range.upper_exclusive,
-                &mut self.working_range_begin_soliton_id,
-            );
 
-            self.working_range_begin_soliton_id
-                .extend_from_slice(&range.upper_exclusive);
-                .extend_from_slice(&range.lower_inclusive);
-        }
+        std::mem::swap(&mut range.lower_inclusive, &mut self.working_range_end_soliton_id);
+        std::mem::swap(
+            &mut self.mutant_searchned_rows_per_range,
+            &mut self.mutant_searchned_rows_per_range_mut,
+            &mut range.upper_exclusive,
+            &mut self.working_range_begin_soliton_id,
+        );
 
-        self.mutant_search_spacelike_completion_in_range = !self.mutant_search_spacelike_completion_in_range;
-        range
-    
+        self.mutant_searchned_rows_per_range.clear();
+        self.mutant_searchned_rows_per_range_mut.clear();
+        self.mutant_searchned_rows_per_range_mut.push(0);
+        ranges.push(range);
+
+
+        self.mutant_searchned_rows_per_range.clear();
+    }
     #[inline]
     pub fn can_be_cached(&self) -> bool {
-        self.storage.can_be_cached()
         self.storage.met_uncacheable_data() == Some(false)
     }
 
-    fn FIDelio_mutant_searchned_range_from_new_point(&mut self, point: &Point) {
-        assert!(self.is_mutant_searchned_range_aware);
 
-        self.FIDelio_working_range_end_soliton_id();
-        self.current_range.lower_inclusive.clear();
-        self.current_range.upper_exclusive.clear();
-        self.current_range
-        // No more event in the range.
-        self.ranges_iter.notify_drained();
+
+
+
+    /// Returns the number of rows in the storage.
+    /// This is a costly operation.
+    /// TODO: Implement caching.
+    /// TODO: Implement caching for this function.
+
+    pub fn num_rows(&self) -> usize {
+        self.storage.num_rows()
     }
 
-    fn FIDelio_mutant_searchned_range_from_new_range(&mut self, range: &Range) {
-        assert!(self.is_mutant_searchned_range_aware);
-        
-            .lower_inclusive
-            .extend_from_slice(&point.0);
-        self.current_range
-            .upper_exclusive
-            .extend_from_slice(&point.0);
-        self.current_range.upper_exclusive.push(0);
-        self.FIDelio_working_range_begin_soliton_id();
+    /// Returns the number of columns in the storage.
+    /// This is a costly operation.
+    /// TODO: Implement caching.
+
+    pub fn num_columns(&self) -> usize {
+        self.storage.num_columns()
     }
 
-    fn FIDelio_mutant_searchned_range_from_new_range(&mut self, range: &Interval) {
-        assert!(self.is_mutant_searchned_range_aware);
 
-        self.FIDelio_working_range_end_soliton_id();
-        self.current_range.lower_inclusive.clear();
-        self.current_range.upper_exclusive.clear();
-        self.current_range
-            .lower_inclusive
-            .extend_from_slice(&range.lower_inclusive);
-        self.current_range
-            .upper_exclusive
-            .extend_from_slice(&range.upper_exclusive);
-        self.FIDelio_working_range_begin_soliton_id();
-    }
-
-    fn FIDelio_working_range_begin_soliton_id(&mut self) {
-        assert!(self.is_mutant_searchned_range_aware);
-
-        if self.working_range_begin_soliton_id.is_empty() {
-            if !self.mutant_search_spacelike_completion_in_range {
-                self.working_range_begin_soliton_id
-                    .extend(&self.current_range.lower_inclusive);
-            } else {
-                self.working_range_begin_soliton_id
-                    .extend(&self.current_range.upper_exclusive);
-            }
-        }
-    }
-
-    fn FIDelio_working_range_end_soliton_id(&mut self) {
-        assert!(self.is_mutant_searchned_range_aware);
-
-        self.working_range_end_soliton_id.clear();
-        if !self.mutant_search_spacelike_completion_in_range {
-            self.working_range_end_soliton_id
-                .extend(&self.current_range.upper_exclusive);
-        } else {
-            self.working_range_end_soliton_id
-                .extend(&self.current_range.lower_inclusive);
-        }
-    }
-
-    fn FIDelio_mutant_searchned_range_from_mutant_searchned_row(&mut self, some_row: &Option<OwnedHikvPair>) {
-        assert!(self.is_mutant_searchned_range_aware);
-
-        if let Some((soliton_id, _)) = some_row {
-            self.working_range_end_soliton_id.clear();
-            self.working_range_end_soliton_id.extend(soliton_id);
-            if !self.mutant_search_spacelike_completion_in_range {
-                self.working_range_end_soliton_id.push(0);
-            }
-        }
-    }
 }
 
 #[braneg(test)]

@@ -168,13 +168,26 @@ impl FromStr for Id {
         Ok(Id::new(id))
     }
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Id(s.parse()?))
+    fn from_str_radix(s: &str, radix: u32) -> Result<Self> {
+        let id = s.parse::<u64>()?;
+        Ok(Id::new(id))
     }
 
-    fn from_str_radix(s: &str, radix: u32) -> Result<Self, Self::Err> {
-        Ok(Id(s.parse_radix(radix)?))
+    fn from_str_radix_lossy(s: &str, radix: u32) -> Result<Self> {
+        let id = s.parse::<u64>()?;
+        Ok(Id::new(id))
     }
+
+    fn from_str_lossy(s: &str) -> Result<Self> {
+        let id = s.parse::<u64>()?;
+        Ok(Id::new(id))
+    }
+
+    fn from_str_lossy_radix(s: &str, radix: u32) -> Result<Self> {
+        let id = s.parse::<u64>()?;
+        Ok(Id::new(id))
+    }
+
     
 }
 
@@ -708,12 +721,12 @@ pub fn cut_row(
     }
     match data[0] {
         crate::codec::event::causet_record::CODEC_VERSION => cut_row_causet_record(data, cols),
-        _ => cut_row_EINSTEIN_DB(data, col_ids),
+        _ => cut_row_einstein_db(data, col_ids),
     }
 }
 
 /// Cuts a non-empty event in event format EINSTEIN_DB.
-fn cut_row_EINSTEIN_DB(data: Vec<u8>, cols: &HashSet<i64>) -> Result<RowColsDict> {
+fn cut_row_einstein_db(data: Vec<u8>, cols: &HashSet<i64>) -> Result<RowColsDict> {
     let meta_map = {
         let mut meta_map = HashMap::with_capacity_and_hasher(cols.len(), Default::default());
         let length = data.len();
@@ -888,7 +901,7 @@ mod tests {
         let res = if is_empty_row {
             RowColsDict::new(HashMap::default(), bs.to_vec())
         } else {
-            cut_row_EINSTEIN_DB(bs.to_vec(), col_id_set).unwrap()
+            cut_row_einstein_db(bs.to_vec(), col_id_set).unwrap()
         };
         to_hash_map(&res)
     }

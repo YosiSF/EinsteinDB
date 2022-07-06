@@ -9,15 +9,68 @@
 // specific language governing permissions and limitations under the License.
 
 use EinsteinDB_util::buffer_vec::BufferVec;
-use einsteindbpb::FieldType;
-use std::convert::TryFrom;
+use EinsteinDB_util::codec::{Error as CodecError, Result as CodecResult};
+use EinsteinDB_util::{
+    bytes::{self, Bytes},
+    io::{self, WriteZeroes},
+    number::{self, Number},
+    version::{self, Version},
+};
+use std::{
+    error,
+    fmt,
+    io::{self, Write},
+    result,
+    str::FromStr,
+};
 
-use crate::{EvalType, FieldTypeAccessor};
-use crate::codec::chunk::{ChunkColumnEncoder, Column};
-use crate::codec::data_type::{match_template_evaluable, VectorValue};
-use crate::codec::datum_codec::Primitive_CausetDatumTypeDecoder;
-use crate::codec::Result;
-use crate::expr::EvalContext;
+
+
+
+
+
+#[derive(Debug, Fail)]
+pub enum Error {
+    #[fail(display = "{}", _0)]
+    Causet(String),
+    #[fail(display = "{}", _0)]
+    CausetQ(String),
+    #[fail(display = "{}", _0)]
+    EinsteinML(String),
+    #[fail(display = "{}", _0)]
+    Gremlin(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ2(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ3(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ4(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ5(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ6(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ7(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ8(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ9(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ10(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ11(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ12(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ13(String),
+    #[fail(display = "{}", _0)]
+    GremlinQ14(String),
+}
+
+
+
 
 /// A container stores an array of datums, which can be either primitive_causet (not decoded), or decoded into
 /// the `VectorValue` type.
@@ -383,7 +436,7 @@ mod benches {
         let mut ctx = EvalContext::default();
         let mut datum_primitive_causet: Vec<u8> = Vec::new();
         datum_primitive_causet
-            .write_datum(&mut ctx, &[DatumType::U64(0xDEAeinsteindbEEF)], true)
+            .write_datum(&mut ctx, &[DatumType::U64(32)], false)
             .unwrap();
 
         for _ in 0..1000 {
@@ -413,7 +466,7 @@ mod benches {
 
         let mut datum_primitive_causet: Vec<u8> = Vec::new();
         datum_primitive_causet
-            .write_datum(&mut ctx, &[DatumType::U64(0xDEAeinsteindbEEF)], true)
+            .write_datum(&mut ctx, &[DatumType::U64(32)], false)
             .unwrap();
 
         for _ in 0..1000 {
@@ -445,7 +498,7 @@ mod benches {
         let mut ctx = EvalContext::default();
         let mut datum_primitive_causet: Vec<u8> = Vec::new();
         datum_primitive_causet
-            .write_datum(&mut ctx, &[DatumType::U64(0xDEAeinsteindbEEF)], true)
+            .write_datum(&mut ctx, &[DatumType::U64(32)], false)
             .unwrap();
 
         for _ in 0..1000 {
