@@ -3,6 +3,24 @@
 use fdb_traits::{Mutable, Result, WriteBatch, WriteBatchExt, WriteOptions};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+use std::time::Duration;
+use std::collections::HashSet;
+use std::collections::hash_set::Iter as HashSetIter;
+use std::collections::hash_set::IterMut as HashSetIterMut;
+
+
+use std::collections::BTreeSet;
+use std::collections::btree_set::Iter as BTreeSetIter;
+use std::collections::btree_set::IterMut as BTreeSetIterMut;
+
+
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+
+
+use std::collections::hash_map::Iter;
 
 //now we abstract the lshp-tree into a poset so that it is lisp-like
 //source: https://franz.com/support/documentation/ansicl.94/section/dictio19.htm
@@ -20,6 +38,10 @@ use std::sync::Arc;
 //we shall use guillaume's interpretation of a stateless hash tree as featured on the NIST2019 paper
 //SPHINCS-Gravity and its rust implementations
 //
+
+
+
+
 
 pub struct Poset {
 
@@ -122,6 +144,8 @@ pub struct BlockHash {
 }
 
 
+
+
 impl BlockHash {
     pub fn new(id: u64, hash: Arc<Vec<u8>>, body: Arc<BlockBody>) -> Self {
         Self {
@@ -171,30 +195,83 @@ pub fn new_alexandrov_process<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_t
 }
 
 
-
-
 impl<K, V> AlexandrovProcess<K, V> {
-    let alexandrov_poset_processv_process = AlexandrovProcess {
-        db: Arc::new(Mutable::new(db_path)),
-        prefix: vec![],
-        key_type: K,
-        value_type: V,
-        write_options: WriteOptions::new(),
-
-    };
-    Ok(alexandrov_poset_processv_process)
-
+    pub fn new_alexandrov_process<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V) -> Result<AlexandrovProcess<K, V>> {
+        let write_options = WriteOptions::new();
+        Ok(AlexandrovProcess {
+            db,
+            prefix,
+            key_type,
+            value_type,
+            write_options,
+        })
+    }
+    pub fn new_alexandrov_process_with_write_options<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Result<AlexandrovProcess<K, V>> {
+        Ok(AlexandrovProcess {
+            db,
+            prefix,
+            key_type,
+            value_type,
+            write_options,
+        })
+    }
+    pub fn new_alexandrov_process_with_write_options_and_prefix<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Result<AlexandrovProcess<K, V>> {
+        Ok(AlexandrovProcess {
+            db,
+            prefix,
+            key_type,
+            value_type,
+            write_options,
+        })
+    }
+    pub fn new_alexandrov_process_with_write_options_and_prefix_and_key_type<K, V>(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Result<AlexandrovProcess<K, V>> {
+        Ok(AlexandrovProcess {
+            db,
+            prefix,
+            key_type,
+            value_type,
+            write_options,
+        })
+    }
 }
 
 
-impl<K, V> Poset {
-    pub fn new(fdb: Arc<dyn Mutable>) -> Self {
-        Self {
-            fdb,
-            root: Arc::new(PosetNode::new(0, Arc::new(BlockHash::new(0, Arc::new(vec![0; 32]), Arc::new(BlockBody::new(0, Arc::new(vec![0; 32]), None, HashMap::new(), HashMap::new(), HashMap::new(), HashMap::new()))))),
-            leaves: HashMap::new(),
-            soft_index: HashMap::new(),
-        }
+impl<K, V> AlexandrovProcess<K, V> {
+    pub fn get_db(&self) -> Arc<dyn Mutable> {
+        self.db.clone()
+    }
+    pub fn get_prefix(&self) -> Vec<u8> {
+        self.prefix.clone()
+    }
+    pub fn get_key_type(&self) -> K {
+        self.key_type.clone()
+    }
+    pub fn get_value_type(&self) -> V {
+        self.value_type.clone()
+    }
+    pub fn get_write_options(&self) -> WriteOptions {
+        self.write_options.clone()
+    }
+    pub fn get_write_options_with_prefix(&self) -> WriteOptions {
+        self.write_options.clone()
+    }
+    pub fn get_write_options_with_prefix_and_key_type(&self) -> WriteOptions {
+        self.write_options.clone()
+    }
+    pub fn get_write_options_with_prefix_and_key_type_and_value_type(&self) -> WriteOptions {
+        self.write_options.clone()
+    }
+    pub fn get_write_options_with_prefix_and_key_type_and_value_type_and_write_options(&self) -> WriteOptions {
+        self.write_options.clone()
+    }
+    pub fn get_write_options_with_prefix_and_key_type_and_value_type_and_write_options_and_db(&self) -> WriteOptions {
+        self.write_options.clone()
+    }
+    pub fn get_write_options_with_prefix_and_key_type_and_value_type_and_write_options_and_db_and_prefix(&self) -> WriteOptions {
+        self.write_options.clone()
+    }
+    pub fn get_write_options_with_prefix_and_key_type_and_value_type_and_write_options_and_db_and_prefix_and_key_type(&self) -> WriteOptions {
+        self.write_options_and_prefix_and_key_type.clone()
     }
 }
 
@@ -385,3 +462,10 @@ pub fn unwrap_index_bytes_with_namespaced_and_key(index_bytes: &[u8]) -> (&[u8],
 }
 
 
+///CHANGELOG for soliton_panic_merkle_tree
+///
+///1.0.0:
+///    - Initial version
+///    - Added support for namespaced keys
+///    - Added support for namespaced keys and namespaced valuesource
+///    - Added support for namespaced keys and namespaced valuesource and namespaced valuesink
