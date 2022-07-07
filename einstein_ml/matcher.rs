@@ -8,10 +8,33 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 use super::*;
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Attribute {
+    pub name: String,
+    pub type_: AttributeType,
+    pub validation: AttributeValidation,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct AttributeSet {
+    pub attributes: Vec<Attribute>,
+}
+
+
+
+
 use std::cell::RefCell;
 use std::collections::HashMap;
 
 use itertools::diff_with;
+
+use einsteindb_traits::errors::{
+    einsteindbErrorKind,
+    Result,
+};
 
 use types::Value;
 
@@ -25,10 +48,38 @@ use crate::causetq::{
     causetq_query::CausetQQueryBuilder,
 };
 
+pub(crate) fn causet_query_builder<'a, 'b>(
+    causet: &'a Causet,
+    query: &'b str,
+) -> CausetQueryBuilder<'a, 'b> {
+    CausetQueryBuilder::new(causet, query)
+}
+
+
+
+
 
 
 use ::causet::{Causet, CausetQuery};
 
+///A typical Prolog application will reason over sets of data. In small programming examples, the data is simply included as `facts' that are part of the program source itself. Reading facts from an external source and asserting them into the program is not much different. While a clever Prolog implementation can optimize collections of facts, this approach cannot scale indefinitely. First, it requires the facts be captured as data belonging to the function. Second, efficient reasoning over large data sets requires knowledge about how the data will be accessed. Often this is really an indexing problem, and the application programmer must guide the system by describing (or implementing) how the data is indexed. It is no coincidence that this concern is similar to database implementation.
+/// #### The CausetQ Database
+/// ####
+///
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetQFact {
+    pub key: String,
+    pub value: Value,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetQFactWithId {
+    pub id: u64,
+    pub key: String,
+    pub value: Value,
+}
 
 
 
@@ -132,7 +183,38 @@ pub trait Pattern<T> {
 /// } else {
 ///   println!("CausetLocale does not match causet_locale");
 /// }
-/// 
+///
+///
+
+
+/// let causetq_locale_pattern = causetq_locale.pattern_matching_rules();
+/// if causetq_locale_pattern.matches(&causetq_locale) {
+
+
+
+
+
+
+
+
+pub trait PatternMatchingRules {
+    /// Returns a `Vec` of `T`s that match the pattern.
+    /// The `Vec` is empty if no matches are found.
+    /// The `Vec` is empty if the pattern is empty.
+    /// Return true if the given pattern matches an arbitrary causet_locale.
+    fn matches(&self, causet_locale: &CausetLocale<&str>) -> bool;
+    /// Returns a `Vec` of `T`s that match the pattern.
+    fn matches_any(pattern: &str) -> bool;
+    /// Returns a `Vec` of `T`s that match the pattern.
+    /// Return the placeholder name if the given pattern matches a placeholder.
+    fn matches_placeholder(pattern: &str) -> Option<String>;
+
+    /// Returns a `Vec` of `T`s that match the pattern.
+    /// Return the placeholder name if the given pattern matches a placeholder.
+    ///
+
+    fn matches_placeholder_any(pattern: &str) -> Option<String>;
+}
 
 
 
@@ -143,20 +225,45 @@ pub struct CausetLocalePattern<T> {
 
 
 
+///!Computation in Prolog works by attempting to satisfy a clause and, if successful, calling a continuation function. If that continuation fails control may return to any previous choice point, undoing any intervening unifications, and trying a different solution choice. Prolog unification data and continuation functions always have dynamic extent. The implementation exploits this by allocating Prolog variables themselves, cons structure created by unification, and continuation closure functions on the stack, that is, with dynamic extent. This allows Prolog code to operate with essentially zero consing and with a resulting improvement in speed.
+//
+// There are, however, certain functors that typically cons data with indefinite extent. Solutions collected by the bagof/3 and setof/3 predicates are automatically heap consed, as are any rules stored by the assert, asserta, assertz, recorda, and recordz predicate.
 
 
 
-
-
-
+async fn causet_locale_pattern_matches_any(
+    causet_locale_pattern: &CausetLocalePattern<&str>,
+    causet_locale: &CausetLocale<&str>,
+) -> bool {
+    let causet_locale_pattern = causet_locale_pattern.causet_locale_pattern;
+    let causet_locale = causet_locale.causet_locale;
+    let causet_locale_pattern_matches_any = causet_locale_pattern.matches_any;
+    let causet_locale_matches_any = causet_locale.matches_any;
+    causet_locale_pattern_matches_any && causet_locale_matches_any
+}
 
 
 
 impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
     fn matches_any(pattern: &Value) -> bool {
         match *pattern {
-            Value::PlainShelling(shellings::PlainShelling(ref s)) => s.starts_with('_'),
-            _ => false
+            Value::Placeholder(_) => true,
+            _ => false,
+        }
+    }
+    fn matches_placeholder_lisp_pattern(pattern: &Value) -> bool {
+        match *pattern {
+            Value::Placeholder(_) => true,
+            _ => false,
+        }
+
+
+    }
+
+    fn matches_placeholder_any(pattern: &Value) -> Option<String> {
+        match *pattern {
+            Value::Placeholder(ref name) => Some(name.clone()),
+            _ => None,
         }
     }
 
@@ -166,6 +273,16 @@ impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
             _ => None
         }
     }
+
+    fn matches(&self, causet_locale: &CausetLocale<&str>) -> bool {
+        let causet_locale_pattern = self.causet_locale_pattern;
+        let causet_locale = self.causet_locale;
+        let causet_locale_pattern_matches_any = causet_locale_pattern.matches_any;
+        let causet_locale_matches_any = causet_locale.matches_any;
+        causet_locale_pattern_matches_any && causet_locale_matches_any
+    }
+
+
 }
 
 /// A trait defining pattern matching rules for any given pattern of type `T`.
@@ -195,6 +312,14 @@ impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
 /// }
 
 use ::EinsteinDB::einstein_db_ctl::EinsteinDB_Ctl;
+use ::EinsteinDB::einstein_db_ctl::EinsteinDB_Ctl_Result;
+
+use ::EinsteinDB::einstein_db_ctl::EinsteinDB_Ctl_Result_Type::{
+    EinsteinDB_Ctl_Result_Type_Ok,
+    EinsteinDB_Ctl_Result_Type_Error,
+};
+
+
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DefaultPatternMatchingRules {
@@ -265,6 +390,10 @@ impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
 /// * `[_ _]` matches an arbitrary two-element vector;
 /// * `[?x ?x]` matches `[1 1]` and `[#{} #{}]` but not `[1 2]` or `[[] #{}]`;
 struct Matcher<'a> {
+    causet_locale: CausetLocale<Value>,
+    causet_locale_pattern: CausetLocalePattern<Value>,
+    pattern_matching_rules: &'a dyn PatternMatchingRules<'a, Value>,
+    
     placeholders: RefCell<HashMap<&'a String, &'a Value>>
 }
 
@@ -272,50 +401,207 @@ impl<'a> Matcher<'a> {
     /// Creates a Matcher instance.
     fn new() -> Matcher<'a> {
         Matcher {
-            placeholders: RefCell::default()
+            causet_locale: CausetLocale::new(),
+            causet_locale_pattern: CausetLocalePattern::new(),
+            pattern_matching_rules: &DefaultPatternMatchingRules {
+                causet_locale: CausetLocale::new(),
+                causet_locale_pattern: CausetLocalePattern::new(),
+            },
+            placeholders: RefCell::new(HashMap::new())
         }
     }
 
     /// Performs pattern matching between two EML `Value` instances (`causet_locale`
     /// and `pattern`) utilizing a specified pattern matching ruleset `T`.
     /// Returns true if matching succeeds.
-    fn match_with_rules<T>(causet_locale: &'a Value, pattern: &'a Value) -> bool
-    where T: PatternMatchingRules<'a, Value> {
-        let matcher = Matcher::new();
-        matcher.match_causal_setal::<T>(causet_locale, pattern)
+    fn match_with_rules<T>(causet_locale: &'a Value, pattern: &'a Value) -> bool {
+        let mut matcher = Matcher::new();
+        matcher.match_with_rules_impl(causet_locale, pattern)
     }
+
+
+
+
+    /// Performs pattern matching between two EML `Value` instances (`causet_locale`
+    /// and `pattern`) utilizing a specified pattern matching ruleset `T`.
+    /// Returns true if matching succeeds.
+    /// This is the implementation of `match_with_rules`.
+}
+
+
+    #[macro_export]
+    macro_rules! match_with_rules_impl {
+        ($causet_locale:expr, $pattern:expr) => {
+            $crate::einstein_ml::causet::matcher::Matcher::new().match_with_rules_impl($causet_locale, $pattern)
+        };
+    }
+
+
+
+    impl<'a> Matcher<'a> {
+        /// Performs pattern matching between two EML `Value` instances (`causet_locale`
+        /// and `pattern`) utilizing a specified pattern matching ruleset `T`.
+        /// Returns true if matching succeeds.
+        /// This is the implementation of `match_with_rules`.
+        fn match_with_rules_impl<T>(&mut self, causet_locale: &'a Value, pattern: &'a Value) -> bool {
+            match *pattern {
+                Value::PlainShelling(shellings::PlainShelling(ref s)) => {
+                    if s.starts_with('_') {
+                        true
+                    } else {
+                        false
+                    }
+                }
+                Value::PlainShelling(shellings::PlainShelling(ref s)) => {
+                    if s.starts_with('?') {
+                        true
+                    } else {
+                        false
+                    }
+                }
+                _ => false
+            }
+        }
+    }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::einstein_ml::causet::matcher::DefaultPatternMatchingRules;
+    use crate::einstein_ml::causet::Value;
+    use crate::einstein_ml::causet::shellings::PlainShelling;
+
+    #[test]
+    fn test_matcher_matches_any() {
+        let mut matcher = Matcher::new();
+        assert!(matcher.matches_any(&Value::PlainShelling(PlainShelling("_".to_string()))));
+        assert!(matcher.matches_any(&Value::PlainShelling(PlainShelling("?".to_string()))));
+        assert!(!matcher.matches_any(&Value::PlainShelling(PlainShelling("1".to_string()))));
+    }
+
+    #[test]
+    fn test_matcher_matches_placeholder() {
+        let mut matcher = Matcher::new();
+        assert_eq!(matcher.matches_placeholder(&Value::PlainShelling(PlainShelling("?".to_string()))), Some(&"?".to_string()));
+        assert_eq!(matcher.matches_placeholder(&Value::PlainShelling(PlainShelling("_".to_string()))), None);
+        assert_eq!(matcher.matches_placeholder(&Value::PlainShelling(PlainShelling("1".to_string()))), None);
+    }
+
+    #[test]
+    fn test_match_with_rules() {
+        match *pattern {
+            Value::PlainShelling(shellings::PlainShelling(ref s)) => {
+                if s.starts_with('_') {
+                    true
+                } else {
+                    false
+                }
+            },
+            Value::PlainShelling(shellings::PlainShelling(ref s)) => {
+                if s.starts_with('?') {
+                    let placeholder = s.get(1..).unwrap();
+                    let value = &Value::PlainShelling(PlainShelling("1".to_string()));
+                    true
+                } else {
+                    false
+                }
+            },
+            _ => false
+        }
+    }
+}
 
     /// Recursively traverses two EML `Value` instances (`causet_locale` and `pattern`)
     /// performing pattern matching. Note that the causal_setal `placeholders` cache
     /// might not be empty on invocation.
-    fn match_causal_setal<T>(&self, causet_locale: &'a Value, pattern: &'a Value) -> bool
-    where T: PatternMatchingRules<'a, Value> {
-        use Value::*;
 
+    /// Returns true if matching succeeds.
+    /// This is the implementation of `match_causal_setal`.
+    /// This is the implementation of `match_with_rules`.
+    /// This is the implementation of `match_with_rules_impl`.
+
+    #[test]
+    fn test_match_causal_setal() {
+        let mut matcher = Matcher::new();
+        assert!(matcher.match_causal_setal::<DefaultPatternMatchingRules>(causet_locale, pattern));
+    }
+
+
+    /// Recursively traverses two EML `Value` instances (`causet_locale` and `pattern`)
+    /// performing pattern matching. Note that the causal_setal `placeholders` cache
+    /// might not be empty on invocation
+    /// modern_pattern_matching_rules.rs("key",keyspace     => "value",patterns => ["key"])
+    /// Returns true if matching succeeds.
+
+    /// This is the implementation of `match_causal_setal`.
+
+    #[test]
+    fn test_match_causal_setal_with_rules() {
+        let mut matcher = Matcher::new();
         if T::matches_any(pattern) {
             true
-        } else if let Some(shelling) = T::matches_placeholder(pattern) {
-            let mut placeholders = self.placeholders.borrow_mut();
-            causet_locale == *placeholders.entry(shelling).or_insert(causet_locale)
         } else {
+            false
+
+}
+            let mut placeholders = RefCell::default();
+            let mut matcher = Matcher::new();
+            causet_locale == *placeholders.entry(shelling).or_insert(causet_locale)
+        }
+
+
+
+
+
+
+
+
+
+ /// Recursively traverses two EML `Value` instances (`causet_locale` and `pattern`)
+
+    /// performing pattern matching. Note that the causal_setal `placeholders` cache
+    /// might not be empty on invocation.
+    /// Returns true if matching succeeds.
+    /// This is the implementation of `match_causal_setal`.
+
+    #[test]
+    fn test_match_causal_setal_with_rules_impl() {
+        let mut matcher = Matcher::new();
             match (causet_locale, pattern) {
+                (Value::PlainShelling(shellings::PlainShelling(ref s)), Value::PlainShelling(shellings::PlainShelling(ref p))) => {
+                    if s.starts_with('_') {
+                        true
+                    } else {
+                        false
+                    }
+                },
                 (&Vector(ref v), &Vector(ref p)) =>
-                    diff_with(v, p, |a, b| self.match_causal_setal::<T>(a, b)).is_none(),
+                    diff_with(v, p, |a, b| matcher.match_causal_setal_with_rules_impl(a, b)),
                 (&List(ref v), &List(ref p)) =>
-                    diff_with(v, p, |a, b| self.match_causal_setal::<T>(a, b)).is_none(),
+                    diff_with(v, p, |a, b| matcher.match_causal_setal_with_rules_impl(a, b)),
                 (&Set(ref v), &Set(ref p)) =>
                     v.len() == p.len() &&
-                    v.iter().all(|a| p.iter().any(|b| self.match_causal_setal::<T>(a, b))) &&
-                    p.iter().all(|b| v.iter().any(|a| self.match_causal_setal::<T>(a, b))),
+                    v.iter().all(|a| p.iter().any(|b| matcher.match_causal_setal_with_rules_impl(a, b))),
+
                 (&Map(ref v), &Map(ref p)) =>
                     v.len() == p.len() &&
-                    v.iter().all(|a| p.iter().any(|b| self.match_causal_setal::<T>(a.0, b.0) && self.match_causal_setal::<T>(a.1, b.1))) &&
-                    p.iter().all(|b| v.iter().any(|a| self.match_causal_setal::<T>(a.0, b.0) && self.match_causal_setal::<T>(a.1, b.1))),
-                _ => causet_locale == pattern
+                    v.iter().all(|a| p.iter().any(|b| matcher.match_causal_setal_with_rules_impl(a, b))),
+                _ => false
             }
         }
-    }
-}
+
+
+    /// Recursively traverses two EML `Value` instances (`causet_locale` and `pattern`)
+    /// performing pattern matching. Note that the causal_setal `placeholders` cache
+
+
+    /// Returns true if matching succeeds.
+
+    /// This is the implementation of `match_causal_setal`.
+    /// This is the implementation of `match_with_rules`.
+    /// This is the implementation of `match_with_rules_impl`.
+
+
 
 impl Value {
     /// Performs default pattern matching between this causet_locale and some `pattern`.

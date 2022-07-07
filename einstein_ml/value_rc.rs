@@ -30,6 +30,187 @@ use ::std::ops::RangeTo;
 use ::std::ops::RangeToInclusive;
 use ::std::ops::IndexMut;
 
+
+use ::std::ops::Add;
+use ::std::ops::AddAssign;
+use ::std::ops::BitAnd;
+use ::std::ops::BitAndAssign;
+use ::std::ops::BitOr;
+use ::std::ops::BitOrAssign;
+use ::std::ops::BitXor;
+use ::std::ops::BitXorAssign;
+use ::std::ops::Div;
+use ::std::ops::DivAssign;
+
+use ::EinsteinDB::einstein_ml::value::Value;
+use ::EinsteinDB::einstein_ml::value::ValueType;
+use ::EinsteinDB::einstein_ml::value::ValueType::*;
+
+impl<T> ValueRc<T> {
+    pub fn new(value: T) -> Self {
+        ValueRc {
+
+            value: Rc::new(RefCell::new(value)),
+        }
+
+
+    }
+
+    pub fn get_value(&self) -> Rc<RefCell<T>> {
+        self.value.clone()
+    }
+
+    pub fn get_value_mut(&mut self) -> Rc<RefCell<T>> {
+        self.value.clone()
+    }
+
+    pub fn get_value_ref(&self) -> &T {
+        self.value.borrow()
+    }
+
+    pub fn get_value_ref_mut(&mut self) -> &mut T {
+        self.value.borrow_mut()
+    }
+
+
+}
+
+
+impl<T> Deref for ValueRc<T> {
+
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &self.value.borrow()
+    }
+
+
+}
+
+
+impl<T> DerefMut for ValueRc<T> {
+    fn deref_mut(&mut self) -> &mut T {
+        &mut self.value.borrow_mut()
+    }
+}
+
+
+impl<T> Drop for ValueRc<T> {
+    fn drop(&mut self) {
+        self.value.borrow_mut().drop();
+    }
+}
+
+
+impl<T> Display for ValueRc<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        self.value.borrow().fmt(f)
+    }
+}
+
+
+impl<T> Debug for ValueRc<T>
+where
+    T: Debug,
+{
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        self.value.borrow().fmt(f)
+    }
+}
+
+
+impl<T> Error for ValueRc<T>
+where
+    T: Error,
+{
+    fn description(&self) -> &str {
+        self.value.borrow().description()
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        self.value.borrow().cause()
+    }
+}
+
+
+impl<T> FmtError for ValueRc<T>
+where
+    T: FmtError,
+{
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        self.value.borrow().fmt(f)
+    }
+}
+
+
+impl<T> Index<usize> for ValueRc<T> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &T {
+        &self.value.borrow()[index]
+    }
+}
+
+
+impl<T> IndexMut<usize> for ValueRc<T> {
+    fn index_mut(&mut self, index: usize) -> &mut T {
+        &mut self.value.borrow_mut()[index]
+    }
+}
+
+
+impl<T> Index<Range<usize>> for ValueRc<T> {
+    type Output = [T];
+
+    fn index(&self, index: Range<usize>) -> &[T] {
+        &self.value.borrow()[index]
+    }
+}
+
+
+impl<T> IndexMut<Range<usize>> for ValueRc<T> {
+    fn index_mut(&mut self, index: Range<usize>) -> &mut [T] {
+        &mut self.value.borrow_mut()[index]
+    }
+}
+
+
+impl<T> Index<RangeTo<usize>> for ValueRc<T> {
+    type Output = [T];
+
+    fn index(&self, index: RangeTo<usize>) -> &[T] {
+        &self.value.borrow()[index]
+    }
+}
+
+
+impl<T> IndexMut<RangeTo<usize>> for ValueRc<T> {
+    fn index_mut(&mut self, index: RangeTo<usize>) -> &mut [T] {
+        &mut self.value.borrow_mut()[index]
+    }
+}
+
+
+impl<T> Index<RangeFrom<usize>> for ValueRc<T> {
+    type Output = [T];
+
+    fn index(&self, index: RangeFrom<usize>) -> &[T] {
+        &self.value.borrow()[index]
+    }
+}
+
+
+impl<T> IndexMut<RangeFrom<usize>> for ValueRc<T> {
+    fn index_mut(&mut self, index: RangeFrom<usize>) -> &mut [T] {
+        &mut self.value.borrow_mut()[index]
+    }
+}
+
+
+
 use crate::einstein_db::value::Value;
 use crate::einstein_db::value::ValueType;
 use crate::einstein_db::causetq::Causetq;

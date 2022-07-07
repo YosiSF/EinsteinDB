@@ -150,6 +150,23 @@ tempfile = "3.0"
 paste = "1.0"
 thiserror = "1.0"
 
+[lib]
+name = "causetq"
+path = "../causetq/src/lib.rs"
+features = ["default"]
+
+
+
+
+
+[target.'$TARGET'.dependencies]
+causetq = { path = "../causetq" }
+causets = { path = "../causets" }
+soliton_panic = { path = "../soliton_panic" }
+einstein_ml = { path = "../einstein_ml" }
+
+
+
 
 [profile.release]
 optimization = "speed"
@@ -170,3 +187,27 @@ optimization = "speed"
 lto = "off"
 debug = "false"
 doc = "true"
+
+
+[profile.test]
+optimization = "speed"
+lto = "off"
+debug = "false"
+doc = "false"
+
+
+[profile.bench]
+optimization = "speed"
+lto = "off"
+debug = "false"
+doc = "false"
+
+
+[profile.bench-test]
+optimization = "speed"
+lto = "off"
+debug = "false"
+doc = "false"
+
+
+

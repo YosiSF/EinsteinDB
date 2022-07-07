@@ -97,18 +97,18 @@ impl u64x2 {
 
     }
 
-     /// Write u64x2 content into array pointer (potentially unaligned)
+     /// Write U64x2 content into array pointer (potentially unaligned)
      /// # Safety
      /// This is unsafe because it writes to an unaligned pointer.
      /// The caller must ensure that the pointer is valid.
      /// The function has no other safety requirements.
      /// # Examples
      /// ```
-     /// use einstein_sqlite::u64x2;
+     /// use einstein_sqlite::U64x2;
      /// let mut dest = [0u8; 16];
-     /// let src = u64x2::new(0x1122334455667788, 0x99AABBCCDDEEFF00);
+     /// let src = U64x2::new(0x1122334455667788, 0x99AABBCCDDEEFF00);
      /// unsafe {
-     ///    einstein_sqlite::u64x2::write(&mut dest, src);
+     ///    einstein_sqlite::U64x2::write(&mut dest, src);
      /// 
      ///    
 #[inline(always)]

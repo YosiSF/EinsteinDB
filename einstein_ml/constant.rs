@@ -17,6 +17,95 @@ use std::io;
 use std::result;
 use std::mem;
 use std::ptr::copy_nonoverlapping;
+use std::slice;
+use std::str;
+use std::string::FromUtf8Error;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use std::{fmt, io, mem, ptr, str, sync, time};
+use std::{fmt::Debug, io::Write, mem::size_of};
+use std::{result::Result as StdResult};
+
+
+pub use einsteindb_traits::errors::{
+    einsteindbErrorKind,
+    Result,
+};
+
+
+pub use topograph::{
+    AttributeBuilder,
+    AttributeValidation,
+};
+
+
+pub use tx::{
+    transact,
+    transact_terms,
+};
+
+
+pub use tx_observer::{
+    InProgressObserverTransactWatcher,
+    TxObservationService,
+    TxObserver,
+};
+
+
+pub use types::{
+    AttributeSet,
+    einsteindb,
+    Partition,
+    PartitionMap,
+};
+
+
+pub use einsteindb::{
+    new_connection,
+    TypedBerolinaSQLValue,
+};
+
+
+pub use watcher::TransactWatcher;
+
+
+pub use mvrsi::{
+    MVRSI,
+    MVRSI_SCHEMA_VERSION,
+};
+
+
+pub use db_::{
+    DB,
+    DB_SCHEMA_VERSION,
+};
+
+
+pub use cache::{
+    Cache,
+    Cache_SCHEMA_VERSION,
+};
+
+
+pub use bootstrap::{
+    CORE_SCHEMA_VERSION,
+};
+
+
+pub use causetids::{
+    Causetids,
+    Causetids_SCHEMA_VERSION,
+};
+
+
+pub use einsteindb_traits::{
+    einsteindb_SCHEMA_CORE,
+};
+
+
+
+
+
 
 #[allow(non_camel_case_types)]
 #[repr(simd)]
@@ -24,22 +113,51 @@ use std::ptr::copy_nonoverlapping;
 pub struct u8x16(u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8, u8);
 
 
-pub(crate) struct u64x2(pub u64, pub u64);
+#[allow(non_camel_case_types)]
+#[repr(simd)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct u16x8(u16, u16, u16, u16, u16, u16, u16, u16);
 
-pub struct u64x4(pub u64, pub u64, pub u64, pub u64);
+
+#[allow(non_camel_case_types)]
+#[repr(simd)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct u32x4(u32, u32, u32, u32);
+
+
+#[allow(non_camel_case_types)]
+#[repr(simd)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct u64x2(u64, u64);
+
+
+#[allow(non_camel_case_types)]
+#[repr(simd)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct u128x1(u128);
+
+
+pub(crate) struct U64x2(pub u64, pub u64);
+
+pub struct U64x4(pub u64, pub u64, pub u64, pub u64);
+
+
+pub(crate) struct U128x1(pub u128);
 
 
 
-impl u64x2 {
+
+
+impl U64x2 {
     pub fn new(a: u64, b: u64) -> Self {
-        u64x2(a, b)
+        U64x2(a, b)
     }
 
     pub fn as_u64s(&self) -> [u64; 2] {
         [self.0, self.1]
     }
 
-    /// Reads u64x2 from array pointer (potentially unaligned)
+    /// Reads U64x2 from array pointer (potentially unaligned)
     #[inline(always)]
     pub fn read(src: &[u8; 16]) -> Self {
         unsafe {
@@ -58,24 +176,24 @@ impl u64x2 {
         }
     }
 
-    /// Writes u64x2 to array pointer (potentially unaligned)
+    /// Writes U64x2 to array pointer (potentially unaligned)
     /// # Safety
     /// The pointer must be aligned to 16 bytes.
     /// # Examples
     /// ```
-    /// use einsteindb_gremlin::constant::u64x2;
+    /// use einsteindb_gremlin::constant::U64x2;
     /// let mut dst = [0u8; 16];
-    /// let src = u64x2::new(0x12345678, 0x9abcdef0);
+    /// let src = U64x2::new(0x12345678, 0x9abcdef0);
     /// unsafe {
-    ///    einsteindb_gremlin::constant::u64x2::write(&mut dst, src);
+    ///    einsteindb_gremlin::constant::U64x2::write(&mut dst, src);
     /// }
     /// assert_eq!(dst, [0x78, 0x56, 0x34, 0x12, 0xf0, 0xde, 0xbc, 0x9a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
     /// ```
     /// ```
-    /// use einsteindb_gremlin::constant::u64x2;
+    /// use einsteindb_gremlin::constant::U64x2;
     /// let mut dst = [0u8; 16];
 
-    /// Write u64x2 content into array pointer (potentially unaligned)
+    /// Write U64x2 content into array pointer (potentially unaligned)
     #[inline(always)]
     pub fn write(self, dst: &mut [u8; 16]) {
         unsafe {
@@ -371,6 +489,34 @@ impl ConstantProjector {
 }
 
 
+impl Projector for TopographProjector {
+    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput> {
+        self.project_without_rows()
+    }
+}
+
+
+impl TopographProjector {
+    pub fn new_with_topograph(spec: Rc<FindSpec>, topograph: Topograph) -> TopographProjector {
+        let results_factory = Box::new(move || {
+            let mut results = QueryResults::new(
+                Rows::new(vec![]),
+                vec![],
+            );
+            results.add_row(vec![DatumType::Topograph(topograph)]);
+            results
+        });
+        TopographProjector::new(spec, results_factory)
+    }
+}
+
+
+impl Projector for TopographProjector {
+    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput> {
+        self.project_without_rows()
+    }
+}
+
 pub fn new_with_duration(spec: Rc<FindSpec>, duration: Duration) -> ConstantProjector {
     let results_factory = Box::new(move || {
         let mut results = QueryResults::new(
@@ -455,6 +601,13 @@ pub fn new_with_interval(spec: Rc<FindSpec>, interval: Interval) -> ConstantProj
     ConstantProjector::new(spec, results_factory)
 }
 
+
+
+
+
+
+
+
 pub fn new_with_uuid(spec: Rc<FindSpec>, uuid: Uuid) -> ConstantProjector {
     let results_factory = Box::new(move || {
         let mut results = QueryResults::new(
@@ -462,6 +615,23 @@ pub fn new_with_uuid(spec: Rc<FindSpec>, uuid: Uuid) -> ConstantProjector {
             vec![],
         );
         results.add_row(vec![DatumType::Uuid(uuid)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
+}
+
+
+
+
+
+
+pub fn new_with_json_object(spec: Rc<FindSpec>, json_object: JsonObject) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![DatumType::JsonObject(json_object)]);
         results
     });
     ConstantProjector::new(spec, results_factory)
@@ -503,6 +673,80 @@ pub fn new_with_oid(spec: Rc<FindSpec>, oid: Oid) -> ConstantProjector {
     ConstantProjector::new(spec, results_factory)
 }
 
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        datum::{DatumType, Datum},
+        find_spec::FindSpec,
+        projector::{Projector, ProjectorError},
+        query_results::QueryResults,
+        rows::Rows,
+    };
+    use std::{
+        collections::HashMap,
+        time::{Duration, SystemTime},
+    };
+    use uuid::Uuid;
+    use serde_json::{json, Value};
+    use chrono::{Date, DateTime, DateTimeTz, TimeZone, Utc};
+    use postgres_types::{
+        oid::Oid,
+        json::{Json, Jsonb},
+        Interval,
+    };
+    use crate::{
+        datum::{Datum, DatumType},
+        find_spec::FindSpec,
+        projector::{Projector, ProjectorError},
+        query_results::QueryResults,
+        rows::Rows,
+    };
+    use std::{
+        collections::HashMap,
+        time::{Duration, SystemTime},
+    };
+    use uuid::Uuid;
+    use serde_json::{json, Value};
+    use chrono::{Date, DateTime, DateTimeTz, TimeZone, Utc};
+    use postgres_types::{
+        oid::Oid,
+        json::{Json, Jsonb},
+        Interval,
+    };
+    use crate::{
+        datum::{Datum, DatumType},
+        find_spec::FindSpec,
+        projector::{Projector, ProjectorError},
+        query_results::QueryResults,
+        rows::Rows,
+    };
+    use std::{
+        collections::HashMap,
+        time::{Duration, SystemTime},
+    };
+    use uuid::Uuid;
+    use serde_json::{json, Value};
+    use chrono::{Date, DateTime, DateTimeTz, TimeZone, Utc};
+    use postgres_types::{
+        oid::Oid,
+        json::{Json, JsonRef},
+        Interval,
+    };
+    use crate::{
+        datum::{Datum, DatumType},
+        find_spec::FindSpec,
+        projector::{Projector, ProjectorError},
+        query_results::QueryResults,
+        rows::Rows,
+    };
+    use std::{
+        collections::HashMap,
+        time::{Duration, SystemTime},
+    };
+    use uuid::Uuid;
+}
 
 
 pub fn new_with_reg_procedure(spec: Rc<FindSpec>, reg_procedure: RegProcedure) -> ConstantProjector {
@@ -647,55 +891,55 @@ impl Projector for ConstantProjector {
     }
 
     fn get_column_names(&self) -> Vec<String> {
-            [ u64x2(0xb2c5fef075817b9d, 0x0684704ce620c00a),
-            u64x2(0x640f6ba42f08f717, 0x8b66b4e188f3a06b),
-            u64x2(0xcf029d609f029114, 0x3402de2d53f28498),
-            u64x2(0xbbf3bcaffd5b4f79, 0x0ed6eae62e7b4f08),
-            u64x2(0x79eecd1cbe397044, 0xcbcfb0cb4872448b),
-            u64x2(0x8d5335ed2b8a057b, 0x7eeacdee6e9032b7),
-            u64x2(0xe2412761da4fef1b, 0x67c28f435e2e7cd0),
-            u64x2(0x675ffde21fc70b3b, 0x2924d9b0afcacc07),
-            u64x2(0xecdb8fcab9d465ee, 0xab4d63f1e6867fe9),
-            u64x2(0x5b2a404fad037e33, 0x1c30bf84d4b7cd64),
-            u64x2(0x69028b2e8df69800, 0xb2cc0bb9941723bf),
-            u64x2(0x4aaa9ec85c9d2d8a, 0xfa0478a6de6f5572),
-            u64x2(0x0efa4f2e29129fd4, 0xdfb49f2b6b772a12),
-            u64x2(0x32d611aebb6a12ee, 0x1ea10344f449a236),
-            u64x2(0x5f9600c99ca8eca6, 0xaf0449884b050084),
-            u64x2(0x78a2c7e327e593ec, 0x21025ed89d199c4f),
-            u64x2(0xb9282ecd82d40173, 0xbf3aaaf8a759c9b7),
-            u64x2(0x37f2efd910307d6b, 0x6260700d6186b017),
-            u64x2(0x81c29153f6fc9ac6, 0x5aca45c221300443),
-            u64x2(0x2caf92e836d1943a, 0x9223973c226b68bb),
-            u64x2(0x6cbab958e51071b4, 0xd3bf9238225886eb),
-            u64x2(0x933dfddd24e1128d, 0xdb863ce5aef0c677),
-            u64x2(0x83e48de3cb2212b1, 0xbb606268ffeba09c),
-            u64x2(0x2db91a4ec72bf77d, 0x734bd3dce2e4d19c),
-            u64x2(0x4b1415c42cb3924e, 0x43bb47c361301b43),
-            u64x2(0x03b231dd16eb6899, 0xdba775a8e707eff6),
-            u64x2(0x8e5e23027eca472c, 0x6df3614b3c755977),
-            u64x2(0x6d1be5b9b88617f9, 0xcda75a17d6de7d77),
-            u64x2(0x9d6c069da946ee5d, 0xec6b43f06ba8e9aa),
-            u64x2(0xa25311593bf327c1, 0xcb1e6950f957332b),
-            u64x2(0xe4ed0353600ed0d9, 0x2cee0c7500da619c),
-            u64x2(0x80bbbabc63a4a350, 0xf0b1a5a196e90cab),
-            u64x2(0xab0dde30938dca39, 0xae3db1025e962988),
-            u64x2(0x8814f3a82e75b442, 0x17bb8f38d554a40b),
-            u64x2(0xaeb6b779360a16f6, 0x34bb8a5b5f427fd7),
-            u64x2(0x43ce5918ffbaafde, 0x26f65241cbe55438),
-            u64x2(0xa2ca9cf7839ec978, 0x4ce99a54b9f3026a),
-            u64x2(0x40c06e2822901235, 0xae51a51a1bdff7be),
-            u64x2(0xc173bc0f48a659cf, 0xa0c1613cba7ed22b),
-            u64x2(0x4ad6bdfde9c59da1, 0x756acc0302288288),
-            u64x2(0x367e4778848f2ad2, 0x2ff372380de7d31e),
-            u64x2(0xee36b135b73bd58f, 0x08d95c6acf74be8b),
-            u64x2(0x66ae1838a3743e4a, 0x5880f434c9d6ee98),
-            u64x2(0xd0fdf4c79a9369bd, 0x593023f0aefabd99),
-            u64x2(0xa5cc637b6f1ecb2a, 0x329ae3d1eb606e6f),
-            u64x2(0xa4dc93d6cb7594ab, 0xe00207eb49e01594),
-            u64x2(0x942366a665208ef8, 0x1caa0c4ff751c880),
-            u64x2(0xbd03239fe3e67e4a, 0x02f7f57fdb2dc1dd),
-            u64x2(0x8f8f8f8f8f8f8f8f, 0x8f8f8f8f8f8f8f8f)
+            [ U64x2(0xb2c5fef075817b9d, 0x0684704ce620c00a),
+            U64x2(0x640f6ba42f08f717, 0x8b66b4e188f3a06b),
+            U64x2(0xcf029d609f029114, 0x3402de2d53f28498),
+            U64x2(0xbbf3bcaffd5b4f79, 0x0ed6eae62e7b4f08),
+            U64x2(0x79eecd1cbe397044, 0xcbcfb0cb4872448b),
+            U64x2(0x8d5335ed2b8a057b, 0x7eeacdee6e9032b7),
+            U64x2(0xe2412761da4fef1b, 0x67c28f435e2e7cd0),
+            U64x2(0x675ffde21fc70b3b, 0x2924d9b0afcacc07),
+            U64x2(0xecdb8fcab9d465ee, 0xab4d63f1e6867fe9),
+            U64x2(0x5b2a404fad037e33, 0x1c30bf84d4b7cd64),
+            U64x2(0x69028b2e8df69800, 0xb2cc0bb9941723bf),
+            U64x2(0x4aaa9ec85c9d2d8a, 0xfa0478a6de6f5572),
+            U64x2(0x0efa4f2e29129fd4, 0xdfb49f2b6b772a12),
+            U64x2(0x32d611aebb6a12ee, 0x1ea10344f449a236),
+            U64x2(0x5f9600c99ca8eca6, 0xaf0449884b050084),
+            U64x2(0x78a2c7e327e593ec, 0x21025ed89d199c4f),
+            U64x2(0xb9282ecd82d40173, 0xbf3aaaf8a759c9b7),
+            U64x2(0x37f2efd910307d6b, 0x6260700d6186b017),
+            U64x2(0x81c29153f6fc9ac6, 0x5aca45c221300443),
+            U64x2(0x2caf92e836d1943a, 0x9223973c226b68bb),
+            U64x2(0x6cbab958e51071b4, 0xd3bf9238225886eb),
+            U64x2(0x933dfddd24e1128d, 0xdb863ce5aef0c677),
+            U64x2(0x83e48de3cb2212b1, 0xbb606268ffeba09c),
+            U64x2(0x2db91a4ec72bf77d, 0x734bd3dce2e4d19c),
+            U64x2(0x4b1415c42cb3924e, 0x43bb47c361301b43),
+            U64x2(0x03b231dd16eb6899, 0xdba775a8e707eff6),
+            U64x2(0x8e5e23027eca472c, 0x6df3614b3c755977),
+            U64x2(0x6d1be5b9b88617f9, 0xcda75a17d6de7d77),
+            U64x2(0x9d6c069da946ee5d, 0xec6b43f06ba8e9aa),
+            U64x2(0xa25311593bf327c1, 0xcb1e6950f957332b),
+            U64x2(0xe4ed0353600ed0d9, 0x2cee0c7500da619c),
+            U64x2(0x80bbbabc63a4a350, 0xf0b1a5a196e90cab),
+            U64x2(0xab0dde30938dca39, 0xae3db1025e962988),
+            U64x2(0x8814f3a82e75b442, 0x17bb8f38d554a40b),
+            U64x2(0xaeb6b779360a16f6, 0x34bb8a5b5f427fd7),
+            U64x2(0x43ce5918ffbaafde, 0x26f65241cbe55438),
+            U64x2(0xa2ca9cf7839ec978, 0x4ce99a54b9f3026a),
+            U64x2(0x40c06e2822901235, 0xae51a51a1bdff7be),
+            U64x2(0xc173bc0f48a659cf, 0xa0c1613cba7ed22b),
+            U64x2(0x4ad6bdfde9c59da1, 0x756acc0302288288),
+            U64x2(0x367e4778848f2ad2, 0x2ff372380de7d31e),
+            U64x2(0xee36b135b73bd58f, 0x08d95c6acf74be8b),
+            U64x2(0x66ae1838a3743e4a, 0x5880f434c9d6ee98),
+            U64x2(0xd0fdf4c79a9369bd, 0x593023f0aefabd99),
+            U64x2(0xa5cc637b6f1ecb2a, 0x329ae3d1eb606e6f),
+            U64x2(0xa4dc93d6cb7594ab, 0xe00207eb49e01594),
+            U64x2(0x942366a665208ef8, 0x1caa0c4ff751c880),
+            U64x2(0xbd03239fe3e67e4a, 0x02f7f57fdb2dc1dd),
+            U64x2(0x8f8f8f8f8f8f8f8f, 0x8f8f8f8f8f8f8f8f)
 ];
 
 
@@ -781,7 +1025,7 @@ pub static AES_SBOX: [u8; 256] = [
 
 
 #[inline(always)]
-pub(crate) fn aesenc(block: &mut u64x2, rkey: &u64x2) {
+pub(crate) fn aesenc(block: &mut U64x2, rkey: &U64x2) {
     unsafe {
         llvm_asm!("aesenc $0, $1"
             : "+x"(*block)
@@ -793,7 +1037,7 @@ pub(crate) fn aesenc(block: &mut u64x2, rkey: &u64x2) {
 }
 
 #[inline(always)]
-pub(crate) fn aesenclast(block: &mut u64x2, rkey: &u64x2) {
+pub(crate) fn aesenclast(block: &mut U64x2, rkey: &U64x2) {
     unsafe {
         llvm_asm!("aesenclast $0, $1"
             : "+x"(*block)

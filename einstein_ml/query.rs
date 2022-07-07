@@ -213,11 +213,63 @@ impl Hash {
         }
     }
 
-    where
-        I: Iterator<Item = &'a u8>,
-        I: DoubleEndedIterator<Item = &'a u8>,
-        I: ExactSizeIterator<Item = &'a u8>,
-    {
+    pub fn from_base32(hash_type: HashType, hash_size: usize, hash_bits: usize, hash_bytes: usize, s: &str) -> Self {
+
+        let mut h = [0; config::HASH_SIZE];
+        let mut i = 0;
+
+        for b in s.bytes() {
+            if b >= b'A' && b <= b'Z' {
+                h[i] = b - b'A';
+            } else if b >= b'a' && b <= b'z' {
+                h[i] = b - b'a' + 26;
+            } else if b >= b'2' && b <= b'7' {
+                h[i] = b - b'2' + 36;
+            } else if b == b'=' {
+                h[i] = 0;
+            } else {
+                panic!("invalid base32 string");
+            }
+            i += 1;
+        }
+        Self {
+            h,
+            hash_type,
+            hash_size,
+            hash_bits,
+            hash_bytes,
+        }
+    }
+
+    pub fn from_base16(hash_type: HashType, hash_size: usize, hash_bits: usize, hash_bytes: usize, s: &str) -> Self {
+
+        let mut h = [0; config::HASH_SIZE];
+        let mut i = 0;
+
+        for b in s.bytes() {
+            if b >= b'0' && b <= b'9' {
+                h[i] = b - b'0';
+            } else if b >= b'a' && b <= b'f' {
+                h[i] = b - b'a' + 10;
+            } else if b >= b'A' && b <= b'F' {
+                h[i] = b - b'A' + 10;
+            } else {
+                panic!("invalid base16 string");
+            }
+            i += 1;
+        }
+        Self {
+            h,
+            hash_type,
+            hash_size,
+            hash_bits,
+            hash_bytes,
+        }
+
+
+    }
+
+    pub fn from_base64_url(hash_type: HashType, hash_size: usize, hash_bits: usize, hash_bytes: usize, s: &str) -> Self {
         let mut hash: Hash = Default::default();
         let mut i = 0;
         for x in hash.h.iter_mut() {
@@ -246,27 +298,48 @@ impl Hash {
 pub fn hash_to_hex(hash: &Hash) -> String {
     let mut s = String::new();
     for b in hash.h.iter() {
-        s.push(format!("{:02x}", b).as_bytes()[0] as char);
-        s.push(format!("{:02x}", b).as_bytes()[1] as char);
+        s.push(format!("{:02x}", b).as_str());
     }
+
+
+    s
+}
+
+
+pub fn hash_to_base64(hash: &Hash) -> String {
+    let mut s = String::new();
+    for b in hash.h.iter() {
+        s.push(format!("{:02x}", b).as_str());
+    }
+
     let digest = Sha256::digest(src);
-    Hash {
-        h: digest.as_slice(),
-        hash_type: HashType::SHA256,
-        hash_size: 32,
-        h: *array_ref![digest, 0, config::HASH_SIZE],
-
+    let mut hex = String::new();
+    for b in digest.iter() {
+        hex.push(format!("{:02x}", b).as_bytes()[0] as char);
+        hex.push(format!("{:02x}", b).as_bytes()[1] as char);
     }
+    hex
 }
 
-pub fn hash_n_to_n(dst: &mut Hash, src: &Hash) {
-    let mut h = [0; config::HASH_SIZE];
-    for i in 0..config::HASH_SIZE {
-        h[i] = src.h[i];
-    }
-    dst.h = h;
-}
 
+
+
+pub fn hash_to_base58(hash: &Hash) -> String {
+
+    let mut s = String::new();
+    for b in hash.h.iter() {
+
+        s.push(format!("{:02x}", b).as_str());
+    }
+
+    let digest = Sha256::digest(src);
+    let mut hex = String::new();
+    for b in digest.iter() {
+        hex.push(format!("{:02x}", b).as_bytes()[0] as char);
+        hex.push(format!("{:02x}", b).as_bytes()[1] as char);
+    }
+    hex
+}
 
 pub fn hash_n_to_n_mut(dst: &mut Hash, src: &Hash) {
     haraka256::haraka256::<6>(&mut dst.h, &src.h)

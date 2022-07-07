@@ -180,11 +180,11 @@ impl MaxwellDemon {
 /// The FSM is a single threaded state machine.
 
 
-/// `FsmScheduler` schedules `Fsm` for later handles.
+/// `FsmScheduler` schedules `fsm` for later handles.
 pub trait FsmScheduler {
 
-    /// `schedule` schedules the `Fsm` for later handles.
-    /// The `Fsm` is scheduled for later handles.
+    /// `schedule` schedules the `fsm` for later handles.
+    /// The `fsm` is scheduled for later handles.
     /// 
     
 
@@ -192,13 +192,13 @@ pub trait FsmScheduler {
 }
 
 
-/// `FsmScheduler` schedules `Fsm` for later handles.
-/// The `Fsm` is scheduled for later handles.
+/// `FsmScheduler` schedules `fsm` for later handles.
+/// The `fsm` is scheduled for later handles.
 ///     
 /// # Examples
 /// ```
 /// use maxwell::fsm::FsmScheduler;
-/// use maxwell::fsm::Fsm;
+/// use maxwell::fsm::fsm;
 /// use maxwell::fsm::FSM;
 /// 
 /// let fsm = FSM::new();
@@ -207,52 +207,25 @@ pub trait FsmScheduler {
 /// ```
 /// 
 /// # Panics
-/// This function may panic if the `Fsm` is not valid.
+/// This function may panic if the `fsm` is not valid.
 /// 
 /// # Safety
-/// This function is unsafe because it dereferences the `Fsm` to get its `Mailbox`.
+/// This function is unsafe because it dereferences the `fsm` to get its `Mailbox`.
 /// This function is unsafe because it dereferences the `Mailbox` to get its `MailboxGuard`.
 /// This function is unsafe because it dereferences the `MailboxGuard` to get its `Mailbox`.
 
 
 
-
-#[derive(Debug, Clone)]
-pub struct FsmSchedulerImpl {
-    type Fsm: Fsm;
-
-    /// Schedule a Fsm for later handles.
-    fn schedule(&self, fsm: Box<Self::Fsm>);
-    /// Shutdown the scheduler, which indicates that resources like
-    /// background thread pool should be released.
-    fn shutdown(&self);
-
-    /// `FsmScheduler` schedules `Fsm` for later handles.
-    /// The `Fsm` is scheduled for later handles.
-    
-    pub fn new() -> Self {
-        FsmSchedulerImpl {
-            type Fsm: Fsm;
-            schedule: Box::new(|fsm| {
-                unimplemented!()
-            }),
-            shutdown: Box::new(|| {
-                unimplemented!()
-            }),
-        }
-    }
-}
-
-/// A Fsm is a finite state machine. It should be able to be notified for
+/// A fsm is a finite state machine. It should be able to be notified for
 /// uFIDelating internal state according to incoming messages.
 pub trait Fsm {
 
-    /// `mailbox` returns the mailbox for this Fsm.
-    /// The mailbox is used to send messages to the Fsm.
+    /// `mailbox` returns the mailbox for this fsm.
+    /// The mailbox is used to send messages to the fsm.
     ///     
     /// # Examples
     /// ```
-    /// use maxwell::fsm::Fsm;
+    /// use maxwell::fsm::fsm;
     /// use maxwell::fsm::FSM;
     /// 
     /// let fsm = FSM::new();
@@ -260,19 +233,19 @@ pub trait Fsm {
     /// ```
     /// 
     /// # Panics
-    /// This function may panic if the `Fsm` is not valid.
+    /// This function may panic if the `fsm` is not valid.
     /// 
     type Message: Send;
 
     fn is_stopped(&self) -> bool;
 
-    /// Set a mailbox to Fsm, which should be used to send message to itself.
+    /// Set a mailbox to fsm, which should be used to send message to itself.
     fn set_mailbox(&mut self, _mailbox: Cow<'_, BasicMailbox<Self>>)
     where
         Self: Sized,
     {
     }
-    /// Take the mailbox from Fsm. Implementation should ensure there will be
+    /// Take the mailbox from fsm. Implementation should ensure there will be
     /// no reference to mailbox after calling this method.
     fn take_mailbox(&mut self) -> Option<BasicMailbox<Self>>
     where

@@ -250,7 +250,7 @@ impl Value {
     fn write_pretty_to_vec(&self, width: usize) -> Result<Vec<u8>, io::Error> {
         let mut out = Vec::new();
         self.write_pretty(width, &mut out)?;
-        self.as_doc(&pretty::BoxAllocator).1.render(width, out)
+
 
         Ok(out)
     }
@@ -268,7 +268,8 @@ impl Value {
         let first = iter.next().unwrap();
         let mut out = String::new();
         out.push_str(first);
-        where A: pretty::DocAllocator<'a>, T: Into<Cow<'a, str>>, I: IntoIterator<Item=&'a Value> {
+        for item in iter {
+
             let mut iter = iter.into_iter();
             let first = iter.next().unwrap();
             let mut out = String::new();

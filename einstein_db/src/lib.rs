@@ -83,6 +83,12 @@ extern crate bit_array_macro;
 extern crate bit_array_macro_derive;
 
 
+#[macro_use]
+extern crate einstein_db_alexandrov_processing;
+
+
+
+
 
 
 ///! # EinsteinDB Rust API

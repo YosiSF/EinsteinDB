@@ -145,16 +145,7 @@ pub enum ImportOption {
     ChecksumBlockXorRotate(i32),
     ChecksumBlockXorRotateOffset(i32),
     ChecksumBlockXorRotateLength(i32),
-    ChecksumBlockXorRotateMask(i32),
-    ChecksumBlockXorRotateShift(i32),
-    ChecksumBlockXorRotateRotate(i32),
-    ChecksumBlockXorRotateRotateOffset(i32),
-    ChecksumBlockXorRotateRotateLength(i32),
-    ChecksumBlockXorRotateRotateMask(i32),
-    ChecksumBlockXorRotateRotateShift(i32),
-    ChecksumBlockXorRotateRotateRotate(i32),
-    ChecksumBlockXorRotateRotateRotateOffset(i32),
-};
+}
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -303,8 +294,41 @@ impl ImportOptions {
         self.checksum_block_length = length;
     }
 
-    type IngestlightlikeFileOptions: IngestlightlikeFileOptions;
+    pub fn set_checksum_block_mask(&mut self, mask: i32) {
+        self.checksum_block_mask = mask;
+    }
 
+    pub fn set_checksum_block_shift(&mut self, shift: i32) {
+        self.checksum_block_shift = shift;
+    }
+
+    pub fn get_mode(&self) -> ImportMode {
+        self.mode
+    }
+
+    pub fn get_path(&self) -> PathBuf {
+        self.path.clone()
+    }
+
+    pub fn get_threads(&self) -> usize {
+        self.threads
+    }
+
+    pub fn get_compression(&self) -> Compression {
+        self.compression
+    }
+
+    pub fn get_compression_level(&self) -> i32 {
+        self.compression_level
+    }
+
+    pub fn get_compression_type(&self) -> CompressionType {
+        self.compression_type
+    }
+
+    pub fn get_checksum(&self) -> bool {
+        self.checksum
+    }
 
     pub fn to_ingestlightlike_file_options(&self) -> Result<Self::IngestlightlikeFileOptions> {
         let mut opts = IngestlightlikeFileOptions::new();
@@ -365,7 +389,26 @@ impl ImportOptions {
         opts.checksum_block_length = self.checksum_block_length;
         Ok(opts.to_string())
     }
-    fn ingest_lightlike_file_namespaced(&self, namespaced: &str, filefs: &[&str]) -> Result<()>;
+    fn ingest_lightlike_file_namespaced(&self, namespaced: bool) -> Result<()> {
+        let mut opts = IngestlightlikeFileOptions::new();
+        opts.mode = self.mode.clone();
+        opts.path = self.path.clone();
+        opts.threads = self.threads;
+        opts.compression = self.compression.clone();
+        opts.compression_level = self.compression_level;
+        opts.compression_type = self.compression_type.clone();
+        opts.checksum = self.checksum;
+        opts.checksum_type = self.checksum_type.clone();
+        opts.checksum_level = self.checksum_level;
+        opts.checksum_block_size = self.checksum_block_size;
+        opts.checksum_block_start = self.checksum_block_start;
+        opts.checksum_block_end = self.checksum_block_end;
+        opts.checksum_block_step = self.checksum_block_step;
+        opts.checksum_block_offset = self.checksum_block_offset;
+        opts.checksum_block_length = self.checksum_block_length;
+        opts.namespaced = namespaced;
+        opts.to_ingestlightlike_file()
+    }
 }
 
 pub trait IngestlightlikeFileOptions {

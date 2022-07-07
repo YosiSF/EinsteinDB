@@ -1,20 +1,23 @@
 [package]
-name = "einstein_db_alexandrov_processv_processing"
+name = "einstein_db_alexandrov_processing"
 version = "0.1.0"
 authors = ["EinsteinDB Authors"]
 edition = "2021"
 license = "MIT Licensed"
-url = "https://github.com/YosiSF/EinsteinDB.git"
-
-
-[lib]
-name = "einstein_db_alexandrov_processv_processing"
+description = "EinsteinDB processing package"
+tags = ["einstein", "db", "alexandrov", "processv", "processing"]
 
 
 [dependencies]
-serde = { version = "0.1.0", features = ["derive"] }
 
-[dev-dependencies.cargo-test]
-version = "0.1.0"
+[dependencies.einstein_db_alexandrov_processv_processing]
 
 
+
+
+
+
+[build]
+rustflags = ["-L /usr/local/lib"]
+rustc-link-arg = ["-L /usr/local/lib"]
+rustc-link-lib = ["einstein_db_alexandrov_processv_processing"]
