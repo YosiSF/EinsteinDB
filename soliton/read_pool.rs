@@ -316,8 +316,8 @@ mod metrics {
         };
         // max running tasks number should be 2*1 = 2
 
-        let interlocking_directorate = TestEngineBuilder::new().build().unwrap();
-        let pool = build_yatp_read_pool(&config, DummyReporter, interlocking_directorate);
+        let InterlockingDirectorate = TestEngineBuilder::new().build().unwrap();
+        let pool = build_yatp_read_pool(&config, DummyReporter, InterlockingDirectorate);
 
         let gen_task = || {
             let (tx, rx) = oneshot::channel::<()>();

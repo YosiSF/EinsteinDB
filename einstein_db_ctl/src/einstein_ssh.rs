@@ -4,6 +4,18 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::fmt::Debug;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result;
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::io::{Read, Seek, SeekFrom, Write};
+use std::net::{TcpListener, TcpStream};
+use std::path::Path;
+use std::process::{Child, Command, Stdio};
+use std::sync::{Arc, Mutex};
+
 use std::lazy::SyncLazy;
 use std::string::ToString;
 use linefeed::{Interface, ReadResult};
@@ -12,23 +24,12 @@ use linefeed::complete::word::WordCompleter;
 use linefeed::complete::line::LineCompleter;
 use structopt::StructOpt;
 
-mod completer;
-mod command;
-mod error;
-mod executor;
-mod line;
-mod prompt;
-mod table;
-mod util;
 
 
-use crate::completer::Completer as EinsteinCompleter;
-use crate::command::Command as EinsteinCommand;
-use crate::error::Error as EinsteinError;
-use crate::executor::Executor as EinsteinExecutor;
-use crate::line::Line as EinsteinLine;
-use crate::prompt::Prompt as EinsteinPrompt;
+use crate::einstein_db_ctl::einstein_db_ctl::EinsteinDB;
+use crate::einstein_db_ctl::einstein_db_ctl::EinsteinDBError;
 
+use crate::einstein_db_ctl::einstein_db_ctl::*;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "einstein_db_ctl")]
@@ -52,7 +53,68 @@ static VERSION_INFO: SyncLazy<String> = SyncLazy::new(|| {
     setting = AppSettings::DontCollapseArgsInUsag,
 )]
 
-pub struct Opt {
+pub struct EinsteinDBCli {
+    #[structopt(subcommand)]
+    cmd: Command,
+}
+
+
+impl EinsteinDBCli {
+    pub fn new() -> Self {
+        EinsteinDBCli {
+            cmd: Command::new(),
+        }
+    }
+
+    pub fn run(&self) -> Result<(), EinsteinDBError> {
+        match self.cmd {
+            Command::Ssh(ssh_opt) => {
+                let mut einstein_db = EinsteinDB::new();
+                einstein_db.run_ssh(ssh_opt)?;
+            }
+            Command::Cmd(cmd_opt) => {
+                let mut einstein_db = EinsteinDB::new();
+                einstein_db.run_cmd(cmd_opt)?;
+            }
+        }
+        Ok(())
+    }
+
+    pub fn run_ssh(&self, ssh_opt: SshOpt) -> Result<(), EinsteinDBError> {
+        let mut einstein_db = EinsteinDB::new();
+        einstein_db.run_ssh(ssh_opt)?;
+        Ok(())
+    }
+
+    pub fn run_cmd(&self, cmd_opt: CmdOpt) -> Result<(), EinsteinDBError> {
+        let mut einstein_db = EinsteinDB::new();
+        einstein_db.run_cmd(cmd_opt)?;
+        Ok(())
+    }
+
+    pub fn run_cmd_with_einstein_db(&self, cmd_opt: CmdOpt, einstein_db: EinsteinDB) -> Result<(), EinsteinDBError> {
+        einstein_db.run_cmd(cmd_opt)?;
+        Ok(())
+    }
+}
+
+
+//fidel is an interlocking multiplexer for attributes of a single entity.
+
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "einstein_db_ctl")]
+enum Command {
+    #[structopt(name = "ssh")]
+    Ssh(SshOpt),
+    #[structopt(name = "cmd")]
+    Cmd(CmdOpt),
+}
+
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "einstein_db_ctl")]
+struct SshOpt {
     #[structopt(long)]
     /// Set the address of pd
     pub fidel: Option<String>,
@@ -78,6 +140,11 @@ pub struct Opt {
     pub soliton_id_path: Option<String>,
 
 
+    #[structopt(long)]
+    /// Set the remote port
+    /// Default: 22
+    pub port: Option<u64>,
+
 
     #[structopt(long)]
     /// TiKV data-dir, check <deploy-dir>/scripts/run.sh to get it
@@ -101,11 +168,22 @@ pub struct Opt {
     validator = |_| Err("DEPRECATED!!! Use --data-dir and --config instead".to_owned()),
     )]
     /// Set the violetabft foundationdb path
-    pub violetabftdb: Option<String>,
+    pub violetabft_tangaroa: Option<String>,
 
     #[structopt(conflicts_with = "escaped-to-hex", long = "to-escaped")]
     /// Convert a hex soliton_id to escaped soliton_id
     pub hex_to_escaped: Option<String>,
+
+    #[structopt(conflicts_with = "hex-to-escaped", long = "escaped-to-hex")]
+    /// Convert an escaped soliton_id to hex soliton_id
+    ///
+    /// The escaped soliton_id is a hex string of a soliton_id with the following format:
+
+    pub causetq_path: Option<String>,
+
+    pub timelike_path: Option<String>,
+
+    pub spacelike_store_on_fdb: Option<String>,
 
     #[structopt(conflicts_with = "hex-to-escaped", long = "to-hex")]
     /// Convert an escaped soliton_id to hex soliton_id
@@ -117,6 +195,81 @@ pub struct Opt {
     )]
     /// Decode a soliton_id in escaped format
     pub decode: Option<String>,
+
+    #[structopt(
+    conflicts_with_all = &["hex-to-escaped", "escaped-to-hex"],
+    long,
+    )]
+    /// Encode a soliton_id in escaped format
+    pub encode: Option<String>,
+
+    #[structopt(subcommand)]
+    pub cmd: Option<Cmd>,
+}
+
+
+#[derive(StructOpt, Debug)]
+#[structopt(name = "einstein_db_ctl")]
+struct CmdOpt {
+    #[structopt(long)]
+    /// Set the address of pd
+    pub fidel: Option<String>,
+
+    #[structopt(long, default_causet_locale = "warn")]
+    /// Set the log level
+    pub log_level: String,
+
+    #[structopt(long)]
+    /// Set the remote host
+    pub host: Option<String>,
+
+    #[structopt(long)]
+    /// Set the CA certificate path
+    pub ca_path: Option<String>,
+
+    #[structopt(long)]
+    /// Set the certificate path
+    pub cert_path: Option<String>,
+
+    #[structopt(long)]
+    /// Set the private soliton_id path
+    pub soliton_id_path: Option<String>,
+
+    #[structopt(long)]
+    /// Set the remote port
+    /// Default: 22
+    pub port: Option<u64>,
+
+    #[structopt(long)]
+    /// TiKV data-dir, check <deploy-dir>/scripts/run.sh to get it
+    pub data_dir: Option<String>,
+
+    #[structopt(long)]
+    /// Skip paranoid checks when open foundationdb
+    pub skip_paranoid_checks: bool,
+
+    #[allow(dead_code)]
+    #[structopt(
+    long,
+    validator = |_| Err("DEPRECATED!!! Use --data-dir and --config instead".to_owned()),
+    )]
+    /// Set the foundationdb path
+    pub einstein_db: Option<String>,
+
+    #[allow(dead_code)]
+    #[structopt(
+    long,
+    validator = |_| Err("DEPRECATED!!! Use --data-dir and --config instead".to_owned()),
+    )]
+    /// Set the violetabft foundationdb path
+    pub violetabft_tangaroa: Option<String>,
+
+    #[structopt(conflicts_with = "escaped-to-hex", long = "to-escaped")]
+    /// Convert a hex soliton_id to escaped soliton_id_path = "escaped-to-hex")]
+    /// Convert an escaped soliton_id to hex soliton_id_path = "to-hex")]
+    /// Decode a soliton_id in escaped format!("{}_{}")
+    ///
+pub escaped_to_hex: Option<String>,
 
     #[structopt(
     conflicts_with_all = &["hex-to-escaped", "escaped-to-hex"],
@@ -149,8 +302,41 @@ pub enum Cmd {
         causet_locale_delimiter = ",",
         default_causet_locale = "default,write,lock"
         )]
-        /// Set the APPEND_LOG_ name, if not specified, print all APPEND_LOG_
-        APPEND_LOG_: Vec<String>,
+        /// Set the append_log name, if not specified, print all append_log
+        append_log: Vec<String>,
+
+        #[structopt(short = "s")]
+        /// Set the soliton_id, if not specified, print all soliton_id
+        /// The escaped soliton_id is a hex string of a soliton_id with the following format:
+        /// 0x<soliton_id>
+        /// The escaped soliton_id is a hex string of a soliton_id with the following format:
+        /// 0x<soliton_id>
+
+        soliton_id: Option<String>,
+
+        #[structopt(short = "d")]
+        /// Set the data_dir, if not specified, print all data_dir
+        /// The data_dir is a path of a data_dir with the following format:
+        /// <data_dir>/<region_id>/<append_log_name>/<soliton_id>
+
+        data_dir: Option<String>,
+
+        #[structopt(short = "c")]
+        /// Set the config, if not specified, print all config
+        /// The config is a path of a config with the following format:
+        /// <config>/<region_id>/<append_log_name>/<soliton_id>
+        ///
+
+        config: Option<String>,
+
+        #[structopt(short = "l")]
+        /// Set the log_level, if not specified, print all log_level
+        /// The log_level is a path of a log_level with the following format:
+        /// <log_level>/<region_id>/<append_log_name>/<soliton_id>
+        /// The log_level is a path of a log_level with the following format:
+        /// <log_level>/<region_id>/<append_log_name>/<soliton_id>
+
+
     },
     /// Print the range db range
     Scan {
@@ -188,9 +374,9 @@ pub enum Cmd {
         default_causet_locale = "default,write,lock"
         )]
         default_causet_locale = APPEND_LOG__DEFAULT,
-        /// Set the APPEND_LOG_ name, if not specified, print all APPEND_LOG_
-        /// If specified, only print the APPEND_LOG_ specified
-        /// If specified multiple times, print the APPEND_LOG_ specified multiple times
+        /// Set the append_log name, if not specified, print all append_log
+        /// If specified, only print the append_log specified
+        /// If specified multiple times, print the append_log specified multiple times
         APPEND_LOG_: Vec<String>,
     },
     /// Print the range db range
@@ -243,9 +429,9 @@ pub enum Cmd {
         default_causet_locale = "default,write,lock"
         )]
         default_causet_locale = APPEND_LOG__DEFAULT,
-        /// Set the APPEND_LOG_ name, if not specified, print all APPEND_LOG_
-        /// If specified, only print the APPEND_LOG_ specified
-        /// If specified multiple times, print the APPEND_LOG_ specified multiple times
+        /// Set the append_log name, if not specified, print all append_log
+        /// If specified, only print the append_log specified
+        /// If specified multiple times, print the append_log specified multiple times
         APPEND_LOG_: Vec<String>,
     },
     /// Print the range db range

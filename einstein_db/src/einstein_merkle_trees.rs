@@ -66,6 +66,25 @@ use einstein_db::{EinsteinDB, EinsteinDBError, EinsteinDBResult};
 /// assert_eq!(db.get_block_height().unwrap(), 10);
 /// assert_eq!(db.get_block_height_by_hash("".to_string()).unwrap(), 10);
 ///
+
+
+
+pub struct RelativisticRedBlackTree {
+    pub db: EinsteinDB,
+    pub merkle_tree: MerkleTree,
+    pub soliton: Soliton,
+    pub causetq: Causetq,
+    pub causets: Causets,
+    pub causet: Causet,
+    pub einstein_ml: EinsteinML,
+    pub allegro_poset: AllegroPoset,
+    pub gravity: Gravity,
+    pub light_like: LightLike,
+}
+
+
+
+
 ///
 /// //absolute time travel queries
 /// assert_eq!(db.get_block_height_by_hash("".to_string()).unwrap(), 10);
@@ -84,6 +103,30 @@ use einstein_db::{EinsteinDB, EinsteinDBError, EinsteinDBResult};
 /// 
 /// 
 
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InterlockingDirectorate {
+    pub id: i32,
+    pub name: String,
+    pub description: String,
+    pub address: String,
+    pub port: i32,
+    pub public_key: String,
+    pub private_key: String,
+    pub status: i32,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InterlockingDirectorateStatus {
+    pub id: i32,
+    pub name: String,
+    pub description: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
 
 
 #[derive(Clone, Debug)]
@@ -123,6 +166,20 @@ pub struct EinsteinDB {
     pub(crate) merkle_tree_node_id_counter: AtomicUsize,
     pub(crate) merkle_tree_node_id_counter_map: HashMap<String, usize>,
 }
+
+
+
+
+
+pub struct EinsteinDBError {
+    pub error: String,
+}
+
+
+
+
+pub type EinsteinDBResult<T> = Result<T, EinsteinDBError>;
+
 
 
 

@@ -251,8 +251,10 @@ impl QuiesceBatchColumn {
     /// Returns maximum encoded size.
     pub fn maximum_encoded_size(&self, logical_rows: &[usize]) -> usize {
         match self {
-            QuiesceBatchColumn::Primitive_Causet(v) => v.total_len(),
+            #[cfg(any(feature = "codec", feature = "codec_with_qeueue"))]
+            QuiesceBatchColumn::Primitive_Causet(v) => v.maximum_encoded_size(logical_rows),
             QuiesceBatchColumn::Decoded(v) => v.maximum_encoded_size(logical_rows),
+
         }
     }
 
@@ -261,6 +263,7 @@ impl QuiesceBatchColumn {
         match self {
             QuiesceBatchColumn::Primitive_Causet(v) => v.total_len() * 2,
             QuiesceBatchColumn::Decoded(v) => v.maximum_encoded_size_chunk(logical_rows),
+
         }
     }
 
@@ -293,6 +296,74 @@ impl QuiesceBatchColumn {
             QuiesceBatchColumn::Primitive_Causet(v) => Column::from_primitive_causet_datums(field_type, v, logical_rows, ctx)?,
             QuiesceBatchColumn::Decoded(ref v) => {
                 Column::from_vector_causet_locale(field_type, v, logical_rows)?
+            }
+        };
+        output.write_chunk_column(&causet_merge)
+    }
+
+    #[inline]
+    pub fn encode_chunk_with_decoded(
+        &self,
+        ctx: &mut EvalContext,
+        logical_rows: &[usize],
+        field_type: &FieldType,
+        output: &mut Vec<u8>,
+    ) -> Result<()> {
+        let causet_merge = match self {
+            QuiesceBatchColumn::Primitive_Causet(v) => Column::from_primitive_causet_datums(field_type, v, logical_rows, ctx)?,
+            QuiesceBatchColumn::Decoded(ref v) => {
+                Column::from_vector_causet_locale(field_type, v, logical_rows)?
+            }
+        };
+        output.write_chunk_column(&causet_merge)
+    }
+
+    #[inline]
+    pub fn encode_chunk_with_decoded_with_capacity(
+        &self,
+        ctx: &mut EvalContext,
+        logical_rows: &[usize],
+        field_type: &FieldType,
+        output: &mut Vec<u8>,
+    ) -> Result<()> {
+        let causet_merge = match self {
+            QuiesceBatchColumn::Primitive_Causet(v) => Column::from_primitive_causet_datums(field_type, v, logical_rows, ctx)?,
+            QuiesceBatchColumn::Decoded(ref v) => {
+                Column::from_vector_causet_locale_with_capacity(field_type, v, logical_rows)?
+            }
+        };
+        output.write_chunk_column(&causet_merge)
+    }
+
+    #[inline]
+    #[cfg(any(feature = "codec", feature = "codec_with_qeueue"))]
+    pub fn encode_chunk_with_decoded_with_capacity_and_capacity(
+        &self,
+        ctx: &mut EvalContext,
+        logical_rows: &[usize],
+        field_type: &FieldType,
+        output: &mut Vec<u8>,
+    ) -> Result<()> {
+        let causet_merge = match self {
+            QuiesceBatchColumn::Primitive_Causet(v) => Column::from_primitive_causet_datums(field_type, v, logical_rows, ctx)?,
+            QuiesceBatchColumn::Decoded(ref v) => {
+                Column::from_vector_causet_locale_with_capacity(field_type, v, logical_rows)?
+            }
+        };
+        output.write_chunk_column(&causet_merge)
+    }
+
+    pub fn encode_chunk_with_decoded_with_capacity_and_len(
+        &self,
+        ctx: &mut EvalContext,
+        logical_rows: &[usize],
+        field_type: &FieldType,
+        output: &mut Vec<u8>,
+    ) -> Result<()> {
+        let causet_merge = match self {
+            QuiesceBatchColumn::Primitive_Causet(v) => Column::from_primitive_causet_datums(field_type, v, logical_rows, ctx)?,
+            QuiesceBatchColumn::Decoded(ref v) => {
+                Column::from_vector_causet_locale_with_capacity_and_len(field_type, v, logical_rows)?
             }
         };
         output.write_chunk_column(&causet_merge)
@@ -413,6 +484,8 @@ mod benches {
     #[bench]
     fn bench_lazy_batch_column_push_primitive_causet_4bytes(b: &mut test::Bencher) {
         let mut causet_merge = QuiesceBatchColumn::primitive_causet_with_capacity(1000);
+        let mut ctx = EvalContext::default();
+        let mut datum_primitive_causet_1 = Vec::new();
         let val = vec![0; 4];
         b.iter(|| {
             let causet_merge = test::black_box(&mut causet_merge);

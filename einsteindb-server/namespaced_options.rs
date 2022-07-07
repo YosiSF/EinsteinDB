@@ -125,78 +125,97 @@ pub (crate) struct NamespacedOptions {
 }
 
 
-#[derive(Clone, Debug, Default)]
-pub struct NamespacedOptions {
-    inner: Arc<Mutex<HashMap<String, Value>>>,
-
-    /// The default namespace.
-    /// This namespace is always present.
-}
-
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct append_log_panic_fdb_options {
+pub struct AppendLogPanicFdbOptions {
 
     pub(crate) inner: fdb_lsh_treesoliton_panic_merkle_tree::DBOptions,
 }
 
 
+impl AppendLogPanicFdbOptions {
+    pub fn new() -> Self {
+        Self {
+            inner: fdb_lsh_treesoliton_panic_merkle_tree::DBOptions::new(),
+        }
+    }
+}
+
+
+impl Default for AppendLogPanicFdbOptions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+
+
+
+impl Deref for AppendLogPanicFdbOptions {
+    type Target = fdb_lsh_treesoliton_panic_merkle_tree::DBOptions;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
 
 
 impl NamespacedOptions {
-    /// Creates a new `NamespacedOptions` instance.
+    /// Creates a new `NamespacedOptions`.
+    /// The `NamespacedOptions` is used to store the options for a specific
+    /// namespace. Using a Unified Key for the same option will result in the
+    /// value being stored under the same key. Formally, the following is true:
+
     pub fn new() -> Self {
         Self {
-            inner: Arc::new(Mutex::new(HashMap::new())),
+            options: HashMap::new(),
         }
     }
-
     /// Creates a new `NamespacedOptions` instance with the given options.
+       /// The `NamespacedOptions` is used to store the options for a specific
+    /// namespace. Using a Unified Key for the same option will result in the
+    ///
+
     pub fn with_options(options: HashMap<String, Value>) -> Self {
         Self {
-            inner: Arc::new(Mutex::new(options)),
+            options,
         }
     }
 
-    /// Creates a new `NamespacedOptions` instance with the given options.
-    pub fn with_options_ref(options: &HashMap<String, Value>) -> Self {
-        Self {
-            inner: Arc::new(Mutex::new(options.clone())),
-        }
-    }
+    /// Sets the value for the given key.
+    /// If the key already exists, the value will be overwritten.
+    /// If the key does not exist, the key-value pair will be added.
+    /// The key is a `String` and the value can be any type that can be
+    ///
 
-    /// Creates a new `NamespacedOptions` instance with the given options.
-    pub fn with_options_ref_mut(options: &mut HashMap<String, Value>) -> Self {
-        Self {
-            inner: Arc::new(Mutex::new(options.clone())),
-        }
+    pub fn set(&mut self, key: impl Into<String>, value: impl Into<Value>) {
+        self.options.insert(key.into(), value.into());
     }
 
     /// Creates a new `NamespacedOptions` instance with the given options.
     pub fn with_options_arc(options: Arc<Mutex<HashMap<String, Value>>>) -> Self {
         Self {
-            inner: options,
+            options: options.lock().unwrap().clone(),
         }
     }
-
     /// Creates a new `NamespacedOptions` instance with the given options.
-    pub fn with_options_arc_ref(options: &Arc<Mutex<HashMap<String, Value>>>) -> Self {
+    pub fn with_options_arc_ref(options: Arc<Mutex<HashMap<String, Value>>>) -> Self {
         Self {
-            inner: options.clone(),
+            options: options.lock().unwrap().clone(),
         }
     }
 
     /// Creates a new `NamespacedOptions` instance with the given options.
     pub fn with_options_arc_ref_mut(options: &Arc<Mutex<HashMap<String, Value>>>) -> Self {
         Self {
-            inner: options.clone(),
+            options: options.lock().unwrap().clone(),
         }
     }
 
     /// Creates a new `NamespacedOptions` instance with the given options.
     pub fn with_options_arc_mut(options: Arc<Mutex<HashMap<String, Value>>>) -> Self {
         Self {
-            inner: options,
+            options: options.lock().unwrap().clone(),
         }
     }
 

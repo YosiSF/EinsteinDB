@@ -92,8 +92,8 @@ struct Queue {
 //relativistic queue implementation
 
 //step 1: create a queue that can be used to communicate between queries and responses taking into account the causality of the queries
-// step 2: consistency of the queue is maintained by the interlocking_directorate
-// step 3: the interlocking_directorate is a thread that polls the queue and sends the queries to einstein_db and receives the responses from einstein_db
+// step 2: consistency of the queue is maintained by the InterlockingDirectorate
+// step 3: the InterlockingDirectorate is a thread that polls the queue and sends the queries to einstein_db and receives the responses from einstein_db
 
 
 

@@ -16,9 +16,7 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 #![allow(unused_imports)]
-
-
-
+#![allow(unused_mut)]
 use std::collections::HashSet;
 use std::collections::HashMap;
 use std::collections::BTreeSet;
@@ -47,6 +45,47 @@ use ::{
     ValueRefMut,
 };
 
+
+use std::collections::HashMap;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+use std::collections::HashSet;
+
+
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::cell::Ref;
+
+
+use std::fmt::Debug;
+use std::fmt::Display;
+
+
+use std::fmt::Formatter;
+use std::fmt::Result;
+
+
+
+
+pub(crate) fn einsteindb_macro_impl<T>(t: T) -> T {
+
+    t
+}
+
+
+
+pub(crate) fn causet_macro_impl<T>(t: T) -> T {
+
+    t
+}
+
+
+
+
+
+
+
+
 /// An `InternSet` allows to "intern" some potentially large values, maintaining a single value
 /// instance owned by the `InternSet` and leaving consumers with lightweight ref-counted handles to
 /// the large owned value.  This can avoid expensive clone() operations.
@@ -56,34 +95,7 @@ use ::{
 /// See https://en.wikipedia.org/wiki/String_interning for discussion.
 /// 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct InternSet<T> {
-    set: HashSet<T>,
-},
 
-
-impl<T> InternSet<T> {
-    pub fn new() -> Self {
-        InternSet {
-            set: HashSet::new(),
-        }
-    }
-    pub fn insert(&mut self, value: T) -> bool {
-        self.set.insert(value)
-    }
-    pub fn contains(&self, value: &T) -> bool {
-        self.set.contains(value)
-    }
-    pub fn len(&self) -> usize {
-        self.set.len()
-    }
-    pub fn is_empty(&self) -> bool {
-        self.set.is_empty()
-    }
-    pub fn clear(&mut self) {
-        self.set.clear();
-    }
-},
 
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
@@ -99,7 +111,19 @@ pub struct InternSet<T> where T: Eq + Hash {
     
 
     cache: HashMap<ValueRc<T>, ValueRef<T>>,
+
+
+
+
+
+
     
+}
+
+
+pub fn  intern_set_macro_impl<T>(t: T) -> T {
+
+    t
 }
 
 
@@ -129,25 +153,19 @@ impl<T> InternSet<T> where T: Eq + Hash {
         self.inner.clear();
         self.cache.clear();
     }
+
+    pub fn get(&self, value: &T) -> Option<ValueRef<T>> {
+        self.cache.get(value).cloned()
+    }
+
+
     pub fn get_ref(&self, value: &T) -> Option<ValueRef<T>> {
         self.cache.get(value).cloned()
     }
-    pub fn get_ref_mut(&mut self, value: &T) -> Option<ValueRefMut<T>> {
-        self.cache.get_mut(value).cloned()
-    }
-    pub fn get_rc(&self, value: &T) -> Option<ValueRc<T>> {
-        self.cache.get(value).cloned().map(|v| v.rc.clone())
-    }
-    pub fn get_rc_mut(&mut self, value: &T) -> Option<ValueRcMut<T>> {
-        self.cache.get_mut(value).cloned().map(|v| v.rc_mut.clone())
-    }
+
 
     
-    pub fn get_rc_mut(&mut self, value: &T) -> Option<ValueRcMut<T>> {
-        self.cache.get_mut(value).cloned().map(|v| v.rc_mut.clone())
-    }
 
-        self.cache.get(value).cloned()
     
     pub fn get_ref_mut(&mut self, value: &T) -> Option<ValueRefMut<T>> {
         self.cache.get_mut(value).cloned()
@@ -159,30 +177,8 @@ impl<T> InternSet<T> where T: Eq + Hash {
         self.cache.get_mut(value).cloned().map(|v| v.rc_mut.clone())
     }
 }
-        self.inner.contains(value)
-    
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-    pub fn is_empty(&self) -> bool {
-        self.inner.is_empty()
-    }
-    pub fn clear(&mut self) {
-        self.inner.clear();
-        self.cache.clear();
-    }
-    pub fn get_ref(&self, value: &T) -> Option<ValueRef<T>> {
-        self.cache.get(value).cloned()
-    }
-    pub fn get_ref_mut(&mut self, value: &T) -> Option<ValueRefMut<T>> {
-        self.cache.get_mut(value).cloned()
-    }
-    pub fn get_rc(&self, value: &T) -> Option<ValueRc<T>> {
-        self.cache.get(value).cloned().map(|v| v.rc.clone())
-    }
-    pub fn get_rc_mut(&mut self, value: &T) -> Option<ValueRcMut<T>> {
-        self.cache.get_mut(value).cloned().map(|v| v.rc_mut.clone())
-    }
+
+
 
 use std::collections::BTreeMap;
 
@@ -193,6 +189,12 @@ use std::collections::BTreeMap;
 /// some order.
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
 pub struct AddRetractAlterSet<K, V> {
+    /// The set of (assertion, retraction) pairs.
+    /// The keys are the assertion values, the values are the retraction values.
+    /// The keys are ordered by the assertion values.
+    /// The values are ordered by the retraction values.
+
+    inner: BTreeMap<K, BTreeSet<V>>,
     /// The set of keys that have been added.
     /// This is a set of keys that have been added.
     
@@ -201,14 +203,16 @@ pub struct AddRetractAlterSet<K, V> {
     /// This is a set of keys that have been retracted.
     pub asserted: BTreeMap<K, V>,
 
-
-
     /// The set of keys that have been retracted.
     pub retracted: BTreeMap<K, V>,
 
     /// The set of keys that have been added and retracted.
     pub altered: BTreeMap<K, (V, V)>,
 
+    /// The set of keys that have been added and retracted.
+    /// This is a set of keys that have been added and retracted.
+    /// This is a set of keys that have been added and retracted.
+    pub altered_added: BTreeMap<K, (V, V)>,
 }
 
 
@@ -216,10 +220,12 @@ pub struct AddRetractAlterSet<K, V> {
 impl AddRetractAlterSet<K, V> {
     pub fn new() -> Self {
         AddRetractAlterSet {
+            inner: (),
             added: InternSet::new(),
             asserted: BTreeMap::new(),
             retracted: BTreeMap::new(),
             altered: BTreeMap::new(),
+            altered_added: ()
         }
     }
     pub fn insert_added(&mut self, key: K, value: V) -> bool {

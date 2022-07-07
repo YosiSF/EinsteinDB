@@ -2,7 +2,16 @@
 name = "causetq"
 version = "0.1.0"
 edition = "2021"
+author = "Karl Whitford <karl@einst.ai>"
+description = "A simple, fast, and efficient queue for causetq allegro lisp library"
+license = "MIT"
+repository = "https://github.com/YosiSF/EisnteinDB/causetq"
+keywords = ["causal set queue", "causetq", "causetq allegro lisp"]
 
 
-[dependencies.causetq]
-version = "0.1.0"
+[dependencies]
+byteorder= "1.2.7"
+thiserror="1.0"
+
+[dev-dependencies]
+cargo-test = "0.12.0"

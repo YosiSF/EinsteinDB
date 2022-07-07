@@ -9,6 +9,68 @@
  // specific language governing permissions and limitations under the License.
 
 
+
+
+
+ use std::str;
+    use std::str::FromStr;
+    use std::fmt::{self, Display, Formatter};
+    use std::error::Error as StdError;
+    use std::io::{self, Read};
+    use std::result::Result as StdResult;
+    use std::collections::HashMap;
+
+ #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum Error {
+        /// An error caused by a malformed JSON input.
+        MalformedJson(String),
+        /// An error caused by a malformed JSON path.
+        MalformedPath(String),
+        /// An error caused by a malformed JSON path.
+        InvalidPath(String),
+        /// An error caused by a malformed JSON path.
+        InvalidType(String, String),
+        /// An error caused by a malformed JSON path.
+        InvalidValue(String, String),
+        /// An error caused by a malformed JSON path.
+        InvalidNumber(String),
+        /// An error caused by a malformed JSON path.
+        InvalidBoolean(String),
+        /// An error caused by a malformed JSON path.
+        InvalidNull(String),
+        /// An error caused by a malformed JSON path.
+        InvalidArray(String),
+        /// An error caused by a malformed JSON path.
+        InvalidObject(String),
+        /// An error caused by a malformed JSON path.
+        InvalidKey(String),
+        /// An error caused by a malformed JSON path.
+        InvalidIndex(String),
+        /// An error caused by a malformed JSON path.
+        InvalidMember(String),
+        /// An error caused by a malformed JSON path.
+        InvalidValueType(String, String),
+        /// An error caused by a malformed JSON path.
+        InvalidValueTypeForKey(String, String, String),
+        /// An error caused by a malformed JSON path.
+        InvalidValueForKey(String, String, String),
+        /// An error caused by a malformed JSON path.
+        InvalidValueForIndex(String, String, String),
+        /// An error caused by a malformed JSON path.
+        InvalidValueForMember(String, String, String),
+        /// An error caused by a malformed JSON path.
+        InvalidValueForMemberOrIndex(String, String, String),
+        /// An error caused by a malformed JSON path.
+        InvalidValueForKeyOrIndex(String, String, String),
+        /// An error caused by a malformed JSON path.
+        InvalidValueForKeyOrMember(String, String, String)
+    }
+
+
+
+
+
+
 //     LocalPathExpression ::= scope (LocalPathLeg)*
 //     scope ::= [ columnReference ] '$'
 //     columnReference ::= // omit...
@@ -88,35 +150,24 @@ use gremlin_capnp::gremlin_capnp::{GremlinRequest, GremlinResponse};
 use gremlin_capnp::gremlin_capnp::{GremlinRequest_get_query, GremlinRequest_get_query_get_query};
 
 
+use EinsteinDB_core::{EinsteinDBError, EinsteinDBErrorKind};
+use EinsteinDB_core::EinsteinDBErrorKind::{EinsteinDBErrorKind, EinsteinDBErrorKind};
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+
+
+
+ #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+ /// A JSON path expression.
+ /// This is a string representation of a JSON path.
+ /// It is a sequence of path legs.
+ ///
+
 pub struct LocalPathExpression {
-    pub scope: Option<String>,
+    /// The path legs.
     pub legs: Vec<LocalPathLeg>,
-
-    // The following fields are used for cacheing.
-    // The cacheing is used to avoid repeated SQL queries.
-    pub cached_pod_list: Option<PodList>,
-    pub cached_pod_list_timestamp: Option<std::time::Instant>,
-    pub cached_pod_list_error: Option<String>,
-
-    pub cached_pod_list_by_label: Option<HashMap<String, PodList>>,
-    pub cached_pod_list_by_label_timestamp: Option<std::time::Instant>,
-
-    pub cached_pod_list_by_label_and_namespace: Option<HashMap<String, HashMap<String, PodList>>>,
-    pub cached_pod_list_by_label_and_namespace_timestamp: Option<std::time::Instant>,
-
-    pub cached_pod_list_by_label_and_namespace_and_status: Option<HashMap<String, HashMap<String, HashMap<String, PodList>>>>,
-    pub cached_pod_list_by_label_and_namespace_and_status_timestamp: Option<std::time::Instant>,
-} // LocalPathExpression
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct LocalPathLeg {
-    pub member: Option<String>,
-    pub array_index: Option<usize>,
-} // LocalPathLeg
+     pub flags: u8,
+ }
 
 
 
@@ -209,33 +260,85 @@ pub struct GremlinRequest {
 
 #[derive(clone,debug,partial_eq)]
 pub enum LocalPathLeg {
+    Asterisk,
+    Dot,
+    Identifier(String),
+    Index(u64),
+}
+
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct LocalPathLegK8s {
+        pub identifier: String,
+        pub index: u64,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct LocalPathLegK8sAsterisk {
+        pub identifier: String,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct LocalPathLegK8sDot {
+        pub identifier: String,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct LocalPathLegK8sIndex {
+        pub index: u64,
+    }
+
+
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct LocalPathLegK8sAsteriskAsterisk {
+        pub identifier: String,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct LocalPathLegK8sAsteriskDot {
+        pub identifier: String,
+    }
+
+
+
+ pub struct GremlinClientCapnp {
+     pub query: String,
+     pub request: GremlinRequest,
+     pub response: GremlinResponse,
+     pub request_capnp: gremlin_capnp::gremlin_capnp::GremlinRequest,
+     pub response_capnp: gremlin_capnp::gremlin_capnp::GremlinResponse,
+
+    }
+
+
+
+ pub fn contains_any_asterisk(path: &str) -> bool {
     /// `Key` indicates the local_path leg  with '.soliton_id'.
-    Key(string),
-    /// `Index` indicates the local_path leg with form '[number]'.
-    Index(i32),
-    /// `DoubleAsterisk` indicates the local_path leg with form '**'.
-    DoubleAsterisk,
+    Key::contains_any_asterisk(path){
+        return true;
+    }
+
+    return false;
+
+
 }
 
 // ArrayIndexAsterisk is for parsing '*' into a number.
 // we need this number represent "all".
-pub const local_path_EXPR_ARRAY_INDEX_ASTERISK: i32 = -1;
+pub const LOCAL_PATH_EXPR_ARRAY_INDEX_ASTERISK: i32 = -1;
 
-pub type local_pathExpressionFlag = u8;
+pub type LocalPathExpressionFlag = u8;
 
-pub const local_path_EXPRESSION_CONTAINS_ASTERISK: local_pathExpressionFlag = 0x01;
-pub const local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK: local_pathExpressionFlag = 0x02;
+pub const LOCAL_PATH_EXPRESSION_CONTAINS_ASTERISK: LocalPathExpressionFlag = 0x01;
+pub const LOCAL_PATH_EXPRESSION_CONTAINS_DOUBLE_ASTERISK: LocalPathExpressionFlag = 0x02;
 
-#[derive(Clone, Default, Debug, PartialEq)]
-pub struct LocalPathExpression {
-    pub legs: Vec<LocalPathLeg>,
-    pub flags: local_pathExpressionFlag,
-}
+
 
 impl LocalPathExpression {
     pub fn contains_any_asterisk(&self) -> bool {
         (self.flags
-            & (local_path_EXPRESSION_CONTAINS_ASTERISK | local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK))
+            & (LOCAL_PATH_EXPRESSION_CONTAINS_ASTERISK | LOCAL_PATH_EXPRESSION_CONTAINS_DOUBLE_ASTERISK))
             != 0
     }
 }
@@ -263,7 +366,7 @@ pub fn parse_json_local_path_expr(local_path_expr: &str) -> Result<LocalPathExpr
         static ref RE: Regex = Regex::new(local_path_EXPR_LEG_RE_STR).unwrap();
     }
     let mut legs = vec![];
-    let mut flags = local_pathExpressionFlag::default();
+    let mut flags = LocalPathExpressionFlag::default();
     let mut last_end = 0;
     for m in RE.find_iter(expr) {
         let (start, end) = (m.start(), m.end());
@@ -283,8 +386,8 @@ pub fn parse_json_local_path_expr(local_path_expr: &str) -> Result<LocalPathExpr
             let leg = expr[start + 1..end].trim();
             let index_str = leg[0..leg.len() - 1].trim();
             let index = if index_str == LOCAL_PATH_EXPR_ASTERISK {
-                flags |= local_path_EXPRESSION_CONTAINS_ASTERISK;
-                local_path_EXPR_ARRAY_INDEX_ASTERISK
+                flags |= LOCAL_PATH_EXPRESSION_CONTAINS_ASTERISK;
+                LOCAL_PATH_EXPR_ARRAY_INDEX_ASTERISK
             } else {
                 box_try!(index_str.parse::<i32>())
             };
@@ -293,7 +396,7 @@ pub fn parse_json_local_path_expr(local_path_expr: &str) -> Result<LocalPathExpr
             // The leg is a soliton_id of a JSON object.
             let mut soliton_id = expr[start + 1..end].trim().to_owned();
             if soliton_id == LOCAL_PATH_EXPR_ASTERISK {
-                flags |= local_path_EXPRESSION_CONTAINS_ASTERISK;
+                flags |= LOCAL_PATH_EXPRESSION_CONTAINS_ASTERISK;
             } else if soliton_id.starts_with('"') {
                 // We need to unquote the origin string.
                 soliton_id = unquote_string(&soliton_id[1..soliton_id.len() - 1])?;
@@ -301,7 +404,7 @@ pub fn parse_json_local_path_expr(local_path_expr: &str) -> Result<LocalPathExpr
             legs.push(LocalPathLeg::Key(soliton_id))
         } else {
             // The leg is '**'.
-            flags |= local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK;
+            flags |= LOCAL_PATH_EXPRESSION_CONTAINS_DOUBLE_ASTERISK;
             legs.push(LocalPathLeg::DoubleAsterisk);
         }
     }
@@ -326,13 +429,13 @@ mod tests {
     fn test_local_path_expression_flag() {
         let mut e = LocalPathExpression {
             legs: vec![],
-            flags: local_pathExpressionFlag::default(),
+            flags: LocalPathExpressionFlag::default(),
         };
         assert!(!e.contains_any_asterisk());
-        e.flags |= local_path_EXPRESSION_CONTAINS_ASTERISK;
+        e.flags |= LOCAL_PATH_EXPRESSION_CONTAINS_ASTERISK;
         assert!(e.contains_any_asterisk());
-        e.flags = local_pathExpressionFlag::default();
-        e.flags |= local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK;
+        e.flags = LocalPathExpressionFlag::default();
+        e.flags |= LOCAL_PATH_EXPRESSION_CONTAINS_DOUBLE_ASTERISK;
         assert!(e.contains_any_asterisk());
     }
 
@@ -344,7 +447,7 @@ mod tests {
                 true,
                 Some(LocalPathExpression {
                     legs: vec![],
-                    flags: local_pathExpressionFlag::default(),
+                    flags: LocalPathExpressionFlag::default(),
                 }),
             ),
             (
@@ -352,32 +455,26 @@ mod tests {
                 true,
                 Some(LocalPathExpression {
                     legs: vec![LocalPathLeg::Key(String::from("a"))],
-                    flags: local_pathExpressionFlag::default(),
+                    flags: LocalPathExpressionFlag::default(),
                 }),
             ),
             (
                 "$.\"hello world\"",
                 true,
-                Some(LocalPathExpression {
-                    legs: vec![LocalPathLeg::Key(String::from("hello world"))],
-                    flags: local_pathExpressionFlag::default(),
-                }),
+                Some(LocalPathExpression { legs: vec![LocalPathLeg::Key(String::from("hello world"))], flags: LocalPathExpressionFlag::default(), }),
             ),
             (
                 "$[0]",
                 true,
                 Some(LocalPathExpression {
                     legs: vec![LocalPathLeg::Index(0)],
-                    flags: local_pathExpressionFlag::default(),
+                    flags: LocalPathExpressionFlag::default(),
                 }),
             ),
             (
                 "$**.a",
                 true,
-                Some(LocalPathExpression {
-                    legs: vec![LocalPathLeg::DoubleAsterisk, LocalPathLeg::Key(String::from("a"))],
-                    flags: local_path_EXPRESSION_CONTAINS_DOUBLE_ASTERISK,
-                }),
+                Some(LocalPathExpression { legs: vec![LocalPathLeg::DoubleAsterisk, LocalPathLeg::Key(String::from("a"))], flags: LOCAL_PATH_EXPRESSION_CONTAINS_DOUBLE_ASTERISK, }),
             ),
             // invalid local_path expressions
             (".a", false, None),

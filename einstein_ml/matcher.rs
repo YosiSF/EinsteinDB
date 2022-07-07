@@ -27,6 +27,7 @@ use crate::causetq::{
 
 
 
+use ::causet::{Causet, CausetQuery};
 
 
 
@@ -89,8 +90,13 @@ pub trait Pattern<T> {
     fn matches_any(pattern: &T) -> bool;
     /// Returns a `Vec` of `T`s that match the pattern.
     /// Return the placeholder name if the given pattern matches a placeholder.
-    fn matches_placeholder(pattern: &'a T) -> Option<(&'a String)>;
-    
+    fn matches_placeholder(pattern: &T) -> Option<String>;
+
+    /// Returns a `Vec` of `T`s that match the pattern.
+    /// Return the placeholder name if the given pattern matches a placeholder.
+    ///
+
+    fn matches_placeholder_any(pattern: &T) -> Option<String>;
 }
 
 /// A default type implementing `PatternMatchingRules` specialized on
@@ -161,6 +167,97 @@ impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
         }
     }
 }
+
+/// A trait defining pattern matching rules for any given pattern of type `T`.
+/// This trait is specialized on EML causet_locales using plain shellings as patterns.
+/// These patterns are:
+/// * `_` matches arbitrary sub-EML;
+/// * `?name` matches sub-EML, which must be causetidical each place `?name` appears;
+/// * `?name:type` matches sub-EML, which must be causetidical each place `?name` appears;
+///
+/// # Examples
+/// ```
+/// use einstein_ml::{
+///   causet::{Causet, CausetQuery},
+///
+/// };
+///
+/// let causet = Causet::new();
+/// let causet_query = CausetQueryBuilder::new();
+///
+/// let causet_locale = causet.query(&causet_query).unwrap();
+/// let causet_locale_pattern = causet_locale.pattern_matching_rules();
+///
+/// if causet_locale_pattern.matches(&causet_locale) {
+///   println!("CausetLocale matches causet_locale");
+/// } else {
+///  println!("CausetLocale does not match causet_locale");
+/// }
+
+use ::EinsteinDB::einstein_db_ctl::EinsteinDB_Ctl;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DefaultPatternMatchingRules {
+    pub causet_locale: CausetLocale<Value>,
+    pub causet_locale_pattern: CausetLocalePattern<Value>,
+}
+
+
+
+///l-user(2): (require :prolog)
+// nil
+// cl-user(3): (use-package :prolog)
+// t
+// cl-user(4): (?- (append ?x ?y (1 2 3)))
+// ?x = ()
+// ?y = (1 2 3) <ENTER>
+// ?x = (1)
+// ?y = (2 3) <ENTER>
+// ?x = (1 2)
+// ?y = (3) <ENTER>
+// ?x = (1 2 3)
+// ?y = () <ENTER>
+// No.
+// cl-user(5): (?- (append ?x ?y (1 2 3 4)))
+// ?x = ()
+// ?y = (1 2 3 4) <ENTER>
+// ?x = (1)
+// ?y = (2 3 4) <ENTER>
+
+
+impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
+    fn matches_any(pattern: &Value) -> bool {
+        match *pattern {
+            Value::PlainShelling(shellings::PlainShelling(ref s)) => s.starts_with('_'),
+            _ => false
+        }
+    }
+
+    fn matches_placeholder(pattern: &'a Value) -> Option<(&'a String)> {
+        match *pattern {
+            Value::PlainShelling(shellings::PlainShelling(ref s)) => if s.starts_with('?') { Some(s) } else { None },
+            _ => None
+        }
+    }
+}
+
+
+impl<'a> PatternMatchingRules<'a, Value> for DefaultPatternMatchingRules {
+    fn matches_any(pattern: &Value) -> bool {
+        match *pattern {
+            Value::PlainShelling(shellings::PlainShelling(ref s)) => s.starts_with('_'),
+            _ => false
+        }
+    }
+
+    fn matches_placeholder(pattern: &'a Value) -> Option<(&'a String)> {
+        match *pattern {
+            Value::PlainShelling(shellings::PlainShelling(ref s)) => if s.starts_with('?') { Some(s) } else { None },
+            _ => None
+        }
+    }
+}
+
 
 /// Pattern matcher for EML causet_locales utilizing specified pattern matching rules.
 /// For example, using this with `DefaultPatternMatchingRules`:

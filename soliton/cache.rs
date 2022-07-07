@@ -9,6 +9,34 @@
 // specific language governing permissions and limitations under the License.
 
 
+// #[macro_export]
+// macro_rules! einsteindb_macro_impl {
+//     ($($tokens:tt)*) => {
+//         $crate::einsteindb_macro_impl!($($tokens)*)
+//     };
+
+pub use self::cache::Cache;
+
+use grpc::{Client, ChannelBuilder, ClientStub, RpcContext, RpcStatus, RpcStatusCode};
+use grpc::{Server, ServerBuilder, ServerUnaryExt, ServerStreamingExt, ServerBidirectionalExt};
+
+//jsonrpc::client::Client;
+//jsonrpc::client::ClientBuilder;
+//jsonrpc::client::Rpc;
+//jsonrpc::client::RpcError;
+
+
+// #[macro_export]
+// macro_rules! einsteindb_macro_impl {
+//     ($($tokens:tt)*) => {
+//         $crate::einsteindb_macro_impl!($($tokens)*)
+//     };
+//     ($($tokens:tt)*) => {
+//         $crate::einsteindb_macro_impl!($($tokens)*)
+//     };
+
+
+//     ($($tokens:tt)*) => {
 use einstein_ml::{
     cache::{
         Cache, CacheConfig, CacheType, CacheValue, CacheValueType,
@@ -18,11 +46,46 @@ use einstein_ml::{
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
+use std::thread;
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::sync::mpsc;
+use std::sync::mpsc::{TryRecvError};
+
+#[derive(Clone, Debug)]
+pub struct CacheConfig {
+    pub cache_type: CacheType,
+    pub cache_value_type: CacheValueType,
+    pub cache_size: usize,
+    pub cache_ttl: Duration,
+    pub cache_clean_interval: Duration,
+}
 
 
-use crate::cache::{Cache, CacheEntry};
-use crate::error::{Error, Result};
-use crate::util::{self, CacheKey};
+#[derive(Clone, Debug)]
+pub struct CacheValue {
+    pub value: String,
+    pub last_access: Instant,
+}
+
+
+#[derive(Clone, Debug)]
+pub struct Cache {
+    pub cache_config: CacheConfig,
+    pub cache_map: Arc<RwLock<HashMap<String, CacheValue>>>,
+    pub cache_clean_thread: Option<thread::JoinHandle<()>>,
+}
+pub(crate) struct CacheImpl {
+    cache: Arc<RwLock<Cache>>,
+}
+
+
+impl CacheImpl {
+    pub(crate) fn new(cache: Cache) -> CacheImpl {
+        CacheImpl {
+            cache: Arc::new(RwLock::new(cache)),
+        }
+    }
+}
 
 
 /// A simple in-memory cache.

@@ -8,6 +8,29 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+//jsonrpc is a protocol for remote procedure calls over HTTP.
+use crate::einsteindb_macro_impl;
+
+use crate::crate_version;
+
+use std::collections::HashSet;
+use std::collections::HashMap;
+use std::collections::BTreeSet;
+use std::collections::BTreeMap;
+
+use ::{
+    //path
+    ValueRc,
+    ValueRef,
+    ValueRefMut,
+};
+
+use causet::{
+    //path
+    Causet,
+    CausetMut,
+};
+
 
 use std::fmt;
 use std::fmt::{Display, Formatter};
@@ -30,11 +53,108 @@ use crate::fdb_traits::fdb_traits::{FdbTraitResult, FdbTraitResult::*};
 use crate::fdb_traits::fdb_traits::{FdbTraitResultError, FdbTraitResultError::*};
 
 
+
+
+//use crate::fdb_traits::fdb_traits::{FdbTrait, FdbTraitError};
+//use crate::fdb_traits::fdb_traits::{FdbTraitErrorKind, FdbTraitErrorKind::*};
+
+
+
+pub struct Fdb {
+    pub berolina_sql: BerolinaSql,
+    pub causet: Causet,
+    pub causets: Causets,
+    pub causetq: Causetq,
+}
+
+///Flow features
+// Flow’s new keywords and control-flow primitives support the capability to pass messages asynchronously between components. Here’s a brief overview.
+//
+// Promise<T> and Future<T>
+// The data types that connect asynchronous senders and receivers are Promise<T> and Future<T> for some C++ type T. When a sender holds a Promise<T>, it represents a promise to deliver a value of type T at some point in the future to the holder of the Future<T>. Conversely, a receiver holding a Future<T> can asynchronously continue computation until the point at which it actually needs the T.
+//
+// Promises and futures can be used within a single process, but their real strength in a distributed system is that they can traverse the network. For example, one computer could create a promise/future pair, then send the promise to another computer over the network. The promise and future will still be connected, and when the promise is fulfilled by the remote computer, the original holder of the future will see the value appear.
+//
+
+#[macro_export]
+macro_rules! einsteindb_macro_impl {
+    ($t:ty) => {
+        $t
+    };
+}
+
+
+pub struct FdbTrait {
+
+    pub berolina_sql: BerolinaSql,
+    pub causet: Causet,
+    pub causets: Causets,
+    pub causetq: Causetq,
+}
+
+
+impl FdbTrait {
+    pub fn new() -> FdbTrait {
+        FdbTrait {
+            berolina_sql: BerolinaSql::new(),
+            causet: Causet::new(),
+            causets: Causets::new(),
+            causetq: Causetq::new(),
+        }
+    }
+}
+
+// wait()
+// At the point when a receiver holding a Future<T> needs the T to continue computation, it invokes the wait() statement with the Future<T> as its parameter. The wait() statement allows the calling actor to pause execution until the value of the future is set, returning a value of type T. During the wait, other actors can continue execution, providing asynchronous concurrency within a single process.
+//
+// ACTOR
+// Only functions labeled with the ACTOR tag can call wait(). Actors are the essential unit of asynchronous work and can be composed to create complex message-passing systems. By composing actors, futures can be chained together so that the result of one depends on the output of another.
+//
+
+
+type FdbTraitResult = Result<FdbTrait, FdbTraitError>;
+//ActorResult
+type ActorResult = Result<(), FdbTraitError>;
+//ActorResultError
+type ActorResultError = FdbTraitError;
+//grpcio::Error
+type GrpcError = grpcio::Error;
+//grpcio::ErrorKind
+type GrpcErrorKind = grpcio::ErrorKind;
+// An actor is declared as returning a Future<T> where T may be Void if the actor’s return value is used only for signaling. Each actor is preprocessed into a C++11 class with internal callbacks and supporting functions.
+//
+// State
+// The state keyword is used to scope a variable so that it is visible across multiple wait() statements within an actor. The use of a state variable is illustrated in the example actor below.
+//
+// PromiseStream<T>, FutureStream<T>
+// When a component wants to work with a stream of asynchronous messages rather than a single message, it can use PromiseStream<T> and FutureStream<T>. These constructs allow for two important features: multiplexing and reliable delivery of messages. They also play an important role in Flow design patterns. For example, many of the servers in FoundationDB expose their interfaces as a struct of promise streams—one for each request type.
+
+
+impl Fdb {
+    pub fn new() -> Fdb {
+        Fdb {
+            berolina_sql: BerolinaSql::new(),
+            causet: Causet::new(),
+            causets: Causets::new(),
+            causetq: Causetq::new(),
+        }
+    }
+}
+
+///A promise is a placeholder for a value that will be provided later.
+///
+///
+#[derive(Debug)]
+pub struct Promise<T> {
+    pub value: Option<T>,
+}
+
 /// FdbTrait implementation for Rust.
 ///
 /// This trait is used to implement a FdbTrait for Rust.
 
 
+const FDB_TRAIT_VERSION: &str = "0.1.0";
 const NIL: u8 = 0x00;
 const BYTES: u8 = 0x01;
 const STRING: u8 = 0x02;
@@ -77,9 +197,31 @@ impl CausetTupleDepth {
     pub fn is_zero(&self) -> bool {
         self.0 == 0
     }
+
+    pub fn is_one(&self) -> bool {
+        self.0 == 1
+    }
+
+    pub fn is_two(&self) -> bool {
+        self.0 == 2
+    }
 }
 #[derive(Debug)]
 pub struct FdbRust;
+
+
+impl FdbTrait for FdbRust {
+    fn get_version(&self) -> String {
+        FDB_TRAIT_VERSION.to_string()
+    }
+}
+
+
+impl FdbRust {
+    pub fn new() -> FdbRust {
+        FdbRust
+    }
+}
 
 
 #[derive(Debug)]

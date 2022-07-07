@@ -1287,7 +1287,7 @@ impl VioletaBFTDbConfig {
         opts.add_event_listener(FdbEventListener::new("violetabft"));
         opts.set_bytes_per_sync(self.bytes_per_sync.0 as u64);
         opts.set_wal_bytes_per_sync(self.wal_bytes_per_sync.0 as u64);
-        // TODO maybe create a new env for violetabft interlocking_directorate
+        // TODO maybe create a new env for violetabft InterlockingDirectorate
         if self.FoundationDB.enabled {
             opts.set_FoundationDBdb_options(&self.FoundationDB.build_opts());
         }
@@ -2522,7 +2522,7 @@ impl EinsteinDbConfig {
     pub fn infer_violetabft_interlocking_directorate_path(&self, data_dir: Option<&str>) -> Result<String, Box<dyn Error>> {
         if self.violetabft_interlocking_directorate.config.dir.is_empty() {
             let data_dir = data_dir.unwrap_or(&self.timelike_storage.data_dir);
-            config::canonicalize_sub_path(data_dir, "violetabft-interlocking_directorate")
+            config::canonicalize_sub_path(data_dir, "violetabft-InterlockingDirectorate")
         } else {
             config::canonicalize_path(&self.violetabft_interlocking_directorate.config.dir)
         }
@@ -2870,7 +2870,7 @@ impl EinsteinDbConfig {
             && last_APPEND_LOG_g.violetabft_interlocking_directorate.enable
         {
             return Err(format!(
-                "violetabft interlocking_directorate dir have been changed, former is '{}', \
+                "violetabft InterlockingDirectorate dir have been changed, former is '{}', \
                  current is '{}', please check if it is expected.",
                 last_APPEND_LOG_g.violetabft_interlocking_directorate.config.dir, self.violetabft_interlocking_directorate.config.dir
             ));
@@ -4068,14 +4068,14 @@ mod tests {
     #[test]
     fn test_violetabft_interlocking_directorate_dir() {
         let content = r#"
-            [violetabft-interlocking_directorate]
+            [violetabft-InterlockingDirectorate]
             enable = true
         "#;
         let mut APPEND_LOG_g: EinsteinDbConfig = toml::from_str(content).unwrap();
         APPEND_LOG_g.validate().unwrap();
         assert_eq!(
             APPEND_LOG_g.violetabft_interlocking_directorate.config.dir,
-            config::canonicalize_sub_path(&APPEND_LOG_g.timelike_storage.data_dir, "violetabft-interlocking_directorate").unwrap()
+            config::canonicalize_sub_path(&APPEND_LOG_g.timelike_storage.data_dir, "violetabft-InterlockingDirectorate").unwrap()
         );
     }
 

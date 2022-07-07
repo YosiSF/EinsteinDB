@@ -20,6 +20,7 @@ use crate::IteratorMode;
 use crate::Modify;
 use crate::Snapshot;
 use crate::WriteBatch;
+use crate::WriteOptions;
 
 use einstein_ml::{
     engine::{
@@ -42,6 +43,29 @@ use einstein_ml::{
         WriteBatch as EinsteinWriteBatchImpl,
     },
 };
+
+
+/// `Modifier` is a wrapper of `EinsteinEngine` that provides the following features:
+/// - `Modifier` is thread-safe.
+/// - `Modifier` is safe to use in multi-threaded environment.
+/// - `Modifier` is safe to use in multi-process environment.
+
+
+
+
+#[derive(Debug)]
+pub struct Modifier {
+    engine: Arc<Mutex<EinsteinEngine>>,
+    is_closed: AtomicBool,
+}
+
+
+#[derive(Debug)]
+pub struct ModifierSnapshot {
+    engine: Arc<Mutex<EinsteinEngine>>,
+    is_closed: AtomicBool,
+}
+
 
 
 pub struct EngineImpl {
@@ -77,6 +101,32 @@ impl EngineImpl {
 /// See `binaryModifier` in MEDB `json/binary_function.go`
 pub struct BinaryModifier<'a> {
 
+    /// The underlying engine
+    /// This is the engine that the `BinaryModifier` is wrapping.
+    /// It is used to get the underlying engine.
+
+    engine: &'a mut EinsteinEngine,
+
+    /// The underlying engine snapshot
+    /// This is the engine snapshot that the `BinaryModifier` is wrapping.
+    /// It is used to get the underlying engine snapshot.
+
+    engine_snapshot: EinsteinEngineSnapshot,
+
+    /// The underlying engine write batch
+    /// This is the engine write batch that the `BinaryModifier` is wrapping.
+    /// It is used to get the underlying engine write batch.
+    /// It is used to get the underlying engine write batch.
+
+    engine_write_batch: EinsteinEngineWriteBatch,
+
+
+    /// The underlying engine iterator
+    /// This is the engine iterator that the `BinaryModifier` is wrapping.
+    ///
+
+    engine_iterator: EinsteinEngineIterator,
+
     /// The encoded bytes of the JSON
 
     encoded: &'a [u8],
@@ -89,6 +139,15 @@ pub struct BinaryModifier<'a> {
     new: JsonRef<'a>,
     
     new_causet_locale: Option<Json>,
+
+    // The target Json to be inserted
+    insert: JsonRef<'a>,
+
+    // The target Json to be removed
+    remove: JsonRef<'a>,
+
+    // The target Json to be replaced
+    replace: JsonRef<'a>,
 }
 
 ///! A helper struct that derives a new JSON by combining and manipulating
@@ -97,12 +156,19 @@ impl<'a> BinaryModifier<'a> {
     pub fn new(old: JsonRef<'a>) -> BinaryModifier<'_> {
         BinaryModifier {
             // The initial offset is 0 by `as_ref()` call
+            engine: &mut (),
+            engine_snapshot: (),
+            engine_write_batch: (),
+            engine_iterator: (),
             encoded: &[],
             old,
             // Mark invalid
             to_be_modified_ptr: ptr::null(),
             new: (),
             new_causet_locale: None,
+            insert: (),
+            remove: (),
+            replace: ()
         }
     }
 

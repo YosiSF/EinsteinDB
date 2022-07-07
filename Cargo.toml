@@ -1,5 +1,5 @@
 [package]
-name = " EinsteinDB"
+name = "einsteindb"
 version = "1.0.0"
 authors = ["Whtcorps", "EinstAI", "Josh Leder slushie@gmail.com", "Karl Whitford (karl@einst.ai)", "Jared Smith (jared@amazon.com)"]     
 edition = "2018"
@@ -9,6 +9,26 @@ license = "MIT OR Apache-2.0"
 keywords = ["OLAP", "OLTP", "MergeAppend", "Bulk Synchronization", "IPAM", "CRON", "SQLAgnostic", "Hybrid Key-Value"]
 categories = ["HTAP", "CAUSETS", "ACID", "DB4AI", "command-line-utilities", "development-tools::cargo-plugins"]
 
+
+
+[lib]
+einsteindb = "einsteindb"
+name = "einsteindb"
+path = "../EinsteinDB/einstein_db/src/lib.rs"
+
+[dependencies.einsteindb]
+version = "1.0.0"
+path = "."
+
+
+[dependencies.einstein_db]
+path = "../EinsteinDB/einstein_db"
+version = "1.0.0"
+
+[dependencies.einsteindb.features]
+path = "."
+default = ["einsteindb"]
+[features]
 
 [dependencies]
 anyhow = "1.0.58"
@@ -57,3 +77,42 @@ tokio-process="0.2.5"
 tokio-threadpool="0.1.0"
 
 
+[dependencies.einsteindb.features.einsteindb]
+path = "."
+
+[dependencies.causets]
+path = "../EinsteinDB/causets"
+
+
+[dependencies.einsteindb.causet]
+path = "../EinsteinDB/causet"
+
+
+[dependencies.einsteindb.features.causet]
+path = "."
+
+[dependencies.allegro_poset]
+path = "../EinsteinDB/allegro_poset"
+
+
+[dependencies.einsteindb.features.allegro_poset]
+path = "."
+
+
+[dependencies.causets.features]
+path = "."
+
+[dependencies.einstein_db.features]
+path = "."
+einstein-db = ["einstein_db"]
+
+
+[dependencies.causet]
+path = "../EinsteinDB/causet"
+
+[workspace]
+members = ["einsteindb", "causets", "einstein_db", "causet"]
+
+
+[dependencies.einstein_db_alexandrov_processv_processing]
+path = "../EinsteinDB/einstein_db_alexandrov_processv_processing"

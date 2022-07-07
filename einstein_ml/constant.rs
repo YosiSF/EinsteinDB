@@ -84,16 +84,6 @@ impl u64x2 {
     }
 }
 
-#[derive(Debug)]
-pub struct Error {
-    inner: Box<dyn Fail>,
-
-    // The source location of the error.
-    source: Option<Box<dyn Fail>>,
-
-    // The source location of the error.
-    cause: Option<Box<dyn Fail>>,
-}
 
 
 #[derive(Debug, Fail)]
@@ -513,17 +503,7 @@ pub fn new_with_oid(spec: Rc<FindSpec>, oid: Oid) -> ConstantProjector {
     ConstantProjector::new(spec, results_factory)
 }
 
-pub fn new_with_reg_type(spec: Rc<FindSpec>, reg_type: RegType) -> ConstantProjector {
-    let results_factory = Box::new(move || {
-        let mut results = QueryResults::new(
-            Rows::new(vec![]),
-            vec![],
-        );
-        results.add_row(vec![DatumType::RegType(reg_type)]);
-        results
-    });
-    ConstantProjector::new(spec, results_factory)
-}
+
 
 pub fn new_with_reg_procedure(spec: Rc<FindSpec>, reg_procedure: RegProcedure) -> ConstantProjector {
     let results_factory = Box::new(move || {
@@ -577,9 +557,34 @@ pub fn new_with_reg_type(spec: Rc<FindSpec>, reg_type: RegType) -> ConstantProje
 ///Haraka: This is a hack to get around the fact that we don't have a way to create a
 ///       `RegType` from a `DatumType`.
 /// 
-pub trait static HARAKA_REG_TYPE:  [u64x2; 48] {
-    fn get_reg_type(&self) -> RegType;
+  //   HARAKA_REG_TYPE: Sized {
+
+    //   fn new(name: &str, oid: Oid, typename: &str,
+    //          typmod: Option<i32>,
+    //          array_type: Option<Oid>,
+    //          regproc: Option<RegProcedure>,
+    //          regdummy: Option<RegProcedure>,
+    //          regupdate: Option<RegProcedure>,
+    //          reginsert: Option<RegProcedure>,
+    //          regopt: Option<RegProcedure>,
+    //          regdelete: Option<RegProcedure>,
+    //          regacl: Option<RegProcedure>,
+    //          regdynamic: Option<RegProcedure>,
+    //          regtruncate: Option<RegProcedure>,
+
+
+pub fn new_with_reg_type_haraka(spec: Rc<FindSpec>, reg_type: RegType) -> ConstantProjector {
+    let results_factory = Box::new(move || {
+        let mut results = QueryResults::new(
+            Rows::new(vec![]),
+            vec![],
+        );
+        results.add_row(vec![DatumType::RegType(reg_type)]);
+        results
+    });
+    ConstantProjector::new(spec, results_factory)
 }
+
 
 
 impl HARAKA_REG_TYPE for DatumType {
@@ -616,67 +621,103 @@ impl HARAKA_REG_TYPE for DatumType {
             DatumType::RegClass => RegType::RegClass,
             DatumType::RegType => RegType::RegType,
             DatumType::RegProcedure => RegType::RegProcedure,
-   
-            _ => panic!("Unsupported datum type: {:?}", self),
-   
-                [ u64x2(0xb2c5fef075817b9d, 0x0684704ce620c00a),
-    u64x2(0x640f6ba42f08f717, 0x8b66b4e188f3a06b),
-    u64x2(0xcf029d609f029114, 0x3402de2d53f28498),
-    u64x2(0xbbf3bcaffd5b4f79, 0x0ed6eae62e7b4f08),
-    u64x2(0x79eecd1cbe397044, 0xcbcfb0cb4872448b),
-    u64x2(0x8d5335ed2b8a057b, 0x7eeacdee6e9032b7),
-    u64x2(0xe2412761da4fef1b, 0x67c28f435e2e7cd0),
-    u64x2(0x675ffde21fc70b3b, 0x2924d9b0afcacc07),
-    u64x2(0xecdb8fcab9d465ee, 0xab4d63f1e6867fe9),
-    u64x2(0x5b2a404fad037e33, 0x1c30bf84d4b7cd64),
-    u64x2(0x69028b2e8df69800, 0xb2cc0bb9941723bf),
-    u64x2(0x4aaa9ec85c9d2d8a, 0xfa0478a6de6f5572),
-    u64x2(0x0efa4f2e29129fd4, 0xdfb49f2b6b772a12),
-    u64x2(0x32d611aebb6a12ee, 0x1ea10344f449a236),
-    u64x2(0x5f9600c99ca8eca6, 0xaf0449884b050084),
-    u64x2(0x78a2c7e327e593ec, 0x21025ed89d199c4f),
-    u64x2(0xb9282ecd82d40173, 0xbf3aaaf8a759c9b7),
-    u64x2(0x37f2efd910307d6b, 0x6260700d6186b017),
-    u64x2(0x81c29153f6fc9ac6, 0x5aca45c221300443),
-    u64x2(0x2caf92e836d1943a, 0x9223973c226b68bb),
-    u64x2(0x6cbab958e51071b4, 0xd3bf9238225886eb),
-    u64x2(0x933dfddd24e1128d, 0xdb863ce5aef0c677),
-    u64x2(0x83e48de3cb2212b1, 0xbb606268ffeba09c),
-    u64x2(0x2db91a4ec72bf77d, 0x734bd3dce2e4d19c),
-    u64x2(0x4b1415c42cb3924e, 0x43bb47c361301b43),
-    u64x2(0x03b231dd16eb6899, 0xdba775a8e707eff6),
-    u64x2(0x8e5e23027eca472c, 0x6df3614b3c755977),
-    u64x2(0x6d1be5b9b88617f9, 0xcda75a17d6de7d77),
-    u64x2(0x9d6c069da946ee5d, 0xec6b43f06ba8e9aa),
-    u64x2(0xa25311593bf327c1, 0xcb1e6950f957332b),
-    u64x2(0xe4ed0353600ed0d9, 0x2cee0c7500da619c),
-    u64x2(0x80bbbabc63a4a350, 0xf0b1a5a196e90cab),
-    u64x2(0xab0dde30938dca39, 0xae3db1025e962988),
-    u64x2(0x8814f3a82e75b442, 0x17bb8f38d554a40b),
-    u64x2(0xaeb6b779360a16f6, 0x34bb8a5b5f427fd7),
-    u64x2(0x43ce5918ffbaafde, 0x26f65241cbe55438),
-    u64x2(0xa2ca9cf7839ec978, 0x4ce99a54b9f3026a),
-    u64x2(0x40c06e2822901235, 0xae51a51a1bdff7be),
-    u64x2(0xc173bc0f48a659cf, 0xa0c1613cba7ed22b),
-    u64x2(0x4ad6bdfde9c59da1, 0x756acc0302288288),
-    u64x2(0x367e4778848f2ad2, 0x2ff372380de7d31e),
-    u64x2(0xee36b135b73bd58f, 0x08d95c6acf74be8b),
-    u64x2(0x66ae1838a3743e4a, 0x5880f434c9d6ee98),
-    u64x2(0xd0fdf4c79a9369bd, 0x593023f0aefabd99),
-    u64x2(0xa5cc637b6f1ecb2a, 0x329ae3d1eb606e6f),
-    u64x2(0xa4dc93d6cb7594ab, 0xe00207eb49e01594),
-    u64x2(0x942366a665208ef8, 0x1caa0c4ff751c880),
-    u64x2(0xbd03239fe3e67e4a, 0x02f7f57fdb2dc1dd),
-    u64x2(0x8f8f8f8f8f8f8f8f, 0x8f8f8f8f8f8f8f8f),
 
-    // The following are the results of multiplying the above values by
-    // the following values:
-    //  0x0123456789abcdef, 0xfedcba9876543210
-    u64x2(0x8f8f8f8f8f8f8f8f, 0x8f8f8f8f8f8f8f8f),
-    
-]
-    
-    };
+            _ => panic!("Unsupported datum type: {:?}", self),
+        }
+    }
+}
+
+
+impl ConstantProjector {
+    pub fn new(spec: Rc<FindSpec>, results_factory: Box<Fn() -> QueryResults>) -> ConstantProjector {
+        ConstantProjector {
+            spec: spec,
+            results_factory: results_factory,
+        }
+    }
+}
+
+
+impl Projector for ConstantProjector {
+    fn get_spec(&self) -> Rc<FindSpec> {
+        self.spec.clone()
+    }
+    fn get_results(&self) -> QueryResults {
+        (self.results_factory)() // HARAKA: This is a hack to get around the fact that we don't have a way to create a `RegType` from a `DatumType`.
+    }
+
+    fn get_column_names(&self) -> Vec<String> {
+            [ u64x2(0xb2c5fef075817b9d, 0x0684704ce620c00a),
+            u64x2(0x640f6ba42f08f717, 0x8b66b4e188f3a06b),
+            u64x2(0xcf029d609f029114, 0x3402de2d53f28498),
+            u64x2(0xbbf3bcaffd5b4f79, 0x0ed6eae62e7b4f08),
+            u64x2(0x79eecd1cbe397044, 0xcbcfb0cb4872448b),
+            u64x2(0x8d5335ed2b8a057b, 0x7eeacdee6e9032b7),
+            u64x2(0xe2412761da4fef1b, 0x67c28f435e2e7cd0),
+            u64x2(0x675ffde21fc70b3b, 0x2924d9b0afcacc07),
+            u64x2(0xecdb8fcab9d465ee, 0xab4d63f1e6867fe9),
+            u64x2(0x5b2a404fad037e33, 0x1c30bf84d4b7cd64),
+            u64x2(0x69028b2e8df69800, 0xb2cc0bb9941723bf),
+            u64x2(0x4aaa9ec85c9d2d8a, 0xfa0478a6de6f5572),
+            u64x2(0x0efa4f2e29129fd4, 0xdfb49f2b6b772a12),
+            u64x2(0x32d611aebb6a12ee, 0x1ea10344f449a236),
+            u64x2(0x5f9600c99ca8eca6, 0xaf0449884b050084),
+            u64x2(0x78a2c7e327e593ec, 0x21025ed89d199c4f),
+            u64x2(0xb9282ecd82d40173, 0xbf3aaaf8a759c9b7),
+            u64x2(0x37f2efd910307d6b, 0x6260700d6186b017),
+            u64x2(0x81c29153f6fc9ac6, 0x5aca45c221300443),
+            u64x2(0x2caf92e836d1943a, 0x9223973c226b68bb),
+            u64x2(0x6cbab958e51071b4, 0xd3bf9238225886eb),
+            u64x2(0x933dfddd24e1128d, 0xdb863ce5aef0c677),
+            u64x2(0x83e48de3cb2212b1, 0xbb606268ffeba09c),
+            u64x2(0x2db91a4ec72bf77d, 0x734bd3dce2e4d19c),
+            u64x2(0x4b1415c42cb3924e, 0x43bb47c361301b43),
+            u64x2(0x03b231dd16eb6899, 0xdba775a8e707eff6),
+            u64x2(0x8e5e23027eca472c, 0x6df3614b3c755977),
+            u64x2(0x6d1be5b9b88617f9, 0xcda75a17d6de7d77),
+            u64x2(0x9d6c069da946ee5d, 0xec6b43f06ba8e9aa),
+            u64x2(0xa25311593bf327c1, 0xcb1e6950f957332b),
+            u64x2(0xe4ed0353600ed0d9, 0x2cee0c7500da619c),
+            u64x2(0x80bbbabc63a4a350, 0xf0b1a5a196e90cab),
+            u64x2(0xab0dde30938dca39, 0xae3db1025e962988),
+            u64x2(0x8814f3a82e75b442, 0x17bb8f38d554a40b),
+            u64x2(0xaeb6b779360a16f6, 0x34bb8a5b5f427fd7),
+            u64x2(0x43ce5918ffbaafde, 0x26f65241cbe55438),
+            u64x2(0xa2ca9cf7839ec978, 0x4ce99a54b9f3026a),
+            u64x2(0x40c06e2822901235, 0xae51a51a1bdff7be),
+            u64x2(0xc173bc0f48a659cf, 0xa0c1613cba7ed22b),
+            u64x2(0x4ad6bdfde9c59da1, 0x756acc0302288288),
+            u64x2(0x367e4778848f2ad2, 0x2ff372380de7d31e),
+            u64x2(0xee36b135b73bd58f, 0x08d95c6acf74be8b),
+            u64x2(0x66ae1838a3743e4a, 0x5880f434c9d6ee98),
+            u64x2(0xd0fdf4c79a9369bd, 0x593023f0aefabd99),
+            u64x2(0xa5cc637b6f1ecb2a, 0x329ae3d1eb606e6f),
+            u64x2(0xa4dc93d6cb7594ab, 0xe00207eb49e01594),
+            u64x2(0x942366a665208ef8, 0x1caa0c4ff751c880),
+            u64x2(0xbd03239fe3e67e4a, 0x02f7f57fdb2dc1dd),
+            u64x2(0x8f8f8f8f8f8f8f8f, 0x8f8f8f8f8f8f8f8f)
+];
+
+
+            let mut r = [0u64; 16];
+            for i in 0..16 {
+                r[i] = a[i] ^ b[i];
+            }
+
+            let mut c = [0u64; 16];
+
+            for i in 0..16 {
+                c[i] = a[i] ^ b[i] ^ r[i];
+            }
+
+            let mut d = [0u64; 16];
+
+            for i in 0..16 {
+                d[i] = a[i] ^ b[i] ^ c[i];
+            }
+
+            // The following are the results of multiplying the above value
+    }
 
 
     #[test]
@@ -698,42 +739,22 @@ impl HARAKA_REG_TYPE for DatumType {
     }
 }
 
-
-#[cfg(test)]
-mod test_u64x2_shifts {
-    use super::u64x2;
-    use super::u64x2_shifts;
-    use super::u64x2_shifts_wide;
-
-
-    #[test]
-    fn test_shifts_u64x2() {
-        for i in 0..SHIFTS_U64X2_TESTS.len() {
-            let (a, b) = SHIFTS_U64X2_TESTS[i];
-            let c = a.shifts_u64x2(b);
-            assert_eq!(c, SHIFTS_U64X2_RESULTS[i]);
-        }
-    }
-}
-
-
 /// The following tests are for the `u64x2_shifts_wide` function.
 /// The tests are based on the following values:
-/// 
-    for (size_t i = 0; i < sizeof(kMultiplications) / sizeof(kMultiplications[0]); ++i) {
-        u64x2 a = kMultiplications[i].a;
-        u64x2 b = kMultiplications[i].b;
-        u64x2 c = a * b;
-        EXPECT_EQ(c.low, kMultiplications[i].low);
-        EXPECT_EQ(c.high, kMultiplications[i].high);
-    }
-}
+///
+/// ```text
+/// a = 0x0123456789abcdef, 0xfedcba9876543210
+/// b = 0xfedcba9876543210, 0x0123456789abcdef
+/// ```
+/// use the following values:
+/// 0x0123456789abcdef, 0xfedcba9876543210
+/// 0xfedcba9876543210, 0x0123456789abcdef
+/// 0x0123456789abcdef, 0xfedcba9876543210
+/// 0xfedcba9876543210, 0x0123456789abcdef
+/// 0x0123456789abcdef, 0xfedcba9876543210
+/// 0xfedcba9876543210, 0x0123456789abcdef
+/// 0x0123456789abcdef, 0xfedcba9876543210
 
-
-#if defined(__x86_64__) || defined(__arm__)
-#define TEST_MUL_64x2_64(a, b, c) TEST_MUL_64x2_64_impl(a, b, c)
-#define TEST_MUL_64x2_64_impl(a, b, c) \
-   
 
 #[cfg(test)]
 pub static AES_RCON: [u8; 7] = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40];
@@ -828,66 +849,6 @@ macro_rules! aeskeygenassist {
         unsafe {
             aeskeygenassist!(dst.as_mut_ptr(), $src, $i, $tmp);
             dst.assume_init()
-        }
-    }}
-}
-
-#[inline(always)]
-pub(crate) fn aeskeygenassist_0x00(src: &u64x2) -> u64x2 {
-    
-    aeskeygenassist!(src, 0x00)
-}
-#[inline(always)]
-pub(crate) fn aeskeygenassist_0x01(src: &u64x2) -> u64x2 {
-    aeskeygenassist!(src, 0x01)
-}
-#[inline(always)]
-pub(crate) fn aeskeygenassist_0x02(src: &u64x2) -> u64x2 {
-
-    aeskeygenassist!(src, 0x02)
-}
-#[inline(always)]
-pub(crate) fn aeskeygenassist_0x04(src: &u64x2) -> u64x2 {
-    aeskeygenassist!(src, 0x04)
-}
-#[inline(always)]
-pub(crate) fn aeskeygenassist_0x08(src: &u64x2) -> u64x2 {
-    aeskeygenassist!(src, 0x08)
-}
-#[inline(always)]
-pub(crate) fn aeskeygenassist_0x10(src: &u64x2) -> u64x2 {
-    aeskeygenassist!(src, 0x10)
-}
-#[inline(always)]
-pub(crate) fn aeskeygenassist_0x20(src: &u64x2) -> u64x2 {
-    aeskeygenassist!(src, 0x20)
-}
-#[inline(always)]
-pub(crate) fn aeskeygenassist_0x40(src: &u64x2) -> u64x2 {
-    aeskeygenassist!(src, 0x40)
-}
-
-#[inline(always)]
-pub(crate) fn aeskeygenassist_0x80(src: &u64x2) -> u64x2 {
-    unsafe {
-        llvm_asm!("pxor $0, $1"
-            : "+x"(*dst)
-            : "x"(*src)
-            :
-            : "intel", "alignstack"
-        );
-    }
-}
-
-macro_rules! pslldq {
-    ($dst:ident, $i:expr) => {{
-        unsafe {
-            llvm_asm!("pslldq $0, $1"
-                    : "+x"(*$dst)
-                    : "i"($i)
-                    :
-                    : "intel", "alignstack"
-                );
         }
     }}
 }

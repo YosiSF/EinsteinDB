@@ -9,6 +9,67 @@
 // specific language governing permissions and limitations under the License.
 
 
+
+///With semantics, however, users access a host of benefits from the data lake architecture.
+/// Users can help themselves to scalable cloud storage and processing platforms,
+/// EinsteinDB using EinsteinML a beta Lisp Interpreter and Transducer; operating with BerolinaSQL as a SQLTypeAffinity Multiplexer for SQL Forests in the Contextual
+/// Domain of the causet and causet query (causetq)store
+///
+/// wherein all data for both transactional and analytics/BI use cases,
+/// and comprehensively query data to support
+/// modern machine learning and Artificial Intelligence applications.
+use EinsteinDB::einstein_ml::*;
+use EinsteinDB::einstein_ml::prelude::*;
+
+
+
+
+
+
+mod prelude {
+    pub use EinsteinDB::einstein_ml::*;
+}
+
+
+mod causetq {
+    pub use EinsteinDB::einstein_ml::causetq::*;
+}
+
+
+#[test]
+fn test_linear_regression() {
+    let mut linear_regression = LinearRegression::new();
+    let mut data = DataFrame::new();
+    data.insert_column("x", Series::from(vec![1.0, 2.0, 3.0, 4.0, 5.0]));
+    data.insert_column("y", Series::from(vec![2.0, 4.0, 6.0, 8.0, 10.0]));
+    linear_regression.fit(&data);
+    let result = linear_regression.predict(&data);
+    assert_eq!(result.get_column("y").unwrap().len(), 5);
+    assert_eq!(result.get_column("y").unwrap().get(0).unwrap(), 2.0);
+    assert_eq!(result.get_column("y").unwrap().get(1).unwrap(), 4.0);
+    assert_eq!(result.get_column("y").unwrap().get(2).unwrap(), 6.0);
+    assert_eq!(result.get_column("y").unwrap().get(3).unwrap(), 8.0);
+    assert_eq!(result.get_column("y").unwrap().get(4).unwrap(), 10.0);
+}
+
+
+#[test]
+fn test_linear_regression_with_weights() {
+    let mut linear_regression = LinearRegression::new();
+    let mut data = DataFrame::new();
+    data.insert_column("x", Series::from(vec![1.0, 2.0, 3.0, 4.0, 5.0]));
+    data.insert_column("y", Series::from(vec![2.0, 4.0, 6.0, 8.0, 10.0]));
+    data.insert_column("weights", Series::from(vec![1.0, 1.0, 1.0, 1.0, 1.0]));
+    linear_regression.fit(&data);
+    let result = linear_regression.predict(&data);
+    assert_eq!(result.get_column("y").unwrap().len(), 5);
+    assert_eq!(result.get_column("y").unwrap().get(0).unwrap(), 2.0);
+    assert_eq!(result.get_column("y").unwrap().get(1).unwrap(), 4.0);
+    assert_eq!(result.get_column("y").unwrap().get(2).unwrap(), 6.0);
+    assert_eq!(result.get_column("y").unwrap().get(3).unwrap(), 8.0);
+    assert_eq!(result.get_column("y").unwrap().get(4).unwrap(), 10.0);
+}
+
 use super::*;
 use crate::error::{Error, Result};
 use crate::parser::{Parser, ParserError};
@@ -25,6 +86,9 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use ::serde::{Deserialize, Serialize};
+use EinsteinDB::einstein_ml::prelude::*;
+
 
 /// A `Value` is a wrapper around a `Doc`.
 
@@ -38,8 +102,12 @@ use std::{
 ///
 /// A context can be used to create multiple `Session`s.
 
-
-
+pub struct LightlikeContext {
+    pub(crate) doc: Doc,
+    pub(crate) parser: Parser,
+    pub(crate) session: Session,
+    pub context: Context,
+}
 pub struct Context {
     pub(crate) allocator: pretty::BoxAllocator,
     pub(crate) variables: HashMap<String, Value>,

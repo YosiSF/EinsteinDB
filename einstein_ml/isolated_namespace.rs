@@ -22,27 +22,56 @@ use soliton::{Soliton, SolitonOptions, SolitonOptionsBuilder};
 use berolina_sql::{SqlDatabase, SqlDatabaseOptions, SqlDatabaseContext, SqlDatabaseContextBuilder};
 
 
+////The following Prolog predicates are predefined in Allegro Prolog and generally implement the standard Prolog functionality. The set of defined predicates may be extended in the future. A few predicates in this implementation accept varying arity and are indicated with a *, as in or/*.
+//
+// =/2   ==/2   abolish/2   and/*   append/3   arg/3   assert/1   asserta/1   assertz/1   atom/1   atomic/1   bagof/3   call/1   consult/1   copy-term/2   erase/1   fail/0   first/1   functor/3   ground/1   if/2   if/3   is/2   last/1   leash/1   length/1   listing/1   member/2   memberp/2 (member without backtracking)   not/1   number/1   or/*   princ/1   read/1   recorda/1   recordz/1   recorded/2   repeat/0   rest/1   retract/1   rev/2   setof/3   true/0   var/1   write/1
+//
+// ! is the Prolog cut. It may written as an atom ! as well as the 1-element list (!). The Prolog atom predicate is equivalent to Lisp's symbolp. The Prolog atomic predicate is equivalent to Lisp's atom, true for any object that is not a cons.
 
 
 
-// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this file File except in compliance with the License. You may obtain a copy of the
-// License at http://www.apache.org/licenses/LICENSE-2.0
-// Unless required by applicable law or agreed to in writing, software distributed
-// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations under the License.
-use  einstein_ml::{
-    isolated_namespace::{
+use ::std::collections::HashMap;
+
+use ::EinsteinDB::einstein_ml::*;
 
 
-        isolated_namespace_causet_per_solitonid,
 
-        isolated_namespace_causetq_VT_per_solitonid,
-        //isolated_namespace_causetq_VT_per_solitonid_with_solitonid_as_key,
-        allegro_poset::{ async as allegro_poset_async, sync as allegro_poset_sync }
-    },
-};
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct IsolatedNamespaceOptions {
+    pub name: String,
+    pub db_options: DatabaseOptions,
+    pub soliton_options: SolitonOptions,
+    pub berolina_sql_options: SqlDatabaseOptions,
+    pub isolated_namespace_id: String,
+    pub isolated_namespace_id_subspace: Subspace,
+    pub isolated_namespace_id_subspace_key: Subspace,
+    pub isolated_namespace_id_subspace_value: Subspace,
+    pub isolated_namespace_id_subspace_key_value: Subspace,
+}
+
+
+use einstein_ml::isolated_namespace::allegro_poset_async::sync as allegro_poset_sync_;
+use einstein_ml::isolated_namespace::allegro_poset_async::async as allegro_poset_async_;
+use einstein_ml::isolated_namespace::allegro_poset::_sync as allegro_poset_sync_;
+use einstein_ml::isolated_namespace::allegro_poset::_async as allegro_poset_async_;
+use einstein_ml::isolated_namespace::isolated_namespace_causetq_VT_per_solitonid;
+use einstein_ml::isolated_namespace::IsolatedNamespace;
+use einstein_ml::isolated_namespace::isolated_namespace_causet_per_solitonid;
+use einstein_ml::DatabaseContext;
+use einstein_ml::DatabaseOptions;
+use einstein_ml::Database;
+use einstein_ml::soliton::Soliton;
+use einstein_ml::soliton::SolitonOptions;
+use einstein_ml::soliton::SolitonOptionsBuilder;
+use einstein_ml::berolina_sql::SqlDatabase;
+use einstein_ml::berolina_sql::SqlDatabaseOptions;
+use einstein_ml::berolina_sql::SqlDatabaseContext;
+use einstein_ml::berolina_sql::SqlDatabaseContextBuilder;
+use einstein_ml::fdb::FDBDatabase;
+use einstein_ml::fdb::FDBDatabaseOptions;
+use einstein_ml::fdb::FDBDatabaseContext;
+use einstein_ml::fdb::FDBDatabaseContextBuilder;
+
 
 ///!EinsteinML is a Turing Complete AllegroCL LISP Interpreter.
 /// It is a simple, fast, and powerful language for building
@@ -666,6 +695,28 @@ struct IndustrializeTablespaceName<'a> {
     name: &'a str,
 }
 
+///! A namespace that is isolated from the rest of the cluster.
+/// This is a namespace that is isolated from the rest of the cluster.
+impl<'a> IndustrializeTablespaceName<'a> {
+    pub fn new(isolate_namespace_file: Option<&'a str>, name: &'a str) -> Self {
+        IndustrializeTablespaceName {
+            isolate_namespace_file,
+            name,
+        }
+    }
+}
+
+
+impl<'a> fmt::Display for IndustrializeTablespaceName<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(isolate_namespace_file) = self.isolate_namespace_file {
+            write!(fmt, "{}/{}", isolate_namespace_file, self.name)
+        } else {
+            fmt.write_str(self.name)
+        }
+    }
+}
+
 #[APPEND_LOG_g(feature = "serde_support")]
 impl<'de> Deserialize<'de> for IsolatedNamespace {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
@@ -761,3 +812,63 @@ mod test {
         ]);
     }
 }
+
+
+///<- clause*
+// Assert a fact or rule. A macro.
+// <-- clause*
+// As above, but first retracts all rules for the functor with the same arity. This is similar to the action taken for <- the first time a functor/arity is seen within a consult, but <-- is especially useful interactively. By retracting previous clauses it allows predicates to be changed and files to be loaded more than once. A useful convention (in a file that might be loaded rather than consulted) is to use <-- in the first rule for a particular function/arity. An example of typical usage would be:
+//   (<-- (member ?item (?item . ?)))
+//   (<-  (member ?item (? . ?rest)) (member ?item ?rest))
+
+
+#[APPEND_LOG_g(feature = "clause_macro")]
+#[APPEND_LOG_g_attr(feature = "clause_macro", derive(Debug, Clone, PartialEq, Eq))]
+#[APPEND_LOG_g_attr(feature = "clause_macro", serde(rename = "Clause"))]
+#[APPEND_LOG_g_attr(feature = "clause_macro", derive(Serialize, Deserialize))]
+struct Clause<'a> {
+    functor: &'a str,
+    arity: usize,
+    body: &'a str,
+}
+
+
+#[APPEND_LOG_g(feature = "clause_macro")]
+#[APPEND_LOG_g_attr(feature = "clause_macro", derive(Serialize, Deserialize))]
+struct ClauseList<'a> {
+    clauses: Vec<Clause<'a>>,
+}
+
+
+
+pub struct ClauseMacro<'a> {
+    clauses: Vec<Clause<'a>>,
+}
+
+
+#[APPEND_LOG_g(feature = "clause_macro")]
+impl<'a> ClauseMacro<'a> {
+    pub fn new(clauses: Vec<Clause<'a>>) -> Self {
+        ClauseMacro {
+            clauses: clauses,
+        }
+    }
+}
+
+
+#[APPEND_LOG_g(feature = "clause_macro")]
+impl<'a> ClauseMacro<'a> {
+    pub fn clauses(&self) -> &Vec<Clause<'a>> {
+        &self.clauses
+    }
+}
+
+
+#[APPEND_LOG_g(feature = "clause_macro")]
+impl<'a> ClauseMacro<'a> {
+    pub fn clauses_mut(&mut self) -> &mut Vec<Clause<'a>> {
+        &mut self.clauses
+    }
+}
+
+

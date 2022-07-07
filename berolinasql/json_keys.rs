@@ -10,12 +10,114 @@
 
 use std::str;
 
+
+
 use super::{Json, JsonRef, JsonType};
 use super::local_path_expr::local_pathExpression;
 use super::super::Result;
+use super::super::Error;
+use super::super::Error::{self, *};
+use super::super::Error::{overCausetxctx, division_by_zero};
+
+
+pub fn json_keys(json: &Json) -> Result<Vec<String>> {
+    match json {
+        &Json::Object(ref m) => {
+            let mut keys = Vec::new();
+            for (k, _) in m.iter() {
+                keys.push(k.to_owned());
+            }
+            Ok(keys)
+        }
+        _ => Err(Error::invalid_type("OBJECT", json.get_type())),
+    }
+}
+
+
+
+
+/// Returns the value of the specified key in the JSON object.
+/// If the key does not exist, returns null.
+/// If the value is not a JSON object, returns null.
+
+
+pub fn json_get(json: &Json, key: &str) -> Result<Json> {
+    match json {
+        &Json::Object(ref m) => {
+            match m.get(key) {
+                Some(v) => Ok(v.clone()),
+                None => Ok(Json::Null),
+            }
+        }
+        _ => Err(Error::invalid_type("OBJECT", json.get_type())),
+    }
+}
+
+
+/// Returns the value of the specified key in the JSON object.
+/// If the key does not exist, returns null.
+
+
+pub fn json_get_string(json: &Json, key: &str) -> Result<String> {
+    match json {
+        &Json::Object(ref m) => {
+            match m.get(key) {
+                Some(v) => Ok(v.to_string()),
+                None => Ok(String::new()),
+            }
+        }
+        _ => Err(Error::invalid_type("OBJECT", json.get_type())),
+    }
+}
+
+impl Json {
+    pub fn get_string(&self, key: &str) -> Result<String> {
+        match self {
+            &Json::Object(ref m) => {
+                match m.get(key) {
+                    Some(v) => Ok(v.to_string()),
+                    None => Ok(String::new()),
+                }
+            }
+            _ => Err(Error::invalid_type("OBJECT", self.get_type())),
+        }
+    }
+}
+
+
+
+
 
 impl<'a> JsonRef<'a> {
     /// Evaluates a (possibly empty) list of causet_locales and returns a JSON array containing those causet_locales specified by `local_path_expr_list`
+    pub fn soliton_ids(&self, local_path_expr_list: &[local_pathExpression]) -> Result<Option<Json>> {
+        if !local_path_expr_list.is_empty() {
+            if local_path_expr_list.len() > 1 {
+                return Err(box_err!(
+                    "Incorrect number of parameters: expected: 0 or 1, get {:?}",
+                    local_path_expr_list.len()
+                ));
+            }
+            if local_path_expr_list
+                .iter()
+                .any(|expr| expr.contains_any_asterisk())
+            {
+                return Err(box_err!(
+                    "Invalid local_path expression: expected no asterisk, but {:?}",
+                    local_path_expr_list
+                ));
+            }
+            match self.extract(local_path_expr_list)? {
+                Some(j) => json_soliton_ids(&j.as_ref()),
+                None => Ok(None),
+            }
+        } else {
+            json_soliton_ids(&self)
+        }
+    }
+}
+
+impl JsonRef {
     pub fn soliton_ids(&self, local_path_expr_list: &[local_pathExpression]) -> Result<Option<Json>> {
         if !local_path_expr_list.is_empty() {
             if local_path_expr_list.len() > 1 {

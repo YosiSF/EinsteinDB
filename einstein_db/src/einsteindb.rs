@@ -10,6 +10,13 @@
 
 
 // Language: rust
+
+
+
+use std::collections::HashMap;
+use std::error::Error;
+use std::fs;
+use std::io::{Error as IoError, ErrorKind};
 use byteorder::{BigEndian, ReadBytesExt};
 use std::collections::BTreeMap;
 use std::io::{Cursor, Read};
@@ -28,7 +35,17 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+pub(crate) const EINSTEINDB_MAGIC: &[u8] = b"Einsteindb";
+pub(crate) const EINSTEINDB_VERSION: u8 = 1;
+pub(crate) const EINSTEINDB_HEADER_SIZE: usize = 16;
+pub(crate) const EINSTEINDB_ITEM_SIZE: usize = 32;
+pub(crate) const EINSTEINDB_ITEM_HEADER_SIZE: usize = 8;
+pub(crate) const EINSTEINDB_ITEM_TYPE_SIZE: usize = 1;
+pub(crate) const EINSTEINDB_ITEM_TYPE_HEADER_SIZE: usize = 1;
 
+
+pub(crate) const EINSTEINDB_ITEM_TYPE_DATA: u8 = 0;
+pub(crate) const EINSTEINDB_ITEM_TYPE_INDEX: u8 = 1;
 pub use crate::einstein_db_alexandrov_processing::*;
 
 
@@ -66,13 +83,67 @@ impl EinsteinDB {
         }
     }
 
-    pub fn add_event(&mut self, event: String) {
-        self.events.push(event);
+
+    pub fn load_from_file(path: &str) -> Result<EinsteinDB, Box<dyn Error>> {
+        let mut file = fs::File::open(path)?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)?;
+        EinsteinDB::load_from_buffer(&buffer)
     }
 
-    pub fn add_edge(&mut self, event1: String, event2: String) {
-        self.edges.push((event1, event2));
+    pub fn load_from_buffer(buffer: &[u8]) -> Result<EinsteinDB, Box<dyn Error>> {
+        let mut cursor = Cursor::new(buffer);
+        let mut einstein_db = EinsteinDB::new();
+        einstein_db.load_from_cursor(&mut cursor)?;
+        Ok(einstein_db)
     }
+
+
+    pub fn add_event(&self, event:Event) -> Result<EinsteinDB, Box<dyn Error>> {
+        let mut einstein_db = self.clone();
+        einstein_db.events.push(event.to_string());
+        Ok(einstein_db)
+    }
+
+    #[allow(dead_code)]
+
+    pub fn add_edge(&mut self, event1: String, event2: String) {
+        while self.events.len() < event1.len() {
+            self.events.push(String::new());
+        }
+
+        if Some(event1) != self.events.get(event1.len() as usize) {
+            panic!("Event1 not found");
+        }
+
+        if Some(event2) != self.events.get(event2.len() as usize) {
+            panic!("Event2 not found");
+        }
+
+
+        //relationship is undirected
+        for event in [event1, event2].iter() {
+            if !self.events.contains(event) {
+                self.events.push(event.clone());
+            }
+        }
+        self.edges.push((event1, event2));
+        if event1 != event2 {
+
+            self.edges.push((event2, event1));
+        }
+
+        else {
+            println!("{}", event1);
+        }
+
+
+        #[cfg(test)]
+        {
+            assert_eq!(self.events.len(), self.edges.len());
+        }
+    }
+
 
     pub fn add_signature(&mut self, signature: WotsSignature) {
         self.signatures.push(signature);
