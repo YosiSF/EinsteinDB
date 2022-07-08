@@ -6,7 +6,7 @@ license = "MIT Licensed"
 description = "Soliton is a distributed database system embedded to the EinsteinDB."
 edition = "2021"
 
-[dependencies]
+
 
 
 [build]

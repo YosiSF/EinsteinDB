@@ -1,8 +1,16 @@
-// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
-//
-//  misc
-// |
-// +- misc.rs
+// Copyright 2020 EinsteinDB Project Authors.
+// Licensed under Apache-2.0. See the LICENSE file in the project root for license information.
+// -----------------------------------------------------------------------------
+//! # EinsteinDB
+//!
+//!
+//! MVRSI is a concurrency control system for the EinsteinDB.
+//!
+//! We use a combination of HoneyBadger Epaxos and MVRSI to implement MVRSI.
+//! The MVRSI is a concurrency control system for the EinsteinDB.
+//!
+//!
+
 
 ///! Misc utilities for soliton_panic.
 ///  We use this module to define some utility functions.

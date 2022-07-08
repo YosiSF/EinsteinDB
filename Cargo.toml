@@ -9,6 +9,14 @@ license = "MIT OR Apache-2.0"
 keywords = ["OLAP", "OLTP", "MergeAppend", "Bulk Synchronization", "IPAM", "CRON", "SQLAgnostic", "Hybrid Key-Value"]
 categories = ["HTAP", "CAUSETS", "ACID", "DB4AI", "command-line-utilities", "development-tools::cargo-plugins"]
 
+[package.dependencies]
+serde = "0.9.0"
+serde_json = "0.9.0"
+serde_yaml = "0.9.0"
+serde_derive = "1.0"
+
+
+
 
 
 [lib]

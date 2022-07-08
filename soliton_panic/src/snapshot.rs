@@ -1,5 +1,16 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
-
+// -----------------------------------------------------------------------------
+//! # EinsteinDB
+//! # ----------------------------------------------------------------
+//!
+//!   #[macro_use]
+//! extern crate lazy_static;
+//!
+//! #[macro_use]
+//! extern crate serde_derive;
+//!
+//! #[macro_use]
+//! extern crate serde_json;
 use std::fmt;
 use std::hash::Hash;
 use std::cmp::Ordering;
@@ -82,7 +93,31 @@ use crate as soliton_panic;
     pub static ref SNAPSHOT_DB: EinsteinDB = EinsteinDB::new();
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SnapshotId {
+    pub id: u64,
+}
 
+
+impl SnapshotId {
+    pub fn new(id: u64) -> Self {
+        Self { id }
+    }
+}
+
+
+impl fmt::Display for SnapshotId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.id)
+    }
+}
+
+
+impl PartialOrd for SnapshotId {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
 
 pub struct Observable<T> {
     pub value: T,
@@ -99,6 +134,10 @@ pub struct Observable<T> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CubeBy<T> {
+    pub dimensions: Vec<T>,
+}
+
+pub struct CubeByRef<T> {
     pub dimensions: Vec<T>,
 }
 
@@ -134,3 +173,33 @@ impl Deref for PanicMerkleTree {
     }
 }
 
+
+
+/// # PanicLightlikePersistence
+/// # ----------------------------------------------------------------
+///
+///
+/// # ----------------------------------------------------------------
+/// # PanicMerkleTree::DBOptions
+
+
+#[derive(Clone, Debug)]
+pub struct PanicLightlikePersistenceDBOptions {
+    pub db_path: String,
+    pub db_options: soliton_panic::einstein_db::DBOptions,
+}
+
+
+impl PanicLightlikePersistenceDBOptions {
+    pub fn new(db_path: String, db_options: soliton_panic::einstein_db::DBOptions) -> Self {
+        Self { db_path, db_options }
+    }
+}
+
+
+#[derive(Clone, Debug)]
+#[allow(dead_code)]
+pub struct PanicLightlikePersistenceDB {
+    pub db_path: String,
+    pub db_options: soliton_panic::einstein_db::DBOptions,
+}

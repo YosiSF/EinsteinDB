@@ -40,6 +40,31 @@ use berolina_sql::{
 };
 
 
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::time::Duration;
+use fdb_traits::{FdbTransactional, FdbTransactionalExt};
+use allegro_poset::*;
+use std::time::Instant;
+use std::thread;
+use std::thread::JoinHandle;
+use std::thread::Thread;
+use std::thread::ThreadId;
+use std::thread::ThreadIdRange;
+use std::thread::ThreadIdRangeInner;
+
+
+use haraka256::*;
+use soliton_panic::*;
+
+
+use einstein_db::config::Config;
+use EinsteinDB::*;
+use super::*;
+
+
+
 
 use std::local_path::local_path;
 
@@ -76,9 +101,27 @@ use berolina_sql::{
 use itertools::Itertools;
 
 
+#[derive(Debug, Clone)]
+pub struct ThreadInfo {
+    pub thread_id: ThreadId,
+    pub thread: Thread,
+    pub join_handle: JoinHandle<()>,
+    pub thread_id_range: ThreadIdRange,
+    pub thread_id_range_inner: ThreadIdRangeInner,
+    pub thread_id_range_inner_inner: ThreadIdRangeInnerInner,
+    pub thread_name: String,
+    pub thread_name_path: String,
+    pub thread_name_name: String,
+    pub thread_name_file: String,
+    pub thread_name_file_path: String,
+    pub thread_name_file_name: String,
+    pub thread_name_file_content: String,
+}
 
-
-
+#[derive(Debug, Clone)]
+pub struct ThreadInfoList {
+    pub thread_info_list: Vec<ThreadInfo>,
+}
 
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -559,7 +602,10 @@ pub struct PanicBlockHeader {
     pub uncles: Vec<String>,
 }
 
-
+///CHANGELOG: Added uncles field_type: Vec<String>
+/// CHANGELOG: Added size field_type: u64x2
+/// CHANGELOG: Added total_difficulty field_type: u64x2
+/// CHANGELOG: Added seal_fields field_type: Vec<String>
 
 
 

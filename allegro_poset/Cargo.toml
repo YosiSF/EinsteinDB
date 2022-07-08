@@ -7,10 +7,15 @@ description = "AllegroCL Poset"
 license = "MIT"
 homepage = "https://www.einsteindb.com"
 
+[lib]
+name = "allegro_poset"
+
+[lib.path]
+include = "include"
+lib = "lib"
 
 [dependencies]
 byteorder = "1.2"
-chrono = {version = "0.4.19", features=["serde"] }
 tokio = "1.19.2"
 enum-set = "0.0.8"
 lazy_static = "1.4.0"

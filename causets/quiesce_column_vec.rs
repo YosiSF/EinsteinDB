@@ -263,12 +263,19 @@ where
         column_vec: &'a mut Vec<Arc<RwLock<CausetColumn>>>,
         f: F,
 
-
     ) -> Result<(), CausetError>
     where
         F: FnOnce(&'a mut Vec<Arc<RwLock<CausetColumn>>>),
     {
-        f(column_vec);
+        let mut causet_columns_read_guard = causet_columns.iter();
+        let mut column_vec_mut = Vec::new();
+        for column in column_vec {
+            column_vec_mut.push(column.clone());
+        }
+        // This is the function that is called by the caller.
+        //
+
+
         Ok(())
     }
 

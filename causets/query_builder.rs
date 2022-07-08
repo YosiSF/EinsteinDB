@@ -9,6 +9,8 @@
 // specific language governing permissions and limitations under the License.
 
 #![macro_use]
+#![allow(dead_code)]
+#![allow(unused_imports)]
 
 use ::{
     HasSchema,
