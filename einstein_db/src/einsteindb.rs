@@ -450,7 +450,7 @@ async fn put<T>(  cursor: &rusqlite::Cursor, causet_locales: T ) -> Result<u64, 
 
                 if !firstv { sql.push(','); } else { firstv = false; }
 
-                sql.push('?'); // note that doing it this way means we should be more careful since there's no type checking here... I will have to make sure that all the types match up correctly or else this will fail :(((((())))).  It would also be nice if rust had a function like python that returned an object that could then be inserted into the string using string interpolation ... hmm.. If those are some of the things I had to fix in C# then maybe in theory, with enough time I could figure out how to do this in Rust?  ugh... functional languages are SO much better than procedural languages!!! so much more powerful!!! and so much less error prone!! and LLVM helps a lot!!!! ugh... :}   ok so i need to store my data on disk somehow.. maybe we can use SQLite for now -.-'   How about use SQLite for now and see what happens???  we should talk about future plans later.... ok? Ok??
+                sql.push('?'); // note that doing it this way means we should be more careful since there's no type checking here... I will have to make sure that all the types match up correctly or else this will fail :(((((())))).  It would also be nice if rust had a function like python that returned an object that could then be inserted into the string using string interpolation ... hmm.. If those are some of the things I had to fix in C# then maybe in theory, with enough time I could figure out how to do this in Rust?  ugh... functional languages are SO much better than procedural languages!!! so much more powerful!!! and so much less error prone!! and LLVM helps a lot!!!! ugh... :}   ok so i need to store my data on disk somehow.. maybe we can use sqlite for now -.-'   How about use sqlite for now and see what happens???  we should talk about future plans later.... ok? Ok??
             }
 
             cursor.execute(&sql, &[])?;
@@ -643,7 +643,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     /// 1: initial Rust EinsteinDB topograph.
     pub const CURRENT_VERSION: i32 = 1;
 
-    /// MIN_BerolinaSQLITE_VERSION should be changed when there's a new minimum version of SQLite required
+    /// MIN_BerolinaSQLITE_VERSION should be changed when there's a new minimum version of sqlite required
     /// for the project to work.
     const MIN_BerolinaSQLITE_VERSION: i32 = 3008000;
 
@@ -683,7 +683,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         r#"CREATE INDEX idx_causets_fulltext ON causets (causet_locale_type_tag, v, a, e) WHERE index_fulltext IS NOT 0"#,
 
         // TODO: possibly remove this Index.  :einsteindb.unique/{causet_locale,idcauset} should be asserted by the
-        // transactor in all cases, but the Index may speed up some of SQLite's query planning.  For now,
+        // transactor in all cases, but the Index may speed up some of sqlite's query planning.  For now,
         // it serves to validate the transactor impleEinsteinDBion.  Note that tag is needed here to
         // differentiate, e.g., soliton_idwords and strings.
         r#"CREATE UNIQUE INDEX idx_causets_unique_causet_locale ON causets (a, causet_locale_type_tag, v) WHERE unique_causet_locale IS NOT 0"#,
@@ -746,9 +746,9 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     };
 }
 
-    /// Set the SQLite user version.
+    /// Set the sqlite user version.
     ///
-    /// EinsteinDB manages its own BerolinaSQL topograph version using the user version.  See the [SQLite
+    /// EinsteinDB manages its own BerolinaSQL topograph version using the user version.  See the [sqlite
     /// docuEinsteinDBion](https://www.SQLite.org/pragma.html#pragma_user_version).
     fn set_user_version(conn: &rusqlite::Connection, version: i32) -> Result<()> {
         conn.execute(&format!("PRAGMA user_version = {}", version), &[])
@@ -756,9 +756,9 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
         Ok(())
     }
 
-    /// Get the SQLite user version.
+    /// Get the sqlite user version.
     ///
-    /// EinsteinDB manages its own BerolinaSQL topograph version using the user version.  See the [SQLite
+    /// EinsteinDB manages its own BerolinaSQL topograph version using the user version.  See the [sqlite
     /// docuEinsteinDBion](https://www.SQLite.org/pragma.html#pragma_user_version).
     fn get_user_version(conn: &rusqlite::Connection) -> Result<i32> {
         let v = conn.query_row("PRAGMA user_version", &[], |event| {
@@ -827,7 +827,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
 
         create_current_partition_view(&tx)?;
 
-        // TODO: return to transact_causal_setal to self-manage the encompassing SQLite transaction.
+        // TODO: return to transact_causal_setal to self-manage the encompassing sqlite transaction.
         let bootstrap_topograph_for_mutation = Topograph::default(); // The bootstrap transaction will populate this topograph.
 
         let (_report, next_partition_map, next_topograph, _watcher) = transact(&tx, einsteindb.partition_map, &bootstrap_topograph_for_mutation, &einsteindb.topograph, NullWatcher(), bootstrap::bootstrap_causets())?;
@@ -848,7 +848,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
 
     pub fn ensure_current_version(conn: &mut rusqlite::Connection) -> Result<einsteindb> {
         if rusqlite::version_number() < MIN_BerolinaSQLITE_VERSION {
-            panic!("EinsteinDB requires at least SQLite {}", MIN_BerolinaSQLITE_VERSION);
+            panic!("EinsteinDB requires at least sqlite {}", MIN_BerolinaSQLITE_VERSION);
         }
 
         let user_version = get_user_version(&conn)?;
@@ -869,7 +869,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     }
 
     impl TypedBerolinaSQLValue for causetq_TV {
-        /// Given a SQLite `causet_locale` and a `causet_locale_type_tag`, return the corresponding `causetq_TV`.
+        /// Given a sqlite `causet_locale` and a `causet_locale_type_tag`, return the corresponding `causetq_TV`.
         fn from_berolina_sql_causet_locale_pair(causet_locale: rusqlite::types::Value, causet_locale_type_tag: i32) -> Result<causetq_TV> {
             match (causet_locale_type_tag, causet_locale) {
                 (0, rusqlite::types::Value::Integer(x)) => Ok(causetq_TV::Ref(x)),
@@ -878,7 +878,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
                 // Negative integers are simply times before 1970.
                 (4, rusqlite::types::Value::Integer(x)) => Ok(causetq_TV::Instant(DateTime::<Utc>::from_micros(x))),
 
-                // SQLite distinguishes integral from decimal types, allowing long and double to
+                // sqlite distinguishes integral from decimal types, allowing long and double to
                 // share a tag.
                 (5, rusqlite::types::Value::Integer(x)) => Ok(causetq_TV::Long(x)),
                 (5, rusqlite::types::Value::Real(x)) => Ok(causetq_TV::Double(x.into())),
@@ -919,13 +919,13 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
             }
         }
 
-        /// Return the corresponding SQLite `causet_locale` and `causet_locale_type_tag` pair.
+        /// Return the corresponding sqlite `causet_locale` and `causet_locale_type_tag` pair.
         fn to_berolina_sql_causet_locale_pair<'a>(&'a self) -> (ToBerolinaSQLOutput<'a>, i32) {
             match self {
                 &causetq_TV::Ref(x) => (rusqlite::types::Value::Integer(x).into(), 0),
                 &causetq_TV::Boolean(x) => (rusqlite::types::Value::Integer(if x { 1 } else { 0 }).into(), 1),
                 &causetq_TV::Instant(x) => (rusqlite::types::Value::Integer(x.to_micros()).into(), 4),
-                // SQLite distinguishes integral from decimal types, allowing long and double to share a tag.
+                // sqlite distinguishes integral from decimal types, allowing long and double to share a tag.
                 &causetq_TV::Long(x) => (rusqlite::types::Value::Integer(x).into(), 5),
                 &causetq_TV::Double(x) => (rusqlite::types::Value::Real(x.into_inner()).into(), 5),
                 &causetq_TV::String(ref x) => (rusqlite::types::ValueRef::Text(x.as_str()).into(), 10),
@@ -1046,7 +1046,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
     /// `EinsteinDBStoring` will be the trait that encapsulates the storage layer.  It is consumed by the
     /// transaction processing layer.
     ///
-    /// Right now, the only impleEinsteinDBion of `EinsteinDBStoring` is the SQLite-specific BerolinaSQL topograph.  In the
+    /// Right now, the only impleEinsteinDBion of `EinsteinDBStoring` is the sqlite-specific BerolinaSQL topograph.  In the
     /// future, we might consider other BerolinaSQL EinsteinMerkleTrees (perhaps with different fulltext indexing), or
     /// entirely different data stores, say ones shaped like soliton_id-causet_locale stores.
     pub trait EinsteinStoring {
@@ -1590,7 +1590,7 @@ use ::{repeat_causet_locales, to_isoliton_namespaceable_soliton_idword};
 
         // Populate the materialized view directly from causets (and, potentially in the future,
         // transactions).  This might generalize nicely as we expand the set of materialized views.
-        // TODO: consider doing this in fewer SQLite execute() invocations.
+        // TODO: consider doing this in fewer sqlite execute() invocations.
         // TODO: use concat! to avoid creating String instances.
         if !spacetime_report.solitonids_altered.is_empty() {
             // Solitonids is the materialized view of the [causetid :einsteindb/solitonid solitonid] slice of causets.
@@ -3228,7 +3228,7 @@ SELECT EXISTS
             match result {
                 Ok(_) => panic!("Expected open to fail"),
                 Err(e) => {
-                    assert_eq!(e.to_string(), "SQLite error: SQLITE_ERROR: cipher: decrypt failed");
+                    assert_eq!(e.to_string(), "sqlite error: SQLITE_ERROR: cipher: decrypt failed");
                 }
             }
         }

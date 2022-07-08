@@ -1,5 +1,65 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+//     VariablesUnbound(Vec<String>),
+//     #[fail(display = "variables {:?} unbound at query execution time", _0)]
+//     VariablesUnbound(Vec<String>),
+//     #[fail(display = "variables {:?} unbound at query execution time", _0)]
 
+
+// #[derive(Debug, Fail)]
+// pub enum EinsteinDBError {
+//     #[fail(display = "EinsteinDBError: {}", _0)]
+//     EinsteinDBError(String),
+//
+//     //path
+//     #[fail(display = "variables {:?} unbound at query execution time", _0)]
+//     VariablesUnbound(Vec<String>),
+//     #[fail(display = "variables {:?} unbound at query execution time", _0)]
+//     VariablesUnbound(Vec<String>),
+
+use std::collections::HashSet;
+use std::collections::HashMap;
+use std::collections::BTreeSet;
+use std::collections::BTreeMap;
+use std::hash::Hash;
+use std::ops::{
+    Add,
+    AddAssign,
+    Sub,
+    SubAssign,
+    Mul,
+    MulAssign,
+    Div,
+    DivAssign,
+    Deref,
+    DerefMut,
+    Index,
+    IndexMut,
+};
+
+
+use ::{
+    //path
+
+    ValueRc,
+    ValueRef,
+    ValueRefMut,
+};
+
+use ::{
+    //path
+    ValueRc,
+    ValueRef,
+    ValueRefMut,
+};
+
+use crate::fdb_traits::{
+    //path
+
+    ValueRc,
+    ValueRef,
+    ValueRefMut,
+};
 
 use crate::{
     traits::{FdbEngine, FdbKvEngine, FdbKvStore, FdbKvStoreMut},

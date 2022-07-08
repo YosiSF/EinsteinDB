@@ -268,7 +268,7 @@ impl From<FdbRustError> for FdbRustError {
 
 
 
-/// A convenience wrapper around a single SQLite connection and a Conn. This is suitable
+/// A convenience wrapper around a single sqlite connection and a Conn. This is suitable
 /// for applications that don't require complex connection management.
 pub struct Store {
     conn: Conn,

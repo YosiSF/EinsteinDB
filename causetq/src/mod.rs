@@ -8,10 +8,35 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+
+#[macro_use]
+extern crate soliton_panic;
+
+
+extern crate soliton;
+
+
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate serde_json;
+#[macro_use]
+extern crate serde_value;
+#[macro_use]
+
+extern crate serde_yaml;
+
+
 //! Builder utilities for making type representations. Currently only includes
 //! `FieldTypeBuilder` for building the `FieldType` protobuf message.
 
 mod field_type;
+
+
 
 pub use self::field_type::FieldTypeBuilder;
 
@@ -24,25 +49,76 @@ crate use self::ctx::{Context, ContextBuilder};
 crate use self::dedup::dedup;
 
 
-//gremlin queries for causet
-//Peek, Obtain Lease, Complete, and Enqueue operations.
-mod causet;
-mod causet_query;
-mod causet_query_builder;
-mod causet_query_builder_impl;
+/// A macro for defining a `Result` with a custom error type.
+/// This is similar to the `?` operator in Rust, but it allows you to define a
+/// custom error type.
+/// This macro is borrowed from the `failure` crate.
+/// See [`failure`](https://crates.io/crates/failure) for more information.
+
+#[macro_export]
+macro_rules! result {
+    ($expr:expr, $err:ty) => (
+        match $expr {
+            Ok(val) => Ok(val),
+            Err(err) => Err(From::from(err)),
+        }
+    );
+    ($expr:expr) => (
+        match $expr {
+            Ok(val) => Ok(val),
+            Err(err) => Err(From::from(err)),
+        }
+    );
+}
 
 
-//gremlin queries for causetq
-//Peek, Obtain Lease, Complete, and Enqueue operations.
-mod causetq;
-mod causetq_query;
-mod causetq_query_builder;
+/// A macro for defining a `Result` with a custom error type.
+/// This is similar to the `?` operator in Rust, but it allows you to define a
+///
+
+
+/// A macro for defining a `Result` with a custom error type.
+#[macro_export]
+macro_rules! result_err {
+    ($expr:expr, $err:ty) => (
+        match $expr {
+            Ok(val) => Ok(val),
+            Err(err) => Err(From::from(err)),
+        }
+    );
+    ($expr:expr) => (
+        match $expr {
+            Ok(val) => Ok(val),
+            Err(err) => Err(From::from(err)),
+        }
+    );
+    ($expr:expr) => (
+        match $expr {
+            Ok(val) => Ok(val),
+            Err(err) => Err(From::from(err)),
+        }
+    );
+}
 
 
 
 
 
 
+#[macro_export]
+macro_rules! einsteindb_macro_impl_with_args {
+    /// einsteindb_macro_impl_with_args!(
+    ///    "Hello, {}!",
+    ///   "world"
+    /// );
+    ($($x:tt)*) => {
+        {
+            let mut _einsteindb_macro_result = String::new();
+            write!(_einsteindb_macro_result, $($x)*).unwrap();
+            _einsteindb_macro_result
+        }
+    };
+}
 
 
 

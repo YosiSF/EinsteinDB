@@ -59,11 +59,11 @@ pub enum ScalarValue {
     Null,
     //PostgresQL
     Jsonb(Option<super::Jsonb>),
-    //SQLite
+    //sqlite
     Blob(Option<super::Blob>),
-    //SQLite
+    //sqlite
     Text(Option<super::Text>),
-    //SQLite
+    //sqlite
     Nullable(Option<ScalarValue>),
     //FOUNDATIONDB
     Bool(Option<super::Bool>),

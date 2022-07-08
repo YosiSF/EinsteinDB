@@ -15,11 +15,6 @@ use std::path::PathBuf;
 use std::fs::{DirBuilder, OpenOptions};
 use std::sync::Arc;
 
-#[derive(Debug)]
-pub struct FileSystem {
-    pub base_path: String,
-}
-
 pub fn create_dir(dir: &str) -> Result<(), String> {
     let path = Path::new(dir);
     if !path.exists() {
@@ -133,20 +128,6 @@ pub struct FileSystem {
 }
 
 
-impl FileSystem {
-    pub fn new(file_path: &str, file_size: u64) -> FileSystem {
-        let io_rate_limiter = get_io_rate_limiter() == "none"
-            ? Arc::new(IORateLimiter::new(0, 0))
-            : Arc::new(IORateLimiter::new(get_io_rate_limiter().parse().unwrap(), get_io_type()));
-        let io_type = get_io_type();
-        FileSystem {
-            io_rate_limiter = io_rate_limiter,
-            io_type = io_type,
-            file_path: file_path.to_string(),
-            file_size: file_size,
-        }
-    }
-}   
 
 
 impl FileSystem {
@@ -174,13 +155,11 @@ impl FileSystem {
 }
 
 
-impl FileSystem {
-    pub fn new() -> Self {
-        FileSystem {
-            io_rate_limiter: get_io_rate_limiter(),
-        }
-    }
-}
+
+/// FileSystem is a wrapper of file system.
+/// It provides a set of functions to operate file system.
+/// It also provides a set of functions to operate file.
+/// git message : "FileSystem is a wrapper of file system. It provides a set of functions to operate file system. It also provides a set of functions to operate file."
 pub trait FileInspector: Sync + Send {
     fn get_file_size(&self) -> u64;
     fn get_file_path(&self) -> String;

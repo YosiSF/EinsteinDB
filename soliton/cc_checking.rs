@@ -222,29 +222,7 @@ pub(crate) fn check_terms(terms: &[Term]) -> Result<(), String> {
 /// We try to be maximally helpful by yielding every malformed causet, rather than only the first.
 
 
-pub(crate) fn check_term(term: &Term) -> Result<(), String> {
-
-    let mut type_checker = TypeChecker::new();
-
-    let mut errors: TypeDisagreements = TypeDisagreements::default();
-
-    for expr in &term.exprs {
-        for (solitonid, type_) in &term.type_map {
-            type_checker.type_map.insert(solitonid.clone(), type_.clone());
-        }
-
-        let expr_type = type_checker.check_type(expr)?;
-        let expr_type = type_checker.type_map.get(solitonid).unwrap();
-        if expr_type != type_ {
-            errors.push(TypeDisagreement {
-                expr: expr.clone(),
-                solitonid: solitonid.clone(),
-                expected: type_.clone(),
-                actual: expr_type.clone(),
-            });
-        }
-    }
-
+pub(crate) fn causetq_term_type(term: &Term) -> Result<(), String> {
     if errors.is_empty() {
         Ok(())
     } else {
@@ -326,12 +304,116 @@ pub(crate) fn check_term(term: &Term) -> Result<(), String> {
                     }
                     errors.insert((e, a, v.clone()), attribute.causet_locale_type);
                 }
+
+                ///close the causet
             }
+
+        //errors.push(TypeDisagreement {
+        //    expr: Expr::Ident(v.clone()),
+        //    solitonid: v.clone(),
+        //    expected: attribute.causet_locale_type,
+        //    actual: v.causet_locale_type(),
+        //});
+        //errors.insert((e, a, v.clone()), attribute.causet_locale_type);
+
+        errors.push(TypeDisagreement {
+            expr: Expr::Ident(v.clone()),
+            solitonid: v.clone(),
+            expected: attribute.causet_locale_type,
+            actual: v.causet_locale_type(),
+        });
+
+        }
+
+    Err(errors.to_string())
+
+    }
+
+    pub(crate) fn check_term(term: &Term) -> Result<(), String> {
+        let mut type_checker = TypeChecker::new();
+
+        let mut errors: TypeDisagreements = TypeDisagreements::default();
+
+        for expr in &term.exprs {
+            for (solitonid, type_) in &term.type_map {
+                type_checker.type_map.insert(solitonid.clone(), type_.clone());
+            }
+
+            let expr_type = type_checker.check_type(expr)?;
+            let expr_type = type_checker.type_map.get(solitonid).unwrap();
+            if expr_type != type_ {
+                errors.push(TypeDisagreement {
+                    expr: expr.clone(),
+                    solitonid: solitonid.clone(),
+                    expected: type_.clone(),
+                    actual: expr_type.clone(),
+                });
+            }
+        }
+
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors.to_string())
         }
     }
 
-    Ok(())
-}
+
+    /// Ensure that the given term type check.
+    /// This function is similar to check_term, but it does not yield any errors.
+    /// Instead, it returns a list of all the errors that were found.
+    /// This is useful for testing.
+
+
+
+    pub(crate) fn check_term_silent(term: &Term) -> TypeDisagreements {
+        let mut type_checker = TypeChecker::new();
+
+        let mut errors: TypeDisagreements = TypeDisagreements::default();
+
+        for expr in &term.exprs {
+            for (solitonid, type_) in &term.type_map {
+                type_checker.type_map.insert(solitonid.clone(), type_.clone());
+            }
+
+            let expr_type = type_checker.check_type(expr);
+            let expr_type = type_checker.type_map.get(solitonid).unwrap();
+            if expr_type != type_ {
+                errors.push(TypeDisagreement {
+                    expr: expr.clone(),
+                    solitonid: solitonid.clone(),
+                    expected: type_.clone(),
+                    actual: expr_type.clone(),
+                });
+            }
+        }
+
+        errors
+    }
+
+
+    /// Ensure that the given term type check.
+    /// We try to be maximally helpful by yielding every malformed causet, rather than only the first.
+    /// In the future, we might change this choice, or allow the consumer to specify the robustness of
+    /// the type checking desired, since there is a cost to providing helpful diagnostics.
+    /// pub(crate) fn check_term(term: &Term) -> Result<(), String> {
+    ///    let mut type_checker = TypeChecker::new();
+    ///   let mut errors: TypeDisagreements = TypeDisagreements::default();
+    ///  for expr in &term.exprs {
+    ///   for (solitonid, type_) in &term.type_map {
+    ///   type_checker.type_map.insert(solitonid.clone(), type_.clone());
+    /// causet_locale_type = v.causet_locale_type();
+    /// assert_eq!(cache.get("foo").unwrap().value(), "bar");
+    /// assert_eq!(cache.get("foo").unwrap().value(), "bar");
+    /// assert_eq!(cache.get("foo").unwrap().value(), "bar");
+    ///
+    /// assert_eq!(cache.get("foo").unwrap().value(), "bar");
+    /// assert_eq!(cache.get("foo").unwrap().value(), "bar");
+    ///
+    ///
+    /// assert_eq!(cache.get("foo").unwrap().value(), "bar");
+    /// assert_eq!(cache.get("foo").unwrap().value(), "bar");
+
 
 /// Ensure that the given terms obey the cardinality restrictions of the given topograph.
 ///
@@ -345,26 +427,18 @@ pub(crate) fn check_term(term: &Term) -> Result<(), String> {
 /// We try to be maximally helpful by yielding every malformed set of causets, rather than just the
 /// first set, or even the first conflict.  In the future, we might change this choice, or allow the
 /// consumer to specify the robustness of the cardinality checking desired.
-pub(crate) fn cardinality_conflicts<'topograph>(aev_trie: &AEVTrie<'topograph>) -> Vec<CardinalityConflict> {
-    let mut errors = vec![];
 
-    for (&(a, attribute), evs) in aev_trie {
-        for (&e, ref ars) in evs {
-            if !attribute.multival && ars.add.len() > 1 {
-                let vs = ars.add.clone();
-                errors.push(CardinalityConflict::CardinalityOneAddConflict { e, a, vs });
-            }
 
-            let vs: BTreeSet<_> = ars.retract.intersection(&ars.add).cloned().collect();
-            if !vs.is_empty() {
-                errors.push(CardinalityConflict::AddRetractConflict { e, a, vs })
-            }
-        }
-    }
+/// Ensure that the given terms obey the cardinality restrictions of the given topograph.
 
-    errors
 
-}
+
+
+
+
+    /// Ensure that the given term type check.
+    /// We try to be maximally helpful by yielding every malformed causet, rather than only the first.
+
 
 
 /// Ensure that the given terms obey the cardinality restrictions of the given topograph.

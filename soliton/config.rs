@@ -1,11 +1,41 @@
 //Copyright (c) 2022-EinsteinDB. All rights reserved.
+// Copyright (c) 2022 Whtcorps Inc and EinsteinDB Project contributors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+// # About
+//
+// This is a library for the [EinsteinDB](https://einsteindb.com
+// "EinsteinDB: A Scalable, High-Performance, Distributed Database")
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
 ///////////////////////////////////////////////////////////////////////////////
 
 use std::env;
+
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
+
+
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::thread::{self, JoinHandle};
+use std::time::{Duration, Instant};
+
+
+
 
 //! Configuration for the soliton server.
 //! This is loaded from the `soliton.toml` file located in the root of the project.
@@ -27,6 +57,104 @@ const VIOLETABFT_MAX_MEM: usize = GIB as usize;
 const LAST_CONFIG_FILE: &str = "last_einsteindb.toml";
 const TMP_CONFIG_FILE: &str = "tmp_einsteindb.toml";
 const MAX_BLOCK_SIZE: usize = 32 * MIB as usize;
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Config {
+    pub soliton_sub_causet_dir: String,
+    pub soliton_sub_causet_name: String,
+    pub soliton_sub_causet_version: String,
+    pub soliton_sub_causet_author: String,
+    pub soliton_sub_causet_description: String,
+    pub soliton_sub_causet_license: String,
+    pub soliton_sub_causet_copyright: String,
+    pub soliton_sub_causet_homepage: String,
+    pub soliton_sub_causet_repository: String,
+    pub soliton_sub_causet_issues: String,
+    pub soliton_sub_causet_readme: String,
+    pub soliton_sub_causet_changelog: String,
+    pub soliton_sub_causet_license_file: String,
+    pub soliton_sub_causet_license_file_content: String,
+    pub soliton_sub_causet_license_file_content_type: String,
+    pub soliton_sub_causet_license_file_content_encoding: String,
+    pub soliton_sub_causet_license_file_content_disposition: String,
+    pub soliton_sub_causet_license_file_content_length: String,
+    pub soliton_sub_causet_license_file_content_md5: String,
+    pub soliton_sub_causet_license_file_content_sha1: String,
+    pub soliton_sub_causet_license_file_content_sha256: String,
+    pub soliton_sub_causet_license_file_content_sha512: String,
+    pub soliton_sub_causet_license_file_content_crc32: String,
+    pub soliton_sub_causet_license_file_content_crc64: String,
+    pub soliton_sub_causet_license_file_content_crc128: String,
+}
+
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConfigFile {
+    pub soliton_sub_causet_dir: String,
+    pub soliton_sub_causet_name: String,
+    pub soliton_sub_causet_version: String,
+    pub soliton_sub_causet_author: String,
+    pub soliton_sub_causet_description: String,
+    pub soliton_sub_causet_license: String,
+    pub soliton_sub_causet_copyright: String,
+    pub soliton_sub_causet_homepage: String,
+    pub soliton_sub_causet_repository: String,
+    pub soliton_sub_causet_issues: String,
+    pub soliton_sub_causet_readme: String,
+    pub soliton_sub_causet_changelog: String,
+    pub soliton_sub_causet_license_file: String,
+    pub soliton_sub_causet_license_file_content: String,
+    pub soliton_sub_causet_license_file_content_type: String,
+    pub soliton_sub_causet_license_file_content_encoding: String,
+    pub soliton_sub_causet_license_file_content_disposition: String,
+    pub soliton_sub_causet_license_file_content_length: String,
+    pub soliton_sub_causet_license_file_content_md5: String,
+    pub soliton_sub_causet_license_file_content_sha1: String,
+    pub soliton_sub_causet_license_file_content_sha256: String,
+    pub soliton_sub_causet_license_file_content_sha512: String,
+    pub soliton_sub_causet_license_file_content_crc32: String,
+    pub soliton_sub_causet_license_file_content_crc64: String,
+    pub soliton_sub_causet_license_file_content_crc128: String,
+}
+
+impl fmt::Display for SolitonSubResource {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SolitonSubResource {
+    pub name: String,
+    pub version: String,
+    pub author: String,
+    pub description: String,
+    pub license: String,
+    pub copyright: String,
+    pub homepage: String,
+    pub repository: String,
+    pub issues: String,
+    pub readme: String,
+    pub changelog: String,
+    pub license_file: String,
+    pub license_file_content: String,
+    pub license_file_content_type: String,
+    pub license_file_content_encoding: String,
+    pub license_file_content_disposition: String,
+    pub license_file_content_length: String,
+    pub license_file_content_md5: String,
+    pub license_file_content_sha1: String,
+    pub license_file_content_sha256: String,
+    pub license_file_content_sha512: String,
+    pub license_file_content_crc32: String,
+    pub license_file_content_crc64: String,
+    pub license_file_content_crc128: String,
+}
+
+
 
 fn memory_limit_for_namespaced(is_violetabft_db: bool, namespaced: &str, total_mem: u64) -> ReadableSize {
     let (ratio, min, max) = match (is_violetabft_db, namespaced) {
@@ -53,6 +181,29 @@ pub struct FoundationDBNamespacedConfig {
     pub namespace_lock: FoundationDBNamespacedConfigNamespace,
     #[serde(default)]
     pub namespace_write: FoundationDBNamespacedConfigNamespace,
+}
+
+
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug, OnlineConfig)]
+#[serde(default)]
+#[serde(rename_all = "kebab-case")]
+pub struct FoundationDBNamespacedConfigNamespace {
+    #[serde(default)]
+    pub memory_limit: ReadableSize,
+    #[serde(default)]
+    pub memory_limit_for_namespaced: FoundationDBNamespacedConfigNamespaceMemoryLimitForNamespaced,
+    #[serde(default)]
+    pub memory_limit_for_namespaced_db: FoundationDBNamespacedConfigNamespaceMemoryLimitForNamespaced,
+    #[serde(default)]
+    pub memory_limit_for_namespaced_db_violetabft: FoundationDBNamespacedConfigNamespaceMemoryLimitForNamespaced,
+    #[serde(default)]
+    pub memory_limit_for_namespaced_db_violetabft_db: FoundationDBNamespacedConfigNamespaceMemoryLimitForNamespaced,
+    #[serde(default)]
+    pub memory_limit_for_namespaced_db_violetabft_db_violetabft: FoundationDBNamespacedConfigNamespaceMemoryLimitForNamespaced,
+    #[serde(default)]
+    pub memory_limit_for_namespaced_db_violetabft_db_violetabft_db: FoundationDBNamespacedConfigNamespaceMemoryLimitForNamespaced,
+    #[serde(default)]
+    pub memory_limit_for_namespaced_db_violetabft_db_violetabft_db_violetabft: FoundationDBNamespacedConfigNamespaceMemoryLimitForNamespaced,
 }
 
 impl Default for FoundationDBNamespacedConfig {

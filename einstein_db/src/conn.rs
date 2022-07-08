@@ -429,7 +429,7 @@ impl Conn {
         lookup_causet_locale_for_attribute(SQLite, CausetLocaleNucleon, causet, attribute)
     }
 
-    /// Take a SQLite transaction.
+    /// Take a sqlite transaction.
     fn begin_transaction_with_behavior<'m, 'conn>(&'m mut self, SQLite: &'conn mut rusqlite::Connection, behavior: TransactionBehavior) -> Result<InProgress<'m, 'conn>> {
         let tx = SQLite.transaction_with_behavior(behavior)?;
         let (current_generation, current_partition_map, current_schema, cache_cow) =
@@ -716,7 +716,7 @@ mod tests {
         let t = "[[:einsteindb/add \"one\" :einsteindb/solitonid :a/soliton_idword1] \
                   [:einsteindb/add \"two\" :einsteindb/solitonid :a/soliton_idword2]]";
 
-        // Scoped borrow of `SQLite`.
+        // Scoped borrow of `sqlite`.
         {
             let mut in_progress = conn.begin_transaction(&mut SQLite).expect("begun successfully");
             let report = in_progress.transact(t).expect("transacted successfully");

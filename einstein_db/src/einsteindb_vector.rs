@@ -841,6 +841,18 @@ while let Some(tx) = tx_range_iter.next() {
         let mut causet_locale_ref = causet_locale.borrow_ref();
     }
 
+    /// The causet_locale_ref is the causet_locale of the tx.
+    /// The causet_locale_ref_next is the causet_locale of the next tx.
+    ///
+    /// # Examples
+    /// ----------------
+    /// ```
+    /// use std::collections::HashMap;
+    /// use einstein_db::{
+    ///
+    ///
+    ///
+
     /// Collects a supplied tx range into an DESC ordered Vec of valid txs,
     /// ensuring they all belong to the same timeline.
     /// This function is used to collect the causet_locale of the next tx.
@@ -851,28 +863,35 @@ while let Some(tx) = tx_range_iter.next() {
     /// use einstein_ml::{*}
     ///
 
-    fn collect_causet_locale_of_next_tx(
-        causet_locale: &CausetLocale,
-        tx_range: &TxRange,
-    ) -> Result<CausetLocaleRef, Error> {
-        let mut causets = Vec::new();
-        let mut tx_range = tx_range.clone();
-        let mut tx_range_iter = tx_range.into_iter();
-        let mut tx_range_iter_mut = tx_range.into_iter();
-        let mut tx_range_iter_mut_next = tx_range_iter_mut.next();
 
-        let mut causet_locale_ref = causet_locale.borrow_ref();
+    fn collect_causets_ordered_by_stochastic_clock(
+        tx_range: &TxRange,
+    ) -> Result<Vec<CausetLocaleRef>, Error> {
+        Vec::new();
+        let mut tx_range = tx_range.clone();
+        tx_range.into_iter();
+        let mut tx_range_iter_mut = tx_range.into_iter();
+        tx_range_iter_mut.next();
+
+        fn collect_causet_locale_of_next_tx(
+            causet_locale: &CausetLocale,
+            tx_range: &TxRange,
+        ) -> Result<CausetLocaleRef, Error> {
+            Vec::new();
+            let mut tx_range = tx_range.clone();
+            tx_range.into_iter();
+            let mut tx_range_iter_mut = tx_range.into_iter();
+            tx_range_iter_mut.next();
+
+            causet_locale.borrow_ref();
+            causet_locale.borrow_mut();
+        }
     }
+
+
 
     /// Collects a supplied tx range into an DESC ordered Vec of valid txs,
     /// ensuring they all belong to the same timeline.
     /// This function is used to collect the causet_locale of the next tx.
-
-
-
-
-
-
-
 
 

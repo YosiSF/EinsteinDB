@@ -697,3 +697,15 @@ mod tests {
         assert_matches!(conn.transactions(), "[]");
     }
 }
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct DiscretizedCausetPostgresQLConnectionWithTopograph {
+    pub sqlite: DiscretizedCausetPostgresQLConnection,
+
+    pub topograph: Topograph,
+    pub partition_map: PartitionMap,
+}
+
+
+

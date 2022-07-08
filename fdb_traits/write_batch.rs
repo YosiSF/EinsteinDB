@@ -1,4 +1,12 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0. Unless required by
+// applicable law or agreed to in writing, software distributed under the License is
+// distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied. See the License for the specific language
+// governing permissions and limitations under the License.
+//
 
 
 use crate::fdb_traits::*;
@@ -13,6 +21,120 @@ use std::ops::{Deref, DerefMut};
 use std::slice;
 use std::str;
 
+use std::collections::HashMap;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+use std::collections::HashSet;
+
+
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::cell::Ref;
+
+
+use std::fmt::Debug;
+use std::fmt::Display;
+
+use EinsteinDB::fdb_traits::*;
+use EinsteinDB::fdb_traits::options::*;
+
+
+
+use EinsteinDB::einstein_db::*;
+use EinsteinDB::einstein_db::options::*;
+
+use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
+use std::ops::{Deref, DerefMut, Index, IndexMut};
+
+
+use std::convert::TryFrom;
+use std::convert::TryInto;
+
+
+use std::iter::FromIterator;
+use std::iter::IntoIterator;
+
+
+use std::hash::Hash;
+use std::hash::Hasher;
+
+
+use std::cmp::PartialEq;
+use std::cmp::Eq;
+use std::cmp::Ordering;
+use std::cmp::PartialOrd;
+use std::cmp::Ord;
+
+
+use std::fmt::Debug;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result;
+
+///Co-optimizing storage and queries for linear algebras
+/// # Examples
+/// ```
+/// use EinsteinDB::fdb_traits::*;
+/// use EinsteinDB::fdb_traits::options::*;
+///
+///
+
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FdbWriteBatch<K, V> {
+    pub(crate) inner: Rc<RefCell<FdbWriteBatchInner<K, V>>>,
+}
+
+
+impl<K, V> FdbWriteBatch<K, V> {
+    pub fn new() -> Self {
+        FdbWriteBatch {
+            inner: Rc::new(RefCell::new(FdbWriteBatchInner::new())),
+        }
+    }
+}
+
+
+impl<K, V> FdbWriteBatch<K, V> {
+    pub fn clear(&mut self) {
+        self.inner.borrow_mut().clear();
+    }
+}
+
+
+impl<K, V> FdbWriteBatch<K, V> {
+    pub fn commit(&mut self) -> FdbResult<()> {
+        self.inner.borrow_mut().commit()
+    }
+}
+
+#[derive(Debug, Fail)]
+pub enum WriteBatchError {
+    #[fail(display = "WriteBatchError: {}", _0)]
+    WriteBatchError(String),
+}
+
+#[derive(Debug, Fail)]
+#[allow(dead_code)]
+pub enum WriteBatchWriteError {
+    #[fail(display = "WriteBatchWriteError: {}", _0)]
+    WriteBatchWriteError(String),
+}
+
+
+#[derive(Debug, Fail)]
+#[allow(dead_code)]
+#[allow(unused_variables)]
+#[allow(unused_imports)]
+#[allow(unused_mut)]
+pub enum WriteBatchReadError {
+    #[fail(display = "WriteBatchReadError: {}", _0)]
+    WriteBatchReadError(String),
+}
 
 /// A write batch is a collection of mutations that can be applied to a database.
 /// The batch is not thread-safe, and must be committed before it can be used again.

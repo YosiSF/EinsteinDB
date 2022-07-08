@@ -49,7 +49,7 @@ use std::thread;
 
 
 /*
-Encrypted storage. What are the tradeoffs to using SQLCipher instead of SQLite? 
+Encrypted storage. What are the tradeoffs to using SQLCipher instead of sqlite?
 It's a trivial change that gives us pervasive encryption of all data, 
 but we don't know the performance implications. 
 

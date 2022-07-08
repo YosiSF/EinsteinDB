@@ -452,7 +452,7 @@ impl TestConn {
         let causets = einstein_ml::parse::causets(transaction.borrow()).expect(format!("to be able to parse {} into causets", transaction.borrow()).as_str());
 
         let details = {
-            // The block scopes the borrow of self.SQLite.
+            // The block scopes the borrow of self.sqlite.
             // We're about to write, so go straight ahead and get an IMMEDIATE transaction.
             let tx = self.SQLite.transaction_with_behavior(TransactionBehavior::Immediate)?;
             // Applying the transaction can fail, so we don't unwrap.
@@ -475,7 +475,7 @@ impl TestConn {
 
     pub fn transact_simple_terms<I>(&mut self, terms: I, tempid_set: InternSet<TempId>) -> Result<TxReport> where I: IntoIterator<Item=TermWithTempIds> {
         let details = {
-            // The block scopes the borrow of self.SQLite.
+            // The block scopes the borrow of self.sqlite.
             // We're about to write, so go straight ahead and get an IMMEDIATE transaction.
             let tx = self.SQLite.transaction_with_behavior(TransactionBehavior::Immediate)?;
             // Applying the transaction can fail, so we don't unwrap.

@@ -18,17 +18,9 @@ path = "../EinsteinDB/einstein_db/src/lib.rs"
 
 [dependencies.einsteindb]
 version = "1.0.0"
-path = "."
+path = "../EinsteinDB/einstein_db/src/lib.rs"
 
 
-[dependencies.einstein_db]
-path = "../EinsteinDB/einstein_db"
-version = "1.0.0"
-
-[dependencies.einsteindb.features]
-path = "."
-default = ["einsteindb"]
-[features]
 
 [dependencies]
 anyhow = "1.0.58"
@@ -54,7 +46,6 @@ rand = "0.8.5"
 regex = "1.5.6"
 strum = "0.24.1"
 parking_lot = "0.12.1"
-serde = "1.0"
 serde = "1.0.137"
 serde_json = "1.0.82"
 prometheus = "0.13.1"
@@ -80,8 +71,6 @@ tokio-process="0.2.5"
 tokio-threadpool="0.1.0"
 
 
-[dependencies.einsteindb.features.einsteindb]
-path = "."
 
 [dependencies.causets]
 path = "../EinsteinDB/causets"
@@ -113,9 +102,8 @@ einstein-db = ["einstein_db"]
 [dependencies.causet]
 path = "../EinsteinDB/causet"
 
+
+
 [workspace]
 members = ["causetq", "causets", "einstein_db", "causet", "allegro_poset", "einstein_ml"]
 
-
-[dependencies.einstein_db_alexandrov_processv_processing]
-path = "../EinsteinDB/einstein_db_alexandrov_processv_processing"

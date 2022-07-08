@@ -64,7 +64,25 @@ use crate::fdb_traits::{FdbRecord, FdbRecordOptions, FdbRecordOptionsBuilder};
 use crate::fdb_traits::{FdbRecordReader, FdbRecordReaderOptions, FdbRecordReaderOptionsBuilder};
 use crate::fdb_traits::{FdbRecordWriter, FdbRecordWriterOptions, FdbRecordWriterOptionsBuilder};
 
+
+//use std::collections::HashMap;
 use uuid::Uuid;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+use std::collections::HashSet;
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::cell::Ref;
+use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign};
+use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::hash::Hash;
+use std::fmt::Debug;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result;
+use std::fmt::Error;
+use std::fmt::Write;
+use std::fmt::Display;
 
 //Attribute Map from SolitonID 
 //to the corresponding FdbRecord
@@ -78,10 +96,30 @@ fn escape_string(s: &str) -> String {
 
 
 fn foundationdb_connection_string(host: &str, port: &str, db_name: &str) -> String {
-    let conn match uri.to_string_lossy().len() {
-    0 => "foundationdb:".to_string(),
-    _ => uri.to_string_lossy().to_string(),
-    };
+    format!("foundationdb://{}:{}/{}", host, port, db_name)
+}
+
+
+fn foundationdb_connection_string_with_options(host: &str, port: &str, db_name: &str, options: &str) -> String {
+    format!("foundationdb://{}:{}/{}?{}", host, port, db_name, options)
+}
+
+
+fn foundationdb_connection_string_with_options_and_timeout(host: &str, port: &str, db_name: &str, options: &str, timeout: &str) -> String {
+    format!("foundationdb://{}:{}/{}?{}&timeout={}", host, port, db_name, options, timeout)
+}
+
+
+
+
+fn foundationdb_connection_string_with_options_and_timeout_and_retry(host: &str, port: &str, db_name: &str, options: &str, timeout: &str, retry: &str) -> String {
+    format!("foundationdb://{}:{}/{}?{}&timeout={}&retry={}", host, port, db_name, options, timeout, retry)
+}
+
+
+fn foundationdb_connection_string_with_options_and_timeout_and_retry_and_retry_timeout(host: &str, port: &str, db_name: &str, options: &str, timeout: &str, retry: &str, retry_timeout: &str) -> String {
+    format!("foundationdb://{}:{}/{}?{}&timeout={}&retry={}&retry_timeout={}", host, port, db_name, options, timeout, retry, retry_timeout)
+}
 
 //page size is the default page size for FoundationDB
 //We will create a template which can also be used with rusqlite and postgresql
@@ -124,7 +162,103 @@ fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> rusqlite::
 //It is a trait which is implemented by the FdbRecord struct
 //It is a trait which is implemented by the FdbRecordReader struct
 
-    let page_size = 32768;
+
+//This is the foundationdb record layer
+//It is a trait which is implemented by the FdbRecord struct
+//It is a trait which is implemented by the FdbRecordReader struct
+
+
+//This is the foundationdb record layer
+
+
+
+
+//This is the foundationdb record layer
+//It is a trait which is implemented by the FdbRecord struct
+
+
+
+
+
+#[derive(Debug)]
+pub struct FdbRecordOptions {
+    pub id: String,
+    pub data: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub deleted_at: String,
+}
+
+
+
+
+impl FdbRecord {
+    pub fn new(id: String, data: String, created_at: String, updated_at: String, deleted_at: String, version: String, revision: String, attributes: HashMap<String, String>) -> FdbRecord {
+        FdbRecord {
+            id: id,
+            data: data,
+
+        }
+    }
+
+
+    pub fn new_with_attributes(id: String, data: String, created_at: String, updated_at: String, deleted_at: String, version: String, revision: String, attributes: HashMap<String, String>) -> FdbRecord {
+        FdbRecord {
+            id: id,
+            data: data,
+
+        }
+    }
+
+
+    pub fn new_with_attributes_and_options(id: String, data: String, created_at: String, updated_at: String, deleted_at: String, version: String, revision: String, attributes: HashMap<String, String>, options: FdbRecordOptions) -> FdbRecord {
+        FdbRecord {
+            id,
+            data,
+
+        }
+    }
+}
+
+
+impl FdbRecordReader {
+    pub fn new(id: String, data: String, created_at: String, updated_at: String, deleted_at: String, version: String, revision: String, attributes: HashMap<String, String>) -> FdbRecordReader {
+        FdbRecordReader {
+            id,
+            data,
+            created_at,
+            updated_at,
+            deleted_at,
+            version,
+            revision,
+            attributes,
+        }
+    }
+
+
+    pub fn new_with_attributes(id: String, data: String, created_at: String, updated_at: String, deleted_at: String, version: String, revision: String, attributes: HashMap<String, String>) -> FdbRecordReader {
+        FdbRecordReader {
+            id,
+            data,
+            created_at,
+            updated_at,
+            deleted_at,
+            version,
+            revision,
+            attributes,
+        }
+    }
+}
+   /// let page_size = 32768;
+   /// let encryption_key = "";
+   /// let connection_string = foundationdb_connection_string(host, port, db_name);
+   /// let connection = make_connection(&connection_string, encryption_key).unwrap();
+   /// let mut fdb_record_reader = FdbRecordReader::new(id, data, created_at, updated_at, deleted_at, version, revision, attributes);
+   /// let mut fdb_record_reader = FdbRecordReader::new_with_attributes(id, data, created_at, updated_at, deleted_at, version, revision, attributes);
+
+
+
+pub fn foundationdb_record_layer_test() {
 
     let initial_pragmas = if let Some(encryption_key) = maybe_encryption_key {
         assert!(cfg!(feature = "sqlcipher"),
@@ -143,30 +277,42 @@ fn make_connection(uri: &Path, maybe_encryption_key: Option<&str>) -> rusqlite::
 
     let mut conn = make_connection(uri, maybe_encryption_key)?;
     conn.execute_batch(&initial_pragmas)?;
-    Ok(conn)
-        String::new()
-    };
+    conn.execute_batch("PRAGMA synchronous=NORMAL;")?;
+    conn.execute_batch("PRAGMA journal_mode=WAL;")?;
+    conn.execute_batch("PRAGMA foreign_keys=ON;")?;
+    conn.execute_batch("PRAGMA locking_mode=EXCLUSIVE;")?;
+    conn.execute_batch("PRAGMA temp_store=MEMORY;")?;
+}
 
-    // See https://github.com/mozilla/mentat/issues/505 for details on temp_store
-    // pragma and how it might interact together with consumers such as Firefox.
-    // temp_store=2 is currently present to force SQLite to store temp files in memory.
-    // Some of the platforms we support do not have a tmp partition (e.g. Android)
-    // necessary to store temp files on disk. Ideally, consumers should be able to
-    // override this behaviour (see issue 505).
-    conn.execute_batch(&format!("
-        {}
-        
-        PRAGMA journal_mode=wal;
-        PRAGMA wal_autocheckpoint=32;
-        PRAGMA journal_size_limit=3145728;
-        PRAGMA foreign_keys=ON;
-        PRAGMA temp_store=2;
-        PRAGMA synchronous=NORMAL;
-        PRAGMA locking_mode=EXCLUSIVE;
-        PRAGMA read_uncommitted=OFF; // https://www.sqlite.org/pragma.html#read_uncommitted
-    ", initial_pragmas))?;
 
-    Ok(conn)
+
+
+
+//This is the foundationdb record layer
+//It is a trait which is implemented by the FdbRecord struct
+//It is a trait which is implemented by the FdbRecordReader struct
+
+
+
+
+#[derive(Debug)]
+pub struct FdbRecord {
+    pub id: String,
+    pub data: String,
+}
+
+
+impl FdbRecord {
+    pub fn new(id: String, data: String) -> Self {
+        FdbRecord {
+            id,
+            data,
+        }
+
+
+
+    }
+}
 
 
 pub fn new_connection<T>(uri: T) -> rusqlite::Result<rusqlite::Connection>
@@ -178,18 +324,6 @@ where
     Ok(conn)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FdbRecordType {
-    String,
-    Integer,
-    Float,
-    Boolean,
-    Date,
-    DateTime,
-    Uuid,
-    Blob,
-    Null,
-}
 
 
 #[cfg(feature = "sqlcipher")]
@@ -228,7 +362,7 @@ const TRUE: i32 = 1;
 const FALSE: i32 = 0;
 
 /// Turn an owned bool into a static reference to a bool for FoundationDB.
-/// Do the same for SQLite's `SQLITE_TRUE` and `SQLITE_FALSE`.
+/// Do the same for sqlite's `SQLITE_TRUE` and `SQLITE_FALSE`.
 /// 
 /// # Examples
 /// 
@@ -274,6 +408,12 @@ pub enum FdbRecordType {
     Null,
 }
 
+
+
+
+
+
+
 lazy_static! {
     pub static ref FOUNDATIONDB_RECORD_LAYER_VERSION_STR: String = FOUNDATIONDB_RECORD_LAYER_VERSION.to_string();
     [cfg_attr(feature = "sqlcipher", doc = "")]
@@ -297,12 +437,101 @@ lazy_static! {
         
     static ref FALSE_REF: &'static str = FALSE:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
         index_fulltext TINYINT NOT NULL DEFAULT 0,
-        unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+    ]};
+
+
+    static ref FOUNDATIONDB_RECORD_LAYER_VERSION_REF: &'static str = FOUNDATIONDB_RECORD_LAYER_VERSION:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+unique_value TINYINT NOT NULL DEFAULT 0)"#, };
+    static ref MIN_SQLITE_VERSION_REF: &'static str = MIN_SQLITE_VERSION:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#, };
+    static ref TRUE_REF: &'static str = TRUE:Vector<u8> { vec![
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+                    // Opt-in index: only if a has :db/index true.
+
+    static ref FALSE_REF: &'static str = FALSE:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+    ]};
+
+
+    static ref FOUNDATIONDB_RECORD_LAYER_VERSION_REF: &'static str = FOUNDATIONDB_RECORD_LAYER_VERSION:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#, };
+    static ref MIN_SQLITE_VERSION_REF: &'static str = MIN_SQLITE_VERSION:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#, };
+    static ref TRUE_REF: &'static str = TRUE:Vector<u8> { vec![
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+                    // Opt-in index: only if a has :db/index true.
+
+
+    static ref FALSE_REF: &'static str = FALSE:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+    ]};
+
+
+
+
+
+static ref FOUNDATIONDB_RECORD_LAYER_VERSION_REF: &'static str = FOUNDATIONDB_RECORD_LAYER_VERSION:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#, };
+    static ref MIN_SQLITE_VERSION_REF: &'static str = MIN_SQLITE_VERSION:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#, };
+    static ref TRUE_REF: &'static str = TRUE:Vector<u8> { vec![
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+                    // Opt-in index: only if a has :db/index true.
+
+    static ref FALSE_REF: &'static str = FALSE:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+    ]};
+
 
         r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0, index_fulltext TINYINT NOT NULL DEFAULT 0, unique_value TINYINT NOT NULL DEFAULT 0)"#,
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0, index_fulltext TINYINT NOT NULL DEFAULT 0, unique_value TINYINT NOT NULL DEFAULT 0)"#,
     static ref NULL_REF: &'static str = NULL:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+
+
         index_fulltext TINYINT NOT NULL DEFAULT 0,
-        unique_value TINYINT NOT NULL DEFAULT 0)"#,) };
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+
+
+    static ref FALSE_REF: &'static str = FALSE:Vector<u8> { vec! CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#, };
+    static ref TRUE_REF: &'static str = TRUE:Vector<u8> { vec![
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+                    // Opt-in index: only if a has :db/index true.
+    ]};
+
+    static ref TRUE_REF: &'static str = TRUE:Vector<u8> { vec![
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+        index_fulltext TINYINT NOT NULL DEFAULT 0,
+        unique_value TINYINT NOT NULL DEFAULT 0)"#,
+
+
+        r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0,
+                    // Opt-in index: only if a has :db/index true.
+
+
         r#"CREATE TABLE causets(e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, causet_value_type_tag SMALLINT NOT NULL, index_avet TINYINT NOT NULL DEFAULT 0, index_vaet TINYINT NOT NULL DEFAULT 0, index_fulltext TINYINT NOT NULL DEFAULT 0, unique_value TINYINT NOT NULL DEFAULT 0)"#,
   
         Opt-in index: only if a has :db/fulltext true; thus, it has :db/valueType :db.type/string,
@@ -451,176 +680,181 @@ lazy_static! {
                 BEGIN
                 DELETE FROM fulltext_values WHERE searchid = old.searchid;
                 INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
+                END"#, old.text <> new.texts(ttl)
+        r#"CREATE TRIGGER update_fulltext_searchid
+                INSTEAD OF UPDATE ON fulltext_values_view
+                WHEN old.text <> new.text
+                BEGIN
+                DELETE FROM fulltext_values WHERE searchid = old.searchid;
+                INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
+                END"#, old.text <> new.texts(ttl)
+        r#"CREATE TRIGGER update_fulltext_searchid
+        );
+
+        // Fulltext indexing.
+        // A fulltext indexed value v is an integer rowid referencing fulltext_values.
+        // The index is created if and only if causetq_index_fulltext is true.
+        //
+
+
+        // By default we use Unicode-aware tokenizing (particularly for case folding), but preserve
+        // diacritics. This will render a compatible FDB index, but may not be compatible with other
+        //for safety, we use the default tokenizer.
+        r#"CREATE VIRTUAL TABLE fulltext_values USING fts5(e, a, v, tx, tokenize='unicode_ci', prefix='2,3')"#,
+        r#"CREATE VIEW fulltext_values_view AS SELECT * FROM fulltext_values"#,
+        r#"CREATE TRIGGER replace_fulltext_searchid
+             INSTEAD OF INSERT ON fulltext_values_view
+             WHEN EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+             BEGIN
+               UPDATE fulltext_values SET searchid = new.searchid WHERE text = new.text;
+             END"#,
+        r#"CREATE TRIGGER insert_fulltext_searchid
+                INSTEAD OF INSERT ON fulltext_values_view
+                WHEN NOT EXISTS (SELECT 1 FROM fulltext_values WHERE text = new.text)
+                BEGIN
+                INSERT INTO fulltext_values (text, searchid) VALUES (new.text, new.searchid);
                 END"#,
-                
+        r#"CREATE TRIGGER delete_fulltext_searchid
+                INSTEAD OF DELETE ON fulltext_values_view
+                BEGIN
+                DELETE FROM fulltext_values WHERE searchid = old.searchid;
+                END"#]
+        }
+        .iter()
+        .for_each(|sql| {
+            let mut conn = self.connect().unwrap();
+            conn.execute(sql, NO_PARAMS).unwrap();
+        });
+
+        // Fulltext indexing.
 
 
-}
+        // A fulltext indexed value v is an integer rowid referencing fulltext_values.
+
+
+    pub struct FulltextIndex {
+        pub table: String,
+        pub column: String,
+        pub values: Vec<String>,
+    }
+
+
+    pub struct FulltextIndex {
+        pub table: String,
+        pub column: String,
+        pub values: Vec<String>,
+    }
+
+
 
 // A view transparently interpolating all entities (fulltext and non-fulltext) into the causet q table.
 // This view is used to query the causetq table.
 // The view is created if and only if causetq_index_fulltext is true.
 
-r#"CREATE VIEW all_causets AS SELECT e, a, v, tx, searchid FROM causetq UNION SELECT e, a, v, tx, searchid FROM fulltext_values"#,
-    SELECT e, a, v, tx, searchid FROM causetq UNION SELECT e, a, v, tx, searchid FROM fulltext_values
-    WHERE text MATCH '%' || ? || '%'
-    UNION ALL SELECT e, a, v, tx, searchid FROM fulltext_values WHERE text MATCH '%' || ? || '%'
-    FROM all_causets
-    WHERE text MATCH '%' || ? || '%'
-
-    // Materialized views of the metadata as spacetime.
-    // The view is created if and only if causetq_index_fulltext is true.
 
 
 
-    r#"CREATE TABLE solitonid (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
-    r#"CREATE TABLE solitonid_view AS SELECT * FROM solitonid"#,
-    r#"CREATE TRIGGER replace_solitonid
-             INSTEAD OF INSERT ON solitonid
-             WHEN EXISTS (SELECT 1 FROM solitonid WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-             BEGIN
-               UPDATE solitonid SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
-             END"#,
-
-    r#"CREATE TRIGGER insert_solitonid
-                INSTEAD OF INSERT ON solitonid
-                WHEN NOT EXISTS (SELECT 1 FROM solitonid WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-                BEGIN
-                INSERT INTO solitonid (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
-                END"#,
-
-    r#"CREATE TRIGGER delete_solitonid
-
-                INSTEAD OF DELETE ON solitonid
-                BEGIN
-                DELETE FROM solitonid WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
-                END"#,
-
-    r#"CREATE TRIGGER update_solitonid
-
-                INSTEAD OF UPDATE ON solitonid
-                WHEN old.e <> new.e OR old.a <> new.a OR old.v <> new.v OR old.tx <> new.tx
-                BEGIN
-                DELETE FROM solitonid WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
-                INSERT INTO solitonid (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
-                END"#,
-
-    r#"CREATE TABLE solitonid_values (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
-    r#"CREATE TABLE solitonid_values_view AS SELECT * FROM solitonid_values"#,
-    r#"CREATE TRIGGER replace_solitonid_values
-             INSTEAD OF INSERT ON solitonid_values
-             WHEN EXISTS (SELECT 1 FROM solitonid_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-             BEGIN
-               UPDATE solitonid_values SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
-             END"#,
-    r#"CREATE TRIGGER insert_solitonid_values
-                INSTEAD OF INSERT ON solitonid_values
-                WHEN NOT EXISTS (SELECT 1 FROM solitonid_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-                BEGIN
-                INSERT INTO solitonid_values (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
-                END"#,
-    r#"CREATE TABLE soliton_idx (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
-    r#"CREATE TABLE soliton_idx_view AS SELECT * FROM soliton_idx"#,
-
-    //store causetid instead of solitonid for partition name.
-    r#"CREATE TABLE causetid (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
-    r#"CREATE TABLE causetid_view AS SELECT * FROM causetid"#,
-    r#"CREATE TRIGGER replace_causetid
-             INSTEAD OF INSERT ON causetid
-             WHEN EXISTS (SELECT 1 FROM causetid WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-             BEGIN
-               UPDATE causetid SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
-             END"#,
-             r#"CREATE INDEX causetid_e_a_v_tx ON causetid (e, a, v, tx)"#,
-    r#"CREATE TRIGGER insert_causetid
-                INSTEAD OF INSERT ON causetid
-                WHEN NOT EXISTS (SELECT 1 FROM causetid WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-                BEGIN
-                INSERT INTO causetid (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
-                END"#,
-    r#"CREATE TRIGGER delete_causetid
-                INSTEAD OF DELETE ON causetid
-                BEGIN
-                DELETE FROM causetid WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
-                END"#,
-    r#"CREATE TRIGGER update_causetid
-                INSTEAD OF UPDATE ON causetid
-                WHEN old.e <> new.e OR old.a <> new.a OR old.v <> new.v OR old.tx <> new.tx
-                BEGIN
-                DELETE FROM causetid WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
-                INSERT INTO causetid (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
-                END"#,
-    r#"CREATE TABLE causetid_values (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
-    r#"CREATE TABLE causetid_values_view AS SELECT * FROM causetid_values"#,    
-    r#"CREATE TRIGGER replace_causetid_values
-             INSTEAD OF INSERT ON causetid_values
-             WHEN EXISTS (SELECT 1 FROM causetid_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-             BEGIN
-               UPDATE causetid_values SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
-             END"#,
-
-    r#"CREATE TRIGGER insert_causetid_values
-                INSTEAD OF INSERT ON causetid_values
-                WHEN NOT EXISTS (SELECT 1 FROM causetid_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-                BEGIN
-                INSERT INTO causetid_values (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
-                END"#,
+// A view transparently interpolating all entities (fulltext and non-fulltext) into the causet q table.
+// This view is used to query the causetq table.
+// The view is created if and only if causetq_index_fulltext is true.
 
 
-    r#"CREATE TABLE causetid_idx (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
-    r#"CREATE TABLE causetid_idx_view AS SELECT * FROM causetid_idx"#,
-
-    r#"CREATE TABLE causetid_idx_values (e INTEGER NOT NULL, a SMALL INT NOT NULL, v BLOB NOT NULL, tx INTEGER NOT NULL, PRIMARY KEY (e, a, v, tx))"#,
-    r#"CREATE TABLE causetid_idx_values_view AS SELECT * FROM causetid_idx_values"#,
-    r#"CREATE TRIGGER replace_causetid_idx_values
-             INSTEAD OF INSERT ON causetid_idx_values
-             WHEN EXISTS (SELECT 1 FROM causetid_idx_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-             BEGIN
-               UPDATE causetid_idx_values SET tx = new.tx WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx;
-             END"#, 
-
-    r#"CREATE TRIGGER insert_causetid_idx_values
-                INSTEAD OF INSERT ON causetid_idx_values
-                WHEN NOT EXISTS (SELECT 1 FROM causetid_idx_values WHERE e = new.e AND a = new.a AND v = new.v AND tx = new.tx)
-                BEGIN
-                INSERT INTO causetid_idx_values (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
-                END"#,
-    r#"CREATE TRIGGER delete_causetid_idx_values    
-                INSTEAD OF DELETE ON causetid_idx_values
-                BEGIN
-                DELETE FROM causetid_idx_values WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
-                END"#,
-    r#"CREATE TRIGGER update_causetid_idx_values
-                INSTEAD OF UPDATE ON causetid_idx_values
-                WHEN old.e <> new.e OR old.a <> new.a OR old.v <> new.v OR old.tx <> new.tx
-                BEGIN
-                DELETE FROM causetid_idx_values WHERE e = old.e AND a = old.a AND v = old.v AND tx = old.tx;
-                INSERT INTO causetid_idx_values (e, a, v, tx) VALUES (new.e, new.a, new.v, new.tx);
-                END"#,
-
-    };
-    for s in sql {
 
 
-        let mut stmt = conn.prepare(s).unwrap();
-        
-        stmt.execute(&[]).unwrap();
+
+
+ pub fn create_causetq_view(
+    &self,
+    causetq_index_fulltext: bool,
+    causetq_index_non_fulltext: bool,
+) {
+    let mut conn = self.connect().unwrap();
+    let mut stmt = conn.prepare(
+        r#"CREATE VIEW causetq_view AS SELECT * FROM causetq WHERE 1 = 0"#,
+    ).unwrap();
+    let mut params = Vec::new();
+    if causetq_index_fulltext {
+        params.push(("causetq_index_fulltext", &Value::Bool(true)));
     }
+    if causetq_index_non_fulltext {
+        params.push(("causetq_index_non_fulltext", &Value::Bool(true)));
+    }
+    stmt.execute(&params).unwrap();
+
 }
+
+
+
+pub fn create_causetq_view(conn: &mut Connection) -> Result<(), Error> {
+    let mut stmt = conn.prepare(
+        r#"CREATE VIEW causetq_view AS SELECT * FROM causetq WHERE 1 = 0"#,
+    )?;
+    stmt.execute(&[])?;
+    Ok(())
+}
+
+
+pub fn create_causetq_index_fulltext(conn: &mut Connection) -> Result<(), Error> {
+    let mut stmt = conn.prepare(
+        r#"CREATE VIRTUAL TABLE causetq_index_fulltext USING fts5(e, a, v, tx, tokenize='unicode_ci', prefix='2,3')"#,
+    )?;
+    stmt.execute(&[])?;
+    Ok(())
+}
+
+
+pub fn create_causetq_index_fulltext_view(conn: &mut Connection) -> Result<(), Error> {
+    let mut stmt = conn.prepare(
+        r#"CREATE VIEW causetq_index_fulltext_view AS SELECT * FROM causetq_index_fulltext"#,
+    )?;
+    stmt.execute(&[])?;
+    Ok(())
+}
+
+
+pub fn create_causetq_index_fulltext_trigger(conn: &mut Connection) -> Result<(), Error> {
+    let mut stmt = conn.prepare(
+        r#"CREATE TRIGGER replace_causetq_index_fulltext
+             INSTEAD OF INSERT ON causetq_index_fulltext
+             WHEN EXISTS (SELECT 1 FROM causetq_index_fulltext WHERE text = new.text)
+             BEGIN
+               UPDATE causetq_index_fulltext SET searchid = new.searchid WHERE text = new.text;
+             END"#,
+    )?;
+    stmt.execute(&[])?;
+    Ok(())
+}
+
+
+
+
+
 
 
 fn main() {
+    let conn = Connection::open_in_memory().unwrap();
+    create_causetq_view(&mut conn).unwrap();
+    create_causetq_index_fulltext(&mut conn).unwrap();
+    create_causetq_index_fulltext_view(&mut conn).unwrap();
     let conn = Connection::open("sqlite.db").unwrap();
-    create_tables(&conn);
-    let mut stmt = conn.prepare("SELECT * FROM causetid_values").unwrap();
-    let rows = stmt.query(&[]).unwrap();
-    for row in rows {
-        println!("{:?}", row);
-    }
+    create_causetq_index_fulltext_trigger(&mut conn).unwrap();
+    //fdb create_causetq_index_fulltext_trigger(&mut conn).unwrap();
+    //FoundationDB connection.create_causetq_index_fulltext_trigger().unwrap();
 }
+    }
 
 
-#[cfg(test)]
+
+
+
+// A view transparently interpolating all entities (fulltext and non-fulltext) into the causet q table.
+// This view is used to query the causetq table.
+// The view is created if and only if causetq_index_fulltext is true.
+
+
+
+
+
 
 
 
