@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/EinsteinDB.iml" filepath="$PROJECT_DIR$/.idea/EinsteinDB.iml" />
+        <module fileurl="file://$PROJECT_DIR$/EinsteinDB.iml" filepath="$PROJECT_DIR$/EinsteinDB.iml" />
     </modules>
-  </component>
+    </component>
 </project>
