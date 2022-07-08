@@ -138,6 +138,66 @@
 // }
 
 
+// #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+// pub enum CausetidOrSolitonid {
+//     Causetid(Causetid),
+//     Solitonid(Solitonid),
+// }
+
+
+// #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+// pub enum Causetid {
+//     Causetid(Causetid),
+//     Solitonid(Solitonid),
+// }
+
+
+// #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+// pub enum Solitonid {
+//     Solitonid(Solitonid),
+//     Causetid(Causetid),
+// }
+
+
+
+
+#[cfg(test)]
+    mod tests {
+    use super::*;
+    use crate::block::Block;
+    use crate::block::BlockHeader;
+    use crate::block::BlockBody;
+    use crate::block::BlockHeaderBody;
+    use crate::block::BlockHeaderBodySignature;
+    use crate::block::BlockHeaderBodyHash;
+    use crate::block::BlockHeaderBodyHeight;
+    use crate::block::BlockHeaderBodyRound;
+    use crate::block::BlockHeaderBodyRoundIndex;
+    use crate::block::BlockHeaderBodyRoundStartTime;
+    use crate::block::BlockHeaderBodyRoundElapsedTime;
+    use crate::block::BlockHeaderBodyTimestamp;
+    use crate::block::BlockHeaderBodyParent;
+    use crate::block::BlockHeaderBodyParentHash;
+    use crate::block::BlockHeaderBodyParentHeight;
+    use crate::block::BlockHeaderBodyParentRound;
+    use crate::block::BlockHeaderBodyParentRoundIndex;
+    use crate::block::BlockHeaderBodyParentRoundStartTime;
+    use crate::block::BlockHeaderBodyParentRoundElapsedTime;
+    use crate::block::BlockHeaderBodyParentTimestamp;
+    use crate::block::BlockHeaderBodyParentSignature;
+    use crate::block::BlockHeaderBodyParentHash;
+    use crate::block::BlockHeaderBodyParentHeight;
+    use crate::block::BlockHeaderBodyParentRound;
+    use crate::block::BlockHeaderBodyParentRoundIndex;
+    use crate::block::BlockHeaderBodyParentRoundStartTime;
+    use crate::block::BlockHeaderBodyParentRoundElapsedTime;
+    use crate::block::BlockHeaderBodyParentTimestamp;
+    use crate::block::BlockHeaderBodyParentSignature;
+    use crate::block::BlockHeaderBodyParentHash;
+}
+
+
+
     use std::collections::HashMap;
     use std::collections::hash_map::Entry;
     use std::collections::hash_map::Iter;
@@ -226,6 +286,7 @@
 
     use std::collections::btree_set::Keys as BTreeSetKeys;
     use std::collections::btree_set::Values as BTreeSetValues;
+
 
 
     #[derive(Debug)]
@@ -525,8 +586,10 @@ impl<K, V> LightlikeUpsert<K, V> {
     }
 }
 
-#[APPEND_LOG_g(test)]
-mod tests {
+
+
+
+mod tests2 {
     use super::*;
     use crate::{
         db::{

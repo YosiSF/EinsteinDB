@@ -40,6 +40,90 @@
 
 
 
+//! ```
+//!     let mut a = [1, 2, 3, 4, 5];
+//!    let mut b = [0; 5];
+//!   let mut c = [0; 5];
+//!
+//! // Convert from [u8; 5] to [i32; 5]
+//! convert_from_u8_to_i32(&mut a, &mut b);
+//!
+//! // Convert from [i32; 5] to [u8; 5]
+//! convert_from_i32_to_u8(&mut b, &mut c);
+//!
+
+
+pub fn convert_from_u8_to_i32(a: &mut [u8], b: &mut [i32]) -> Result<(), Error> {
+    if a.len() != b.len() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "convert_from_u8_to_i32: a and b must have the same length",
+        ));
+    }
+    for i in 0..a.len() {
+        b[i] = a[i] as i32;
+    }
+    Ok(())
+}
+
+
+pub fn convert_from_i32_to_u8(a: &mut [i32], b: &mut [u8]) -> Result<(), Error> {
+    if a.len() != b.len() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "convert_from_i32_to_u8: a and b must have the same length",
+        ));
+    }
+    for i in 0..a.len() {
+        b[i] = a[i] as u8;
+    }
+    Ok(())
+}
+
+
+pub fn convert_from_i32_to_u16(a: &mut [i32], b: &mut [u16]) -> Result<(), Error> {
+    if a.len() != b.len() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "convert_from_i32_to_u16: a and b must have the same length",
+        ));
+    }
+    for i in 0..a.len() {
+        b[i] = a[i] as u16;
+    }
+    Ok(())
+}
+
+
+pub fn convert_from_u16_to_i32(a: &mut [u16], b: &mut [i32]) -> Result<(), Error> {
+    if a.len() != b.len() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "convert_from_u16_to_i32: a and b must have the same length",
+        ));
+    }
+    for i in 0..a.len() {
+        b[i] = a[i] as i32;
+    }
+    Ok(())
+}
+
+
+pub fn convert_from_u16_to_u8(a: &mut [u16], b: &mut [u8]) -> Result<(), Error> {
+    if a.len() != b.len() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "convert_from_u16_to_u8: a and b must have the same length",
+        ));
+    }
+    for i in 0..a.len() {
+        b[i] = a[i] as u8;
+    }
+    Ok(())
+}
+
+
+
 
 pub use self::convert_from_u8_to_i32::*;
 pub use self::convert_from_u8_to_i64::*;
@@ -2658,3 +2742,5 @@ mod tests {
         }
     }
 }
+
+

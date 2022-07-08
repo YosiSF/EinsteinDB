@@ -1,5 +1,16 @@
 // Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
-
+// -----------------------------------------------------------------------------
+//! # EinsteinDB
+//! #################################
+//!
+//!  EinsteinDB engages in a semi-lock-free concurrency control system for the EinsteinDB.
+//!  While it boasts optimistic concurrency control, it is not a lock-free concurrency control system.
+//! It is a semi-lock-free concurrency control system for the EinsteinDB.
+//!
+//! We use a combination of HoneyBadger Epaxos and MVRSI to implement MVRSI.
+//! The MVRSI is a concurrency control system for the EinsteinDB.
+//! Alexandrov Topologies are a concurrency control system for Causets of the EinsteinDB.
+//! Their connected components provide CAP (Causal Partitioning) and CSP (Causet Partitioning) capabilities.
 use fdb_traits::{Mutable, Result, WriteBatch, WriteBatchExt, WriteOptions};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -20,8 +31,52 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
 
+
 use std::collections::hash_map::Iter;
 
+
+#[derive(Clone)]
+pub struct AlexandrovTopology {
+    pub config: Config,
+    pub db: Arc<FdbTransactional>,
+    pub poset: Arc<Poset>,
+    pub db_name: String,
+    pub db_path: String,
+    pub db_config: String,
+    pub db_config_path: String,
+    pub db_config_name: String,
+    pub db_config_file: String,
+    pub db_config_file_path: String,
+    pub db_config_file_name: String,
+    pub db_config_file_content: String,
+}
+
+
+///! AlexandrovTopology is a struct that contains the following:
+/// - config: the configuration of the soliton_panic
+/// Copyright 2019 EinsteinDB Project Authors. Licensed under Apache-2.0.
+/// -----------------------------------------------------------------------------
+/// # EinsteinDB
+/// #################################
+
+
+
+#[derive(Clone)]
+#[derive(Debug)]
+pub struct AlexandrovTopologyConfig {
+    pub config: Config,
+    pub db: Arc<FdbTransactional>,
+    pub poset: Arc<Poset>,
+    pub db_name: String,
+    pub db_path: String,
+    pub db_config: String,
+    pub db_config_path: String,
+    pub db_config_name: String,
+    pub db_config_file: String,
+    pub db_config_file_path: String,
+    pub db_config_file_name: String,
+    pub db_config_file_content: String,
+}
 //now we abstract the lshp-tree into a poset so that it is lisp-like
 //source: https://franz.com/support/documentation/ansicl.94/section/dictio19.htm
 

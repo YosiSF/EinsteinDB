@@ -11,9 +11,27 @@
 #
 name: "CodeQL"
 
+
+
 on:
-  push:
-    branches: [ master ]
+
+    push:
+        branches:
+        - "master"
+        - "develop"
+        - "feature/*"
+        - "bugfix/*"
+        - "hotfix/*"
+        - "release/*"
+        - "release-*"
+        - "hotfix-*"
+        - "feature-*"
+        - "bugfix-*"
+        - "develop-*"
+        - "master-*"
+        - "*"
+        - "*/master"
+        - "*/develop"
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ master ]
@@ -22,13 +40,12 @@ on:
 
 jobs:
   analyze:
+
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
-      actions: read
-      contents: read
-      security-events: write
-
+        push:
+            - "EinsteinDB"
     strategy:
       fail-fast: false
       matrix:
@@ -37,8 +54,103 @@ jobs:
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
 
     steps:
+      - uses: actions/checkout@v2
+        - containerPort: 8080
+          - containerName: codeql-analysis
+            - containerImage: codeql/codeql-analysis:latest
+              - env:
+                - name: CODEQL_LANGUAGES
+                  value: "go"
+                - name: CODEQL_QUERY_PATH
+                  value: "./queries"
+                - name: CODEQL_QUERY_PREFIX
+                  value: "query"
+                - name: CODEQL_QUERY_SUFFIX
+                  value: ".yaml"
+                - name: CODEQL_QUERY_FILE_EXTENSION
+                  value: ".yaml"
+                - name: CODEQL_QUERY_FILE_ENCODING
+                  value: "utf-8"
+                - name: CODEQL_QUERY_FILE_ENCODING_ERROR_HANDLING
+                  value: "ignore"
+                - name: CODEQL_QUERY_FILE_ENCODING_ERROR_HANDLING_REASON
+                  value: "Unsupported encoding"
+                - name: CODEQL_QUERY_FILE_ENCODING_ERROR_HANDLING_REASON_URL
+                  value: "https://git.io/codeql-language-support"
+                - name: CODEQL_QUERY_FILE_ENCODING_ERROR_HANDLING_REASON_URL_TEXT
+                  value: "Learn more about CodeQL language support"
+                - name: CODEQL_QUERY_FILE_ENCODING_ERROR_HANDLING_REASON_URL_TEXT_ENCODING
+                  value: "utf-8"
+                - name: CODEQL_QUERY_FILE_ENCODING_ERROR_HANDLING_REASON_URL_TEXT_ENCODING_ERROR_HANDLING
+                  value: "ignore"
+                - name: CODEQL_QUERY_FILE_ENCODING_ERROR_HANDLING_REASON_URL_TEXT_ENCODING_ERROR_HANDLING_REASON
+                  value: "Unsupported encoding"
+                - name: CODEQL_QUERY_FILE_ENCODING_ERROR_HANDLING_REASON_URL_TEXT_ENCODING_ERROR_HANDLING_REASON_URL
+                  value: "https://git.io/codeql-language-support"
+                - name-default
     - name: Checkout repository
+        run:
+            name: Checkout repository
+            path: |
+            git clone $GITHUB_REPOSITORY $GITHUB_WORKSPACE
+            cd $GITHUB_WORKSPACE
+            git checkout $GITHUB_SHA
+            env:
+            - name: GITHUB_REPOSITORY
+                value: $GITHUB_REPOSITORY
+            - name: GITHUB_SHA
+                value: $GITHUB_SHA
+            - name: GITHUB_REF
+                value: $GITHUB_REF
+            - name: GITHUB_WORKSPACE
+                value: $GITHUB_WORKSPACE
       uses: actions/checkout@causet_record
+        - name: Run CodeQL
+            run:
+                name: Run CodeQL
+                path: |
+                codeql analyze --language go --query-path ./queries --query-prefix query --query-suffix .yaml --query-file-extension .yaml --query-file-encoding utf-8 --query-file-encoding-error-handling ignore --query-file-encoding-error-handling-reason Unsupported encoding --query-file-encoding-error-handling-reason-url https://git.io/codeql-language-support --query-file-encoding-error-handling-reason-url-text Learn more about CodeQL language support
+                env:
+                - name: GITHUB_REPOSITORY
+                    value: $GITHUB_REPOSITORY
+                - name: GITHUB_SHA
+                    value: $GITHUB_SHA
+                - name: GITHUB_REF
+                    value: $GITHUB_REF
+                - name: GITHUB_WORKSPACE
+                    value: $GITHUB_WORKSPACE
+        - name: Checkout repository
+            run:
+                name: Checkout repository
+                path: |
+                git clone $GITHUB_REPOSITORY $GITHUB_WORKSPACE
+                cd $GITHUB_WORKSPACE
+                git checkout $GITHUB_SHA
+                env:
+                - name: GITHUB_REPOSITORY
+                    value: $GITHUB_REPOSITORY
+                - name: GITHUB_SHA
+                    value: $GITHUB_SHA
+                - name: GITHUB_REF
+                    value: $GITHUB_REF
+                - name: GITHUB_WORKSPACE
+                    value: $GITHUB_WORKSPACE
+        - name: Checkout repository
+            run:
+                name: Checkout repository
+                path: |
+                git clone $GITHUB_REPOSITORY $GITHUB_WORKSPACE
+                cd $GITHUB_WORKSPACE
+                git checkout $GITHUB_SHA
+                env:
+                - name: GITHUB_REPOSITORY
+                    value: $GITHUB_REPOSITORY
+                - name: GITHUB_SHA
+                    value: $GITHUB_SHA
+                - name: GITHUB_REF
+                    value: $GITHUB_REF
+                - name: GITHUB_WORKSPACE
+                    value: $GITHUB_WORKSPACE
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL

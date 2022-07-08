@@ -1,4 +1,30 @@
-//Copyright (c) 2022 EinsteinDB contributors
+///Copyright (c) 2022 EinsteinDB contributors
+///
+/// Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+/// and associated documentation files (the "Software"), to deal in the Software without restriction,
+/// including without limitation the rights to use, copy, modify, merge, publish, distribute,
+/// sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+///
+/// The above copyright notice and this permission notice shall be included in all copies or
+/// substantial portions of the Software.
+/// This is a modified version of the original source code.
+/// EinsteinDB copyright notice and license terms will be retained in the source code.
+/// EinsteinDB trademarks may not be used to endorse or promote products derived from this software
+/// without specific prior written permission.
+///
+/// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+/// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+/// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+/// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+/// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+///
+/// @author <a href="mailto:karl@einst.ai">Karl Vossel</a>
+/// @author <a href="mailto:slushie@gmail.com">Slush</a>
+///
+/// @version 0.1.0
+///
+/// @since 0.1.0
 //! # Poset
 //! Poset is a library for building and querying a [Poset](https://en.wikipedia.org/wiki/Poset)
 //! of [`Block`](../block/struct.Block.html)s.
@@ -52,6 +78,31 @@
 //! block.set_round_elapsed_time(0);
 //! 
 //! 
+pub use self::block::Block;
+pub use self::poset::Poset;
+pub use self::poset::PosetError;
+
+
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Partitioning};
+
+
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::Duration;
+
+
+use std::sync::mpsc::channel;
+
+
+use std::sync::mpsc::Receiver;
+
+use ::block::Block;
+use ::poset::Poset;
+use ::poset::PosetError;
+
+
 
 
 
@@ -69,6 +120,8 @@ extern crate ordered_float;
 extern crate uuid;
 extern crate lazy_static;
 extern crate einsteindb_util;
+
+
 
 
 use std::collections::HashMap;
@@ -124,6 +177,7 @@ use crate::block::{BlockHash, BlockHashType};
 use crate::block::{BlockSignature, BlockSignatureType};
 
 
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BlockId(Arc<Block>);
 
@@ -163,8 +217,6 @@ enum BlockHeaderIdTypeEnum {
 enum BlockBodyIdTypeEnum {
     BlockBodyId(BlockBodyIdType),
 }
-
-
 
 
 pub use crate::datum::DatumType;
@@ -334,7 +386,8 @@ impl Block {
     }
 }
 
-
+///CHANGELOG: Added block_hash_id to Block
+/// CHANGELOG: Added block_hash to Block
 
 
 impl Block {
@@ -345,7 +398,21 @@ impl Block {
     pub fn get_hash(&self) -> BlockHash {
         self.block_hash
     }
+
+    pub fn set_signature(&mut self, signature: BlockSignature) {
+        self.block_signature = signature;
+    }
+
+    pub fn get_signature(&self) -> BlockSignature {
+        self.block_signature
+    }
+
+    pub fn set_height(&mut self, height: usize) {
+        self.block_height = height;
+    }
 }
+
+
 
 
 

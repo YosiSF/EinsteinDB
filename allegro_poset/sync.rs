@@ -18,6 +18,20 @@ use std::collections::hash_map::Entry;
 use std::collections::hash_map::Iter;
 use std::collections::hash_map::IterMut;
 
+use std::sync::atomic::
+{
+    AtomicUsize,
+    Ordering::Relaxed,
+    Ordering::SeqCst
+};
+
+
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::sync::mpsc::TryRecvError;
+
+
+use std::sync::mpsc::RecvError;
+use std::sync::mpsc::RecvTimeoutError;
 
 use super::{AllegroPoset, Poset};
 use super::{PosetError, PosetErrorKind};
@@ -29,6 +43,14 @@ use super::{PosetNode, PosetNodeId, PosetNodeData};
 /// This implementation is thread-safe.
 ///
 
+
+
+
+
+
+pub fn new_sync() -> Arc<Mutex<AllegroPoset>> {
+    Arc::new(Mutex::new(AllegroPoset::new()))
+}
 
 pub struct Sync {
     poset: Arc<Mutex<AllegroPoset>>,

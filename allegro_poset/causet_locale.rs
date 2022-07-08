@@ -40,6 +40,108 @@ use std::sync::Weak;
 
 
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Causet {
+    pub nodes: BTreeMap<Keyword, CausetNode>,
+}
+
+
+impl Causet {
+    pub fn new() -> Causet {
+        Causet {
+            nodes: BTreeMap::new(),
+        }
+    }
+}
+
+
+impl Deref for Causet {
+    type Target = BTreeMap<Keyword, CausetNode>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.nodes
+    }
+}
+
+
+impl DerefMut for Causet {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.nodes
+    }
+}
+
+
+impl FromIterator<(Keyword, CausetNode)> for Causet {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (Keyword, CausetNode)>,
+    {
+        let mut nodes = BTreeMap::new();
+        for (keyword, node) in iter {
+            nodes.insert(keyword, node);
+        }
+        Causet { nodes }
+    }
+}
+
+
+impl FromIterator<(Keyword, CausetNodeRc)> for Causet {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (Keyword, CausetNodeRc)>,
+    {
+        let mut nodes = BTreeMap::new();
+        for (keyword, node) in iter {
+            nodes.insert(keyword, node);
+        }
+        Causet { nodes }
+    }
+}
+
+
+impl FromIterator<(Keyword, CausetNodeWeak)> for Causet {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (Keyword, CausetNodeWeak)>,
+    {
+        let mut nodes = BTreeMap::new();
+        for (keyword, node) in iter {
+            nodes.insert(keyword, node);
+        }
+        Causet { nodes }
+    }
+}
+
+
+impl FromIterator<(Keyword, CausetNodeWeakRc)> for Causet {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (Keyword, CausetNodeWeakRc)>,
+    {
+        let mut nodes = BTreeMap::new();
+        for (keyword, node) in iter {
+            nodes.insert(keyword, node);
+        }
+        Causet { nodes }
+    }
+}
+
+
+impl FromIterator<(Keyword, PlainShelling)> for Causet {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (Keyword, PlainShelling)>,
+    {
+        let mut nodes = BTreeMap::new();
+        for (keyword, node) in iter {
+            nodes.insert(keyword, node);
+        }
+        Causet { nodes }
+    }
+}
+
+
+
 
 
 
@@ -120,6 +222,8 @@ impl TempId {
     }
 }
 
+
+
 impl fmt::Display for TempId {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
@@ -129,7 +233,72 @@ impl fmt::Display for TempId {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+
+impl From<String> for TempId {
+    fn from(s: String) -> Self {
+        TempId::lightlike(s)
+    }
+}
+
+
+impl From<&str> for TempId {
+    fn from(s: &str) -> Self {
+        TempId::lightlike(s.to_string())
+    }
+}
+
+
+impl From<i64> for TempId {
+    fn from(i: i64) -> Self {
+        TempId::Internal(i)
+    }
+}
+
+
+
+
+#[impl From<TempId> for i64 {
+    fn from(t: TempId) -> Self {
+        match t {
+            TempId::lightlike(_) => panic!("TempId::into_i64 called on lightlike TempId"),
+            TempId::Internal(i) => i,
+        }
+    }
+}derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+pub enum TempidPlace {
+    Atom(Tempid),
+    LookupRef(CausetLocale<Tempid>),
+}
+
+
+impl TempidPlace {
+    pub fn new(tempid: Tempid) -> Self {
+        TempidPlace::Atom(tempid)
+    }
+}
+
+
+impl From<Tempid> for TempidPlace {
+    fn from(tempid: Tempid) -> Self {
+        TempidPlace::Atom(tempid)
+    }
+}
+
+
+impl From<CausetLocale<Tempid>> for TempidPlace {
+    fn from(causet_locale: CausetLocale<Tempid>) -> Self {
+        TempidPlace::LookupRef(causet_locale)
+    }
+}
+
+
+impl From<CausetLocaleWeakRc> for TempidPlace {
+    fn from(causet_locale: CausetLocaleWeakRc) -> Self {
+        TempidPlace::LookupRef(causet_locale)
+    }
+}
+
+
 pub enum CausetidOrSolitonid {
     Causetid(i64),
     Solitonid(Keyword),
@@ -154,6 +323,14 @@ impl CausetidOrSolitonid {
             &CausetidOrSolitonid::Solitonid(ref a) => a.unreversed().map(CausetidOrSolitonid::Solitonid),
         }
     }
+}
+
+
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+pub enum CausetidPlace {
+    Atom(CausetidOrSolitonid),
+    LookupRef(CausetLocale<CausetidOrSolitonid>),
 }
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
