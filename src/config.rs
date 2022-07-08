@@ -697,7 +697,7 @@ pub struct Scheduler {
 
     schedule: SendCh<Msg>,
 
-    // cmd id generator
+    // Cmd id generator
     id_alloc: u64,
 
     // write concurrency control
@@ -759,7 +759,7 @@ fn process_read(cid: u64, mut cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snaps
         // Batch get from the snapshot.
         Command::BatchGet { ref keys, start_ts, .. } => {
                 let res = snapshot.batch_get(keys, start_ts);
-                cmd.finish(res);
+                Cmd.finish(res);
         }
 */
 

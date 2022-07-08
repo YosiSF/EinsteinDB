@@ -107,7 +107,7 @@ impl EinsteinDBCli {
 enum Command {
     #[structopt(name = "ssh")]
     Ssh(SshOpt),
-    #[structopt(name = "cmd")]
+    #[structopt(name = "Cmd")]
     Cmd(CmdOpt),
 }
 
@@ -311,14 +311,12 @@ pub enum Cmd {
         /// 0x<soliton_id>
         /// The escaped soliton_id is a hex string of a soliton_id with the following format:
         /// 0x<soliton_id>
-
         soliton_id: Option<String>,
 
         #[structopt(short = "d")]
         /// Set the data_dir, if not specified, print all data_dir
         /// The data_dir is a path of a data_dir with the following format:
         /// <data_dir>/<region_id>/<append_log_name>/<soliton_id>
-
         data_dir: Option<String>,
 
         #[structopt(short = "c")]
@@ -326,7 +324,6 @@ pub enum Cmd {
         /// The config is a path of a config with the following format:
         /// <config>/<region_id>/<append_log_name>/<soliton_id>
         ///
-
         config: Option<String>,
 
         #[structopt(short = "l")]
@@ -335,9 +332,73 @@ pub enum Cmd {
         /// <log_level>/<region_id>/<append_log_name>/<soliton_id>
         /// The log_level is a path of a log_level with the following format:
         /// <log_level>/<region_id>/<append_log_name>/<soliton_id>
+        /// The log_level is a path of a log_level with the following format:
+        ///
+        log_level: Option<String>,
+
+    }
+}
 
 
-    },
+#[derive(StructOpt)]
+pub enum VioletaBFTPaxosScanCmd {
+
+    /// Scan the log of a region
+    ///
+
+    #[structopt(name = "scan")]
+    Scan {
+        #[structopt(short = "r")]
+        /// Set the region id, if not specified, print all regions
+        region: Option<u64>,
+
+        #[structopt(
+        short = "c",
+        use_delimiter = true,
+        require_delimiter = true,
+        causet_locale_delimiter = ",",
+        default_causet_locale = "default,write,lock"
+        )]
+        /// Set the append_log name, if not specified, print all append_log
+        append_log: Vec<String>,
+
+        #[structopt(short = "s")]
+        /// Set the soliton_id, if not specified, print all soliton_id
+        /// The escaped soliton_id is a hex string of a soliton_id with the following format:
+        /// 0x<soliton_id>
+        /// The escaped soliton_id is a hex string of a soliton_id with the following format:
+        /// 0x<soliton_id>
+        soliton_id: Option<String>,
+
+        #[structopt(short = "d")]
+        /// Set the data_dir, if not specified, print all data_dir
+        /// The data_dir is a path of a data_dir with the following format:
+        /// <data_dir>/<region_id>/<append_log_name>/<soliton_id>
+        data_dir: Option<String>,
+
+        #[structopt(short = "c")]
+        /// Set the config, if not specified, print all config
+        /// The config is a path of a config with the following format:
+        /// <config>/<region_id>/<append_log_name>/<soliton_id>
+        ///
+        config: Option<String>,
+
+        #[structopt(short = "l")]
+        /// Set the log_level, if not specified, print all log_level
+        /// The log_level is a path of a log_level with the following format:
+        /// <log_level>/<region_id>/<append_log_name>/<soliton_id>
+    /// Scan the log
+    /// Scan the log
+    #[structopt(subcommand)]
+    cmd: Option<VioletaBFTPaxosScanCmd>,
+    }
+}
+
+
+#[derive(StructOpt)]
+#[structopt(name = "violetabft-paxos")]
+pub enum VioletaBFTPaxosCmdLine {
+    /// Print a violetabft log entry
     /// Print the range db range
     Scan {
         #[structopt(
@@ -373,11 +434,10 @@ pub enum Cmd {
         causet_locale_delimiter = ",",
         default_causet_locale = "default,write,lock"
         )]
-        default_causet_locale = APPEND_LOG__DEFAULT,
         /// Set the append_log name, if not specified, print all append_log
         /// If specified, only print the append_log specified
         /// If specified multiple times, print the append_log specified multiple times
-        APPEND_LOG_: Vec<String>,
+        append_log: Vec<String>,
     },
     /// Print the range db range
     Range {
@@ -389,11 +449,10 @@ pub enum Cmd {
         from: String,
 
         /// Column family names, combined from default/lock/write
-        show_APPEND_LOG_: Vec<String>,
+        show_append_log: Vec<String>,
     },
 
-
-/// Print the range db range
+    /// Print the range db range
     RangeWith {
         #[structopt(
         short = "f",
@@ -428,18 +487,34 @@ pub enum Cmd {
         causet_locale_delimiter = ",",
         default_causet_locale = "default,write,lock"
         )]
-        default_causet_locale = APPEND_LOG__DEFAULT,
         /// Set the append_log name, if not specified, print all append_log
         /// If specified, only print the append_log specified
         /// If specified multiple times, print the append_log specified multiple times
-        APPEND_LOG_: Vec<String>,
+        append_log: Vec<String>,
     },
     /// Print the range db range
     RangeWith2 {
         #[structopt(
         short = "f",
         long,
+        help = RAW_KEY_HINT,
+        )]
+        from: String,
+
+        #[structopt(long)]
+        /// Set the scan limit
+        /// If specified, only print the append_log specified
+        /// If specified multiple times, print the append_log specified multiple times
+        /// If specified, only print the append_log specified
+        limit: Option<u64>,
+
+        #[structopt(long)]
+        /// Set the scan start_ts as filter
+        /// If specified, only print the append_log specified
+        /// If specified multiple times, print the append_log specified multiple times
+        start_ts: Option<u64>,
     }
+}
 
 /// Starting prompt
 const DEFAULT_PROMPT: &'static str = "EinsteinDB=> ";
@@ -530,7 +605,7 @@ impl InputReader {
             r.set_word_break_chars(" \t\n!\"#$%&'(){}*+,-./:;<=>?@[\\]^`");
         }
 
-        InputReader{
+        InputReader {
             buffer: String::new(),
             interface,
             in_process_cmd: None,
@@ -594,29 +669,88 @@ impl InputReader {
                 Ok(InputResult::Quit)
             }
         }
-
     }
+
+
+    /// Reads a single command, item, or statement from `stdin`.
+    /// Returns `More` if further input is required for a complete result.
+    /// In this case, the input received so far is buffered internally.
+    /// This function is used for the range command
+
+
+
+
 
     /// Returns the current command being processed, if any.
     /// This is useful for displaying the prompt.
     /// If there is no command being processed, returns `None`.
     /// If there is a command being processed, returns the command.
     /// If there is a command being processed, but it is not complete, returns `None`.
-    /// 
-    
+    ///
+
     pub fn current_command(&self) -> Option<Command> {
         self.in_process_cmd.clone()
     }
+}
 
+
+/// The main entry point for the application.
+/// This function is called when the application is run from the command line.
+/// It parses the command line arguments and then runs the application.
+/// It returns a `Result` to allow for easy error handling.
+/// # Examples
+/// ```
+/// use violetabft::{run, Command};
+/// use std::io::{self, Write};
+/// use std::process::exit;
+/// use structopt::StructOpt;
+/// #[derive(StructOpt)]
+/// struct Opt {
+///    #[structopt(subcommand)]
+///   cmd: Command,
+/// }
+/// fn main() -> Result<(), io::Error> {
+///    let opt = Opt::from_args();
+///   match opt.cmd {
+///      Command::Scan => {
+///       let mut reader = InputReader::new(None);
+///      loop {
+///        match reader.read_input() {
+///         Ok(InputResult::MetaCommand(cmd)) => {
+///          println!("{:?}", cmd);
+///        }
+///        Ok(InputResult::More) => {
+///         println!("More");
+///       }
+///      Ok(InputResult::Quit) => {
+/// println!("Quit");
+/// break;
+
+
+
+#[derive(StructOpt)]
+
+struct OptManifold {
+    #[structopt(subcommand)]
+    cmd: Command,
+}
+
+
+fn main() -> Result<(), io::Error> {
     let prompt = format!("{blue}{prompt}{reset}",
                              blue = color::Fg(::BLUE),
                              prompt = prompt,
                              reset = color::Fg(color::Reset));
-        let line = match self.read_line(prompt.as_str()) {
+    let mut reader = InputReader::new(Some(Interface::new(prompt)));
+    loop {
+        let line = reader.read_input()?;
+        match line {
             UserAction::TextInput(s) => s,
-            UserAction::Interrupt if self.in_process_cmd.is_some() => {
-                self.in_process_cmd = None;
-                self.buffer.clear();
+            UserAction::Interrupt => {
+                println!("Interrupted");
+                continue;
+            }
+            UserAction::Quit => {
                 // Move to the next line, so that our next prompt isn't on top
                 // of the previous.
                 println!();
@@ -625,141 +759,201 @@ impl InputReader {
             _ => return Ok(Eof),
         };
 
-        if !self.buffer.is_empty() {
-            self.buffer.push('\n');
+        if !line.is_empty() {
+            println!("{}", line);
         }
 
-        self.buffer.push_str(&line);
-
-        if self.buffer.is_empty() {
-            return Ok(Empty);
+        if line == "quit" {
+            break;
         }
+    }
+    Ok(())
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{self, Write};
+    use std::process::exit;
+    use structopt::StructOpt;
+    #[derive(StructOpt)]
+    struct Opt {
+        #[structopt(subcommand)]
+        cmd: Command,
+
+    }
+
+    #[test]
+    fn test_main() {
+
+        if let Some(ref interface) = interface {
+            // It's fine to fail to load history.
+            let p = ::history_file_path();
+            let loaded = interface.load_history(&p);
+            debug!("history read from {}: {}", p.display(), loaded.is_ok());
+
+            let mut r = interface.lock_reader();
+            // Handle SIGINT (Ctrl-C)
+            r.set_report_signal(Signal::Interrupt, true);
+            r.set_word_break_chars(" \t\n!\"#$%&'(){}*+,-./:;<=>?@[\\]^`");
+            r.set_completer(Some(completer));
+            r.set_key_reader(Some(key_reader));
+            r.set_prompt_func(Some(prompt_func));
+            r.set_startup_hook(Some(startup_hook));
+            r.set_pre_input_hook(Some(pre_input_hook));
+        }
+        let opt = Opt::from_args();
+        match opt.cmd {
+            Command::Scan => {
+                let mut reader = InputReader::new(None);
+                loop {
+                    match reader.read_input() {
+                        Ok(InputResult::MetaCommand(cmd)) => {
+                            println!("{:?}", cmd);
+                        }
+                        Ok(InputResult::More) => {
+                            println!("More");
+                        }
+                        Ok(InputResult::Quit) => {
+                            println!("Quit");
+                            break;
+                        }
+                    }
+                }
+            }
+            Command::Range => {
+                let mut reader = InputReader::new(None);
+                loop {
+                    match reader.read_input() {
+                        Ok(InputResult::MetaCommand(cmd)) => {
+                            println!("{:?}", cmd);
+                        }
+                        Ok(InputResult::More) => {
+                            println!("More");
+                        }
+                        Ok(InputResult::Quit) => {
+                            println!("Quit");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    fn completer(line: &str, _pos: usize) -> Vec<String> {
+        vec![line.to_string()]
+
+    }
+
+
+    fn key_reader(line: &str, _pos: usize) -> Option<Key> {
+        None
+
+    }
+
+    fn prompt_func(reader: &mut InputReader) -> io::Result<String> {
+        Ok(String::new())
+    }
+
+    fn startup_hook(reader: &mut InputReader) -> io::Result<()> {
+        Ok(())
+    }
+
+
+    fn pre_input_hook(reader: &mut InputReader) -> io::Result<()> {
+        Ok(())
+    }
 
 
 
-        // if we have a command in process (i.e. an incomplete query or transaction),
+
+       // if we have a command in process (i.e. an incomplete query or transaction),
         // then we already know which type of command it is and so we don't need to parse the
         // command again, only the content, which we do later.
         // Therefore, we add the newly read in line to the existing command args.
         // If there is no in process command, we parse the read in line as a new command.
-        let cmd = match &self.in_process_cmd {
-            &Some(Command::QueryPrepared(ref args)) => {
-                Ok(Command::QueryPrepared(args.clone() + "\n" + &line))
-            },
-            &Some(Command::Query(ref args)) => {
-                Ok(Command::Query(args.clone() + "\n" + &line))
-            },
-            &Some(Command::Transact(ref args)) => {
-                Ok(Command::Transact(args.clone() + "\n" + &line))
-            },
-            _ => {
-                command(&self.buffer)
-            },
-        };
+        // If the command is complete, we process it and then start a new command.
+        // If the command is not complete, we just add the read in line to the existing command.
 
-        match cmd {
-            Ok(cmd) => {
-                self.in_process_cmd = Some(cmd);
-                self.buffer.clear();
-                Ok(More)
-            },
-            Err(e) => {
-                error!("{}", e);
-                self.buffer.clear();
-                Ok(More)
-            },
+
+    
+fn read_stdin() -> io::Result<String> {
+    let mut stdin = io::stdin();
+    let mut line = String::new();
+    stdin.read_line(&mut line)?;
+    Ok(line)
+}
+
+
+    #[test]
+    fn test_read_stdin() {
+        let line = read_stdin().unwrap();
+        assert_eq!(line, "quit\n");
+    }
+
+    #[test]
+    fn test_read_stdin_eof() {
+        let line = read_stdin().unwrap();
+        assert_eq!(line, "quit\n");
+
+
+        let mut s = String::new();
+
+        match stdin().read_line(&mut s) {
+            Ok(0) | Err(_) => UserAction::Quit,
+            Ok(_) => {
+                if s.ends_with("\n") {
+                    let len = s.len() - 1;
+                    s.truncate(len);
+                }
+                UserAction::TextInput(s)
+            }
         }
     }
 
-    /// Returns the current buffer.
-    /// This is useful for displaying the prompt.
-    /// If there is no command being processed, returns `None`.
-
-    pub fn current_buffer(&self) -> Option<String> {
-        self.buffer.clone()
-    }
-
-    match cmd {
-        Ok(cmd) => {
-            self.in_process_cmd = Some(cmd);
-            self.buffer.clear();
-            Ok(More)
-        },
-        Err(e) => {
-            error!("{}", e);
-            self.buffer.clear();
-            Ok(More)
-        },
-    },
-    _ => {
-        self.buffer.clear();
-        Ok(More)
-    },
 }
-    
-fn read_stdin(&self) -> UserAction {
+
+fn add_history(line: &str) {
+    let p = ::history_file_path();
+    let mut f = File::create(&p).unwrap();
+    f.write_all(line.as_bytes()).unwrap();
+}
+
+pub fn save_history() {
+    let p = ::history_file_path();
+    let mut f = File::create(&p).unwrap();
+    f.write_all("".as_bytes()).unwrap();
+}
+
+
+pub fn load_history() {
+    let p = ::history_file_path();
+    let mut f = File::open(&p).unwrap();
     let mut s = String::new();
-
-    match stdin().read_line(&mut s) {
-        Ok(0) | Err(_) => UserAction::Quit,
-        Ok(_) => {
-            if s.ends_with("\n") {
-                let len = s.len() - 1;
-                s.truncate(len);
-            }
-            UserAction::TextInput(s)
-        },
-    }
-}
-
-fn add_history(&self, line: String) {
-    if let Some(ref interface) = self.interface {
-        interface.add_history(line);
-    }
-    self.save_history();
-}
-
-pub fn save_history(&self) -> () {
-    if let Some(ref interface) = self.interface {
-        let p = ::history_file_path();
-        // It's okay to fail to save history.
-        let saved = interface.save_history(&p);
-        debug!("history saved to {}: {}", p.display(), saved.is_ok());
-    }
+    f.read_to_string(&mut s).unwrap();
 }
 
 
-pub fn load_history(&self) -> () {
-    if let Some(ref interface) = self.interface {
-        let p = ::history_file_path();
-        // It's okay to fail to load history.
-        let loaded = interface.load_history(&p);
-        debug!("history loaded from {}: {}", p.display(), loaded.is_ok());
-    }
+pub fn clear_history() {
+    let p = ::history_file_path();
+    let _ = std::fs::remove_file(&p);
 }
 
 
-pub fn clear_history(&self) -> () {
-    if let Some(ref interface) = self.interface {
-        interface.clear_history();
-    }
+pub fn history_file_path() -> PathBuf {
+    let mut p = ::env::current_dir().unwrap();
+    p.push(".history");
+    p
 }
 
 
-pub fn history_size(&self) -> usize {
-    if let Some(ref interface) = self.interface {
-        interface.history_size()
-    } else {
-        0
-    }
+pub fn history_file_exists() -> bool {
+    let p = ::history_file_path();
+    p.exists()
 }
 
 
-pub fn history_is_empty(&self) -> bool {
-    if let Some(ref interface) = self.interface {
-        interface.history_is_empty()
-    } else {
-        true
-    }
-}
-
+/// The history file is a text file that contains the history of commands.

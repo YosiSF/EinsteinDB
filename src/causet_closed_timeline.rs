@@ -306,7 +306,7 @@ pub enum TimelikeMsg {
     FidelId: u64, //fidel id
 
     RawCmd {
-        cmd: String,
+        Cmd: String,
         args: Vec<String>,
     },
 */

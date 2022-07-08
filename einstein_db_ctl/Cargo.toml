@@ -8,9 +8,9 @@ edition = "2021"
 
 
 [dependencies]
+
 gag = "1.0"
 hex = "0.4"
-causetq = { path = "../causetq" }
 causet = { path = "../causet" }
 causets = { path = "../causets" }
 berolinasql = { path = "../berolinasql" }
@@ -28,7 +28,8 @@ regex = "1"
 serde_json = "1.0"
 toml = "0.5"
 
-
+[dependencies.causetq]
+path = "../causetq"
 
 
 [features]
@@ -36,17 +37,48 @@ rt-multi-thread = "1"
 time = "1"
 
 
-[dependencies.causetq]
-version = "0.1.0"
-features = ["rt-multi-thread", "time"]
+[target.'.exe'.linker.libraries]
+gag = { kind = "static" }
+hex = { kind = "static" }
+causetq = { kind = "static" }
+causet = { kind = "static" }
+causets = { kind = "static" }
+berolinasql = { kind = "static" }
+chrono = { kind = "static" }
+crossbeam = { kind = "static" }
+tempfile = { kind = "static" }
+serde = { kind = "static" }
+structopt = { kind = "static" }
+futures = { kind = "static" }
+tokio = { kind = "static" }
+libc = { kind = "static" }
+nix = { kind = "static" }
 
 
-[dependencies.causet]
-version = "0.1.0"
-features = ["rt-multi-thread", "time"]
+[target.'.exe'.linker.libraries.dynamic]
+rand = { kind = "dynamic" }
+regex = { kind = "dynamic" }
+serde_json = { kind = "dynamic" }
+toml = { kind = "dynamic" }
 
-[dependencies.causets]
-version = "0.1.0"
-features = ["rt-multi-thread", "time"]
 
+[target.'.exe'.linker.libraries.dynamic.rand]
+version = "0.8.5"
+
+
+[target.'.exe'.linker.libraries.dynamic.regex]
+version = "1"
+
+
+[target.'.exe'.linker.libraries.dynamic.serde_json]
+version = "1.0"
+
+
+#debian
+[target.'.exe'.linker.libraries.dynamic.toml]
+version = "0.5"
+
+
+[target.'.exe'.linker.libraries.dynamic.tokio]
+version = "1.5"
 

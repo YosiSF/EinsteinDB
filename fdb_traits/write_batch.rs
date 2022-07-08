@@ -494,7 +494,7 @@ pub trait WriteBatch<E: WriteBatchExt + Sized>: Mutable {
 
 
     /// Record a command
-    /// * `cmd`: The command to record
+    /// * `Cmd`: The command to record
     /// * `cmd_type`: The type of command
     /// * `cmd_type_len`: The length of the command type
     /// * `cmd_data`: The data of the command
