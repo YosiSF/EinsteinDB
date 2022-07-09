@@ -766,6 +766,7 @@ fn eval_box(&self) -> Result<Box<ScalarValue>> {
 }
 
 
+#[cfg(test)]
 impl ScalarValue {
     #[inline]
     pub fn eval_type(&self) -> EvalType {
@@ -784,291 +785,53 @@ impl ScalarValue {
                             Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record)?
                         }
                     }
-                }
-                _ => panic!("Cannot compare two ScalarValueRef in different type"),
-            }
-        }
-
-
-                impl ScalarValue {
-                    pub fn eval_type(&self) -> EvalType {
-                        match self {
-                            ScalarValue::Int(_) => EvalType::Int,
-                            ScalarValue::Real(_) => EvalType::Real,
-                            ScalarValue::Decimal(_) => EvalType::Decimal,
-                            ScalarValue::DateTime(_) => EvalType::DateTime,
-                            ScalarValue::Duration(_) => EvalType::Duration,
-                            ScalarValue::Json(_) => EvalType::Json,
-                            ScalarValue::Bytes(_) => EvalType::Bytes,
-                        }
-                    }
-
-                    pub fn as_int(&self) -> Option<i64> {
-                        match self {
-                            ScalarValue::Int(v) => *v,
-                            other => panic!(
-                                "Cannot cast {} scalar causet_locale into {}",
-                                other.eval_type(),
-                                stringify!(Int),
-                            ),
-                        }
-                    }
-
-                    pub fn as_real(&self) -> Option<f64> {
-                        match self {
-                            ScalarValue::Real(v) => *v,
-                            other => panic!(
-                                "Cannot cast {} scalar causet_locale into {}",
-                                other.eval_type(),
-                                stringify!(Real),
-                            ),
-                        }
-                    }
-
-                    pub fn as_decimal(&self) -> Option<Decimal> {
-                        match self {
-                            ScalarValue::Decimal(v) => *v,
-                            other => panic!(
-                                "Cannot cast {} scalar causet_locale into {}",
-                                other.eval_type(),
-                                stringify!(Decimal),
-                            ),
-                        }
-                    }
-
-                    pub fn as_datetime(&self) -> Option<DateTime> {
-                        match self {
-                            ScalarValue::DateTime(v) => *v,
-                            other => panic!(
-                                "Cannot cast {} scalar causet_locale into {}",
-                                other.eval_type(),
-                                stringify!(DateTime),
-                            ),
-                        }
-                    }
-
-                    pub fn as_duration(&self) -> Option<Duration> {
-                        match self {
-                            ScalarValue::Duration(v) => *v,
-                            other => panic!(
-                                "Cannot cast {} scalar causet_locale into {}",
-                                other.eval_type(),
-                                stringify!(Duration),
-                            ),
-                        }
-                    }
-
-                    pub fn as_json(&self) -> Option<Json> {
-                        match self {
-                            ScalarValue::Json(v) => *v,
-                            other => panic!(
-                                "Cannot cast {} scalar causet_locale into {}",
-                                other.eval_type(),
-                                stringify!(Json),
-                            ),
-                        }
-                    }
-
-                    pub fn as_bytes(&self) -> Option<Bytes> {
-                        match self {
-                            ScalarValue::Bytes(v) => *v,
-                            other => panic!(
-                                "Cannot cast {} scalar causet_locale into {}",
-                                other.eval_type(),
-                                stringify!(Bytes),
-                            ),
-                        }
-                    }
-
-                    pub fn as_string(&self) -> Option<String> {
-                        match self {
-                            ScalarValue::Bytes(v) => v.map(|v| v.to_string_lossy().to_string()),
-                            other => panic!(
-                                "Cannot cast {} scalar causet_locale into {}",
-                                other.eval_type(),
-                                stringify!(String),
-                            ),
-                        }
-                    }
-                }
-
-                impl<'a> PartialOrd for ScalarValueRef<'a> {
-                    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-                        match_template_evaluable! {
-        TT, match (self, other) {
-
-            (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.partial_cmp(causet_record),
-            (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.partial_cmp(causet_record),
-            (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => Some(Ordering::Equal),
-            (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => Some(Ordering::Greater),
-            (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => Some(Ordering::Less),
-            (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
-                match_template_collator! {
-                    TT, match field_type.collation()? {
-                        Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record)?
-                    }
-                }
-            }
-
-            _ => panic!("Cannot compare two ScalarValueRef in different type"),
-        }
-            }
-                    }
-                }
-
-                impl<'a> PartialEq for ScalarValueRef<'a> {
-                    fn eq(&self) -> bool {
-                        match_template_evaluable! {
-                            match self {
-                                ScalarValue::Int(_) => EvalTypeAccessor::Int,
-                                ScalarValue::Real(_) => EvalTypeAccessor::Real,
-                                ScalarValue::Decimal(_) => EvalTypeAccessor::Decimal,
-                                ScalarValue::DateTime(_) => EvalTypeAccessor::DateTime,
-                                ScalarValue::Duration(_) => EvalTypeAccessor::Duration,
-                                ScalarValue::Json(_) => EvalTypeAccessor::Json,
-                                ScalarValue::Bytes(_) => EvalTypeAccessor::Bytes,
-                            }
-                        }
-
-                        match_template_evaluable! {
-        TT, match (self, other) {
-
-                (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => true,
-                (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => false,
-                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => false,
+}
                 (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
                     match_template_collator! {
                         TT, match field_type.collation()? {
                             Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record)?
                         }
                     }
-                }
 
-                _ => panic!("Cannot compare two ScalarValueRef in different type"),
-            }
+                (ScalarValueRef::Real(EINSTEIN_DB), ScalarValueRef::Real(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Decimal(EINSTEIN_DB), ScalarValueRef::Decimal(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::DateTime(EINSTEIN_DB), ScalarValueRef::DateTime(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Duration(EINSTEIN_DB), ScalarValueRef::Duration(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Json(EINSTEIN_DB), ScalarValueRef::Json(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Bytes(EINSTEIN_DB), ScalarValueRef::Bytes(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Real(EINSTEIN_DB), ScalarValueRef::Real(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Decimal(EINSTEIN_DB), ScalarValueRef::Decimal(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::DateTime(EINSTEIN_DB), ScalarValueRef::DateTime(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                            }
                 }
+                (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.eq(causet_record),
                     }
-
-                    impl<'a> fmt::Display for ScalarValueRef<'a> {
-                        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                            match_template_evaluable! {
-        TT, match self {
-            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
-            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
-        }
-            }
-                        }
-                    }
-                }
-
-                impl<'a> fmt::Debug for ScalarValueRef<'a> {
-                    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                        match_template_evaluable! {
-        TT, match self {
-            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
-            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
-        }
-            }
-                    }
-                }
-            }
-
-            impl<'a> fmt::Display for ScalarValueRef<'a> {
-                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                    match_template_evaluable! {
-        TT, match self {
-            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
-            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
-        }
-            }
-                }
-            }
-        }
-    }   // end of mod scalar_value
-}// end of mod causet_locale
-
-
-mod causet_record {
-    use super::*;
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct CausetRecord {
-    pub id: i64,
-    pub data: Vec<u8>,
-}
-
-    impl CausetRecord {
-        pub fn new(id: i64, data: Vec<u8>) -> Self {
-            CausetRecord {
-                id,
-                data,
-            }
-        }
-    }
-
-    impl fmt::Display for CausetRecord {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "CausetRecord(id: {}, data: {:?})", self.id, self.data)
-        }
-    }
-
-    impl fmt::Debug for CausetRecord {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "CausetRecord(id: {}, data: {:?})", self.id, self.data)
-        }
-
-        fn fmt_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            write!(f, "CausetRecord(id: {}, data: {:?})", self.id, self.data)
-        }
-    }
-
-    impl PartialEq for CausetRecord {
-                impl<'a> fmt::Display for ScalarValueRef<'a> {
-                    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                        match_template_evaluable! {
-        TT, match self {
-            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
-            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
-        }
-            }
-                }
-            }
-
-        impl<'a> fmt::Display for ScalarValueRef<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            bool {
                 match_template_evaluable! {
-        TT, match self {
-            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
-            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
-        }
-            }
-        }
-    }
+            TT, match (self, other) {
+                (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => true,
+                (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => false,
+                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => false,
+                (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
+                match_template_collator ! {
+                TT, match field_type.collation() ? {
+                Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record) ?
+                }
+                }
+                }
+                (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
+                match_template_collator ! {
+                TT, match field_type.collation() ? {
+                Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record) ?
+                }
 
-
-        impl<'a> fmt::Debug for ScalarValueRef<'a> {
-            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                match_template_evaluable! {
-        TT, match self {
-            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
-            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
-            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
-        }
-            }
+                }
+                }
+                }
         }
     }
 }
+
+
