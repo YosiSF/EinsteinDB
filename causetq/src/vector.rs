@@ -27,15 +27,14 @@ use crate::{
 };
 
 
-pub mod causet;
-pub mod causet_query;
-pub mod causet_query_builder;
-pub mod causetq;
-pub mod causetq_query;
-pub mod causetq_query_builder;
-pub mod gremlin;
-//FoundationDB Record Layer Thread
-pub mod thread; //FoundationDB Record Layer Thread
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Vector {
+    pub(crate) tp: FieldType,
+    pub(crate) values: Vec<Option<Vec<u8>>>,
+}
+
 
 /// A vector causet_locale container, a.k.a. causet_merge, for all concrete eval types.
 ///
@@ -65,6 +64,27 @@ pub enum VectorValue {
 
 
 impl VectorValue {
+    pub fn causet(&self) -> Option<&CausetLocale> {
+        match self {
+            VectorValue::Causet(locale) => Some(locale),
+            _ => None,
+        }
+    }
+
+    pub fn causetq(&self) -> Option<&CausetqLocale> {
+        match self {
+            VectorValue::Causetq(locale) => Some(locale),
+            _ => None,
+        }
+    }
+
+    pub fn causet_mut(&mut self) -> Option<&mut CausetLocale> {
+        match self {
+            VectorValue::Causet(locale) => Some(locale),
+            _ => None,
+        }
+    }
+
     /// Creates a new `VectorValue` from a `CausetLocale`.
     ///     
     /// # Examples
@@ -75,7 +95,24 @@ impl VectorValue {
     /// 
     /// let causet_locale = CausetLocale::new(CausetQuery::new(CausetQueryBuilder::new().build()));
     /// let vector_value = VectorValue::from(causet_locale);
-    Int(NotChunkedVec<Int>),
+    /// assert_eq!(vector_value.causet(), Some(&causet_locale));
+
+
+
+    /// Creates a new `VectorValue` from a `CausetqLocale`.
+    ///
+    /// # Examples
+    /// ```
+    /// use causet::vector::VectorValue;
+    /// use causet::causetq_locale::CausetqLocale;
+    /// use causet::causetq_query::CausetqQuery;
+    /// use causet::
+
+
+
+
+    /*
+    Int(NotChunkedVec<Int>)
     Real(NotChunkedVec<Real>),
     Decimal(NotChunkedVec<Decimal>),
     //store strings in adjacent memory places
@@ -124,8 +161,27 @@ impl VectorValue {
     EnumVector(ChunkedVec<Enum>),
     SetVector(ChunkedVec<Set>),
     BitSetVector(ChunkedVec<BitSet>),
+*/
 
+    pub fn from_causet(causet_locale: CausetLocale) -> Self {
+        VectorValue::Causet(causet_locale)
+    }
+
+    pub fn from_causetq(causetq_locale: CausetqLocale) -> Self {
+        VectorValue::Causetq(causetq_locale)
+    }
+
+    pub fn from_causet_query(causet_query: CausetQuery) -> Self {
+        VectorValue::Causet(CausetLocale::new(causet_query))
+    }
+
+    pub fn from_causetq_query(causetq_query: CausetqQuery) -> Self {
+        VectorValue::Causetq(CausetqLocale::new(causetq_query))
+    }
 }
+
+
+
 
 impl VectorValue {
     pub fn new_int(capacity: usize) -> Self {
@@ -316,6 +372,7 @@ impl VectorValue {
     pub fn new_bytes_vector_map_set(capacity: usize) -> Self {
         VectorValue::BytesVectorMapSet(ChunkedVec::new(capacity))
     }
+}
 
 
     /// Creates a new `VectorValue` with the same eval type and capacity.
@@ -383,39 +440,11 @@ impl VectorValue {
     /// # Panics
     ///
     /// Panics if `other` does not have the same `EvalType` as `Self`.
-    ///
+    /// Panics if `Self` is not chunked.
+    /// Panics if `other` is not chunked.
+    /// Panics if `Self` is not sorted.
+    /// Panics if `other` is not sorted.
 
-    impl_ext! { Int, push_int }
-    impl_ext! { Real, push_real }
-    impl_ext! { Decimal, push_decimal }
 
 
-    impl_ext! { Bytes, push_bytes }
-    impl_ext! { DateTime, push_date_time}
-
-    impl_ext! { Duration, push_duration }
-    impl_ext! { Json, push_json }
-    impl_ext! { Time, push_time }
-    impl_ext! { Date, push_date }
-    impl_ext! { Interval, push_interval }
-    impl_ext! { String, push_string }
-    impl_ext! { Uuid, push_uuid }
-    impl_ext! { Enum, push_enum }
-    impl_ext! { Set, push_set }
-    impl_ext! { List, push_list }
-    impl_ext! { Map, push_map }
-    impl_ext! { Struct, push_struct }
-    impl_ext! { Tuple, push_tuple }
-    impl_ext! { Vector, push_vector }
-    impl_ext! { Dict, push_dict }
-    impl_ext! { SetKey, push_set_key }
-    impl_ext! { ListKey, push_list_key }    //      impl_ext! { ListKey, push_list_key }
-    impl_ext! { MapKey, push_map_key }
-    impl_ext! { StructKey, push_struct_key }
-    impl_ext! { TupleKey, push_tuple_key }
-    impl_ext! { VectorKey, push_vector_key }
-
-    impl_ext! { IntVector, push_int_vector }
-
-    impl_ext! { RealVector, push_real_vector }
 

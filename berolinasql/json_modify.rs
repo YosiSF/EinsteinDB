@@ -10,6 +10,12 @@
 
 
 
+
+// use std::error::Error;
+// use std::fmt;
+// use std::io;
+// use std::string::FromUtf8Error;
+
 use std::error::Error;
 use std::fmt;
 use std::io;
@@ -27,6 +33,49 @@ use std::collections::hash_map::Iter;
 use std::collections::hash_map::IterMut;
 
 
+use crate::berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind};
+use crate::berolinasql::{ErrorImpl as BerolinaSqlErrorImpl};
+use std::error::Error;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+use std::result;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+use std::error::Error;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+use std::error::Error;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+use std::error::Error;
+
+
+ #[derive(Debug)]
+    pub enum ErrorKind {
+        Io(io::Error),
+        BerolinaSql(BerolinaSqlError),
+        Utf8(Utf8Error),
+        FromUtf8(FromUtf8Error),
+        Other(String),
+    }
+
+    #[derive(Debug)]
+    pub struct ErrorImpl {
+        pub kind: ErrorKind,
+    }
+
+    #[derive(Debug)]
+    pub enum BerolinaSqlError {
+        IoError(io::Error),
+        SqlError(String),
+    }
+
+
+
+
+
+
+
 
 
 
@@ -39,10 +88,11 @@ use std::collections::hash_map::Values;
 
 
  use std::collections::HashSet;
+    use std::collections::HashMap;
+    use std::collections::hash_map::Entry;
 
-
-
-
+    use std::collections::hash_map::Iter;
+    use std::collections::hash_map::IterMut;
 
 
 #[derive(Clone, Copy, Debug, PartialEq)]

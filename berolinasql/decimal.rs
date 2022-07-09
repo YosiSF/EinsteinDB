@@ -261,6 +261,38 @@ impl<T> Into<Result<T>> for Res<T> {
     
 }
 
+
+impl<T> Into<Result<T>> for Res<T> {
+
+    fn into(self) -> Result<T> {
+        match self {
+            Res::Ok(t) => Ok(t),
+            Res::Truncated(t) => Err(Error::truncated()),
+            Res::Truncated(_) => Err(Error::truncated()),
+            Res::OverCausetxctx(_) => Err(Error::overCausetxctx("", "")),
+
+        }
+
+    }
+
+}
+
+
+impl<T> Into<Result<T>> for Res<T> {
+
+    fn into(self) -> Result<T> {
+        match self {
+            Res::Ok(t) => Ok(t),
+            Res::Truncated(t) => Err(Error::truncated()),
+            Res::Truncated(_) => Err(Error::truncated()),
+            Res::OverCausetxctx(_) => Err(Error::overCausetxctx("", "")),
+
+        }
+
+    }
+
+}
+
 impl<T> Deref for Res<T> {
     type Target = T;
 
@@ -281,6 +313,7 @@ impl<T> DerefMut for Res<T> {
 
 // A `Decimal` holds 9 words.
 const WORD_BUF_LEN: u8 = 9;
+
 // A word holds 9 digits.
 const DIGITS_PER_WORD: u8 = 9;
 // A word is 4 bytes i32.

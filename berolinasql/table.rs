@@ -1,4 +1,12 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable
+// law or agreed to in writing, software distributed under the License is distributed
+// on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied. See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 
 use super::*;
@@ -7,6 +15,63 @@ use crate::parser::{Parser, ParserError};
 use crate::value::{Value, ValueType};
 use crate::{ValueRef, ValueRefMut};
 use itertools::Itertools;
+use std::collections::HashMap;
+use std::fmt;
+use std::io;
+use std::str::FromStr;
+
+
+#[derive(Debug)]
+pub struct Table {
+    pub name: String,
+    pub columns: Vec<Column>,
+    pub rows: Vec<Row>,
+}
+
+
+impl Table {
+    pub fn new(name: String, columns: Vec<Column>, rows: Vec<Row>) -> Self {
+        Table {
+            name,
+            columns,
+            rows,
+        }
+    }
+}
+
+
+#[derive(Debug)]
+pub struct Column {
+    pub name: String,
+    pub value_type: ValueType,
+}
+
+
+impl Column {
+    pub fn new(name: String, value_type: ValueType) -> Self {
+        Column {
+            name,
+            value_type,
+        }
+    }
+}
+
+
+#[derive(Debug)]
+pub struct Row {
+    pub values: Vec<Value>,
+}
+
+
+
+
+impl Row {
+    pub fn new(values: Vec<Value>) -> Self {
+        Row {
+            values,
+        }
+    }
+}
 
 
 use crate::fdb_traits::FdbTrait;
@@ -22,6 +87,31 @@ use std::{
     ops::{Deref, DerefMut},
     sync::{Arc, Mutex},
 };
+
+
+
+#[derive(Debug)]
+pub struct TableImpl {
+    pub name: String,
+    pub columns: Vec<Column>,
+    pub rows: Vec<Row>,
+    pub fdb_trait: FdbTraitImpl,
+}
+
+
+#[derive(Debug)]
+pub struct TableRef {
+    pub table: Arc<Mutex<TableImpl>>,
+}
+
+#[derive(Debug)]
+pub struct TableRefMut {
+    pub table: Arc<Mutex<TableImpl>>,
+}
+
+
+
+
 
 
 ///ttl for primitive type in EinsteinDB
@@ -91,33 +181,31 @@ use einsteindb_util::time::{DurationSecs, DurationSecs as DurationSecsT};
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Table {
-    pub name: String,
-    pub columns: Vec<Column>,
-    pub indexes: Vec<Index>,
-    pub primary_key: Vec<String>,
-    pub ttl: u64,
-    pub ttl_column: String,
-    pub ttl_column_type: ColumnType,
-    pub ttl_column_type_flag: ColumnTypeFlag,
-    pub ttl_column_type_tp: ColumnTypeTp,
+
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct TableRefImpl {
+    pub table: Arc<Mutex<TableImpl>>,
 }
 
+#[allow(unused_imports)]
+use einsteindb_util::time::{DurationSecs, DurationSecs as DurationSecsT};
 
+
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct TableRefMutImpl {
+    pub table: Arc<Mutex<TableImpl>>,
+}
 impl Table {
     pub fn new(name: String, columns: Vec<Column>, indexes: Vec<Index>, primary_key: Vec<String>, ttl: u64, ttl_column: String, ttl_column_type: ColumnType, ttl_column_type_flag: ColumnTypeFlag, ttl_column_type_tp: ColumnTypeTp) -> Self {
-        Table {
+        let mut table = Table {
             name,
             columns,
-            indexes,
-            primary_key,
-            ttl,
-            ttl_column,
-            ttl_column_type,
-            ttl_column_type_flag,
-            ttl_column_type_tp,
-        }
+            rows: Vec::new(),
+        };
+
+
     }
 }
 
@@ -125,6 +213,11 @@ impl Table {
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Id(u64);
 
+
+
+pub struct TableRefImplImpl {
+    pub table: Arc<Mutex<TableImpl>>,
+}
 
 impl Id {
     pub fn new(id: u64) -> Self {

@@ -1,4 +1,5 @@
  //Copyright 2021-2023 WHTCORPS INC
+
  //
  // Licensed under the Apache License, Version 2.0 (the "License"); you may not use
  // this file File except in compliance with the License. You may obtain a copy of the
@@ -34,7 +35,35 @@
 //!
 //!   // the number of members in object or number of elements in array
 //!   element-count ::= uint32
-//!
+
+
+ use std::error::Error;
+    use std::fmt;
+    use std::io;
+    use std::string::FromUtf8Error;
+    use std::str::Utf8Error;
+    use std::result;
+    use std::string::FromUtf8Error;
+    use std::str::Utf8Error;
+    use std::error::Error;
+    use std::string::FromUtf8Error;
+
+
+
+ #[derive(Debug, Clone, PartialEq, Eq)]
+    pub enum JsonType {
+        Object,
+        Array,
+        Literal,
+        Int16,
+        Uint16,
+        Int32,
+        Uint32,
+        Int64,
+        Uint64,
+        Double,
+        Utf8mb4String,
+    }
 //!   //number of bytes in the binary representation of the object or array
 //!   size ::= uint32
 //!   soliton_id-causet ::= soliton_id-offset soliton_id-length
@@ -67,17 +96,6 @@
 
  const ERR_CONVERT_FAILED: &str = "Can not covert from ";
 
-/// The types of `Json` which follows https://tools.ietf.org/html/rfc7159#section-3
-#[derive(Eq, PartialEq, FromPrimitive, Clone, Debug, Copy)]
-pub enum JsonType {
-    Object = 0x01,
-    Array = 0x03,
-    Literal = 0x04,
-    I64 = 0x09,
-    U64 = 0x0a,
-    Double = 0x0b,
-    String = 0x0c,
-}
 
 impl TryFrom<u8> for JsonType {
     type Error = Error;

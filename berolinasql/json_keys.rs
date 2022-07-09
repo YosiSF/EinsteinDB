@@ -9,6 +9,105 @@
 // specific language governing permissions and limitations under the License.
 
 use std::str;
+use std::fmt;
+use std::error;
+use std::io;
+use std::convert::From;
+use std::result;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Json {
+    Null,
+    Bool(bool),
+    Number(f64),
+    String(String),
+    Array(Vec<Json>),
+    Object(BTreeMap<String, Json>),
+}
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Error {
+    SyntaxError(String),
+    IoError(io::Error),
+    InvalidType(String, String),
+    InvalidSyntax(String),
+    InvalidNumber(String),
+    InvalidString(String),
+    InvalidEscape(char),
+    InvalidUnicode(String),
+    MissingColon,
+    MissingComma,
+    MissingCloseBrace,
+    MissingCloseBracket,
+    MissingCloseParen,
+    MissingOpenBrace,
+    MissingOpenBracket,
+    MissingOpenParen,
+    MissingQuote,
+    MissingSemicolon,
+    MissingValue,
+    MissingColonOrComma,
+    MissingCommaOrCloseBrace,
+    MissingCommaOrCloseBracket,
+    MissingCommaOrCloseParen,
+    MissingCommaOrOpenBrace,
+    MissingCommaOrOpenBracket,
+    MissingCommaOrOpenParen,
+    MissingCommaOrQuote,
+    MissingCommaOrSemicolon,
+    MissingCommaOrValue,
+    MissingColonOrCloseBrace,
+    MissingColonOrCloseBracket,
+    MissingColonOrCloseParen,
+    MissingColonOrOpenBrace,
+    MissingColonOrOpenBracket,
+    MissingColonOrOpenParen,
+    MissingColonOrQuote,
+    MissingColonOrSemicolon,
+    MissingColonOrValue,
+    MissingCommaOrColon,
+    MissingCommaOrCloseBraceOrSemicolon,
+    MissingCommaOrCloseBracketOrSemicolon,
+    MissingCommaOrCloseParenOrSemicolon,
+    MissingCommaOrOpenBraceOrSemicolon,
+    MissingCommaOrOpenBracketOrSemicolon,
+    MissingCommaOrOpenParenOrSemicolon,
+    MissingCommaOrQuoteOrSemicolon,
+    MissingCommaOrValueOrSemicolon,
+    MissingColonOrColonOrSemicolon,
+    MissingColonOrCloseBraceOrSemicolon,
+    MissingColonOrCloseBracketOrSemicolon,
+    MissingColonOrCloseParenOrSemicolon,
+}
+
+impl fmt::Display for SemicolonToken {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, ";")
+    }
+}
+
+
+impl fmt::Display for CommaToken {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, ",")
+    }
+}
+
+
+impl fmt::Display for ColonToken {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, ":")
+    }
+}
+
 
 
 

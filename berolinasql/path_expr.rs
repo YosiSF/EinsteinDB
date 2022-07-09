@@ -313,13 +313,37 @@ pub enum LocalPathLeg {
 
 
 
- pub fn contains_any_asterisk(path: &str) -> bool {
-    /// `Key` indicates the local_path leg  with '.soliton_id'.
-    Key::contains_any_asterisk(path){
-        return true;
+
+impl GremlinClientCapnp {
+    pub fn new(query: String, request: GremlinRequest, response: GremlinResponse) -> GremlinClientCapnp {
+        GremlinClientCapnp {
+            query: query,
+            request: request,
+            response: response,
+            request_capnp: gremlin_capnp::gremlin_capnp::GremlinRequest::new(),
+            response_capnp: gremlin_capnp::gremlin_capnp::GremlinResponse::new(),
+        }
     }
 
-    return false;
+    pub fn from_request_capnp(request_capnp: gremlin_capnp::gremlin_capnp::GremlinRequest) -> GremlinClientCapnp {
+        GremlinClientCapnp {
+            query: request_capnp.get_query().to_string(),
+            request: GremlinRequest::from_request_capnp(request_capnp.get_request()),
+            response: GremlinResponse::from_response_capnp(request_capnp.get_response()),
+            request_capnp: request_capnp,
+            response_capnp: gremlin_capnp::gremlin_capnp::GremlinResponse::new(),
+        }
+    }
+
+    pub fn from_response_capnp(response_capnp: gremlin_capnp::gremlin_capnp::GremlinResponse) -> GremlinClientCapnp {
+        GremlinClientCapnp {
+            query: response_capnp.get_query().to_string(),
+            request: GremlinRequest::from_request_capnp(response_capnp.get_request()),
+            response: GremlinResponse::from_response_capnp(response_capnp.get_response()),
+            request_capnp: gremlin_capnp::gremlin_capnp::GremlinRequest::new(),
+            response_capnp: response_capnp,
+        }
+    }
 
 
 }

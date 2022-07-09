@@ -1,25 +1,51 @@
-// Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
-//
+/// Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
+/// Licensed under the Apache License, Version 2.0 (the "License");
+/// you may not use this file except in compliance with the License.
+/// You may obtain a copy of the License at
+/// http://www.apache.org/licenses/LICENSE-2.0
+/// Unless required by applicable law or agreed to in writing, software
+/// distributed under the License is distributed on an "AS IS" BASIS,
+/// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+/// See the License for the specific language governing permissions and
+/// limitations under the License.
+/// ----------------------------------------------------------------------------
+/// @author     <> @CavHack @jedisct1 @kamilskurz @rukzuk @tomaslazdik @slushie
+///
+/// Licensed under the Apache License, Version 2.0 (the "License");
 
 
-//FoundationDB
+//sqlx
+use super::*;
+use crate::error::{Error, Result};
+use crate::parser::{Parser, ParserError};
+use crate::value::{Value, ValueType};
+use crate::{ValueRef, ValueRefMut};
+use itertools::Itertools;
 
-use fdb::{Database, DatabaseOptions, DatabaseContext, Subspace, Transaction, WriteOptions};
-use fdb::{FDBError, FDBFuture, FDBTuple};
-use fdb::{FDBKeySelector, FDBStreamingMode, FDBStreamingModeOptions};
-use fdb::{FDBStreamingResult, FDBStreamingResultOptions};
-use fdb::{FDBStreamingResultOptions, FDBStreamingResultOptionsBuilder};
+use crate::fdb_traits::FdbTrait;
+use crate::fdb_traits::FdbTraitImpl;
+use pretty;
 
-//use sys-fdb
-use fdb::{FDBDatabase, FDBDatabaseOptions, FDBDatabaseContext, FDBDatabaseContextBuilder};
-use fdb::{FDBDatabaseOptionsBuilder, FDBDatabaseContextBuilder};
-use fdb::{FDBDatabaseOptions, FDBDatabaseOptionsBuilder};
+///! # PrimitiveTtl
+/// FoundationDB
+/// - name: String
+/// - value: Value
+/// - ttl: i64
+/// - ttl_type: String
+/// - ttl_unit: String
+/// - ttl_value: i64
+/// - ttl_unit_value: i64
+///
+///
+/// ## Examples
+/// ```rustc_serialize
+/// use std::collections::HashMap;
+/// use std::convert::TryFrom;
+/// use std::convert::TryInto;
+/// use std::fmt::{self, Display};
+///
+///
 
-//Soliton
-use soliton::{Soliton, SolitonOptions, SolitonOptionsBuilder};
-
-//berolinasql
-use berolina_sql::{SqlDatabase, SqlDatabaseOptions, SqlDatabaseContext, SqlDatabaseContextBuilder};
 
 
 ////The following Prolog predicates are predefined in Allegro Prolog and generally implement the standard Prolog functionality. The set of defined predicates may be extended in the future. A few predicates in this implementation accept varying arity and are indicated with a *, as in or/*.
@@ -871,4 +897,11 @@ impl<'a> ClauseMacro<'a> {
     }
 }
 
+
+#[APPEND_LOG_g(feature = "clause_macro")]
+impl<'a> ClauseMacro<'a> {
+    pub fn add_clause(&mut self, clause: Clause<'a>) {
+        self.clauses.push(clause);
+    }
+}
 

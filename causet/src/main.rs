@@ -309,19 +309,78 @@ pub fn get_fixture(&self, event: T) -> Option<T> {
         }
         let fixture = fixture.unwrap();
         Ok(Some(fixture.clone()))
+    }
+}
 
+
+////////////////////////////////
+/// Fixture
+/// A Fixture is a set of fixtures.
+/// Fixtures are FoundationDB Records with tuplestore secondary attributes and copy on write access.
+/// The tuplestore is used to store the fixtures.
+/// The tuplestore is a key-value store, where the key is the event and the value is the set of events that follow the event.
+/// The tuplestore is implemented as a B+Tree.
+/// we use async to simulate the async behavior of FoundationDB.
+/// The Fixture is ordered by the order of the events in the Fixture.
+/// !# Examples
+/// ```
+/// use allegrocl::fixture::Fixture;
+/// use allegrocl::event::Event;
+/// use allegrocl::error::StorageError;
+///
+/// let mut fixture = Fixture::new();
+/// fixture.add_fixture(Event::new("a"));
+/// fixture.add_fixture(Event::new("b"));
+/// fixture.add_fixture(Event::new("c"));
+/// fixture.add_fixture(Event::new("d"));
+/// fixture.add_fixture(Event::new("e"));
+///
+///
+///
+/// let mut fixture2 = Fixture::new();
+/// fixture2.add_fixture(Event::new("a"));
+/// fixture2.add_fixture(Event::new("b"));
+/// fixture2.add_fixture(Event::new("c"));
+/// fixture2.add_fixture(Event::new("d"));
+///
+///
+/// let mut fixture3 = Fixture::new();
+/// fixture3.add_fixture(Event::new("a"));
+/// fixture3.add_fixture(Event::new("b"));
+/// fixture3.add_fixture(Event::new("c"));
+///
+///
+/// let mut fixture4 = Fixture::new();
+///
+///
+///
+///
+
+pub async fn get_fixture_async(fixture: &Fixture <Event>, event: Event) -> Result<Option<Event>, crate::error::StorageError> {
+    let mut fixture = fixture.get_fixture_ref(event);
+    if fixture.is_none() {
+        return Ok(None);
+    }
 
     let mut causet = Causet::new();
-    causet.add_event("a".to_string());
-    causet.add_event("b".to_string());
-    causet.add_event("c".to_string());
 
-causet.add_edge("a".to_string(), "b".to_string());
-causet.add_edge("b".to_string(), "c".to_string());
-causet.add_edge("c".to_string(), "a".to_string());
-
-
+    for event in fixture.unwrap() {
+        causet.add_event(event.clone());
+        causet.add_event(event.clone());
     }
+
+    Ok(Some(causet.get_event(0).unwrap().clone()))
+}
+
+
+////////////////////////////////
+/// Fixture
+///
+    ///
+/// causet.add_event("a".to_string());
+/// causet.add_event("b".to_string());
+/// causet.add_event("c".to_string());
+
 
 
     ///main function to get the fixture for a given event
@@ -330,32 +389,45 @@ causet.add_edge("c".to_string(), "a".to_string());
     /// # Returns   the fixture formatted   as a string
 
 
-
-    pub async fn get_fixture_formatted_async(&self, event: T) -> Result<String, crate::error::StorageError> {
-        let mut fixture = self.get_fixture_ref(event);
-        if fixture.is_none() {
-            return Ok(String::new());
-        }
-        let fixture = fixture.unwrap();
-        Ok(fixture.clone().to_string())
-
-    let causet_id = 1;
-    let causet_name = "causet_name".to_string();
-    let causet_t = causet.causet;
-    let events = causet.events;
-    let edges = causet.edges;
-
-    let causet = Causet {
-        causet_id,
-        causet_name,
-        causet: causet_t,
-        events,
-        edges,
-    };
-
-    let causets = Causets::new();
-        }
+pub async fn get_fixture_mut_async(fixture: &mut Fixture <Event>, event: Event) -> Result<Option<Event>, crate::error::StorageError> {
+    let mut fixture = fixture.get_fixture_ref_mut(event);
+    if fixture.is_none() {
+        return Ok(None);
     }
+}
+
+    pub async fn get_fixture_formatted_async(fixture: &Fixture <Event>, event: Event) -> Result<Option<String>, crate::error::StorageError> {
+        let mut fixture = fixture.get_fixture_ref(event);
+        if fixture.is_none() {
+            return Ok(None);
+        }
+        let mut fixture = fixture.unwrap();
+        let mut causet = Causet::new();
+        for event in fixture {
+            causet.add_event(event.clone());
+            causet.add_event(event.clone());
+        }
+        Ok(Some(causet.get_event(0).unwrap().clone().to_string()))
+    }
+
+
+
+    ///main function to get the fixture for a given event
+    /// # Arguments
+    /// * event - the event to get the fixture formatted
+    /// # Returns   the fixture formatted   as a string
+    /// # Errors
+    /// * `StorageError` - if there is an error getting the fixture
+    /// # Examples
+    /// ```
+    /// use allegrocl::fixture::Fixture;
+    /// use allegrocl::event::Event;
+    ///
+    /// fn() {
+    ///    let mut fixture = Fixture::new();
+    /// fixture.
+    /// }
+
 
 
 
@@ -363,128 +435,4 @@ causet.add_edge("c".to_string(), "a".to_string());
     /// # Arguments
 
 
-
-
-}
-        ///main function to get the fixture for a given event
-        let mut fixture = self.get_fixture_ref_mut(event){
-            if fixture.is_none() {
-                return Ok(String::new());
-            }
-            let fixture = fixture.unwrap();
-            Ok(fixture.clone().to_string())
-        }
-        if fixture.is_none() {
-            return Ok(String::new());
-        }
-        let fixture = fixture.unwrap();
-        Ok(fixture.clone().to_string(){
-            if fixture.is_none() {
-                return Ok(String::new());
-            }
-            let fixture = fixture.unwrap();
-            let mut tokens = tokens.iter().map(|t| t.to_string()).collect::<Vec<String>>();
-            let mut causet = Causet::new();
-
-            let mut fixture = self.get_fixture_ref(event);
-            if fixture.is_none() {
-                return Ok(String::new());
-            }
-            let fixture = fixture.unwrap();
-            Ok(fixture.clone().to_string());
-
-        if fixture.is_none() {
-            return Ok(String::new());
-
-
-
-        let mut causet = Causet::new();
-        }
-
-
-    let causet_id = 2;
-    let causet_name = "causet_name".to_string();
-    let causet_t = causet.causet;
-    let events = causet.events;
-    let edges = causet.edges;
-
-    let causet = Causet {
-        causet_id,
-        causet_name,
-        causet: causet_t,
-        events,
-        edges,
-    };
-
-
-    let causet_id = 3;
-    let causet_name = "causet_name".to_string();
-    let mut causets = Causets::new();
-
-    let mut causet = Causet::new();
-    causet.add_event("A".to_string());
-    causet.add_event("B".to_string());
-    causet.add_event("C".to_string());
-    causet.add_event("D".to_string());
-
-    causet.add_edge("A".to_string(), "B".to_string());
-    causet.add_edge("B".to_string(), "C".to_string());
-    causet.add_edge("C".to_string(), "D".to_string());
-    causet.add_edge("D".to_string(), "A".to_string());
-
-    causets.add_causet(causet);
-
-    let causet_id = 4;
-    let causets = Causets::new();
-    causets.add_causet(causet);
-
-
-    let causet_arc = Arc::new(Mutex::new(causet));
-    let causet_arc_clone = causet_arc.clone();
-
-    let mut causets = Causets::new();
-
-    causets.add_causet(causet_arc);
-
-    let causets = causets;
-
-    let causets_arc = Arc::new(Mutex::new(causets));
-
-    let causets_arc_clone = causets_arc.clone();
-
-    let mut causets_clone = causets_arc.lock().unwrap().clone();
-
-    let causets_clone = causets_clone;
-
-    async fn async_causets_add_causet(causets_arc: Arc<Mutex<Causets<String>>>) {
-        let causets_arc_clone = causets_arc.clone();
-        let causets_arc_clone = causets_arc_clone;
-        let causets_clone = causets_arc.lock().unwrap().clone();
-        let causet_clone = causets_clone.add_causet(causet_arc_clone);
-        println!("{:?}", causet_clone);
-    }
-
-    #[tokio::main]
-    async fn main() {
-        let causets_arc = causets_arc_clone.clone();
-        let causets_arc = causets_arc;
-        let causets_clone = causets_arc.lock().unwrap().clone();
-        let causets_clone = causets_clone;
-        let causet_clone = causets_clone.add_causet(causet_arc_clone);
-        println!("{:?}", causet_clone);
-    }
-
-    async_causets_add_causet(causets_arc_clone).await;
-
-    let causets_clone = causets_arc.lock().unwrap().clone();
-
-    let causets_clone = causets_clone;
-
-    let causet_clone = causets_clone.add_causet(causet_arc_clone);
-
-    println!("{:?}", causet_clone);
-
-    }
-    }
-}
 

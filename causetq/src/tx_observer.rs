@@ -45,23 +45,50 @@ use crate::{
 };
 
 
-pub mod causet;
-pub mod causet_query;
-pub mod causet_query_builder;
+/// A macro for defining a `Result` with a custom error type.
+/// This is similar to the `?` operator in Rust, but it allows you to define a
+/// custom error type.
+/// This macro is borrowed from the `failure` crate.
+/// See [`failure`](https://crates.io/crates/failure) for more information.
+/// # Example
+/// ```
+/// #[macro_use]
+/// extern crate failure;
+/// #[macro_use]
+/// extern crate failure_derive;
+/// #[macro_use]
+/// extern crate soliton_panic;
+/// #[macro_use]
+/// extern crate soliton;
+/// #[macro_use]
+/// extern crate lazy_static;
+///
+///
+///
+///
 
 
 
 pub struct TxObserver {
     pub schema: Schema,
     pub transaction: Transaction,
+    pub causetq_query: CausetqQuery,
+    pub gremlin_query: GremlinQuery,
+    pub causet_query: CausetQuery,
 }
 
 
 impl TxObserver {
     pub fn new(schema: Schema, transaction: Transaction) -> Self {
+        let causetq_query = CausetqQueryBuilder::new(schema, transaction).build();
+        let gremlin_query = GremlinQueryBuilder::new(schema, transaction).build();
+        let causet_query = CausetQueryBuilder::new(schema, transaction).build();
         Self {
             schema,
             transaction,
+            causetq_query,
+            gremlin_query,
+            causet_query,
         }
     }
 
@@ -81,11 +108,11 @@ impl TxObserver {
         GremlinQueryBuilderImpl::new(self).with_query(query).build()
     }
 
+
     pub fn gremlin_query_with_query_and_params(&self, query: &str, params: &[&str]) -> GremlinQuery {
         GremlinQueryBuilderImpl::new(self).with_query_and_params(query, params).build()
     }
-    notify_fn: Arc<Box<dyn Fn(&str, IndexMap<&Causetid, &AttributeSet>) + Send + Sync>>,
-    attributes: AttributeSet,
+
     pub fn notify(&self, query: &str, attributes: AttributeSet) {
         (self.notify_fn)(query, attributes);
     }
@@ -99,14 +126,18 @@ impl TxObserver {
     }
 }
 
-impl TxObserver {
-    pub fn new_with_notify_fn(schema: Schema, transaction: Transaction, notify_fn: Arc<Box<dyn Fn(&str, IndexMap<&Causetid, &AttributeSet>) + Send + Sync>>) -> Self {
-        Self {
-            schema,
-            transaction,
-            notify_fn,
-        }
-    }
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttributeSet {
+    pub attributes: IndexMap<&'static str, Attribute>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Attribute {
+    pub value: String,
+    pub field_type: FieldType,
 }
 
 
@@ -137,22 +168,52 @@ impl CausetQueryBuilder for CausetQueryBuilderImpl {
         self.params = params;
         self
     }
-    pub fn new<F>(attributes: AttributeSet, notify_fn: F) -> TxObserver where F: Fn(&str, IndexMap<&Causetid, &AttributeSet>) + 'static + Send + Sync {
-        TxObserver {
-            notify_fn: Arc::new(Box::new(notify_fn)),
-            attributes,
+      fn build(&self) -> CausetQuery {
+            CausetQuery::new(self.observer.clone(), self.query.clone(), self.params.clone())
         }
-    }
+}
 
+
+pub struct CausetqQueryBuilderImpl {
+    observer: TxObserver,
+    query: String,
+    params: IndexMap<&Causetid, &AttributeSet>,
+}
+
+
+impl CausetqQueryBuilderImpl {
     pub fn applicable_reports<'r>(&self, reports: &'r IndexMap<Causetid, AttributeSet>) -> IndexMap<&'r Causetid, &'r AttributeSet> {
         reports.into_iter()
-               .filter(|&(_txid, attrs)| !self.attributes.is_disjoint(attrs))
-               .collect()
+            .filter(|&(_txid, attrs)| !self.attributes.is_disjoint(attrs))
+            .collect()
     }
 
     fn notify(&self, soliton_id: &str, reports: IndexMap<&Causetid, &AttributeSet>) {
         (*self.notify_fn)(soliton_id, reports);
     }
+
+    pub fn new(observer: &TxObserver) -> Self {
+        Self {
+            observer: observer.clone(),
+            query: String::new(),
+            params: IndexMap::new(),
+        }
+    }
+
+    pub fn with_query(&mut self, query: &str) -> &mut Self {
+        self.query = query.to_string();
+        self
+    }
+
+    pub fn with_params(&mut self, params: IndexMap<&Causetid, &AttributeSet>) -> &mut Self {
+        self.params = params;
+        self
+    }
+
+    pub fn build(&self) -> CausetqQuery {
+        CausetqQuery::new(self.observer.clone(), self.query.clone(), self.params.clone())
+    }
+
 }
 
 
@@ -184,29 +245,34 @@ pub struct TxCommand {
 }
 
 
+
+
 impl Command for TxCommand {
-    pub command: String,
-
-    pub params: IndexMap<&Causetid, &AttributeSet>,
-
-    pub observer: TxObserver,
-
-    pub soliton_id: String,
-
-    pub reports: IndexMap<Causetid, AttributeSet>,
-
-    pub error: Option<Error>,
+    fn execute(&self, observer: &TxObserver) -> Result<()> {
+        observer.notify(&self.command, self.params.clone());
+        Ok(())
+    }
 }
+
+
+impl CausetQueryImpl {
+    pub fn execute(&self, observer: &TxObserver) -> Result<()> {
+        observer.causet_query().execute()?;
+        observer.causetq_query().execute()?;
+        observer.gremlin_query().execute()?;
+        observer.gremlin_query_with_query("g.V()").execute()?;
+        observer.gremlin_query_with_query_and_params("g.V()", &["a", "b"]).execute()?;
+        Ok(())
+    }
+}
+
 
 impl TxCommand {
     pub fn new(command: String, params: IndexMap<&Causetid, &AttributeSet>, observer: TxObserver) -> Self {
         Self {
             command,
             params,
-            observer,
-            soliton_id: String::new(),
-            reports: IndexMap::new(),
-            error: None,
+
         }
     }
 

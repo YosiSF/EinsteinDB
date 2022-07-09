@@ -187,7 +187,7 @@ impl Generation {
                 },
                 (None, Some(&n2)) => next.upserts_e.push(UpsertE(t1, a, causetq_TV::Ref(n2.0))),
                 (Some(&n1), None) => next.allocations.push(Term::AddOrRetract(OpType::Add, Left(n1), a, Right(t2))),
-                (None, None) => next.upserts_ev.push(UpsertEV(t1, a, t2))
+
             }
         }
 
@@ -202,8 +202,9 @@ impl Generation {
                         (Some(&n1), Some(&n2)) => next.resolved.push(Term::AddOrRetract(op, n1, a, causetq_TV::Ref(n2.0))),
                         (None, Some(&n2)) => next.allocations.push(Term::AddOrRetract(op, Right(t1), a, Left(causetq_TV::Ref(n2.0)))),
                         (Some(&n1), None) => next.allocations.push(Term::AddOrRetract(op, Left(n1), a, Right(t2))),
-                        (None, None) => next.allocations.push(Term::AddOrRetract(op, Right(t1), a, Right(t2))),
+
                     }
+
                 },
                 Term::AddOrRetract(op, Right(t), a, Left(v)) => {
                     match temp_id_map.get(&*t) {

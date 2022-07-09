@@ -1,5 +1,40 @@
 //ast for pushdown automata from foundation db key-value to gremlin tinkerpop
 //einsteinml is a meta language inspired by allegrocl code generation
+use std::fmt;
+use std::rc::Rc;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::collections::VecDeque;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+use std::collections::LinkedList;
+use std::collections::BinaryHeap;
+use std::collections::HashMap;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+use std::collections::LinkedList;
+
+
+use std::rc::Rc;
+use std::cell::RefCell;
+
+
+
+pub type Solitonid = String;
+pub type Soliton = String;
+pub type SolitonType = String;
+pub type SolitonValue = String;
+pub type SolitonValueType = String;
+pub type TypeId = String;
+pub type TypeName = String;
+pub fn type_name(name: &str) -> TypeName {
+    format!("{}", name)
+}
+pub type TypeNameList = Vec<TypeName>;
+pub type TypeList = Vec<Type>;
+pub type TypeIdList = Vec<TypeId>;
+pub type TypeIdListList = Vec<TypeIdList>;
 
 
 //! # AST
@@ -202,41 +237,6 @@ pub struct LispExpression {
 //!  [2] Entering rev-member/2 {Unbound 1000fe7cb1} (cat fish)
 //!
 
-use std::fmt;
-use std::rc::Rc;
-use std::cell::RefCell;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::collections::VecDeque;
-use std::collections::BTreeMap;
-use std::collections::BTreeSet;
-use std::collections::LinkedList;
-use std::collections::BinaryHeap;
-use std::collections::HashMap;
-use std::collections::BTreeMap;
-use std::collections::BTreeSet;
-use std::collections::LinkedList;
-
-
-use std::rc::Rc;
-use std::cell::RefCell;
-
-
-
-pub type Solitonid = String;
-pub type Type = String;
-pub type TypeId = String;
-pub type TypeName = String;
-
-pub fn type_name(name: &str) -> TypeName {
-    format!("{}", name)
-}
-
-
-pub type TypeNameList = Vec<TypeName>;
-pub type TypeList = Vec<Type>;
-pub type TypeIdList = Vec<TypeId>;
-pub type TypeIdListList = Vec<TypeIdList>;
 
 
 

@@ -137,7 +137,6 @@ impl u64x2 {
 
 
 
-#inline[(always)]
 pub(crate) fn aesenc(block: &mut u64x2, rkey: &u64x2) {
     let mut tmp = u64x2::read(block);
     tmp.0 ^= rkey.0;
@@ -196,11 +195,27 @@ pub(crate) fn aeskeygenassist(r: &mut u64x2, a: u64) {
 }
 
 
+
+
+
 #[inline(always)]
-pub(crate) fn aesround(block: &mut u64x2, rkey: &u64x2) {
+pub(crate) fn aesroundlast(block: &mut u64x2, rkey: &u64x2) {
+    unsafe {
+        llvm_asm!("aesroundlast $0, $1"
+            : "+x"(*block)
+            : "x"(*rkey)
+            :
+            : "intel", "alignstack"
+        );
+    }
+}
+
+
+#[inline(always)]
+pub(crate) fn aesimc(block: &mut u64x2) {
     let mut tmp = u64x2::read(block);
     tmp.0 ^= rkey.0;
-    ($src:ident, $i:expr) => {{
+
         unsafe {
             llvm_asm!("aesenc $0, $1"
                 : "+x"(*block)
@@ -209,8 +224,26 @@ pub(crate) fn aesround(block: &mut u64x2, rkey: &u64x2) {
                 : "intel", "alignstack"
             );
         }
-    }};
-        let mut dst = mem::MaybeUninit::<u64x2>::uninit();
+
+    tmp.1 ^= rkey.1;
+    unsafe {
+        llvm_asm!("aesenc $0, $1"
+            : "+x"(*block)
+            : "x"(*rkey)
+            :
+            : "intel", "alignstack"
+        );
+
+
+    }
+
+
+}
+
+
+#[inline(always)]
+pub(crate) fn aesimclast(block: &mut u64x2) {
+    let mut dst = mem::MaybeUninit::<u64x2>::uninit();
         unsafe {
             llvm_asm!("aeskeygenassist $0, $1, $2"
                     : "+x"(*dst.as_mut_ptr())
@@ -223,7 +256,20 @@ pub(crate) fn aesround(block: &mut u64x2, rkey: &u64x2) {
     }
 
     #[inline(always)]
-    pub(crate) fn aesroundlast(block: &mut u64x2, rkey: &u64x2) {
+    pub(crate) fn aesimcround(block: &mut u64x2, rkey: &u64x2) {
+        unsafe {
+            llvm_asm!("aesround $0, $1"
+                : "+x"(*block)
+                : "x"(*rkey)
+                :
+                : "intel", "alignstack"
+            );
+        }
+
+    }
+
+    #[inline(always)]
+    pub(crate) fn aesimcroundlast(block: &mut u64x2, rkey: &u64x2) {
         let mut tmp = u64x2::read(block);
         tmp.0 ^= rkey.0;
         unsafe {
@@ -250,9 +296,12 @@ pub(crate) fn aesround(block: &mut u64x2, rkey: &u64x2) {
             );
             dst.assume_init()
         }}
-    
 
 
+
+trait AES {
+    fn aesenc(&mut self, rkey: &u64x2);
+}
     #[inline(always)]
     pub(crate) fn aeskeygenassist_0x00(src: &u64x2) -> u64x2 {
         aeskeygenassist!(src, 0x00)
@@ -286,18 +335,32 @@ pub(crate) fn aesround(block: &mut u64x2, rkey: &u64x2) {
         aeskeygenassist!(src, 0x40)
     }
     
-    #[inline(always)]
-    pub(crate) fn pxor(dst: &mut u64x2, src: &u64x2) {
-        unsafe {
-            llvm_asm!("pxor $0, $1"
-                : "+x"(*dst)
-                : "x"(*src)
-                :
-                : "intel", "alignstack"
-            );
-        }
-    }
     
+    
+#[inline(always)]
+    pub(crate) fn pxor(a: &u64x2, b: &u64x2) -> u64x2 {
+        u64x2::read(a) ^ u64x2::read(b)
+    }
+
+    #[inline(always)]
+    pub(crate) fn pxor_assign(a: &mut u64x2, b: &u64x2) {
+        *a = *a ^ *b;
+    }
+
+    #[inline(always)]
+    pub(crate) fn pxor_assign_u64(a: &mut u64x2, b: u64) {
+        *a = *a ^ b;
+
+pub(crate) fn aeskeygenassist(r: &mut u64x2, a: u64) {
+    unsafe {
+        llvm_asm!("aeskeygenassist $0, $1, $2"
+            : "+x"(*r)
+            : "x"(*r), "i"(a)
+            :
+            : "intel", "alignstack"
+        );
+    }
+}
     macro_rules! pslldq {
         ($dst:ident, $i:expr) => {{
             unsafe {
@@ -353,50 +416,14 @@ macro_rules! pslldq {
         }
     }}
 }
-
-#[inline(always)]
-pub(crate) fn pslldq_0x04(dst: &mut u64x2) {
-    pslldq!(dst, 0x04)
-}
-
-macro_rules! pshufd {
-    ($src:ident, $i:expr) => {{
-        let mut dst = mem::MaybeUninit::<u64x2>::uninit();
-        unsafe {
-            llvm_asm!("pshufd $0, $1, $2"
-                    : "+x"(*dst.as_mut_ptr())
-                    : "x"(*$src), "i"($i)
-                    :
-                    : "intel", "alignstack"
-                );
-            dst.assume_init()
-        }
-    }}
-}
-#[inline(always)]
-pub(crate) fn pxor(dst: &mut u64x2, src: &u64x2) {
-    unsafe {
-        llvm_asm!("pxor $0, $1"
-            : "+x"(*dst)
-            : "x"(*src)
-            :
-            : "intel", "alignstack"
-        );
+        
+    #[inline(always)]
+    pub(crate) fn pslldq(dst: &mut u64x2, i: u32) {
+        pslldq!(dst, i);
     }
-}
-
-macro_rules! pslldq {
-    ($dst:ident, $i:expr) => {{
-        unsafe {
-            llvm_asm!("pslldq $0, $1"
-                    : "+x"(*$dst)
-                    : "i"($i)
-                    :
-                    : "intel", "alignstack"
-                );
-        }
-    }}
-}
+        
+        
+        
 
 #[inline(always)]
 pub(crate) fn pslldq_0x04(dst: &mut u64x2) {
@@ -535,45 +562,7 @@ pub fn aes256_ret(src: &[u8; 16], key: &[u8; 32]) -> [u8; 16] {
 }
 
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::aes::aes256_ret;
-    use crate::aes::aes256_rkeys_slice;
-    use crate::aes::aes256_rkeys_xmm;
-    use crate::aes::expand256_slice;
-    use crate::aes::expand256;
-    use crate::aes::assist256_1;
-    use crate::aes::assist256_2;
-    use crate::aes::aes256_enc_slice;
-    use crate::aes::aes256_enc_xmm;
-    use crate::aes::aes256_dec_slice;
-    use crate::aes::aes256_dec_xmm;
-    use crate::aes::aes256_enc_slice_xmm;
-    use crate::aes::aes256_enc_slice_slice;
-    use crate::aes::aes256_dec_slice_xmm;
-    use crate::aes::aes256_dec_slice_slice;
-    use crate::aes::aes256_enc_slice_xmm_xmm;
-    use crate::aes::aes256_enc_slice_slice_xmm;
-    use crate::aes::aes256_dec_slice_xmm_xmm;
-    use crate::aes::aes256_dec_slice_slice_xmm;
-    
 
-    #[test] 
-    fn aes256_enc_slice_xmm() {
-        let src = [0u8; 16];
-        let key = [0u8; 32];
-        let dst = aes256_enc_slice_xmm(&src, &key);
-        assert_eq!(dst, aes256_ret(&src, &key));
-    }
-
-    #[test]
-
-
-    //CHANGELOG: added test for aes256_enc_slice_slice_xmm
-    
-
-    
 
 
 

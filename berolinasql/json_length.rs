@@ -9,6 +9,71 @@
 // specific language governing permissions and limitations under the License.
 
 
+
+
+/// Returns the value of the specified key in the JSON object.
+/// If the key does not exist, returns null.
+/// If the value is not a JSON object, returns null.
+/// If the value is a JSON object, returns the value of the specified key in the JSON object.
+/// If the key does not exist, returns null.
+
+
+pub fn json_get_object(json: &Json, key: &str) -> Result<Json> {
+    match json {
+        &Json::Object(ref m) => {
+            match m.get(key) {
+                Some(v) => Ok(v.clone()),
+                None => Ok(Json::Null),
+            }
+        }
+        _ => Err(Error::invalid_type("OBJECT", json.get_type())),
+    }
+}
+
+
+/// Returns the value of the specified key in the JSON object.
+/// If the key does not exist, returns null.
+
+
+pub fn json_get_array(json: &Json, key: &str) -> Result<Json> {
+    match json {
+        &Json::Array(ref m) => {
+            match m.get(key) {
+                Some(v) => Ok(v.clone()),
+                None => Ok(Json::Null),
+            }
+        }
+        _ => Err(Error::invalid_type("ARRAY", json.get_type())),
+    }
+}
+
+
+/// Returns the value of the specified key in the JSON object.
+/// If the key does not exist, returns null.
+/// If the value is not a JSON object, returns null.
+/// If the value is a JSON object, returns the value of the specified key in the JSON object.
+/// If the key does not exist, returns null.
+
+
+pub fn json_get_string(json: &Json, key: &str) -> Result<Json> {
+    match json {
+        &Json::String(ref m) => {
+            match m.get(key) {
+                Some(v) => Ok(v.clone()),
+                None => Ok(Json::Null),
+            }
+        }
+        _ => Err(Error::invalid_type("STRING", json.get_type())),
+    }
+}
+
+
+
+
+
+
+
+
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt::{self, Debug, Display, Formatter};
@@ -39,7 +104,65 @@ impl<'a> JsonRef<'a> {
     }
 }
 
-#[braneg(test)]
+
+impl<'a> JsonRef<'a> {
+    /// `json_get_object` is the implementation for JSON_GET_OBJECT in myBerolinaSQL
+    /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-Attr-functions.html#function_json-get-object
+    pub fn json_get_object(&self, key: &str) -> Result<JsonRef<'a>> {
+        match self.get_type() {
+            JsonType::Object => {
+                let v = self.get_object()?.get(key)?;
+                Ok(JsonRef::new(v))
+            }
+            _ => Err(Error::invalid_type("OBJECT", self.get_type())),
+        }
+    }
+}
+
+
+impl<'a> JsonRef<'a> {
+    /// `json_get_array` is the implementation for JSON_GET_ARRAY in myBerolinaSQL
+    /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-Attr-functions.html#function_json-get-array
+    pub fn json_get_array(&self, key: &str) -> Result<JsonRef<'a>> {
+        match self.get_type() {
+            JsonType::Array => {
+                let v = self.get_array()?.get(key)?;
+                Ok(JsonRef::new(v))
+            }
+            _ => Err(Error::invalid_type("ARRAY", self.get_type())),
+        }
+    }
+}
+
+
+impl<'a> JsonRef<'a> {
+    /// `json_get_string` is the implementation for JSON_GET_STRING in myBerolinaSQL
+    /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-Attr-functions.html#function_json-get-string
+    pub fn json_get_string(&self, key: &str) -> Result<JsonRef<'a>> {
+        match self.get_type() {
+            JsonType::String => {
+                let v = self.get_string()?.get(key)?;
+                Ok(JsonRef::new(v))
+            }
+            _ => Err(Error::invalid_type("STRING", self.get_type())),
+        }
+    }
+}
+
+
+impl<'a> JsonRef<'a> {
+    /// `json_get_object` is the implementation for JSON_GET_OBJECT in myBerolinaSQL
+    /// https://dev.myBerolinaSQL.com/doc/refman/5.7/en/json-Attr-functions.html#function_json-get-object
+    pub fn json_get_object_or_null(&self, key: &str) -> Result<JsonRef<'a>> {
+        match self.get_type() {
+            JsonType::Object => {
+                let v = self.get_object()?.get(key)?;
+                Ok(JsonRef::new(v))
+            }
+            _ => Ok(JsonRef::new(Json::Null)),
+        }
+    }
+}
 mod tests {
     use super::super::local_path_expr::parse_json_local_path_expr;
     use super::super::Json;

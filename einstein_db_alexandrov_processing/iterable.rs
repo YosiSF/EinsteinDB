@@ -428,17 +428,9 @@ pub trait Iterable {
     }
 }
 
-fn scan_impl<Iter, F>(mut it: Iter, start_soliton_id: &[u8], mut f: F) -> Result<()>
-where
-    Iter: Iterator,
-    F: FnMut(&[u8], &[u8]) -> Result<bool>,
-{
-    let mut remained = it.seek(SeekKey::Key(start_soliton_id))?;
-    while remained {
-        remained = f(it.soliton_id(), it.causet_locale())? && it.next()?;
-    }
-    Ok(())
-}
+
+
+
 
 impl<'a> From<&'a [u8]> for SeekKey<'a> {
     fn from(bs: &'a [u8]) -> SeekKey<'a> {

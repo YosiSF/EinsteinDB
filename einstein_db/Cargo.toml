@@ -1,24 +1,28 @@
 [package]
 name = "einstein_db"
-
 version = "0.1.0"
-edition = "2021"
+description = "Einstein DB"
 license = "MIT"
+author = "EinsteinDB"
+repository = "https://github.com/YosiSF/EinsteinDB"
+keywords = ["einstein", "db", "sql", "mysql", "mariadb", "postgresql", "sqlite", "oracle", "sqlserver"]
 
-
-[lib]
-name = "einstein_db"
-path = "./src/lib.rs"
-version = "0.1.0"
-
-[bin]
-name = "einstein_db"
-path = "../einstein_db/src/einsteindb.rs"
-
-
-# See more soliton_ids and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+einstein_db = { path= "../einstein_db" }
+eindtein_ml = { path= "../einstein_ml" }
+berolinasql = { path= "../berolina-sql" }
+causet= { path= "../causet" }
+causets = { path= "../causets" }
+allegro_poset = { path= "../allegro_poset" }
+soliton = { path= "../soliton" }
+soliton_panic = { path= "../soliton_panic" }
+fdb_traits = { path= "../fdb_traits" }
+serde = "1.0.1138"
+serde_derive = "1.0.1138"
+slog = "1.0.1138"
+einstein_db_ctl = { path= "../einstein_db_ctl" }
+einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}
 sodiumoxide = "0.2.18"
 foundationdb = "0.1.0"
 grpcio = "0.10.3"

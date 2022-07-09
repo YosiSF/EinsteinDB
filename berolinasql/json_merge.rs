@@ -8,11 +8,125 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
- use std::collections::BTreeMap;
 
- use crate::codec::{Error, Result};
 
- use super::{Json, JsonRef, JsonType};
+// use std::error::Error;
+// use std::fmt;
+// use std::io;
+// use std::string::FromUtf8Error;
+// use std::str::Utf8Error;
+
+
+ use crate::berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind};
+ use crate::berolinasql::{ErrorImpl as BerolinaSqlErrorImpl};
+ use std::error::Error;
+
+    use std::string::FromUtf8Error;
+    use std::str::Utf8Error;
+    use std::result;
+    use std::string::FromUtf8Error;
+    use std::str::Utf8Error;
+    use std::error::Error;
+
+    use crate::berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind};
+
+
+
+    #[derive(Debug)]
+    pub enum ErrorKind {
+        Io(io::Error),
+        BerolinaSql(BerolinaSqlError),
+        Utf8(Utf8Error),
+        FromUtf8(FromUtf8Error),
+        Other(String),
+    }
+
+    #[derive(Debug)]
+    pub struct ErrorImpl {
+        pub kind: ErrorKind,
+    }
+
+    #[derive(Debug)]
+    pub enum BerolinaSqlError {
+        IoError(io::Error),
+        SqlError(String),
+    }
+
+    impl fmt::Display for BerolinaSqlError {
+        fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+            match *self {
+                BerolinaSqlError::IoError(ref err) => write!(f, "IO error: {}", err),
+                BerolinaSqlError::SqlError(ref err) => write!(f, "SQL error: {}", err),
+            }
+        }
+
+        fn cause(&self) -> Option<&dyn Error> {
+            match *self {
+                BerolinaSqlError::IoError(ref err) => Some(err),
+                BerolinaSqlError::SqlError(_) => None,
+            }
+        }
+
+        fn description(&self) -> &str {
+            match *self {
+                BerolinaSqlError::IoError(_) => "IO error",
+                BerolinaSqlError::SqlError(_) => "SQL error",
+            }
+        }
+    }
+
+    impl Error for BerolinaSqlError {
+        fn description(&self) -> &str {
+            match *self {
+                BerolinaSqlError::IoError(_) => "IO error",
+                BerolinaSqlError::SqlError(_) => "SQL error",
+            }
+        }
+    }
+
+    impl Error for ErrorImpl {
+        fn description(&self) -> &str {
+            match *self {
+                ErrorImpl { kind: ErrorKind::Io(_) } => "IO error",
+                ErrorImpl { kind: ErrorKind::BerolinaSql(_) } => "SQL error",
+                ErrorImpl { kind: ErrorKind::Utf8(_) } => "UTF8 error",
+                ErrorImpl { kind: ErrorKind::FromUtf8(_) } => "UTF8 error",
+                ErrorImpl { kind: ErrorKind::Other(_) } => "other error",
+            }
+        }
+    }
+
+    impl From<io::Error> for ErrorImpl {
+        fn from(err: io::Error) -> ErrorImpl {
+            ErrorImpl { kind: ErrorKind::Io(err) }
+        }
+    }
+
+    impl From<BerolinaSqlError> for ErrorImpl {
+        fn from(err: BerolinaSqlError) -> ErrorImpl {
+            ErrorImpl { kind: ErrorKind::BerolinaSql(err) }
+        }
+    }
+
+    impl From<Utf8Error> for ErrorImpl {
+        fn from(err: Utf8Error) -> ErrorImpl {
+            ErrorImpl { kind: ErrorKind::Utf8(err) }
+        }
+    }
+
+
+    impl From<FromUtf8Error> for ErrorImpl {
+        fn from(err: FromUtf8Error) -> ErrorImpl {
+            ErrorImpl { kind: ErrorKind::FromUtf8(err) }
+        }
+    }
+
+    impl From<String> for ErrorImpl {
+        fn from(err: String) -> ErrorImpl {
+            ErrorImpl { kind: ErrorKind::Other(err) }
+        }
+    }
+
 
  impl Json {
     /// `merge` is the implementation for JSON_MERGE in myBerolinaSQL

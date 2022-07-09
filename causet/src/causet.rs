@@ -7,6 +7,41 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::fmt::Error;
 use std::fmt::Debug;
+use std::fmt::Result;
+use std::ops::Deref;
+use std::ops::DerefMut;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+
+use EinsteinDB::berolinasql::{
+    self,
+    db::{self, DB},
+    error::{self, Error},
+    options::{self, Options},
+    types::{self, Type},
+    util::{self, Key},
+};
+
+
+///4` divides i64 a with b and returns:
+/// - an Error indicating over_causetxctx occurred or the divisor is 0
+/// - i64 otherwise
+/// #[inline]
+/// pub fn div_i64(a: i64, b: i64) -> Result<i64> {
+///    if b == 0 {
+///       return Err(Error::division_by_zero());
+///   }
+///  match a.overCausetxctxing_div(b) {
+///     (_res, true) => Err(Error::overCausetxctx(
+///      "UNSIGNED BIGINT",
+///     &format!("({} / {})", a, b),
+///    )),
+///   (res, false) => Ok(res),
+/// }
+///
+/// }
+///
 
 
 
@@ -102,7 +137,6 @@ use berolina_sql::*;
 //ok, let's build the causet which is a set of causet_closures
 //
 
-#[derive(Debug, Clone)]
 pub trait CausetTrait {
 
     fn new() -> Self;

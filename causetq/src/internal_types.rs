@@ -44,11 +44,28 @@ impl TransactableValue for ValueAndSpan {
             Text(v) => Ok(causetPlace::TempId(TempId::lightlike(v).into())),
             List(ls) => {
                 let mut it = ls.iter();
-                match (it.next().map(|x| &x.inner), it.next(), it.next(), it.next()) {
-                    // Like "(transaction-id)".
-                    (Some(&PlainShelling(ref op)), None, None, None) => {
-                        Ok(causetPlace::TxFunction(TxFunction { op: op.clone() }))
-                    },
+                let first = it.next().unwrap();
+                match first {
+                    kSpannedCausetValue::Integer(v) => {
+                        let mut vals = vec![];
+                        for v in it {
+                            vals.push(v.into_causet_place()?);
+                        }
+                        Ok(causetPlace::Causetid(causets::CausetidOrSolitonid::Causetid(v)))
+
+
+                    }
+
+                    _ => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace))
+                }
+            }
+            _ => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace))
+        }
+    }
+
+    fn into_causet_locale(self) -> Result<causetLocale<Self>> {
+        use self::kSpannedCausetValue::*;
+        match self.inner {
                     // Like "(lookup-ref)".
                     (Some(&PlainShelling(einstein_ml::PlainShelling(ref s))), Some(a), Some(v), None) if s == "lookup-ref" => {
                         match a.clone().into_causet_place()? {
@@ -60,7 +77,11 @@ impl TransactableValue for ValueAndSpan {
                     },
                     _ => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace)),
                 }
-            },
+            }
+
+    fn into_causet_value(self) -> Result<causetq_TV> {
+        use self::kSpannedCausetValue::*;
+        match self.inner {
             Nil |
             Boolean(_) |
             Instant(_) |
@@ -73,6 +94,8 @@ impl TransactableValue for ValueAndSpan {
             Set(_) |
             Map(_) => bail!(einsteindbErrorKind::InputError(errors::InputError::BadcausetPlace)),
         }
+
+
     }
 
     fn as_tempid(&self) -> Option<TempId> {
@@ -172,13 +195,63 @@ pub fn replace_lookup_ref<T, U>(lookup_map: &AVMap, desired_or: Either<T, Lookup
             match other {
                 LookupRefOrTempId::TempId(t) => Ok(Right(t)),
                 LookupRefOrTempId::LookupRef(av) => lookup_map.get(&*av)
-                    .map(|x| lift(*x)).map(Left)
-                    // XXX TODO: fix this error kind!
-                    .ok_or_else(|| einsteindbErrorKind::UnrecognizedSolitonid(format!("couldn't lookup [a v]: {:?}", (*av).clone())).into()),
-            }
+                    .ok_or_else(|| errors::Error::from(einsteindbErrorKind::LookupError(errors::LookupError::LookupRefNotFound(av.clone()))))
+                    .map(|c| Right(c.into())),
+            }.map(lift)
         }
     }
 }
+
+
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+pub enum  KeywordRc<T> {
+    Causetid(Causetid),
+    Solitonid(Solitonid),
+    String(String),
+    Boolean(bool),
+    Long(i64),
+    Double(f64),
+    Instant(Instant),
+    Uuid(Uuid),
+    Other(T)
+}
+
+
+impl<T> KeywordRc<T> {
+
+    pub fn as_causetid(&self) -> Option<Causetid> {
+        match self {
+            KeywordRc::Causetid(x) => Some(*x),
+            _ => None,
+        }
+    }
+
+    pub fn as_solitonid(&self) -> Option<Solitonid> {
+        match self {
+            KeywordRc::Solitonid(x) => Some(*x),
+            _ => None,
+        }
+
+    }
+
+    pub fn as_string(&self) -> Option<String> {
+        match self {
+            KeywordRc::String(x) => Some(x.clone()),
+            _ => None,
+        }
+    }
+
+
+    pub fn as_boolean(&self) -> Option<bool> {
+        match self {
+                    // XXX TODO: fix this error kind!
+            KeywordRc::Boolean(x) => Some(*x),
+            _ => None,
+
+            }
+        }
+    }
+
 
 #[derive(Clone, Debug, Default)]
 pub(crate) struct AddAndRetract {

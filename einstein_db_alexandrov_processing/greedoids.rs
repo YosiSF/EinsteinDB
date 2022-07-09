@@ -1,5 +1,6 @@
 // Copyright 2021 EinsteinDB Project Authors. Licensed under Apache-2.0.
 // -------------------------------------------------------------------------------------------
+
 use std::ffi::CStr;
 use std::os::raw::{c_char, c_int, c_uint, c_void};
 use std::ptr;

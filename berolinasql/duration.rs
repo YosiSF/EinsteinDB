@@ -1,10 +1,199 @@
 // Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+// this file File except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
+//
+//
+// use std::error::Error;
+// use std::fmt;
+// use std::io;
+// use std::string::FromUtf8Error;
+// use std::str::Utf8Error;
+// use std::result;
+// use std::string::FromUtf8Error;
+// use std::str::Utf8Error;
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////
+//                                                                                           //
+//                                                                                           //
+///
+/// Copyright 2021-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
+/// LICENSED UNDER APACHE LICENSE, VERSION 2.0.
+///
+/// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+/// this file File except in compliance with the License. You may obtain a copy of the
+/// License at http://www.apache.org/licenses/LICENSE-2.0
+/// Unless required by applicable law or agreed to in writing, software distributed
+/// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+/// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+/// specific language governing permissions and limitations under the License.
+/// You may obtain a copy of the License at
+///
+///    http://www.apache.org/licenses/LICENSE-2.0
+/// Unless
+/// required by applicable law or agreed to in writing, software distributed under the
+/// License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+/// KIND, either express or implied. See the License for the specific language governing
+/// permissions and limitations under the License.
+
+use std::error::Error;
+use std::fmt;
+use std::io;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+
+use std::result;
+use std::string::FromUtf8Error;
+
+
+
+//Relativistic Spacelike Time:
+//https://en.wikipedia.org/wiki/Relativistic_spacelike_time
+//https://en.wikipedia.org/wiki/Relativistic_spacelike_time#Relativistic_spacelike_time
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RelativisticSpacelikeTime {
+    /// The time in seconds.
+    /// The time is measured from the epoch, 1970-01-01T00:00:00Z.
+    /// The epoch is defined as the time when the space-time coordinate system was defined.
+    /// The epoch is also the time when the space-time coordinate system was defined.
+    pub epoch_time: f64,
+    //prometheus
+    /// The time in seconds.
+    /// The time is measured from the epoch, 1970-01-01T00:00:00Z.
+
+
+
+    pub time_in_seconds: f64,
+    pub time: f64,
+    pub velocity: f64,
+}
+
+use std::fmt::{Display, Formatter, Result};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RelativisticSpacelikeTimeError {
+    pub message: String,
+}
+
+
+impl Display for RelativisticSpacelikeTimeError {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+
+impl Error for RelativisticSpacelikeTimeError {
+    fn description(&self) -> &str {
+        &self.message
+    }
+}
+
+
+impl From<FromUtf8Error> for RelativisticSpacelikeTimeError {
+    fn from(err: FromUtf8Error) -> RelativisticSpacelikeTimeError {
+        RelativisticSpacelikeTimeError {
+            message: format!("{}", err),
+        }
+    }
+}
+
+
+
+
+
+
+#[derive(Clone, PartialEq, Message)]
+pub struct EpaxosPropose {
+    #[proto_field(1, required = true)]
+    pub cmd: Vec<u8>,
+    #[proto_field(2, required = true)]
+    pub instance_id: u64,
+    #[proto_field(3, required = true)]
+    pub leader_id: u64,
+    #[proto_field(4, required = true)]
+    pub leader_commit: u64,
+    #[proto_field(5, required = true)]
+    pub leader_commit_index: u64,
+    #[proto_field(6, required = true)]
+    pub leader_commit_ts: u64,
+    #[proto_field(7, required = true)]
+    pub leader_commit_ts_epoch: u64,
+    #[proto_field(8, required = true)]
+    pub leader_commit_ts_inc: u64,
+    #[proto_field(9, required = true)]
+    pub leader_commit_ts_inc_epoch: u64,
+    #[proto_field(10, required = true)]
+    pub leader_commit_ts_inc_inc: u64,
+    #[proto_field(11, required = true)]
+    pub leader_commit_ts_inc_inc_epoch: u64,
+    #[proto_field(12, required = true)]
+    pub leader_commit_ts_inc_inc_inc: u64,
+    #[proto_field(13, required = true)]
+    pub leader_commit_ts_inc_inc_inc_epoch: u64,
+    #[proto_field(14, required = true)]
+    pub leader_commit_ts_inc_inc_inc_inc: u64,
+    #[proto_field(15, required = true)]
+    pub leader_commit_ts_inc_inc_inc_inc_epoch: u64,
+    #[proto_field(16, required = true)]
+    pub leader_commit_ts_inc_inc_inc_inc_inc: u64,
+}
+
+
+use protobuf::Message as Message_imported_for_functions;
+use protobuf::ProtobufEnum as ProtobufEnum_imported_for_functions;
+
+/// Generated files are compatible only with the same version
+/// of protobuf runtime.
+///
+/// This file is generated by rust-protobuf 2.8.1. Do not edit
+/// @generatedata_for_test
+
+
+#[derive(Clone, PartialEq, ::protobuf::Message)]
+
+pub struct EpaxosMsg {
+    #[proto_field(1, repeated = "*")]
+    pub entries: ::protobuf::RepeatedField<Entry>,
+    #[proto_field(2, repeated = "*")]
+    pub entries_to_commit: ::protobuf::RepeatedField<Entry>,
+    #[proto_field(3, repeated = "*")]
+    pub entries_to_apply: ::protobuf::RepeatedField<Entry>,
+    #[proto_field(4, repeated = "*")]
+    pub entries_to_commit_and_apply: ::protobuf::RepeatedField<Entry>,
+    #[proto_field(5, repeated = "*")]
+    pub entries_to_commit_and_apply_and_learn: ::protobuf::RepeatedField<Entry>,
+    #[proto_field(6, repeated = "*")]
+    pub entries_to_commit_and_apply_and_learn_and_propose: ::protobuf::RepeatedField<Entry>,
+    #[proto_field(7, repeated = "*")]
+    pub entries_to_commit_and_apply_and_learn_and_propose_and_propose: ::protobuf::RepeatedField<Entry>,
+    #[proto_field(8, repeated = "*")]
+    pub entries_to_commit_and_apply_and_learn_and_propose_and_propose_and_propose: ::protobuf::RepeatedField<Entry>,
+    #[proto_field(9, repeated = "*")]
+    pub entries_to_commit_and_apply_and_learn_and_propose_and_propose_and_propose_and_propose: ::protobuf::RepeatedField<Entry>,
+    #[proto_field(10, repeated = "*")]
+    pub entries_to_commit_and_apply_and_learn_and_propose_and_propose_and_propose_and_propose_and_propose: ::protobuf::RepeatedField<Entry>,
+}
+
+
+
+
 
 
 use std::fmt;
 use std::ops::{Add, Sub, Mul, Div};
-use std::time::Duration;
+use std::str::FromStr;
+use std::string::FromUtf8Error;
 
+
+
+#[]
 
 /// A `Duration` type to represent a span of time.
 ///     # Examples
@@ -24,12 +213,28 @@ use std::time::Duration;
 /// ```
 ///
 
+
+
 pub const NANOS_PER_SEC: i64 = 1_000_000_000;
 pub const NANOS_PER_MILLI: i64 = 1_000_000;
 pub const NANOS_PER_MICRO: i64 = 1_000;
 pub const MICROS_PER_SEC: i64 = 1_000_000;
 pub const NANO_WIDTH: usize = 9;
 pub const MICRO_WIDTH: usize = 6;
+pub const MILLI_WIDTH: usize = 3;
+pub const SEC_WIDTH: usize = 2;
+pub const MIN_WIDTH: usize = 2;
+pub const HOUR_WIDTH: usize = 2;
+pub const DAY_WIDTH: usize = 3;
+pub const WEEK_WIDTH: usize = 3;
+pub const MONTH_WIDTH: usize = 3;
+pub const YEAR_WIDTH: usize = 4;
+pub const DECADE_WIDTH: usize = 2;
+pub const CENTURY_WIDTH: usize = 2;
+pub const MILLENIUM_WIDTH: usize = 2;
+pub const ERA_WIDTH: usize = 2;
+pub const FOREVER_WIDTH: usize = 0;
+
 
 const SECS_PER_HOUR: i64 = 3600;
 const SECS_PER_MINUTE: i64 = 60;

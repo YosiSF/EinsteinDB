@@ -9,15 +9,20 @@ tags = ["einstein", "db", "alexandrov", "processv", "processing"]
 
 
 [dependencies]
-
-[dependencies.einstein_db_alexandrov_processv_processing]
-
-
-
-
+serde = "*"
+serde_json = "*"
+serde_yaml = "*"
+serde_toml = "*"
 
 
-[build]
-rustflags = ["-L /usr/local/lib"]
-rustc-link-arg = ["-L /usr/local/lib"]
-rustc-link-lib = ["einstein_db_alexandrov_processv_processing"]
+[[build]]
+rustflags = ["-C", "link-arg=-lstdc++"]
+rustc = ["rustc"]
+rustc_args = ["--crate-type=lib", "--crate-name=einstein_db_alexandrov_processing"]
+output = ["lib/einstein_db_alexandrov_processing.rlib"]
+
+[[bin]]
+name = "einstein_db_alexandrov_processing"
+path = "./alexandrov.rs"
+
+

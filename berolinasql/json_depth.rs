@@ -8,10 +8,152 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-use super::super::Result;
-use super::{JsonRef, JsonType};
+use std::error::Error;
+use std::fmt;
+use std::io;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+use std::result;
+
+
+#[derive(Debug)]
+pub enum JsonDepthError {
+    IoError(io::Error),
+    Utf8Error(Utf8Error),
+    FromUtf8Error(FromUtf8Error),
+    JsonError(serde_json::Error),
+    JsonDepthError(String),
+}
+
+
+impl fmt::Display for JsonDepthError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            JsonDepthError::IoError(ref err) => write!(f, "IO error: {}", err),
+            JsonDepthError::Utf8Error(ref err) => write!(f, "UTF8 error: {}", err),
+            JsonDepthError::FromUtf8Error(ref err) => write!(f, "FromUtf8 error: {}", err),
+            JsonDepthError::JsonError(ref err) => write!(f, "JSON error: {}", err),
+            JsonDepthError::JsonDepthError(ref err) => write!(f, "JSON depth error: {}", err),
+        }
+    }
+}
+
+
+///Find The Depth of an ordered Einstein JSON object.
+/// # Arguments
+/// * `json` - The JSON object to find the depth of.
+/// # Returns
+/// * `Result<usize, JsonDepthError>` - The depth of the JSON object.
+/// # Errors
+/// * `JsonDepthError` - If the JSON object is not valid.
+/// # Examples
+/// ```
+/// use einstein_sql::berolinasql::json_depth;
+/// let json = r#"{
+///    "a": {
+///       "b": {
+///         "c": {
+///          "d": {
+///           "e": {
+///           "f": {
+///          "g": {
+///          "h": {
+///         "i": {
+///        "j": {
+///      "k": {
+///    "l": {
+/// "m": {
+/// "n": {
+/// "o": {
+/// "p": {
+/// "q": {
+/// "r": {
+/// "s": {
+/// "t": {
+/// "u": {
+/// "v": {
+/// "w": {
+/// "x": {
+
+
+
+
+struct JsonDepth {
+    depth: usize,
+}
+
+
+///BTree Hashmap
+/// # Arguments
+/// * `depth` - The depth of the JSON object.
+
+
+impl JsonDepth {
+    pub fn new(depth: usize) -> JsonDepth {
+        JsonDepth {
+            depth: depth,
+        }
+    }
+}
+
+
+impl JsonDepth {
+    pub fn get_depth(&self) -> usize {
+        self.depth
+    }
+}
+
+
+impl Error for JsonDepthError {
+    fn description(&self) -> &str {
+        match *self {
+            JsonDepthError::IoError(ref err) => err.description(),
+            JsonDepthError::Utf8Error(ref err) => err.description(),
+            JsonDepthError::FromUtf8Error(ref err) => err.description(),
+            JsonDepthError::JsonError(ref err) => err.description(),
+            JsonDepthError::JsonDepthError(ref err) => err.as_str(),
+        }
+    }
+
+    fn cause(&self) -> Option<&Error> {
+        match *self {
+            JsonDepthError::IoError(ref err) => Some(err),
+            JsonDepthError::Utf8Error(ref err) => Some(err),
+            JsonDepthError::FromUtf8Error(ref err) => Some(err),
+            JsonDepthError::JsonError(ref err) => Some(err),
+            JsonDepthError::JsonDepthError(ref err) => None,
+        }
+    }
+}
+
+
+impl From<io::Error> for JsonDepthError {
+    fn from(err: io::Error) -> JsonDepthError {
+        JsonDepthError::IoError(err)
+    }
+}
+
+
+impl From<Utf8Error> for JsonDepthError {
+    fn from(err: Utf8Error) -> JsonDepthError {
+        JsonDepthError::Utf8Error(err)
+    }
+}
+
+
+impl From<FromUtf8Error> for JsonDepthError {
+    fn from(err: FromUtf8Error) -> JsonDepthError {
+        JsonDepthError::FromUtf8Error(err)
+    }
+}
+
+
+
+
 
 impl<'a> JsonRef<'a> {
+
+
     /// Returns maximum depth of JSON document
     pub fn depth(&self) -> Result<i64> {
         depth_json(&self)

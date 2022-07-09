@@ -1,6 +1,28 @@
 // Copyright 2021-2023 EinsteinDB Project Authors. Licensed under Apache-2.0.
+// Copyright 2021-2023 WHTCORPS INC. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+// this file except in compliance with the License. You may obtain a copy of the
+// License at http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software distributed
+// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+// specific language governing permissions and limitations under the License.
+//
+// @File: modifier.rs
+// @Date: 2020-03-20
 
 
+use std::io::{self, Read, Write};
+use std::mem;
+use std::cmp;
+use std::fmt;
+
+use byteorder::{ByteOrder, BigEndian, ReadBytesExt, WriteBytesExt};
+use byteorder::{LittleEndian, WriteBytesExt};
+
+
+use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
@@ -21,6 +43,9 @@ use crate::Modify;
 use crate::Snapshot;
 use crate::WriteBatch;
 use crate::WriteOptions;
+
+
+
 
 use einstein_ml::{
     engine::{
@@ -92,6 +117,86 @@ impl EngineImpl {
     }
 }
 
+
+
+/// `Modifier` is a wrapper of `EinsteinEngine` that provides the following features:
+/// - `Modifier` is thread-safe.
+/// - `Modifier` is safe to use in multi-threaded environment.
+/// - `Modifier` is safe to use in multi-process environment.
+
+
+impl Modifier {
+    pub fn new(engine: EinsteinEngine) -> Self {
+        Self {
+            engine: Arc::new(Mutex::new(engine)),
+            is_closed: AtomicBool::new(false),
+        }
+    }
+
+    pub fn is_closed(&self) -> bool {
+        self.is_closed.load(Ordering::Relaxed)
+    }
+
+    pub fn close(&self) {
+        self.is_closed.store(true, Ordering::Relaxed);
+    }
+
+    pub fn get_engine(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_impl(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_snapshot(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_write_batch(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_iterator(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_modify(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_snapshot_impl(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_write_batch_impl(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_iterator_impl(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_modify_impl(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone
+    }
+
+    pub fn get_engine_impl_(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_snapshot_impl_(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_write_batch_impl_(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+
+    pub fn get_engine_iterator_impl_(&self) -> Arc<Mutex<EinsteinEngine>> {
+        Arc::clone(&self.engine)
+    }
+}
 
 
 /// A helper struct that derives a new JSON by combining and manipulating

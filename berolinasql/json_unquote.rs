@@ -8,10 +8,25 @@
  // CONDITIONS OF ANY KIND, either express or implied. See the License for the
  // specific language governing permissions and limitations under the License.
 
-use std::{char, str, u32};
 
-use super::super::Result;
-use super::{JsonRef, JsonType};
+
+ use std::error::Error;
+    use std::fmt;
+    use std::io;
+    use std::string::FromUtf8Error;
+    use std::str::Utf8Error;
+    use std::result;
+    use std::string::FromUtf8Error;
+    use std::str::Utf8Error;
+    use std::error::Error;
+    use std::string::FromUtf8Error;
+    use std::str::Utf8Error;
+    use std::error::Error;
+    use std::string::FromUtf8Error;
+    use std::str::Utf8Error;
+    use std::error::Error;
+    use std::string::FromUtf8Error;
+
 
 const ESCAPED_UNICODE_BYTES_SIZE: usize = 4;
 

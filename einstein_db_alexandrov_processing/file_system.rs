@@ -1,4 +1,22 @@
-// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
+/// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
+/// @author   jmzhao, Slushie
+/// @license  Apache-2.0
+/// @email
+/// @date     2020/08/05
+/// @file     file_system.rs
+///
+
+
+///! This module contains the file system interface for the EinsteinDB database.
+/// It is a thin wrapper around the underlying database.
+/// The interface is designed to be similar to the standard library's `std::fs` module.
+/// The interface is implemented using the `einstein_db` crate's `einstein_db_alexandrov_processing` module.
+///
+///
+
+
+
+
 
 
 use std::fs::File;
@@ -14,6 +32,9 @@ use std::fs::{metadata, read_dir};
 use std::path::PathBuf;
 use std::fs::{DirBuilder, OpenOptions};
 use std::sync::Arc;
+
+
+
 
 pub fn create_dir(dir: &str) -> Result<(), String> {
     let path = Path::new(dir);

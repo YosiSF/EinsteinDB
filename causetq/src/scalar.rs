@@ -227,8 +227,11 @@ impl ScalarValue {
     pub fn new_decimal_fixed(v: Option<super::DecimalFixed>) -> Self {
         ScalarValue::DecimalFixed(v)
     }
+}
 
 
+
+impl ScalarValue {
     #[inline]
     pub fn eval_type(&self) -> EvalType {
         match_template_evaluable! {
@@ -237,6 +240,59 @@ impl ScalarValue {
             }
         }
     }
+}
+
+
+
+
+impl Evaluable for ScalarValue {
+
+
+    #[inline]
+    fn eval(&self) -> Result<ScalarValue> {
+        match_template_evaluable! {
+            TT, match self {
+                ScalarValue::TT(v) => Ok(ScalarValue::TT(v.eval()?)),
+            }
+        }
+    }
+
+    #[inline]
+fn eval_ref(&self) -> Result<&ScalarValue> {
+        match_template_evaluable! {
+            TT, match self {
+                ScalarValue::TT(v) => Ok(ScalarValue::TT(v.eval_ref()?)),
+            }
+        }
+    }
+
+    #[inline]
+fn eval_mut(&mut self) -> Result<&mut ScalarValue> {
+        match_template_evaluable! {
+            TT, match self {
+                ScalarValue::TT(v) => Ok(ScalarValue::TT(v.eval_mut()?)),
+            }
+        }
+    }
+
+    #[inline]
+fn eval_box(&self) -> Result<Box<ScalarValue>> {
+        match_template_evaluable! {
+            TT, match self {
+                ScalarValue::TT(v) => Ok(ScalarValue::TT(v.eval_box()?)),
+            }
+        }
+    }
+
+    /// Evaluates the scalar value.
+    /// # Panics
+    /// Panics if the scalar value is not of the expected type.
+    /// # Examples
+    /// Examples    if thereby  scalar causet_locales_per_tuple is_some notify_fn   of thereby  expected_type
+    /// ```
+    /// # use tidb_query_datatype::Evaluable;
+
+
 
     #[inline]
     pub fn as_scalar_causet_locale_ref(&self) -> ScalarValueRef<'_> {
@@ -312,6 +368,66 @@ impl ScalarValue {
         }
     };
 }
+
+        impl_from!(Int);
+        impl_from!(Duration);
+        impl_from!(DateTime);
+        impl_from!(Real);
+        impl_from!(Decimal);
+        impl_from!(Bytes);
+        impl_from!(Json);
+
+        impl From<ScalarValue> for bool {
+            #[inline]
+            fn from(s: ScalarValue) -> bool {
+                match s {
+                    ScalarValue::Bool(v) => v.unwrap(),
+                    _ => panic!(
+                        "Cannot cast {} scalar causet_locale into bool",
+                        s.eval_type(),
+                    ),
+                }
+            }
+        }
+
+        impl From<ScalarValue> for i8 {
+            #[inline]
+            fn from(s: ScalarValue) -> i8 {
+                match s {
+                    ScalarValue::Int(v) => v.unwrap(),
+                    _ => panic!(
+                        "Cannot cast {} scalar causet_locale into i8",
+                        s.eval_type(),
+                    ),
+                }
+            }
+        }
+
+        impl From<ScalarValue> for i16 {
+            #[inline]
+            fn from(s: ScalarValue) -> i16 {
+                match s {
+                    ScalarValue::Int(v) => v.unwrap(),
+                    _ => panic!(
+                        "Cannot cast {} scalar causet_locale into i16",
+                        s.eval_type(),
+                    ),
+                }
+            }
+        }
+
+        impl From<ScalarValue> for i32 {
+            #[inline]
+            fn from(s: ScalarValue) -> i32 {
+                match s {
+                    ScalarValue::Int(v) => v.unwrap(),
+                    _ => panic!(
+                        "Cannot cast {} scalar causet_locale into i32",
+                        s.eval_type(),
+                    ),
+                }
+            }
+        }
 
         impl_from! { Int }
         impl_from! { Real }
@@ -670,346 +786,79 @@ impl ScalarValue {
             }
         }
             }
-        }
 
-        impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'a> {
-            fn eq(&self, other: &ScalarValue) -> bool {
-                self == &other.as_scalar_causet_locale_ref()
-            }
-        }
-
-        impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValue {
-            fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                other == self
-            }
-        }
-
-        impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-            fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                match_template_evaluable! {
+            impl<'a> PartialEq for ScalarValueRef<'a> {
+                fn eq(&self, other: &Self) -> bool {
+                    match_template_evaluable! {
             TT, match (self, other) {
                 (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                _ => false,
+                (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => true,
+                (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => false,
+                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => false,
+                (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
+                    match_template_collator! {
+                        TT, match field_type.collation()? {
+                            Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record)?
+                        }
+                    }
+                }
+                _ => panic!("Cannot compare two ScalarValueRef in different type"),
             }
         }
 
 
-                impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValue) -> bool {
-                        other == self
-                    }
-                }
+                    impl ScalarValue {
+                        pub fn eval_type(&self) -> EvalType {
+                            match self {
+                                ScalarValue::Int(_) => EvalType::Int,
+                                ScalarValue::Real(_) => EvalType::Real,
+                                ScalarValue::Decimal(_) => EvalType::Decimal,
+                                ScalarValue::DateTime(_) => EvalType::DateTime,
+                                ScalarValue::Duration(_) => EvalType::Duration,
+                                ScalarValue::Json(_) => EvalType::Json,
+                                ScalarValue::Bytes(_) => EvalType::Bytes,
+                            }
+                        }
 
-                impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValue) -> bool {
-                        other == self
-                    }
-                }
+                        pub fn eval_type_as_accessor(&self) -> EvalTypeAccessor {
+                            match self {
+                                ScalarValue::Int(_) => EvalTypeAccessor::Int,
+                                ScalarValue::Real(_) => EvalTypeAccessor::Real,
+                                ScalarValue::Decimal(_) => EvalTypeAccessor::Decimal,
+                                ScalarValue::DateTime(_) => EvalTypeAccessor::DateTime,
+                                ScalarValue::Duration(_) => EvalTypeAccessor::Duration,
+                                ScalarValue::Json(_) => EvalTypeAccessor::Json,
+                                ScalarValue::Bytes(_) => EvalTypeAccessor::Bytes,
+                            }
+                        }
 
-                impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValue) -> bool {
-                        other == self
-                    }
-                }
+                        pub fn eval_type_as_accessor_as_ref(&self) -> EvalTypeAccessorRef {
+                            match self {
+                                ScalarValue::Int(_) => EvalTypeAccessorRef::Int,
+                                ScalarValue::Real(_) => EvalTypeAccessorRef::Real,
+                                ScalarValue::Decimal(_) => EvalTypeAccessorRef::Decimal,
+                                ScalarValue::DateTime(_) => EvalTypeAccessorRef::DateTime,
+                                ScalarValue::Duration(_) => EvalTypeAccessorRef::Duration,
+                                ScalarValue::Json(_) => EvalTypeAccessorRef::Json,
+                                ScalarValue::Bytes(_) => EvalTypeAccessorRef::Bytes,
+                            }
+                        }
 
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValue {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValue> for ScalarValue {
-                    fn eq(&self, other: &ScalarValue) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValue> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValue) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValue {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
-                    }
-                }
-
-                impl<'a> PartialEq<ScalarValueRef<'a>> for ScalarValueRef<'_> {
-                    fn eq(&self, other: &ScalarValueRef<'_>) -> bool {
-                        self == other
+                        pub fn eval_type_as_accessor_as_ref_as_ref(&self) -> EvalTypeAccessorRefRef {
+                            match self {
+                                ScalarValue::Int(_) => EvalTypeAccessorRefRef::Int,
+                                ScalarValue::Real(_) => EvalTypeAccessorRefRef::Real,
+                                ScalarValue::Decimal(_) => EvalTypeAccessorRefRef::Decimal,
+                                ScalarValue::DateTime(_) => EvalTypeAccessorRefRef::DateTime,
+                                ScalarValue::Duration(_) => EvalTypeAccessorRefRef::Duration,
+                                ScalarValue::Json(_) => EvalTypeAccessorRefRef::Json,
+                                ScalarValue::Bytes(_) => EvalTypeAccessorRefRef::Bytes,
+                            }
+                        }
                     }
                 }
             }
         }
     }
-
-
-    #[test]
-    fn test_scalar_value_ref_eq() {
-        let value = ScalarValue::new(Value::from(1));
-        let value_ref = value.as_ref();
-        let value_ref_ref = value_ref.as_ref();
-        let value_ref_clone = value_ref.clone();
-        let value_ref_clone_ref = value_ref_clone.as_ref();
-    }
-
-    #[APPEND_LOG_g(feature = "serde")]
-    mod serde {
-        use super::*;
-        use serde::{Serialize, Deserialize};
-
-        #[derive(Serialize, Deserialize)]
-        struct TestStruct {
-            #[serde(with = "serde_bytes")]
-            bytes: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_ref_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_ref_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_ref_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_ref_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_ref_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_ref_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_mut_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_mut_ref_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_mut_ref_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]  // should be ignored
-            bytes_mut_mut_mut_mut: Vec<u8>, // should be ignored
-        }
-
-        #[test]
-        fn test_serde() {
-            let bytes = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241,
-            ];
-            let bytes_ref = bytes.clone();
-            let bytes_ref_ref = bytes.clone();
-        }
-    }
-
-    #[APPEND_LOG_g(feature = "serde")]
-    mod serde_bytes {
-        use super::*;
-        use serde::{Serialize, Deserialize};
-
-        #[derive(Serialize, Deserialize)]
-        struct TestStruct {
-            #[serde(with = "serde_bytes")]
-            bytes: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_ref_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_ref_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_ref_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_ref_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_ref_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_ref_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_mut: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_mut_ref: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_mut_ref_ref: Vec<u8>,
-            // should be ignored
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_mut_ref_mut: Vec<u8>,
-            // should be ignored
-            #[serde(with = "serde_bytes")]
-            bytes_mut_mut_mut_mut: Vec<u8>, // should be ignored
-        }
-    }
-
-
-    #[APPEND_LOG_g(test)]
-    mod tests {
-        use super::*;
-        use crate::{
-            scalar_value::{
-                ScalarValue,
-                ScalarValueRef,
-            },
-            scalar_type::{
-                ScalarType,
-                ScalarTypeRef,
-            },
-        };
-        use std::{
-            cell::{
-                RefCell,
-            }, str::{
-                FromStr,
-            },
-        };
-        use std::rc::Rc;
-        use std::collections::HashMap;
-        use crate::{
-            scalar_type::{
-                ScalarType,
-                ScalarTypeRef,
-            },
-        };
-
-        #[test]
-        fn test_scalar_value_ref_new() {
-            let scalar_type = ScalarType::new(ScalarType::Type::String, None);
-            let scalar_value = ScalarValue::new(scalar_type, "test".to_string());
-            let scalar_value_ref = ScalarValueRef::new(scalar_value);
-            assert_eq!(scalar_value_ref.get_value(), "test");
-        }
-
-        #[test]
-        fn test_scalar_value_ref_new_with_type() {
-            let scalar_type = ScalarType::new(ScalarType::Type::String, None);
-            let scalar_value = ScalarValue::new(scalar_type, "test".to_string());
-            let scalar_value_ref = ScalarValueRef::new_with_type(scalar_value, scalar_type);
-            assert_eq!(scalar_value_ref.get_value(), "test");
-        }
-
-        #[test]
-        fn test_scalar_value_ref_new_with_type_and_value() {
-            let scalar_type = ScalarType::new(ScalarType::Type::String, None);
-            let scalar_value = ScalarValue::new(scalar_type, "test".to_string());
-            let scalar_value_ref = ScalarValueRef::new_with_type_and_value(scalar_type, "test".to_string());
-            assert_eq!(scalar_value_ref.get_value(), "test");
-
-            let scalar_value_ref = ScalarValueRef::new_with_type_and_value(scalar_type, "test".to_string());
-            assert_eq!(scalar_value_ref.get_value(), "test");
-        }
-    }
-
+}

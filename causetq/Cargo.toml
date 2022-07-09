@@ -8,10 +8,18 @@ license = "MIT"
 repository = "https://github.com/YosiSF/EisnteinDB/causetq"
 keywords = ["causal set queue", "causetq", "causetq allegro lisp"]
 
-
 [dependencies]
-byteorder= "1.2.7"
-thiserror="1.0"
-
-[dev-dependencies]
-cargo-test = "0.12.0"
+einstein_db = { path= "../einstein_db" }
+eindtein_ml = { path= "../einstein_ml" }
+berolinasql = { path= "../berolina-sql" }
+causet= { path= "../causet" }
+causets = { path= "../causets" }
+allegro_poset = { path= "../allegro_poset" }
+soliton = { path= "../soliton" }
+soliton_panic = { path= "../soliton_panic" }
+fdb_traits = { path= "../fdb_traits" }
+serde = "1.0.1138"
+serde_derive = "1.0.1138"
+slog = "1.0.1138"
+einstein_db_ctl = { path= "../einstein_db_ctl" }
+einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}

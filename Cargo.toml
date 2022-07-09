@@ -1,3 +1,13 @@
+[workspace]
+members = [
+    ".",
+    "./src",
+    "einstein_db",
+    "einstein_db/src",
+    "causet",
+    "causet/src",
+]
+
 [package]
 name = "einsteindb"
 version = "1.0.0"
@@ -9,109 +19,8 @@ license = "MIT OR Apache-2.0"
 keywords = ["OLAP", "OLTP", "MergeAppend", "Bulk Synchronization", "IPAM", "CRON", "SQLAgnostic", "Hybrid Key-Value"]
 categories = ["HTAP", "CAUSETS", "ACID", "DB4AI", "command-line-utilities", "development-tools::cargo-plugins"]
 
-[package.dependencies]
-serde = "0.9.0"
-serde_json = "0.9.0"
-serde_yaml = "0.9.0"
-serde_derive = "1.0"
-
-
-
-
-
-[lib]
-einsteindb = "einsteindb"
-name = "einsteindb"
-path = "../EinsteinDB/einstein_db/src/lib.rs"
-
-[dependencies.einsteindb]
-version = "1.0.0"
-path = "../EinsteinDB/einstein_db/src/lib.rs"
-
-
-
 [dependencies]
-anyhow = "1.0.58"
-async-stream = "0.3.3"
-async-std = "1.12.0"
-async-trait = "0.1.0"
-chrono = "0.4.0"
-crate = "0.0.2"
-crossbeam = "0.8"
-backtrace = "0.3.65"
-postgres = "0.19.3"
-rusqlite = "0.27.0"
-cargo-edit = "0.9.1"
-cargo-c = "0.6.13"
-libc = "0.2.126"
-mime = "0.3.16"
-notify = "4.0.17"
-num_cpus = "1.13.1"
-more-asserts = "0.3.0"
-protobuf = "3.1.0"
-log= "0.4.0"
-rand = "0.8.5"
-regex = "1.5.6"
-strum = "0.24.1"
-parking_lot = "0.12.1"
-serde = "1.0.137"
-serde_json = "1.0.82"
-prometheus = "0.13.1"
-serde_derive = "1.0.137"
-futures = "0.3.21"
-futures-util = "0.3.21"
-pin-project = "1.0.10"
-num-traits = "0.2.15"
-rev_lines= "0.2.1"
-itertools = "0.10.3"
-http= "0.2.8"
-slog-term = "2.9.0"
-lazy_static = "1.4.0"
-slog = "0.4.0"
-
-hyper="0.14.19"
-hyper-tls="0.5.0"
-tokio="1.19.2"
-tokio-tls="0.3.1"
-tokio-codec="0.1.2"
-tokio-io="0.1.13"
-tokio-process="0.2.5"
-tokio-threadpool="0.1.0"
-
-
-
-[dependencies.causets]
-path = "../EinsteinDB/causets"
-
-
-[dependencies.einsteindb.causet]
-path = "../EinsteinDB/causet"
-
-
-[dependencies.einsteindb.features.causet]
-path = "."
-
-[dependencies.allegro_poset]
-path = "../EinsteinDB/allegro_poset"
-
-
-[dependencies.einsteindb.features.allegro_poset]
-path = "."
-
-
-[dependencies.causets.features]
-path = "."
-
-[dependencies.einstein_db.features]
-path = "."
-einstein-db = ["einstein_db"]
-
-
-[dependencies.causet]
-path = "../EinsteinDB/causet"
-
-
-
-[workspace]
-members = ["causetq", "causets", "einstein_db", "causet", "allegro_poset", "einstein_ml"]
-
+serde = "1.0.1138"
+serde_derive = "1.0.1138"
+slog = "1.0.1138"
+slog_derive = "1.0.1138"

@@ -8,12 +8,8 @@ author_email = "karl@einst.ai"
 url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
 license = "MIT"
 
-
-[target.'$TARGET'.dependencies]
-
-
-[target.'$TARGET'.compile]
-
+[package]
+name = "soliton_panic"
 
 
 [target.x86_64-pc-windows-msvc.linker.libraries]

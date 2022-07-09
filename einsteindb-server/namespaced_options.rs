@@ -15,6 +15,62 @@
 // ----------------------------------------------------------------------------
 // @author     <> @CavHack @jedisct1 @kamilskurz @rukzuk @tomaslazdik @slushie
 
+
+
+use std::fmt::{self, Display, Formatter};
+use std::error::Error;
+use std::io;
+use std::result;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+use std::string::FromUtf8Error;
+
+
+#[derive(Debug)]
+pub struct ResultExt<T, E> {
+    pub value: result::Result<T, E>,
+}
+
+
+impl<T, E> ResultExt<T, E> {
+    pub fn failure(err: E) -> Self {
+        ResultExt {
+            value: Err(err),
+        }
+    }
+
+    pub fn ok(value: T) -> Self {
+        ResultExt {
+            value: Ok(value),
+        }
+    }
+}
+
+
+impl<T, E> ResultExt<T, E> {
+    pub fn unwrap(self) -> T {
+        self.value.unwrap()
+    }
+}
+
+
+impl<T, E> ResultExt<T, E> {
+    pub fn unwrap_or(self, default: T) -> T {
+        self.value.unwrap_or(default)
+    }
+}
+
+
+impl<T, E> ResultExt<T, E> {
+    pub fn unwrap_or_else(self, f: impl FnOnce(E) -> T) -> T {
+        self.value.unwrap_or_else(f)
+    }
+}
+
+
+
+
+
 #[macro_export]
 macro_rules! einsteindb_macro {
     ($($tokens:tt)*) => {
@@ -116,6 +172,8 @@ use einstein_ml::*;
 /// The `NamespacedOptions` is also used to store the options for the default
 /// namespace. This is the namespace that is used when no namespace is specified.
 /// The default namespace is always present.
+
+
 
 
 
@@ -286,7 +344,7 @@ impl ColumnFamilyOptions for PanicColumnFamilyOptions {
     fn set_block_cache_capacity(&self, capacity: u64) -> std::result::Result<(), String> {
         panic!()
     }
-    fn set_FoundationDBdb_options(&mut self, opts: &Self::FoundationDBDBOptions) {
+    fn set_foundation_dbdb_options(&mut self, opts: &Self::FoundationDBDBOptions) {
         panic!()
     }
     fn get_target_file_size_base(&self) -> u64 {
@@ -301,7 +359,41 @@ impl ColumnFamilyOptions for PanicColumnFamilyOptions {
     fn get_disable_write_stall(&self) -> bool {
         panic!()
     }
-    fn set_Causet_partitioner_factory<F: CausetPartitionerFactory>(&mut self, factory: F) {
+    fn set_causet_partitioner_factory<F: CausetPartitionerFactory>(&mut self, factory: F) {
         panic!()
     }
 }
+
+
+impl Deref for PanicColumnFamilyOptions {
+    type Target = append_log_panic_fdb;
+
+    fn deref(&self) -> &Self::Target {
+        panic!()
+    }
+}
+
+
+impl DerefMut for PanicColumnFamilyOptions {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        panic!()
+    }
+}
+
+
+impl Deref for append_log_panic_fdb {
+    type Target = fdb_lsh_treesoliton_panic_merkle_tree::DBOptions;
+
+    fn deref(&self) -> &Self::Target {
+        panic!()
+    }
+}
+
+
+impl DerefMut for append_log_panic_fdb {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        panic!()
+    }
+}
+
+

@@ -18,6 +18,47 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PrimitiveTtl {
+    pub name: String,
+    pub value: Value,
+    pub ttl: i64,
+}
+
+
+impl PrimitiveTtl {
+    pub fn new(name: String, value: Value, ttl: i64) -> Self {
+        PrimitiveTtl {
+            name,
+            value,
+            ttl,
+        }
+    }
+}
+
+
+impl Display for PrimitiveTtl {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", pretty::render(&self))
+    }
+}
+
+
+
+
+/// # PrimitiveTtl
+///  - name: String
+/// - value: Value
+/// - ttl: i64
+/// - ttl_type: String
+/// - ttl_unit: String
+/// - ttl_value: i64
+/// - ttl_unit_value: i64
+///
+///
+/// ## Examples
+/// ```
+///
 
 ///ttl for primitive type in EinsteinDB
 /// time to live for primitive type in EinsteinDB

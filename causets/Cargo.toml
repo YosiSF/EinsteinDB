@@ -7,24 +7,23 @@ description = "Causets is a tool for generating causality datasets for testing c
 license = "MIT"
 homepage = "https://www.einsteindb.com"
 repository = "https://www.github.com/YosiSF/EinsteinDB/Causets"
-workspace = ".."
 
-
-[target]
-name = "causets"
-path = "../causets/causet_partitioner.rs"
-kind = "binary"
-[einstein_ml.causets]
-causets_path = "causets"
-causets_version = "0.1.0"
-
+[lib]
+proc-macro=true
 
 [dependencies]
-failure= "0.1.82"
+causet = { path = "../causet" }
+causetq = { path = "../causetq" }
+einstein_ml = { path = "../einstein_ml" }
+soliton = { path = "../soliton" }
+soliton_panic = { path = "../soliton_panic" }
+einstein_db_ctl = { path = "../einstein_db_ctl" }
+allegro_poset = { path = "../allegro_poset" }
+einstein_db_alexandrov_processing = { path = "../einstein_db_alexandrov_processing" }
+futures = {version = "0.3"}
+serde = { version = "0.9.0" }
+serde_json = { version = "0.13.0" }
+serde_yaml = { version = "0.13.0" }
+serde_derive = { version = "1.0.94" }
+slog = { version = "0.8.0" }
 
-[dependencies.failure]
-version = "0.1.82"
-
-[dev-dependencies]
-failure= "0.1.82"
-itertools = "0.10.3"

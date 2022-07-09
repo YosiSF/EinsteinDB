@@ -58,12 +58,49 @@ impl Display for Counter {
 
 
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Gauge {
+    value: Value,
+}
+
+
+impl Gauge {
+    /// Creates a new gauge with the given value.
+    pub fn new(value: Value) -> Self {
+        Gauge { value }
+    }
+}
+
+
+impl Metric for Gauge {
+    fn metric_type(&self) -> MetricType {
+        MetricType::Gauge
+    }
+}
+
+
+impl Display for Gauge {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
+
+
+
+
 #[macro_export]
 macro_rules! einsteindb_macro {
     ($($tokens:tt)*) => {
-        $crate::einsteindb_macro_impl!($($tokens)*)
+        {
+            let mut _einsteindb_macro_result = String::new();
+            write!(_einsteindb_macro_result, $($tokens)*).unwrap();
+            _einsteindb_macro_result
+        }
     };
 }
+
+
 
 
 #[macro_export]
@@ -174,6 +211,24 @@ pub struct Metrics {
     pub kube_server_requests_duration_seconds_histogram_bucket: HistogramVec,
 }
 
+
+
+#[derive(Clone)]
+pub struct MetricsImpl {
+    pub einsteindb_server_requests_total: CounterVec,
+    pub einsteindb_server_requests_duration_seconds: HistogramVec,
+    pub openai_server_requests_total: CounterVec,
+    pub openai_server_requests_duration_seconds: HistogramVec,
+    pub openai_server_requests_duration_seconds_histogram: HistogramVec,
+    pub openai_server_requests_duration_seconds_histogram_bucket: HistogramVec,
+    pub openai_server_requests_duration_seconds_histogram_count: HistogramVec,
+    pub openai_server_requests_duration_seconds_histogram_sum: HistogramVec,
+    pub openai_server_requests_duration_seconds_histogram_bucket_lower_bound: HistogramVec,
+    pub kube_server_requests_total: CounterVec,
+    pub kube_server_requests_duration_seconds: HistogramVec,
+    pub kube_server_requests_duration_seconds_histogram: HistogramVec,
+    pub kube_server_requests_duration_seconds_histogram_bucket: HistogramVec,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct CounterMetricImpl {
@@ -416,10 +471,6 @@ pub enum MetricType {
     Histogram,
 }
 
-
-
-
-
 lazy_static::lazy_static! {
     static ref INTERLOCK_EXECUTOR_COUNT: IntCounterVec = register_int_counter_vec!(
         "EinsteinDB_interlock_executor_count",
@@ -427,210 +478,304 @@ lazy_static::lazy_static! {
         &["type"]
     )
     .unwrap();
-}
-
-lazy_static::lazy_static! {
-    pub static ref EXECUTOR_COUNT_METRICS: LocalCoprExecutorCount =
-        auto_flush_from!(INTERLOCK_EXECUTOR_COUNT, LocalCoprExecutorCount);
-
-    pub static ref EXECUTOR_COUNT_METRICS_TOTAL: LocalCoprExecutorCount =
-
-        auto_flush_from!(INTERLOCK_EXECUTOR_COUNT, LocalCoprExecutorCount);
-
-    pub static ref EXECUTOR_COUNT_METRICS_DURATION: LocalCoprExecutorCount = auto_flush_from!(
-        INTERLOCK_EXECUTOR_COUNT,
-        LocalCoprExecutorCount
-    );
-
-    pub static ref EXECUTOR_COUNT_METRICS_TOTAL_DURATION: LocalCoprExecutorCount =
-        auto_flush_from!(INTERLOCK_EXECUTOR_COUNT, LocalCoprExecutorCount);
-}
-
-
-lazy_static::lazy_static! {
-    static ref INTERLOCK_EXECUTOR_COUNT_TOTAL: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_interlock_executor_count_total",
-        "Total number of each executor",
+    static ref INTERLOCK_EXECUTOR_DURATION: IntCounterVec = register_int_counter_vec!(
+        "EinsteinDB_interlock_executor_duration",
+        "Total duration of each executor",
         &["type"]
     )
     .unwrap();
+    static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM: HistogramVec = register_histogram_vec!(
+        "EinsteinDB_interlock_executor_duration_histogram",
+        "Duration of each executor",
+        &["type"]
+    )
+    .unwrap();
+    static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_BUCKET: IntCounterVec = register_int_counter_vec!(
+        "EinsteinDB_interlock_executor_duration_histogram_bucket",
+        "Duration of each executor",
+        &["type"]
+    )
+    .unwrap();
+    static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_COUNT: IntCounterVec = register_int_counter_vec!(
+        "EinsteinDB_interlock_executor_duration_histogram_count",
+        "Duration of each executor",
+        &["type"]
+    )
+    .unwrap();
+    static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_SUM: IntCounterVec = register_int_counter_vec!(
+        "EinsteinDB_interlock_executor_duration_histogram_sum",
+        "Duration of each executor",
+        &["type"]
+    )
+    .unwrap();
+
+    static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_BUCKET_LOWER_BOUND: IntCounterVec = register_int_counter_vec!(
+        "EinsteinDB_interlock_executor_duration_histogram_bucket_lower_bound",
+        "Duration of each executor",
+        &["type"]
+    )
+    .unwrap();
+    static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_BUCKET_UPPER_BOUND: IntCounterVec = register_int_counter_vec!(
+        "EinsteinDB_interlock_executor_duration_histogram_bucket_upper_bound",
+        "Duration of each executor",
+        &["type"]
+    )
+    .unwrap();
+                }
+
+impl MetricType {
+    pub fn metric_name(&self) -> &'static str {
+        match self {
+            MetricType::Counter => "counter",
+            MetricType::Gauge => "gauge",
+            MetricType::Histogram => "histogram",
+        }
+    }
+
+    pub fn metric_label_name(&self) -> &'static str {
+        match self {
+            MetricType::Counter => "type",
+            MetricType::Gauge => "type",
+            MetricType::Histogram => "type",
+        }
+    }
+
+    pub fn metric_label_value(&self) -> &'static str {
+
+        match self {
+
+            MetricType::Counter => "counter",
+            MetricType::Gauge => "gauge",
+            MetricType::Histogram => "histogram",
+        }
+    }
 }
 
+            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+            pub enum InterlockExecutorType {
+                InterlockExecutor,
+                InterlockExecutorPool,
+            }
 
-lazy_static::lazy_static! {
-    pub static ref EXECUTOR_COUNT_METRICS_TOTAL_TOTAL: LocalCoprExecutorCount =
-        auto_flush_from!(INTERLOCK_EXECUTOR_COUNT_TOTAL, LocalCoprExecutorCount);
-}
+            impl InterlockExecutorType {
+                pub fn as_str(&self) -> &'static str {
+                    match self {
+                        InterlockExecutorType::InterlockExecutor => "interlock_executor",
+                        InterlockExecutorType::InterlockExecutorPool => "interlock_executor_pool",
+                    }
+                }
+
+
+            impl fmt::Display for InterlockExecutorType {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    write!(f, "{}", self.as_str())
+                }
+
+            impl From<&str> for InterlockExecutorType {
+                fn from(s: &str) -> Self {
+                    match s {
+                        "interlock_executor" => InterlockExecutorType::InterlockExecutor,
+                        "interlock_executor_pool" => InterlockExecutorType::InterlockExecutorPool,
+                        _ => panic!("Unknown InterlockExecutorType: {}", s),
+                    }
+                }
+
+
+            impl From<InterlockExecutorType> for &'static str {
+                fn from(s: InterlockExecutorType) -> Self {
+                    s.as_str()
+                }
 
 
 
-///CHANGELOG: 
+            impl From<InterlockExecutorType> for String {
+                fn from(s: InterlockExecutorType) -> Self {
+                    s.as_str().to_string()
+                }
+                                }
+
+
+            impl From<InterlockExecutorType> for &'static str {
+                fn from(s: InterlockExecutorType) -> Self {
+                    s.as_str()
+                }
+                                    }
+
+
+            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+            pub enum InterlockExecutorPoolType {
+                InterlockExecutorPool,
+            }
+
+            impl InterlockExecutorPoolType {
+                pub fn as_str(&self) -> &'static str {
+                    match self {
+                        InterlockExecutorPoolType::InterlockExecutorPool => "interlock_executor_pool",
+                    }
+
+            }
+
+            impl fmt::Display for InterlockExecutorPoolType {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    write!(f, "{}", self.as_str())
+                }
+            }
+
+            impl From<&str> for InterlockExecutorPoolType {
+                fn from(s: &str) -> Self {
+                    match s {
+                        "interlock_executor_pool" => InterlockExecutorPoolType::InterlockExecutorPool,
+                        _ => panic!("Unknown InterlockExecutorPoolType: {}", s),
+                    }
+                }
+            }
+
+            impl From<InterlockExecutorPoolType> for &'static str {
+                fn from(s: InterlockExecutorPoolType) -> Self {
+                    s.as_str()
+                }
+            }
+
+
+            impl From<InterlockExecutorPoolType> for String {
+                fn from(s: InterlockExecutorPoolType) -> Self {
+                    s.as_str().to_string()
+                }
+            }
+
+
+            impl From<InterlockExecutorPoolType> for &'static str {
+                fn from(s: InterlockExecutorPoolType) -> Self {
+                    s.as_str()
+                }
+            }
+
+                }   // end of impl InterlockExecutorType
+
+
+
+            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+            pub enum InterlockExecutorPoolStatus {
+                Idle,
+                Busy,
+            }
+
+            impl InterlockExecutorPoolStatus {
+                pub fn as_str(&self) -> &'static str {
+                    match self {
+                        InterlockExecutorPoolStatus::Idle => "idle",
+                        InterlockExecutorPoolStatus::Busy => "busy",
+                    }
+                }
+            }
+
+            impl fmt::Display for InterlockExecutorPoolStatus {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    write!(f, "{}", self.as_str())
+                }
+            }
+
+            impl InterlockExecutorPoolStatus {
+                pub fn as_str(&self) -> &'static str {
+                    match self {
+                        InterlockExecutorPoolStatus::Idle => "idle",
+                        InterlockExecutorPoolStatus::Busy => "busy",
+                    }
+                }
+            }
+
+            impl fmt::Display for InterlockExecutorPoolStatus {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    write!(f, "{}", self.as_str())
+                }
+            }
+
+            impl From<&str> for InterlockExecutorPoolStatus {
+                fn from(s: &str) -> Self {
+                    match s {
+                        "idle" => InterlockExecutorPoolStatus::Idle,
+                        "busy" => InterlockExecutorPoolStatus::Busy,
+                        _ => panic!("Unknown InterlockExecutorPoolStatus: {}", s),
+                    }
+                }
+            }
+
+            impl From<InterlockExecutorPoolStatus> for &'static str {
+                fn from(s: InterlockExecutorPoolStatus) -> Self {
+                    s.as_str()
+                }
+            }
+
+            impl From<InterlockExecutorPoolStatus> for String {
+                fn from(s: InterlockExecutorPoolStatus) -> Self {
+                    s.as_str().to_string()
+                }
+            }
+
+            impl From<InterlockExecutorPoolStatus> for &'static str {
+                fn from(s: InterlockExecutorPoolStatus) -> Self {
+                    s.as_str()
+                }
+            }
+
+            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+            pub enum InterlockExecutorPoolStatusType {
+                InterlockExecutorPoolStatus,
+            }
+
+            impl InterlockExecutorPoolStatusType {
+                pub fn as_str(&self) -> &'static str {
+                    match self {
+                        InterlockExecutorPoolStatusType::InterlockExecutorPoolStatus => "interlock_executor_pool_status",
+                    }
+                }
+            }
+
+            impl fmt::Display for InterlockExecutorPoolStatusType {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    write!(f, "{}", self.as_str())
+                }
+            }
+
+            impl From<&str> for InterlockExecutorPoolStatusType {
+                fn from(s: &str) -> Self {
+                    match s {
+                        "interlock_executor_pool_status" => InterlockExecutorPoolStatusType::InterlockExecutorPoolStatus,
+                        _ => panic!("Unknown InterlockExecutorPoolStatusType: {}", s),
+                    }
+                }
+            }
+
+            impl From<InterlockExecutorPoolStatusType> for &'static str {
+                fn from(s: InterlockExecutorPoolStatusType) -> Self {
+                    s.as_str()
+                }
+            }
+
+
+            impl From<InterlockExecutorPoolStatusType> for String {
+                fn from(s: InterlockExecutorPoolStatusType) -> Self {
+                    s.as_str().to_string()
+                }
+            }
+
+            impl From<InterlockExecutorPoolStatusType> for &'static str {
+                fn from(s: InterlockExecutorPoolStatusType) -> Self {
+                    s.as_str()
+                }
+            }
+                                }   // end of impl InterlockExecutorPoolStatus
+
+            #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+            pub enum InterlockExecutorPoolStatusType {
+                InterlockExecutorPoolStatus,
+            }
+
+
 /// - Added `EinsteindbServerRequestsTotal` and `EinsteindbServerRequestsDurationSeconds`
 /// - Added `OpenaiServerRequestsTotal` and `OpenaiServerRequestsDurationSeconds`
 /// - Added `KubeServerRequestsTotal` and `KubeServerRequestsDurationSeconds`
 /// - Added `OpenaiServerRequestsDurationSecondsHistogram` and `OpenaiServerRequestsDurationSecondsHistogramBucket`
 /// - Added `OpenaiServerRequestsDurationSecondsHistogramCount` and `OpenaiServerRequestsDurationSecondsHistogramSum`
 /// - Added `OpenaiServerRequestsDurationSecondsHistogramBucketLowerBound`
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Metric {
-    EinsteindbServerRequestsTotal,
-    EinsteindbServerRequestsDurationSeconds,
-    OpenaiServerRequestsTotal,
-    OpenaiServerRequestsDurationSeconds,
-    OpenaiServerRequestsDurationSecondsHistogram,
-    OpenaiServerRequestsDurationSecondsHistogramBucket,
-    OpenaiServerRequestsDurationSecondsHistogramCount,
-    OpenaiServerRequestsDurationSecondsHistogramSum,
-    OpenaiServerRequestsDurationSecondsHistogramBucketLowerBound,
-    KubeServerRequestsTotal,
-    KubeServerRequestsDurationSeconds,
-    KubeServerRequestsDurationSecondsHistogram,
-    KubeServerRequestsDurationSecondsHistogramBucket,
-}
-
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]    
-pub enum CausetQueryType {
-    EinsteindbServer,
-    OpenaiServer,
-    KubeServer,
-}
-
-impl CausetQueryType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            CausetQueryType::Einsteindb => "einsteindb",
-            CausetQueryType::Openai => "openai",
-            CausetQueryType::Kube => "kube",
-        }
-    }
-}
-
-
-
-lazy_static::lazy_static! {
-    static ref CAUSET_QUERY_COUNT: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_causet_query_count",
-        "Total number of each causet query",
-        &["type"]
-    )
-    .unwrap();
-}
-
-lazy_static::lazy_static! {
-    pub static ref CAUSET_QUERY_COUNT_METRICS: LocalCoprCausetQueryCount =
-        auto_flush_from!(CAUSET_QUERY_COUNT, LocalCoprCausetQueryCount);
-
-}
-
-
-
-impl CausetQueryType {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            CausetQueryType::Einsteindb => "einsteindb",
-
-            CausetQueryType::Openai => "openai",
-            CausetQueryType::Kube => "kube",
-
-
-        }
-    }
-}
-
-lazy_static::lazy_static! {
-    static ref CAUSET_QUERY_COUNT_TOTAL: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_causet_query_count_total",
-        "Total number of each causet query",
-        &["type"]
-    )
-    .unwrap();
-}
-
-lazy_static::lazy_static! {
-    pub static ref CAUSET_QUERY_COUNT_METRICS_TOTAL: LocalCoprCausetQueryCount =
-        auto_flush_from!(CAUSET_QUERY_COUNT_TOTAL, LocalCoprCausetQueryCount);
-}
-
-
-lazy_static::lazy_static! {
-    static ref CAUSET_QUERY_COUNT_DURATION: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_causet_query_count_duration",
-        "Total number of each causet query",
-        &["type"]
-    )
-    .unwrap();
-}
-
-
-lazy_static::lazy_static! {
-    pub static ref CAUSET_QUERY_COUNT_METRICS_DURATION: LocalCoprCausetQueryCount =
-        auto_flush_from!(CAUSET_QUERY_COUNT_DURATION, LocalCoprCausetQueryCount);
-}
-
-
-lazy_static::lazy_static! {
-    static ref CAUSET_QUERY_COUNT_TOTAL_DURATION: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_causet_query_count_total_duration",
-        "Total number of each causet query",
-        &["type"]
-    )
-    .unwrap();
-}
-
-lazy_static::lazy_static! {
-    pub static ref CAUSET_QUERY_COUNT_METRICS_TOTAL_DURATION: LocalCoprCausetQueryCount =
-        auto_flush_from!(CAUSET_QUERY_COUNT_TOTAL_DURATION, LocalCoprCausetQueryCount);
-
-
-}
-
-
-lazy_static::lazy_static! {
-    static ref CAUSET_QUERY_COUNT_DURATION_HISTOGRAM: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_causet_query_count_duration_histogram",
-        "Total number of each causet query",
-        &["type"]
-    )
-    .unwrap();
-
-
-
-}
-
-lazy_static::lazy_static! {
-    pub static ref CAUSET_QUERY_COUNT_METRICS_DURATION_HISTOGRAM: LocalCoprCausetQueryCount =
-        auto_flush_from!(CAUSET_QUERY_COUNT_DURATION_HISTOGRAM, LocalCoprCausetQueryCount);
-
-
-
-}
-
-            ::std::fmt::Display::fmt(&self, f) -> ::std::fmt::Result {
-
-                match self {
-                    CausetQueryType::Einsteindb => write!(f, "einsteindb"),
-                    CausetQueryType::Openai => write!(f, "openai"),
-                    CausetQueryType::Kube => write!(f, "kube"),
-                }
-            }
-
-            ::std::fmt::Debug::fmt(&self, f) -> ::std::fmt::Result {
-                match self {
-                    CausetQueryType::Einsteindb => write!(f, "einsteindb"),
-                    CausetQueryType::Openai => write!(f, "openai"),
-                    CausetQueryType::Kube => write!(f, "kube"),
-                }
-            }
-
-            ::std::fmt::Display::fmt(&self, f) -> ::std::fmt::Result {
-                match self {
-                    CausetQueryType::Einsteindb => write!(f, "einsteindb"),
-                    CausetQueryType::Openai => write!(f, "openai"),
-                    CausetQueryType::Kube => write!(f, "kube"),
-                }
-
-
-        }
-}
+/// - Added `OpenaiServerRequestsDurationSecondsHistogramBucketUpperBound`

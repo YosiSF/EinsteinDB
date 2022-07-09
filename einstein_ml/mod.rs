@@ -21,6 +21,21 @@
 use EinsteinDB::einstein_ml::*;
 use EinsteinDB::einstein_ml::prelude::*;
 
+use super::*;
+use crate::error::{Error, Result};
+use crate::parser::{Parser, ParserError};
+use crate::value::{Value, ValueType};
+use crate::{ValueRef, ValueRefMut};
+use itertools::Itertools;
+use pretty;
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    io,
+    convert::{TryFrom, TryInto},
+    ops::{Deref, DerefMut},
+    sync::{Arc, Mutex},
+};
 
 
 
@@ -70,24 +85,6 @@ fn test_linear_regression_with_weights() {
     assert_eq!(result.get_column("y").unwrap().get(4).unwrap(), 10.0);
 }
 
-use super::*;
-use crate::error::{Error, Result};
-use crate::parser::{Parser, ParserError};
-use crate::value::{Value, ValueType};
-use crate::{ValueRef, ValueRefMut};
-use itertools::Itertools;
-use pretty;
-use std::{
-    collections::HashMap,
-    fmt::{self, Display},
-    io,
-    convert::{TryFrom, TryInto},
-    ops::{Deref, DerefMut},
-    sync::{Arc, Mutex},
-};
-
-use ::serde::{Deserialize, Serialize};
-use EinsteinDB::einstein_ml::prelude::*;
 
 
 /// A `Value` is a wrapper around a `Doc`.
@@ -152,11 +149,24 @@ impl Context {
 
 
 
-   #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-    pub struct Session {
-         pub(crate) inner: Arc<Mutex<SessionInner>>,
+/// A `Executor` is a context for executing a program.
 
-    }
+
+    /// Create a new session.
+    ///
+    ///
+
+
+/// A `Session` is a context for executing a program.
+
+
+pub struct Session {
+    pub(crate) context: Context,
+    pub(crate) variables: HashMap<String, Value>,
+    pub(crate) inner: Arc<Mutex<SessionInner>>,
+}
+
+
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub struct SessionInner {
         pub(crate) executors: Vec<Executor>,
@@ -166,6 +176,8 @@ impl Context {
         /// Create a new session.
         pub fn new() -> Self {
             Self {
+                context: Context::new(),
+                variables: HashMap::new(),
                 inner: Arc::new(Mutex::new(SessionInner {
                     executors: Vec::new(),
                     variables: HashMap::new(),
@@ -174,167 +186,367 @@ impl Context {
         }
         /// Create a new session.
         /// This is a convenience function that calls `Session::new()`.
+
+
     }
 
-   /// 
-   /// 
-   /// 
+    impl SessionInner {
+        /// Create a new session.
+        /// This is a convenience function that calls `Session::new()`.
+
+
+        pub fn new() -> Self {
+            Self {
+                executors: Vec::new(),
+                variables: HashMap::new(),
+            }
+        }
+
+
+        pub fn new_executor(&mut self) -> Executor {
+            let executor = Executor::new();
+            self.executors.push(executor);
+            executor
+        }
+
+        pub fn new_session(&mut self) -> Session {
+            let session = Session::new();
+            self.executors.push(session.inner.lock().unwrap().executors[0].clone());
+            session
+        }
+
+        pub fn new_variable(&mut self, name: &str, value: Value) {
+            self.variables.insert(name.to_string(), value);
+        }
+    }
+
+
+/// A `Executor` is a context for executing a program.
+pub struct Executor {
+
+    pub(crate) context: Context,
+    pub(crate) variables: HashMap<String, Value>,
+    pub(crate) inner: Arc<Mutex<ExecutorInner>>,
+}
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct ExecutorInner {
+
+        pub(crate) variables: HashMap<String, Value>,
+    }
+
+
+    impl Executor {
+        /// Create a new executor.
+        pub fn new() -> Self {
+            Self {
+                context: Context::new(),
+                variables: HashMap::new(),
+                inner: Arc::new(Mutex::new(ExecutorInner {
+                    variables: HashMap::new(),
+                })),
+            }
+        }
+        /// Create a new executor.
+        /// This is a convenience function that calls `Executor::new()`.
+    }
+    impl ExecutorInner {
+        /// Create a new executor.
+        /// This is a convenience function that calls `Executor::new()`.
+        pub fn new() -> Self {
+            Self {
+                variables: HashMap::new(),
+            }
+        }
+        pub fn new_variable(&mut self, name: &str, value: Value) {
+            self.variables.insert(name.to_string(), value);
+        }
+    }
+
+
+
+
+    impl Executor {
+        /// Create a new executor.
+        /// This is a convenience function that calls `Executor::new()`.
+    }
+
+
+    impl ExecutorInner {
+        /// Create a new executor.
+        /// This is a convenience function that calls `Executor::new()`.
+        pub fn new() -> Self {
+            Self {
+                variables: HashMap::new(),
+            }
+        }
+        pub fn new_variable(&mut self, name: &str, value: Value) {
+            self.variables.insert(name.to_string(), value);
+        }
+    }
+
+
+
+
+
+
+/// A `Value` is a wrapper around a `Doc`.
+/// A `Value` can be used to create a `Doc`.
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Value {
+    pub(crate) doc: Doc,
+
+}
+    /// A `Series` is a wrapper around a `Vec<Value>`.
+    /// It is created by calling `Series::new()`.
+    /// A `Series` can be used to create multiple `Series`s
+
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct Series {
+        pub(crate) inner: Arc<Mutex<SeriesInner>>,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct SeriesInner {
+        pub(crate) values: Vec<Value>,
+    }
+
+    impl Series {
+        /// Create a new series.
+        pub fn new() -> Self {
+            Self {
+                inner: Arc::new(Mutex::new(SeriesInner {
+                    values: Vec::new(),
+                })),
+            }
+        }
+        /// Create a new series.
+        /// This is a convenience function that calls `Series::new()`.
+    }
+
+    impl SeriesInner {
+        /// Create a new series.
+        /// This is a convenience function that calls `Series::new()`.
+    }
+
+    /// A `DataFrame` is a wrapper around a `Vec<Series>`.
+    /// It is created by calling `DataFrame::new()`.
+    /// A `DataFrame` can be used to create multiple `DataFrame`s
+    /// A `DataFrame` can be used to create multiple `Series`s
+
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct DataFrame {
+        pub(crate) inner: Arc<Mutex<DataFrameInner>>,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct DataFrameInner {
+        pub(crate) series: Vec<Series>,
+    }
+
+    impl DataFrame {
+        /// Create a new dataframe.
+        pub fn new() -> Self {
+            Self {
+                inner: Arc::new(Mutex::new(DataFrameInner {
+                    series: Vec::new(),
+                })),
+            }
+        }
+        /// Create a new dataframe.
+        /// This is a convenience function that calls `DataFrame::new()`.
+    }
+
+
+    impl DataFrameInner {
+        /// Create a new dataframe.
+        /// This is a convenience function that calls `DataFrame::new()`.
+    }
+
+    /// A `Table` is a wrapper around a `Vec<Vec<Value>>`.
+    /// It is created by calling `Table::new()`.
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct Table {
+        pub(crate) inner: Arc<Mutex<TableInner>>,
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+    pub struct TableInner {
+        pub(crate) values: Vec<Vec<Value>>,
+    }
+
+    impl Table {
+        /// Create a new table.
+        pub fn new() -> Self {
+            Self {
+                inner: Arc::new(Mutex::new(TableInner {
+                    values: Vec::new(),
+                })),
+            }
+        }
+        /// Create a new table.
+        /// This is a convenience function that calls `Table::new()`.
+    }
+
+    impl TableInner {
+        /// Create a new table.
+        /// This is a convenience function that calls `Table::new()`.
+    }
+
+    /// A `DataFrame` is a wrapper around a `Vec<Vec<Value>>`.
+    /// It is created by calling `DataFrame::new()`.
+    ///
+    ///
+
+
+
+
+    /// Create a new value.
+    /// This is a convenience function that calls `Value::new()`.
+
+    pub fn new_value() -> Value {
+
+        Value::new()
+    }
+
+    /// Create a new series.
+
+    pub fn new_series() -> Series {
+        Series::new()
+    }
+
+    /// Create a new dataframe.
+
+    pub fn new_dataframe() -> DataFrame {
+        DataFrame::new()
+    }
+
+    /// Create a new table.
+
+    pub fn new_table() -> Table {
+        Table::new()
+    }
 
     /// Create a new executor.
-    pub fn new_executor(&self) -> Executor {
-        let inner = self.inner.clone();
-        let mut inner = inner.lock().unwrap();
-        let executor = Executor {
-            inner: inner.executors.len(),
-            inner: inner.executors.push(ExecutorInner {
-                context: self.clone(),
-                variables: HashMap::new(),
-            }).unwrap(),
-        };
-        executor
+    /// This is a convenience function that calls `Executor::new()`.
+
+    pub fn new_executor_() -> Executor {
+        new_executor()
+    }
+
+    /// Create a new value.
+    /// This is a convenience function that calls `Value::new()`.
+    /// This is a convenience function that calls `Value::new()`.
+
+    pub fn new_value_() -> Value {
+        new_value()
     }
 
     /// Create a new session.
-    pub fn new_session(&self) -> Session {
-        let inner = self.inner.clone();
+    pub fn new_session() -> Session {
+        let inner = SessionInner {
+            executors: (),
+            variables: HashMap::new(),
+        };
         let mut inner = inner.lock().unwrap();
         let session = Session {
-            inner: inner.sessions.len(),
-            inner: inner.sessions.push(SessionInner {
-                context: self.clone(),
-                variables: HashMap::new(),
-            }).unwrap(),
+            context: Context {
+                allocator: (),
+                variables: (),
+                inner
+            },
+            variables: (),
+            inner: Arc::new(Mutex::new(inner)),
         };
+
         session
     }
-    /// This is a convenience function that calls `Context::sessions_len()`.
-    pub fn sessions_len(&self) -> usize {
-        let inner = self.inner.clone();
-        let inner = inner.lock().unwrap();
-        inner.sessions.len()
-    }
-    /// Get the number of executors.
-    /// This is a convenience function that calls `Context::executors_len()`.
-    pub fn executors_len(&self) -> usize {
-        let inner = self.inner.clone();
-        let inner = inner.lock().unwrap();
-        inner.executors.len()
-    }
-    /// Get the number of sessions.
-    /// This is a convenience function that calls `Context::sessions_len()`.
-    pub fn executors(&self) -> Vec<Executor> {
-        let inner = self.inner.clone();
-        let inner = inner.lock().unwrap();
-        inner.executors.clone()
-    }
-    /// Get the number of sessions.
-    /// This is a convenience function that calls `Context::sessions_len()`.
-    pub fn sessions(&self) -> Vec<Session> {
-        let inner = self.inner.clone();
-        let inner = inner.lock().unwrap();
-        inner.sessions.clone()
-    }
-    /// Get the number of sessions.
-    /// This is a convenience function that calls `Context::sessions_len()`.
-    pub fn session(&self, index: usize) -> Session {
-        let inner = self.inner.clone();
-        let inner = inner.lock().unwrap();
-        inner.sessions[index].clone()
-    }
-    /// Get the number of sessions.
-    /// This is a convenience function that calls `Context::sessions_len()`.
-    pub fn executor(&self, index: usize) -> Executor {
-        let inner = self.inner.clone();
-        let inner = inner.lock().unwrap();
-        inner.executors[index].clone()
-    }
-  
 
+    /// Create a new session.
+    /// This is a convenience function that calls `Session::new()`.
 
-
-
-
-
-
-pub trait EinsteinMlToString {
-
-    //tinkerpop
-    fn to_string(&self) -> String;
-
-    fn einstein_ml_to_string(&self) -> String;
-}
-
-//From FDB to AEVTrie
-pub trait FDBToAEVTrie {
-    fn fdb_to_aevtrie(&self) -> AEVTrie;
-}
-
-//FoundationDB SQL dialect
-pub trait FdbSqlDialect {
-    fn to_string(&self) -> String;
-}
-
-//ML SQL dialect
-pub trait MlSqlDialect {
-    fn to_string(&self) -> String;
-}
-//A crown inherits the topological properties of allegro_poset and composes a dag projection list.
-pub trait Crown {   //tinkerpop graph
-    //tinkerpop
-
-
-    fn to_string(&self) -> String;
-
-    fn einstein_ml_to_string(&self) -> String;
-
-    fn get_projector(&self) -> Arc<Mutex<dyn Projector>>;
-
-    fn get_projector_mut(&self) -> Arc<Mutex<dyn Projector>>;
-}
-
-
-pub trait ProjectorBuilder {
-    fn build(&self) -> Result<Arc<Mutex<dyn Projector>>>;
-
-}
-
-
-pub trait ProjectorBuilderFactory {
-    fn project<'stmt, 's>(&self, topograph: &Topograph, berolina_sql: &'s berolina_sql::Connection, rows: Rows<'stmt>) -> Result<QueryOutput>;
-    fn columns<'s>(&'s self) -> Box<dyn Iterator<Item=&Element> + 's>;
-
-    fn is_projectable(&self) -> bool {
-        let x = self.columns().count() == 1;
-        x && self.columns().next().unwrap().is_scalar() && self.columns().next().is_none() && self.columns().next().is_none();
-        x && self.columns().all(|e| e.is_projectable())
-    }
-
-    fn is_projectable_with_topograph(&self, topograph: &Topograph) -> bool {
-        let x = self.columns().count() == 1;
-
-        x && self.columns().all(|e| e.is_projectable_with_topograph(topograph))
-    }
-
-    fn is_projectable_with_topograph_and_berolina_sql(&self, topograph: &Topograph, berolina_sql: &berolina_sql::Connection) -> bool {
-        let x = self.columns().count() == 1;
-
-        x && self.columns().all(|e| e.is_projectable_with_topograph_and_berolina_sql(topograph, berolina_sql))  && self.columns().next().is_none() && self.columns().next().is_none()
-
-
-    }
-
-    fn is_projectable_with_topograph_and_berolina_sql_and_rows(&self, topograph: &Topograph, berolina_sql: &berolina_sql::Connection, rows: Rows) -> bool {
-        let x = self.columns().count() == 1;
-
-        x && self.columns().all(|e| e.is_projectable_with_topograph_and_berolina_sql_and_rows(topograph, berolina_sql, rows))
+    pub fn new_session_() -> Session {
+        new_session()
     }
 
 
-        fn semi_groupoid(&self) -> bool {
-            self.columns().count() == 1
-        }
+    /// Create a new context.
+    /// This is a convenience function that calls `Context::new()`.
 
-        fn is_sortable(&self) -> bool {
-            self.columns().count() == 1
-        }
+    pub fn new_context() -> Context {
+        Context::new()
     }
+
+    fn new_executor_inner() -> ExecutorInner {
+        let inner = ExecutorInner {
+            variables: HashMap::new(),
+        };
+        inner: Arc::new(Mutex::new(inner));
+    }
+
+    /// Create a new executor.
+    /// This is a convenience function that calls `Executor::new()`.
+
+pub fn new_executor() -> Executor {
+        let inner = new_executor_inner();
+        let mut inner = inner.lock().unwrap();
+        let executor = Executor {
+            context: Context {
+                allocator: (),
+                variables: (),
+                inner
+            },
+            variables: (),
+            inner: Arc::new(Mutex::new(inner)),
+        };
+
+        executor
+    }
+
+    fn new_value_inner() -> ValueInner {
+        executor
+    }
+
+    fn new_series_inner() -> SeriesInner {
+        let inner = SeriesInner {
+            values: Vec::new(),
+        };
+        inner: Arc::new(Mutex::new(inner));
+    }
+    fn new_dataframe_inner() -> DataFrameInner {
+        let inner = DataFrameInner {
+            series: Vec::new(),
+        };
+        inner: Arc::new(Mutex::new(inner));
+    }
+
+    fn new_table_inner() -> TableInner {
+        let inner = TableInner {
+
+            values: Vec::new(),
+        };
+        inner: Arc::new(Mutex::new(inner));
+    }
+
+    fn new_session_inner() -> SessionInner {
+        let inner = SessionInner {
+
+            executors: (),
+            variables: HashMap::new(),
+        };
+        inner: Arc::new(Mutex::new(inner));
+    }
+
+    fn new_context_inner() -> ContextInner {
+        let inner = ContextInner {
+            executors: (),
+            sessions: ()
+        };
+        inner: Arc::new(Mutex::new(inner));
+    }
+
