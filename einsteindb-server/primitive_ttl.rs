@@ -17,6 +17,31 @@ use std::{
     ops::{Deref, DerefMut},
     sync::{Arc, Mutex},
 };
+use crate::fdb_traits::FdbTrait;
+use crate::fdb_traits::FdbTraitImpl;
+
+
+#[derive(Debug, Default)]
+pub struct TtlGreedoids {
+    pub max_expire_ts: u64,
+    pub min_expire_ts: u64,
+}
+
+
+
+
+pub trait TtlGreedoidsExt {
+    fn get_range_ttl_greedoids_namespaced(
+        &self,
+        namespaced: &str,
+        start_soliton_id: &[u8],
+        end_soliton_id: &[u8],
+    ) -> Result<Vec<(String, TtlGreedoids)>>;
+}
+
+
+
+
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PrimitiveTtl {
@@ -38,10 +63,37 @@ impl PrimitiveTtl {
 
 
 impl Display for PrimitiveTtl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+
+impl Deref for PrimitiveTtl {
+    type Target = Value;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+
+
+
+impl Display for PrimitiveTtl {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", pretty::render(&self))
     }
 }
+
+
+impl DerefMut for PrimitiveTtl {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.value
+    }
+}
+
+
 
 
 

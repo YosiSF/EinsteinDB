@@ -8,6 +8,128 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
+use std::fmt::{
+    Display,
+    Formatter,
+    Write,
+};
+
+
+use std::{
+    collections::HashMap,
+    fmt::{self, Display},
+    io,
+    convert::{TryFrom, TryInto},
+    ops::{Deref, DerefMut},
+    sync::{Arc, Mutex},
+};
+
+
+use pretty::{
+    BoxAllocator,
+    Doc,
+    DocBuilder,
+    DocIter,
+    DocWriter,
+    Line,
+    LineWriter,
+    Pretty,
+    RenderMode,
+    RenderSpan,
+    Spanned,
+    SpannedIter,
+    SpannedWriter,
+    SpannedWriterIter,
+    Span,
+    SpanIter,
+    SpanWriter,
+    SpanWriterIter,
+    StyledDoc,
+    StyledDocBuilder,
+    StyledDocIter,
+    StyledDocWriter,
+    StyledLine,
+    StyledLineWriter,
+    StyledSpanned,
+    StyledSpannedIter,
+    StyledSpannedWriter,
+    StyledSpannedWriterIter,
+    StyledSpan,
+    StyledSpanIter,
+    StyledSpanWriter,
+    StyledSpanWriterIter,
+    StyledWriteMode,
+};
+
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::{Duration, Instant};
+use std::{cmp, u64};
+
+
+use fdb_traits::Result;
+
+
+#[derive(Debug, Clone)]
+pub struct CompactOptions {
+    pub tombstone_threshold: u64,
+    pub tombstone_compaction_interval: u64,
+    pub tombstone_compaction_threshold: u64,
+    pub block_size: u64,
+    pub block_cache_size: u64,
+    pub block_cache_shard_bits: u8,
+    pub enable_bloom_filter: bool,
+    pub enable_indexing: bool,
+    pub index_block_size: u64,
+    pub index_block_cache_size: u64,
+    pub index_block_cache_shard_bits: u8,
+    pub index_block_restart_interval: u64,
+    pub compression_type: String,
+}
+
+
+#[derive(Debug, Clone)]
+pub struct Compaction {
+    pub start_time: Instant,
+    pub end_time: Instant,
+    pub duration: Duration,
+    pub input_files: Vec<String>,
+    pub output_files: Vec<String>,
+    pub input_bytes: u64,
+    pub output_bytes: u64,
+    pub input_records: u64,
+    pub output_records: u64,
+    pub input_deletions: u64,
+    pub output_deletions: u64,
+    pub input_corruptions: u64,
+    pub output_corruptions: u64,
+    pub input_compression_type: String,
+    pub output_compression_type: String,
+    pub input_compression_ratio: f64,
+    pub output_compression_ratio: f64,
+    pub input_compression_size: u64,
+    pub output_compression_size: u64,
+    pub input_compression_time: Duration,
+    pub output_compression_time: Duration,
+    pub input_index_size: u64,
+    pub output_index_size: u64,
+    pub input_index_compression_size: u64,
+    pub output_index_compression_size: u64,
+    pub input_index_compression_time: Duration,
+    pub output_index_compression_time: Duration,
+    pub input_index_records: u64,
+    pub output_index_records: u64,
+    pub input_index_deletions: u64,
+    pub output_index_deletions: u64,
+    pub input_index_corruptions: u64,
+    pub output_index_corruptions: u64,
+    pub input_index_compression_type: String,
+    pub output_index_compression_type: String,
+    pub input_index_compression_ratio: f64,
+    pub output_index_compression_ratio: f64,
+}
+
 
 #[macro_export]
 macro_rules! einsteindb_macro {
@@ -65,63 +187,7 @@ macro_rules! einsteindb_macro {
         }
     }
 
-
-
-use std::fmt::{
-    Display,
-    Formatter,
-    Write,
-};
-
-
-use std::{
-    collections::HashMap,
-    fmt::{self, Display},
-    io,
-    convert::{TryFrom, TryInto},
-    ops::{Deref, DerefMut},
-    sync::{Arc, Mutex},
-};
-
-
-use pretty::{
-    BoxAllocator,
-    Doc,
-    DocBuilder,
-    DocIter,
-    DocWriter,
-    Line,
-    LineWriter,
-    Pretty,
-    RenderMode,
-    RenderSpan,
-    Spanned,
-    SpannedIter,
-    SpannedWriter,
-    SpannedWriterIter,
-    Span,
-    SpanIter,
-    SpanWriter,
-    SpanWriterIter,
-    StyledDoc,
-    StyledDocBuilder,
-    StyledDocIter,
-    StyledDocWriter,
-    StyledLine,
-    StyledLineWriter,
-    StyledSpanned,
-    StyledSpannedIter,
-    StyledSpannedWriter,
-    StyledSpannedWriterIter,
-    StyledSpan,
-    StyledSpanIter,
-    StyledSpanWriter,
-    StyledSpanWriterIter,
-    StyledWriteMode,
-};
-
-
-
+#[macro_export]
 
 
 
@@ -357,4 +423,27 @@ fn test_ns_soliton_idword_macro() {
                Keyword::isoliton_namespaceable("test", "name").to_string());
     assert_eq!(ns_soliton_idword!("ns", "_name").to_string(),
                Keyword::isoliton_namespaceable("ns", "_name").to_string());
+}
+
+
+#[test]
+fn test_keyword_macro() {
+    assert_eq!(kw!("test").to_string(), Keyword::plain("test").to_string());
+    assert_eq!(kw!("ns", "name").to_string(), Keyword::isoliton_namespaceable("ns", "name").to_string());
+    assert_eq!(kw!("ns", "_name").to_string(), Keyword::isoliton_namespaceable("ns", "_name").to_string());
+}
+
+
+#[test]
+fn test_keyword_macro_reversed() {
+    assert_eq!(kw!("test").to_reversed().to_string(), Keyword::plain("test").to_reversed().to_string());
+    assert_eq!(kw!("ns", "name").to_reversed().to_string(), Keyword::isoliton_namespaceable("ns", "name").to_reversed().to_string());
+    assert_eq!(kw!("ns", "_name").to_reversed().to_string(), Keyword::isoliton_namespaceable("ns", "_name").to_reversed().to_string());
+}
+
+#[test]
+fn test_keyword_macro_unreversed() {
+    assert_eq!(kw!("test").unreversed().unwrap().to_string(), Keyword::plain("test").to_string());
+    assert_eq!(kw!("ns", "name").unreversed().unwrap().to_string(), Keyword::isoliton_namespaceable("ns", "name").to_string());
+    assert_eq!(kw!("ns", "_name").unreversed().unwrap().to_string(), Keyword::isoliton_namespaceable("ns", "_name").to_string());
 }
