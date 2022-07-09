@@ -293,42 +293,17 @@ fn eval_box(&self) -> Result<Box<ScalarValue>> {
     /// # use tidb_query_datatype::Evaluable;
 
 
-
     #[inline]
-    pub fn as_scalar_causet_locale_ref(&self) -> ScalarValueRef<'_> {
-        match self {
-            ScalarValue::Int(v) => ScalarValueRef::Int(v),
-            ScalarValue::Duration(x) => ScalarValueRef::Duration(x.as_ref()),
-            ScalarValue::DateTime(x) => ScalarValueRef::DateTime(x.as_ref()),
-            ScalarValue::Real(x) => ScalarValueRef::Real(x.as_ref()),
-            ScalarValue::Decimal(x) => ScalarValueRef::Decimal(x.as_ref()),
-            ScalarValue::Bytes(x) => ScalarValueRef::Bytes(x.as_ref().map(|x| x.as_slice())),
-            ScalarValue::Json(x) => ScalarValueRef::Json(x.as_ref().map(|x| x.as_ref())),
-        }
-    }
-
-    #[inline]
-    pub fn is_none(&self) -> bool {
+    fn eval_option(&self) -> Result<Option<ScalarValue>> {
         match_template_evaluable! {
             TT, match self {
-                ScalarValue::TT(v) => v.is_none(),
-            }
-
-
-
-    #[inline]
-    pub fn is_some(&self) -> bool {
-        match_template_evaluable! {
-            TT, match self {
-                ScalarValue::TT(v) => v.is_some(),
+                ScalarValue::TT(v) => Ok(ScalarValue::TT(v.eval_option()?)),
             }
         }
-    }
-}
 
         impl AsMyBerolinaSQLBool for ScalarValue {
             #[inline]
-            fn as_myBerolinaSQL_bool(&self, context: &mut EvalContext) -> Result<bool> {
+            fn as_my_berolina_sql_bool(&self, context: &mut EvalContext) -> Result<bool> {
                 match_template_evaluable! {
             TT, match self {
                 ScalarValue::TT(v) => v.as_ref().as_myBerolinaSQL_bool(context),
@@ -786,10 +761,17 @@ fn eval_box(&self) -> Result<Box<ScalarValue>> {
             }
         }
             }
+        }
+    }
+}
 
-            impl<'a> PartialEq for ScalarValueRef<'a> {
-                fn eq(&self, other: &Self) -> bool {
-                    match_template_evaluable! {
+
+impl ScalarValue {
+    #[inline]
+    pub fn eval_type(&self) -> EvalType {
+        impl<'a> PartialEq for ScalarValueRef<'a> {
+            fn eq(&self, other: &Self) -> bool {
+                match_template_evaluable! {
             TT, match (self, other) {
                 (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.eq(causet_record),
                 (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.eq(causet_record),
@@ -808,20 +790,135 @@ fn eval_box(&self) -> Result<Box<ScalarValue>> {
         }
 
 
-                    impl ScalarValue {
-                        pub fn eval_type(&self) -> EvalType {
-                            match self {
-                                ScalarValue::Int(_) => EvalType::Int,
-                                ScalarValue::Real(_) => EvalType::Real,
-                                ScalarValue::Decimal(_) => EvalType::Decimal,
-                                ScalarValue::DateTime(_) => EvalType::DateTime,
-                                ScalarValue::Duration(_) => EvalType::Duration,
-                                ScalarValue::Json(_) => EvalType::Json,
-                                ScalarValue::Bytes(_) => EvalType::Bytes,
-                            }
+                impl ScalarValue {
+                    pub fn eval_type(&self) -> EvalType {
+                        match self {
+                            ScalarValue::Int(_) => EvalType::Int,
+                            ScalarValue::Real(_) => EvalType::Real,
+                            ScalarValue::Decimal(_) => EvalType::Decimal,
+                            ScalarValue::DateTime(_) => EvalType::DateTime,
+                            ScalarValue::Duration(_) => EvalType::Duration,
+                            ScalarValue::Json(_) => EvalType::Json,
+                            ScalarValue::Bytes(_) => EvalType::Bytes,
                         }
+                    }
 
-                        pub fn eval_type_as_accessor(&self) -> EvalTypeAccessor {
+                    pub fn as_int(&self) -> Option<i64> {
+                        match self {
+                            ScalarValue::Int(v) => *v,
+                            other => panic!(
+                                "Cannot cast {} scalar causet_locale into {}",
+                                other.eval_type(),
+                                stringify!(Int),
+                            ),
+                        }
+                    }
+
+                    pub fn as_real(&self) -> Option<f64> {
+                        match self {
+                            ScalarValue::Real(v) => *v,
+                            other => panic!(
+                                "Cannot cast {} scalar causet_locale into {}",
+                                other.eval_type(),
+                                stringify!(Real),
+                            ),
+                        }
+                    }
+
+                    pub fn as_decimal(&self) -> Option<Decimal> {
+                        match self {
+                            ScalarValue::Decimal(v) => *v,
+                            other => panic!(
+                                "Cannot cast {} scalar causet_locale into {}",
+                                other.eval_type(),
+                                stringify!(Decimal),
+                            ),
+                        }
+                    }
+
+                    pub fn as_datetime(&self) -> Option<DateTime> {
+                        match self {
+                            ScalarValue::DateTime(v) => *v,
+                            other => panic!(
+                                "Cannot cast {} scalar causet_locale into {}",
+                                other.eval_type(),
+                                stringify!(DateTime),
+                            ),
+                        }
+                    }
+
+                    pub fn as_duration(&self) -> Option<Duration> {
+                        match self {
+                            ScalarValue::Duration(v) => *v,
+                            other => panic!(
+                                "Cannot cast {} scalar causet_locale into {}",
+                                other.eval_type(),
+                                stringify!(Duration),
+                            ),
+                        }
+                    }
+
+                    pub fn as_json(&self) -> Option<Json> {
+                        match self {
+                            ScalarValue::Json(v) => *v,
+                            other => panic!(
+                                "Cannot cast {} scalar causet_locale into {}",
+                                other.eval_type(),
+                                stringify!(Json),
+                            ),
+                        }
+                    }
+
+                    pub fn as_bytes(&self) -> Option<Bytes> {
+                        match self {
+                            ScalarValue::Bytes(v) => *v,
+                            other => panic!(
+                                "Cannot cast {} scalar causet_locale into {}",
+                                other.eval_type(),
+                                stringify!(Bytes),
+                            ),
+                        }
+                    }
+
+                    pub fn as_string(&self) -> Option<String> {
+                        match self {
+                            ScalarValue::Bytes(v) => v.map(|v| v.to_string_lossy().to_string()),
+                            other => panic!(
+                                "Cannot cast {} scalar causet_locale into {}",
+                                other.eval_type(),
+                                stringify!(String),
+                            ),
+                        }
+                    }
+                }
+
+                impl<'a> PartialOrd for ScalarValueRef<'a> {
+                    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+                        match_template_evaluable! {
+        TT, match (self, other) {
+
+            (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.partial_cmp(causet_record),
+            (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.partial_cmp(causet_record),
+            (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => Some(Ordering::Equal),
+            (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => Some(Ordering::Greater),
+            (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => Some(Ordering::Less),
+            (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
+                match_template_collator! {
+                    TT, match field_type.collation()? {
+                        Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record)?
+                    }
+                }
+            }
+
+            _ => panic!("Cannot compare two ScalarValueRef in different type"),
+        }
+            }
+                    }
+                }
+
+                impl<'a> PartialEq for ScalarValueRef<'a> {
+                    fn eq(&self) -> bool {
+                        match_template_evaluable! {
                             match self {
                                 ScalarValue::Int(_) => EvalTypeAccessor::Int,
                                 ScalarValue::Real(_) => EvalTypeAccessor::Real,
@@ -833,31 +930,144 @@ fn eval_box(&self) -> Result<Box<ScalarValue>> {
                             }
                         }
 
-                        pub fn eval_type_as_accessor_as_ref(&self) -> EvalTypeAccessorRef {
-                            match self {
-                                ScalarValue::Int(_) => EvalTypeAccessorRef::Int,
-                                ScalarValue::Real(_) => EvalTypeAccessorRef::Real,
-                                ScalarValue::Decimal(_) => EvalTypeAccessorRef::Decimal,
-                                ScalarValue::DateTime(_) => EvalTypeAccessorRef::DateTime,
-                                ScalarValue::Duration(_) => EvalTypeAccessorRef::Duration,
-                                ScalarValue::Json(_) => EvalTypeAccessorRef::Json,
-                                ScalarValue::Bytes(_) => EvalTypeAccessorRef::Bytes,
-                            }
-                        }
+                        match_template_evaluable! {
+        TT, match (self, other) {
 
-                        pub fn eval_type_as_accessor_as_ref_as_ref(&self) -> EvalTypeAccessorRefRef {
-                            match self {
-                                ScalarValue::Int(_) => EvalTypeAccessorRefRef::Int,
-                                ScalarValue::Real(_) => EvalTypeAccessorRefRef::Real,
-                                ScalarValue::Decimal(_) => EvalTypeAccessorRefRef::Decimal,
-                                ScalarValue::DateTime(_) => EvalTypeAccessorRefRef::DateTime,
-                                ScalarValue::Duration(_) => EvalTypeAccessorRefRef::Duration,
-                                ScalarValue::Json(_) => EvalTypeAccessorRefRef::Json,
-                                ScalarValue::Bytes(_) => EvalTypeAccessorRefRef::Bytes,
-                            }
+                (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.eq(causet_record),
+                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => true,
+                (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => false,
+                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => false,
+                (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
+                    match_template_collator! {
+                        TT, match field_type.collation()? {
+                            Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record)?
                         }
                     }
                 }
+
+                _ => panic!("Cannot compare two ScalarValueRef in different type"),
+            }
+                }
+                    }
+
+                    impl<'a> fmt::Display for ScalarValueRef<'a> {
+                        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                            match_template_evaluable! {
+        TT, match self {
+            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
+            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
+        }
+            }
+                        }
+                    }
+                }
+
+                impl<'a> fmt::Debug for ScalarValueRef<'a> {
+                    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                        match_template_evaluable! {
+        TT, match self {
+            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
+            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
+        }
+            }
+                    }
+                }
+            }
+
+            impl<'a> fmt::Display for ScalarValueRef<'a> {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    match_template_evaluable! {
+        TT, match self {
+            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
+            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
+        }
+            }
+                }
+            }
+        }
+    }   // end of mod scalar_value
+}// end of mod causet_locale
+
+
+mod causet_record {
+    use super::*;
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetRecord {
+    pub id: i64,
+    pub data: Vec<u8>,
+}
+
+    impl CausetRecord {
+        pub fn new(id: i64, data: Vec<u8>) -> Self {
+            CausetRecord {
+                id,
+                data,
+            }
+        }
+    }
+
+    impl fmt::Display for CausetRecord {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "CausetRecord(id: {}, data: {:?})", self.id, self.data)
+        }
+    }
+
+    impl fmt::Debug for CausetRecord {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "CausetRecord(id: {}, data: {:?})", self.id, self.data)
+        }
+
+        fn fmt_debug(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "CausetRecord(id: {}, data: {:?})", self.id, self.data)
+        }
+    }
+
+    impl PartialEq for CausetRecord {
+                impl<'a> fmt::Display for ScalarValueRef<'a> {
+                    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                        match_template_evaluable! {
+        TT, match self {
+            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
+            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
+        }
+            }
+                }
+            }
+
+        impl<'a> fmt::Display for ScalarValueRef<'a> {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                match_template_evaluable! {
+        TT, match self {
+            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
+            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
+        }
+            }
+        }
+    }
+
+
+        impl<'a> fmt::Debug for ScalarValueRef<'a> {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                match_template_evaluable! {
+        TT, match self {
+            ScalarValueRef::TT(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Int(EINSTEIN_DB) => EINSTEIN_DB.fmt(f),
+            ScalarValueRef::Bytes(None) => write!(f, "NULL"),
+            ScalarValueRef::Bytes(Some(EINSTEIN_DB)) => EINSTEIN_DB.fmt(f),
+        }
             }
         }
     }
