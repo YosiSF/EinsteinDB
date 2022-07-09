@@ -17,6 +17,29 @@ pub struct ScalarValueClone<T: Clone> {
     pub field_type: FieldType,
 }
 
+
+impl<T: Clone> ScalarValueClone<T> {
+    pub fn new(value: Option<ScalarValueRef>, field_type: FieldType) -> Self {
+        ScalarValueClone {
+            value,
+            field_type,
+        }
+    }
+}
+
+
+impl<T: Clone> Clone for ScalarValueClone<T> {
+    fn clone(&self) -> Self {
+        ScalarValueClone {
+            value: self.value.clone(),
+            field_type: self.field_type.clone(),
+        }
+    }
+}
+
+
+
+
 /// A scalar causet_locale container, a.k.a. datum, for all concrete eval types.
 ///
 /// In many cases, for example, at the framework level, the concrete eval type is unCausetLocaleNucleon at compile
@@ -97,6 +120,72 @@ pub enum ScalarValue {
     Date(Option<super::Date>),
     //Spanner
 }
+
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ScalarValueRef {
+    Int(super::Int),
+    Real(super::Real),
+    Decimal(super::Decimal),
+    Bytes(super::Bytes),
+    DateTime(super::DateTime),
+    Duration(super::Duration),
+    Json(super::Json),
+    Enum(super::Enum),
+    Set(super::Set),
+    //PostgresQL
+    Bit(super::Bit),
+    //PostgresQL
+    Uuid(super::Uuid),
+    //PostgresQL
+    Inet(super::Inet),
+    //PostgresQL
+    Time(super::Time),
+    //PostgresQL
+    TimeStamp(super::TimeStamp),
+    //PostgresQL
+    TimeStampTz(super::TimeStampTz),
+    //PostgresQL
+    Interval(super::Interval),
+    //PostgresQL
+    Null,
+    //PostgresQL
+    Jsonb(super::Jsonb),
+    //sqlite
+    Blob(super::Blob),
+    //sqlite
+    Text(super::Text),
+    //sqlite
+    Nullable(ScalarValueRef),
+    //FOUNDATIONDB
+    Bool(super::Bool),
+    //FOUNDATIONDB
+    Float(super::Float),
+    //FOUNDATIONDB
+    Double(super::Double),
+    //FOUNDATIONDB
+    FixedLenByteArray(super::FixedLenByteArray),
+    //FOUNDATIONDB
+    VarLenByteArray(super::VarLenByteArray),
+    //FOUNDATIONDB
+    TimeStampMicros(super::TimeStampMicros),
+    //FOUNDATIONDB
+    TimeStampMillis(super::TimeStampMillis),
+    //FOUNDATIONDB
+    TimeStampSeconds(super::TimeStampSeconds),
+    //FOUNDATIONDB
+    TimeStampNanos(super::TimeStampNanos),
+    //FOUNDATIONDB
+    DecimalVar(super::DecimalVar),
+    //FOUNDATIONDB
+    DecimalFixed(super::DecimalFixed),
+    //FOUNDATIONDB_RECORD_LAYER_VERSION_REF
+    DurationVar(super::DurationVar),
+}
+
+
+
 
 impl ScalarValue {
     pub fn new_int(v: Option<super::Int>) -> Self {
@@ -312,6 +401,39 @@ fn eval_box(&self) -> Result<Box<ScalarValue>> {
             }
         }
 
+        impl AsMyBerolinaSQLInt for ScalarValue {
+            #[inline]
+            fn as_my_berolina_sql_int(&self, context: &mut EvalContext) -> Result<i64> {
+                match_template_evaluable! {
+            TT, match self {
+                ScalarValue::TT(v) => v.as_ref().as_myBerolinaSQL_int(context),
+            }
+        }
+            }
+        }
+
+        impl AsMyBerolinaSQLUInt for ScalarValue {
+            #[inline]
+            fn as_my_berolina_sql_uint(&self, context: &mut EvalContext) -> Result<u64> {
+                match_template_evaluable! {
+            TT, match self {
+                ScalarValue::TT(v) => v.as_ref().as_myBerolinaSQL_uint(context),
+            }
+        }
+            }
+        }
+
+        impl AsMyBerolinaSQLFloat for ScalarValue {
+            #[inline]
+            fn as_my_berolina_sql_float(&self, context: &mut EvalContext) -> Result<f64> {
+                match_template_evaluable! {
+            TT, match self {
+                ScalarValue::TT(v) => v.as_ref().as_myBerolinaSQL_float(context),
+            }
+        }
+            }
+        }
+
         macro_rules! impl_from {
     ($ty:tt) => {
         impl From<Option<$ty>> for ScalarValue {
@@ -344,6 +466,14 @@ fn eval_box(&self) -> Result<Box<ScalarValue>> {
     };
 }
 
+        impl_from!(i64);
+        impl_from!(u64);
+        impl_from!(f64);
+        impl_from!(String);
+        impl_from!(Bytes);
+        impl_from!(DateTime);
+        impl_from!(TimeStamp);
+        impl_from!(TimeStampMillis);
         impl_from!(Int);
         impl_from!(Duration);
         impl_from!(DateTime);
@@ -764,74 +894,3 @@ fn eval_box(&self) -> Result<Box<ScalarValue>> {
         }
     }
 }
-
-
-#[cfg(test)]
-impl ScalarValue {
-    #[inline]
-    pub fn eval_type(&self) -> EvalType {
-        impl<'a> PartialEq for ScalarValueRef<'a> {
-            fn eq(&self, other: &Self) -> bool {
-                match_template_evaluable! {
-            TT, match (self, other) {
-                (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => true,
-                (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => false,
-                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => false,
-                (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
-                    match_template_collator! {
-                        TT, match field_type.collation()? {
-                            Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record)?
-                        }
-                    }
-}
-                (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
-                    match_template_collator! {
-                        TT, match field_type.collation()? {
-                            Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record)?
-                        }
-                    }
-
-                (ScalarValueRef::Real(EINSTEIN_DB), ScalarValueRef::Real(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Decimal(EINSTEIN_DB), ScalarValueRef::Decimal(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::DateTime(EINSTEIN_DB), ScalarValueRef::DateTime(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Duration(EINSTEIN_DB), ScalarValueRef::Duration(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Json(EINSTEIN_DB), ScalarValueRef::Json(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Bytes(EINSTEIN_DB), ScalarValueRef::Bytes(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Real(EINSTEIN_DB), ScalarValueRef::Real(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Decimal(EINSTEIN_DB), ScalarValueRef::Decimal(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::DateTime(EINSTEIN_DB), ScalarValueRef::DateTime(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                            }
-                }
-                (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                    }
-            bool {
-                match_template_evaluable! {
-            TT, match (self, other) {
-                (ScalarValueRef::TT(EINSTEIN_DB), ScalarValueRef::TT(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Int(EINSTEIN_DB), ScalarValueRef::Int(causet_record)) => EINSTEIN_DB.eq(causet_record),
-                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(None)) => true,
-                (ScalarValueRef::Bytes(Some(_)), ScalarValueRef::Bytes(None)) => false,
-                (ScalarValueRef::Bytes(None), ScalarValueRef::Bytes(Some(_))) => false,
-                (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
-                match_template_collator ! {
-                TT, match field_type.collation() ? {
-                Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record) ?
-                }
-                }
-                }
-                (ScalarValueRef::Bytes(Some(EINSTEIN_DB)), ScalarValueRef::Bytes(Some(causet_record))) => {
-                match_template_collator ! {
-                TT, match field_type.collation() ? {
-                Collation::TT => TT::sort_compare(EINSTEIN_DB, causet_record) ?
-                }
-
-                }
-                }
-                }
-        }
-    }
-}
-
-
