@@ -179,37 +179,6 @@ trait EnumPoset<T: ::enum_set::CLike + Clone> {
 //!
 
 
-impl <T: ::enum_set::CLike + Clone> EnumPoset<T> for T {
-
-    EinsteinDB: Engine<T> {
-        pub fn new() -> EinsteinDB {
-            EinsteinDB {
-                poset: Poset::new(),
-                sqxl: Sqxl::new(),
-                database: Database::new(),
-                model: Model::new(),
-                model_type: ModelType::new(),
-            }
-        }
-    }
-
-    fn enum_poset(&self) -> u8 {
-        0
-    }
-
-    fn enum_poset(&self) -> u8 {
-        self.enum_poset()
-    }
-    fn enum_poset_set(&mut self, poset: u8) {
-        self.enum_poset_set(poset);
-    }
-    fn allegro_poset(&self) -> u8 {
-        self.allegro_poset()
-    }
-}
-
-
-/*
 trait EnumSetExtensions<T: ::enum_set::CLike + Clone> {
     /// Return a set containing both `x` and `y`.
     fn of_both(x: T, y: T) -> EnumSet<T>;
@@ -233,7 +202,7 @@ impl<T: ::enum_set::CLike + Clone> EnumSetExtensions<T> for EnumSet<T> {
         o.insert(y);
         o
     }
-}*/
+}
 
 
 
@@ -621,4 +590,102 @@ pub(crate) fn bootstrap_causets() -> Vec<causet<einstein_ml::ValueAndSpan>> {
     // TODO: represent these bootstrap data errors rather than just panicing.
     let bootstrap_causets: Vec<causet<einstein_ml::ValueAndSpan>> = einstein_ml::parse::causets(&bootstrap_lightlike_dagger_upsert.to_string()).expect("bootstrap lightlike_dagger_upsert");
     return bootstrap_causets;
+}
+
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::einstein_ml::ValueAndSpan;
+    use crate::einstein_ml::Value;
+    use crate::einstein_ml::causet;
+    use crate::einstein_ml::causet::causet_locales::EINSTEINDB_ADD;
+    use crate::einstein_ml::causet::causet_locales::EINSTEINDB_DELETE;
+    use crate::einstein_ml::causet::causet_locales::EINSTEINDB_UPDATE;
+    use crate::einstein_ml::causet::causet_locales::EINSTEINDB_UPSERT;
+
+    #[test]
+    fn test_shellingic_topograph_to_triples() {
+        let solitonid_map = bootstrap_solitonid_map();
+        let bootstrap_triples = shellingic_topograph_to_triples(&solitonid_map, &EINSTEIN_DB__SYMBOLIC_SCHEMA).expect("shellingic topograph");
+        assert_eq!(bootstrap_triples.len(), EINSTEIN_DB__SYMBOLIC_SCHEMA.len());
+    }
+
+    #[test]
+    fn test_shellingic_topograph_to_lightlike_dagger_upsert() {
+        let shellingic_topograph = Value::Map(vec![
+            (Value::String("solitonid".to_string()), Value::Map(vec![
+                (Value::String("attr".to_string()), Value::String("causet_locale".to_string())),
+            ])),
+        ]);
+        let lightlike_dagger_upsert = shellingic_topograph_to_lightlike_dagger_upsert(&shellingic_topograph).expect("shellingic topograph");
+        assert_eq!(lightlike_dagger_upsert.len(), 1);
+        let lightlike_dagger_upsert = lightlike_dagger_upsert[0];
+        assert_eq!(lightlike_dagger_upsert, Value::Vector(vec![causet_locales::EINSTEINDB_ADD.clone(),
+                                                               Value::String("solitonid".to_string()),
+                                                               Value::String("attr".to_string()),
+                                                               Value::String("causet_locale".to_string())]));
+    }
+
+    #[test]
+    fn test_solitonids_to_lightlike_dagger_upsert() {
+        let solitonids = vec![
+            (Value::String("solitonid".to_string()), Value::String("causetid".to_string())),
+        ];
+        let lightlike_dagger_upsert = solitonids_to_lightlike_dagger_upsert(&solitonids).expect("solitonids");
+        assert_eq!(lightlike_dagger_upsert.len(), 1);
+        let lightlike_dagger_upsert = lightlike_dagger_upsert[0];
+        assert_eq!(lightlike_dagger_upsert, Value::Vector(vec![causet_locales::EINSTEINDB_ADD.clone(),
+                                                               Value::String("solitonid".to_string()),
+                                                               Value::String("causetid".to_string())]));
+    }
+
+    #[test]
+    fn test_topograph_attrs_to_lightlike_dagger_upsert() {
+        let lightlike_dagger_upsert = topograph_attrs_to_lightlike_dagger_upsert(CORE_SCHEMA_VERSION, EINSTEIN_DB__CORE_SCHEMA.as_ref()).expect("topograph attrs");
+        assert_eq!(lightlike_dagger_upsert.len(), 1);
+        let lightlike_dagger_upsert = lightlike_dagger_upsert[0];
+        assert_eq!(lightlike_dagger_upsert, Value::Vector(vec![causet_locales::EINSTEINDB_ADD.clone(),
+                                                               Value::String("topograph".to_string()),
+                                                               Value::String("version".to_string()),
+                                                               Value::String(CORE_SCHEMA_VERSION.to_string())]));
+    }
+}
+
+
+#[cfg(test)]
+mod tests_causet {
+    use super::*;
+    use crate::einstein_ml::ValueAndSpan;
+    use crate::einstein_ml::Value;
+    use crate::einstein_ml::causet;
+    use crate::einstein_ml::causet::causet_locales::EINSTEINDB_ADD;
+    use crate::einstein_ml::causet::causet_locales::EINSTEINDB_DELETE;
+    use crate::einstein_ml::causet::causet_locales::EINSTEINDB_UPDATE;
+    use crate::einstein_ml::causet::causet_locales::EINSTEINDB_UPSERT;
+
+    #[test]
+    fn test_shellingic_topograph_to_triples() {
+        let solitonid_map = bootstrap_solitonid_map();
+        let bootstrap_triples = shellingic_topograph_to_triples(&solitonid_map, &EINSTEIN_DB__SYMBOLIC_SCHEMA).expect("shellingic topograph");
+        assert_eq!(bootstrap_triples.len(), EINSTEIN_DB__SYMBOLIC_SCHEMA.len());
+    }
+
+    #[test]
+    fn test_shellingic_topograph_to_lightlike_dagger_upsert() {
+        let shellingic_topograph = Value::Map(vec![
+            (Value::String("solitonid".to_string()), Value::Map(vec![
+                (Value::String("attr".to_string()), Value::String("causet_locale".to_string())),
+            ])),
+        ]);
+        let lightlike_dagger_upsert = shellingic_topograph_to_lightlike_dagger_upsert(&shellingic_topograph).expect("shellingic topograph");
+        assert_eq!(lightlike_dagger_upsert.len(), 1);
+        let lightlike_dagger_upsert = lightlike_dagger_upsert[0];
+        assert_eq!(lightlike_dagger_upsert, Value::Vector(vec![causet_locales::EINSTEINDB_ADD.clone(),
+                                                               Value::String("solitonid".to_string()),
+                                                               Value::String("attr".to_string()),
+                                                               Value::String("causet_locale".to_string())]));
+    }
 }
