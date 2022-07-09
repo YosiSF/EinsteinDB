@@ -69,6 +69,108 @@ use crate::{
 
 
 
+
+/// A macro for defining a `Result` with a custom error type.
+/// This is similar to the `?` operator in Rust, but it allows you to define a
+/// custom error type.
+/// This macro is borrowed from the `failure` crate.
+/// See [`failure`](https://crates.io/crates/failure) for more information.
+/// # Example
+/// ```
+/// #[macro_use]
+/// extern crate failure;
+/// #[macro_use]
+/// extern crate failure_derive;
+/// #[macro_use]
+/// extern crate soliton_panic;
+///
+/// #[macro_use]
+/// extern crate soliton;
+/// #[macro_use]
+/// extern crate lazy_static;
+/// #[macro_use]
+/// extern crate soliton_derive;
+///
+///
+
+
+
+#[macro_export]
+macro_rules! soliton_derive {
+    ($name:ident) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+        pub struct $name {
+            pub name: String,
+            pub value: Value,
+            pub ttl: i64,
+        }
+        impl $name {
+            pub fn new(name: String, value: Value, ttl: i64) -> Self {
+                $name {
+                    name,
+                    value,
+                    ttl,
+                }
+            }
+        }
+        impl Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "{}", self.name)
+            }
+        }
+        impl Deref for $name {
+            type Target = Value;
+            fn deref(&self) -> &Self::Target {
+                &self.value
+            }
+        }
+        impl DerefMut for $name {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.value
+            }
+        }
+    };
+}
+
+
+#[macro_export]
+macro_rules! soliton_panic {
+    ($name:ident) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+        pub struct $name {
+            pub name: String,
+            pub value: Value,
+            pub ttl: i64,
+        }
+        impl $name {
+            pub fn new(name: String, value: Value, ttl: i64) -> Self {
+                $name {
+                    name,
+                    value,
+                    ttl,
+                }
+            }
+        }
+        impl Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, "{}", self.name)
+            }
+        }
+        impl Deref for $name {
+            type Target = Value;
+            fn deref(&self) -> &Self::Target {
+                &self.value
+            }
+        }
+        impl DerefMut for $name {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.value
+            }
+        }
+    };
+}
+
+
 pub struct TxObserver {
     pub schema: Schema,
     pub transaction: Transaction,
@@ -92,8 +194,8 @@ impl TxObserver {
         }
     }
 
-    pub fn causet_query(&self) -> CausetQuery {
-        CausetQueryBuilderImpl::new(self).build()
+    pub fn causet_query(&self) -> &CausetQuery {
+        &self.causet_query
     }
 
     pub fn causetq_query(&self) -> CausetqQuery {
@@ -117,7 +219,7 @@ impl TxObserver {
         (self.notify_fn)(query, attributes);
     }
 
-    pub fn notify_with_params(&self, query: &str, attributes: AttributeSet, params: IndexMap<&Causetid, &AttributeSet>) {
+    pub fn notify_with_params(&self, query: &str, attributes: AttributeSet) {
         (self.notify_fn)(query, attributes);
     }
 
@@ -320,7 +422,7 @@ impl Command for TxCommand {
 
 pub struct TxObservationService {
     observers: Arc<IndexMap<String, Arc<TxObserver>>>,
-    executor: Option<Sender<Box<Command + Send>>>,
+    executor: Option<Sender<Box<dyn Command + Send>>>,
 }
 
 impl TxObservationService {
@@ -355,7 +457,7 @@ impl TxObservationService {
         }
 
         let executor = self.executor.get_or_insert_with(|| {
-            let (tx, rx): (Sender<Box<Command + Send>>, Receiver<Box<Command + Send>>) = channel();
+            let (tx, rx): (Sender<Box<dyn Command + Send>>, Receiver<Box<dyn Command + Send>>) = channel();
             let mut worker = CommandExecutor::new(rx);
 
             thread::spawn(move || {
@@ -403,11 +505,11 @@ impl TransactWatcher for InProgressObserverTransactWatcher {
 }
 
 struct CommandExecutor {
-    receiver: Receiver<Box<Command + Send>>,
+    receiver: Receiver<Box<dyn Command + Send>>,
 }
 
 impl CommandExecutor {
-    fn new(rx: Receiver<Box<Command + Send>>) -> Self {
+    fn new(rx: Receiver<Box<dyn Command + Send>>) -> Self {
         CommandExecutor {
             receiver: rx,
         }
@@ -416,7 +518,7 @@ impl CommandExecutor {
     fn main(&mut self) {
         loop {
             match self.receiver.recv() {
-                Err(RecvError) => {
+                Err(_RecvError) => {
                     // "The recv operation can only fail if the sending half of a channel (or
                     // sync_channel) is disconnected, implying that no further messages will ever be
                     // received."

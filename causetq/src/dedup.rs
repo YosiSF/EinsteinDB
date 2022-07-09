@@ -17,26 +17,71 @@ use allegro_poset::{ PosetFactory, PosetFactoryConfig };
 use einsteindb::{ Database, DatabaseConfig };
 use sqxl::{ Sqxl, SqxlConfig };
 
-// -------------------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------------------
 
-pub struct DedupConfig {
-    pub poset_config: PosetConfig,
-    pub sqxl_config: SqxlConfig,
-    pub database_config: DatabaseConfig,
-    pub model_config: ModelConfig,
-    pub model_type_config: ModelTypeConfig,
-}
+use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result;
+use std::hash::Hash;
+use std::hash::Hasher;
+use std::ops::Deref;
+use std::ops::DerefMut;
+
+
+use types::Value;
+
+
+use crate::errors::Result;
+use crate::storage::{
+    engine::{
+        Engine,
+        EngineIterator,
+        EngineIteratorOptions,
+        EngineIteratorOptionsBuilder,
+    },
+    snapshot::{
+        Snapshot,
+        SnapshotIterator,
+        SnapshotIteratorOptions,
+        SnapshotIteratorOptionsBuilder,
+    },
+};
+
+
+
+/// Dedup will remove duplicate entries from the database.  It will also remove entries that are
+/// older than the specified number of seconds.  The default is to remove entries that are older than
+/// 24 hours.
+///  Because EinsteinDB operates in the form of quads definitions, it is possible to dedup based on
+/// the quad's subject, predicate, object, and context.  The default is to remove entries that are
+/// older than 24 hours.  The default is to remove entries that are older than 24 hours.
+///
+/// We aim to build a relativistic database that is able to handle the vast majority of cases.  We
+/// Without the risk of decreasing write throughput or increasing read throughput.  We will also
+/// remove entries that are older than 24 hours.  We will also remove entries that are older than
+///  than a causal consistent hybrid temporal index
+
+
 
 
 pub struct Dedup {
+
     pub poset: Poset,
     pub sqxl: Sqxl,
-    pub database: Database,
-    pub model: Model,
-    pub model_type: ModelType,
+    pub einstein_ml: Model,
+    pub einstein_ml_type: ModelType,
+    pub einstein_ml_factory: ModelFactory,
+    pub einstein_ml_type_factory: ModelTypeFactory,
+
+    pub database_config: DatabaseConfig,
+    pub poset_config: PosetConfig,
+    pub sqxl_config: SqxlConfig,
+    pub einstein_ml_config: ModelConfig,
+    pub einstein_ml_type_config: ModelTypeConfig,
+
 }
+
 
 pub type ValueTypeTag = u8;
 pub type ValueType = u8;
@@ -108,7 +153,6 @@ impl DedupConfig {
 
 
 
-
 trait EnumPoset<T: ::enum_set::CLike + Clone> {
 
     /// Returns the enum set of the enum type.
@@ -129,10 +173,40 @@ trait EnumPoset<T: ::enum_set::CLike + Clone> {
 //! # CausetQ
 //!
 //! `causetq` is a Rust implementation of the CausetQ algorithm.
-//!
+//! It is a causal consistent, hybrid temporal index.
+//! It is a hybrid of the `causet` and `causets` algorithms.
 //! ## CausetQ
 //!
 
+
+impl <T: ::enum_set::CLike + Clone> EnumPoset<T> for T {
+
+    EinsteinDB: Engine<T> {
+        pub fn new() -> EinsteinDB {
+            EinsteinDB {
+                poset: Poset::new(),
+                sqxl: Sqxl::new(),
+                database: Database::new(),
+                model: Model::new(),
+                model_type: ModelType::new(),
+            }
+        }
+    }
+
+    fn enum_poset(&self) -> u8 {
+        0
+    }
+
+    fn enum_poset(&self) -> u8 {
+        self.enum_poset()
+    }
+    fn enum_poset_set(&mut self, poset: u8) {
+        self.enum_poset_set(poset);
+    }
+    fn allegro_poset(&self) -> u8 {
+        self.allegro_poset()
+    }
+}
 
 
 /*

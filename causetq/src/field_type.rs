@@ -24,9 +24,196 @@
 // }
 //
 
+use either::Either;
+use std::{
+    fmt::{self, Debug, Display},
+    hash::{Hash, Hasher},
+    marker::PhantomData,
+    mem,
+    ops::{Deref, DerefMut},
+    str::FromStr,
+};
 
 
 
+use crate::errors::Result;
+use crate::storage::{
+    engine::{
+        Engine,
+        EngineIterator,
+        EngineIteratorOptions,
+        EngineIteratorOptionsBuilder,
+    },
+    snapshot::{
+        Snapshot,
+        SnapshotIterator,
+        SnapshotIteratorOptions,
+        SnapshotIteratorOptionsBuilder,
+    },
+};
+
+
+#[derive(Debug, Clone)]
+pub struct CompactOptions {
+    pub tombstone_threshold: u64,
+    pub tombstone_compaction_interval: u64,
+    pub tombstone_compaction_threshold: u64,
+    pub block_size: u64,
+    pub block_cache_size: u64,
+    pub block_cache_shard_bits: u8,
+    pub enable_bloom_filter: bool,
+    pub enable_indexing: bool,
+    pub index_block_size: u64,
+    pub index_block_cache_size: u64,
+    pub index_block_cache_shard_bits: u8,
+    pub index_block_restart_interval: u64,
+}
+
+
+impl CompactOptions {
+    pub fn new() -> Self {
+        CompactOptions {
+            tombstone_threshold: 0,
+            tombstone_compaction_interval: 0,
+            tombstone_compaction_threshold: 0,
+            block_size: 0,
+            block_cache_size: 0,
+            block_cache_shard_bits: 0,
+            enable_bloom_filter: false,
+            enable_indexing: false,
+            index_block_size: 0,
+            index_block_cache_size: 0,
+            index_block_cache_shard_bits: 0,
+            index_block_restart_interval: 0,
+        }
+    }
+}
+
+///BerolinaSQL transduces the transaction log of binding parameters to AEV in the form of a tuplespace.
+/// The tuplespace is a data structure that stores tuples of values.
+/// The Causet becomes a datum of the tuplespace.
+/// The Causet is a data structure that stores tuples of values.
+///  IT operates using LSH-based indexing with embedded Merkle trees
+/// and a key value store. It accepts human-first full-text indexing
+/// querying of semantic data, in human language; while simultaneously
+/// supporting the use of a wide range of data types.
+/// In the form of Agnostic SQL a mix between a relational database and a
+/// key-value store with knowledge of the semantics of the data.
+///
+
+
+#[must_use="The result of the operation is an iterator. Iteration is lazy."]
+pub struct Causet<'a, E: Engine + 'a> {
+    engine: &'a E,
+    options: CausetOptions,
+    phantom: PhantomData<E>,
+}
+
+
+impl<'a, E: Engine + 'a> Causet<'a, E> {
+    pub fn new(engine: &'a E, options: CausetOptions) -> Self {
+        Causet {
+            engine,
+            options,
+            phantom: PhantomData,
+        }
+    }
+}
+
+
+impl<'a, E: Engine + 'a> Deref for Causet<'a, E> {
+    type Target = E;
+
+    fn deref(&self) -> &Self::Target {
+        self.engine
+    }
+}
+
+
+impl<'a, E: Engine + 'a> DerefMut for Causet<'a, E> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.engine
+    }
+}
+
+
+impl<'a, E: Engine + 'a> Debug for Causet<'a, E> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Causet")
+    }
+}
+
+
+
+
+/// `Compact` is a trait that provides compacting operations.
+/// It is used to compact a range of keys in a table.
+/// The caller must specify the type of compaction to perform.
+/// The returned compaction output will be placed in `out`.
+/// The output is a sequence of files.
+/// If `level` is specified, the output files will be written to that level.
+/// If `level` is not specified, the output files will be written to the same level as the input.
+///
+
+
+
+pub trait Compact {
+    fn compact(&self, start: &[u8], end: &[u8], options: &CompactOptions, out: &mut Vec<u8>) -> Result<()>;
+}
+
+
+#[must_use="The result of the operation is an iterator. Iteration is lazy."]
+pub struct CausetIterator<'a, E: Engine + 'a> {
+    engine: &'a E,
+    options: CausetIteratorOptions,
+    phantom: PhantomData<E>,
+}
+
+
+impl<'a, E: Engine + 'a> CausetIterator<'a, E> {
+    pub fn new(engine: &'a E, options: CausetIteratorOptions) -> Self {
+        CausetIterator {
+            engine,
+            options,
+            phantom: PhantomData,
+        }
+    }
+}
+pub trait TtlGreedoidsExt {
+    fn get_range_ttl_greedoids_namespaced(
+        &self,
+        namespaced: &str,
+        start_soliton_id: &[u8],
+        end_soliton_id: &[u8],
+    ) -> Result<Vec<(String, TtlGreedoids)>>;
+}
+
+
+impl TtlGreedoidsExt for Snapshot {
+    fn get_range_ttl_greedoids_namespaced(
+        &self,
+        namespaced: &str,
+        start_soliton_id: &[u8],
+        end_soliton_id: &[u8],
+    ) -> Result<Vec<(String, TtlGreedoids)>> {
+        let mut iter = self.iter(
+            SnapshotIteratorOptionsBuilder::new()
+                .namespaced(namespaced)
+                .start_soliton_id(start_soliton_id)
+                .end_soliton_id(end_soliton_id)
+                .build(),
+        )?;
+        let mut result = Vec::new();
+        while let Some(mut entry) = iter.next()? {
+            let key = entry.key();
+            let value = entry.value();
+            let mut ttl_greedoids = TtlGreedoids::new();
+            ttl_greedoids.merge_from_bytes(&value)?;
+            result.push((key.to_vec(), ttl_greedoids));
+        }
+        Ok(result)
+    }
+}
 
 #[macro_export]
 macro_rules! result {
@@ -40,6 +227,20 @@ macro_rules! result {
         }
     );
 }
+
+#[macro_export]
+macro_rules! result_opt {
+    ($expr:expr) => (
+        result_opt!($expr, $crate::Error);
+    );
+    ($expr:expr, $err:ty) => (
+        match $expr {
+            Some(val) => val,
+            None => return Err($crate::ResultExt::failure($err)),
+        }
+    );
+}
+
 
 
 

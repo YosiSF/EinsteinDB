@@ -34,6 +34,38 @@ use std::collections::hash_map::Entry;
 
 use std::collections::hash_map::Iter;
 
+pub use crate::fdb_traits::FdbTrait;
+pub use crate::fdb_traits::FdbTraitImpl;
+use crate::fdb_traits::FdbTrait;
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PrimitiveTtl {
+    pub name: String,
+    pub value: Value,
+    pub ttl: i64,
+}
+
+
+impl PrimitiveTtl {
+    pub fn new(name: String, value: Value, ttl: i64) -> Self {
+        PrimitiveTtl {
+            name,
+            value,
+            ttl,
+        }
+    }
+}
+
+
+impl Display for PrimitiveTtl {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+
+
 
 #[derive(Clone)]
 pub struct AlexandrovTopology {
@@ -134,6 +166,47 @@ pub struct AlexandrovProcess<K, V> {
     pub(crate) write_options: WriteOptions,
 
 }
+
+
+impl<K, V> AlexandrovProcess<K, V> {
+    pub fn new(db: Arc<dyn Mutable>, prefix: Vec<u8>, key_type: K, value_type: V, write_options: WriteOptions) -> Self {
+        AlexandrovProcess {
+            db,
+            prefix,
+            key_type,
+            value_type,
+            write_options,
+        }
+    }
+}
+
+
+impl<K, V> Drop for AlexandrovProcess<K, V> {
+    fn drop(&mut self) {
+        //self.db.drop_prefix(self.prefix.clone());
+    }
+}
+
+
+impl<K, V> AlexandrovProcess<K, V> {
+    pub fn get_db(&self) -> Arc<dyn Mutable> {
+        self.db.clone()
+    }
+    pub fn get_prefix(&self) -> Vec<u8> {
+        self.prefix.clone()
+    }
+    pub fn get_key_type(&self) -> K {
+        self.key_type.clone()
+    }
+    pub fn get_value_type(&self) -> V {
+        self.value_type.clone()
+    }
+    pub fn get_write_options(&self) -> WriteOptions {
+        self.write_options.clone()
+    }
+}
+
+
 
 //now we abstract the lshp-tree into a poset so that it is lisp-like
 //source: https://franz.com/support/documentation/ansicl.94/section/dictio19.htm

@@ -56,6 +56,9 @@ use crate::causetq::Causetq::{CausetqSender, CausetqReceiver};
 /// if you want to send a query to a Causetq, you can use the `send` method.
 /// if you want to receive a response from a Causetq, you can use the `recv` method.
 
+
+
+
 ///Causetq algebrizes the SQL query and the SQL response. It formats the query and response into a string.
 ///In Prolog terms, the query is a predicate and the response is a fact.
 ///
@@ -79,6 +82,14 @@ pub struct Causetq {
 /// A Causetq is a thread-safe queue that can be used to communicate between
 /// queries and responses.
 ///
+///
+
+
+/// A Causetq is a thread-safe queue that can be used to communicate between
+/// queries and responses.
+
+
+
 
 
 #[derive(Debug)]
