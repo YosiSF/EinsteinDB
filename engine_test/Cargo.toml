@@ -1,7 +1,7 @@
 [package]
 name = "engine_test"
 version = "0.1.0"
-authors = [""]
+authors = ["EinsteinDB Developer Group"]
 edition = "2021"
 description = "Test engine"
 license = "MIT"
@@ -10,11 +10,7 @@ tags = ["test"]
 
 
 
-[lib]
-name = "engine_test"
-version = "0.1.0"
-authors = ["Josh Leder, Karl Whitford Pollard"]
-src = "src"
+
 
 
 [dependencies]
@@ -28,45 +24,3 @@ berolinasql = { path = "../berolinasql" }
 soliton = { path = "../soliton" }
 soliton_panic = { path = "../soliton_panic" }
 allegro_poset = { path = "../allegro_poset" }
-
-[build]
-bin = "bin"
-lib = "lib"
-include = "include"
-obj = "obj"
-
-
-[build.compile]
-
-
-[build.link]
-lib = "lib"
-bin = "bin"
-obj = "obj"
-include = "include"
-
-
-[build.link.libs]
-engine = "engine"
-einstein_db = "einstein_db"
-einstein_ml = "einstein_ml"
-causet = "causet"
-causetq = "causetq"
-causets = "causets"
-berolinasql = "berolinasql"
-soliton = "soliton"
-soliton_panic = "soliton_panic"
-allegro_poset = "allegro_poset"
-
-
-[build.link.libs.engine]
-path = "../einstein_db"
-name = "engine"
-version = "0.1.0"
-authors = [""]
-edition = "2021"
-description = "Test engine"
-license = "MIT"
-tags = ["test"]
-
-

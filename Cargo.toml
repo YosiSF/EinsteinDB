@@ -6,6 +6,10 @@ members = [
     "einstein_db/src",
     "causet",
     "causet/src",
+    "berolinasql",
+    "einstein_ml",
+    "causets",
+    "einstein_db_ctl",
 ]
 
 [package]

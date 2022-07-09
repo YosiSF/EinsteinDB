@@ -6,6 +6,7 @@ author = "AllegroCL EinsteinDB's team"
 description = "AllegroCL Poset"
 license = "MIT"
 homepage = "https://www.einsteindb.com"
+repository = "https://github.com/YosiSF/EinsteinDB"
 
 
 
@@ -29,7 +30,6 @@ tokio = "1.19.2"
 enum-set = "0.0.8"
 lazy_static = "1.4.0"
 indexmap = "1.8.0"
-serde = {version = "1.0.99", features=["derive"] }
 uuid = "1.1.2"
 libc = "0.2.54"
 static_assertions = "1.0"
