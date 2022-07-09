@@ -31,6 +31,73 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
 
+///! A structure that represents a node in the graph.
+/// A node is a vertex in the graph.
+/// Unlike a vertex, a node does not have a label.
+/// We deal mostly with DAGs and within this DAG, we deal with vertices
+/// and edges which are represented by the Node struct.
+/// We elevate the notion of a Node and discuss it as a simplicial complex.
+/// A simplicial complex is a set of simplices.
+/// A simplex is a set of vertices.
+/// A Causet could be thought of us as a simplicial norm of a DAG.
+///
+/// A Causet is a set of vertices.
+/// A Causet is a set of edges.
+/// A Causet is a set of simplices.
+
+
+
+trait Node {
+    /// Returns the id of the node.
+    /// The id is a unique identifier for the node.
+    /// The id is a non-negative integer.
+    /// The id is unique for the node.
+
+    fn id(&self) -> u64;
+
+    /// Returns the label of the node.
+    /// The label is a string.
+    /// The label is a non-negative integer.
+    ///
+    /// The label is a string.
+
+    fn label(&self) -> String;
+
+    fn set_label(&mut self, label: String);
+
+    async fn get_label(&self) -> String;
+
+    async fn set_label_async(&self, label: String);
+
+    //thread control via interlocking directorate
+    fn set_thread_control(&mut self, thread_control: Arc<AtomicBool>);
+}
+
+pub fn alexandrov_process(
+    engine: Arc<dyn Engine>,
+    snapshot: Arc<dyn Snapshot>,
+    options: Arc<CompactOptions>,
+    mutable: Arc<dyn Mutable>,
+    mutable_options: Arc<WriteOptions>,
+
+    }) -> Result<()> {
+    let mut engine_iterator = engine.iterator(
+        EngineIteratorOptions::new()
+            .set_prefix(b"alexandrov_process")
+            .set_reverse(true),
+    );
+    let mut snapshot_iterator = snapshot.iterator(
+        SnapshotIteratorOptionsBuilder::new()
+            .set_prefix(b"alexandrov_process")
+            .set_reverse(true),
+    );
+
+    }
+    let mut engine_iterator = engine.iterator(
+        EngineIteratorOptions::new()
+            .set_prefix(b"alexandrov_process")
+            .set_reverse(true),
+    );
 
 use std::collections::hash_map::Iter;
 
@@ -63,6 +130,35 @@ impl Display for PrimitiveTtl {
         write!(f, "{}", self.name)
     }
 }
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PrimitiveTtlSet {
+    pub name: String,
+    pub value: Value,
+    pub ttl: i64,
+}
+
+
+impl PrimitiveTtlSet {
+    pub fn new(name: String, value: Value, ttl: i64) -> Self {
+        PrimitiveTtlSet {
+            name,
+            value,
+            ttl,
+        }
+    }
+}
+
+
+impl Display for PrimitiveTtlSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
+}
+
+
 
 
 
@@ -155,6 +251,41 @@ pub struct AllegroPosetAlexandrovProcess {
     tree_leaves: HashMap<u64, Arc<PosetNode>>,
     //the leaves of the tree
     tree_leaves_reverse: HashMap<u64, Arc<PosetNode>>,
+}
+
+
+
+pub fn alexandrov_process(
+    engine: Arc<dyn Engine>,
+    snapshot: Arc<dyn Snapshot>,
+    options: Arc<CompactOptions>,
+    mutable: Arc<dyn Mutable>,
+    mutable_options: Arc<WriteOptions>,
+    ) -> Result<()> {
+    let mut engine_iterator = engine.iterator(
+        EngineIteratorOptions::new()
+            .set_prefix(b"alexandrov_process")
+            .set_reverse(true),
+    );
+    let mut snapshot_iterator = snapshot.iterator(
+        SnapshotIteratorOptionsBuilder::new()
+            .set_prefix(b"alexandrov_process")
+            .set_reverse(true),
+    );
+
+    }
+    let mut engine_iterator = engine.iterator(
+        EngineIteratorOptions::new()
+            .set_prefix(b"alexandrov_process")
+            .set_reverse(true),
+    );
+
+    let mut snapshot_iterator = snapshot.iterator(
+        SnapshotIteratorOptionsBuilder::new()
+            .set_prefix(b"alexandrov_process")
+            .set_reverse(true),
+    );
+
 }
 
 
@@ -597,3 +728,10 @@ pub fn unwrap_index_bytes_with_namespaced_and_key(index_bytes: &[u8]) -> (&[u8],
 ///    - Added support for namespaced keys
 ///    - Added support for namespaced keys and namespaced valuesource
 ///    - Added support for namespaced keys and namespaced valuesource and namespaced valuesink
+
+
+///CHANGELOG for soliton_panic_merkle_tree
+///
+///1.0.0:
+///    - Initial version
+///    - Added support for namespaced keys and namespaced valuesource

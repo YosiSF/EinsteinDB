@@ -11,7 +11,8 @@ keywords = ["causal set queue", "causetq", "causetq allegro lisp"]
 [dependencies]
 einstein_db = { path= "../einstein_db" }
 eindtein_ml = { path= "../einstein_ml" }
-berolinasql = { path= "../berolina-sql" }
+berolinasql = { path= "../berolina_sql" }
+einstein_db_ctl= { path= "../einstein_db_ctl" }
 causet= { path= "../causet" }
 causets = { path= "../causets" }
 allegro_poset = { path= "../allegro_poset" }
@@ -21,5 +22,4 @@ fdb_traits = { path= "../fdb_traits" }
 serde = "1.0.1138"
 serde_derive = "1.0.1138"
 slog = "1.0.1138"
-einstein_db_ctl = { path= "../einstein_db_ctl" }
 einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}

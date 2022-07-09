@@ -1,29 +1,20 @@
-[workspace]
-members = [
-    ".",
-    "./src",
-    "einstein_db",
-    "einstein_db/src",
-    "causet",
-    "causet/src",
-    "berolinasql",
-    "einstein_ml",
-    "causets",
-    "einstein_db_ctl",
-]
-
 [package]
 name = "einsteindb"
 version = "1.0.0"
 authors = ["Whtcorps", "EinstAI", "Josh Leder slushie@gmail.com", "Karl Whitford (karl@einst.ai)", "Jared Smith (jared@amazon.com)"]     
-edition = "2018"
+edition = "2021"
 description = "EinsteinDB is a Distributed OLAP Semi-Relational Relativsitic Causal Consistent Database with Interlocking Directorate OLTP"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 keywords = ["OLAP", "OLTP", "MergeAppend", "Bulk Synchronization", "IPAM", "CRON", "SQLAgnostic", "Hybrid Key-Value"]
 categories = ["HTAP", "CAUSETS", "ACID", "DB4AI", "command-line-utilities", "development-tools::cargo-plugins"]
+publish = false
+
+
 
 [dependencies]
+einstein_db = "0.1.0"
+
 serde = "1.0.1138"
 serde_derive = "1.0.1138"
 slog = "1.0.1138"

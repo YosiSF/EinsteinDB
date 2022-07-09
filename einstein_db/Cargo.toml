@@ -9,9 +9,9 @@ keywords = ["einstein", "db", "sql", "mysql", "mariadb", "postgresql", "sqlite",
 
 
 [dependencies]
-einstein_db = { path= "../einstein_db" }
+serde = "^0.8"
 eindtein_ml = { path= "../einstein_ml" }
-berolinasql = { path= "../berolina-sql" }
+berolinasql = { path= "../EinsteinDB/berolinasql", branch= "master" }
 causet= { path= "../causet" }
 causets = { path= "../causets" }
 allegro_poset = { path= "../allegro_poset" }
