@@ -9,6 +9,9 @@
  // specific language governing permissions and limitations under the License.
 
 
+
+
+
  use allegro_poset::{
      schema::{
          Schema,
@@ -72,6 +75,20 @@ use std::time::Duration;
 use std::time::Instant;
 use std::sync::mpsc::TryRecvError;
 use std::sync::mpsc::RecvTimeoutError;
+
+ #[derive(Debug)]
+pub struct Sync {
+     poset: Arc<Mutex<AllegroPoset>>,
+ }
+
+ #[derive(Debug)]
+pub struct SyncError {
+     kind: SyncErrorKind,
+ }
+
+
+
+
 
  #[derive(Debug, Clone)]
  pub enum Comparison {

@@ -52,6 +52,10 @@ pub fn new_sync() -> Arc<Mutex<AllegroPoset>> {
     Arc::new(Mutex::new(AllegroPoset::new()))
 }
 
+
+#[derive(Debug)]
+
+
 pub struct Sync {
     poset: Arc<Mutex<AllegroPoset>>,
     is_running: Arc<AtomicBool>,

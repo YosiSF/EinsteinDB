@@ -13,7 +13,7 @@ repository = "https://github.com/YosiSF/EinsteinDB"
 [dependencies]
 einstein_db = { path= "../einstein_db" }
 eindtein_ml = { path= "../einstein_ml" }
-berolinasql = { path= "../berolina-sql" }
+berolinasql = { path= "../berolinasql" }
 causet= { path= "../causet" }
 causets = { path= "../causets" }
 allegro_poset = { path= "../allegro_poset" }

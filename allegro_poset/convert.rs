@@ -232,8 +232,8 @@ impl<'a> ConvertTo<Real> for JsonRef<'a> {
 impl<'a> ConvertTo<String> for JsonRef<'a> {
     #[inline]
     fn convert(&self, _: &mut EvalContext) -> Result<String> {
-        // FIXME: There is an additional step `ProduceStrWithSpecifiedTp` in MEDB.
         Ok(self.to_string())
+
     }
 }
 
@@ -1050,6 +1050,77 @@ fn round_int_str(num_next_dot: char, s: &str) -> Cow<'_, str> {
         }
     }
     Cow::Owned(int_str)
+
+}
+
+
+/// the `s` must be a valid float_str
+/// and the `s` must be a valid int_string
+/// if the `s` is a valid int_string, then the return value is the same as `s` must be.
+/// if the `s` is a valid float_str, then the return value is the same as `s` must be.
+
+#[inline]
+fn float_str_to_int_string(ctx: &mut EvalContext, s: &str) -> Result<Cow<'_, str>> {
+    let mut int_str = String::with_capacity(s.len());
+    let mut num_next_dot = '0';
+    let mut saw_digit = false;
+    let mut e_idx = 0;
+    for (i, c) in s.chars().enumerate() {
+        if c == '+' || c == '-' {
+            if i != 0 && (e_idx == 0 || i != e_idx + 1) {
+                // "1e+1" is valid.
+                break;
+            }
+        } else if c == '.' {
+            if e_idx > 0 {
+                // "1e1.1"
+                break;
+            }
+            if saw_digit {
+                // "123." is valid.
+                num_next_dot = c;
+            }
+        } else if c == 'e' || c == 'E' {
+            if !saw_digit {
+                // "+.e"
+                break;
+            }
+            if e_idx != 0 {
+                // "1e5e"
+                break;
+            }
+            e_idx = i
+        } else if c < '0' || c > '9' {
+            break;
+        } else {
+            saw_digit = true;
+            int_str.push(c);
+        }
+    }
+    if !saw_digit {
+        return Ok(Cow::Borrowed("0"));
+    }
+    if e_idx > 0 {
+        let e_str = &s[e_idx + 1..];
+        let e = e_str.parse::<i64>().map_err(|err| -> Error { box_err!("Parse '{}' to int err: {:?}", e_str, err) })?;
+        if e > 0 {
+            let mut e_str = String::with_capacity(e_str.len());
+            e_str.push_str("0.");
+            for _i in 0..e {
+                e_str.push('0');
+            }
+            int_str.push_str(&e_str);
+        } else if e < 0 {
+            let mut e_str = String::with_capacity(e_str.len());
+            e_str.push_str("0.");
+            for _i in 0..-e {
+                e_str.push('0');
+            }
+            int_str.push_str(&e_str);
+        }
+    } else if num_next_dot == '.' {
+        int_str.push('0');
+    }
 }
 
 /// It converts a valid float string into valid integer string which can be
@@ -1061,14 +1132,20 @@ fn round_int_str(num_next_dot: char, s: &str) -> Cow<'_, str> {
 ///
 /// This func will find serious over_causetxctx such as the len of result > 20 (without prefix `+/-`)
 /// however, it will not check whether the result over_causetxctx BIGINT.
-fn float_str_to_int_string<'a>(
-    ctx: &mut EvalContext,
-    valid_float: &'a str,
-) -> Result<Cow<'a, str>> {
-    // this func is complex, to make it same as MEDB's version,
-    // we impl it like MEDB's version(https://github.com/pingcap/MEDB/blob/9b521342bf/types/convert.go#L400)
-    let mut dot_idx = None;
-    let mut e_idx = None;
+///
+///
+
+
+#[inline]
+fn float_str_to_int_string_with_warn(ctx: &mut EvalContext, s: &str) -> Result<Cow<'_, str>> {
+
+    if valid_len == 0 || valid_len < valid_float.len() {
+        ctx.handle_truncate_err(Error::truncated_wrong_val("INTEGER", valid_float))?;
+    }
+
+    if valid_len == 0 {
+        return Ok(Cow::Borrowed("0"));
+    }
 
     for (i, c) in valid_float.chars().enumerate() {
         match c {
@@ -1115,8 +1192,8 @@ fn exp_float_str_to_int_str<'a>(
         Ok(exp) => exp,
         _ => return Ok(Cow::Borrowed(valid_float)),
     };
-    let (int_cnt, is_overCausetxctx): (i64, bool) = int_cnt.overCausetxctxing_add(exp);
-    if int_cnt > 21 || is_overCausetxctx {
+    let (int_cnt, is_over_causetxctx): (i64, bool) = int_cnt.overCausetxctxing_add(exp);
+    if int_cnt > 21 || is_over_causetxctx {
         // MaxInt64 has 19 decimal digits.
         // MaxUint64 has 20 decimal digits.
         // And the intCnt may contain the len of `+/-`,
@@ -1397,7 +1474,7 @@ mod tests {
     }
 
     #[test]
-    fn test_bytes_to_int_overCausetxctx() {
+    fn test_bytes_to_int_over_causetxctx() {
         let tests: Vec<(&[u8], _, _)> = vec![
             (
                 b"12e1234817291749271847289417294",
@@ -1804,8 +1881,8 @@ mod tests {
     }
 
     #[test]
-    fn test_datatype_to_uint_overCausetxctx() {
-        fn test_overCausetxctx<T: Debug + Clone + ToInt>(primitive_causet: T, dst: u64, tp: FieldTypeTp) {
+    fn test_datatype_to_uint_over_causetxctx() {
+        fn test_over_causetxctx<T: Debug + Clone + ToInt>(primitive_causet: T, dst: u64, tp: FieldTypeTp) {
             let mut ctx = EvalContext::default();
             let val = primitive_causet.to_uint(&mut ctx, tp);
             match val {
@@ -1838,7 +1915,7 @@ mod tests {
             (i64::MIN, u64::from(u32::MAX), FieldTypeTp::Long),
         ];
         for (primitive_causet, dst, tp) in cases {
-            test_overCausetxctx(primitive_causet, dst, tp);
+            test_over_causetxctx(primitive_causet, dst, tp);
         }
 
         // uint_to_uint
@@ -1849,7 +1926,7 @@ mod tests {
             (u64::MAX, 4294967295, FieldTypeTp::Long),
         ];
         for (primitive_causet, dst, tp) in cases {
-            test_overCausetxctx(primitive_causet, dst, tp);
+            test_over_causetxctx(primitive_causet, dst, tp);
         }
 
         // float_to_uint
@@ -1865,7 +1942,7 @@ mod tests {
             (f64::MAX, u64::MAX, FieldTypeTp::LongLong),
         ];
         for (primitive_causet, dst, tp) in cases {
-            test_overCausetxctx(primitive_causet, dst, tp);
+            test_over_causetxctx(primitive_causet, dst, tp);
         }
 
         // bytes_to_uint
@@ -1880,7 +1957,7 @@ mod tests {
             (b"314748364221339834234239", u64::MAX, FieldTypeTp::LongLong),
         ];
         for (primitive_causet, dst, tp) in cases {
-            test_overCausetxctx(primitive_causet, dst, tp);
+            test_over_causetxctx(primitive_causet, dst, tp);
         }
     }
 

@@ -20,6 +20,95 @@
 
 
 
+// use std::sync::{Arc, Mutex};
+// use std::sync::atomic::{AtomicBool, Partitioning};
+// use std::thread;
+// use std::time::Duration;
+
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Partitioning};
+use std::thread;
+use std::time::Duration;
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::collections::hash_map::Iter;
+
+
+use std::error::Error;
+use std::fmt;
+use std::io;
+use std::result;
+
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::thread;
+use std::time::Duration;
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::collections::hash_map::Iter;
+use std::collections::hash_map::IterMut;
+use std::collections::hash_map::Keys;
+use std::collections::hash_map::Values;
+
+
+use std::collections::HashSet;
+use std::collections::hash_set::Iter as HashSetIter;
+use std::collections::hash_set::IterMut as HashSetIterMut;
+
+
+use std::collections::BTreeSet;
+use std::collections::btree_set::Iter as BTreeSetIter;
+use std::collections::btree_set::IterMut as BTreeSetIterMut;
+
+
+
+use std::sync::atomic::
+{
+    AtomicUsize,
+    Ordering::Relaxed,
+    Ordering::SeqCst
+};
+
+
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::sync::mpsc::TryRecvError;
+
+
+
+use std::sync::mpsc::RecvError;
+use std::sync::mpsc::RecvTimeoutError;
+
+
+use super::{AllegroPoset, Poset};
+use super::{PosetError, PosetErrorKind};
+use super::{PosetNode, PosetNodeId, PosetNodeData};
+
+
+/// A `Sync` implementation for `AllegroPoset`.
+/// This implementation is thread-safe.
+/// # Examples
+/// ```
+/// use einsteindb::causetq::sync::new_sync;
+/// use einsteindb::causetq::sync::Sync;
+/// use std::sync::Arc;
+/// use std::sync::Mutex;
+///
+/// let poset = new_sync();
+/// let sync = Sync::new(poset);
+///
+/// let mutex = Arc::new(Mutex::new(sync));
+/// let mutex2 = Arc::new(Mutex::new(sync));
+///
+/// let mutex3 = Arc::new(Mutex::new(sync));
+///
+///
+///
+
+
+
+
+
+
 #[macro_use]
 extern crate soliton_panic;
 
@@ -49,39 +138,6 @@ extern crate failure;
 extern crate failure_derive;
 #[macro_use]
 extern crate failure_derive_recover;
-
-
-
-
-
-
-
-use std::error::Error;
-use std::fmt;
-use std::io;
-use std::result;
-
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread;
-use std::time::Duration;
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::collections::hash_map::Iter;
-use std::collections::hash_map::IterMut;
-use std::collections::hash_map::Keys;
-use std::collections::hash_map::Values;
-
-
-use std::collections::HashSet;
-use std::collections::hash_set::Iter as HashSetIter;
-use std::collections::hash_set::IterMut as HashSetIterMut;
-
-
-use std::collections::BTreeSet;
-use std::collections::btree_set::Iter as BTreeSetIter;
-use std::collections::btree_set::IterMut as BTreeSetIterMut;
-
 
 
 
@@ -118,7 +174,26 @@ impl BerolinaSqlErrorInfoList {
         }
     }
 }
+#[derive(Deserialize, Serialize, Debug)]
+pub struct BerolinaSqlErrorInfoListSerialized {
+    pub error_info_list: Vec<BerolinaSqlErrorInfoSerialized>,
+}
 
+
+impl BerolinaSqlErrorInfoListSerialized {
+    pub fn new() -> BerolinaSqlErrorInfoListSerialized {
+        BerolinaSqlErrorInfoListSerialized {
+            error_info_list: Vec::new(),
+        }
+    }
+}
+
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct BerolinaSqlErrorInfoSerialized {
+    pub error_type: BerolinaSqlErrorTypeSerialized,
+    pub error_msg: String,
+}
 
 impl BerolinaSqlError {
     pub fn new(error_type: BerolinaSqlErrorType, error_msg: String) -> BerolinaSqlError {
@@ -144,6 +219,9 @@ macro_rules! einsteindb_macro {
         }
     };
 }
+
+
+
 
 
 #[macro_export]
@@ -276,6 +354,11 @@ macro_rules! einstein_db_macro {
     };
 
 }
+
+
+
+///CHANGELOG: 0.1.1
+/// - Added EinsteinDBVersion and EinsteinDBMLVersion structs and associated macros.
 
 
 macro_rules! einstein_db_macro_impl {

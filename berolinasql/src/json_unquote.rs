@@ -9,6 +9,24 @@
  // specific language governing permissions and limitations under the License.
 
 
+use EinsteinDB::*;
+ use EinsteinDB::berolinasql::*;
+    use EinsteinDB::berolinasql::json_modify::*;
+    use EinsteinDB::berolinasql::json_length::*;
+    use EinsteinDB::berolinasql::json_quote::*;
+    use EinsteinDB::berolinasql::json_unquote::*;
+    use EinsteinDB::berolinasql::json_type::*;
+    use EinsteinDB::berolinasql::json_unwrap::*;
+    use EinsteinDB::berolinasql::json_wrap::*;
+    use EinsteinDB::berolinasql::json_unwrap::*;
+    use EinsteinDB::berolinasql::json_wrap::*;
+    use EinsteinDB::berolinasql::json_unwrap::*;
+    use EinsteinDB::berolinasql::json_wrap::*;
+
+
+
+
+
 
  use std::error::Error;
     use std::fmt;
@@ -29,12 +47,19 @@
 
 
 const ESCAPED_UNICODE_BYTES_SIZE: usize = 4;
-
+ const ESCAPED_UNICODE_BYTES: &[u8] = b"\\u";
 const CHAR_BACKSPACE: char = '\x08';
 const CHAR_HORIZONTAL_TAB: char = '\x09';
 const CHAR_LINEFEED: char = '\x0A';
 const CHAR_FORMFEED: char = '\x0C';
 const CHAR_CARRIAGE_RETURN: char = '\x0D';
+const CHAR_VERTICAL_TAB: char = '\x0B';
+const CHAR_QUOTATION_MARK: char = '\x22';
+const CHAR_APOSTROPHE: char = '\x27';
+const CHAR_AMPERSAND: char = '\x26';
+const CHAR_LESS_THAN: char = '\x3C';
+const CHAR_GREATER_THAN: char = '\x3E';
+
 
 impl<'a> JsonRef<'a> {
     /// `unquote` recognizes the escape sequences shown in:
@@ -186,3 +211,5 @@ mod tests {
         }
     }
 }
+
+ 

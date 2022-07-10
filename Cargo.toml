@@ -13,9 +13,21 @@ publish = false
 
 
 [dependencies]
-einstein_db = "0.1.0"
-
-serde = "1.0.1138"
-serde_derive = "1.0.1138"
-slog = "1.0.1138"
-slog_derive = "1.0.1138"
+einstein_db = { path = "./einstein_db"  }
+einstein_ml = { path = "./einstein_ml" }
+causetq = { path = "./causetq" }
+causets = { path = "./causets" }
+causet = {path = "./causet"}
+berolinasql = {path = "./berolinasql"}
+einstein_db_ctl = {path = "./einstein_db_ctl"}
+einstein_db_alexandrov_processing = {path = "./einstein_db_alexandrov_processing"}
+einsteindb-server = {path = "./einsteindb-server"}
+soliton = {path = "./soliton"}
+soliton_panic = {path = "./soliton_panic"}
+chrono = "0.4.19"
+failure = "0.1.0"
+lazy_static = "1.4.0"
+time = "0.3.11"
+uuid = {version = "0.5", features= ["v1", "v3", "v4", "v5"]}
+serde = {version = "0.9.0", features= ["derive", "json", "serde_derive"]}
+serde_json = "0.13.0"

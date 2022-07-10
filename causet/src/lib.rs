@@ -1,4 +1,160 @@
 //Copyright (c) 2019-present, Whtcorps Inc.
+//All rights reserved.
+// This source code is licensed under the MIT license found in the LICENSE file in the root directory of this source tree.
+//#![feature(async_await)]
+//#![feature(await_macro)]
+//#![feature(drain_filter)]
+//#![feature(drain_filter_next)]
+//#![feature(drain_filter_map)]
+//#![feature(drain_filter_map_next)]
+//#![feature(drain_filter_map_while)]
+
+/// # Causet
+/// Causet is a tuplestore that is designed to be used as a key-value store.
+/// It is a wrapper of `BTreeMap` and `BTreeSet`.
+/// It is designed to be used as a causal consistent tuplestore for causality.
+
+
+use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::{Debug, Display, Formatter, Result};
+use std::hash::Hash;
+use std::iter::FromIterator;
+use std::ops::{Deref, DerefMut};
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Partitioning};
+use std::thread;
+use std::time::Duration;
+
+
+use std::sync::atomic::
+{
+    AtomicUsize,
+    Ordering::Relaxed,
+    Ordering::SeqCst
+};
+
+
+use std::sync::mpsc::{channel, Sender, Receiver};
+use std::sync::mpsc::TryRecvError;
+
+
+use std::sync::mpsc::RecvError;
+use std::sync::mpsc::RecvTimeoutError;
+
+
+use super::{AllegroPoset, Poset};
+use super::{PosetError, PosetErrorKind};
+use super::{PosetNode, PosetNodeId, PosetNodeData};
+
+
+/// A `Sync` implementation for `AllegroPoset`.
+/// This implementation is thread-safe.
+/// # Examples
+/// ```
+/// use einsteindb::causetq::sync::new_sync;
+/// use einsteindb::causetq::sync::Sync;
+/// let poset = new_sync();
+/// let sync = Sync::new(poset);
+/// ```
+/// # Causet
+/// Causet is a tuplestore that is designed to be used as a key-value store.
+/// It is a wrapper of `BTreeMap` and `BTreeSet`.
+///
+/// # Examples
+/// ```
+/// use einsteindb::causetq::sync::new_sync;
+/// use einsteindb::causetq::sync::Sync;
+///
+
+
+
+
+#[derive(Debug)]
+pub struct Sync {
+    poset: Arc<Mutex<AllegroPoset>>,
+}
+
+
+impl Sync {
+    /// Creates a new `Sync` instance.
+    /// # Examples
+    /// ```
+    /// use einsteindb::causetq::sync::new_sync;
+    /// use einsteindb::causetq::sync::Sync;
+    /// let poset = new_sync();
+    /// let sync = Sync::new(poset);
+    /// ```
+    pub fn new(poset: AllegroPoset) -> Self {
+        Sync {
+            poset: Arc::new(Mutex::new(poset)),
+        }
+    }
+}
+
+
+impl Sync {
+    /// Creates a new `Sync` instance.
+    /// # Examples
+    /// ```
+    /// use einsteindb::causetq::sync::new_sync;
+    /// use einsteindb::causetq::sync::Sync;
+    /// let poset = new_sync();
+    /// let sync = Sync::new(poset);
+    /// ```
+    pub fn new_sync(poset: AllegroPoset) -> Arc<Mutex<Sync>> {
+        Arc::new(Mutex::new(Sync::new(poset)))
+    }
+}
+
+
+impl Sync {
+    /// Creates a new `Sync` instance.
+    /// # Examples
+    /// ```
+    /// use einsteindb::causetq::sync::new_sync;
+    /// use einsteindb::causetq::sync::Sync;
+    /// let poset = new_sync();
+    /// let sync = Sync::new(poset);
+    /// ```
+    pub fn new_sync_with_config(poset: AllegroPoset, config: SyncConfig) -> Arc<Mutex<Sync>> {
+        Arc::new(Mutex::new(Sync::new_with_config(poset, config)))
+    }
+}
+
+
+impl Sync {
+    /// Creates a new `Sync` instance.
+    /// # Examples
+    /// ```
+    /// use einsteindb::causetq::sync::new_sync;
+    /// use einsteindb::causetq::sync::Sync;
+    /// let poset = new_sync();
+    /// let sync = Sync::new(poset);
+    /// ```
+    pub fn new_with_config(poset: AllegroPoset, config: SyncConfig) -> Self {
+        Sync {
+            poset: Arc::new(Mutex::new(poset)),
+        }
+    }
+}
+
+
+impl Sync {
+    /// Creates a new `Sync` instance.
+    /// # Examples
+    /// ```
+    /// use einsteindb::causetq::sync::new_sync;
+    /// use einsteindb::causetq::sync::Sync;
+    /// let poset = new_sync();
+    /// let sync = Sync::new(poset);
+    /// ```
+    pub fn new_with_config_sync(poset: AllegroPoset, config: SyncConfig) -> Arc<Mutex<Sync>> {
+        Arc::new(Mutex::new(Sync::new_with_config(poset, config)))
+    }
+}
+
+
+
 
 
 use std::collections::HashMap;

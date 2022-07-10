@@ -8,10 +8,61 @@ license = "MIT"
 repository = "https://github.com/YosiSF/EisnteinDB/causetq"
 keywords = ["causal set queue", "causetq", "causetq allegro lisp"]
 
+
+[dev-dependencies]
+cargo-test = "^0.2"
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+causetq = { path = "causetq" }
+
+[target.x86_64-unknown-linux-gnu.features]
+default = ["causetq"]
+
+[target.x86_64-unknown-linux-gnu.test]
+features = ["default"]
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+causetq = { path = "causetq" }
+
+[target.x86_64-unknown-linux-gnu.features]
+default = ["causetq"]
+
+[target.x86_64-unknown-linux-gnu.test]
+features = ["default"]
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+causetq = { path = "causetq" }
+
+[target.x86_64-unknown-linux-gnu.features]
+default = ["causetq"]
+
+[target.x86_64-unknown-linux-gnu.test]
+features = ["default"]
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+causetq = { path = "causetq" }
+
+[target.x86_64-unknown-linux-gnu.features]
+default = ["causetq"]
+
+[target.x86_64-unknown-linux-gnu.test]
+features = ["default"]
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+causetq = { path = "causetq" }
+
+[target.x86_64-unknown-linux-gnu.features]
+default = ["causetq"]
+
+[target.x86_64-unknown-linux-gnu.test]
+features = ["default"]
+
+
+
 [dependencies]
 einstein_db = { path= "../einstein_db" }
 eindtein_ml = { path= "../einstein_ml" }
-berolinasql = { path= "../berolina_sql" }
+berolinasql = { path= "../berolinasql" }
 einstein_db_ctl= { path= "../einstein_db_ctl" }
 causet= { path= "../causet" }
 causets = { path= "../causets" }
@@ -23,3 +74,6 @@ serde = "1.0.1138"
 serde_derive = "1.0.1138"
 slog = "1.0.1138"
 einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}
+
+[dev-dependencies]
+cargo-test = "^0.2"

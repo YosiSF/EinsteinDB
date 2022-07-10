@@ -10,8 +10,9 @@ edition = "2021"
 [dependencies]
 einstein_db = { path= "../einstein_db" }
 eindtein_ml = { path= "../einstein_ml" }
-berolinasql = { path= "../berolina-sql" }
+berolinasql = { path= "../berolinasql" }
 causet= { path= "../causet" }
+causetq = { path= "../causetq" }
 causets = { path= "../causets" }
 allegro_poset = { path= "../allegro_poset" }
 soliton = { path= "../soliton" }
@@ -20,7 +21,6 @@ fdb_traits = { path= "../fdb_traits" }
 serde = "1.0.1138"
 serde_derive = "1.0.1138"
 slog = "1.0.1138"
-einstein_db_ctl = { path= "../einstein_db_ctl" }
 einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}
 
 gag = "1.0"
@@ -64,6 +64,18 @@ futures = { kind = "static" }
 tokio = { kind = "static" }
 libc = { kind = "static" }
 nix = { kind = "static" }
+rand = { kind = "static" }
+regex = { kind = "static" }
+serde_json = { kind = "static" }
+toml = { kind = "static" }
+
+[target.'.exe'.linker.libraries.causetq]
+path = "../causetq"
+
+
+[target.'.exe'.linker.libraries.causet]
+path = "../causet"
+
 
 
 [target.'.exe'.linker.libraries.dynamic]

@@ -8,36 +8,10 @@ author_email = "karl@einst.ai"
 url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
 license = "MIT"
 
-[package]
-name = "soliton_panic"
-
-
-[target.x86_64-pc-windows-msvc.linker.libraries]
-
-# This file is used to define the dependencies of the package.
-# The dependencies are defined in the form of a list of tuples.
-# The first element of the tuple is the name of the package,
-# the second element is the version of the package.
-# The version can be a range of versions, for example:
-# ">=1.0.0" means that the version of the package must be greater than or equal to 1.0.0.
-# The version can also be a specific version, for example:
 
 [dependencies]
-serde = "*"
-serde_json = "*"
-serde_yaml = "*"
-serde_derive = "*"
-serde_bytes = "*"
-
-[build]
-rustflags = ["-C", "panic=abort"]
-
-
-[dependencies.soliton]
-version = "0.1.0"
-url = "https://www.github.com/YosiSF/EinsteinDB/soliton"
-license = "MIT"
-
+soliton_panic = "0.1.0"
+einstein_db_ctl = "0.1.0"
 
 
 

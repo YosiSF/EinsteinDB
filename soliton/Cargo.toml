@@ -38,21 +38,6 @@ serde_yaml = { version = "0.8.24", optional = true }
 
 
 
-[dependencies.failure]
-version = "0.1.1"
-path = "../failure"
-
-
-[dependencies.indexmap]
-version = "1"
-path = "../indexmap"
-
-
-[dependencies.itertools]
-version = "0.10.3"
-path = "../itertools"
-
-
 
 [dependencies.lazy_static]
 version = "1.4.0"
