@@ -9,6 +9,8 @@ url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
 license = "MIT"
 
 
+[lib]
+name = "soliton_panic"
 
 
 [dependencies.einstein_db]

@@ -4,6 +4,9 @@ version = "0.1.0"
 license = "MIT, Apache-2.0, BSD-3.0"
 authors = ["Whtcorps Inc, The EinsteinDB Authors, EinstAI Inc, and OpenAI Inc"]
 edition = "2021"
+description = "EinsteinDB Control Tool"
+source = "  https://github.com/YosiSF/EinsteinDB/einstein_db_ctl
+
 
 
 
@@ -38,6 +41,10 @@ rand = "0.8.5"
 regex = "1"
 serde_json = "1.0"
 toml = "0.5"
+
+
+[bin]
+einstein_db_ctl = "einstein_db_ctl/src/main.rs"
 
 [dependencies.causetq]
 path = "../causetq"

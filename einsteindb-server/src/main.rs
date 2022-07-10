@@ -202,14 +202,14 @@ pub struct AuthC {
 
 
 #[derive(Default)]
-pub struct AuthC_Root {
+pub struct AuthCRoot {
     pub auth_c_root: Hash,
     pub auth_c_root_hash: Hash,
 }
 impl SecKey {
     pub fn new_from_seed(sec_key: String, seed: Hash) -> SecKey {
         SecKey {
-            sec_key: sec_key,
+            sec_key,
             seed: Hash::new(),
             salt: Hash::new(),
             cache: merkle::MerkleTree::new(),
@@ -222,8 +222,8 @@ impl SecKey {
 
     pub fn new(seed: Hash, salt: Hash) -> SecKey {
         SecKey {
-            seed: seed,
-            salt: salt,
+            seed,
+            salt,
             cache: merkle::MerkleTree::new(),
             sec_key: String::new(),
         }

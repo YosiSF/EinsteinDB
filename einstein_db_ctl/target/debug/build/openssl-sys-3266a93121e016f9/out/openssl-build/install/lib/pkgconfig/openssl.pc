@@ -1,9 +1,0 @@
-prefix=/Users/hermanngrassmann/Documents/GitHub/EinsteinDB/einstein_db/einstein_db_ctl/target/debug/build/openssl-sys-3266a93121e016f9/out/openssl-build/install
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib
-includedir=${prefix}/include
-
-Name: OpenSSL
-Description: Secure Sockets Layer and cryptography libraries and tools
-Version: 1.1.1n
-Requires: libssl libcrypto

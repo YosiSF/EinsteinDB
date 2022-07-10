@@ -84,6 +84,100 @@ use std::fmt::Error;
 use std::fmt::Write;
 use std::fmt::Display;
 
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FdbRecordId {
+    pub id: Uuid,
+}
+
+
+impl FdbRecordId {
+    pub fn new() -> Self {
+        FdbRecordId {
+            id: Uuid::new_v4(),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FdbRecord {
+    pub id: FdbRecordId,
+    pub data: Vec<u8>,
+}
+
+
+impl FdbRecord {
+    pub fn new(data: Vec<u8>) -> Self {
+        FdbRecord {
+            id: FdbRecordId::new(),
+            data,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FdbRecordReaderOptions {
+    pub id: FdbRecordId,
+    pub data: Vec<u8>,
+}
+
+
+impl FdbRecordReaderOptions {
+    pub fn new(id: FdbRecordId, data: Vec<u8>) -> Self {
+        FdbRecordReaderOptions {
+            id,
+            data,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FdbRecordWriterOptions {
+    pub id: FdbRecordId,
+    pub data: Vec<u8>,
+}
+
+
+impl FdbRecordWriterOptions {
+    pub fn new(id: FdbRecordId, data: Vec<u8>) -> Self {
+        FdbRecordWriterOptions {
+            id,
+            data,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FdbRecordReader {
+    pub id: FdbRecordId,
+    pub data: Vec<u8>,
+}
+
+
+impl FdbRecordReader {
+    pub fn new(id: FdbRecordId, data: Vec<u8>) -> Self {
+        FdbRecordReader {
+            id,
+            data,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FdbRecordWriter {
+    pub id: FdbRecordId,
+    pub data: Vec<u8>,
+}
+
 //Attribute Map from SolitonID 
 //to the corresponding FdbRecord
 //This is a global variable
@@ -92,10 +186,12 @@ use std::fmt::Display;
 //This is a global variable
 fn escape_string(s: &str) -> String {
     s.replace("\"", "\"\"")
+
 }   
 
 
 fn foundationdb_connection_string(host: &str, port: &str, db_name: &str) -> String {
+
     format!("foundationdb://{}:{}/{}", host, port, db_name)
 }
 
@@ -195,8 +291,8 @@ pub struct FdbRecordOptions {
 impl FdbRecord {
     pub fn new(id: String, data: String, created_at: String, updated_at: String, deleted_at: String, version: String, revision: String, attributes: HashMap<String, String>) -> FdbRecord {
         FdbRecord {
-            id: id,
-            data: data,
+            id,
+            data,
 
         }
     }
@@ -204,8 +300,8 @@ impl FdbRecord {
 
     pub fn new_with_attributes(id: String, data: String, created_at: String, updated_at: String, deleted_at: String, version: String, revision: String, attributes: HashMap<String, String>) -> FdbRecord {
         FdbRecord {
-            id: id,
-            data: data,
+            id,
+            data,
 
         }
     }
@@ -226,12 +322,7 @@ impl FdbRecordReader {
         FdbRecordReader {
             id,
             data,
-            created_at,
-            updated_at,
-            deleted_at,
-            version,
-            revision,
-            attributes,
+
         }
     }
 
@@ -240,12 +331,7 @@ impl FdbRecordReader {
         FdbRecordReader {
             id,
             data,
-            created_at,
-            updated_at,
-            deleted_at,
-            version,
-            revision,
-            attributes,
+
         }
     }
 }
@@ -295,11 +381,11 @@ pub fn foundationdb_record_layer_test() {
 
 
 
-#[derive(Debug)]
-pub struct FdbRecord {
-    pub id: String,
-    pub data: String,
-}
+//This is the foundationdb record layer
+//It is a trait which is implemented by the FdbRecord struct
+//It is a trait which is implemented by the FdbRecordReader struct
+
+
 
 
 impl FdbRecord {

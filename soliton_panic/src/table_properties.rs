@@ -24,10 +24,11 @@ use std::os::raw::c_char;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
-use std::thread;
+
 use std::time::Duration;
 use std::time::Instant;
 use std::{thread, time};
+use std::error::Error;
 
 
 use soliton_panic::*;
@@ -41,7 +42,91 @@ pub use soliton_panic::{
 };
 
 
+use soliton_panic::{
+    CausetPartitionerRequest,
+    CausetPartitionerResult,
+    CausetPartitionerContext,
+};
 
+
+#[derive(Clone)]
+pub struct SolitonPanic {
+    pub config: Config,
+    pub db: Arc<FdbTransactional>,
+    pub poset: Arc<Poset>,
+    pub db_name: String,
+    pub db_path: String,
+    pub db_config: String,
+    pub db_config_path: String,
+    pub db_config_name: String,
+    pub db_config_file: String,
+    pub db_config_file_path: String,
+    pub db_config_file_name: String,
+    pub db_config_file_content: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct ThreadInfoBrane {
+    pub thread_id: usize,
+    pub thread_name: String,
+    pub thread_receiver: Receiver<()>,
+    pub thread_sender: Sender<()>,
+    pub thread_is_running: bool,
+    pub thread_is_stopped: bool,
+    pub thread_is_finished: bool,
+    pub thread_is_error: bool,
+    pub thread_error: String,
+    pub thread_error_message: String,
+    pub thread_error_backtrace: String,
+    pub thread_error_backtrace_lines: Vec<String>,
+    pub thread_error_backtrace_lines_count: usize,
+    pub thread_error_backtrace_lines_count_max: usize,
+    pub thread_error_backtrace_lines_count_min: usize,
+    pub thread_error_backtrace_lines_count_avg: usize,
+    pub thread_error_backtrace_lines_count_median: usize,
+    pub thread_error_backtrace_lines_count_mode: usize,
+    pub thread_error_backtrace_lines_count_stddev: usize,
+    pub thread_error_backtrace_lines_count_variance: usize,
+    pub thread_error_backtrace_lines_count_skew: usize,
+    pub thread_error_backtrace_lines_count_kurtosis: usize,
+    pub thread_error_backtrace_lines_count_kurtosis_normalized: usize,
+
+}
+
+
+
+///! SolitonPanic is a struct that contains the following:
+/// - config: the configuration of the soliton_panic
+/// - db: the database of the soliton_panic
+/// - poset: the poset of the soliton_panic
+/// - db_name: the name of the database
+/// - db_path: the path of the database
+/// - db_config: the name of the database config
+/// - db_config_path: the path of the database config
+#[derive(Debug, Clone)]
+async fn get_config(db: &FdbTransactional) -> Result<Config, dyn Error> {
+    let config_file = db.get_config_file().await?;
+    let config_file_content = db.get_config_file_content().await?;
+    let config = Config::new(config_file, config_file_content);
+    Ok(config)
+}
+
+
+#[derive(Debug, Clone)]
+pub struct ThreadInfo {
+    pub thread_id: usize,
+    pub thread_name: String,
+    pub thread_receiver: Receiver<()>,
+    pub thread_sender: Sender<()>,
+    pub thread_is_running: bool,
+    pub thread_is_stopped: bool,
+    pub thread_is_finished: bool,
+    pub thread_is_error: bool,
+    pub thread_error: String,
+    pub thread_error_message: String,
+    pub thread_error_backtrace: String,
+    pub thread_error_backtrace_lines: Vec<String>,
+}
 
 // DatabaseTypeName returns the database system name of the column type. If an empty
 // string is returned, then the driver type name is not supported.
@@ -50,6 +135,16 @@ pub use soliton_panic::{
 // Common type names include "VARCHAR", "TEXT", "NVARCHAR", "DECIMAL", "BOOL",
 // "INT", and "BIGINT".
 
+
+///! SolitonPanic is a struct that contains the following:
+/// - config: the configuration of the soliton_panic
+/// - db: the database of the soliton_panic
+/// - poset: the poset of the soliton_panic
+/// - db_name: the name of the database
+/// - db_path: the path of the database
+/// - db_config: the name of the database config
+/// - db_config_path: the path of the database config
+///
 #[no_mangle]
 #[allow(unused_variables)]
 pub extern "C" fn soliton_panic_causet_partitioner_database_type_name() -> *const c_char {
@@ -77,6 +172,51 @@ pub enum CausetPartitionerResult {
     NotRequired,
     Required,
 }
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CausetPartitionerContext {
+    pub prev_user_soliton_id: Vec<u8>,
+    pub current_user_soliton_id: Vec<u8>,
+    pub current_output_file_size: u64,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CausetPartitioner<'a> {
+    pub config: Config,
+    pub db: Arc<FdbTransactional>,
+    pub poset: Arc<Poset>,
+    pub db_name: String,
+    pub db_path: String,
+    pub db_config: String,
+    pub db_config_path: String,
+    pub db_config_name: String,
+    pub db_config_file: String,
+    pub db_config_file_path: String,
+    pub db_config_file_name: String,
+    pub db_config_file_content: String,
+    pub thread_info: ThreadInfo,
+}
+
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CausetPartitionerConfig {
+    pub config: Config,
+    pub db: Arc<FdbTransactional>,
+    pub poset: Arc<Poset>,
+    pub db_name: String,
+    pub db_path: String,
+    pub db_config: String,
+    pub db_config_path: String,
+    pub db_config_name: String,
+    pub db_config_file: String,
+    pub db_config_file_path: String,
+    pub db_config_file_name: String,
+    pub db_config_file_content: String,
+    pub thread_info: ThreadInfo,
+}
+
 
 #[no_mangle]
 #[allow(unused_variables)]
@@ -164,23 +304,22 @@ pub fn causet_partitioner_scan(
 #[allow(unused_variables)]
 pub fn causet_partitioner_context_new() -> Box<CausetPartitionerContext> {
     Box::new(CausetPartitionerContext {
-        soliton_id: vec![],
-        output_file_size: 0,
+        prev_user_soliton_id: Vec::new(),
+        current_user_soliton_id: Vec::new(),
+        current_output_file_size: 0,
     })
 }
+
 
 
 #[no_mangle]
 #[allow(unused_variables)]
 pub fn causet_partitioner_context_free(context: Box<CausetPartitionerContext>) {
+
+    //println!("causet_partitioner_context_free");
+    println!("causet_partitioner_context_free");
+
 }
-
-
-
-
-
-
-
 
 //    *string
 //    *[]byte
@@ -217,7 +356,66 @@ pub fn causet_partitioner_context_free(context: Box<CausetPartitionerContext>) {
 // provided by the underlying driver without conversion. When scanning
 // from a source value of type []byte to *interface{}, a copy of the
 // slice is made and the caller owns the result.
-//
+
+
+#[no_mangle]
+#[allow(unused_variables)]
+pub fn causet_partitioner_scan_column(
+    context: Box<CausetPartitionerContext>,
+    column_name: &[u8],
+    column_value: &[u8],
+) -> Box<CausetPartitionerContext> {
+    context
+}
+
+
+#[no_mangle]
+#[allow(unused_variables)]
+pub fn causet_partitioner_scan_column_as_string(
+    context: Box<CausetPartitionerContext>,
+    column_name: &[u8],
+    column_value: &[u8],
+) -> Box<CausetPartitionerContext> {
+    context
+}
+
+
+#[no_mangle]
+#[allow(unused_variables)]
+pub fn causet_partitioner_scan_column_as_int(
+    context: Box<CausetPartitionerContext>,
+    column_name: &[u8],
+    column_value: &[u8],
+) -> Box<CausetPartitionerContext> {
+    context
+}
+
+
+
+
+
+
+#[no_mangle]
+#[allow(unused_variables)]
+pub fn causet_partitioner_scan_column_as_bool(
+    context: Box<CausetPartitionerContext>,
+    column_name: &[u8],
+    column_value: &[u8],
+) -> Box<CausetPartitionerContext> {
+    context
+}
+
+
+#[no_mangle]
+#[allow(unused_variables)]
+pub fn causet_partitioner_scan_column_as_float(
+    context: Box<CausetPartitionerContext>,
+    column_name: &[u8],
+    column_value: &[u8],
+) -> Box<CausetPartitionerContext> {
+    context
+}
+
 // Source values of type time.Time may be scanned into values of type
 // *time.Time, *interface{}, *string, or *[]byte. When converting to
 // the latter two, time.RFC3339Nano is used.
@@ -299,3 +497,49 @@ pub enum CausetScanTablePartitionType0 {
     // 2-index-partition
     CausetPartitionType0_3 // 3-index-partition
 }
+
+
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+#[allow(dead_code)]
+pub enum CausetScanTablePartitionType1 {
+    CausetPartitionType1_0,
+    // 0-index-partition
+    CausetPartitionType1_1,
+    // 1-index-partition
+    CausetPartitionType1_2,
+    // 2-index-partition
+    CausetPartitionType1_3 // 3-index-partition
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+#[allow(dead_code)]
+
+pub enum CausetScanTablePartitionType2 {
+    CausetPartitionType2_0,
+    // 0-index-partition
+    CausetPartitionType2_1,
+    // 1-index-partition
+    CausetPartitionType2_2,
+    // 2-index-partition
+    CausetPartitionType2_3 // 3-index-partition
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(C)]
+#[allow(dead_code)]
+pub enum CausetScanTablePartitionType3 {
+    CausetPartitionType3_0,
+    // 0-index-partition
+    CausetPartitionType3_1,
+    // 1-index-partition
+    CausetPartitionType3_2,
+    // 2-index-partition
+    CausetPartitionType3_3 // 3-index-partition
+}
+

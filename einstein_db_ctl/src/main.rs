@@ -37,9 +37,6 @@ use tokio_io::io;
 
 pub struct EinsteinDB {
 
-
-
-
     pub db: Database,
 
 
@@ -559,3 +556,5 @@ fn handle_command(command: Command, db: &mut Database) -> Result<(), Box<dyn std
 
     Ok(())
 }
+
+

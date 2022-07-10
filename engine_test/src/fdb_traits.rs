@@ -8,8 +8,39 @@
 /// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 /// See the License for the specific language governing permissions and limitations under the License.
 ///     
-/// 
+///
 
+
+
+
+// use std::error::Error;
+
+use std::fmt;
+use std::io;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+
+
+use crate::berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind};
+use crate::berolinasql::{ErrorImpl as BerolinaSqlErrorImpl};
+use std::error::Error;
+
+
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+use std::result;
+use std::string::FromUtf8Error;
+
+
+use crate::soliton::{Error as SolitonError, ErrorKind as SolitonErrorKind};
+use crate::soliton::{ErrorImpl as SolitonErrorImpl};
+use std::error::Error;
+
+
+
+use crate::einstein_ml::{Error as EinsteinMlError, ErrorKind as EinsteinMlErrorKind};
+use crate::einstein_ml::{ErrorImpl as EinsteinMlErrorImpl};
+use std::error::Error;
 
 // #[macro_export]
 // macro_rules! einsteindb_macro {
@@ -106,6 +137,51 @@ macro_rules! einsteindb_macro_impl {
 
 
 
+
+#[macro_export]
+macro_rules! einsteindb_macro_impl {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+            }
+    }
+
+
 /// here we can use the macro to define the trait
 /// #[einsteindb_macro]
 /// trait FdbTrait {
@@ -157,8 +233,6 @@ impl FdbTrait for i32 {
 }
 
 
-let x = 1;
-let y = x.fdb_trait_method();
 
 
 assert_eq!(y, 1);
@@ -178,9 +252,5 @@ impl FdbTrait2 for i32 {
 }
 
 
-let x = 1;
-let y = x.fdb_trait_method();
 
-
-assert_eq!(y, 1);
 

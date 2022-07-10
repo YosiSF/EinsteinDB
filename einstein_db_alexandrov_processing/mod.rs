@@ -22,6 +22,11 @@
 
 
 
+
+
+
+
+
 pub struct EinsteindbIteratorItemOptions {
     pub item_type: EinsteindbIteratorItemType,
     pub item_type_options: EinsteindbIteratorItemTypeOptions,
@@ -938,9 +943,9 @@ mod tests {
             Downstream::new(String::new(), region_epoch, request_id, ConnID::new());
         let downstream_id = downstream.get_id();
         downstream.set_sink(sink);
-        let mut Sentinel = Sentinel::new(region_id);
-        Sentinel.subscribe(downstream);
-        let enabled = Sentinel.enabled();
+        let mut sentinel = Sentinel::new(region_id);
+        sentinel.subscribe(downstream);
+        let enabled = sentinel.enabled();
         assert!(enabled.load(Partitioning::SeqCst));
 
         let rx_wrap = Cell::new(Some(rx));
@@ -1001,7 +1006,7 @@ mod tests {
             ),
             None,
         ];
-        Sentinel.on_mutant_search(downstream_id, entries);
+        sentinel.on_mutant_search(downstream_id, entries);
         // Flush all pending entries.
         let mut row1 = EventRow::default();
         row1.start_ts = 1;
@@ -1023,6 +1028,6 @@ mod tests {
 
         let mut resolver = Resolver::new(region_id);
         resolver.init();
-        Sentinel.on_region_ready(resolver, region);
+        sentinel.on_region_ready(resolver, region);
     }
 }

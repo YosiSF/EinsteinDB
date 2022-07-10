@@ -36,13 +36,40 @@ use std::ops::Deref;
 use std::ops::DerefMut;
 use std::ops::Index;
 use std::ops::IndexMut;
-use std::ops::;
 use std::ops::Bounds;
 use std::ops::From;
 use std::ops::Full;
 use std::ops::Inclusive;
 use std::ops::To;
 use std::ops::ToInclusive;
+
+
+use std::ops::Range;
+
+
+pub trait RangeProperties {
+    fn range_properties(&self) -> dyn RangeProperties;
+
+    fn range_properties_mut(&mut self) -> dyn RangePropertiesMut;
+}
+
+
+#[macro_export]
+macro_rules! einsteindb_macro {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+}
+
+
+#[macro_export]
+macro_rules! einsteindb_macro_impl {
+    ($($tokens:tt)*) => {
+        $crate::einsteindb_macro_impl!($($tokens)*)
+    };
+}
+
+
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Properties<T> {
@@ -55,7 +82,8 @@ pub struct Properties<T> {
 
 
 pub struct PropertiesIterator<T> {
-    iter: Peekable<Zip<Rev<<T>>, Rev<Properties<T>>>>,
+    iter: Peekable<Zip<Rev<VecDeque<T>>, Rev<VecDeque<T>>>>,
+
 }
 
 pub struct GreedoidsExt<T> {
@@ -63,19 +91,24 @@ pub struct GreedoidsExt<T> {
 
     pub range_properties_iterator: PropertiesIterator<T>,
 
-    pub range_greedoids: Vec<<T>>,
+    pub range_greedoids: Vec<Greedoid<T>>,
 
     pub range_greedoids_iterator: PropertiesIterator<T>,
 
-    iter: Zip<Rev<<T>>, Rev<Properties<T>>>,
+    iter: Peekable<Zip<Rev<VecDeque<T>>, Rev<VecDeque<T>>>>,
 
 }
 
 impl GreedoidsExt<i32> {
-    pub fn new(range: <i32>) -> Self {
-        panic!()
+    pub fn new(range_properties: Properties<i32>, range_properties_iterator: PropertiesIterator<i32>, range_greedoids: Vec<Greedoid<i32>>, range_greedoids_iterator: PropertiesIterator<i32>) -> GreedoidsExt<i32> {
+        GreedoidsExt {
+            range_properties,
+            range_properties_iterator,
+            range_greedoids,
+            range_greedoids_iterator,
+            iter: Peekable::new(Zip::new(Rev::new(VecDeque::new()), Rev::new(VecDeque::new()))),
+        }
     }
-
     pub fn new_from_iter(range: impl Iterator<Item=i32>) -> Self {
         panic!()
     }
@@ -84,77 +117,120 @@ impl GreedoidsExt<i32> {
         panic!()
     }
 
-    pub fn new_from_iter_with_properties_and_greedoids(range: impl Iterator<Item=(i32, Properties<i32>, Vec<<i32>>)>) -> Self {
+    pub fn new_from_iter_with_properties_and_greedoids(range: impl Iterator<Item=(i32, Properties<i32>, Vec<Greedoid<i32>>)>) -> Self {
         panic!()
     }
 
-    pub fn new_from_iter_with_properties_and_greedoids_and_iter(range: impl Iterator<Item=(i32, Properties<i32>, Vec<<i32>>, impl Iterator<Item=i32>)>) -> Self {
+    pub fn new_from_iter_with_properties_and_greedoids_and_iterator(range: impl Iterator<Item=(i32, Properties<i32>, Vec<Greedoid<i32>>, PropertiesIterator<i32>)>) -> Self {
         panic!()
     }
 
-    pub fn new_from_iter_with_properties_and_greedoids_and_iter_and_iter(range: impl Iterator<Item=(i32, Properties<i32>, Vec<<i32>>, impl Iterator<Item=i32>, impl Iterator<Item=i32>)>) -> Self {
+    pub fn new_from_iter_with_properties_and_greedoids_and_iter_and_iterator(range: impl Iterator<Item=(i32, Properties<i32>, Vec<Greedoid<i32>>, PropertiesIterator<i32>, PropertiesIterator<i32>)>) -> Self {
         panic!()
     }
 
-    pub fn new_from_iter_with_properties_and_greedoids_and_iter_and_iter_and_iter(range: impl Iterator<Item=(i32, Properties<i32>, Vec<<i32>>, impl Iterator<Item=i32>, impl Iterator<Item=i32>, impl Iterator<Item=i32>)>) -> Self {
+    pub fn new_from_iter_with_properties_and_greedoids_and_iter_and_iter_and_iterator(range: impl Iterator<Item=(i32, Properties<i32>, Vec<Greedoid<i32>>, PropertiesIterator<i32>, PropertiesIterator<i32>, PropertiesIterator<i32>)>) -> Self {
         panic!()
     }
+}
+
+
+
+
+impl GreedoidsExt<i64> {
+    pub fn new(range_properties: Properties<i64>, range_properties_iterator: PropertiesIterator<i64>, range_greedoids: Vec<Greedoid<i64>>, range_greedoids_iterator: PropertiesIterator<i64>) -> GreedoidsExt<i64> {
+        GreedoidsExt {
+            range_properties,
+            range_properties_iterator,
+            range_greedoids,
+            range_greedoids_iterator,
+            iter: Peekable::new(Zip::new(Rev::new(VecDeque::new()), Rev::new(VecDeque::new()))),
+        }
+    }
+
+    pub fn new_from_iter(range: impl Iterator<Item=i64>) -> Self {
+        panic!()
+    }
+
+    pub fn new_from_iter_with_properties(range: impl Iterator<Item=(i64, Properties<i64>)>) -> Self {
+        panic!()
+    }
+
+    pub fn new_from_iter_with_properties_and_greedoids(range: impl Iterator<Item=(i64, Properties<i64>, Vec<Greedoid<i64>>)>) -> Self {
+        panic!()
+    }
+}
+
+
+impl GreedoidsExt<f32> {
+    pub fn new(range_properties: Properties<f32>, range_properties_iterator: PropertiesIterator<f32>, range_greedoids: Vec<Greedoid<f32>>, range_greedoids_iterator: PropertiesIterator<f32>) -> GreedoidsExt<f32> {
+        GreedoidsExt {
+            range_properties,
+            range_properties_iterator,
+            range_greedoids,
+            range_greedoids_iterator,
+            iter: Peekable::new(Zip::new(Rev::new(VecDeque::new()), Rev::new(VecDeque::new()))),
+        }
+    }
+    pub fn new_from_iter(range: impl Iterator<Item=f32>) -> Self {
+        panic!()
+    }
+
+    pub fn new_from_iter_with_properties(range: impl Iterator<Item=(f32, Properties<f32>)>) -> Self {
+        panic!()
+    }
+
+    switch_to_impl!(f32, i32, i64, f64);
+}
+
+
+
+
+impl GreedoidsExt<f64> {
+    pub fn new(range_properties: Properties<f64>, range_properties_iterator: PropertiesIterator<f64>, range_greedoids: Vec<Greedoid<f64>>, range_greedoids_iterator: PropertiesIterator<f64>) -> GreedoidsExt<f64> {
+        GreedoidsExt {
+            range_properties,
+            range_properties_iterator,
+            range_greedoids,
+            range_greedoids_iterator,
+            iter: Peekable::new(Zip::new(Rev::new(VecDeque::new()), Rev::new(VecDeque::new()))),
+        }
+    }
+    pub fn new_from_iter(range: impl Iterator<Item=f64>) -> Self {
+        panic!()
+    }
+    pub fn new_from_iter_with_properties(range: impl Iterator<Item=(f64, Properties<f64>)>) -> Self {
+        panic!()
+    }
+    switch_to_impl!(f64, i32, i64, f32);
+}
+
+
+
+
+
 
 
     fn get_range_approximate_size_namespaced_with_redundant_causet_with_redundant_causet_with_redundant_causet(
-        &self,
-        redundant_causet: &str,
-        // causet_range: <'_, Idx>,
-        large_threshold: u64,
-    ) -> Result<u64, dyn Eq> {
+        range: impl Iterator<Item=i32>,
+        range_properties: Properties<i32>,
+        range_properties_iterator: PropertiesIterator<i32>,
+        range_greedoids: Vec<Greedoid<i32>>,
+        range_greedoids_iterator: PropertiesIterator<i32>,
+    ) -> (i32, Properties<i32>, Vec<Greedoid<i32>>) {
         panic!()
     }
 
 
     fn get_range_approximate_split_soliton_ids_namespaced_with_redundant_causet(
-        &self,
-        namespace_in_einstein_ml: &str,
-        soliton_id_count: usize,
-        redundant_causet: &str,
-    ) -> Result<Vec<Vec<u8>>, dyn Eq> {
+        range: impl Iterator<Item=i32>,
+        range_properties: Properties<i32>,
+        range_properties_iterator: PropertiesIterator<i32>,
+        range_greedoids: Vec<Greedoid<i32>>,
+        range_greedoids_iterator: PropertiesIterator<i32>,
+    ) -> (i32, Properties<i32>, Vec<Greedoid<i32>>) {
         panic!()
     }
-
-    fn get_range_approximate_split_soliton_ids_namespaced_with_redundant_causet_with_redundant_causet(
-        &self,
-        namespace_in_einstein_ml: &str,
-        soliton_id_count: usize,
-        redundant_causet: &str,
-    ) -> Result<Vec<Vec<u8>>, dyn Eq> {
-        panic!()
-    }
-
-    fn get_range_approximate_split_soliton_ids_namespaced_with_redundant_causet_with_redundant_causet_with_redundant_causet(
-        &self,
-        namespace_in_einstein_ml: &str,
-        soliton_id_count: usize,
-        redundant_causet: &str,
-    ) -> Result<Vec<Vec<u8>>, dyn Eq> {
-        panic!()
-    }
-
-    fn get_range_approximate_split_soliton_ids_with_redundant_causet(
-        &self,
-        soliton_id_count: usize,
-        redundant_causet: &str,
-    ) -> Result<Vec<Vec<u8>>, dyn Eq> {
-        panic!()
-    }
-
-    fn get_range_approximate_split_soliton_ids_with_redundant_causet_with_redundant_causet(
-        &self,
-        soliton_id_count: usize,
-        redundant_causet: &str,
-    ) -> Result<Vec<Vec<u8>>, dyn Eq> {
-        panic!()
-    }
-}
-
 
 
 

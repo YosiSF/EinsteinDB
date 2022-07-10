@@ -1,0 +1,19 @@
+#   move to trash
+._*
+
+.DS_Store
+
+.idea/
+*.iml
+out/
+
+.vscode/**
+
+target
+dist
+tmp
+/bin
+
+.cargo/
+
+*.log

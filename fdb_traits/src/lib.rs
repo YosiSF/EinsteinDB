@@ -1,8 +1,7 @@
-mod fdb_traits;
+use crate::causets::causet_partitioner::CausetPartitioner;
+use crate::causets::causet_partitioner::CausetPartitionerError;
+use crate::causets::causet_partitioner::CausetPartitionerErrorKind;
 
-pub mod errors;
-
-//users
 use crate::*;
 use std::fs::{self, File};
 use std::io::{self, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
@@ -14,6 +13,31 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
+
+use std::sync::mpsc::{RecvError, RecvTimeoutError};
+use std::sync::mpsc::TryRecvError;
+use std::sync::mpsc::TrySendError;
+use std::sync::mpsc::SendError;
+
+
+
+use crate::einsteindb::einstein_db::*;
+use crate::einsteindb::einstein_db::{EinsteinDB};
+use crate::einsteindb::einstein_db::{EinsteinDBError};
+use crate::einsteindb::einstein_db::{EinsteinDBErrorKind};
+
+
+use crate::einsteindb::einstein_ml::*;
+use crate::einsteindb::einstein_ml::{EinsteinML};
+use crate::einsteindb::einstein_ml::{EinsteinMLError};
+use crate::einsteindb::einstein_ml::{EinsteinMLErrorKind};
+use crate::einsteindb::einstein_ml::{EinsteinMLNode};
+
+
+use crate::einsteindb::einstein_ml::{EinsteinMLNode};
+use crate::einsteindb::einstein_ml::{EinsteinMLNodeId};
+use crate::einsteindb::einstein_ml::{EinsteinMLNodeData};
+
 
 
 
@@ -52,11 +76,7 @@ extern crate fdb_sys;
 extern crate fdb_traits;
 extern crate fdb_file_system;
 extern crate fdb_options;
-//itertools
-extern crate itertools;
-extern crate petgraph;
-extern crate petgraph_dot;
-extern crate petgraph_vis;
+
 //foundationdb
 extern crate foundationdb;
 extern crate foundationdb_sys;
@@ -68,22 +88,33 @@ extern crate log;
 extern crate simple_logger;
 extern crate serde;
 extern crate serde_json;
-
-mod fdb_opts;
-pub mod errors;
-pub mod fdb_traits;
-pub mod fdb_file_system;
-pub mod fdb_options;
- 
-mod fdb_file_system_impl;
-mod fdb_options_impl;
-mod fdb_traits_impl;
-
-//spacetime schema
-mod spacetime_schema;
-mod spacetime_schema_impl;
+extern crate serde_yaml;
+extern crate serde_derive;
+extern crate serde_cbor;
+extern crate serde_json_derive;
+extern crate serde_yaml_derive;
 
 
+#[macro_use]
+extern crate serde_derive;
+
+
+#[macro_use]
+extern crate lazy_static;
+
+
+#[macro_use]
+extern crate failure;
+
+
+#[macro_use]
+extern crate failure_derive;
+
+
+
+
+
+///!
 
 
 
@@ -168,3 +199,132 @@ impl FileSystem {
 
 
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct EinsteinDBPartitionerError {
+    pub kind: EinsteinDBPartitionerErrorKind,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum EinsteinDBPartitionerErrorKind {
+    EinsteinDBError(EinsteinDBError),
+    EinsteinMLError(EinsteinMLError),
+    CausetPartitionerError(CausetPartitionerError),
+    EinsteinDBPartitionerErrorKind(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind2(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind3(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind4(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind5(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind6(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind7(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind8(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind9(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind10(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind11(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind12(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind13(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind14(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind15(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind16(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind17(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind18(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind19(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind20(EinsteinDBPartitionerErrorKind),
+    EinsteinDBPartitionerErrorKind21(EinsteinDBPartitionerErrorKind),
+}
+
+
+
+
+impl fmt::Display for EinsteinDBPartitionerError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "EinsteinDBPartitionerError")
+    }
+}
+
+
+impl fmt::Display for EinsteinDBPartitionerErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "EinsteinDBPartitionerErrorKind")
+    }
+}
+
+
+impl EinsteinDBPartitionerError {
+    pub fn new(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+        EinsteinDBPartitionerError {
+            kind,
+        }
+    }
+}
+
+
+impl EinsteinDBPartitionerErrorKind {
+    pub fn new(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+    }
+}
+
+
+impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+        EinsteinDBPartitionerError::new(kind)
+    }
+}
+
+
+impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
+    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+    }
+}
+
+
+impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+        EinsteinDBPartitionerError::new(kind)
+    }
+}
+
+
+impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
+    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+    }
+}
+
+
+impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+        EinsteinDBPartitionerError::new(kind)
+    }
+}
+
+
+impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
+    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+    }
+}
+
+
+impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+        EinsteinDBPartitionerError::new(kind)
+    }
+}
+
+
+impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
+    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+    }
+}
+
+
+
+//// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+////     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+////         EinsteinDBPartitionerError::new(kind)
+////     }
+//// }

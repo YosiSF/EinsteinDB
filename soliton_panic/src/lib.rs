@@ -1,6 +1,11 @@
-mod snapshot;
+mod violetabft_engine;
+mod table_properties;
 mod mvsr;
 mod misc;
+mod compact;
+mod causetctx_control_factors;
+mod snapshot;
+mod import;
 
 /// Copyright 2019 EinsteinDB Project Authors.
 /// Licensed under Apache-2.0.
@@ -25,6 +30,8 @@ mod misc;
 //! It also defines the `EinsteinMerkleTreeWriter` trait, which is the core interface for
 //! einstein_merkle_tree writers.
 
+
+use std::path::Path;
 
 
 
@@ -85,21 +92,6 @@ use einstein_db_alexandrov_processing::{
     }
 };
 
-
-use berolina_sql::{
-    parser::Parser,
-    value::{Value, ValueType},
-    error::{Error, Result},
-    parser::ParserError,
-    value::{ValueRef, ValueRefMut},
-    fdb_traits::FdbTrait,
-    fdb_traits::FdbTraitImpl,
-    pretty,
-    io,
-    convert::{TryFrom, TryInto},
-    ops::{Deref, DerefMut},
-    sync::{Arc, Mutex},
-};
 
 
 use itertools::Itertools;
@@ -480,7 +472,10 @@ impl PanicLog {
         }
     }
 
-    pub fn from_raw_data_with_timestamp_and_receiver_and_value(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+
+/// A panic transaction is a transaction that is used to panic the node.
+/// It is used to test the node's behaviour when a panic occurs.
+    pub fn from_raw_data_with_timestamp_and_receiver_and_value(value: u64) -> Self {
         PanicTransaction {
             nonce: 0,
             gas_price: 0,
@@ -496,9 +491,10 @@ impl PanicLog {
     }
 
 
+///! EinsteinDB panic transaction
+/// A panic transaction is a transaction that is used to panic the node.
 
-
-    pub fn from_raw_data_with_timestamp_and_receiver_and_value_and_gas_limit(sender: Type, receiver: String, value: u64, timestamp: u64, gas_limit: u64) -> Self {
+    pub fn from_raw_data_with_timestamp_and_receiver_and_value_and_gas_limit(gas_limit: u64) -> Self {
         PanicTransaction {
             nonce: 0,
             gas_price: 0,
@@ -656,6 +652,8 @@ pub struct PanicBlockHeader {
 /// CHANGELOG: Added size field_type: u64x2
 /// CHANGELOG: Added total_difficulty field_type: u64x2
 /// CHANGELOG: Added seal_fields field_type: Vec<String>
+
+
 
 
 

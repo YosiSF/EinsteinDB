@@ -27,6 +27,43 @@
 //
 // //! An example EinsteinDB timelike_storage einstein_merkle_tree
 
+use std::time::{Instant, Duration};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Mutex;
+use std::cell::RefCell;
+use std::collections::HashMap;
+use std::fmt::{self, Debug, Formatter};
+
+
+use crate::time::{self, Time};
+use crate::time::{Time, TimeError};
+use crate::time::{TimeContext, TimeContextError};
+
+#[derive(Debug)]
+pub struct PosetError(String);
+
+
+#[derive(Debug)]
+pub struct PerfContextBuilder {
+    name: String,
+    parent: Option<Arc<PerfContext>>,
+    children: Vec<Arc<PerfContext>>,
+    child_count: Arc<AtomicUsize>,
+    child_count_mutex: Arc<Mutex<()>>,
+    child_count_map: Arc<Mutex<HashMap<String, usize>>>,
+    child_count_map_mutex: Arc<Mutex<()>>,
+}
+
+
+
+
+
+
+
+
+
+
 ///Alexandrov Topology Processing is a library that provides a way to process
 /// transactions in a topology. For example, EinsteinDB is hybrid OLAP and OLTP.
 /// The topology is a graph that represents the structure of the database.
@@ -34,21 +71,31 @@
 /// 
 /// The library is written in Rust.
 ///
-#![allow(unused)]
-#![cfg_attr(not(feature = "std"), no_std)]
-
+/// # Examples
+/// ```
+/// use einstein_db_alexandrov_processing::*;
+/// use einstein_db_alexandrov_processing::topology::*;
+/// use einstein_db_alexandrov_processing::topology::topology_processing::*;
 #[macro_use]
 extern crate lazy_static;
 
 
-//add type path to scope
-// Language: rust
+
+#[macro_use]
+extern crate log;
+
+#[macro_use]
+extern crate serde_derive;
+
+
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct PanicAccount {
-    pub balance: u64,
-    pub nonce: u64,
+    pub id: String,
+    pub balance: i64,
+    pub nonce: i32,
 }
+
 
 
 
@@ -249,6 +296,7 @@ impl Workspace {
     pub fn new_header(header: PanicHeader) -> Self {
         Workspace {
             account: PanicAccount {
+                id: (),
                 balance: 0,
                 nonce: 0,
             },
@@ -289,6 +337,7 @@ impl Workspace {
     pub fn new_header_with_block(header: PanicHeader, block: PanicBlock) -> Self {
         Workspace {
             account: PanicAccount {
+                id: (),
                 balance: 0,
                 nonce: 0,
             },
@@ -738,9 +787,6 @@ mod tests {
         assert_eq!(lines, read_file_lines_to_vec(path));
     }
 }
-
-
-
 
 
 

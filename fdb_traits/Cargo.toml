@@ -8,13 +8,13 @@ license = "MIT"
 copyright = "Copyright (c) 2020-2021 EinsteinDB Project Authors"
 url = "https://github.com/YosiSF/EinsteinDB"
 
-
+[lib]
+name = "fdb_traits"
 
 
 [dependencies]
 einsteindb = {path = "." , version = "1.0.0"}
 einstein_ml = {path = "../einstein_ml" , version = "0.1.0"}
-berolinasql = {path  ="../berolinasql"}
 einstein_db_ctl = {path = "../einstein_db_ctl" , version = "0.1.0"}
 itertools = "0.10.3"
 uuid = "1.1.2"
