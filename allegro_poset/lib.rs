@@ -107,6 +107,9 @@ use ::poset::PosetError;
 
 
 
+
+
+
 //! // Set the block's round_elapsed_time
 //! block.set_round_elapsed_time(0);
 //! 
@@ -176,6 +179,17 @@ use crate::block::{BlockBodyHash, BlockBodyHashType};
 use crate::block::{BlockHash, BlockHashType};
 use crate::block::{BlockSignature, BlockSignatureType};
 
+
+//einsteindb
+use crate::einsteindb::{Einsteindb, EinsteindbType};
+use crate::einsteindb::{EinsteindbError, EinsteindbResult};
+//causet is a crate for creating causet graphs
+use crate::causet::{Causet, CausetType};
+use crate::causet::{CausetError, CausetResult};
+
+//causetq is a crate for creating causet graphs
+use crate::causetq::{Causetq, CausetqType};
+use crate::causetq::{CausetqError, CausetqResult};
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

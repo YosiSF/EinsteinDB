@@ -6,23 +6,69 @@ edition = "2021"
 license = "MIT Licensed"
 description = "EinsteinDB processing package"
 tags = ["einstein", "db", "alexandrov", "processv", "processing"]
+url = "https://www.github.com/YosiSF/EinsteinDB/einstein_db_alexandrov_processing"
+
+[lib]
+name = "einstein_db_alexandrov_processing"
 
 
 [dependencies]
-serde = "*"
-serde_json = "*"
-serde_yaml = "*"
-serde_toml = "*"
+serde_derive = "1.0.1138"
+slog = "1.0.1138"
+grpc = "= 0.2.0"
+protobuf = "= 3.12.3"
+protoc-rust = "= 1.3.0"
+future = "= 0.2.18"
+crossbeam="= 0.7"
+prost = "= 0.7.4"
+prost-derive = "= 0.7.4"
+serde = "= 1.0"
+anyhow = "1.0"
+async-stream = "0.2"
+async-trait = "0.1"
+backtrace = "0.3"
+byteorder = "1.2"
+chrono = "0.4"
+crc32fast = "1.2"
+crc64fast = "0.1"
+crossbeam = "0.8"
+fail = "0.5"
+futures-executor = "0.3.1"
+futures-timer = "3.0"
+hex = "0.4"
+http = "0"
+hyper = { version = "0.14", features = ["full"] }
+hyper-tls = "0.5"
+itertools = "0.10"
+lazy_static = "1.3"
+libc = "0.2"
+libloading = "0.7"
+mime = "0.3.13"
+more-asserts = "0.2"
+murmur3 = "0.5.1"
+notify = "4"
+num-traits = "0.2.14"
+num_cpus = "1"
+openssl = "0.10"
+parking_lot = "0.12"
+paste = "1.0"
+pin-project = "1.0"
+pnet_datalink = "0.23"
+prometheus-static-metric = "0.5"
+regex = "1.3"
+rev_lines = "0.2.1"
+seahash = "4.1.0"
+semver = "0.11"
+serde_derive = "1.0"
+serde_ignored = "0.1"
+serde_json = "1.0"
+
+sysinfo = "0.16"
+tempfile = "3.0"
+thiserror = "1.0"
 
 
-[[build]]
-rustflags = ["-C", "link-arg=-lstdc++"]
-rustc = ["rustc"]
-rustc_args = ["--crate-type=lib", "--crate-name=einstein_db_alexandrov_processing"]
-output = ["lib/einstein_db_alexandrov_processing.rlib"]
 
-[[bin]]
-name = "einstein_db_alexandrov_processing"
-path = "./alexandrov.rs"
-
+[dev-dependencies]
+zipf = "6.1.0"
 

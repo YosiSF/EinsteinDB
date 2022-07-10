@@ -11,7 +11,7 @@ keywords = ["einstein", "db", "sql", "mysql", "mariadb", "postgresql", "sqlite",
 [dependencies]
 serde = "^0.8"
 eindtein_ml = { path= "../einstein_ml" }
-berolinasql = { path= "../EinsteinDB/berolinasql", branch= "master" }
+berolinasql = { path= "../berolinasql", branch= "master" }
 causet= { path= "../causet" }
 causets = { path= "../causets" }
 allegro_poset = { path= "../allegro_poset" }
@@ -79,7 +79,7 @@ sysinfo = "0.24.5"
 tempfile = "3.0"
 paste = "1.0"
 thiserror = "1.0"
-tokio = { version = "1.17", features = ["full"] }
+thread_local = "0.2"
 tokio-openssl = "0.6.3"
 toml = "0.5"
 tokio-tls = "0.3.1"

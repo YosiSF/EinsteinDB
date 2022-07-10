@@ -3560,54 +3560,54 @@ mod tests {
     }
 
     #[test]
-    fn test_last_APPEND_LOG_g_modified() {
-        let (mut APPEND_LOG_g, _dir) = EinsteinDbConfig::with_tmp().unwrap();
-        let timelike_store_path = Path::new(&APPEND_LOG_g.timelike_storage.data_dir);
-        let last_APPEND_LOG_g_path = timelike_store_path.join(LAST_CONFIG_FILE);
+    fn test_last_append_log_g_modified() {
+        let (mut append_log_g, _dir) = EinsteinDbConfig::with_tmp().unwrap();
+        let timelike_store_path = Path::new(&append_log_g.timelike_storage.data_dir);
+        let last_append_log_g_path = timelike_store_path.join(LAST_CONFIG_FILE);
 
-        APPEND_LOG_g.write_to_file(&last_APPEND_LOG_g_path).unwrap();
+        append_log_g.write_to_file(&last_append_log_g_path).unwrap();
 
-        let mut last_APPEND_LOG_g_metadata = last_APPEND_LOG_g_path.metadata().unwrap();
-        let first_modified = last_APPEND_LOG_g_metadata.modified().unwrap();
+        let mut last_append_log_g_metadata = last_append_log_g_path.metadata().unwrap();
+        let first_modified = last_append_log_g_metadata.modified().unwrap();
 
         // not write to file when config is the equivalent of last one.
-        assert!(persist_config(&APPEND_LOG_g).is_ok());
-        last_APPEND_LOG_g_metadata = last_APPEND_LOG_g_path.metadata().unwrap();
-        assert_eq!(last_APPEND_LOG_g_metadata.modified().unwrap(), first_modified);
+        assert!(persist_config(&append_log_g).is_ok());
+        last_append_log_g_metadata = last_append_log_g_path.metadata().unwrap();
+        assert_eq!(last_append_log_g_metadata.modified().unwrap(), first_modified);
 
         // write to file when config is the inequivalent of last one.
-        APPEND_LOG_g.log_l_naught = slog::Level::Warning;
-        assert!(persist_config(&APPEND_LOG_g).is_ok());
-        last_APPEND_LOG_g_metadata = last_APPEND_LOG_g_path.metadata().unwrap();
-        assert_ne!(last_APPEND_LOG_g_metadata.modified().unwrap(), first_modified);
+        append_log_g.log_l_naught = slog::Level::Warning;
+        assert!(persist_config(&append_log_g).is_ok());
+        last_append_log_g_metadata = last_append_log_g_path.metadata().unwrap();
+        assert_ne!(last_append_log_g_metadata.modified().unwrap(), first_modified);
     }
 
     #[test]
-    fn test_persist_APPEND_LOG_g() {
-        let dir = Builder::new().prefix("test_persist_APPEND_LOG_g").temfidelir().unwrap();
+    fn test_persist_append_log_g() {
+        let dir = Builder::new().prefix("test_persist_append_log_g").temfidelir().unwrap();
         let path_buf = dir.path().join(LAST_CONFIG_FILE);
         let file = path_buf.as_path();
         let (s1, s2) = ("/xxx/wal_dir".to_owned(), "/yyy/wal_dir".to_owned());
 
-        let mut einsteindb_APPEND_LOG_g = EinsteinDbConfig::default();
+        let mut einsteindb_append_log_g = EinsteinDbConfig::default();
 
-        einsteindb_APPEND_LOG_g.foundationdb.wal_dir = s1.clone();
-        einsteindb_APPEND_LOG_g.violetabftdb.wal_dir = s2.clone();
-        einsteindb_APPEND_LOG_g.write_to_file(file).unwrap();
-        let APPEND_LOG_g_from_file = EinsteinDbConfig::from_file(file, None).unwrap_or_else(|e| {
+        einsteindb_append_log_g.foundationdb.wal_dir = s1.clone();
+        einsteindb_append_log_g.violetabftdb.wal_dir = s2.clone();
+        einsteindb_append_log_g.write_to_file(file).unwrap();
+        let append_log_g_from_file = EinsteinDbConfig::from_file(file, None).unwrap_or_else(|e| {
             panic!(
                 "invalid auto generated configuration file {}, err {}",
                 file.display(),
                 e
             );
         });
-        assert_eq!(APPEND_LOG_g_from_file.foundationdb.wal_dir, s1);
-        assert_eq!(APPEND_LOG_g_from_file.violetabftdb.wal_dir, s2);
+        assert_eq!(append_log_g_from_file.foundationdb.wal_dir, s1);
+        assert_eq!(append_log_g_from_file.violetabftdb.wal_dir, s2);
 
         // write critical config when exist.
-        einsteindb_APPEND_LOG_g.foundationdb.wal_dir = s2.clone();
-        einsteindb_APPEND_LOG_g.violetabftdb.wal_dir = s1.clone();
-        einsteindb_APPEND_LOG_g.write_to_file(file).unwrap();
+        einsteindb_append_log_g.foundationdb.wal_dir = s2.clone();
+        einsteindb_append_log_g.violetabftdb.wal_dir = s1.clone();
+        einsteindb_append_log_g.write_to_file(file).unwrap();
         let APPEND_LOG_g_from_file = EinsteinDbConfig::from_file(file, None).unwrap_or_else(|e| {
             panic!(
                 "invalid auto generated configuration file {}, err {}",

@@ -17,18 +17,52 @@ use std::time::Duration;
 use std::time::Instant;
 use std::{thread, time};
 
-use causal_set::CausalSet;
+
+use std::sync::mpsc::{RecvError, RecvTimeoutError};
+use std::sync::mpsc::TryRecvError;
+use std::sync::mpsc::TrySendError;
+use std::sync::mpsc::SendError;
+
+use std::sync::mpsc::{RecvError, RecvTimeoutError};
+use std::sync::mpsc::TryRecvError;
+
+
+use std::sync::mpsc::{RecvError, RecvTimeoutError};
+
+
+
 
 
 
 
 //==============================================================================
 
+/// A `Sync` implementation for `AllegroPoset`.
+/// This implementation is thread-safe.
+/// # Examples
+/// ```
+/// use einsteindb::causetq::sync::new_sync;
+/// use einsteindb::causetq::sync::Sync;
+///
+/// let poset = new_sync();
+/// let sync = Sync::new(poset);
+///
+/// ```
 
 //==============================================================================
 
 
+///
+
+
+
+
 //==============================================================================
+
+#[derive(Debug)]
+pub struct Sync {
+    poset: Arc<Mutex<AllegroPoset>>,
+}
 
 
 
@@ -45,6 +79,32 @@ macro_rules! causet {
                 }
             }
             pub fn get(&self, $($key: $value),*) -> Option<Arc<HashMap<$($key),*>>> {
+                self.inner.get($($key),*)
+            }
+            pub fn insert(&mut self, $($key: $value),*) {
+                self.inner.insert($($key),*);
+            }
+            pub fn remove(&mut self, $($key: $value),*) {
+                self.inner.remove($($key),*);
+            }
+        }
+    };
+}
+
+
+#[macro_export]
+macro_rules! causet_sync {
+    ($name:ident, $($key:expr => $value:expr),*) => {
+        pub struct $name {
+            inner: CausalSet<Arc<Mutex<HashMap<$($key),*>>>>,
+        }
+        impl $name {
+            pub fn new() -> $name {
+                $name {
+                    inner: CausalSet::new(),
+                }
+            }
+            pub fn get(&self, $($key: $value),*) -> Option<Arc<Mutex<HashMap<$($key),*>>>> {
                 self.inner.get($($key),*)
             }
             pub fn insert(&mut self, $($key: $value),*) {

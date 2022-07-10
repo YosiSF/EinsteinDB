@@ -141,10 +141,10 @@ pub trait BuildTopographCausetTerms where Self: Sized {
         self.terms
     }
 
-    fn retract<C, A, causetq_VT>(&self, name: C, a: A, v: causetq_VT) -> TopographCausetTermBuilder<Self>
+    fn retract<C, A, CausetqVt>(&self, name: C, a: A, v: CausetqVt) -> TopographCausetTermBuilder<Self>
         where C: Into<CausetPlace<causetq_TV>>,
               A: Into<AttributePlace>,
-              causetq_VT: Into<ValuePlace<causetq_TV>> {
+              CausetqVt: Into<ValuePlace<causetq_TV>> {
         let causet = name.into();
         self.terms.causet(causet.causet, causet.term);
         self.terms.attribute(a.into(), v.into());

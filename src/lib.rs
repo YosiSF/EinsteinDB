@@ -20,6 +20,27 @@
 
 
 
+use std::fmt::{self, Debug, Display, Formatter};
+use std::error::Error as StdError;
+use std::io;
+use std::result;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+use std::error::Error;
+use std::fmt::{self, Debug, Display, Formatter};
+use std::io;
+use std::string::FromUtf8Error;
+use std::str::Utf8Error;
+
+
+use crate::berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind};
+use crate::berolinasql::{ErrorImpl as BerolinaSqlErrorImpl};
+use std::error::Error;
+use std::string::FromUtf8Error;
+
+
+
+
 // use std::sync::{Arc, Mutex};
 // use std::sync::atomic::{AtomicBool, Partitioning};
 // use std::thread;
@@ -103,6 +124,24 @@ use super::{PosetNode, PosetNodeId, PosetNodeData};
 ///
 ///
 ///
+
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct Sync {
+    poset: Arc<AllegroPoset>,
+
+    // This is a map of the nodes that are currently being processed.
+    // The key is the node id.
+    // The value is the number of times the node is being processed.
+    // This is used to prevent a node from being processed more than once.
+    // This is necessary because the node may be added to the queue multiple times.
+    // This is also used to prevent a node from being processed more than once.
+    // This is necessary because the node may be added to the queue multiple times.
+}
+
 
 
 

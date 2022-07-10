@@ -22,19 +22,45 @@ use std::rc::Rc;
 use std::cell::RefCell;
 use std::cell::Ref;
 use std::ops::{
-    Add,
-    AddAssign,
-    Sub,
-    SubAssign,
-    Mul,
-    MulAssign,
-    Div,
-    DivAssign,
-    Deref,
-    DerefMut,
-    Index,
-    IndexMut,
-};
+     Sub,
+     Mul,
+     Div,
+     Rem,
+     AddAssign,
+     SubAssign,
+     MulAssign,
+     DivAssign,
+     RemAssign,
+    };
+
+
+use std::ops::{
+     BitAnd,
+     BitOr,
+     BitXor,
+     BitAndAssign,
+     BitOrAssign,
+     BitXorAssign,
+    };
+
+
+use std::ops::{
+     Shl,
+     Shr,
+     ShlAssign,
+     ShrAssign,
+    };
+
+
+use std::ops::{
+     Neg,
+     Not,
+     BitNot,
+    };
+
+
+
+
 
 
 // -----------------------------------------------------------------------------
@@ -87,6 +113,19 @@ use EinsteinDB::causetq::{CausetQ, CausetQRef};
 use EinsteinDB::einstein_db::{self, EinsteinDB};
 
 
+
+
+use EinsteinDB::soliton_panic::snapshot::Snapshot;
+use EinsteinDB::soliton_panic::snapshot::Snapshotable;
+use EinsteinDB::soliton_panic::snapshot::SnapshotableRef;
+
+
+use EinsteinDB::causet::{self, Causet};
+use EinsteinDB::causet::{CausetQ, CausetQRef};
+use EinsteinDB::causetq::{CausetQ, CausetQRef};
+use EinsteinDB::einstein_db::{self, EinsteinDB};
+
+
 use crate as soliton_panic;
 
 ::lazy_static! {
@@ -115,13 +154,158 @@ impl fmt::Display for SnapshotId {
 
 impl PartialOrd for SnapshotId {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
+        Some(self.cmp(&other))
     }
 }
 
 pub struct Observable<T> {
     pub value: T,
     pub observers: Vec<Arc<dyn Observer<T>>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ObservableRef<T> {
+    pub value: T,
+    pub observers: Vec<Arc<dyn Observer<T>>>,
+}
+
+
+impl<T> Observable<T> {
+    pub fn new(value: T) -> Self {
+        Self {
+            value,
+            observers: Vec::new(),
+        }
+    }
+
+    pub fn get(&self) -> &T {
+        &self.value
+    }
+
+    pub fn get_mut(&mut self) -> &mut T {
+        &mut self.value
+    }
+
+    pub fn set(&mut self, value: T) {
+        self.value = value;
+        self.notify_observers();
+    }
+
+    pub fn add_observer(&mut self, observer: Arc<dyn Observer<T>>) {
+        self.observers.push(observer);
+    }
+
+    pub fn notify_observers(&mut self) {
+        for observer in self.observers.iter() {
+            observer.update(&self.value);
+        }
+    }
+}
+
+
+
+
+impl<T> Observable<T> {
+    pub fn get(&self) -> &T {
+        &self.value
+    }
+
+    pub fn get_mut(&mut self) -> &mut T {
+        &mut self.value
+    }
+
+    pub fn set(&mut self, value: T) {
+        self.value = value;
+        self.notify_observers();
+    }
+
+    pub fn add_observer(&mut self, observer: Arc<dyn Observer<T>>) {
+        self.observers.push(observer);
+    }
+
+    pub fn notify_observers(&mut self) {
+        for observer in self.observers.iter() {
+            observer.update(&self.value);
+        }
+    }
+}
+
+
+impl<T> Observable<T> {
+    pub fn get(&self) -> &T {
+        &self.value
+    }
+
+    pub fn get_mut(&mut self) -> &mut T {
+        &mut self.value
+    }
+
+    pub fn set(&mut self, value: T) {
+        self.value = value;
+        self.notify_observers();
+    }
+
+    pub fn add_observer(&mut self, observer: Arc<dyn Observer<T>>) {
+        self.observers.push(observer);
+    }
+
+    pub fn notify_observers(&mut self) {
+        for observer in self.observers.iter() {
+            observer.update(&self.value);
+        }
+    }
+}
+
+
+impl<T> Observable<T> {
+    pub fn get(&self) -> &T {
+        &self.value
+    }
+
+    pub fn get_mut(&mut self) -> &mut T {
+        &mut self.value
+    }
+
+    pub fn set(&mut self, value: T) {
+        self.value = value;
+        self.notify_observers();
+    }
+
+    pub fn add_observer(&mut self, observer: Arc<dyn Observer<T>>) {
+        self.observers.push(observer);
+    }
+
+    pub fn notify_observers(&mut self) {
+        for observer in self.observers.iter() {
+            observer.update(&self.value);
+        }
+    }
+}
+
+
+impl<T> Observable<T> {
+    pub fn get(&self) -> &T {
+        &self.value
+    }
+
+    pub fn get_mut(&mut self) -> &mut T {
+        &mut self.value
+    }
+
+    pub fn set(&mut self, value: T) {
+        self.value = value;
+        self.notify_observers();
+    }
+
+    pub fn add_observer(&mut self, observer: Arc<dyn Observer<T>>) {
+        self.observers.push(observer);
+    }
+
+    pub fn notify_observers(&mut self) {
+        for observer in self.observers.iter() {
+            observer.update(&self.value);
+        }
+    }
 }
 
 /// Observer is a trait that defines the interface for listening to changes in an observable.
@@ -156,6 +340,24 @@ pub struct ObserverWeak<T> {
 pub struct PanicLightlikePersistence;
 
 
+impl PanicLightlikePersistence {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+
+impl<T> Observer<T> for ObserverWeak<T> {
+    fn update(&self, value: &T) {
+        if let Some(observer) = self.observer.upgrade() {
+            observer.update(value);
+        }
+    }
+}
+
+
+
+
 #[derive(Clone, Debug)]
 pub struct PanicMerkleTree;
 
@@ -166,12 +368,33 @@ impl PanicMerkleTree {
 }
 
 
+impl<T> Observer<T> for PanicMerkleTree {
+    fn update(&self, value: &T) {
+        panic!()
+    }
+}
+
+
+#[derive(Clone, Debug)]
+pub struct PanicMerkleTreePersistence;
+
+
+impl PanicMerkleTreePersistence {
+    pub fn new() -> Self {
+        panic!()
+    }
+}
+
+
+
 impl Deref for PanicMerkleTree {
     type Target = PanicLightlikePersistence;
     fn deref(&self) -> &Self::Target {
         panic!()
     }
 }
+
+
 
 
 

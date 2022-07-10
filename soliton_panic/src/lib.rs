@@ -1,4 +1,8 @@
-/// Copyright 2019 EinsteinDB Project Authors. 
+mod snapshot;
+mod mvsr;
+mod misc;
+
+/// Copyright 2019 EinsteinDB Project Authors.
 /// Licensed under Apache-2.0.
 
 //! An example EinsteinDB timelike_storage einstein_merkle_tree.
@@ -13,13 +17,13 @@
 
 
 
-#![allow(unused)]
-#![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(not(feature = "std"), feature(alloc))]
-#![cfg_attr(not(feature = "std"), feature(allocator_api))]
-#![cfg_attr(not(feature = "std"), feature(core_intrinsics))]
-#![cfg_attr(not(feature = "std"), feature(lang_items))]
-#![cfg_attr(not(feature = "std"), feature(panic_info_message))]
+
+//! The `einstein_merkle_tree` module provides the core API for einstein_merkle_tree.
+//! It defines the `EinsteinMerkleTree` trait, which is the core interface for
+//! einstein_merkle_tree. It also defines the `EinsteinMerkleTreeReader` trait, which is the
+//! core interface for einstein_merkle_tree readers.
+//! It also defines the `EinsteinMerkleTreeWriter` trait, which is the core interface for
+//! einstein_merkle_tree writers.
 
 
 
@@ -264,7 +268,6 @@ pub struct PanicAccountCode {
 
 
 impl PanicTransaction {
-
     pub fn new(nonce: u64, gas_price: u64, gas_limit: u64, action: [u8; 32], data: [u8; 32], signature: [u8; 32], hash: [u8; 32]) -> Self {
         Self {
             nonce,
@@ -280,7 +283,7 @@ impl PanicTransaction {
 
 
 
-        pub fn new_from_bytes(bytes: &[u8]) -> Result<Self> {
+        pub fn new_from_bytes(bytes: &[u8]) -> Result<Self, E> {
         let mut parser = Parser::new(bytes);
         let nonce = parser.parse_u64()?;
         let gas_price = parser.parse_u64()?;
@@ -329,7 +332,7 @@ impl PanicReceipt {
         }
     }
 
-    pub fn new_from_bytes(bytes: &[u8]) -> Result<Self> {
+    pub fn new_from_bytes(bytes: &[u8]) -> Result<Self, E> {
         let mut parser = Parser::new(bytes);
         let state_root = parser.parse_bytes(32)?;
         let gas_used = parser.parse_u64()?;
@@ -378,7 +381,7 @@ impl PanicLog {
     }
 
 
-    pub fn new_from_bytes(bytes: &[u8]) -> Result<Self> {
+    pub fn new_from_bytes(bytes: &[u8]) -> Result<Self, E> {
         let mut parser = Parser::new(bytes);
         let address = parser.parse_bytes(32)?;
         let topics = parser.parse_bytes(32)?;
@@ -405,41 +408,60 @@ impl PanicLog {
 
 }
     pub fn from_raw(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
-        PanicTransaction {
-            nonce: 0,
-            gas_price: 0,
-            gas_limit: 0,
-            action: [],
-            data: [],
-            signature: [],
-
-            hash: []
+        Self {
+            sender,
+            receiver,
+            value,
+            timestamp,
         }
     }
 
-    pub fn from_raw_data(sender: Type, receiver: String, value: u64) -> Self {
+
+
+
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, E> {
+        let mut parser = Parser::new(bytes);
+        let sender = parser.parse_u64()?;
+        let receiver = parser.parse_string()?;
+        let value = parser.parse_u64()?;
+        let timestamp = parser.parse_u64()?;
+        Ok(Self {
+            sender,
+            receiver,
+            value,
+            timestamp,
+        })
+    }
+
+
+
+
+
+    pub fn from_raw_data(receiver: String) -> Self {
         PanicTransaction {
             nonce: 0,
             gas_price: 0,
             gas_limit: 0,
-            action: [],
-            data: [],
-            signature: [],
 
-            hash: []
+            action: [0; 32],
+            data: [0; 32],
+            signature: [0; 32],
+            hash: [0; 32],
+
         }
     }
 
-    pub(crate) fn from_raw_data_with_timestamp(sender: Type, receiver: String, value: u64, timestamp: u64) -> Self {
+    pub(crate) fn from_raw_data_with_nonce(nonce: u64, receiver: String) -> Self {
         PanicTransaction {
-            nonce: 0,
+            nonce,
             gas_price: 0,
             gas_limit: 0,
-            action: [],
-            data: [],
-            signature: [],
 
-            hash: []
+            action: [0; 32],
+            data: [0; 32],
+            signature: [0; 32],
+            hash: [0; 32],
+
         }
     }
 
@@ -449,11 +471,12 @@ impl PanicLog {
             nonce: 0,
             gas_price: 0,
             gas_limit: 0,
-            action: [],
-            data: [],
-            signature: [],
 
-            hash: []
+            action: [0; 32],
+            data: [0; 32],
+            signature: [0; 32],
+            hash: [0; 32],
+
         }
     }
 
@@ -462,14 +485,31 @@ impl PanicLog {
             nonce: 0,
             gas_price: 0,
             gas_limit: 0,
-            action: [],
-            data: [],
-            signature: [],
 
-            hash: []
+            action: [0; 32],
+            data: [0; 32],
+            signature: [0; 32],
+            hash: [0; 32],
+
+
         }
     }
 
+
+
+
+    pub fn from_raw_data_with_timestamp_and_receiver_and_value_and_gas_limit(sender: Type, receiver: String, value: u64, timestamp: u64, gas_limit: u64) -> Self {
+        PanicTransaction {
+            nonce: 0,
+            gas_price: 0,
+            gas_limit,
+
+            action: [0; 32],
+            data: [0; 32],
+            signature: [0; 32],
+            hash: [0; 32],
+        }
+    }
 
 
 
@@ -486,6 +526,14 @@ impl PanicLog {
         transaction
     }
 
+    pub fn into_raw_data_with_timestamp_and_value(transaction: PanicTransaction) -> PanicTransaction {
+        transaction
+    }
+
+    pub fn into_raw_data_with_timestamp_and_receiver(transaction: PanicTransaction) -> PanicTransaction {
+        transaction
+    }
+
 
 
 
@@ -495,11 +543,11 @@ impl PanicLog {
             nonce: 0,
             gas_price: 0,
             gas_limit: 0,
-            action: [],
-            data: [],
-            signature: [],
 
-            hash: []
+            action: [0; 32],
+            data: [0; 32],
+            signature: [0; 32],
+            hash: [0; 32],
         }
     }
 
@@ -508,11 +556,11 @@ impl PanicLog {
             nonce: 0,
             gas_price: 0,
             gas_limit: 0,
-            action: [],
-            data: [],
-            signature: [],
 
-            hash: []
+           action: [0; 32],
+              data: [0; 32],
+                signature: [0; 32],
+                hash: [0; 32],
         }
     }
 
@@ -521,10 +569,12 @@ impl PanicLog {
             nonce: 0,
             gas_price: 0,
             gas_limit: 0,
-            action: [],
-            data: [],
-            signature: [],
-            hash: []
+
+            action: [0; 32],
+            data: [0; 32],
+            signature: [0; 32],
+            hash: [0; 32],
+
         }
     }
 

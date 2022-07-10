@@ -9,12 +9,33 @@ url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
 license = "MIT"
 
 
-[dependencies]
-soliton_panic = "0.1.0"
-einstein_db_ctl = "0.1.0"
 
 
+[dependencies.einstein_db]
+version = "0.1.0"
+path = "../einstein_db"
 
+
+[dependencies.einstein_db_ctl]
+version = "0.1.0"
+path = "../einstein_db_ctl"
+
+
+[dependencies.berolinasql]
+version = "0.1.0"
+path = "../berolinasql"
+
+[dependencies.einstein_ml]
+version = "0.1.0"
+path = "../einstein_ml"
+
+[dependencies.allegro_poset]
+version = "0.1.0"
+path = "../allegro_poset"
+
+[dependencies.causet]
+version = "0.1.0"
+path = "../causet"
 
 
 

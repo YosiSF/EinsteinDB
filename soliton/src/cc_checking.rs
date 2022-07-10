@@ -144,6 +144,73 @@ impl TypeChecker {
 
 
 
+//solitonid = solitonid + 1
+//entid is usually considered to be solitonid + 1
+//but it can be set to a different value
+// in datomic entid is a entity id, which is a number
+// in einsteindb entid is a string, solitonid is a number
+
+
+//lets clear that out with some code
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+/// A variable binding.
+/// This is used to represent a variable binding in a [`Let`] expression.
+/// [`Let`]: enum.Expr.html#variant.Let
+/// [`Ident`]: enum.Expr.html#variant.Ident
+/// [`Index`]: enum.Expr.html#variant.Index
+/// [`Slice`]: enum.Expr.html#variant.Slice
+/// [`Cast`]: enum.Expr.html#variant.Cast
+/// [`Dot`]: enum.Expr.html#variant.Dot
+/// [`Field`]: enum.Expr.html#variant.Field
+/// [`Tuple`]: enum.Expr.html#variant.Tuple
+/// [`List`]: enum.Expr.html#variant.List
+/// [`Map`]: enum.Expr.html#variant.Map
+/// [`Break`]: enum.Expr.html#variant.Break
+/// [`Continue`]: enum.Expr.html#variant.Continue
+/// [`Return`]: enum.Expr.html#variant.Return
+/// [`Try`]: enum.Expr.html#variant.Try
+/// [`Throw`]: enum.Expr.html#variant.Throw
+/// [`Yield`]: enum.Expr.html#variant.Yield
+/// [`While`]: enum.Expr.html#variant.While
+/// [`For`]: enum.Expr.html#variant.For
+///
+///
+
+
+pub struct Let {
+    pub entid: String,
+    pub solitonid: u64,
+    pub name: String,
+    pub value: Box<Expr>,
+    pub body: Box<Expr>,
+}
+
+
+impl Let {
+    pub fn new(entid: String, solitonid: u64, name: String, value: Box<Expr>, body: Box<Expr>) -> Let {
+        Let {
+            entid,
+            solitonid,
+            name,
+            value,
+            body,
+        }
+    }
+}
+
+
+impl Display for Let {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(f, "let {} = {} in {}", self.name, self.value, self.body)
+    }
+}
+
+
+
+
+
+
 /// Check that the type of the expression is correct.
 
 
@@ -163,7 +230,7 @@ pub fn check_type_map(type_map: &TypeMap) -> Result<(), String> {
 
 impl TypeChecker {
     pub fn check_type_map(&self) -> Result<(), String> {
-        for (ident, type_) in &self.type_map {
+        for (_solitonid, type_) in &self.type_map {
             match type_ {
                 Type::Int => {},
                 Type::Bool => {},
