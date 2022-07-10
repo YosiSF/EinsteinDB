@@ -8,46 +8,8 @@ author_email = "karl@einst.ai"
 url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
 license = "MIT"
 
-
-[lib]
-name = "soliton_panic"
-
-
-[dependencies.einstein_db]
-version = "0.1.0"
-path = "../einstein_db"
-
-
-[dependencies.einstein_db_ctl]
-version = "0.1.0"
-path = "../einstein_db_ctl"
-
-
-[dependencies.berolinasql]
-version = "0.1.0"
-path = "../berolinasql"
-
-[dependencies.einstein_ml]
-version = "0.1.0"
-path = "../einstein_ml"
-
-[dependencies.allegro_poset]
-version = "0.1.0"
-path = "../allegro_poset"
-
-[dependencies.causet]
-version = "0.1.0"
-path = "../causet"
-
-
-
-
-
-
-
-
-
-
-
-
-
+[dependencies]
+einstein_db = "^0.1.0"
+clap = "^3.0"
+einsteindb_server = {path = "../einsteindb-server"}
+toml = "^0.5.9"

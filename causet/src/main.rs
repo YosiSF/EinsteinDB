@@ -12,7 +12,26 @@
 ///
 
 
+#[macro_use]
+extern crate soliton_panic;
 
+#[macro_use]
+extern crate soliton;
+
+#[macro_use]
+extern crate lazy_static;
+
+#[macro_use]
+extern crate log;
+
+#[macro_use]
+extern crate causet;
+
+#[macro_use]
+extern crate causetq;
+
+#[macro_use]
+extern crate causets;
 
 // #[macro_use]
 // extern crate soliton_panic;
@@ -53,12 +72,6 @@ extern crate failure;
 #[macro_use]
 extern crate einstein_db;
 
-
-#[macro_use]
-extern crate causetq;
-
-#[macro_use]
-extern crate causets;
 
 
 
@@ -194,20 +207,62 @@ impl <T> CausalSet <T> {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Causets <T> {
     pub causets: Vec<CausalSet <T>>,
+
 }
 
 
 impl <T> Causets <T> {
     pub fn new() -> Causets <T> {
-        Causets {
-            causets: Vec::new(),
-        }
+
+        switch_to_db_thread();
+        Vec::new();
+
+        // Causets {
+        //     causets: Vec::new(),
+        // }
     }
 
     pub fn add_causet(&mut self, causet: CausalSet <T>) {
         self.causets.push(causet);
+
+        // switch_to_db_thread();
+        // self.causets.push(causet);
     }
 }
+
+
+//Causets are now stored in a FoundationDB database.
+//The database is a key-value store, where the key is the event and the value is the set of events that follow the event.
+//The database is implemented as a B+Tree.
+//The Causets are ordered by the order of the events in the Causal Sets.
+
+
+// #[derive(Serialize, Deserialize, Debug, Clone)
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CausetsDB <T> {
+    pub causets: Vec<CausalSet <T>>,
+
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct CausetsDB_ <T> {
+    pub causets: Vec<CausalSet <T>>,
+
+}
+
+
+
+///! # CausetDB
+/// A CausetDB is a Causets with FoundationDB secondary attributes.
+/// The secondary attributes are:
+/// - A tuplestore, where the key is the event and the value is the set of events that follow the event.
+/// - A key-value store, where the key is the event and the value is the set of events that follow the event.
+///
+/// The tuplestore is implemented as a B+Tree.
+///
+
+
+
 
 
 
@@ -433,6 +488,34 @@ pub async fn get_fixture_mut_async(fixture: &mut Fixture <Event>, event: Event) 
 
     ///main function to get the fixture for a given event
     /// # Arguments
+
+
+
+
+    ///main function to get the fixture for a given event
+    /// # Arguments
+    /// * event - the event to get the fixture formatted
+    /// # Returns   the fixture formatted   as a string
+    /// # Errors
+
+
+
+
+
+
+fn get_fixture_formatted(fixture: &Fixture <Event>, event: Event) -> Result<Option<String>, crate::error::StorageError> {
+    let mut fixture = fixture.get_fixture_ref(event);
+    if fixture.is_none() {
+        return Ok(None);
+    }
+    let mut fixture = fixture.unwrap();
+    let mut causet = Causet::new();
+    for event in fixture {
+        causet.add_event(event.clone());
+        causet.add_event(event.clone());
+    }
+    Ok(Some(causet.get_event(0).unwrap().clone().to_string()))
+}
 
 
 

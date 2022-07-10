@@ -10,8 +10,138 @@
 // specific language governing permissions and limitations under the License.
 
 
+/// A trait for converting a value to a reference to the same value.
+/// This is implemented for all `T` which implement `AsRef<U>` for some `U`.
+/// This is a specialization of [`AsRef`] for references.
+/// [`AsRef`]: trait.AsRef.html
+/// [`From`]: trait.From.html
+
+use EinsteinDB::{ Database, DatabaseConfig, DatabaseType };
+use EinsteinDB::Database::Storage::Memtable::Memtable;
+use einstein_ml::{ Dataset, DatasetConfig, DatasetType };
+use allegro_poset::{ Poset, PosetConfig, PosetType };
+use allegro_graph::{ Graph, GraphConfig, GraphType };
+use allegro_graph::{ Vertex, VertexConfig, VertexType };
+use gremlin_client::{ GremlinClient, GremlinClientConfig, GremlinClientType };
+use fdb_traits::{ FdbDatabase, FdbDatabaseConfig, FdbDatabaseType };
+use fdb_traits::{ FdbKV, FdbKVConfig, FdbKVType };
+use crate::fmt;
+use crate::hash::{Hash, Hasher};
+use crate::marker::{PhantomData, Unsize};
+use crate::mem;
+use crate::ops::CoerceUnsized;
 
 
+use std::borrow::Borrow;
+use std::fmt::{self, Debug, Display};
+
+
+use std::hash::{Hash, Hasher};
+
+
+
+#[unstable(feature = "convert_float_to_int", issue = "67057")]
+pub use num::FloatToInt;
+
+
+use std::ops::{Deref, DerefMut};
+use std::ptr::NonNull;
+
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+
+
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+
+pub use hex::{FromHex, ToHex};
+pub use std::collections::HashMap;
+pub use std::collections::HashSet;
+pub use std::collections::VecDeque;
+
+
+
+
+pub use std::collections::BTreeMap;
+pub use std::collections::BTreeSet;
+pub use std::collections::HashMap;
+
+
+mod causet;
+mod causet_of_causets;
+mod eval_type;
+mod range;
+
+
+pub use self::causet::Causet;
+pub use self::causet_of_causets::CausetOfCausets;
+pub use self::eval_type::EvalType;
+pub use self::range::Range;
+
+
+use std::fmt::{self, Display, Formatter};
+use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::collections::{HashMap, HashSet};
+use std::collections::hash_map::Entry;
+use std::collections::hash_set::Iter as HashSetIter;
+use std::collections::hash_set::IterMut as HashSetIterMut;
+use std::collections::hash_set::IntoIter as HashSetIntoIter;
+
+
+use crate::einsteindb_macro::einsteindb_macro_impl;
+
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Key(Arc<KeyInner>);
+
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct KeyInner {
+    pub(crate) id: usize,
+    pub(crate) name: String,
+    pub(crate) causet: Causet,
+    pub(crate) causet_of_causets: CausetOfCausets,
+    pub(crate) eval_type: EvalType,
+    pub(crate) range: Range,
+}
+
+
+
+
+impl Key {
+    pub fn new(id: usize, name: String, causet: Causet, causet_of_causets: CausetOfCausets, eval_type: EvalType, range: Range) -> Self {
+        Key(Arc::new(KeyInner {
+            id,
+            name,
+            causet,
+            causet_of_causets,
+            eval_type,
+            range,
+        }))
+    }
+}
+
+
+impl Deref for Key {
+    type Target = KeyInner;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+
+impl DerefMut for Key {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -75,19 +205,6 @@ impl<'a> fmt::Display for JsonRef<'a> {
 
 
 
-pub use hex::{FromHex, ToHex};
-pub use std::collections::HashMap;
-pub use std::collections::HashSet;
-pub use std::collections::VecDeque;
-
-
-
-
-pub use std::collections::BTreeMap;
-pub use std::collections::BTreeSet;
-pub use std::collections::HashMap;
-
-
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -98,6 +215,29 @@ pub struct Json {
 
 
 pub type JsonValue = JsonValue_<Json>;
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum JsonValue_<Json> {
+    Null,
+    Bool(bool),
+    Number(f64),
+    String(String),
+    Array(Vec<Json>),
+    Object(HashMap<String, Json>),
+    Ref(Arc<Json>),
+}
+
+
+
+
+impl Json {
+    pub fn new(json_type: JsonType, json_value: JsonValue) -> Self {
+        Self { json_type, json_value }
+    }
+}
+
+
 
 
 
@@ -139,51 +279,6 @@ pub type JsonValue = JsonValue_<Json>;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-
-
-
-/// A trait for converting a value to a reference to the same value.
-/// This is implemented for all `T` which implement `AsRef<U>` for some `U`.
-/// This is a specialization of [`AsRef`] for references.
-/// [`AsRef`]: trait.AsRef.html
-/// [`From`]: trait.From.html
-
-use EinsteinDB::{ Database, DatabaseConfig, DatabaseType };
-use EinsteinDB::Database::Storage::Memtable::Memtable;
-use einstein_ml::{ Dataset, DatasetConfig, DatasetType };
-use allegro_poset::{ Poset, PosetConfig, PosetType };
-use allegro_graph::{ Graph, GraphConfig, GraphType };
-use allegro_graph::{ Vertex, VertexConfig, VertexType };
-use gremlin_client::{ GremlinClient, GremlinClientConfig, GremlinClientType };
-use fdb_traits::{ FdbDatabase, FdbDatabaseConfig, FdbDatabaseType };
-use fdb_traits::{ FdbKV, FdbKVConfig, FdbKVType };
-use crate::fmt;
-use crate::hash::{Hash, Hasher};
-use crate::marker::{PhantomData, Unsize};
-use crate::mem;
-use crate::ops::CoerceUnsized;
-
-
-use std::borrow::Borrow;
-use std::fmt::{self, Debug, Display};
-
-
-use std::hash::{Hash, Hasher};
-
-
-
-#[unstable(feature = "convert_float_to_int", issue = "67057")]
-pub use num::FloatToInt;
-
-
-use std::ops::{Deref, DerefMut};
-use std::ptr::NonNull;
-
-
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 
 
 
@@ -249,6 +344,14 @@ use serde::{Deserialize, Serialize};
 pub const fn identity<T>(x: T) -> T {
     x
 }
+
+struct Identity<T> {
+    _marker: PhantomData<T>,
+
+}
+
+
+
 
 
 
@@ -518,6 +621,27 @@ impl RustAlgebrizer {
     }
 }
 
+//conjoining the two states_mut
+//conjoining the two transitions_mut
+//conjoining the two states
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FSM {
+    pub states: Vec<State>,
+    pub transitions: Vec<Transition>,
+    pub initial_state: State,
+    pub final_states: Vec<State>,
+}
+
+pub struct ConjoiningCausets {
+
+
+    pub states: Vec<State>,
+    pub transitions: Vec<Transition>,
+    pub initial_state: State,
+    pub final_states: Vec<State>,
+}
 
 pub use causet::{
     error::{Error, Result},
@@ -552,6 +676,13 @@ macro_rules! fdb_try {
 }
 
 
+pub fn causet_algebrize(fsm: &mut FSM) {
+    let mut algebrizer = Algebrizer::new();
+    algebrizer.algebrize(fsm);
+}
+
+
+
 #[macro_export]
 macro_rules! fdb_try_opt {
     ($e:expr) => {
@@ -580,6 +711,31 @@ macro_rules! fdb_try_opt_ref {
 pub type Result<T> = std::result::Result<T, crate::error::StorageError>;
 
 pub type OwnedParityFilter = (Vec<u8>, Vec<u8>);
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct KV {
+    pub key: Vec<u8>,
+    pub value: Vec<u8>,
+}
+
+
+impl KV {
+    pub fn new(key: Vec<u8>, value: Vec<u8>) -> Self {
+        KV { key, value }
+    }
+}
+
+
+impl KV {
+    pub fn from_key_value(key: &[u8], value: &[u8]) -> Self {
+        KV {
+            key: key.to_vec(),
+            value: value.to_vec(),
+        }
+    }
+}
 
 /// The abstract storage interface. The table mutant_search and Index mutant_search executor relies on a `Storage`
 /// implementation to provide source data.

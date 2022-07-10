@@ -17,6 +17,20 @@ use std::fmt::{self, Debug, Display, Formatter};
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use std::str::FromStr;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use std::{fmt, io, mem, str};
+use std::{fmt::Write, io::Write};
+use std::{fmt::Debug, io::Write};
+use std::{fmt::Display, io::Write};
+
+
+
+use crate::error::{Error, Result};
+use crate::storage::{kv::{self, Key, Value}, Engine, ScanMode};
+use crate::storage::{Dsn, DsnExt};
+use crate::storage::{Dsn, DsnExt};
+use crate::storage::{Dsn, DsnExt};
 
 
 use crate::error::{Error, Result};
@@ -25,51 +39,269 @@ use crate::local_path_expr::parse_json_local_path_expr;
 use crate::{JsonRef, JsonType};
 
 
+use hashlink::lru_cache::{LruCache, LruCacheRef};
+use hashlink::HashLink;
+
+
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RangeBound<T> {
-    Inclusive(T),
-    Exclusive(T),
+pub enum BraneCohomology {
+    Zero = 0,
+    One = 1,
+    Two = 2,
+    Three = 3,
+    Four = 4,
+    Five = 5,
+    Six = 6,
+    Seven = 7,
+    Eight = 8,
+    Nine = 9,
+    Ten = 10,
+    Eleven = 11,
+    Twelve = 12,
+    Thirteen = 13,
+    Fourteen = 14,
+    Fifteen = 15,
+    Sixteen = 16,
+    Seventeen = 17,
+    Eighteen = 18,
+    Nineteen = 19,
+    Twenty = 20,
+    TwentyOne = 21,
+    TwentyTwo = 22,
+    TwentyThree = 23,
+    TwentyFour = 24,
+    TwentyFive = 25,
+    TwentySix = 26,
+    TwentySeven = 27,
+    TwentyEight = 28,
+    TwentyNine = 29,
+    Thirty = 30,
+    ThirtyOne = 31,
+    ThirtyTwo = 32,
+    ThirtyThree = 33,
+    ThirtyFour = 34,
+    ThirtyFive = 35,
+    ThirtySix = 36,
+    ThirtySeven = 37,
+    ThirtyEight = 38,
+    ThirtyNine = 39,
+    Forty = 40,
+    FortyOne = 41,
+    FortyTwo = 42,
+    FortyThree = 43,
+    FortyFour = 44,
+    FortyFive = 45,
+    FortySix = 46,
+    FortySeven = 47,
+    FortyEight = 48,
+    FortyNine = 49,
+    Fifty = 50,
+    FiftyOne = 51,
+    FiftyTwo = 52,
+    FiftyThree = 53,
+    FiftyFour = 54,
+    FiftyFive = 55,
+    FiftySix = 56,
+    FiftySeven = 57,
+    FiftyEight = 58,
+    FiftyNine = 59,
+    Sixty = 60,
+    SixtyOne = 61,
+    SixtyTwo = 62,
+    SixtyThree = 63,
+    SixtyFour = 64,
+    SixtyFive = 65,
+    SixtySix = 66,
+    SixtySeven = 67,
+    SixtyEight = 68,
 }
+
+
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Range<T> {
-    pub start: RangeBound<T>,
-    pub end: RangeBound<T>,
+pub struct BraneCohomologyRange {
+    pub start: BraneCohomology,
+    pub end: BraneCohomology,
+}
+
+
+impl Brane<i64> for BraneCohomologyRange {
+    fn brane(&self, x: i64) -> i64 {
+        if x < self.start as i64 {
+            return 0;
+        }
+        if x > self.end as i64 {
+            return 0;
+        }
+        return 1;
+    }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
+pub struct EvalTypeTp {
+    pub eval_type: EvalType,
+}
+
+
+#[derive(Debug, Clone)]
+pub struct EvalTypeWrap {
+    pub eval_type: EvalType,
+    pub eval_wrap: EvalWrap,
 }
 
 
 
-impl Range<i64> {
-    pub fn new(start: i64, end: i64) -> Self {
+fn eval_type_wrap_from_json(json: &JsonRef) -> Result<EvalTypeWrap> {
+    let eval_type = EvalType::from_json(json)?;
+    let eval_wrap = EvalWrap::from_json(json)?;
+    Ok(EvalTypeWrap {
+        eval_type,
+        eval_wrap,
+    })
+}
+
+
+impl FromJson for EvalTypeWrap {
+    fn from_json(json: &JsonRef) -> Result<Self> {
+        eval_type_wrap_from_json(json)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum EvalType {
+    Int = 0,
+    Real = 1,
+    Decimal = 2,
+    Datetime = 3,
+    Duration = 4,
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
+pub enum EvalWrap {
+    Int = 0,
+    Real = 1,
+    Decimal = 2,
+    Datetime = 3,
+    Duration = 4,
+}
+
+
+fn eval_wrap_from_json(json: &JsonRef) -> Result<EvalWrap> {
+    let eval_wrap = EvalWrap::from_json(json)?;
+    Ok(eval_wrap)
+}
+
+async fn eval_wrap_from_json_async(json: &JsonRef) -> Result<EvalWrap> {
+    let eval_wrap = EvalWrap::from_json(json)?;
+    Ok(eval_wrap)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Serialize, Deserialize)]
+pub enum EvalWrapExt {
+    Int = 0,
+    Real = 1,
+    Decimal = 2,
+    Datetime = 3,
+    Duration = 4,
+}
+
+pub trait EvalWrapExtTp {
+    fn eval_wrap_ext(&self) -> EvalWrapExt;
+}
+
+
+impl EvalWrapExtTp for EvalWrap {
+    fn eval_wrap_ext(&self) -> EvalWrapExt {
+        match self {
+            EvalWrap::Int => EvalWrapExt::Int,
+            EvalWrap::Real => EvalWrapExt::Real,
+            EvalWrap::Decimal => EvalWrapExt::Decimal,
+            EvalWrap::Datetime => EvalWrapExt::Datetime,
+            EvalWrap::Duration => EvalWrapExt::Duration,
+        }
+    }
+}
+
+/// A cache for prepared statements. When full, the least recently used
+/// statement gets removed.
+#[derive(Debug)]
+pub struct StatementCache<T> {
+    cache: LruCache<String, T>,
+    max_size: usize,
+
+}
+
+impl<T> StatementCache<T> {
+    /// Create a new cache with the given capacity.
+    pub fn new(capacity: usize) -> Self {
         Self {
-            start: RangeBound::Inclusive(start),
-            end: RangeBound::Inclusive(end),
+            cache: (),
+            max_size: capacity,
         }
     }
-}
 
+    /// Returns a mutable reference to the value corresponding to the given key
+    /// in the cache, if any.
+    pub fn get_mut(&mut self, k: &str) -> Option<&mut T> {
+        self.inner.get_mut(k)
+    }
 
-impl<T: PartialOrd> Range<T> {
-    pub fn contains(&self, value: &T) -> bool {
-        match self.start {
-            RangeBound::Inclusive(start) => {
-                match self.end {
-                    RangeBound::Inclusive(end) => start <= *value && *value <= end,
-                    RangeBound::Exclusive(end) => start <= *value && *value < end,
-                }
-            }
-            RangeBound::Exclusive(start) => {
-                match self.end {
-                    RangeBound::Inclusive(end) => start < *value && *value <= end,
-                    RangeBound::Exclusive(end) => start < *value && *value < end,
-                }
-            }
+    /// Inserts a new statement to the cache, returning the least recently used
+    /// statement id if the cache is full, or if inserting with an existing key,
+    /// the replaced existing statement.
+    pub fn insert(&mut self, k: &str, v: T) -> Option<T> {
+        let mut lru_item = None;
+
+        if self.capacity() == self.len() && !self.contains_key(k) {
+            lru_item = self.remove_lru();
+        } else if self.contains_key(k) {
+            lru_item = self.inner.remove(k);
         }
+
+        self.inner.insert(k.into(), v);
+
+        lru_item
+    }
+
+    /// The number of statements in the cache.
+    pub fn len(&self) -> usize {
+        self.inner.len()
+    }
+
+    /// Removes the least recently used item from the cache.
+    pub fn remove_lru(&mut self) -> Option<T> {
+        self.inner.remove_lru().map(|(_, v)| v)
+    }
+
+    /// Clear all cached statements from the cache.
+    #[cfg(feature = "sqlite")]
+    pub fn clear(&mut self) {
+        self.inner.clear();
+    }
+
+    /// True if cache has a value for the given key.
+    pub fn contains_key(&mut self, k: &str) -> bool {
+        self.inner.contains_key(k)
+    }
+
+    /// Returns the maximum number of statements the cache can hold.
+    pub fn capacity(&self) -> usize {
+        self.inner.capacity()
+    }
+
+    /// Returns true if the cache capacity is more than 0.
+    #[allow(dead_code)] // Only used for some `cfg`s
+    pub fn is_enabled(&self) -> bool {
+        self.capacity() > 0
     }
 }
-
-
 
 
 
@@ -93,6 +325,29 @@ mod tests {
     }
 }
 
+impl Bracket for Range {
+    type Output = Range;
+
+    fn bracketed(self, left: &str, right: &str) -> Self::Output {
+        Range {
+            start: format!("{}{}{}", left, self.start, right),
+            end: format!("{}{}{}", left, self.end, right),
+        }
+    }
+}
+
+
+impl Range {
+    pub fn new(start: i64, end: i64) -> Self {
+        Range {
+            start,
+            end,
+        }
+    }
+}
+
+
+
 impl From<Interval> for Range {
     fn from(interval: Interval) -> Self {
         Range {
@@ -115,6 +370,9 @@ impl From<Point> for Range {
 
 
 
+
+
+
 #[derive(Default, PartialEq, Eq, Clone)]
 pub struct Interval {
     pub start: i64,
@@ -132,36 +390,84 @@ impl Interval {
         }
     }
 
-    pub fn contains(&self, value: &i64) -> bool {
+    pub fn from_range(range: Range) -> Self {
+        Self {
+            start: range.start.value(),
+            end: range.end.value(),
+        }
+    }
+
+    pub fn from_range_bound(range: Range) -> Self {
+        Self {
+            start: range.start.value(),
+            end: range.end.value(),
+        }
+    }
+
+    pub fn from_range_bound_inclusive(range: Range) -> Self {
+        Self {
+            start: range.start.value(),
+            end: range.end.value(),
+        }
+    }
+
+    pub fn from_range_bound_exclusive(range: Range) -> Self {
+        Self {
+            start: range.start.value() + 1,
+            end: range.end.value() - 1,
+        }
+    }
+}
+
+
+impl From<Range> for Interval {
+    fn from(range: Range) -> Self {
+        Self {
+            start: range.start.value(),
+            end: range.end.value(),
+        }
+    }
+
+}
+
+
+impl From<Range> for RangeBound {
+    fn from(range: Range) -> Self {
+        Self {
+            value: range.start.value(),
+        }
+    }
+
+     fn contains(&self, value: &i64) -> bool {
         self.start <= *value && *value <= self.end
     }
 
 
-    pub fn is_empty(&self) -> bool {
+    fn is_empty(&self) -> bool {
         self.start > self.end
     }
 
-    pub fn is_point(&self) -> bool {
+     fn is_point(&self) -> bool {
         self.start == self.end
     }
 
-    pub fn is_interval(&self) -> bool {
+    fn is_interval(&self) -> bool {
         !self.is_empty() && !self.is_point()
     }
 
-    pub fn is_valid(&self) -> bool {
+    fn is_valid(&self) -> bool {
         self.start <= self.end
     }
 
-    pub fn is_valid_interval(&self) -> bool {
+     fn is_valid_interval(&self) -> bool {
         self.is_valid() && self.is_interval()
     }
 
-    pub fn is_valid_point(&self) -> bool {
+     fn is_valid_point(&self) -> bool {
         self.is_valid() && self.is_point()
     }
 
-    pub fn is_valid_empty(&self) -> bool {
+     fn is_valid_empty(&self) -> bool {
         self.is_valid() && self.is_empty()
     }
 }

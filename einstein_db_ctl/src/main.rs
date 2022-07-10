@@ -1,3 +1,34 @@
+///! Copyright (c) EinsteinDB. All rights reserved.
+/// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+///
+/// # einstein_db_ctl
+///
+use std::env;
+use std::process;
+use std::path::Path;
+use std::path::PathBuf;
+use std::fs::File;
+use std::io::prelude::*;
+use std::io::BufReader;
+use std::io::BufWriter;
+use std::io::Write;
+use std::io::Read;
+
+
+
+
+use crate::einsteindb::einstein_db_ctl::*;
+use crate::einsteindb::einstein_db_ctl::einstein_db_ctl::*;
+
+use crate::einsteindb::einstein_ml::*;
+use crate::einsteindb::einstein_ml::einstein_ml::*;
+
+use crate::einsteindb::einsteindb_server::*;
+use crate::einsteindb::einsteindb_server::einsteindb_server::*;
+
+
+
+
 /// EinsteinDB command line interface.
 /// 
 /// # Examples
@@ -212,19 +243,48 @@ enum Command {
     }
 }
 
-fn main(){
+fn main() {
+    let opt = Opt::from_args();
 
-    let status = std::process::exit(match Opt::from_args() {
-        Opt { port } => {
-            let mut db = Database::new();
-            let mut table = db.create_table(table).unwrap();
-            let mut table = table.as_mut();
-            println!("Table {} created", table.name());
-            0
-        }
-        _ => 1
-    });
-    std::process::exit(status);
+    let addr = format!("EINSTEINDB_BUILD_TIME={}:{}", env!("EINSTEINDB_BUILD_TIME"), opt.port).parse().unwrap();
+
+    init_logger();
+
+    let mut db = Database::new();
+
+    let mut table = db.create_table("table");
+
+    let mut table = table.unwrap();
+
+    let mut table = table.as_mut();
+
+    let cfg_iter = opt.config.as_ref().map(|cfg| cfg.iter()).unwrap_or(std::iter::empty());
+
+    let cfg = opt.config.as_ref().map(|cfg| cfg.clone()).unwrap_or(Config::default());
+    ||
+        {
+            let mut iter = table.iter();
+            let mut iter = iter.peekable();
+            let mut iter_mut = table.iter_mut();
+            let mut iter_mut = iter_mut.peekable();
+            let mut iter_peekable = table.iter();
+            let mut iter_peekable = iter_peekable.peekable();
+            let mut iter_peekable_mut = table.iter_mut();
+            let mut iter_peekable_mut = iter_peekable_mut.peekable();
+            let mut einstein_db = EinsteinDB {
+                db: db,
+                table: table,
+                iter: iter,
+                iter_mut: iter_mut,
+                iter_peekable: iter_peekable,
+                iter_peekable_mut: iter_peekable_mut,
+            };
+            einstein_db.run(cfg_iter);
+        };
+
+    let mut iter = table.iter();
+    let mut iter = iter.peekable();
+    let mut iter_mut = table.iter_mut();
 }
 
 

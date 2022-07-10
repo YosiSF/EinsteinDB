@@ -8,8 +8,7 @@ license = "MIT"
 homepage = "https://www.einsteindb.com"
 repository = "https://www.github.com/YosiSF/EinsteinDB/Causets"
 
-[lib]
-proc-macro=true
+[
 
 [dependencies]
 causet = { path = "../causet" }

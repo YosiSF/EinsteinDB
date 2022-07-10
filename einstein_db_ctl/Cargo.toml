@@ -5,9 +5,10 @@ license = "MIT, Apache-2.0, BSD-3.0"
 authors = ["Whtcorps Inc, The EinsteinDB Authors, EinstAI Inc, and OpenAI Inc"]
 edition = "2021"
 description = "EinsteinDB Control Tool"
-source = "  https://github.com/YosiSF/EinsteinDB/einstein_db_ctl
 
 
+[bin]
+einstein_db_ctl ={ path = "./src/main.rs"}
 
 
 [dependencies]
@@ -25,90 +26,4 @@ serde = "1.0.1138"
 serde_derive = "1.0.1138"
 slog = "1.0.1138"
 einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}
-
-gag = "1.0"
-hex = "0.4"
-
-chrono = "0.4"
-crossbeam = "0.8"
-tempfile = "3.0"
-serde = "1.0.138"
-structopt = "0.3"
-futures = "0.3"
-libc = "0.2"
-nix = "0.24.1"
-rand = "0.8.5"
-regex = "1"
-serde_json = "1.0"
-toml = "0.5"
-
-
-[bin]
-einstein_db_ctl = "einstein_db_ctl/src/main.rs"
-
-[dependencies.causetq]
-path = "../causetq"
-
-
-[features]
-rt-multi-thread = "1"
-time = "1"
-
-
-[target.'.exe'.linker.libraries]
-gag = { kind = "static" }
-hex = { kind = "static" }
-causetq = { kind = "static" }
-causet = { kind = "static" }
-causets = { kind = "static" }
-berolinasql = { kind = "static" }
-chrono = { kind = "static" }
-crossbeam = { kind = "static" }
-tempfile = { kind = "static" }
-serde = { kind = "static" }
-structopt = { kind = "static" }
-futures = { kind = "static" }
-tokio = { kind = "static" }
-libc = { kind = "static" }
-nix = { kind = "static" }
-rand = { kind = "static" }
-regex = { kind = "static" }
-serde_json = { kind = "static" }
-toml = { kind = "static" }
-
-[target.'.exe'.linker.libraries.causetq]
-path = "../causetq"
-
-
-[target.'.exe'.linker.libraries.causet]
-path = "../causet"
-
-
-
-[target.'.exe'.linker.libraries.dynamic]
-rand = { kind = "dynamic" }
-regex = { kind = "dynamic" }
-serde_json = { kind = "dynamic" }
-toml = { kind = "dynamic" }
-
-
-[target.'.exe'.linker.libraries.dynamic.rand]
-version = "0.8.5"
-
-
-[target.'.exe'.linker.libraries.dynamic.regex]
-version = "1"
-
-
-[target.'.exe'.linker.libraries.dynamic.serde_json]
-version = "1.0"
-
-
-#debian
-[target.'.exe'.linker.libraries.dynamic.toml]
-version = "0.5"
-
-
-[target.'.exe'.linker.libraries.dynamic.tokio]
-version = "1.5"
 

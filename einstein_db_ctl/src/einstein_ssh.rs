@@ -44,14 +44,21 @@ static VERSION_INFO: SyncLazy<String> = SyncLazy::new(|| {
     einstein_db::einstein_db_version_info(build_timestamp)
 });
 
-#[derive(StructOpt)]
-#[structopt(
-    name = "EinsteinDB SSH and CMD (einstein_db_cli)"
-    about = "Command Line Interface for EinsteinDB"
-    author = crate_authors!(),
-    version = %**VERSION_INFO,
-    setting = AppSettings::DontCollapseArgsInUsag,
-)]
+
+
+use structopt::StructOpt;
+
+const CAUSET_RAW_KEY_HINT: &str = "Raw key (generally starts with \"z\") in escaped form";
+static EINSTEIN_DB_VERSION_INFO: SyncLazy<String> = SyncLazy::new(|| {
+
+    let build_timestamp = option_env!("EINSTEINDB_BUILD_TIME");
+    einstein_db::einstein_db_version_info(build_timestamp);
+    option_env!("EINSTEINDB_BUILD_TIME");
+});
+
+
+
+
 
 pub struct EinsteinDBCli {
     #[structopt(subcommand)]
