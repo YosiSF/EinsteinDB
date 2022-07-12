@@ -9,18 +9,3 @@ tags = ["test"]
 
 
 
-
-
-
-
-[dependencies]
-engine = { path = "../einstein_db" }
-einstein_db = { path = "../einstein_db" }
-einstein_ml = { path = "../einstein_ml" }
-causet = { path = "../causet" }
-causetq = { path = "../causetq" }
-causets = { path = "../causets" }
-berolinasql = { path = "../berolinasql" }
-soliton = { path = "../soliton" }
-soliton_panic = { path = "../soliton_panic" }
-allegro_poset = { path = "../allegro_poset" }
