@@ -2,26 +2,13 @@
 name = "causets"
 version = "0.1.0"
 edition = "2021"
-author = "EinsteinDB Authors - @CavHack"
 description = "Causets is a tool for generating causality datasets for testing causality algorithms."
 license = "MIT"
-homepage = "https://www.einsteindb.com"
-repository = "https://www.github.com/YosiSF/EinsteinDB/Causets"
 
 
 
 [dependencies]
-causet = { path = "../causet" }
-causetq = { path = "../causetq" }
-einstein_ml = { path = "../einstein_ml" }
-soliton = { path = "../soliton" }
-soliton_panic = { path = "../soliton_panic" }
-einstein_db_ctl= { path = "../einstein_db_ctl" }
-einstein_db_alexandrov_processing = { path = "../einstein_db_alexandrov_processing" }
 futures = {version = "0.3"}
 serde = { version = "0.9.0" }
-serde_json = { version = "0.13.0" }
-serde_yaml = { version = "0.13.0" }
-serde_derive = { version = "1.0.94" }
-slog = { version = "0.8.0" }
+
 

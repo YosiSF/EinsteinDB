@@ -4,25 +4,5 @@ version = "0.1.0"
 license = "MIT, Apache-2.0, BSD-3.0"
 authors = ["Whtcorps Inc, The EinsteinDB Authors, EinstAI Inc, and OpenAI Inc"]
 edition = "2021"
-description = "EinsteinDB Control Tool"
 
-
-[bin]
-einstein_db_ctl ={ path = "./src/main.rs"}
-
-
-[dependencies]
-einstein_db = { path= "../einstein_db" }
-eindtein_ml = { path= "../einstein_ml" }
-berolinasql = { path= "../berolinasql" }
-causet= { path= "../causet" }
-causetq = { path= "../causetq" }
-causets = { path= "../causets" }
-soliton = { path= "../soliton" }
-soliton_panic = { path= "../soliton_panic" }
-fdb_traits = { path= "../fdb_traits" }
-serde = "1.0.1138"
-serde_derive = "1.0.1138"
-slog = "1.0.1138"
-einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}
 
