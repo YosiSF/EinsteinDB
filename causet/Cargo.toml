@@ -6,4 +6,5 @@ description = "A simple cause-effect system for AllegroCL"
 license = "MIT"
 
 
-
+[lib]
+path = "./src/lib.rs"

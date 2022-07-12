@@ -1,14 +1,9 @@
 [package]
 name = "berolinasql"
-version = "0.0.1"
-authors = [["BerolinaSQL and EinsteinDB Authors, Whtcorps", "EinstAI"]]
+version = "0.1.0"
 edition = "2021"
 description = "BerolinaSQL is a SQL engine that is based on the BerolinaDB database system."
-license = "MIT/Apache-2.0"
 
 
-[dependencies]
-prost = "= 0.7.4"
-byteorder = "1.2"
-itertools = "0.10"
-lazy_static = "1.3"
+[lib]
+path = "../src/lib.rs"

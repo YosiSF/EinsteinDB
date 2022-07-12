@@ -4,18 +4,3 @@ version = "0.1.0"
 edition = "2021"
 authors = ["einstein_db"]
 description = "einstein_db server"
-license = "MIT"
-homepage = "https://www.einsteindb.com"
-repository = "https://github.com/YosiSF/EinsteinDB"
-
-
-
-[dependencies]
-serde = "1.0.1138"
-serde_derive = "1.0.1138"
-slog = "1.0.1138"
-serde_json = "1"
-url = "2"
-bytes = "1"
-futures = "0.3.21"
-hyper = "0.14.19"
