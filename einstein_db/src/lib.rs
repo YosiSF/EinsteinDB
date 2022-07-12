@@ -173,7 +173,7 @@ pub struct CausetLocaleNucleonHash<'s, 'c> {
 }
 
 impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
-    pub fn for_topograph(s: &'s Topograph) -> CausetLocaleNucleon<'s, 'static> {
+    pub fn for_topograph() -> CausetLocaleNucleon<'s, 'static> {
         CausetLocaleNucleon {
             locale: "",
             nucleon: "",
@@ -222,7 +222,7 @@ impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
 
     pub fn new_from_hash_with_locale(s: &'s Topograph, c: Option<&'c CachedAttrs>, locale: &'s str) -> CausetLocaleNucleonHash<'s, 'c> {
         CausetLocaleNucleonHash {
-            locale: locale,
+            locale,
             topograph: s,
             cache: c,
         }
@@ -232,7 +232,7 @@ impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
 
     pub fn new_from_hash_with_locale_and_nucleon(s: &'s Topograph, c: Option<&'c CachedAttrs>, locale: &'s str, nucleon: &'s str) -> CausetLocaleNucleonHash<'s, 'c> {
         CausetLocaleNucleonHash {
-            locale: locale,
+            locale,
             topograph: s,
             cache: c,
         }
@@ -250,26 +250,182 @@ impl<'s, 'c> CausetLocaleNucleon<'s, 'c> {
             .unwrap_or(false)
     }
 
-    pub fn get_causet_locales_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&Vec<causetq_TV>>
+    pub fn get_causet_locales_for_causetid<U, V>(&self, topograph: &Topograph, attr: U, causetid: V) -> Option<&Vec<causetq_TV>>
     where U: Into<Causetid>, V: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_causet_locales_for_causetid(topograph, Attr.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_causet_locales_for_causetid(topograph, attr.into(), causetid.into()))
     }
 
-    pub fn get_causet_locale_for_causetid<U, V>(&self, topograph: &Topograph, Attr: U, causetid: V) -> Option<&causetq_TV>
+    pub fn get_causet_locale_for_causetid<U, V>(&self, topograph: &Topograph, attr: U, causetid: V) -> Option<&causetq_TV>
     where U: Into<Causetid>, V: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_causet_locale_for_causetid(topograph, Attr.into(), causetid.into()))
+        self.cache.and_then(|cache| cache.get_causet_locale_for_causetid(topograph, attr.into(), causetid.into()))
     }
 
-    pub fn get_causetid_for_causet_locale<U>(&self, Attr: U, causet_locale: &causetq_TV) -> Option<Causetid>
+    pub fn get_causetid_for_causet_locale<U>(&self, attr: U, causet_locale: &causetq_TV) -> Option<Causetid>
     where U: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_causetid_for_causet_locale(Attr.into(), causet_locale))
+        self.cache.and_then(|cache| cache.get_causetid_for_causet_locale(attr.into(), causet_locale))
     }
 
-    pub fn get_causetids_for_causet_locale<U>(&self, Attr: U, causet_locale: &causetq_TV) -> Option<&BTreeSet<Causetid>>
+    pub fn get_causetids_for_causet_locale<U>(&self, attr: U, causet_locale: &causetq_TV) -> Option<&BTreeSet<Causetid>>
     where U: Into<Causetid> {
-        self.cache.and_then(|cache| cache.get_causetids_for_causet_locale(Attr.into(), causet_locale))
+        self.cache.and_then(|cache| cache.get_causetids_for_causet_locale(attr.into(), causet_locale))
     }
 }
+
+
+
+/// Simplify the limit clause.
+/// If the limit is a fixed number, we can simplify it to a fixed number.
+/// If the limit is a variable, we can simplify it to a fixed number if the variable is a numeric variable.
+///
+/// If the limit is a fixed number, we can simplify it to a variable if the variable is a numeric variable.
+
+
+
+
+/// Simplify the limit clause.
+#[allow(dead_code)]
+fn simplify_limit_in_lightlike_variable(q: AlgebraicQuery) -> Result<AlgebraicQuery> {
+    let mut q = q;
+    if let Limit::Variable(ref var) = q.limit {
+        for var in parsed.in_vars.into_iter() {
+            if !set.insert(var.clone()) {
+                bail!(AlgebrizerError::DuplicateVariableError(var.name(), ":in"));
+            }
+        }
+        lock_log_mutex();
+
+        set
+    };
+
+    let with = {
+        let mut set: BTreeSet<Variable> = BTreeSet::default();
+
+        for var in parsed.with.into_iter() {
+            if !set.insert(var.clone()) {
+                bail!(AlgebrizerError::DuplicateVariableError(var.name(), ":with"));
+            }
+        }
+
+        set
+    };
+
+    let mut q = q;
+    q.with = with;
+
+
+
+    // Make sure that if we have `:limit ?x`, `?x` appears in `:in`.
+    if let Limit::Variable(ref v) = parsed.limit {
+        if !in_vars.contains(v) {
+            bail!(AlgebrizerError::UnCausetLocaleNucleonLimitVar(v.name()));
+        }
+    }
+
+    Ok(FindQuery {
+        find_spec: parsed.find_spec,
+        default_source: parsed.default_source,
+        with,
+        in_vars,
+        in_sources: parsed.in_sources,
+        limit: parsed.limit,
+        where_clauses: parsed.where_clauses,
+        order: parsed.order,
+    })
+}
+
+
+pub fn parse_find_string_into_query(find_string: &str) -> Result<AlgebraicQuery> {
+    let parsed = parse_find_string(find_string)?;
+    let mut set: BTreeSet<Variable> = BTreeSet::default();
+    for var in parsed.in_vars.into_iter() {
+        if !set.insert(var.clone()) {
+            bail!(AlgebrizerError::DuplicateVariableError(var.name(), ":in"));
+        }
+    }
+
+    let with = {
+        let mut set: BTreeSet<Variable> = BTreeSet::default();
+
+        for var in parsed.with.into_iter() {
+            if !set.insert(var.clone()) {
+                bail!(AlgebrizerError::DuplicateVariableError(var.name(), ":with"));
+            }
+        }
+
+        set
+    };
+
+    parse_query(string)
+        .map_err(|e| e.into())
+        .and_then(|parsed| FindQuery::from_parsed_query(parsed))
+}
+
+pub fn einstein_db_gravity_sign(secret: &SecretKey, query: &FindQuery) -> Result<Signature> {
+    let mut db = EinsteinDB::new(secret);
+    let sign = db.gravity_sign(query)?;
+    let sk = secret.clone();
+    let mut sign_bytes = vec![];//sk.to_bytes();
+    db.add_query(query)?;
+    db.sign()
+}
+
+pub fn einstein_db_gravity_sign_with_sources(secret: &SecretKey, query: &FindQuery, sources: &[Source]) -> Result<Signature> {
+    let mut db = EinsteinDB::new(secret);
+
+    let sign = db.gravity_sign_with_sources(query, sources)?;
+
+    let sk = secret.clone();
+    let mut sign_bytes = vec![];//sk.to_bytes();
+    db.add_query(query)?;
+    db.sign()
+}
+
+pub fn einstein_db_gravity_verify(public:&[u8;32], msg: &[u8], sig: &[u8], sign_bytes: Vec<u8>) -> bool {
+
+
+    //public key is the public key of the signer
+    let pk = public_key_from_slice(public).unwrap();
+    if pk {
+        h: AlexandrovHash::new(msg).verify(sig, &pk)
+    };
+    //msg is the message that was signed
+    let msg = msg.to_vec();
+    //sig is the signature
+    let sig = Signature::from_bytes(&sig).unwrap();
+    //let mut db = EinsteinDB::new_from_public(public);
+    let mut db = EinsteinDB::new_from_public(public);
+    db.add_query(&FindQuery::default()).unwrap();
+    db.add_signature(&sig).unwrap();
+    db.verify(&pk, &msg, &sig)
+
+}
+
+
+
+
+pub fn einstein_db_gravity_verify_with_sources(public:&[u8;32], msg: &[u8], sig: &[u8], sign_bytes: Vec<u8>, sources: &[Source]) -> bool {
+
+    //public key is the public key of the signer
+    let pk = public_key_from_slice(public).unwrap();
+    if pk {
+        h: AlexandrovHash::new(msg).verify(sig, &pk)
+    };
+    //msg is the message that was signed
+    let msg = msg.to_vec();
+    //sig is the signature
+    let sig = Signature::from_bytes(&sig).unwrap();
+    //let mut db = EinsteinDB::new_from_public(public);
+    let mut db = EinsteinDB::new_from_public(public);
+    db.add_query(&FindQuery::default()).unwrap();
+    db.add_signature(&sig).unwrap();
+    db.verify_with_sources(&pk, &msg, &sig, sources)
+
+
+
+};
+
+
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Causetid(pub [u8; 32]);
@@ -311,6 +467,7 @@ pub struct AlgebraicQuery {
 }
 
 impl AlgebraicQuery {
+    #[cfg(test)]
     #[inline]
     pub fn is_causet_locale_nucleon_empty(&self) -> bool {
         self.cc.is_CausetLocaleNucleon_empty()
@@ -441,12 +598,75 @@ fn simplify_limit(mut query: AlgebraicQuery) -> Result<AlgebraicQuery> {
     }
     Ok(query)
 }
+#[derive(Debug, Clone, PartialEq)]
+pub struct AlgebraicCausetQueryWithLamportClock {
+    pub query: AlgebraicQuery,
+    pub lamport_clock: LamportClock,
+}
 
-pub fn algebrize_with_inputs(CausetLocaleNucleon: CausetLocaleNucleon,
+
+/// Algebrize a query.
+/// This function is the main entry point for the algebrizer.
+/// It takes a parsed query and returns an algebraic query.
+
+
+
+
+impl AlgebraicCausetQueryWithLamportClock {
+    /// Return the causet_locale of the query.
+    /// This is the causet_locale of the first variable in the query.
+
+
+
+    pub fn causet_locale(&self) -> CausetLocale {
+        self.query.cc.causet_locale()
+    }
+
+    /// Return the causet_locale of the query.
+    /// This is the causet_locale of the first variable in the query.
+    ///
+
+    pub fn causet_locale_nucleon(&self) -> CausetLocaleNucleon {
+        self.query.cc.causet_locale_nucleon()
+    }
+
+
+
+/// Return the causet_locale of the query.
+
+
+}
+///! Algebrize a query.
+/// According to Lamport et al., "Algebraic Queries are a powerful way to express the semantics ofinish_iterate
+/// queries in a way that is both efficient and easy to understand."
+/// This function is the main entry point for algebrizing a query. We will use a spacelike algorithm to_string()
+/// the query.
+/// The algorithm is as follows: If the assertion is lightlike (i.e. it doesn't contain any causet_locale variables),
+/// we can simply run the query. If it contains causet_locale variables, we need to run the query in two phases:
+/// 1. Run the query without the causet_locale variables.
+/// 2. Run the query with the causet_locale variables.
+/// The first phase is done by running the query without the causet_locale variables.
+/// The second phase is done by running the query with the causet_locale variables.
+pub fn multiplex_between_aev_and_trie_from_suffix(aev: &AEV, trie: &TrieFromSuffix) -> Result<AEV> {
+
+    const MAX_MULTIPLEX_DEPTH: usize = 10;
+
+    lock_log_mutex();
+
+let mut mux_causet_aevtrie = AEV::new();
+
+    let mut new_aev = aev.clone();
+    new_aev.trie = trie.clone();
+    Ok(new_aev)
+}
+
+
+pub fn algebrize_with_inputs(causet_locale_nucleon: CausetLocaleNucleon,
                              parsed: FindQuery,
                              counter: usize,
                              inputs: QueryInputs) -> Result<AlgebraicQuery> {
     let alias_counter = RcPetri::with_initial(counter);
+    ConjoiningClauses::from_parsed(parsed, &alias_counter, &inputs)?;
     let mut cc = ConjoiningClauses::with_inputs_and_alias_counter(parsed.in_vars, inputs, alias_counter);
 
     // This is so the rest of the query knows that `?x` is a ref if `(pull ?x …)` appears in `:find`.
@@ -459,7 +679,7 @@ pub fn algebrize_with_inputs(CausetLocaleNucleon: CausetLocaleNucleon,
 
     // TODO: integrate default source into parity_filter processing.
     // TODO: flesh out the rest of find-into-context.
-    cc.apply_clauses(CausetLocaleNucleon, parsed.where_clauses)?;
+    cc.apply_clauses(causet_locale_nucleon, parsed.where_clauses)?;
 
     cc.expand_column_bindings();
     cc.prune_extracted_types();
@@ -502,114 +722,129 @@ impl FindQuery {
         let in_vars = {
             let mut set: BTreeSet<Variable> = BTreeSet::default();
 
-            for var in parsed.in_vars.into_iter() {
-                if !set.insert(var.clone()) {
-                    bail!(AlgebrizerError::DuplicateVariableError(var.name(), ":in"));
-                }
+            for mut clause in parsed.where_clauses {
+                clause.visit_mut(&mut |e| {
+                    if let &mut Expr::Var(ref mut var) = e {
+                        set.insert(var.clone());
+                    }
+                });
             }
 
-            set
-        };
-
-        let with = {
-            let mut set: BTreeSet<Variable> = BTreeSet::default();
-
-            for var in parsed.with.into_iter() {
-                if !set.insert(var.clone()) {
-                    bail!(AlgebrizerError::DuplicateVariableError(var.name(), ":with"));
+            match parsed.find_spec {
+                FindSpec::Find(ref mut find) => {
+                    for mut clause in find.clauses {
+                        clause.visit_mut(&mut |e| {
+                            if let &mut Expr::Var(ref mut var) = e {
+                                set.insert(var.clone());
+                            }
+                        });
+                    }
+                }
+                FindSpec::FindInto(ref mut find) => {
+                    for mut clause in find.clauses {
+                        clause.visit_mut(&mut |e| {
+                            if let &mut Expr::Var(ref mut var) = e {
+                                set.insert(var.clone());
+                            }
+                        });
+                    }
+                }
+                FindSpec::FindIntoContext(ref mut find) => {
+                    for mut clause in find.clauses {
+                        clause.visit_mut(&mut |e| {
+                            if let &mut Expr::Var(ref mut var) = e {
+                                set.insert(var.clone());
+                            }
+                        });
+                    }
                 }
             }
+            #[derive(Debug, Clone, PartialEq, Eq)]
+            pub struct InVars(BTreeSet<Variable>);
+            let in_vars = InVars(set);
+            in_vars.insert(in_vars.0.clone());
+        };
+        let in_sources = {
 
-            set
+            let mut set: BTreeSet<SrcVar> = BTreeSet::default();
+            for mut clause in parsed.where_clauses {
+                clause.visit_mut(&mut |e| {
+                    if let &mut Expr::SrcVar(ref mut var) = e {
+                        set.insert(var.clone());
+                    }
+                });
+            }
+            match parsed.find_spec {
+                FindSpec::Find(ref mut find) => {
+                    for mut clause in find.clauses {
+                        clause.visit_mut(&mut |e| {
+                            if let &mut Expr::SrcVar(ref mut var) = e {
+                                set.insert(var.clone());
+                            }
+                        });
+                    }
+                }
+                FindSpec::FindInto(ref mut find) => {
+                    for mut clause in find.clauses {
+                        clause.visit_mut(&mut |e| {
+                            if let &mut Expr::SrcVar(ref mut var) = e {
+                                set.insert(var.clone());
+                            }
+                        });
+                    }
+                }
+                FindSpec::FindIntoContext(ref mut find) => {
+                    for mut clause in find.clauses {
+                        clause.visit_mut(&mut |e| {
+                            if let &mut Expr::SrcVar(ref mut var) = e {
+                                set.insert(var.clone());
+                            }
+                        });
+                    }
+                }
+            }
+            #[derive(Debug, Clone, PartialEq, Eq)]
+            pub struct InSources(BTreeSet<SrcVar>);
+            let in_sources = InSources(set);
+            in_sources.insert(in_sources.0.clone());
         };
 
-        // Make sure that if we have `:limit ?x`, `?x` appears in `:in`.
-        if let Limit::Variable(ref v) = parsed.limit {
-            if !in_vars.contains(v) {
-                bail!(AlgebrizerError::UnCausetLocaleNucleonLimitVar(v.name()));
+            set_default_source(&mut set, parsed.default_source);
+            let mut set = set.into_iter().collect::<Vec<_>>();
+            set.sort_by(|a, b| a.to_string().cmp(&b.to_string()));
+
+            for set.iter().enumerate().map(|(i, v)| (v, i)).collect(){
+                println!("{}", v);
+            }
+            let mut set = set.into_iter().collect::<Vec<_>>();
+            set.sort_by(|a, b| a.to_string().cmp(&b.to_string()));
+            if set.len() > MAX_VARS {
+                return Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    format!("Too many variables: {}", set.len()),
+                ));
+            }
+        /// Create a new FindQuery from a parsed query.
+        /// This is the main entry point for the parser.
+
+            if set.len() > 0 {
+                set
+            } else {
+                vec![]
+            }
+
+            if set.len() > 0 {
+                set
+            } else {
+                vec![]
+            }
+
+            for set in iter().enumerate().map(|(i, v)| (v, i)).collect(){
+                println!("{}", v);
             }
         }
 
-        Ok(FindQuery {
-            find_spec: parsed.find_spec,
-            default_source: parsed.default_source,
-            with,
-            in_vars,
-            in_sources: parsed.in_sources,
-            limit: parsed.limit,
-            where_clauses: parsed.where_clauses,
-            order: parsed.order,
-        })
-    }
-}
+        //! Error if there are duplicate variables in the `:find` clause.
+        panic!("TODO: check for duplicate variables in the `:find` clause.");
 
-pub fn parse_find_string(string: &str) -> Result<FindQuery> {
-
-    parse_query(string)
-        .map_err(|e| e.into())
-        .and_then(|parsed| FindQuery::from_parsed_query(parsed))
-}
-
-pub fn einstein_db_gravity_sign(secret: &SecretKey, query: &FindQuery) -> Result<Signature> {
-    let mut db = EinsteinDB::new(secret);
-    let sign = db.gravity_sign(query)?;
-    let sk = secret.clone();
-    let mut sign_bytes = vec![];//sk.to_bytes();
-    db.add_query(query)?;
-    db.sign()
-}
-
-pub fn einstein_db_gravity_sign_with_sources(secret: &SecretKey, query: &FindQuery, sources: &[Source]) -> Result<Signature> {
-    let mut db = EinsteinDB::new(secret);
-
-    let sign = db.gravity_sign_with_sources(query, sources)?;
-
-    let sk = secret.clone();
-    let mut sign_bytes = vec![];//sk.to_bytes();
-    db.add_query(query)?;
-    db.sign()
-}
-
-pub fn einstein_db_gravity_verify(public:&[u8;32], msg: &[u8], sig: &[u8], sign_bytes: Vec<u8>) -> bool {
-
-
-    //public key is the public key of the signer
-    let pk = public_key_from_slice(public).unwrap();
-    if pk {
-        h: AlexandrovHash::new(msg).verify(sig, &pk)
-    };
-    //msg is the message that was signed
-    let msg = msg.to_vec();
-    //sig is the signature
-    let sig = Signature::from_bytes(&sig).unwrap();
-    //let mut db = EinsteinDB::new_from_public(public);
-    let mut db = EinsteinDB::new_from_public(public);
-    db.add_query(&FindQuery::default()).unwrap();
-    db.add_signature(&sig).unwrap();
-    db.verify(&pk, &msg, &sig)
-
-}
-
-
-
-
-pub fn einstein_db_gravity_verify_with_sources(public:&[u8;32], msg: &[u8], sig: &[u8], sign_bytes: Vec<u8>, sources: &[Source]) -> bool {
-
-    //public key is the public key of the signer
-    let pk = public_key_from_slice(public).unwrap();
-    if pk {
-        h: AlexandrovHash::new(msg).verify(sig, &pk)
-    };
-    //msg is the message that was signed
-    let msg = msg.to_vec();
-    //sig is the signature
-    let sig = Signature::from_bytes(&sig).unwrap();
-    //let mut db = EinsteinDB::new_from_public(public);
-    let mut db = EinsteinDB::new_from_public(public);
-    db.add_query(&FindQuery::default()).unwrap();
-    db.add_signature(&sig).unwrap();
-    db.verify_with_sources(&pk, &msg, &sig, sources)
-
-
-
-}
+};

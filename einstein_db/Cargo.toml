@@ -9,32 +9,16 @@ keywords = ["einstein", "db", "sql", "mysql", "mariadb", "postgresql", "sqlite",
 
 
 [dependencies]
-serde = "^0.8"
-eindtein_ml = { path= "../einstein_ml" }
-berolinasql = { path= "../berolinasql", branch= "master" }
-causet= { path= "../causet" }
-causets = { path= "../causets" }
-allegro_poset = { path= "../allegro_poset" }
-soliton = { path= "../soliton" }
-soliton_panic = { path= "../soliton_panic" }
-fdb_traits = { path= "../fdb_traits" }
 serde = "1.0.1138"
-serde_derive = "1.0.1138"
 slog = "1.0.1138"
-einstein_db_ctl = { path= "../einstein_db_ctl" }
-einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}
 sodiumoxide = "0.2.18"
 foundationdb = "0.1.0"
 grpcio = "0.10.3"
-grpcio-sys = "0.10.3"
-grpcio-health="0.10.3"
 chrono = "0.4.19"
 failure = "0.1.8"
 lazy_static = "1.4.0"
 time = "0.3.11"
 log = "0.4.17"
-serde = "1.0.138"
-serde_json = "1.0.138"
 anyhow = "1.0.58"
 async-stream = "0.3.3"
 async-trait = "0.1.56"
@@ -64,8 +48,6 @@ regex = "1.3"
 num-traits = "0.2.14"
 rev_lines = "0.2.1"
 semver = "1.0.6"
-serde_derive = "1.0"
-serde_ignored = "0.1"
 serde_json = "1.0"
 slog = "2.7.0"
 parking_lot = "0.12"
@@ -73,18 +55,12 @@ sysinfo = "0.24.5"
 tempfile = "3.0"
 paste = "1.0"
 thiserror = "1.0"
-thread_local = "0.2"
-tokio-openssl = "0.6.3"
 toml = "0.5"
 tokio-tls = "0.3.1"
 url = "2.2.2"
 uuid = "0.9.0"
 uuid-sys = "0.9.0"
 sodiumoxide = "0.2.18"
-foundationdb = "0.1.0"
-grpcio = "0.10.3"
-grpcio-sys = "0.10.3"
-grpcio-health="0.10.3"
 chrono = "0.4.19"
 failure = "0.1.8"
 lazy_static = "1.4.0"
@@ -97,32 +73,11 @@ async-stream = "0.3.3"
 async-trait = "0.1.56"
 backtrace = "0.3.65"
 byteorder = "1.4.3"
-crc32fast = "1.3.2"
-crc64fast = "1.0.0"
-crossbeam = "0.8.1"
-fail = "0.5.0"
 fmt = "0.1.37"
 futures-executor = "0.3.1"
 futures-timer = "3.0"
-hyper-tls = "0.5"
-itertools = "0.10"
-openssl = "0.10"
-
-http = "0"
 libc = "0.2"
 hex = "0.4"
-libloading = "0.7"
-mime = "0.3.13"
-more-asserts = "0.3.0"
-murmur3 = "0.5.1"
-pin-project = "1.0"
-pnet_datalink = "0.31.0"
-rand = "0.8.5"
-regex = "1.3"
-causetq = { path = "../causetq" }
-causets = { path = "../causets" }
-soliton_panic = { path = "../soliton_panic" }
-einstein_ml = { path = "../einstein_ml" }
 num-traits = "0.2.14"
 rev_lines = "0.2.1"
 semver = "1.0.6"

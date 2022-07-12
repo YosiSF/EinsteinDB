@@ -27,8 +27,7 @@ fdb_traits = { path= "./fdb_traits" }
 serde = "1.0.1138"
 serde_derive = "1.0.1138"
 slog = "1.0.1138"
-einstein_db_ctl = { path= "../einstein_db_ctl" }
-einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}
+
 sodiumoxide = "0.2.18"
 foundationdb = "0.1.0"
 grpcio = "0.10.3"
@@ -125,10 +124,7 @@ pin-project = "1.0"
 pnet_datalink = "0.31.0"
 rand = "0.8.5"
 regex = "1.3"
-causetq = { path = "../causetq" }
-causets = { path = "../causets" }
-soliton_panic = { path = "../soliton_panic" }
-einstein_ml = { path = "../einstein_ml" }
+
 num-traits = "0.2.14"
 rev_lines = "0.2.1"
 semver = "1.0.6"
