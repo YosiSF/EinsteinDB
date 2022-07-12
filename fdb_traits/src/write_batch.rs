@@ -234,6 +234,23 @@ pub struct Transaction {
     pub read_version_new: u64,
 }
 
+//read committed and read your own version
+
+
+#[derive(Debug, Clone)]
+pub struct TransactionRead {
+    pub db: Arc<dyn Database>,
+    pub timestamp: u64,
+    pub commit_version: u64,
+    pub read_version: u64,
+    pub read_version_old: u64,
+    pub read_version_new: u64,
+}
+
+
+
+
+
 
 
 impl Transaction {
