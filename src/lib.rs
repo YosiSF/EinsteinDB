@@ -17,467 +17,743 @@
 /// This is a library for the [EinsteinDB](https://einsteindb.com
 /// "EinsteinDB: A Scalable, High-Performance, Distributed Database")
 
+//import serde
 
 
+//macro for unused variables
+#[allow(unused_variables)]
+#[allow(unused_mut)]
+#[allow(unused_imports)]
+#[allow(dead_code)]
+#[allow(unused_must_use)]
+#[warn(unused_extern_crates)]
+#[warn(unused_import_braces)]
+#[warn(unused_qualifications)]
 
-use std::fmt::{self, Debug, Display, Formatter};
-use std::error::Error as StdError;
+#[warn(unused_variables)]
+
+
 use std::io;
-use std::result;
-use std::string::FromUtf8Error;
-use std::str::Utf8Error;
-use std::error::Error;
-use std::fmt::{self, Debug, Display, Formatter};
-use std::io;
-use std::string::FromUtf8Error;
-use std::str::Utf8Error;
 
-
-use crate::berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind};
-use crate::berolinasql::{ErrorImpl as BerolinaSqlErrorImpl};
-use std::error::Error;
-use std::string::FromUtf8Error;
-
-
-
-
-// use std::sync::{Arc, Mutex};
-// use std::sync::atomic::{AtomicBool, Partitioning};
-// use std::thread;
-// use std::time::Duration;
-
-use std::sync::{Arc, Mutex};
-use std::sync::atomic::{AtomicBool, Partitioning};
-use std::thread;
-use std::time::Duration;
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::collections::hash_map::Iter;
-
-
-use std::error::Error;
-use std::fmt;
-use std::io;
-use std::result;
-
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::thread;
-use std::time::Duration;
-use std::collections::HashMap;
-use std::collections::hash_map::Entry;
-use std::collections::hash_map::Iter;
-use std::collections::hash_map::IterMut;
-use std::collections::hash_map::Keys;
-use std::collections::hash_map::Values;
-
-
-use std::collections::HashSet;
-use std::collections::hash_set::Iter as HashSetIter;
-use std::collections::hash_set::IterMut as HashSetIterMut;
-
-
-use std::collections::BTreeSet;
-use std::collections::btree_set::Iter as BTreeSetIter;
-use std::collections::btree_set::IterMut as BTreeSetIterMut;
-
-
-
-use std::sync::atomic::
-{
-    AtomicUsize,
-    Ordering::Relaxed,
-    Ordering::SeqCst
-};
-
-
-use std::sync::mpsc::{channel, Sender, Receiver};
-use std::sync::mpsc::TryRecvError;
-
-
-
-use std::sync::mpsc::RecvError;
-use std::sync::mpsc::RecvTimeoutError;
-
-
-use super::{AllegroPoset, Poset};
-use super::{PosetError, PosetErrorKind};
-use super::{PosetNode, PosetNodeId, PosetNodeData};
-
-
-/// A `Sync` implementation for `AllegroPoset`.
-/// This implementation is thread-safe.
-/// # Examples
-/// ```
-/// use einsteindb::causetq::sync::new_sync;
-/// use einsteindb::causetq::sync::Sync;
-/// use std::sync::Arc;
-/// use std::sync::Mutex;
-///
-/// let poset = new_sync();
-/// let sync = Sync::new(poset);
-///
-/// let mutex = Arc::new(Mutex::new(sync));
-/// let mutex2 = Arc::new(Mutex::new(sync));
-///
-/// let mutex3 = Arc::new(Mutex::new(sync));
-///
-///
-///
-
-
-
-
-
-#[derive(Clone, Debug)]
-pub struct Sync {
-    poset: Arc<AllegroPoset>,
-
-    // This is a map of the nodes that are currently being processed.
-    // The key is the node id.
-    // The value is the number of times the node is being processed.
-    // This is used to prevent a node from being processed more than once.
-    // This is necessary because the node may be added to the queue multiple times.
-    // This is also used to prevent a node from being processed more than once.
-    // This is necessary because the node may be added to the queue multiple times.
-}
-
-
-
-
-
-
-
-#[macro_use]
-extern crate soliton_panic;
-
-
-extern crate soliton;
-
-
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate log;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate serde_json;
-#[macro_use]
-extern crate serde_value;
-#[macro_use]
-extern crate serde_yaml;
-#[macro_use]
-extern crate serde_cbor;
-
-
-#[macro_use]
-extern crate failure;
-#[macro_use]
-extern crate failure_derive;
-#[macro_use]
-extern crate failure_derive_recover;
-
-
-
-#[macro_use]
-extern crate soliton_macro;
-
-#[derive(Debug)]
-pub enum BerolinaSqlError {
-    IoError(io::Error),
-    SqlError(String),
-}
-
-#[derive(Debug)]
-pub enum BerolinaSqlErrorType {
-    IoError,
-    SqlError,
-}
-
-#[derive(Debug)]
-pub struct BerolinaSqlErrorInfo {
-    pub error_type: BerolinaSqlErrorType,
-    pub error_msg: String,
-}
-
-pub struct BerolinaSqlErrorInfoList {
-    pub error_info_list: Vec<BerolinaSqlErrorInfo>,
-}
-
-
-impl BerolinaSqlErrorInfoList {
-    pub fn new() -> BerolinaSqlErrorInfoList {
-        BerolinaSqlErrorInfoList {
-            error_info_list: Vec::new(),
-        }
-    }
-}
-#[derive(Deserialize, Serialize, Debug)]
-pub struct BerolinaSqlErrorInfoListSerialized {
-    pub error_info_list: Vec<BerolinaSqlErrorInfoSerialized>,
-}
-
-
-impl BerolinaSqlErrorInfoListSerialized {
-    pub fn new() -> BerolinaSqlErrorInfoListSerialized {
-        BerolinaSqlErrorInfoListSerialized {
-            error_info_list: Vec::new(),
-        }
-    }
-}
-
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct BerolinaSqlErrorInfoSerialized {
-    pub error_type: BerolinaSqlErrorTypeSerialized,
-    pub error_msg: String,
-}
-
-impl BerolinaSqlError {
-    pub fn new(error_type: BerolinaSqlErrorType, error_msg: String) -> BerolinaSqlError {
-        BerolinaSqlError {
-            error_type: error_type,
-            error_msg: error_msg,
-        }
-    }
-}
 
 pub const EINSTEIN_DB_VERSION: u32 = 0x0101;
 pub const EINSTEIN_DB_VERSION_STR: &str = "0.1.1";
 pub const EINSTEIN_ML_VERSION: u32 = 0x0101;
 pub const EINSTEIN_DB_VERSION_STR_LEN: usize = 16;
 
-#[macro_export]
-macro_rules! einsteindb_macro {
-    ($($x:tt)*) => {
-        {
-            let mut _einsteindb_macro_result = String::new();
-            write!(_einsteindb_macro_result, $($x)*).unwrap();
-            _einsteindb_macro_result
-        }
-    };
+
+/// The error type for EinsteinDB.
+/// All errors returned from the EinsteinDB library are of this type.
+/// This is a catch-all type for errors that are not specific to any
+/// particular operation.
+
+
+#[derive(Debug)]
+pub enum Error {
+    /// An error originating from the client library itself.
+    /// This is a bug in the library itself and should not occur.
+    InternalError(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError2(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError3(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError4(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError5(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError6(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError7(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError8(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError9(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError10(String),
+    /// An error originating from the server itself.
+    /// This is a bug in the server and should be reported to the server
+    /// administrator.
+    ServerError11(String),
+
 }
 
 
-
-
-
-#[macro_export]
-macro_rules! einsteindb_macro_impl {
-    /// einsteindb_macro_impl!(
-    ///    "Hello, {}!",
-    ///   "world"
-    /// );
-    ($($x:tt)*) => {
-        {
-            let mut _einsteindb_macro_result = String::new();
-            write!(_einsteindb_macro_result, $($x)*).unwrap();
-            _einsteindb_macro_result
-        }
-    };
-}
-
-
-#[macro_export]
-macro_rules! einsteindb_macro_impl_with_args {
-    /// einsteindb_macro_impl_with_args!(
-    ///    "Hello, {}!",
-    ///   "world"
-    /// );
-    ($($x:tt)*) => {
-        {
-            let mut _einsteindb_macro_result = String::new();
-            write!(_einsteindb_macro_result, $($x)*).unwrap();
-            _einsteindb_macro_result
-        }
-    };
-}
-
-
-#[macro_export]
-macro_rules! einsteindb_macro_impl_with_args_and_return {
-    /// einsteindb_macro_impl_with_args_and_return!(
-    ///    "Hello, {}!",
-    ///   "world"
-    /// );
-    ($($x:tt)*) => {
-        {
-            let mut _einsteindb_macro_result = String::new();
-            write!(_einsteindb_macro_result, $($x)*).unwrap();
-            _einsteindb_macro_result
-        }
-    };
-}
-
-
-#[macro_export]
-macro_rules! einsteindb_macro_impl_with_args_and_return_and_return_type {
-    /// einsteindb_macro_impl_with_args_and_return_and_return_type!(
-    ///    "Hello, {}!",
-    ///   "world"
-    /// );
-    ($($x:tt)*) => {
-        {
-            let mut _einsteindb_macro_result = String::new();
-            write!(_einsteindb_macro_result, $($x)*).unwrap();
-            _einsteindb_macro_result
-        }
-    };
-}
-
-/// # About
-///
-/// This is a library for the [EinsteinDB](https://einsteindb.com
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct EinsteinDBVersion {
-    pub version: u32,
-    pub version_str: String,
-}
-
-
-impl EinsteinDBVersion {
-    pub fn new(version: u32, version_str: String) -> EinsteinDBVersion {
-        EinsteinDBVersion {
-            version: version,
-            version_str: version_str,
-        }
+impl Error {
+    pub fn new(msg: String) -> Error {
+        Error::InternalError(msg)
     }
 }
 
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct EinsteinDBMLVersion {
-    pub version: u32,
-    pub version_str: String,
-}
-
-
-impl EinsteinDBMLVersion {
-    pub fn new(version: u32, version_str: String) -> EinsteinDBMLVersion {
-        EinsteinDBMLVersion {
-            version: version,
-            version_str: version_str,
-        }
-    }
-}
-
-pub struct EinsteinDB {
-    pub version: u32,
-    pub version_str: String,
-    pub version_str_len: usize,
-
-    #[macro_export]
-    pub einsteindb_macro: String,
-
-    #[macro_export]
-    pub einsteindb_macro_impl: String,
-
-    #[macro_export]
-    pub einsteindb_macro_impl_with_args: String,
-
-#[macro_export]
-    pub einsteindb_macro_impl_with_args_with_args: String,
-}
-
-
-macro_rules! einstein_db_macro {
-    ($($x:tt)*) => {
-        {
-            let mut _einstein_db_macro_result = String::new();
-            write!(_einstein_db_macro_result, $($x)*).unwrap();
-            _einstein_db_macro_result
-        }
-    };
-
-}
 
 
 
-///CHANGELOG: 0.1.1
-/// - Added EinsteinDBVersion and EinsteinDBMLVersion structs and associated macros.
-
-
-macro_rules! einstein_db_macro_impl {
-    ($($x:tt)*) => {
-        {
-            let mut _einstein_db_macro_result = String::new();
-            write!(_einstein_db_macro_result, $($x)*).unwrap();
-            _einstein_db_macro_result
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! einstein_db_macro_impl {
-    ($($x:tt)*) => {
-        {
-            let mut _einstein_db_macro_result = String::new();
-            write!(_einstein_db_macro_result, $($x)*).unwrap();
-            _einstein_db_macro_result
-        }
-
-
-    };
-}
-
-
-#[macro_export]
-macro_rules! einstein_db_macro_impl {
-    /// einstein_db_macro_impl!(
-    ///    "Hello, {}!",
-    ///   "world"
-    /// );
-    ($($x:tt)*) => {
-        {
-            let mut _einstein_db_macro_result = String::new();
-            write!(_einstein_db_macro_result, $($x)*).unwrap();
-            _einstein_db_macro_result
-        }
-    };
-}
-
-pub enum EinsteinDbState {
-    #[allow(dead_code)]
-    Init,
-    #[allow(dead_code)]
-
-    /// # About
-    ///
-    ///    This is a library for the [EinsteinDB](https://einsteindb.com
-    Running,
-    Stopped
-}
-
-impl EinsteinDbState {
-    pub fn is_running(&self) -> bool {
-        use einstein_db_ctl::{EinsteinDbState};
-        for state in EinsteinDbState::values() {
-            if state == EinsteinDbState::Running {
-                while self == EinsteinDbState::Running {
-                    return true;
-                }
-                suspend_thread::sleep(Duration::from_millis(100));
-            }
-        }
-        false
-    }
-}
-
+//  use std::sync::{Arc, Mutex};
+// use std::sync::atomic::{AtomicBool, Partitioning};
+// // use std::thread;
+// // use std::time::Duration
 
 pub struct EinsteinDb {
+
     pub version: u32,
     pub version_str: String,
     pub version_str_len: usize,
-    pub einstein_db_state: EinsteinDbState,
+
     pub einstein_db_state_str: String,
     pub einstein_ml_version: String,
     pub einstein_ml_version_str: String,
     pub einstein_db_version: String,
 
 }
+
+
+
+    
+    // async fn get_version_str(&mut self) -> io::Result<()> Ok({
+    //     let mut version_str = String::new();
+    //     let mut version_str_len = 0;
+    //     let mut einstein_ml_version = String::new();
+    //     let mut einstein_ml_version_str = String::new();
+    //     let mut einstein_db_version = String::new();
+    //     let mut einstein_db_state_str = String::new();
+    //     let mut version = 0;
+    //     let mut version_str_len = 0;
+    //     let mut einstein_ml_version_str_len = 0;
+    //     let mut einstein_db_version_str_len = 0;
+    //     let mut einstein_db_state_str_len = 0;
+    //     let mut einstein_ml_version_len = 0;
+    //     let mut einstein_db_state_str_len = 0;
+    // });
+
+    
+
+
+pub struct EinsteinDbClient {
+    pub einstein_db_client_state_str: String,
+    pub einstein_db_client_state_str_len: usize,
+    pub einstein_db_client_state: String,
+    pub einstein_db_client_state_len: usize,
+    
+
+}
+
+
+
+
+impl EinsteinDbClient {
+
+    pub fn new() -> EinsteinDbClient {
+        EinsteinDbClient {
+            einstein_db_client_state_str: String::new(),
+            einstein_db_client_state_str_len: 0,
+            einstein_db_client_state: String::new(),
+            einstein_db_client_state_len: 0,
+        }
+    }
+
+}
+        
+
+    #[allow(dead_code)]
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+
+
+    #[allow(dead_code)]
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+    #[allow(unused_imports)]
+
+    pub fn get_einstein_db_client_state_str() -> String {
+        let mut einstein_db_client_state_str = String::new();
+        let mut einstein_db_client_state_str_len = 0;
+        let mut einstein_db_client_state = String::new();
+        let mut einstein_db_client_state_len = 0;
+    
+        for i in 0..einstein_db_client_state_str_len {
+            einstein_db_client_state_str.push(einstein_db_client_state.chars().nth(i).unwrap());
+        }
+
+        for i in 0..einstein_db_client_state_len {
+            einstein_db_client_state.push(einstein_db_client_state_str.chars().nth(i).unwrap());
+        }
+
+        einstein_db_client_state
+    }
+
+    #[allow(dead_code)]
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+    #[allow(unused_imports)]
+
+
+    pub fn get_einstein_db_client_state_str_len() -> usize {
+        let mut einstein_db_client_state_str = String::new();
+        let mut einstein_db_client_state_str_len = 0;
+        let mut einstein_db_client_state = String::new();
+        let mut einstein_db_client_state_len = 0;
+
+        for i in 0..einstein_db_client_state_str_len {
+            einstein_db_client_state_str.push(einstein_db_client_state.chars().nth(i).unwrap());
+        }   if let Some(c) = einstein_db_client_state_str.chars().nth(0) {
+            einstein_db_client_state_str_len = c.len_utf8();
+        }
+        einstein_db_client_state_str_len == 0;
+        einstein_db_client_state_str_len
+    }
+
+
+
+    #[allow(dead_code)]
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+    #[allow(unused_imports)]
+
+
+    pub fn get_einstein_db_client_state() -> String {
+
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let mut version_str = String::new();
+            let mut version_str_len = 0;
+            let mut einstein_ml_version = String::new();
+            let mut einstein_ml_version_str = String::new();
+            let mut einstein_db_version = String::new();
+            let mut einstein_db_state_str = String::new();
+            let mut version = 0;
+            let mut version_str_len = 0;
+            let mut einstein_ml_version_str_len = 0;
+            let mut einstein_db_version_str_len = 0;
+            let mut einstein_db_state_str_len = 0;
+            let mut einstein_ml_version_len = 0;
+            let mut einstein_db_state_str_len = 0;
+            let mut einstein_db_client_state_str = String::new();
+            let mut einstein_db_client_state_str_len = 0;
+            let mut einstein_db_client_state = String::new();
+            let mut einstein_db_client_state_len = 0;
+            let mut einstein_db_client_state_str = String::new();
+            let mut einstein_db_client_state_str_len = 0;
+            let mut einstein_db_client_state = String::new();
+            let mut einstein_db_client_state_len = 0;
+            let mut einstein_db_client_state_str = String::new();
+            let mut einstein_db_client_state_str_len = 0;
+            let mut einstein_db_client_state = String::new();
+            let mut einstein_db_client_state_len = 0;
+            let mut einstein_db_client_state_str = String::new();
+            let mut einstein_db_client_state_str_len = 0;
+            let mut einstein_db_client_state = String::new();
+            let mut einstein_db_client_state_len = 0;
+        }
+    }
+
+
+    #[allow(dead_code)] 
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+    #[allow(unused_imports)]
+
+    pub fn get_einstein_db_client_state_len() -> usize {
+        let mut einstein_db_client_state_str = String::new();
+        let mut einstein_db_client_state_str_len = 0;
+        let mut einstein_db_client_state = String::new();
+        let mut einstein_db_client_state_len = 0;
+    
+        for i in 0..einstein_db_client_state_str_len {
+            einstein_db_client_state_str.push(einstein_db_client_state.chars().nth(i).unwrap());
+        }
+        if let Some(c) = einstein_db_client_state_str.chars().nth(0) {
+            einstein_db_client_state_str_len = c.len_utf8();
+        }
+        einstein_db_client_state_str_len == 0;
+        einstein_db_client_state_str_len
+    }
+
+    pub fn get_einstein_db_client_state_len() -> usize {
+
+        let mut einstein_db_client_state_str = String::new();
+        let mut einstein_db_client_state_str_len = 0;
+        let mut einstein_db_client_state = String::new();
+        let mut einstein_db_client_state_len = 0;
+
+
+        for i in 0..einstein_db_client_state_str_len {
+            einstein_db_client_state_str.push(einstein_db_client_state.chars().nth(i).unwrap());
+        }   if let Some(c) = einstein_db_client_state_str.chars().nth(0) {
+            einstein_db_client_state_str_len = c.len_utf8();
+        } else {
+            einstein_db_client_state_str_len = 0;
+        }
+        einstein_db_client_state_str_len
+    }
+
+
+
+        //timeline resume
+        fn next(self: Box<Self>) -> Box<dyn Iterator<Item = Self::Item>> {
+            let mut self_ = *self;
+            self_.version = self_.einstein_db.version;
+            self_.version_str = self_.einstein_db.version_str.clone();
+            self_.version_str_len = self_.einstein_db.version_str_len;
+            self_.einstein_db_state_str = self_.einstein_db.einstein_db_state_str.clone();
+            self_.einstein_ml_version = self_.einstein_db.einstein_ml_version.clone();
+            self_.einstein_ml_version_str = self_.einstein_db.einstein_ml_version_str.clone();
+            self_.einstein_db_version = self_.einstein_db.einstein_db_version.clone();
+            self_.einstein_db_version_str = self_.einstein_db.einstein_db_version_str.clone();
+        
+        }
+    }
+
+
+    #[allow(dead_code)]
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+
+
+    pub fn get_einstein_db_client_state() -> String {
+        
+
+    pub fn get_einstein_db_client_state_str_len() -> usize {
+            for i in 0..self_.einstein_db_client_state_str_len {
+                self_.einstein_db_client_state_str.push(self_.einstein_db.einstein_db_client_state_str.chars().nth(i).unwrap());
+            }   if let Some(c) = self_.einstein_db_client_state_str.chars().nth(0) {
+                self_.einstein_db_client_state_str_len = c.len_utf8();
+            } else {
+                self_.einstein_db_client_state_str_len = 0;
+            }
+        //   self.Box<Self> as  Box<dyn Iterator<Item = Self::Item>> {
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[allow(unused_variables)]
+#[allow(unused_mut)]
+#[allow(unused_imports)]
+
+
+pub fn get_einstein_db_client_state_str_len() -> usize {
+
+    pub fn get_einstein_db_client_state() -> String {
+            let mut self_ = *self;
+            self_.version = self_.einstein_db.version;
+             self_.einstein_db_client_state = self_.einstein_db.einstein_db_client_state.clone();
+            self_.einstein_db_client_state_len = self_.einstein_db.einstein_db_client_state_len;
+    }
+}
+
+
+
+
+pub fn get_einstein_db_client_state_str_len() -> usize {
+    pub fn get_einstein_db_client_state_str() -> String {
+        let mut einstein_db_client_state_str = String::new();
+        let mut einstein_db_client_state_str_len = 0;
+        let mut einstein_db_client_state = String::new();
+        let mut einstein_db_client_state_len = 0;
+        let mut einstein_db_client_state_str = String::new();
+
+        for i in 0..einstein_db_client_state_str_len {
+            einstein_db_client_state_str.push(einstein_db_client_state.chars().nth(i).unwrap());
+        }   if let Some(c) = einstein_db_client_state_str.chars().nth(0) {
+            einstein_db_client_state_str_len = c.len_utf8();
+        } else {
+            einstein_db_client_state_str_len = 0;
+        }
+
+        einstein_db_client_state_str
+    }
+
+    pub fn get_einstein_db_client_state_len() -> usize {
+
+        fn get_version(&self) -> u32 {
+          for i in 0..self.version_str_len {
+            self.version_str.push(self.version.chars().nth(i).unwrap());
+          }   if let Some(c) = self.version_str.chars().nth(0) {
+            self.version_str_len = c.len_utf8();
+          } else {
+            self.version_str_len = 0;
+          }
+
+          if (EINSTEIN_DB_VERSION_STR_LEN == self.version_str_len) {
+            self.version = self.version_str.parse::<u32>().unwrap();
+          } else {
+            self.version = 0;
+          } while (self.version_str_len > 0) {
+            self.version_str.pop();
+            self.version_str_len -= 1;
+          }
+        }
+    }
+}
+
+
+pub fn get_einstein_db_client_state_str_len() -> usize {
+    pub fn get_einstein_db_client_state_str() -> String { 
+        //Clone the replicant schemata nd DML
+        fn get_version_str(&self) -> String {
+           for i in 0..self.version_str_len {
+            self.version_str.push(self.version.chars().nth(i).unwrap());
+            if let mut char_state = self.version_str.chars().nth(0) {
+                switch(EINSTEIN_DB_VERSION_STR_LEN==self.version_str_len); {
+                    case true:{
+
+                        if (EINSTEIN_DB_VERSION_STR_LEN == self.version_str_len) {
+                            self.version = self.version_str.parse::<u32>().unwrap();
+                        } else {
+                            self.version = 0;
+                        } while (self.version_str_len > 0) {
+                            self.version_str.pop();
+                            self.version_str_len -= 1;
+                        }
+
+                        self.version_str_len = char_state.len_utf8();
+                    }
+                    case false:
+
+                        self.version_str_len = 0;
+                }
+
+            } else {
+                self.version_str_len = 0;
+            }
+        }
+        self.version_str
+    }
+}
+
+
+
+
+pub fn get_einstein_db_client_state_str_len() -> usize {
+    pub fn get_einstein_db_client_state_str() -> String {
+        let mut einstein_db_client_state_str = String::new();
+        let mut einstein_db_client_state_str_len = 0;
+        let mut einstein_db_client_state = String::new();
+        let mut einstein_db_client_state_len = 0;
+        
+
+        for i in 0..einstein_db_client_state_str_len {
+            einstein_db_client_state_str.push(einstein_db_client_state.chars().nth(i).unwrap());
+        }   if let Some(c) = einstein_db_client_state_str.chars().nth(0) {
+            einstein_db_client_state_str_len = c.len_utf8();
+        } else {
+            einstein_db_client_state_str_len = 0;
+        }
+
+        einstein_db_client_state_str
+    }
+
+                        if (EINSTEIN_DB_VERSION_STR_LEN == self.version_str_len) {
+                            self.version = self.version_str.parse::<u32>().unwrap();
+                        } else {
+                            self.version = 0;
+                        } while (self.version_str_len > 0) {
+                            self.version_str.pop();
+                            self.version_str_len -= 1;
+                        }
+
+                    }
+
+
+
+
+                }
+            }
+        }
+    }
+        fn get_version_str_len(&self) -> usize {
+            self.version_str_len
+        }
+        fn get_einstein_db_state_str(&self) -> String {
+            for i in 0..self.einstein_db_state_str_len {
+                self.einstein_db_state_str.push(self.einstein_db_state_str.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_db_state_str.chars().nth(0) {
+                self.einstein_db_state_str_len = c.len_utf8();
+            } else {
+                self.einstein_db_state_str_len = 0;
+            }
+            self.einstein_db_state_str
+        }
+        fn get_einstein_db_state_str_len(&self) -> usize {
+            self.einstein_db_state_str_len
+        }
+        fn get_einstein_ml_version(&self) -> u32 {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+
+
+            if (EINSTEIN_ML_VERSION_STR_LEN == self.einstein_ml_version_str_len) {
+                self.einstein_ml_version = self.einstein_ml_version_str.parse::<u32>().unwrap();
+            } else {
+                self.einstein_ml_version = 0;
+            } while (self.einstein_ml_version_str_len > 0) {
+                self.einstein_ml_version_str.pop();
+                self.einstein_ml_version_str_len -= 1;
+            }
+
+            self.einstein_ml_version
+        }
+        fn get_einstein_ml_version_str(&self) -> String {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+
+            self.einstein_ml_version_str
+        }
+    }
+
+    pub fn get_einstein_ml_version_str_len(&self) -> usize {
+        self.einstein_ml_version_str_len
+    }
+
+    pub fn get_einstein_ml_version_str(&self) -> String {
+            if (EINSTEIN_ML_VERSION_STR_LEN == self.einstein_ml_version_str_len) {
+                self.version_str_len = char_state.len_utf8();
+            } else {    
+                self.version_str_len = 0;
+            }
+            self.version_str
+    }
+
+
+
+        fn get_einstein_ml_version(&self) -> u32 {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+
+
+            if (EINSTEIN_ML_VERSION_STR_LEN == self.einstein_ml_version_str_len) {
+                self.einstein_ml_version = self.einstein_ml_version_str.parse::<u32>().unwrap();
+            } else {
+                self.einstein_ml_version = 0;
+            } while (self.einstein_ml_version_str_len > 0) {
+                self.einstein_ml_version_str.pop();
+                self.einstein_ml_version_str_len -= 1;
+            }
+
+            self.einstein_ml_version
+        }
+        fn get_einstein_ml_version_str(&self) -> String {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+
+            self.einstein_ml_version_str
+        }
+
+        fn get_einstein_ml_version(&self) -> u32 {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+
+        }
+        fn get_einstein_ml_version_str(&self) -> String {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+            self.einstein_ml_version_str
+        
+        }
+        fn get_einstein_ml_version(&self) -> u32 {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+            self.einstein_ml_version_str
+        }
+        fn get_einstein_ml_version_str(&self) -> String {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+            self.einstein_ml_version_str
+        }
+        fn get_einstein_ml_version(&self) -> u32 {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+            self.einstein_ml_version_str
+        }
+
+        fn get_einstein_ml_version_str(&self) -> String {
+            for i in 0..self.einstein_ml_version_str_len {
+                self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+            }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+                self.einstein_ml_version_str_len = c.len_utf8();
+            } else {
+                self.einstein_ml_version_str_len = 0;
+            }
+            self.einstein_ml_version_str
+        }
+    
+    fn get_einstein_ml_version(&self) -> u32 {
+        for i in 0..self.einstein_ml_version_str_len {
+            self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+        }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+            self.einstein_ml_version_str_len = c.len_utf8();
+        } else {
+            self.einstein_ml_version_str_len = 0;
+        }
+        self.einstein_ml_version_str
+    }
+
+
+    fn get_einstein_ml_version(&self) -> u32 {
+        for i in 0..self.einstein_ml_version_str_len {
+            self.einstein_ml_version_str.push(self.einstein_ml_version.chars().nth(i).unwrap());
+        }   if let Some(c) = self.einstein_ml_version_str.chars().nth(0) {
+            self.einstein_ml_version_str_len = c.len_utf8();
+        } else {
+            self.einstein_ml_version_str_len = 0;
+        }
+        self.einstein_ml_version_str
+    }
+}
+
+
+    pub fn get_einstein_db_client_state(&self) -> u32 {
+                self_.einstein_db_client_state_str_len = 0;
+                Box::new(self_)
+            }
+    pub fn get_einstein_db_client_state_str(&self) -> String {
+        self.einstein_db_client_state_str
+    }
+    pub fn get_einstein_db_client_state_str_len(&self) -> usize {
+            self.einstein_db_client_state_str_len = 0;
+    }
+    pub fn get_einstein_db_client_state_str_len(&self) -> usize {
+        self.einstein_db_client_state_str_len
+    }
+
+
+    fn get_einstein_db_client_state_str(&self) -> String {
+        self.einstein_db_client_state_str.clone()
+    }
+
+    fn get_einstein_db_client_state_str_len(&self) -> usize {
+        self.einstein_db_client_state_str_len
+    }
+
+    fn get_einstein_db_client_state_str_len(&self) -> usize {
+        self.einstein_db_client_state_str_len
+    }
+
+
+
+
+
+    #[allow(dead_code)]
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+
+
+
+    pub fn get_einstein_db_client_state_len() -> usize {
+
+        /// Here we are using the macro to define the iterator.
+        /// The macro is defined in the `async_iterator!` macro.
+        /// The macro is used to define the iterator struct and the iterator trait.
+        /// Our interlocking directorate is defined in the `async_iterator!` macro.
+        /// The directorate is used to define the next and resume functions.
+        /// The next function is used to return the next item in the iterator.
+        
+
+        /// The resume function is used to resume the iterator.
+        /// The resume function is used to resume the iterator.
+        
+
+        /// The next function is used to return the next item in the iterator.
+        /// 
+    pub fn get_einstein_db_iterator(einstein_db: &EinsteinDb) -> EinsteinDbIterator {   
+        lock = einstein_db.lock.lock().unwrap();
+        fn get_einstein_ml_version_str(&self) -> String {
+            suspend_token = self.suspend_token.clone();
+            self.einstein_ml_version_str.clone()
+        }
+
+        fn get_einstein_ml_version(&self) -> String {
+            suspend_token = self.suspend_token.clone();
+            self.einstein_ml_version.clone()
+
+        }
+
+        fn get_einstein_db_version(&self) -> String {
+            suspend_token = self.suspend_token.clone();
+            self.einstein_db_version.clone()
+        }
+
+
+        fn get_einstein_db_version_str(&self) -> String {
+            self.einstein_db_version.clone()
+        }
+    }
+
+
+
+
+
+
 
 
 
@@ -503,61 +779,103 @@ impl EinsteinDb {
             version: EINSTEIN_DB_VERSION,
             version_str: EINSTEIN_DB_VERSION_STR.to_string(),
             version_str_len: EINSTEIN_DB_VERSION_STR_LEN,
-            einstein_db_state: EinsteinDbState::Init,
+            einstein_db_state_str: EINSTEIN_DB_STATE_STR.to_string(),
+            einstein_ml_version: EINSTEIN_ML_VERSION.to_string(),
+            einstein_ml_version_str: EINSTEIN_ML_VERSION_STR.to_string(),
             einstein_db_state_str: "Init".to_string(),
             einstein_ml_version: EINSTEIN_ML_VERSION.to_string(),
             einstein_ml_version_str: "0.1.1".to_string(),
             einstein_db_version: EINSTEIN_DB_VERSION_STR.to_string(),
         }
     }
-}
 
-
-impl EinsteinDb {
-    pub fn start(&mut self) {
-        self.einstein_db_state = EinsteinDbState::Running;
-        self.einstein_db_state_str = "Running".to_string();
+    pub fn macro_rules(&self) -> ! {
+        self.macro_rules
     }
 }
 
 
-impl EinsteinDb {
-    pub fn stop(&mut self) {
-        self.einstein_db_state = EinsteinDbState::Stopped;
-        self.einstein_db_state_str = "Stopped".to_string();
+/// # About
+///     This is a library for the [EinsteinDB](https://einsteindb.com
+
+
+
+
+
+/// A `Sync` implementation for `AllegroPoset`.
+/// This implementation is thread-safe.
+/// # Examples
+/// ```
+/// use einsteindb::causetq::sync::new_sync;
+/// use einsteindb::causetq::sync::Sync;
+/// use std::sync::Arc;
+/// use std::sync::Mutex;
+///
+/// let poset = new_sync();
+/// let sync = Sync::new(poset);
+///
+/// let mutex = Arc::new(Mutex::new(sync));
+/// let mutex2 = Arc::new(Mutex::new(sync));
+///
+/// let mutex3 = Arc::new(Mutex::new(sync));
+///
+///
+///
+    pub enum BerolinaSqlError {
+        IoError(io::Error),
+        SqlError(String),
+    }
+
+    #[derive(Debug)]
+    pub enum BerolinaSqlErrorType {
+        IoError,
+    SqlError,
+}
+
+#[derive(Debug)]
+pub struct BerolinaSqlErrorInfo {
+    pub error_type: BerolinaSqlErrorType,
+    pub error_msg: String,
+}
+
+pub struct BerolinaSqlErrorInfoList {
+    pub error_info_list: Vec<BerolinaSqlErrorInfo>,
+}
+    }   
+    pub fn get_einstein_db_client_state_str(&self) -> String {
+        self.einstein_db_client_state_str.clone()
     }
 }
 
+    pub fn get_einstein_db_client_state_str_len(&self) -> usize {
+        self.einstein_db_client_state_str_len
+    }
 
-impl EinsteinDb {
-    pub fn is_running(&self) -> bool {
-        self.einstein_db_state.is_running()
+
+
+impl BerolinaSqlErrorInfoList {
+    pub fn new() -> BerolinaSqlErrorInfoList {
+        BerolinaSqlErrorInfoList {
+            error_info_list: Vec::new(),
+        }
     }
 }
-
-impl EinsteinDb {
-    pub fn is_running(&self) -> bool {
-        self.einstein_db_state.is_running()
-    }
-}
+// #[derive(Deserialize, Serialize, Debug)]
+// pub struct BerolinaSqlErrorInfoListSerialized {
+//     pub error_info_list: Vec<BerolinaSqlErrorInfoSerialized>,
+// }
 
 
-impl EinsteinDb {
-    pub fn get_version(&self) -> u32 {
-        self.version
-    }
-}
+// impl BerolinaSqlErrorInfoListSerialized {
+//     pub fn new() -> BerolinaSqlErrorInfoListSerialized {
+//         BerolinaSqlErrorInfoListSerialized {
+//             error_info_list: Vec::new(),
+//         }
+//     }
+// }
 
 
-impl EinsteinDb {
-    pub fn get_version_str(&self) -> String {
-        self.version_str.clone()
-    }
-}
+
+//serde::{Deserialize, Serialize};
 
 
-impl EinsteinDb {
-    pub fn get_version_str_len(&self) -> usize {
-        self.version_str_len
-    }
-}

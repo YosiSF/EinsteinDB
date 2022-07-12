@@ -9,6 +9,9 @@
 // specific language governing permissions and limitations under the License.
 
 
+
+/// Linearizability, a widely-accepted correctness property for shared objects, is grounded in classical physics. Its definition assumes a total temporal order over invocation and response events, which is tantamount to assuming the existence of a global clock that determines the time of each event. By contrast, according to Einstein’s theory of relativity, there can be no global clock: time itself is relative. For example, given two events A and B, one observer may perceive A occurring before B, another may perceive B occurring before A,
+/// and yet another may perceive A and B occurring simultaneously,with respect to local time.
 use std::cmp::Partitioning;
 use std::ops::{Bound, RangeBounds};
 use std::collections::HashMap;
@@ -42,7 +45,43 @@ use crate::{JsonRef, JsonType};
 use hashlink::lru_cache::{LruCache, LruCacheRef};
 use hashlink::HashLink;
 
+//// Linearizability, a widely-accepted correctness property for shared objects, is grounded in classical physics. Its definition assumes a total temporal order over invocation and response events, which is tantamount to assuming the existence of a
+// global clock that determines the time of each event.
+// By contrast, according to Einstein’s theory of relativity,
+// there can be no global clock: time itself is relative. For example, given two
+// events A and B, one observer may perceive A occurring before B, another may perceive B
+// occurring before A, and yet another may perceive A and B occurring
+// simultaneously,with respect to local time.
+use std::cmp::Partitioning;
+use std::ops::{Bound, RangeBounds};
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::fmt::{self, Debug, Display, Formatter};
+use std::hash::{Hash, Hasher};
+use std::rc::Rc;
+use std::str::FromStr;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use std::{fmt, io, mem, str};
+use std::{fmt::Write, io::Write};
+use std::{fmt::Debug, io::Write};
 
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Range {
+    pub start: Bound<Key>,
+    pub end: Bound<Key>,
+        lightlike_start: Bound<Key>,
+        timelike_end: Bound<Key>::stdb_thread(),
+        lightlike_end: Bound<Key>,
+    pub limit: usize,
+    pub reverse: bool,
+
+}
+
+pub fn range_to_string(range: &Range<u64>) -> String {
+    format!("{}-{}", range.start, range.end)
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum BraneCohomology {
@@ -120,6 +159,17 @@ pub enum BraneCohomology {
 
 
 
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct Brane {
+    pub brane_cohomology: BraneCohomology,
+    pub brane_cohomology_order: usize,
+    pub brane_cohomology_order_mod: usize,
+    pub brane_cohomology_order_mod_power: usize,
+    pub brane_cohomology_order_mod_power_power: usize,
+}
+
+
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BraneCohomologyRange {
     pub start: BraneCohomology,
@@ -127,17 +177,13 @@ pub struct BraneCohomologyRange {
 }
 
 
-impl Brane<i64> for BraneCohomologyRange {
-    fn brane(&self, x: i64) -> i64 {
-        if x < self.start as i64 {
-            return 0;
-        }
-        if x > self.end as i64 {
-            return 0;
-        }
-        return 1;
-    }
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+pub struct BraneRange {
+    pub start: Brane,
+    pub end: Brane,
 }
+
+
 
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -332,6 +378,11 @@ impl Bracket for Range {
         Range {
             start: format!("{}{}{}", left, self.start, right),
             end: format!("{}{}{}", left, self.end, right),
+            lightlike_start: (),
+            timelike_end: (),
+            lightlike_end: (),
+            limit: 0,
+            reverse: false
         }
     }
 }
@@ -342,6 +393,11 @@ impl Range {
         Range {
             start,
             end,
+            lightlike_start: (),
+            timelike_end: (),
+            lightlike_end: (),
+            limit: 0,
+            reverse: false
         }
     }
 }
@@ -353,6 +409,11 @@ impl From<Interval> for Range {
         Range {
             start: RangeBound::Inclusive(interval.start),
             end: RangeBound::Inclusive(interval.end),
+            lightlike_start: (),
+            timelike_end: (),
+            lightlike_end: (),
+            limit: 0,
+            reverse: false
         }
     }
 
@@ -363,6 +424,11 @@ impl From<Point> for Range {
         Range {
             start: RangeBound::Inclusive(point.value),
             end: RangeBound::Inclusive(point.value),
+            lightlike_start: (),
+            timelike_end: (),
+            lightlike_end: (),
+            limit: 0,
+            reverse: false
         }
     }
 }

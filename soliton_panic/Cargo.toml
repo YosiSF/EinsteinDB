@@ -8,8 +8,21 @@ author_email = "karl@einst.ai"
 url = "https://www.github.com/YosiSF/EinsteinDB/soliton_panic"
 license = "MIT"
 
+[lib]
+name = "soliton_panic"
+path = "./src/lib.rs"
+
+
 [dependencies]
-einstein_db = "^0.1.0"
-clap = "^3.0"
-einsteindb_server = {path = "../einsteindb-server"}
-toml = "^0.5.9"
+failure = "0.1.1"
+indexmap = "1"
+itertools = "0.10.3"
+lazy_static = "1.4.0"
+log = "0.4"
+ordered-float = "3.0.0"
+time = "0.3.7"
+petgraph = "0.6.0"
+serde = { version = "1.0", optional = true }
+serde_json = { version = "1.0", optional = true }
+serde_derive = { version = "1.0", optional = true }
+serde_yaml = { version = "0.8.24", optional = true }

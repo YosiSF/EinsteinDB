@@ -57,11 +57,207 @@ use std::sync::mpsc::RecvError;
 use std::sync::mpsc::SendError;
 use std::sync::mpsc::RecvTimeoutError;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum IoLimiterType {
-    Read = 0,
-    Write = 1,
+
+/// Herlihy and Wing’s definition (see Section 3), as well as the method they propose for proving linearizability,
+/// weave together a number of mathematical building blocks—partial orders, total orders, representation invariants and ab- straction functions. Underlying these convenient abstractions are two funda- mental assumptions: (1) events can be totally ordered according to an irreflex- ive, transitive temporal relation; (2) the states of the “base objects” used to construct the implemented object can be observed simultaneously. While these assumptions are in line with classical or Newtonian physics, Einstein’s theory of relativity tells us that both time and simultaneity are in fact relative [8]. That is, two events may occur in opposite orders from the perspectives of two observers,
+/// and two events that appear simultaneous to one observer may not be simultane- ous to another observer. Intuitively, these phenomena occur because the speed of light in a vacuum appears the same to all observers irrespective of their relative motion or the motion of the light source. As a result, assumptions (1) and (2) break in a relativistic distributed system where components may move relative to each other at high speeds.
+
+#[derive(Debug)]
+pub struct IoLimiterWithChannel {
+    pub limiter: Arc<Mutex<IoLimiter>>,
+    pub sender: Sender<IoLimiterWithChannelMessage>,
+    pub receiver: Receiver<IoLimiterWithChannelMessage>,
+}
+
+
+#[derive(Debug)]
+pub enum IoLimiterWithChannelMessage {
+    IoLimiterMessage(IoLimiterMessage),
+    IoLimiterWithChannelMessage(IoLimiterWithChannelMessage),
+}
+
+
+#[derive(Debug)]
+pub enum IoLimiterMessage {
+    IoLimiterMessage(IoLimiterMessage),
+    IoLimiterWithChannelMessage(IoLimiterWithChannelMessage),
+}
+
+
+    pub fn max_read_bytes_per_sec(max: usize, policy: IoLimiterPolicy, threshold: usize) -> IoLimiterWithChannel {
+        let (sender, receiver) = channel();
+        let limiter = IoLimiter::new(max, policy, threshold, sender);
+        IoLimiterWithChannel {
+            limiter: Arc::new(Mutex::new(limiter)),
+            sender: sender,
+            receiver: receiver,
+        }
+    }
+
+
+
+    pub fn max_write_bytes_per_sec(max: usize, policy: IoLimiterPolicy, threshold: usize) -> IoLimiterWithChannel {
+        let (sender, receiver) = channel();
+        let limiter = IoLimiter::new(max, policy, threshold, sender);
+        IoLimiterWithChannel {
+            limiter: Arc::new(Mutex::new(limiter)),
+            sender: sender,
+            receiver: receiver,
+        }
+    }
+
+
+    pub fn max_read_bytes_per_sec_with_channel(max: usize, policy: IoLimiterPolicy, threshold: usize, sender: Sender<IoLimiterWithChannelMessage>) -> IoLimiterWithChannel {
+        let limiter = IoLimiter::new(max, policy, threshold, sender);
+        IoLimiterWithChannel {
+            limiter: Arc::new(Mutex::new(limiter)),
+            sender: sender,
+            receiver: sender,
+        }
+    }
+
+
+    pub fn max_write_bytes_per_sec_with_channel(max: usize, policy: IoLimiterPolicy, threshold: usize, sender: Sender<IoLimiterWithChannelMessage>) -> IoLimiterWithChannel {
+        let limiter = IoLimiter::new(max, policy, threshold, sender);
+        IoLimiterWithChannel {
+            limiter: Arc::new(Mutex::new(limiter)),
+            sender: sender,
+            receiver: sender,
+        }
+    }
+
+
+    pub fn max_read_bytes_per_sec_with_channel_and_receiver(max: usize, policy: IoLimiterPolicy, threshold: usize, sender: Sender<IoLimiterWithChannelMessage>, receiver: Receiver<IoLimiterWithChannelMessage>) -> IoLimiterWithChannel {
+        let limiter = IoLimiter::new(max, policy, threshold, sender);
+        IoLimiterWithChannel {
+            limiter: Arc::new(Mutex::new(limiter)),
+            sender: sender,
+            receiver: receiver,
+        }
+    }
+
+impl IoLimiterWithChannel {
+    pub fn new(max: usize, policy: IoLimiterPolicy, threshold: usize, sender: Sender<IoLimiterWithChannelMessage>) -> IoLimiterWithChannel {
+        let (sender, receiver) = channel();
+        let limiter = IoLimiter::new(max, policy, threshold, sender);
+        IoLimiterWithChannel {
+            limiter: Arc::new(Mutex::new(limiter)),
+            sender: sender,
+            receiver: receiver,
+        }
+    }
+
+    pub fn new_with_channel(max: usize, policy: IoLimiterPolicy, threshold: usize, sender: Sender<IoLimiterWithChannelMessage>, receiver: Receiver<IoLimiterWithChannelMessage>) -> IoLimiterWithChannel {
+        let limiter = IoLimiter::new(max, policy, threshold, sender);
+        IoLimiterWithChannel {
+            limiter: Arc::new(Mutex::new(limiter)),
+            sender: sender,
+            receiver: receiver,
+        }
+    }
+
+    pub fn new_with_channel_with_limiter(limiter: IoLimiter, sender: Sender<IoLimiterWithChannelMessage>, receiver: Receiver<IoLimiterWithChannelMessage>) -> IoLimiterWithChannel {
+        IoLimiterWithChannel {
+            limiter: Arc::new(Mutex::new(limiter)),
+            sender: sender,
+            receiver: receiver,
+        }
+    }
+
+    pub fn new_with_channel_with_limiter_with_channel(limiter: IoLimiter, sender: Sender<IoLimiterWithChannelMessage>, receiver: Receiver<IoLimiterWithChannelMessage>) -> IoLimiterWithChannel {
+        IoLimiterWithChannel {
+            limiter: Arc::new(Mutex::new(limiter)),
+            sender: sender,
+            receiver: receiver,
+        }
+    }
+}
+pub fn min_max_for_policy(policy: IoLimiterPolicy) -> (usize, usize) {
+
+    match policy {
+        IoLimiterPolicy::Read => (0, std::usize::MAX),
+        IoLimiterPolicy::Write => (0, std::usize::MAX),
+        IoLimiterPolicy::ReadWrite => (0, std::usize::MAX),
+    }
+
+
+    /// The following is the implementation of the Herlihy and Wing’s algorithm for linearizability.
+    /// The algorithm is based on the implementation of the following paper:
+    /// Herlihy, N., and Wing, S. (1999). Linearizability. In Proceedings of the 35th annual international conference on safety engineering (IEEE). IEEE, pp. 1-6.
+    ///
+    /// The algorithm is based on the following assumptions:
+    /// (1) events can be totally ordered according to an irreflex- ive, transitive temporal relation;
+    /// (2) the states of the “base objects” used to construct the implemented object can be observed simultaneously.
+    ///
+    /// The algorithm is based on the following assumptions:
+    /// (1) events can be totally ordered according to an irreflex- ive, transitive temporal relation;
+    /// (2) the states of the “base objects” used to construct the implemented object can be observed simultaneously.
+    ///
+    ///
+
+
+
+
+    fn min_max_for_policy(policy: IoLimiterPolicy) -> (usize, usize) {
+
+        match policy {
+            IoLimiterPolicy::Read => (0, std::usize::MAX),
+            IoLimiterPolicy::Write => (0, std::usize::MAX),
+            IoLimiterPolicy::ReadWrite => (0, std::usize::MAX),
+        }
+
+        for i in 0..std::usize::MAX {
+            if policy.is_satisfied(i) {
+                let min = i;
+                let max = i;
+                return (min, max);
+
+            }
+        }
+        for i in 0..std::usize::MAX {
+            if policy.is_satisfied(i) {
+                if i < min {
+                    min = i;
+                }
+                if i > max {
+                    max = i;
+                }
+                while i < std::usize::MAX {
+                    if policy.is_satisfied(i) {
+                        if i < min {
+                            min = i;
+                        }
+                        if i > max {
+                            max = i;
+                        }
+                    }
+                    i += 1;
+                }
+            }
+                return (i, std::usize::MAX);
+
+            }
+        }
+    }
+
+
+
+impl IoLimiterWithChannel {
+    pub fn max_read_bytes_per_sec(&self) -> usize {
+        self.limiter.lock().unwrap().max_read_bytes_per_sec()
+    }
+    pub fn max_write_bytes_per_sec(&self) -> usize {
+        self.limiter.lock().unwrap().max_write_bytes_per_sec()
+    }
+}
+//lockfree version
+impl IoLimiterWithChannel {
+    pub fn max_read_bytes_per_sec_with_channel_with_limiter(&self) -> usize {
+        self.limiter.lock().unwrap().max_read_bytes_per_sec()
+    }
+    pub fn max_write_bytes_per_sec_with_channel_with_limiter(&self) -> usize {
+        self.limiter.lock().unwrap().max_write_bytes_per_sec()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -435,6 +631,106 @@ impl IOLimiter for PanicIOLimiter {
     fn get_total_time_blocked(&self) -> Duration {
         panic!()
     }
+}
+
+///An interlocking directorate uses the soliton to control the number of threads that can access the
+/// same resource at the same time. It is lock-free and can be used in a multi-threaded environment.
+/// It is also a rate limiter.
+///
+
+
+const SOLITON_MAX_THREADS: usize = 1024;
+const SOLITON_MAX_THREADS_MASK: usize = SOLITON_MAX_THREADS - 1;
+
+
+#[derive(Clone)]
+pub struct PanicIOLimiter {
+    limiter_type: IoLimiterType,
+    limiter_policy: IoLimiterPolicy,
+    limiter_policy_threshold: usize,
+    limiter_policy_threshold_policy: IoLimiterPolicy,
+    limiter: Arc<RateLimiter>,
+    soliton: Arc<Soliton>,
+}
+
+
+impl PanicIOLimiter {
+    fn new(limiter: Arc<RateLimiter>, soliton: Arc<Soliton>) -> Self {
+        PanicIOLimiter {
+            limiter_type: IoLimiterType::Read,
+            limiter_policy: IoLimiterPolicy::Throttling,
+            limiter_policy_threshold: 0,
+            limiter_policy_threshold_policy: IoLimiterPolicy::Throttling,
+            limiter: limiter,
+            soliton: soliton,
+        }
+    }
+}
+
+
+impl IOLimiter for PanicIOLimiter {
+    fn acquire_read_lock(&self, _: &str) -> Result<()> {
+        self.soliton.acquire()
+    }
+
+    fn acquire_write_lock(&self, _: &str) -> Result<()> {
+        self.soliton.acquire()
+    }
+
+    fn release_read_lock(&self, _: &str) -> Result<()> {
+        self.soliton.release()
+    }
+
+    fn release_write_lock(&self, _: &str) -> Result<()> {
+        self.soliton.release()
+    }
+    fn new(bytes_per_sec: i64) -> Self {
+        panic!()
+    }
+
+    fn acquire_read_lock_for_duration(&self, _: &str, _: Duration) -> Result<()> {
+        self.soliton.acquire()
+    }
+
+    fn acquire_write_lock_for_duration(&self, _: &str, _: Duration) -> Result<()> {
+        self.soliton.acquire()
+    }
+
+    fn set_bytes_per_second(&self, bytes_per_sec: i64) {
+        panic!()
+    }
+    fn request(&self, bytes: i64) {
+        panic!()
+    }
+    fn get_max_bytes_per_time(&self) -> i64 {
+        panic!()
+    }
+
+    fn get_total_bytes_through(&self) -> i64 {
+        panic!()
+    }
+
+    fn get_bytes_per_second(&self) -> i64 {
+        panic!()
+    }
+
+    fn get_total_requests(&self) -> i64 {
+        panic!()
+    }
+
+    fn get_total_time_through(&self) -> Duration {
+        panic!()
+    }
+
+    fn get_total_time_waiting(&self) -> Duration {
+        panic!()
+    }
+
+
+    fn get_total_time_blocked(&self) -> Duration {
+        panic!()
+    }
+
 }
 
 

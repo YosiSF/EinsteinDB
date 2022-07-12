@@ -12,12 +12,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//////////////////////////////////////////////////////////////////////////////
+///The datetime datatypes are DATE, TIMESTAMP, TIMESTAMP WITH TIME ZONE, and TIMESTAMP WITH LOCAL TIME ZONE. Values of datetime datatypes are sometimes called datetimes.
 //
+// The interval datatypes are INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND. Values of interval datatypes are sometimes called intervals.
+//
+// Both datetimes and intervals are made up of fields. The values of these fields determine the value of the datatype. The fields that apply to all Oracle datetime and interval datatypes are:
+//
+// YEAR
+// MONTH
+// DAY
+// HOUR
+// MINUTE
+// SECOND
+// TIMESTAMP WITH TIME ZONE also includes these fields:
+//
+// TIMEZONE_HOUR
+// TIMEZONE_MINUTE
+// TIMEZONE_REGION
+// TIMEZONE_ABBR
+// TIMESTAMP WITH LOCAL TIME ZONE does not store time zone information internally, but you can see local time zone information in SQL output if the TZH:TZM or TZR TZD format elements are specified.
 // ----------------------------------------------------------------------------
 
 
 
-#[allow(dead_code)]
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -47,7 +65,123 @@ use std::ops::ToInclusive;
 use std::ops::Range;
 
 
+
+/// // The interval datatypes are INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND. Values of interval datatypes are sometimes called intervals.
+/// // Both datetimes and intervals are made up of fields. The values of these fields determine the value of the datatype. The fields that apply to all Oracle datetime and interval datatypes are:
+/// // YEAR MONTH DAY HOUR MINUTE SECOND TIMESTAMP WITH TIME ZONE also includes these fields:
+/// // TIMEZONE_HOUR TIMEZONE_MINUTE TIMEZONE_REGION TIMEZONE_ABBR TIMESTAMP WITH LOCAL TIME ZONE does not store time zone information internally, but you can see local time zone information in SQL output if the TZH:TZM or TZR TZD format elements are specified.
+/// // ----------------------------------------------------------------------------
+/// // The datetime datatypes are DATE, TIMESTAMP, TIMESTAMP WITH TIME ZONE, and TIMESTAMP WITH LOCAL TIME ZONE. Values of datetime datatypes are sometimes called datetimes.
+/// // The interval datatypes are INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND. Values of interval datatypes are sometimes called intervals.
+/// // Both datetimes and intervals are made up of fields. The values of these fields determine the value of the datatype. The fields that apply to all Oracle datetime and interval datatypes are:
+/// // YEAR MONTH DAY HOUR MINUTE SECOND TIMESTAMP WITH TIME ZONE also includes these fields:
+/// // TIMEZONE_HOUR TIMEZONE_MINUTE TIMEZONE_REGION TIMEZONE_ABBR TIMESTAMP WITH LOCAL TIME ZONE does not store time zone information internally, but you can see local time zone information in SQL output if the TZH:TZM or TZR TZD format elements are specified.
+///
+///
+///
+/// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// pub struct RangeProperties<T> where T: PartialOrd + Debug + Clone + PartialEq + Eq + Hash {
+///    pub start: T,
+///   pub end: T,
+///  pub step: T,
+/// }
+///
+/// impl<T> RangeProperties<T> where T: PartialOrd + Debug + Clone + PartialEq + Eq + Hash {
+///   pub fn new(start: T, end: T, step: T) -> Self {
+///    RangeProperties { start, end, step }
+/// }
+
+
+const VERSION: &'static str = "0.1.0";
+const NAME: &'static str = "range_properties";
+const DESCRIPTION: &'static str = "The datetime datatypes are DATE, TIMESTAMP, TIMESTAMP WITH TIME ZONE, and TIMESTAMP WITH LOCAL TIME ZONE. Values of datetime datatypes are sometimes called datetimes.
+The interval datatypes are INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND. Values of interval datatypes are sometimes called intervals.
+Both datetimes and intervals are made up of fields. The values of these fields determine the value of the datatype. The fields that apply to all Oracle datetime and interval datatypes are:
+YEAR MONTH DAY HOUR MINUTE SECOND TIMESTAMP WITH TIME ZONE also includes these fields:
+TIMEZONE_HOUR TIMEZONE_MINUTE TIMEZONE_REGION TIMEZONE_ABBR TIMESTAMP WITH LOCAL TIME ZONE does not store time zone information internally, but you can see local time zone information in SQL output if the TZH:TZM or TZR TZD format elements are specified.
+The datetime datatypes are DATE, TIMESTAMP, TIMESTAMP WITH TIME ZONE, and TIMESTAMP WITH LOCAL TIME ZONE. Values of datetime datatypes are sometimes called datetimes.
+The interval datatypes are INTERVAL YEAR TO MONTH and INTERVAL DAY TO SECOND. Values of interval datatypes are sometimes called intervals.
+Both datetimes and intervals are made up of fields. The values of these fields determine the value of the datatype. The fields that apply to all Oracle datetime and interval datatypes are:
+YEAR MONTH DAY HOUR MINUTE SECOND TIMESTAMP WITH TIME ZONE also includes these fields:
+TIMEZONE_HOUR TIMEZONE_MINUTE TIMEZONE_REGION TIMEZONE_ABBR TIMESTAMP WITH LOCAL TIME ZONE does not store time zone information internally, but you can see local time zone information in SQL output if the TZH:TZM or TZR TZD format elements are specified.
+";
+const AUTHOR: &'static str = "EinsteinDB";
+const MAINTAINER: &'static str = "EinsteinDB";
+const LICENSE: &'static str = "MIT";
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RangePropertiesWithCausetAndTimeZones(pub range_properties);
+
+
+impl RangePropertiesWithCausetAndTimeZones {
+  pub fn new(start: i64, end: i64, step: i64) -> Self {
+    RangePropertiesWithCausetAndTimeZones(range_properties::new(start, end, step))
+  }
+}
+
+
+impl Deref for RangePropertiesWithCausetAndTimeZones {
+  type Target = range_properties;
+
+  fn deref(&self) -> &Self::Target {
+    &self.0
+  }
+}
+
+
+impl DerefMut for RangePropertiesWithCausetAndTimeZones {
+  fn deref_mut(&mut self) -> &mut Self::Target {
+    &mut self.0
+  }
+}
+
+
+impl From<range_properties> for RangePropertiesWithCausetAndTimeZones {
+  fn from(r: range_properties) -> Self {
+    RangePropertiesWithCausetAndTimeZones(r)
+  }
+}
+
+
+impl From<RangePropertiesWithCausetAndTimeZones> for range_properties {
+  fn from(r: RangePropertiesWithCausetAndTimeZones) -> Self {
+    r.0
+  }
+}
+
+
+impl From<RangePropertiesWithCausetAndTimeZones> for RangePropertiesWithCausetAndTimeZones {
+  fn from(r: RangePropertiesWithCausetAndTimeZones) -> Self {
+    r
+  }
+}
+
+
+///#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+/// pub struct RangePropertiesWithCausetAndTimeZones(pub range_properties);
+/// impl RangePropertiesWithCausetAndTimeZones {
+///  pub fn new(start: i64, end: i64, step: i64) -> Self {
+///   RangePropertiesWithCausetAndTimeZones(range_properties::new(start, end, step))
+/// }
+///
+
+
+
+
+
+
+
+
 pub trait RangeProperties {
+
+    fn start(&self) -> &Self;
+
+    fn end(&self) -> &Self;
+
+    fn step(&self) -> &Self;
+
+    fn start_mut(&mut self) -> &mut Self;
     fn range_properties(&self) -> dyn RangeProperties;
 
     fn range_properties_mut(&mut self) -> dyn RangePropertiesMut;

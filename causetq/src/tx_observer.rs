@@ -43,6 +43,14 @@ use crate::{
         transaction_builder::TransactionBuilderImpl,
     },
 };
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
+
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering::Relaxed;
+
 
 
 /// A macro for defining a `Result` with a custom error type.
@@ -53,19 +61,35 @@ use crate::{
 /// # Example
 /// ```
 /// #[macro_use]
-/// extern crate failure;
-/// #[macro_use]
-/// extern crate failure_derive;
-/// #[macro_use]
-/// extern crate soliton_panic;
-/// #[macro_use]
-/// extern crate soliton;
-/// #[macro_use]
-/// extern crate lazy_static;
-///
-///
-///
-///
+#[macro_export]
+macro_rules! result {
+    ($ok:expr) => {
+        Ok($ok)
+    };
+    ($ok:expr, $err:expr) => {
+        Ok($ok)
+    };
+    ($res:expr, $err:expr) => {
+        $res.map_err(|err| $err)
+    };
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TransactionObserver {
+    pub transaction_id: usize,
+    pub transaction_type: TransactionType,
+    pub transaction_status: TransactionStatus,
+    pub transaction_schema: Arc<Schema>,
+    pub transaction_fields: HashMap<String, FieldType>,
+    pub transaction_data: HashMap<String, String>,
+    pub transaction_dependencies: HashSet<usize>,
+    pub transaction_dependents: HashSet<usize>,
+    pub transaction_causet_queries: Vec<CausetQuery>,
+    pub transaction_causetq_queries: Vec<CausetqQuery>,
+    pub transaction_gremlin_queries: Vec<GremlinQuery>,
+}
+
 
 
 
@@ -93,7 +117,12 @@ use crate::{
 ///
 ///
 
-
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TransactionType {
+    Insert,
+    Update,
+    Delete,
+}
 
 #[macro_export]
 macro_rules! soliton_derive {
@@ -131,6 +160,39 @@ macro_rules! soliton_derive {
         }
     };
 }
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TransactionStatus {
+    Pending,
+    Committed,
+    RolledBack,
+}
+
+/// A macro for defining a `Result` with a custom error type.
+/// This is similar to the `?` operator in Rust, but it allows you to define allows you to define a
+/// custom error type.
+///
+/// This macro is borrowed from the `failure` crate.
+/// See [`failure`](https://crates.io/crates/failure) for more information.
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Transaction {
+    pub transaction_id: usize,
+    pub transaction_type: TransactionType,
+    pub transaction_status: TransactionStatus,
+    pub transaction_schema: Arc<Schema>,
+    pub transaction_fields: HashMap<String, FieldType>,
+    pub transaction_data: HashMap<String, String>,
+    pub transaction_dependencies: HashSet<usize>,
+    pub transaction_dependents: HashSet<usize>,
+    pub transaction_causet_queries: Vec<CausetQuery>,
+    pub transaction_causetq_queries: Vec<CausetqQuery>,
+    pub transaction_gremlin_queries: Vec<GremlinQuery>,
+}
+
+
 
 
 #[macro_export]

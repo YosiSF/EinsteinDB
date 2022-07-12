@@ -10,6 +10,68 @@
 
 
 use super::*;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
+use std::error::Error;
+use std::convert::From;
+use std::convert::TryFrom;
+use std::convert::TryInto;
+use std::convert::TryInto as _TryInto;
+use std::convert::Into as _Into;
+use std::convert::Into;
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Scalar {
+    pub value: ScalarType,
+}
+
+
+impl Scalar {
+    pub fn new(value: ScalarType) -> Self {
+        Scalar { value }
+    }
+}
+
+
+impl Display for Scalar {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
+}
+
+
+impl FromStr for Scalar {
+    type Err = ScalarError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        ScalarType::from_str(s).map(|v| Scalar::new(v))
+    }
+}
+
+
+impl From<ScalarType> for Scalar {
+    fn from(value: ScalarType) -> Self {
+        Scalar::new(value)
+    }
+}
+
+
+impl From<Scalar> for ScalarType {
+    fn from(value: Scalar) -> Self {
+        value.value
+    }
+}
+
+
+impl From<Scalar> for Option<ScalarType> {
+    fn from(value: Scalar) -> Self {
+        Some(value.value)
+    }
+}
+
+
 
 #[derive(Debug, Clone)]
 pub struct ScalarValueClone<T: Clone> {
@@ -36,6 +98,11 @@ impl<T: Clone> Clone for ScalarValueClone<T> {
         }
     }
 }
+
+
+
+
+
 
 
 

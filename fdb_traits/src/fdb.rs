@@ -210,11 +210,12 @@ impl CausetTupleDepth {
 pub struct FdbRust;
 
 
-impl FdbTrait for FdbRust {
-    fn get_version(&self) -> String {
-        FDB_TRAIT_VERSION.to_string()
+impl FdbRust {
+    pub fn new() -> FdbRust {
+        FdbRust {}
     }
 }
+
 
 
 impl FdbRust {

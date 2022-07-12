@@ -41,10 +41,16 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::collections::hash_map::IterMut::{OccupiedEntry, VacantEntry};
 
 
+
+
 use crate::causetq::{Causetq, CausetqError, CausetqResult};
 use crate::causetq::Causetq::{CausetqSender, CausetqReceiver};
 
 
+
+//import merkle tree
+use crate::merkletree::{MerkleTree, MerkleTreeError, MerkleTreeResult};
+use crate::merkletree::MerkleTree::{MerkleTreeSender, MerkleTreeReceiver};
 
 
 /// A Causetq is a thread-safe queue that can be used to communicate between
@@ -55,6 +61,49 @@ use crate::causetq::Causetq::{CausetqSender, CausetqReceiver};
 /// Causetq is a thread-safe queue that can be used to communicate between queries and responses.
 /// if you want to send a query to a Causetq, you can use the `send` method.
 /// if you want to receive a response from a Causetq, you can use the `recv` method.
+
+
+
+#[derive(Debug)]
+pub struct CausetQueryWithLamport {
+    //Einstein Merkle Tree Index (Merkle Tree Index)
+    pub merkle_tree_index: u64,
+    //Einstein Merkle Tree Hash (Merkle Tree Hash)
+    pub merkle_tree_hash: String,
+    //Einstein Merkle Tree Hash (Merkle Tree Hash)
+    pub lamport_clock: u64,
+    //Einstein Merkle Tree Hash (Merkle Tree Hash)
+    pub query: String,
+}
+
+
+
+
+#[derive(Debug)]
+pub struct CausetResponseWithLamport {
+    //Einstein Merkle Tree Index (Merkle Tree Index)
+    pub merkle_tree_index: u64,
+    //Einstein Merkle Tree Hash (Merkle Tree Hash)
+    pub merkle_tree_hash: String,
+    //Einstein Merkle Tree Hash (Merkle Tree Hash)
+    pub lamport_clock: u64,
+    //Einstein Merkle Tree Hash (Merkle Tree Hash)
+    pub response: String,
+}
+
+
+#[derive(Debug)]
+pub struct CausetQueryWithLamportAndMerkleTree {
+    //Einstein Merkle Tree Index (Merkle Tree Index)
+    pub merkle_tree_index: u64,
+    //Einstein Merkle Tree Hash (Merkle Tree Hash)
+    pub merkle_tree_hash: String,
+    //Einstein Merkle Tree Hash (Merkle Tree Hash)
+    pub lamport_clock: u64,
+    //Einstein Merkle Tree Hash (Merkle Tree Hash)
+    pub query: String,
+}
+
 
 
 

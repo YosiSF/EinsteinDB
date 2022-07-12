@@ -50,6 +50,9 @@ use causetq::*;
 use causet::util::*;
 use causets::*;
 
+
+use crate ::*;
+
 #[derive(Debug)]
 pub struct Debugger {
     pub db: EinsteinDB,
