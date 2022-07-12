@@ -418,11 +418,68 @@ pub fn einstein_db_gravity_verify_with_sources(public:&[u8;32], msg: &[u8], sig:
     let mut db = EinsteinDB::new_from_public(public);
     db.add_query(&FindQuery::default()).unwrap();
     db.add_signature(&sig).unwrap();
-    db.verify_with_sources(&pk, &msg, &sig, sources)
+    db.verify_with_sources(&pk, &msg, &sig, sources);
+
+        for mut causet_locale in causet_locales {
+            causet_locale.verify(&pk, &msg, &sig)
+        }
+    }
+
+        fn verify_with_sources(public: &[u8;32], msg: &[u8], sig: &[u8], sources: &[Source]) -> bool {
+            //public key is the public key of the signer
+            let pk = public_key_from_slice(public).unwrap();
+            if pk {
+                h: AlexandrovHash::new(msg).verify(sig, &pk)
+            };
+            //msg is the message that was signed
+            let msg = msg.to_vec();
+            //sig is the signature
+            let sig = Signature::from_bytes(&sig).unwrap();
+            //let mut db = EinsteinDB::new_from_public(public);
+            let mut db = EinsteinDB::new_from_public(public);
+            db.add_query(&FindQuery::default()).unwrap();
+            db.add_signature(&sig).unwrap();
+            db.verify(&pk, &msg, &sig)
+        }
+
+
+        fn verify_with_lamport_bolt_on_sources(public: &[u8;32], msg: &[u8], sig: &[u8]) -> bool {
+            //public key is the public key of the signer
+            let pk = public_key_from_slice(public).unwrap();
+            if pk {
+                h: AlexandrovHash::new(msg).verify(sig, &pk);
+            };
+            //msg is the message that was signed
+            let msg = msg.to_vec();
+            //sig is the signature
+            let sig = Signature::from_bytes(&sig).unwrap();
+            //let mut db = EinsteinDB::new_from_public(public);
+            let mut db = EinsteinDB::new_from_public(public);
+            db.add_query(&FindQuery::default()).unwrap();
+            db.add_signature(&sig).unwrap();
+            db.verify(&pk, &msg, &sig)
+        }
 
 
 
-};
+        fn verify_with_lamport_bolt_on_sources_with_sources(public: &[u8;32], msg: &[u8], sig: &[u8], sources: &[Source]) -> bool {
+            //public key is the public key of the signer
+            let pk = public_key_from_slice(public).unwrap();
+            if pk {
+                h: AlexandrovHash::new(msg).verify(sig, &pk);
+            };
+            //msg is the message that was signed
+            let msg = msg.to_vec();
+            //sig is the signature
+            let sig = Signature::from_bytes(&sig).unwrap();
+            //let mut db = EinsteinDB::new_from_public(public);
+            let mut db = EinsteinDB::new_from_public(public);
+            db.add_query(&FindQuery::default()).unwrap();
+            db.add_signature(&sig).unwrap();
+            db.verify_with_sources(&pk, &msg, &sig, sources)
+        }
+
+
 
 
 
@@ -813,38 +870,50 @@ impl FindQuery {
             let mut set = set.into_iter().collect::<Vec<_>>();
             set.sort_by(|a, b| a.to_string().cmp(&b.to_string()));
 
-            for set.iter().enumerate().map(|(i, v)| (v, i)).collect(){
-                println!("{}", v);
+           for mut clause in parsed.where_clauses {
+                clause.visit_mut(&mut |e| {
+                    if let &mut Expr::SrcVar(ref mut var) = e {
+                        var.set_default_source(parsed.default_source);
+                    }
+                });
             }
-            let mut set = set.into_iter().collect::<Vec<_>>();
-            set.sort_by(|a, b| a.to_string().cmp(&b.to_string()));
-            if set.len() > MAX_VARS {
-                return Err(Error::new(
-                    ErrorKind::InvalidInput,
-                    format!("Too many variables: {}", set.len()),
-                ));
-            }
+
+        let mut cc = Context::new();
+        cc.constrain_vars_to_long(in_vars.0.clone());
+        cc.constrain_vars_to_long(in_sources.0.clone());
+
+        cc.apply_clauses(causet_locale_nucleon, parsed.where_clauses)?;
+        cc.expand_column_bindings();
+
+
+        cc.prune_extracted_types();
+        cc.process_required_types()?;
+
+        let (order, extra_vars) = validate_and_simplify_order(&cc, parsed.order)?;
+
+        return Ok(FindQuery {
+            find_spec: parsed.find_spec,
+            default_source: parsed.default_source,
+            with: parsed.with,
+            in_vars,
+            in_sources,
+            limit: parsed.limit,
+            where_clauses: parsed.where_clauses,
+            order: parsed.order,
+        });
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FindSpec {
+    pub find_type: FindType,
+    pub clauses: Vec<FindClause>,
+
+}
         /// Create a new FindQuery from a parsed query.
         /// This is the main entry point for the parser.
 
-            if set.len() > 0 {
-                set
-            } else {
-                vec![]
-            }
 
-            if set.len() > 0 {
-                set
-            } else {
-                vec![]
-            }
 
-            for set in iter().enumerate().map(|(i, v)| (v, i)).collect(){
-                println!("{}", v);
-            }
-        }
 
-        //! Error if there are duplicate variables in the `:find` clause.
-        panic!("TODO: check for duplicate variables in the `:find` clause.");
-
-};

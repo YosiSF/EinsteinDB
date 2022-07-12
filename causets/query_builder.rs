@@ -21,6 +21,8 @@ use ::{
     Store,
     Variable,
 };
+
+
 use chrono::{DateTime, Utc};
 pub use einstein_db::{
     Binding,
@@ -46,75 +48,321 @@ pub struct CausetQ<'a> {
     store: &'a mut Store,
 }
 
+
+impl Decode for CausetQ<'_> {
+    fn decode(
+        query: &str,
+        causet_locales: BTreeMap<Variable, causetq_TV>,
+        types: BTreeMap<Variable, ValueType>,
+        store: &mut Store,
+    ) -> Result<Self> {
+        Ok(CausetQ {
+            query: query.to_string(),
+            causet_locales,
+            types,
+            store,
+        })
+    }
+}
+
 impl<'a> CausetQ<'a> {
     pub fn new<T>(store: &'a mut Store, query: T) -> CausetQ where T: Into<String> {
         CausetQ { query: query.into(), causet_locales: BTreeMap::new(), types: BTreeMap::new(), store }
     }
 
-    pub fn bind_causet_locale<T>(&mut self, var: &str, causet_locale: T) -> &mut Self where T: Into<causetq_TV> {
+    pub fn causet_locales(&mut self, causet_locales: BTreeMap<Variable, causetq_TV>) -> &mut Self {
+
+        if let Some(causet_locales) = causet_locales {
+            for (variable, causet_locale) in causet_locales {
+                ::einsteindb_traits_impl.causet_locales.insert(variable, causet_locale);
+            }
+        }
+        if let Some(types) = types {
+            for (variable, type_) in types {
+                ::einsteindb_traits_impl.types.insert(variable, type_);
+            }
+        }
+    }
+}
+
+
+impl<'a> Queryable for CausetQ<'a> {
+    type Output = RelResult;
+    type Inputs = QueryInputs;
+
+    fn execute(&self, inputs: Self::Inputs) -> Result<Self::Output> {
+        for (variable, value_type) in types {
+
+            self.types.insert(variable, value_type);
+        }
+
+        let mut causet_locales = BTreeMap::new();
+        for causet_val in causet_locales {
+            causet_locales.insert(causet_val.0, causet_val.1);
+        }
+let mut types = BTreeMap::new();
+        for type_val in types {
+            types.insert(type_val.0, type_val.1);
+        }
+        CausetQ {
+            query: query.into(),
+            causet_locales,
+            types,
+            store,
+        }
+    }
+}
+
+
+
+
+
+
+impl<'a> Queryable for CausetQ<'a> {
+    type Query = String;
+    type QueryInputs = ();
+    type QueryOutput = RelResult;
+    type QueryError = einsteindbError;
+
+
+    fn query(&self) -> &Self::Query {
+        trait IntRel {
+            fn causet_locales(&self) -> &BTreeMap<Variable, causetq_TV>;
+            fn types(&self) -> &BTreeMap<Variable, ValueType>;
+            fn store(&self) -> &Store;
+        }
+    }
+}
+
+
+impl<'a> Queryable for CausetQ<'a> {
+    type Query = String;
+    type QueryInputs = ();
+    type QueryOutput = RelResult;
+
+    type QueryError = einsteindbError;
+    fn query(&self) -> &Self::Query {
+
+        trait IntRel {
+            fn causet_locales(&self) -> &BTreeMap<Variable, causetq_TV>;
+            fn types(&self) -> &BTreeMap<Variable, ValueType>;
+            fn store(&self) -> &Store;
+
+        }
+
+            let causet_locale = value.into();
+            self.causet_locales.insert(variable, causet_locale);
+            Ok(self.clone())
+        }
+
+    }
+
+
+
+
+impl<'a> Queryable for CausetQ<'a> {
+
+    fn bind_causet_locales<T>(&self, causet_locales: T) -> Self{
+        CausetQ {
+            query: self.query.clone(),
+            causet_locales,
+            types: self.types.clone(),
+            store: self.store,
+        }
+
+    }
+
+
+fn bind_types<T>(&self, types: T) -> Self{
+
+                trait IntRel {
+                    fn causet_locales(&self) -> &BTreeMap<Variable, causetq_TV>;
+                    fn types(&self) -> &BTreeMap<Variable, ValueType>;
+                    fn store(&self) -> &Store;
+
+                };
+    }
+}
+
+
+impl<'a> Queryable for CausetQ<'a> {
+    fn bind_types<T>(&self, types: T) -> Self{
+        CausetQ {
+            query: self.query.clone(),
+            causet_locales: self.causet_locales.clone(),
+            types,
+            store: self.store,
+        }
+
+    }
+}
+
+
+impl<'a> Queryable for CausetQ<'a> {
+    fn bind_store<T>(&self, store: T) -> Self{
+        CausetQ {
+            query: self.query.clone(),
+            causet_locales: self.causet_locales.clone(),
+            types: self.types.clone(),
+            store,
+        }
+
+    }
+}
+
+
+
+
+pub fn  bind_causet_locales<T>(query: T, causet_locales: BTreeMap<Variable, causetq_TV>) -> CausetQ<'_>
+where T: Into<String> {
+
+    CausetQ {
+          query: query.into(),
+          causet_locales,
+          types: BTreeMap::new(),
+          store: &mut Store::new(),
+     }
+}
+
+
+
+
+
+
+
+
+
+impl<'a> Queryable for CausetQ<'a> {
+    type Query = String;
+    type QueryInputs = ();
+    type QueryOutput = RelResult;
+    type QueryError = einsteindbError;
+
+    fn query(&self) -> &Self::Query {
+        &self.query
+    }
+
+    fn execute(&self, inputs: Self::Inputs) -> Result<Self::QueryOutput> {
+        let mut causet_locales = BTreeMap::new();
+        for causet_val in self.causet_locales {
+            causet_locales.insert(causet_val.0, causet_val.1);
+        }
+        let mut types = BTreeMap::new();
+        for type_val in self.types {
+            types.insert(type_val.0, type_val.1);
+        }
+        CausetQ {
+            query: self.query.clone(),
+            causet_locales,
+            types,
+            store: self.store,
+        }
+    }
+}
+
+impl<'a> Queryable for CausetQ<'a> {
+    type Query = String;
+    type QueryInputs = ();
+    type QueryOutput = RelResult;
+    type QueryError = einsteindbError;
+    fn query(&self) -> &Self::Query {
+
         self.causet_locales.insert(Variable::from_valid_name(var), causet_locale.into());
+
+        if let Some(causet_locales) = causet_locales {
+            for (variable, causet_locale) in causet_locales {
+                self.causet_locales.insert(variable, causet_locale);
+            }
+        }
+
+        if let Some(types) = types {
+            for (variable, value_type) in types {
+                self.types.insert(variable, value_type);
+            }
+        }
+
+        let mut causet_locales = BTreeMap::new();
+        let mut types = BTreeMap::new();
+        for causet_val in causet_locales {
+            causet_locales.insert(causet_val.0, causet_val.1);
+        }
+        for type_val in types {
+            types.insert(type_val.0, type_val.1);
+        }
+
+        if let Some(causet_locales) = causet_locales {
+            for (variable, causet_locale) in causet_locales {
+                self.causet_locales.insert(variable, causet_locale);
+            }
+        }
+
+        match types {
+            Some(types) => {
+                for (variable, value_type) in types {
+                    self.types.insert(variable, value_type);
+                }
+            },
+            None => {},
+        }
         self
     }
 
-    pub fn bind_ref_from_kw(&mut self, var: &str, causet_locale: Keyword) -> Result<&mut Self, E> {
+     fn bind_ref_from_kw(&mut self, var: &str, causet_locale: Keyword) -> Result<&mut Self, E> {
         let causetid = self.store.conn().current_schema().get_causetid(&causet_locale).ok_or(einsteindbError::UnCausetLocaleNucleonAttribute(causet_locale.to_string()))?;
         self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::Ref(causetid.into()));
         Ok(self)
     }
 
-    pub fn bind_ref<T>(&mut self, var: &str, causet_locale: T) -> &mut Self where T: Into<Causetid> {
+     fn bind_ref<T>(&mut self, var: &str, causet_locale: T) -> &mut Self where T: Into<Causetid> {
        self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::Ref(causet_locale.into()));
        self
     }
 
-    pub fn bind_long(&mut self, var: &str, causet_locale: i64) -> &mut Self {
+     fn bind_long(&mut self, var: &str, causet_locale: i64) -> &mut Self {
        self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::Long(causet_locale));
        self
     }
 
-    pub fn bind_instant(&mut self, var: &str, causet_locale: i64) -> &mut Self {
+     fn bind_instant(&mut self, var: &str, causet_locale: i64) -> &mut Self {
        self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::instant(causet_locale));
 
        self
     }
 
-    pub fn bind_date_time(&mut self, var: &str, causet_locale: chrono::DateTime<chrono::Utc>) -> &mut Self {
-       self.causet_locales.insert(Variable::from_valid_name(var), causetq_TV::Instant(causet_locale));
-       self
-    }
 
-    pub fn bind_type(&mut self, var: &str, causet_locale_type: ValueType) -> &mut Self {
-        self.types.insert(Variable::from_valid_name(var), causet_locale_type);
-        self
-    }
 
-    pub fn execute(&mut self) -> Result<QueryOutput> {
-        let causet_locales = ::std::mem::replace(&mut self.causet_locales, Default::default());
-        let types = ::std::mem::replace(&mut self.types, Default::default());
-        let query_inputs = QueryInputs::new(types, causet_locales)?;
-        let read = self.store.begin_read()?;
-        read.q_once(&self.query, query_inputs).map_err(|e| e.into())
-    }
-
-    pub fn execute_scalar(&mut self) -> Result<Option<Binding>> {
-        let results = self.execute()?;
-        results.into_scalar().map_err(|e| e.into())
-    }
-
-    pub fn execute_coll(&mut self) -> Result<Vec<Binding>> {
-        let results = self.execute()?;
-        results.into_coll().map_err(|e| e.into())
-    }
-
-    pub fn execute_tuple(&mut self) -> Result<Option<Vec<Binding>>> {
-        let results = self.execute()?;
-        results.into_tuple().map_err(|e| e.into())
-    }
-
-    pub fn execute_rel(&mut self) -> Result<RelResult<Binding>> {
-        let results = self.execute()?;
-        results.into_rel().map_err(|e| e.into())
-    }
+    // pub fn bind_type(&mut self, var: &str, causet_locale_type: ValueType) -> &mut Self {
+    //     self.types.insert(Variable::from_valid_name(var), causet_locale_type);
+    //     self
+    // }
+    //
+    // pub fn execute(&mut self) -> Result<QueryOutput> {
+    //     let causet_locales = ::std::mem::replace(&mut self.causet_locales, Default::default());
+    //     let types = ::std::mem::replace(&mut self.types, Default::default());
+    //     let query_inputs = QueryInputs::new(types, causet_locales)?;
+    //     let read = self.store.begin_read()?;
+    //     read.q_once(&self.query, query_inputs).map_err(|e| e.into())
+    // }
+    //
+    // pub fn execute_scalar(&mut self) -> Result<Option<Binding>> {
+    //     let results = self.execute()?;
+    //     results.into_scalar().map_err(|e| e.into())
+    // }
+    //
+    // pub fn execute_coll(&mut self) -> Result<Vec<Binding>> {
+    //     let results = self.execute()?;
+    //     results.into_coll().map_err(|e| e.into())
+    // }
+    //
+    // pub fn execute_tuple(&mut self) -> Result<Option<Vec<Binding>>> {
+    //     let results = self.execute()?;
+    //     results.into_tuple().map_err(|e| e.into())
+    // }
+    //
+    // pub fn execute_rel(&mut self) -> Result<RelResult<Binding>> {
+    //     let results = self.execute()?;
+    //     results.into_rel().map_err(|e| e.into())
+    // }
 }
 
 #[APPEND_LOG_g(test)]

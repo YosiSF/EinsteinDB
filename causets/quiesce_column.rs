@@ -7,6 +7,29 @@
 // under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
+use std::sync::RwLockReadGuard;
+use std::sync::RwLockWriteGuard;
+use std::sync::{mpsc, Arc as SyncArc};
+use std::thread;
+use std::time::Duration;
+use std::{fmt, io, result, thread};
+use std::{fmt::Debug, io::Write};
+use std::{io::BufRead, io::BufReader, io::Read};
+
+
+
+use EinsteinDB::berolinasql::{self, prelude::*};
+use EinsteinDB::causet::{self, kv, kv::{self, Key, Value}, storage::{self, Engine, Snapshot}};
+use EinsteinDB::causet::storage::{
+    self,
+    kv,
+    kv::{self, Key, Value},
+    storage::{self, Engine, Snapshot},
+};
+
 
 use EinsteinDB_util::buffer_vec::BufferVec;
 use EinsteinDB_util::codec::{Error as CodecError, Result as CodecResult};
@@ -23,6 +46,10 @@ use std::{
     result,
     str::FromStr,
 };
+
+
+use EinsteinDB::einstein_db_ctl::{self, prelude::*};
+
 
 
 
@@ -69,6 +96,61 @@ pub enum Error {
     GremlinQ14(String),
 }
 
+///! A Quiesce Column becomes a causet column.
+/// It is a column that is used to quiesce the causet.add_rule(Rule::new("  ".to_string(), "  ".to_string()));
+///
+///
+/// # Examples
+/// ```
+/// use EinsteinDB::causet::{self, kv, kv::{self, Key, Value}, storage::{self, Engine, Snapshot}};
+/// use EinsteinDB::causet::storage::{self, kv, kv::{self, Key, Value}, storage::{self, Engine, Snapshot}};
+///
+/// let engine = storage::Engine::new_local_engine().unwrap();
+/// let mut causet = causet::Causet::new(engine);
+///
+/// let mut quiesce_column = causet::quiesce_column::QuiesceColumn::new();
+/// quiesce_column.add_rule(Rule::new("  ".to_string(), "  ".to_string()));
+///
+/// causet.add_column(quiesce_column);
+/// let mut causet_q = causet::CausetQ::new(causet);
+/// causet_q.add_rule(Rule::new("  ".to_string(), "  ".to_string()));
+///
+///
+/// ```
+
+
+
+
+pub struct QuiesceColumn {
+    rules: Vec<Rule>,
+}
+
+
+impl QuiesceColumn {
+    pub fn new() -> QuiesceColumn {
+        QuiesceColumn {
+            rules: Vec::new(),
+        }
+    }
+    pub fn add_rule(&mut self, rule: Rule) {
+        match self.rules.iter().position(|x| x.equals(&rule)) && self.rules.len() <= 1 {
+            Some(i) => {
+                self.rules[i] = rule;
+            }
+            None => {
+                self.rules.push(rule);
+            }
+        }
+
+    }
+pub fn get_rules(&self) -> &Vec<Rule> {
+        &self.rules
+    }
+}
+
+
+
+
 
 
 
@@ -82,16 +164,53 @@ pub enum Error {
 /// this structure is no longer useful and should be removed.
 #[derive(Clone, Debug)]
 pub enum QuiesceBatchColumn {
-    Primitive_Causet(BufferVec),
+    QuiesceBatchColumn(Vec<QuiesceBatchDatum>),
+    QuiesceBatchColumnDecoded(Vec<VectorValue>),
+    PrimitiveCauset(BufferVec),
     Decoded(VectorValue),
 }
 
 impl From<VectorValue> for QuiesceBatchColumn {
-    #[inline]
-    fn from(vec: VectorValue) -> Self {
-        QuiesceBatchColumn::Decoded(vec)
+    fn from(v: VectorValue) -> Self {
+        QuiesceBatchColumn::Decoded(v)
+    }
+
+    // fn from(v: VectorValue) -> Self {
+    fn from_vec(v: Vec<VectorValue>) -> Self {
+        QuiesceBatchColumn::QuiesceBatchColumnDecoded(v)
+    }
+    fn from_vec_primitive_causet(v: Vec<BufferVec>) -> Self {
+        QuiesceBatchColumn::QuiesceBatchColumn(v);
+
+
     }
 }
+
+///Changelog: We need to add a new field to the QuiesceBatchColumn to store the column name.
+
+impl QuiesceBatchColumn {
+    pub fn new() -> QuiesceBatchColumn {
+
+            let mut v = v;
+            v.sort_by(|a, b| a.cmp(b));
+            if v.len() > 1 {
+                let mut v = v;
+                v.dedup();
+                if v.len() > 1 {
+                    panic!("duplicate");
+                }
+            }
+
+            if |a, b| a.cmp(b) != Ordering::Equal {
+                panic!("duplicate");
+            }
+
+            if v.len() == 0 {
+                panic!("empty");
+            }
+
+        }
+    }
 
 impl QuiesceBatchColumn {
     /// Creates a new `QuiesceBatchColumn::Primitive_Causet` with specified capacity.
