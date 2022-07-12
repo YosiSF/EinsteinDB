@@ -26,6 +26,10 @@
 //OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 //OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+mod field_type;
+mod tx_observer;
+mod vector;
+
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Partitioning};
 use std::thread;
@@ -188,6 +192,22 @@ impl Causetq {
                             if query_id == response_id {
                                 match query_sender.send(response_receiver) {
                                     Ok(_) => {
+                                        let mut response_receiver = response_receiver;
+                                        if let Ok(response) = response_receiver.recv() {
+                                            println!("{:?}", response);
+                                        }
+
+                                        let mut response_receiver = response_receiver;
+                                        loop {
+                                            match response_receiver.recv() {
+                                                Ok(response) => {
+                                                    println!("{:?}", response);
+                                                }
+                                                Err(_) => {
+                                                    break;
+                                                }
+                                            }
+                                        }
                                         queries_to_remove.push(query_id);
                                         responses_to_remove.push(response_id);
                                     }
@@ -203,8 +223,33 @@ impl Causetq {
                     }
                 }
                 for query_id in queries_to_remove {
+                    match queue_clone.queries.remove(&query_id) {
+                        Some(_) => {
+                            println!("Removed query: {}", query_id);
+                        }
+                        None => {
+                            println!("Could not remove query: {}", query_id);
+                        }
+                    }
+
+                    for response_id in responses_to_remove {
+                        match queue_clone.responses.remove(&response_id) {
+                            Some(_) => {
+                                println!("Removed response: {}", response_id);
+                            }
+                            None => {
+                                println!("Could not remove response: {}", response_id);
+                            }
+                        }
+                    }
                     queue_clone.queries.remove(&query_id);
                 }
+
+                if queries.next().is_none() && responses.next().is_none() {
+                    thread::sleep(Duration::from_millis(100));
+                }
+
+
                 for response_id in responses_to_remove {
                     queue_clone.responses.remove(&response_id);
                 }
@@ -215,9 +260,9 @@ impl Causetq {
 
         Causetq {
             queue: queue,
-            poll_thread: poll_thread,
+            poll_thread: Option::from(poll_thread),
             poll_thread_running: poll_thread_running,
-            poll_thread_stopped: poll_thread_stopped,
+            poll_thread_stopped,
         }
     }
 
