@@ -5,24 +5,11 @@ edition = "2021"
 author = "Karl Whitford <karl@einst.ai>"
 description = "A simple, fast, and efficient queue for causetq allegro lisp library"
 license = "MIT"
-repository = "https://github.com/YosiSF/EisnteinDB/causetq"
 keywords = ["causal set queue", "causetq", "causetq allegro lisp"]
 
 
 
 [dependencies]
-einstein_db = { path= "../einstein_db" }
-eindtein_ml = { path= "../einstein_ml" }
-berolinasql = { path= "../berolinasql" }
-einstein_db_ctl= { path= "../einstein_db_ctl" }
-causet= { path= "../causet" }
-causets = { path= "../causets" }
-allegro_poset = { path= "../allegro_poset" }
-soliton = { path= "../soliton" }
-soliton_panic = { path= "../soliton_panic" }
-fdb_traits = { path= "../fdb_traits" }
-serde = "1.0.1138"
-serde_derive = "1.0.1138"
 slog = "1.0.1138"
-einstein_db_alexandrov_processing = {path= "../einstein_db_alexandrov_processing"}
+
 

@@ -5,3 +5,12 @@ version = 3
 [[package]]
 name = "causetq"
 version = "0.1.0"
+dependencies = [
+ "slog",
+]
+
+[[package]]
+name = "slog"
+version = "1.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07aa15818e194222ef5b814aec86d47da20d93360c068b2c5f5ef64d9347fbdf"

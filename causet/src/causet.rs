@@ -113,7 +113,7 @@ pub trait CausetTrait {
     fn get_min(&self) -> Option<i32>;
 }
 
-#
+
 
 
 
@@ -523,7 +523,12 @@ impl<T> RelResult<T> {
 
 pub fn interlocking_async_wait_free_o_naught_key<T>(primary_key: T, secondary_key: T, value: T) -> ClosedtimelikeCausetq<T> {
 
-  switch_to_timelike_causet(primary_key, secondary_key, value)(<ClosedtimelikeCausetq<T> as Causetq>::new(primary_key, secondary_key, value))
+  switch_to_timelike_causet(primary_key, secondary_key, value)(<ClosedtimelikeCausetq<T> as CosetPoset>::new(primary_key, secondary_key, value))
+}
+
+
+
+
 
     // ClosedtimelikeCausetq {
     //     primary_key,
@@ -531,15 +536,15 @@ pub fn interlocking_async_wait_free_o_naught_key<T>(primary_key: T, secondary_ke
     //     lamport_clock: Arc::new(Mutex::new(LamportClock::Lightlike)),
     //     last_update: Arc::new(Mutex::new(Instant::now())),
     //     value: Arc::new(Mutex::new(value)),
-    // }
-    ClosedtimelikeCausetq {
-        primary_key,
-        secondary_key,
-        lamport_clock: Arc::new(Mutex::new(LamportClock::Lightlike)),
-        last_update: Arc::new(Mutex::new(Instant::now())),
-        value: Arc::new(Mutex::new(value)),
-    }
-}
+//     // }
+//     ClosedtimelikeCausetq {
+//         primary_key,
+//         secondary_key,
+//         lamport_clock: Arc::new(Mutex::new(LamportClock::Lightlike)),
+//         last_update: Arc::new(Mutex::new(Instant::now())),
+//         value: Arc::new(Mutex::new(value)),
+//     }
+// }
 
 impl<T> Causet<T> {
     pub fn new(primary_key: T, secondary_key: T, value: T) -> Causet<T> {
@@ -552,7 +557,7 @@ impl<T> Causet<T> {
         }
     }
 }
-}
+
 
 
 ///![Causet]
@@ -591,7 +596,7 @@ impl<T> Causetq<T> {
     }
 }
 
-
+#[allow(dead_code)]
 
 pub struct Causetq_<T> {
     pub primary_key: T,
@@ -633,6 +638,26 @@ impl<T> Causetq<T> {
 impl<T> Causetq<T> {
     pub fn get_primary_key(&self) -> T {
         self.primary_key.clone()
+        let mutex = self.lamport_clock.lock().unwrap();
+        if mutex.is_lightlike() {
+            self.primary_key.clone()
+        } else {
+            self.secondary_key.clone()
+        }
+    }
+}
+
+
+impl<T> Causetq<T> {
+
+    fn  spacelike_mux(primary_key: StringRef, secondary_key: StringRef, value: StringRef) -> Causetq_<StringRef, String> {
+        Causetq_ {
+            primary_key,
+            secondary_key,
+            lamport_clock: Arc::new(Mutex::new(LamportClock::new())),
+            last_update: Arc::new(Mutex::new(Instant::now())),
+            value: Arc::new(Mutex::new(value)),
+        }
     }
 }
 
@@ -667,7 +692,7 @@ impl<T> LightlikeCauset<T> {
 
     }
 }
-    pub fn new(primary_key: T, secondary_key: T, value: T) -> LightlikeCauset<T> {
+    pub fn new(primary_key: T, value: T) -> LightlikeCauset<T> {
 
     let causet = Causet::new(StringRef::new("primary key"), StringRef::new("secondary key"), StringRef::new("value"));
 for i in 0..10 {
@@ -675,22 +700,5 @@ for i in 0..10 {
 async fn get_value(causet: &Causet) -> StringRef {
     causet.get_value()
 }
-
-for i in 0..10 {
-    let causet = Causet::new(StringRef::new("primary key"), StringRef::new("secondary key"), StringRef::new("value"));
-
-    while let Some(value) = get_value(&causet).await {
-        println!("{}", value);
-    }
-
-    for i in 0..10 {
-        let causet = Causet::new(StringRef::new("primary key"), StringRef::new("secondary key"), StringRef::new("value"));
-    }
-
-    #[macro_use]
-    extern crate lazy_static;
-
-    lazy_static! {
-    pub static ref CAUSET_COUNT: Mutex<u64> = Mutex::new(0);
 }
-
+}
