@@ -1,8 +1,4 @@
 mod causal_set;
-mod config;
-mod encoder;
-mod event_slice;
-
 
 /// Copyright (c) 2022 Whtcorps Inc and EinsteinDB Project contributors
 ///
@@ -38,6 +34,10 @@ mod event_slice;
 /// use einstein_db::EinsteinDb;
 /// let einstein_db = EinsteinDb::new();
 ///
+mod config;
+mod encoder;
+mod event_slice;
+
 
 
 /// # About
@@ -66,6 +66,11 @@ mod event_slice;
 ///
 ///
 ///
+///
+
+
+
+
 pub enum BerolinaSqlError {
     IoError(io::Error),
     SqlError(String),

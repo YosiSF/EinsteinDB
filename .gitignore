@@ -1,4 +1,4 @@
-#   move to trash
+
 ._*
 
 .DS_Store
@@ -17,3 +17,5 @@ tmp
 .cargo/
 
 *.log
+
+
