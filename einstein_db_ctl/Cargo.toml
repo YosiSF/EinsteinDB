@@ -18,7 +18,6 @@ berolinasql = { path= "../berolinasql" }
 causet= { path= "../causet" }
 causetq = { path= "../causetq" }
 causets = { path= "../causets" }
-allegro_poset = { path= "../allegro_poset" }
 soliton = { path= "../soliton" }
 soliton_panic = { path= "../soliton_panic" }
 fdb_traits = { path= "../fdb_traits" }

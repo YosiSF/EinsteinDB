@@ -1,3 +1,31 @@
+/// Copyright 2020-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
+/// AUTHORS: WHITFORD LEDER
+/// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+/// this file File except in compliance with the License. You may obtain a copy of the
+/// License at http://www.apache.org/licenses/LICENSE-2.0
+/// Unless required by applicable law or agreed to in writing, software distributed
+/// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+/// CONDITIONS OF ANY KIND, either express or implied. See the License for the
+/// specific language governing permissions and limitations under the License.
+/// =================================================================
+///
+
+
+
+///! # EinsteinDB
+///
+/// Description: EinsteinDB is a distributed key-value store for Rust with semantic knowledge and fast performance.
+///
+/// ## Features
+/// ```
+/// - Fast and efficient
+/// - High performance
+/// - High availability
+/// - Scalable
+///
+/// - High-level API
+/// - High-level API for high-concurrency workloads
+
 use crate::causets::causet_partitioner::CausetPartitioner;
 use crate::causets::causet_partitioner::CausetPartitionerError;
 use crate::causets::causet_partitioner::CausetPartitionerErrorKind;
@@ -38,6 +66,15 @@ use crate::einsteindb::einstein_ml::{EinsteinMLNode};
 use crate::einsteindb::einstein_ml::{EinsteinMLNodeId};
 use crate::einsteindb::einstein_ml::{EinsteinMLNodeData};
 
+
+
+//Changelog: The following is the changelog of this project.
+//
+// Version 0.1.0:
+// - Initial version.
+// - Initial version of EinsteinDB.
+// - Initial version of EinsteinML.
+// - Initial version of EinsteinMLNode.
 
 
 
