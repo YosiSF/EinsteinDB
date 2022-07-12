@@ -1,3 +1,14 @@
+mod einsteindb_options;
+mod encryption;
+mod fdb_traits;
+mod util;
+mod peekable;
+mod options;
+mod errors;
+mod violetabft_engine;
+mod schema;
+mod vocabulary;
+
 /// Copyright 2020-2023 WHTCORPS INC ALL RIGHTS RESERVED. APACHE 2.0 COMMUNITY EDITION SL
 /// AUTHORS: WHITFORD LEDER
 /// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
@@ -11,7 +22,7 @@
 ///
 
 
-
+/*
 ///! # EinsteinDB
 ///
 /// Description: EinsteinDB is a distributed key-value store for Rust with semantic knowledge and fast performance.
@@ -29,6 +40,7 @@
 use crate::causets::causet_partitioner::CausetPartitioner;
 use crate::causets::causet_partitioner::CausetPartitionerError;
 use crate::causets::causet_partitioner::CausetPartitionerErrorKind;
+*/
 
 use crate::*;
 use std::fs::{self, File};
@@ -108,50 +120,42 @@ use crate::einsteindb::einstein_ml::{EinsteinMLNodeData};
 
 
 
-
-extern crate fdb_sys;
-extern crate fdb_traits;
-extern crate fdb_file_system;
-extern crate fdb_options;
-
-//foundationdb
-extern crate foundationdb;
-extern crate foundationdb_sys;
-//fdb_traits
-extern crate fdb_traits;
-
-#[macro_use]
-extern crate log;
-extern crate simple_logger;
-extern crate serde;
-extern crate serde_json;
-extern crate serde_yaml;
-extern crate serde_derive;
-extern crate serde_cbor;
-extern crate serde_json_derive;
-extern crate serde_yaml_derive;
-
-
-#[macro_use]
-extern crate serde_derive;
-
-
-#[macro_use]
-extern crate lazy_static;
-
-
-#[macro_use]
-extern crate failure;
-
-
-#[macro_use]
-extern crate failure_derive;
+///! SUSE file system with SmartNIC virtualized IPAM
+/// This is a SUSE file system with SmartNIC virtualized IPAM.
+/// It is a file system that is designed to be used with SmartNIC.
 
 
 
+#[derive(Debug)]
+pub struct SUSEFileSystem {
+    /// The path of the file system.
+    path: PathBuf,
+    /// The path of the file system.
+    path_str: String,
+    /// The path of the file system.
+    path_str_ref: &'static str,
+    /// The path of the file system.
+    path_str_ref_mut: &'static mut str,
+    /// The path of the file system.
+}
 
 
-///!
+///We will implement a jail system which will issue out a cron job to clean up the file system.
+/// The jail system will be able to clean up the file system.
+/// The interlock will deal mostly with lightlike nodes.
+
+
+const SUSE_FILE_SYSTEM_PATH: &'static str = "/tmp/suse_file_system";
+const SUSE_FILE_SYSTEM_PATH_STR: &'static str = "/tmp/suse_file_system";
+const SUSE_FILE_SYSTEM_PATH_STR_REF: &'static str = "/tmp/suse_file_system";
+
+#[macro_export(local_inner_macros)]
+macro_rules! local_inner_macros {
+    ($($tokens:tt)*) => {
+        $($tokens)*
+    };
+}
+
 
 
 
@@ -193,6 +197,7 @@ impl FileSystem {
 
 
 impl FileSystem {
+
     pub fn get_root_path(&self) -> PathBuf {
         self.root_path.clone()
     }
@@ -209,159 +214,443 @@ impl FileSystem {
 
 
 impl FileSystem {
-    pub fn get_file_path_as_string(&self) -> String {
-        self.file_path.to_str().unwrap().to_string()
-    }
-    pub fn get_file_name_as_string(&self) -> String {
-        self.file_name.clone()
-    }
-    pub fn get_file_extension_as_string(&self) -> String {
-        self.file_extension.clone()
-    }
-}
+    pub fn get_file_path_str(&self) -> String {
+        if self.file_path.is_relative() {
+            self.file_path.to_str().unwrap().to_string()
+        } else {
+            self.file_path.to_string_lossy().to_string()
+        }
 
+        for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+            if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+                return self.file_path.to_str().unwrap().replace(k8s_path, "").to_string();
+            }
+        }
 
-impl FileSystem {
-    pub fn get_file_path_as_path(&self) -> PathBuf {
-        self.file_path.clone()
-    }
-    pub fn get_file_name_as_path(&self) -> PathBuf {
-        self.file_path.clone()
-    }
-    pub fn get_file_extension_as_path(&self) -> PathBuf {
-        self.file_path.clone()
-    }
-}   //impl FileSystem
+        if self.file_path.to_str().unwrap().starts_with("/var/lib/kubelet/pods/") {
+            return self.file_path.to_str().unwrap().replace("/var/lib/kubelet/pods/", "").to_string();
+        }
 
-
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct EinsteinDBPartitionerError {
-    pub kind: EinsteinDBPartitionerErrorKind,
-}
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum EinsteinDBPartitionerErrorKind {
-    EinsteinDBError(EinsteinDBError),
-    EinsteinMLError(EinsteinMLError),
-    CausetPartitionerError(CausetPartitionerError),
-    EinsteinDBPartitionerErrorKind(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind2(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind3(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind4(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind5(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind6(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind7(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind8(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind9(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind10(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind11(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind12(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind13(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind14(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind15(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind16(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind17(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind18(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind19(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind20(EinsteinDBPartitionerErrorKind),
-    EinsteinDBPartitionerErrorKind21(EinsteinDBPartitionerErrorKind),
-}
-
-
-
-
-impl fmt::Display for EinsteinDBPartitionerError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "EinsteinDBPartitionerError")
-    }
-}
-
-
-impl fmt::Display for EinsteinDBPartitionerErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "EinsteinDBPartitionerErrorKind")
-    }
-}
-
-
-impl EinsteinDBPartitionerError {
-    pub fn new(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
-        EinsteinDBPartitionerError {
-            kind,
+        match self.file_path.to_str() {
+            Some(s) => s.to_string(),
+            None => "".to_string(),
         }
     }
 }
 
 
-impl EinsteinDBPartitionerErrorKind {
-    pub fn new(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
-        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+impl FileSystem {
+    pub fn get_file_path_str_ref(&self) -> &'static str {
+        SUSE_FILE_SYSTEM_PATH_STR_REF
     }
 }
 
 
-impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
-    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
-        EinsteinDBPartitionerError::new(kind)
+impl FileSystem {
+    pub fn get_file_path_str_ref_mut_ref(&self) -> &'static mut &'static str {
+        SUSE_FILE_SYSTEM_PATH_STR_REF_MUT_REF
+    }
+
+
+    pub fn get_file_path_str_ref_mut_ref_mut(&self) -> &'static mut &'static mut &'static str {
+        SUSE_FILE_SYSTEM_PATH_STR_REF_MUT_REF_MUT
+    }
+
+
+    pub fn get_file_path_str_ref_mut_ref_mut_mut(&self) -> &'static mut &'static mut &'static mut &'static str {
+        SUSE_FILE_SYSTEM_PATH_STR_REF_MUT_REF_MUT_MUT
     }
 }
+// }
+//
+// #[derive(Debug)]
+// #[derive(Clone)]
+// #[derive(Copy)]
+// #[derive(PartialEq)]
+// async fn get_file_system_path() {
+//
+//     let mut path = PathBuf::new();
+//     path.push(SUSE_FILE_SYSTEM_PATH){
+//         path
+//     };
+//     path.push("/");
+//     path.push(SUSE_FILE_SYSTEM_PATH){
+//         while(if path.exists() {
+//             path.is_dir()
+//         } else {
+//             false
+//         }) {
+//             path.pop();
+//         }
+//     };
+//     path.push(SUSE_FILE_SYSTEM_PATH){
+//         if (k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"]) {
+//             path.push(k8s_path);
+//         } else {
+//             path.push("/var/lib/kubelet/pods/");
+//         }
+//     };
+//
+//     // println!("{:?}", path);
+//     // println!("{:?}", path.to_str());
+//     // println!("{:?}", path.to_str().unwrap());
+//     #[derive(Debug)]
+//     #[derive(Clone)]
+//
+//     #[derive(Copy)]
+//
+//     #[derive(PartialEq)]
+//
+//     async fn get_file_system_path() {
+//
+//         let mut path = PathBuf::new();
+//         path.push(SUSE_FILE_SYSTEM_PATH){
+//             path
+//         };
+//
+//         loop{
+//             path.push("/");
+//             path.push(SUSE_FILE_SYSTEM_PATH){
+//                 while(if path.exists() {
+//                     path.is_dir()
+//                 } else {
+//                     false
+//                 }) {
+//                     path.pop();
+//                 }
+//             };
+//             path.push(SUSE_FILE_SYSTEM_PATH){
+//                 if (k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"]) {
+//                     path.push(k8s_path);
+//                 } else {
+//                     path.push("/var/lib/kubelet/pods/");
+//                 }
+//             };
+//             break;
+//         }
+//
+//         // println!("{:?}", path);
+//         // println!("{:?}", path.to_str());
+//
+//
+//         #[derive(Debug)]
+//         #[derive(Clone)]
+//
+//
+//
+//         #[derive(Copy)]
+//
+//
+//         match path.to_str() {
+//             for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//                 if path.to_str().unwrap().starts_with(k8s_path) {
+//                     return path.to_str().unwrap().replace(k8s_path, "").to_string();
+//                 }
+//             }
+//
+//             let mut path = PathBuf::new(){
+//                 if (k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"]) {
+//                     for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//                         if path.to_str().unwrap().starts_with(k8s_path) {
+//                             return path.to_str().unwrap().replace(k8s_path, "").to_string();
+//                         }
+//                     }
+//                 }
+//             };
+//             path.push(SUSE_FILE_SYSTEM_PATH){
+//                 path.push(k8s_path);
+//                 //lock the path
+//                 path.push("/var/lib/kubelet/pods/");
+//                 path.push(k8s_path);
+//             } else {
+//                 path.push("/var/lib/kubelet/pods/");
+//             }
+//
+//         loop {
+//             if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+//                match self.file_path.to_str() {
+//                    let mut s = self.file_path.to_str().unwrap().replace(k8s_path, "");
+//                    let mut s = s.replace("/var/lib/kubelet/pods/", "");
+//                    while s.starts_with("/") {
+//                        s = &s[1..];
+//
+//                        if s.starts_with("/") {
+//                            s = &s[1..];
+//                        }
+//
+//                        match s.find("/") {
+//                            Some(i) => {
+//                                s = &s[i..];
+//                            }
+//                            None => {
+//                                s = "";
+//                            }
+//                        }
+//                     None => return "".as_str(),
+//                 }
+//
+//                    for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//                        if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+//                            return self.file_path.to_str().unwrap().replace(k8s_path, "").to_string();
+//                        }
+//                    }
+//                 }
+//             }
+//         }
+//     }
+//
+//         }
+//     }
+//
+//     for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//         if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+//             return self.file_path.to_str().unwrap().replace(k8s_path, "").to_string();
+//         }
+//     }
+//
+//     if self.file_path.to_str().unwrap().starts_with("/var/lib/kubelet/pods/") {
+//         return self.file_path.to_str().unwrap().replace("/var/lib/kubelet/pods/", "").to_string();
+//     }
+//
+// }
+//
+//     ///lock the thread that is calling this function
+//     /// to prevent the thread from being interrupted
+//
+//     match self.file_path.to_str() {
+//         Some(s) => s.to_string(),
+//         None => "".to_string(),
+//
+//         }
+//
+//     for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//         if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+//             return self.file_path.to_str().unwrap().replace(k8s_path, "").to_string();
+//         }
+//     } while (k8s_path) {
+//         match (k8s_path) {
+//             Some(s) => s.to_string(),
+//             None => "".to_string(),
+//         }
+//         for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//           \
+//                 if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+//                     return self.file_path.to_str().unwrap().replace(k8s_path, "").to_string();
+//                 } loop{
+//                     if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+//                         return self.file_path.to_str().unwrap().replace(k8s_path, "").to_string();
+//                     }
+//                 }
+//             }
+//         }
+//
+//         if self.file_path.to_str().unwrap().starts_with("/var/lib/kubelet/pods/") {
+//             return self.file_path.to_str().unwrap().replace("/var/lib/kubelet/pods/", "").to_string();
+//         }
+//     }
+//     #[cfg(feature = "k8s")]
+//         for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//             if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+//                 return self.file_path.to_str().unwrap().replace(k8s_path, "").to_string();
+//             }
+//         }
+// for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//     if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+//
+//         return self.file_path.to_str().unwrap().replace(k8s_path, "").to_string();
+//     }
+// }
+//     if self.file_path.to_str().unwrap().starts_with("/var/lib/kubelet/pods/") {
+//         return self.file_path.to_str().unwrap().replace("/var/lib/kubelet/pods/", "").to_string();
+//     }
+//     for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//         while (ifulltext)
+//         {
+//             if self.file_path.to_str().unwrap().starts_with("/var/lib/kubelet/pods/") {
+//                 return self.file_path.to_str().unwrap().replace("/var/lib/kubelet/pods/", "").to_string();
+//             }
+//         }
+//     }
+// }
+// for k8s_path in &["/var/lib/kubelet/pods/", "/var/lib/kubelet/pods/"] {
+//             if self.file_path.to_str().unwrap().starts_with(k8s_path) {
+//
+//
+//         if causetq_index_fulltext_view_path.to_str().unwrap().starts_with("/var/lib/kubelet/pods/") {
+//
+//             return self.file_path.to_str().unwrap().replace("/var/lib/kubelet/pods/", "").to_string();
+//         }
+//
+//
+//         self.file_path.to_str().unwrap().to_string()
+//     }
+//
+//     pub fn get_file_name_str(&self) -> String {
+//         self.file_name.clone()
+//     }
+//
+//
+//     pub fn get_file_path_as_string(&self) -> String {
+//         self.file_path.to_str().unwrap().to_string()
+//     }
+//     pub fn get_file_name_as_string(&self) -> String {
+//         self.file_name.clone()
+//     }
+//     pub fn get_file_extension_as_string(&self) -> String {
+//         self.file_extension.clone()
+//     }
+// }
+//
+//
+// impl FileSystem {
+//     pub fn get_file_path_as_path(&self) -> PathBuf {
+//         self.file_path.clone()
+//     }
+//     pub fn get_file_name_as_path(&self) -> PathBuf {
+//         self.file_path.clone()
+//     }
+//     pub fn get_file_extension_as_path(&self) -> PathBuf {
+//         self.file_path.clone()
+//     }
+// }   //impl FileSystem
+//
+//
+//
+//
+// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+// pub struct EinsteinDBPartitionerError {
+//     pub kind: EinsteinDBPartitionerErrorKind,
+// }
+//
+//
+// #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+// pub enum EinsteinDBPartitionerErrorKind {
+//     EinsteinDBError(EinsteinDBError),
+//     EinsteinMLError(EinsteinMLError),
+//     CausetPartitionerError(CausetPartitionerError),
+//     EinsteinDBPartitionerErrorKind(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind2(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind3(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind4(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind5(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind6(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind7(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind8(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind9(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind10(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind11(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind12(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind13(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind14(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind15(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind16(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind17(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind18(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind19(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind20(EinsteinDBPartitionerErrorKind),
+//     EinsteinDBPartitionerErrorKind21(EinsteinDBPartitionerErrorKind),
+// }
+//
+//
+//
+//
+// impl fmt::Display for EinsteinDBPartitionerError {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "EinsteinDBPartitionerError")
+//     }
+// }
+//
+//
+// impl fmt::Display for EinsteinDBPartitionerErrorKind {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "EinsteinDBPartitionerErrorKind")
+//     }
+// }
+//
+//
+// impl EinsteinDBPartitionerError {
+//     pub fn new(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+//         EinsteinDBPartitionerError {
+//             kind,
+//         }
+//     }
+// }
+//
+//
+// impl EinsteinDBPartitionerErrorKind {
+//     pub fn new(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+//         EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+//     }
+// }
+//
+//
+// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+//     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+//         EinsteinDBPartitionerError::new(kind)
+//     }
+// }
+//
+//
+// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
+//     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+//         EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+//     }
+// }
+//
+//
+// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+//     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+//         EinsteinDBPartitionerError::new(kind)
+//     }
+// }
+//
+//
+// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
+//     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+//         EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+//     }
+// }
+//
+//
+// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+//     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+//         EinsteinDBPartitionerError::new(kind)
+//     }
+// }
+//
+//
+// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
+//     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+//         EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+//     }
+// }
+//
+//
+// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+//     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+//         EinsteinDBPartitionerError::new(kind)
+//     }
+// }
+//
+//
+// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
+//     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
+//         EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
+//     }
+// }
+//
+//
+//
+// //// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
+// ////     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
+// ////         EinsteinDBPartitionerError::new(kind)
+// ////     }
+// //// }
 
 
-impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
-    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
-        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
-    }
-}
 
+//CHANGELOG:  Added the following functions:
+// 1. einstein_db_partitioner_error_kind_to_string()
+// 2. einstein_db_partitioner_error_to_string()
+//
 
-impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
-    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
-        EinsteinDBPartitionerError::new(kind)
-    }
-}
-
-
-impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
-    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
-        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
-    }
-}
-
-
-impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
-    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
-        EinsteinDBPartitionerError::new(kind)
-    }
-}
-
-
-impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
-    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
-        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
-    }
-}
-
-
-impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
-    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
-        EinsteinDBPartitionerError::new(kind)
-    }
-}
-
-
-impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerErrorKind {
-    fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerErrorKind {
-        EinsteinDBPartitionerErrorKind::EinsteinDBPartitionerErrorKind(kind)
-    }
-}
-
-
-
-//// impl From<EinsteinDBPartitionerErrorKind> for EinsteinDBPartitionerError {
-////     fn from(kind: EinsteinDBPartitionerErrorKind) -> EinsteinDBPartitionerError {
-////         EinsteinDBPartitionerError::new(kind)
-////     }
-//// }

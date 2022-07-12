@@ -10,13 +10,4 @@ url = "https://github.com/YosiSF/EinsteinDB"
 
 
 
-[dependencies]
-einsteindb = {path = "." , version = "1.0.0"}
-einstein_ml = {path = "../einstein_ml" , version = "0.1.0"}
-einstein_db_ctl = {path = "../einstein_db_ctl" , version = "0.1.0"}
-itertools = "0.10.3"
-uuid = "1.1.2"
-num-bigint = "0.4.3"
-num-traits = "0.2.0"
-num-integer = "0.1.45"
 
