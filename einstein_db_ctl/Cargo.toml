@@ -2,7 +2,4 @@
 name = "einstein_db_ctl"
 version = "0.1.0"
 license = "MIT, Apache-2.0, BSD-3.0"
-authors = ["Whtcorps Inc, The EinsteinDB Authors, EinstAI Inc, and OpenAI Inc"]
-edition = "2021"
-
 
