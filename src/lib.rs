@@ -21,19 +21,6 @@ mod causal_set;
 
 //import serde
 
-/// # About
-///
-/// This is a library for the [EinsteinDB](https://einsteindb.com
-/// # Examples
-/// ```
-/// use einstein_db::EinsteinDb;
-/// let einstein_db = EinsteinDb::new();
-/// ```
-/// # Errors
-/// ```
-/// use einstein_db::EinsteinDb;
-/// let einstein_db = EinsteinDb::new();
-///
 mod config;
 mod encoder;
 mod event_slice;
@@ -369,8 +356,7 @@ impl EinsteinDbServer {
 
 
 
-    /// The resume function is used to resume the iterator.
-    /// The resume function is used to resume the iterator.
+
 
 //
 //     fn sync(&mut self, server_uri: &String, user_uuid: &String) -> Result<SyncReport>{
@@ -382,25 +368,7 @@ impl EinsteinDbServer {
 // }
 //
 //
-//         for i in 0..einstein_db_iterator_state_len {
-//             einstein_db_iterator_state.push(einstein_db_iterator_state_str.chars().nth(i).unwrap());
-//         }
-//
-//         einstein_db_iterator_state
-//     }
-// }
 
-//
-// pub struct EinsteinDbServer3 {
-//     fn get_einstein_db_iterator_state_len().nthreads() -> usize {
-//     /// Here we are using the macro to define the iterator.
-//     /// The macro is defined in the `async_iterator!` macro.
-//     #[derive(Debug)]
-//     einstein_db_iterator_state_str: String,
-//     einstein_db_iterator_state: String::new(),
-//     einstein_db_iterator_state_len: 0,
-// }
-//
 
 
 

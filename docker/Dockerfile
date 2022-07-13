@@ -3,9 +3,27 @@
 # found in the LICENSE file.
 #Copyright (c)2018-2023 EinsteinDB-WhtcorpsInc-EinstAI Inc Project Authors. All rights reserved.
 
+
+
+
+# #############################################################################
+# #############################################################################
+#EinsteinDB Dockerfile for AWS ECS, GKE, and Azure Container ServicePort
+ENV PROJECT_NAME "einsteindb"
+ENV PROJECT_VERSION "1.0.0"
+ENV PROJECT_LICENSE "MIT"
+ENV PROJECT_LICENSE_URL "https://opensource.org/licenses/MIT"
+
+# #############################################################################
+# #############################################################################
+# EinsteinDB Dockerfile for AWS ECS, GKE, and Azure Container ServicePort
+ENV PROJECT_NAME "einsteindb"
+ENV AWS_ACCESS_KEY_ID "AKIAJX7X7X7X7X7X7X7X"
+ENV PROJECT_REPO "https://github.com/YosiSF/EinsteinDB.git"
 ENV VERSION="1.0.0"
 ENV BUILD_DATE="$(date +%Y%m%d%H%M%S)"
 ENV BUILD_USER="$(whoami)"
+
 ENV BUILD_HOST="$(hostname)"
 ENV BUILD_PLATFORM="$(uname -s)"
 ENV BUILD_ARCH="$(uname -m)"
@@ -151,3 +169,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
     && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
 
+
+
+# Install the dependencies for aws Engine
+RUN apt-get update && apt-get install -y
+
+RUN git clone https://github.com/YosiSF/EinsteinDB.git

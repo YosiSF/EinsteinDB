@@ -1,5 +1,7 @@
 # EinsteinDB
-EinsteinDB addresses being able to reach the full potential of NLIDB by providing a natural language interface to the database, building a semantic knowledge-base for EAV queries and SQL atop a sparse data structure.
+EinsteinDB addresses being able to reach the full potential of NLIDB by providing a natural language interface to the database ecosystem of Hybrid OLAP/OLTP databases.
+Adopting the architecture of JanusGraph and Galileo, EinsteinDB employs guarantee liveness through locally linearizable relativistically loose coupled removable cumulative window protocol allowing the frame to become consistent across different versions of the application.
+grow before recomputing the aggregate, it permits removal of rows from the previous aggregate. For the sum, count, and avg aggregates, removing rows from the current aggregate can easily be achieved by subtracting.building a semantic knowledge-base for EAV queries and SQL atop a sparse data structure.
 Causets, short for "causal sets", are a way of representing the causal relationships between entities in a database. For example, for a table scan we use features such as the number of pages of a table or information about the data type and average width in bytes for each column that allows the model to learn the runtime complexity of the scan independent of the concrete database at hand.
 Relativistic linearization tells us that the runtime of a query is a function of the number of entities in the database modulo the number of entities in the database engaged with the cursor and the frame pointer: an interlocking direcorate in SUSE.
 
