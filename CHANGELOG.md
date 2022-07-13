@@ -4,3 +4,13 @@
 ### 0.9.10 - Addition of `EinsteinDB.get_version()` function
 
 ### Lamport Clock is now a class
+
+
+### 0.9.11 - Addition of `EinsteinDB.get_version()` function
+
+
+### 0.9.12 - Addition of Docker Compose file_extension functions
+
+
+### 0.9.13 - Ansible deployment of EinsteinDBClient with Helm   format_time `EinsteinDB.get_version()` functions
+### 0.9.14 - Addition of `EinsteinDB.get_version()` function to multiverse timestamp ordered mistypes
