@@ -6,22 +6,18 @@
 
 
 use std::net::{TcpListener, TcpStream};
-use std::io::{Read, Write};
-use std::thread;
-use std::sync::{Arc, Mutex};
+use std::{hash, thread};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::collections::HashMap;
 use std::time::Duration;
-use std::fs::File;
-use std::io::prelude::*;
-use std::path::Path;
+
+
 use std::env;
 use std::process::Command;
 use std::process::Stdio;
 use std::process::Child;
 use std::process::ExitStatus;
 use std::process::Output;
-use std::process::Stdio;
 use std::process::ChildStdin;
 use std::process::ChildStdout;
 use std::process::ChildStderr;
@@ -71,6 +67,8 @@ use std::borrow::Cow;
 use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::{ptr, usize};
+use std::hash::Hash;
+use std::ops::Add;
 
 
 use einstein_ml::{EinsteinMl, EinsteinMlError};
@@ -142,8 +140,8 @@ pub struct SecKey {
 
     pub sec_key: String,
 
-    seed: Hash,
-    salt: Hash,
+    seed: std::hash::Hash,
+    salt: dyn Hash,
     cache: merkle::MerkleTree,
 }
 pub struct PubKey {
@@ -203,11 +201,11 @@ pub struct AuthC {
 
 #[derive(Default)]
 pub struct AuthCRoot {
-    pub auth_c_root: Hash,
-    pub auth_c_root_hash: Hash,
+    pub auth_c_root: dyn Hash,
+    pub auth_c_root_hash: dyn Hash,
 }
 impl SecKey {
-    pub fn new_from_seed(sec_key: String, seed: Hash) -> SecKey {
+    pub fn new_from_seed(sec_key: String, _seed: Box<Hash>) -> SecKey {
         SecKey {
             sec_key,
             seed: Hash::new(),
@@ -220,7 +218,7 @@ impl SecKey {
         self.sec_key.clone()
     }
 
-    pub fn new(seed: Hash, salt: Hash) -> SecKey {
+    pub fn new() -> SecKey {
         SecKey {
             seed,
             salt,
@@ -229,11 +227,11 @@ impl SecKey {
         }
     }
 
-    pub fn get_seed(&self) -> Hash {
+    pub fn get_seed(&self) -> &dyn Hash {
         self.seed.clone()
     }
 
-    pub fn get_salt(&self) -> Hash {
+    pub fn get_salt(&self) -> &dyn Hash {
         self.salt.clone()
     }
 
@@ -248,48 +246,103 @@ impl SecKey {
 
 
 impl PubKey {
-    pub fn new_from_seed(pub_key: String, seed: Hash) -> PubKey {
+    pub fn new_from_seed(_pub_key: String, seed: Box<dyn Hash>) -> SecKey {
         SecKey {
-            sec_key: (),
+            sec_key: String::new(),
             seed,
             salt,
             cache: merkle::MerkleTree::new(),
-            
+
         }
-
-
     }
-    pub fn get_seed(&self) -> Hash {
-        self.seed
-    }
-
-    pub fn get_salt(&self) -> Hash {
-        self.salt
-    }
-
-    pub fn get_cache(&self) -> &merkle::MerkleTree {
-        &self.cache
+    fn new() -> Box<PubKey> {
+        let pub_key = PubKey {
+            pub_key: String::new(),
+            seed: Hash::new(),
+            salt: Hash::new(),
+            cache: merkle::MerkleTree::new(),
+            sec_key: SecKey::new(),
+            h: Hash::new(),
+        };
+        Box::new(pub_key)
     }
 
-    pub fn set_cache(&mut self, cache: merkle::MerkleTree) {
-        self.cache = cache;
+     fn get_pub_key(&self) -> String {
+        self.pub_key.clone()
+    }
+}
+
+
+pub fn get_seed() -> Box<dyn Hash> {
+    Box::new(Hash::new())
+}
+
+          pub fn get_salt() -> Box<dyn Hash> {
+    Box::new(Hash::new())
     }
 
-    pub fn genpk(&self) -> PubKey {
-        let mut rng = rand::thread_rng();
-        let mut pk = PubKey::new(self.seed.clone(), self.salt.clone());
-        let mut pk_hash = Hash::new();
-        pk_hash.hash(&pk.get_seed().to_hex());
-        pk.set_cache(pk_hash.get_cache());
-        pk.set_pub_key(pk_hash.get_hash());
-        pk_hash.set_cache(pk.get_cache());
+pub fn genpk() -> Box<Box<PubKey>> {
+    rand::thread_rng();
+    let mut pk = PubKey::new();
+    let mut pk_hash = Hash::new();
+    pk_hash.hash(&pk.get_seed().to_hex());
+    pk.set_cache(pk_hash.get_cache());
+    pk.set_pub_key(pk_hash.get_hash());
+    pk_hash.set_cache(pk.get_cache());
+    h: pk_hash.get_hash(),
+    Box::new(pk)    // Box::new(pk)
+}
+
+
+pub fn gen() -> Box<SecKey> {
+        pub_key: pk.get_pub_key(),
+        sec_key: pk.get_sec_key(),
+        h: pk.get_h(),
+        sig_hash: pk.get_sig_hash(),
+        sig_hash_cache: pk.get_sig_hash_cache(),
+        sig_hash_cache_root: pk.get_sig_hash_cache_root(),
+        sig_hash_cache_root_hash: pk.get_sig_hash_cache_root_hash(),
+    let x = sig_hash: Hash::new();
+    let y = sig_hash_cache: merkle::MerkleTree::new();
+    let z = sig_hash_cache_root: Hash::new();
+    let w = sig_hash_cache_root_hash: Hash::new();,
+    GRAVITY_D: GRAVITY_D;
+    GRAVITY_CONFIG.get_cache_root_hash_size();
+    let v = pors_sign: pors::Signature::new();
+    GRAVITY_CONFIG.get_pors_sign_size();
+
+    let u = subtrees: [subtree::Signature::new(); GRAVITY_D];
+        sig_hash_cache: merkle::MerkleTree::new(); GRAVITY_CONFIG_VALUE_TYPE_HASH_SIZE);
+    }
+
+    pub fn genpk_from_seed(seed: Box<dyn Hash>) -> Box<Box<PubKey>> {
+        rand::thread_rng();
+        let mut sk = SecKey::new();
+        let mut sk_hash = Hash::new();
+        sk_hash.hash(&sk.get_seed().to_hex());
+        sk.set_cache(sk_hash.get_cache());
+        sk.set_sec_key(sk_hash.get_hash());
+        sk_hash.set_cache(sk.get_cache());
         h: self.cache.root();
         pub_key: self.pub_key.clone();
         sec_key: self.sec_key.clone();
         sig_hash: self.sig_hash.clone();
-        sig_hash_cache: self.sig_hash_cache.clone();
+        sig_hash_cache: self.sig_hash_cache.clone()
     }
-        }
+    pub fn gensig(&self) -> Box<Signature> {
+        rand::thread_rng();
+        let mut sig = Signature::new();
+        let mut sig_hash = Hash::new();
+        sig_hash.hash(&sig.get_seed().to_hex());
+        sig.set_cache(sig_hash.get_cache());
+        sig.set_sig_hash(sig_hash.get_hash());
+        sig_hash.set_cache(sig.get_cache());
+        h: self.cache.root();
+        pub_key: self.pub_key.clone();
+        sec_key: self.sec_key.clone();
+        sig_hash: self.sig_hash.clone();
+        sig_hash_cache: self.sig_hash_cache.clone()
+    }
 impl Signature {
 
         pub fn new() -> Signature {
@@ -313,7 +366,7 @@ impl Signature {
 
 
 
-    pub fn get_sig_hash(&self) -> Hash {
+    pub fn get_sig_hash(&self) -> Box<dyn Hash> {
         self.sig_hash.clone()
     }
 
@@ -328,13 +381,13 @@ impl Signature {
     }
 
 
-    pub fn get_sig_hash_cache_root(&self) -> Hash {
+    pub fn get_sig_hash_cache_root(&self) -> Box<dyn Hash> {
         self.sig_hash_cache_root.clone()
     }
 
 
 
-    pub fn sign_hash(&self, msg: &Hash) -> Signature {
+    pub fn sign_hash(&self, msg: &dyn Hash) -> Signature {
         // let mut sign: Signature = Default::default();
         let mut sign = Signature::default();
         sign.pors_sign = pors::Signature::new(msg, &self.seed, &self.salt);
@@ -394,7 +447,7 @@ impl PubKey {
 }
 
     impl PubKey {
-        fn verify_hash(&self, sign: &Signature, msg: &Hash) -> bool {
+        fn verify_hash(&self, sign: &Signature, msg: &dyn Hash) -> bool {
             if let Some(h) = sign.extract_hash(msg) {
                 self.h == h
             } else {
@@ -587,14 +640,14 @@ fn main() {
 
     let mut turing_automata = Fsm::new();
 
-    let mut sec_key = SecKey::new(Hash::default(), Hash::default());
+    let mut sec_key = SecKey::new();
 
     let mut pub_key = sec_key.genpk();
 
     let mut sign = sec_key.sign_hash(&Hash::default());
 
 
-    let mut sec_key2 = SecKey::new(Hash::default(), Hash::default());
+    let mut sec_key2 = SecKey::new();
 
     ///! Test Connect
     ///! FoundationDB with EinsteinDB Wrapper via Allegro
@@ -705,6 +758,8 @@ fn main() {
 
 
     let rel_tuple_ts = timestamp.get_ts_rel();
+#[allow(unused_variables)]
+
 
     #[derive(Debug, Clone, PartialEq, Eq)]
     struct RelTimestamp {
@@ -739,7 +794,7 @@ fn main() {
     while timestamp < 100 {
         let mut rng = rand::thread_rng();
 
-        let mut sec_key = SecKey::new(Hash::default(), Hash::default());
+        let mut sec_key = SecKey::new();
 
         let mut pub_key = sec_key.genpk();
 
@@ -907,7 +962,7 @@ fn main() {
             }
         }
         if matches != None {
-            let matches = process_matches();
+            let _matches = process_matches();
         }
     }
 
@@ -986,7 +1041,7 @@ fn main() {
 
 
     /// Read the ident map materialized view from the given SQL store.
-    pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<IdentMap> {
+    pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<IdentMap, E> {
         let v = read_materialized_view(conn, "idents")?;
         v.into_iter().map(|(e, a, typed_value)| {
             if a != causetids::DB_IDENT {
@@ -1001,7 +1056,7 @@ fn main() {
     }
 
     /// Read the schema materialized view from the given SQL store.
-    pub(crate) fn read_attribute_map(conn: &rusqlite::Connection) -> Result<AttributeMap> {
+    pub(crate) fn read_attribute_map(conn: &rusqlite::Connection) -> Result<AttributeMap, E> {
         let causetid_triples = read_materialized_view(conn, "schema")?;
         let mut attribute_map = AttributeMap::default();
         metadata::update_attribute_map_from_causetid_triples(&mut attribute_map, causetid_triples, vec![])?;
@@ -1035,7 +1090,7 @@ fn main() {
         /// This is the version of the database that is currently in use.  It is not the version of the database that
         /// was last committed.
 
-        fn get_version(&self) -> Result<i32>;
+        fn get_version(&self) -> Result<i32, E>;
 
         /// Given a slice of [a v] lookup-refs, look up the corresponding [e a v] triples.
         ///
@@ -1045,23 +1100,23 @@ fn main() {
         ///
         /// Returns a map &(a, v) -> e, to avoid cloning potentially large values.  The keys of the map
         /// are exactly those (a, v) pairs that have an assertion [e a v] in the store.
-        fn resolve_avs<'a>(&self, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>>;
+        fn resolve_avs<'a>(&self, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>, E>;
 
         /// Begin (or prepare) the underlying storage layer for a new Mentat transaction.
         ///
         /// Use this to create temporary tables, prepare indices, set pragmas, etc, before the initial
         /// `insert_non_fts_searches` invocation.
-        fn begin_tx_application(&self) -> Result<()>;
+        fn begin_tx_application(&self) -> Result<(), E>;
 
         // TODO: this is not a reasonable abstraction, but I don't want to really consider non-SQL storage just yet.
-        fn insert_non_fts_searches<'a>(&self, causets: &'a [ReducedCauset], search_type: SearchType) -> Result<()>;
-        fn insert_fts_searches<'a>(&self, causets: &'a [ReducedCauset], search_type: SearchType) -> Result<()>;
+        fn insert_non_fts_searches<'a>(&self, causets: &'a [ReducedCauset], search_type: SearchType) -> Result<(), E>;
+        fn insert_fts_searches<'a>(&self, causets: &'a [ReducedCauset], search_type: SearchType) -> Result<(), E>;
 
         /// Prepare the underlying storage layer for finalization after a Mentat transaction.
         ///
         /// Use this to finalize temporary tables, complete indices, revert pragmas, etc, after the
         /// final `insert_non_fts_searches` invocation.
-        fn end_tx_application(&self) -> Result<()>;
+        fn end_tx_application(&self) -> Result<(), E>;
 
         /// Finalize the underlying storage layer after a Mentat transaction.
         ///
@@ -1070,20 +1125,20 @@ fn main() {
         /// It is also called after a transaction is rolled back.
         /// It is called after a transaction is aborted.
 
-        fn finalize_tx(&self) -> Result<()>;
+        fn finalize_tx(&self) -> Result<(), E>;
 
         /// Extract metadata-related [e a typed_value added] datoms resolved in the last
         /// materialized transaction.
-        fn resolved_metadata_assertions(&self) -> Result<Vec<(Causetid, Causetid, causetq_TV, bool)>>;
+        fn resolved_metadata_assertions(&self) -> Result<Vec<(Causetid, Causetid, causetq_TV, bool)>, E>;
 
         /// Extract metadata-related [e a typed_value added] datoms resolved in the last
         /// materialized transaction.
         /// This is a convenience wrapper around `resolved_metadata_assertions` that returns a map
 
-        fn resolved_metadata_assertions_map(&self) -> Result<AVMap> {
+        fn resolved_metadata_assertions_map(&self) -> Result<AVMap, E> {
             let resolved_metadata_assertions = self.resolved_metadata_assertions()?;
             let mut map = AVMap::default();
-            for (e, a, typed_value, added) in resolved_metadata_assertions {
+            for (e, a, typed_value, _added) in resolved_metadata_assertions {
                 map.insert((a, typed_value), e);
             }
             Ok(map)
@@ -1091,10 +1146,10 @@ fn main() {
 
         /// Extract metadata-related [e a typed_value added] datoms resolved in the last
 
-        fn resolved_metadata_assertions_map_for_causet(&self, causet: &Causet) -> Result<AVMap> {
+        fn resolved_metadata_assertions_map_for_causet(&self, causet: &Causet) -> Result<AVMap, E> {
             let resolved_metadata_assertions = self.resolved_metadata_assertions()?;
             let mut map = AVMap::default();
-            for (e, a, typed_value, added) in resolved_metadata_assertions {
+            for (e, a, typed_value, _added) in resolved_metadata_assertions {
                 if causet.contains_causetid(e) {
                     map.insert((a, typed_value), e);
                 }
@@ -1117,7 +1172,7 @@ fn main() {
         /// This is the version of the database that is currently in use.  It is not the version of the database that
         /// was last committed.
         /// TODO: this is not a reasonable abstraction, but I don't want to really consider non-SQL storage just yet.
-        fn get_version(&self) -> Result<i32>;
+        fn get_version(&self) -> Result<i32, E>;
 
         /// Given a slice of [a v] lookup-refs, look up the corresponding [e a v] causets in the database..
         /// It is assumed that the attribute `a` in each lookup-ref is `:db/unique`, so that at most one
@@ -1127,13 +1182,13 @@ fn main() {
         /// are exactly those (a, v) pairs that have an timelike_assertion [e a v] in the store.
         /// TODO: this is not a reasonable abstraction, but I don't want to really consider non-SQL storage just yet.
 
-        fn resolve_avs<'a>(&self, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>>;
+        fn resolve_avs<'a>(&self, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>, E>;
 
-        fn resolve_avs_for_causet<'a>(&self, causet: &'a Causet, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>>;
+        fn resolve_avs_for_causet<'a>(&self, causet: &'a Causet, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>, E>;
 
-        fn resolve_avs_for_causet_mut<'a>(&self, causet: &'a mut Causet, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>>;
+        fn resolve_avs_for_causet_mut<'a>(&self, causet: &'a mut Causet, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>, E>;
 
-        async fn resolve_avs_for_causet_async<'a>(&self, causet: &'a Causet, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>> {
+        async fn resolve_avs_for_causet_async<'a>(&self, causet: &'a Causet, avs: &'a [&'a AVPair]) -> Result<AVMap<'a>, E> {
             let mut map = AVMap::default();
             for av in avs {
                 let e = self.resolve_av(causet, av)?;
@@ -1169,7 +1224,7 @@ fn main() {
         /// It is also called before a transaction is rolled back.
         /// It is called before a transaction is aborted.
 
-        fn begin_tx(&self) -> Result<()>;
+        fn begin_tx(&self) -> Result<(), E>;
 
         /// Insert a non-fts search into the underlying storage layer.
         /// This is a second step in performing a transaction.
@@ -1180,18 +1235,18 @@ fn main() {
         ///
 
 
-        fn insert_non_fts_search(&self, search: &NonFtsSearch) -> Result<()>;
+        fn insert_non_fts_search(&self, search: &NonFtsSearch) -> Result<(), E>;
 
         /// Insert a fts search into the underlying storage layer.
 
-        fn insert_fts_search(&self, search: &FtsSearch) -> Result<()>;
+        fn insert_fts_search(&self, search: &FtsSearch) -> Result<(), E>;
 
         /// Insert a fts search into the underlying storage layer.
         /// This is a second step in performing a transaction.
         /// It is called after `begin_tx` and `insert_non_fts_searches` and `insert_fts_searches`.
         /// It is also called after a transaction is rolled back.
 
-        fn insert_fts_searches(&self, searches: &[FtsSearch]) -> Result<()> {
+        fn insert_fts_searches(&self, _searches: &[FtsSearch]) -> Result<(), E> {
             r#"
       INSERT INTO temp.search_results
       SELECT t.e0, t.a0, t.v0, t.value_type_tag0, t.added0, t.flags0, ':db.cardinality/many', d.rowid, d.v
@@ -1228,7 +1283,7 @@ fn main() {
     /// Insert the new transaction into the `transactions` table.
     ///
     ///
-    fn insert_transaction(conn: &rusqlite::Connection, tx: causetid) -> Result<()> {
+    fn insert_transaction(conn: &rusqlite::Connection, tx: causetid) -> Result<(), E> {
         // EinsteinDB follows Datomic and Mentat treating its input as a set.  That means it is okay to transact the
         // same [e a v] twice in one transaction.  However, we don't want to represent the transacted
         // datom twice.  Therefore, the transactor unifies repeated datoms, and in addition we add
@@ -1273,8 +1328,8 @@ fn main() {
     /// This is a convenience wrapper around `insert_transaction` that returns a map
 
 
-    fn insert_transaction_map(conn: &rusqlite::Connection, tx: causetid) -> Result<AVMap> {
-        let mut map = AVMap::default();
+    fn insert_transaction_map(conn: &rusqlite::Connection, tx: causetid) -> Result<AVMap, E> {
+        let mut _map = AVMap::default();
         let s = r#"
       INSERT INTO transactions
       SELECT e, a, v, value_type_tag, added, flags, ':db/id', rowid, v

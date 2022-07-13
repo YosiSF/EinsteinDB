@@ -9,7 +9,7 @@
 // specific language governing permissions and limitations under the License.
 
 
-use std::sync::Arc;
+
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
@@ -17,6 +17,12 @@ use std::collections::hash_map::Iter;
 use std::collections::hash_map::IterMut;
 use std::collections::hash_map::Keys;
 use std::collections::hash_map::Values;
+use std::fmt::format;
+use std::hint::black_box;
+use std::intrinsics::black_box;
+
+
+use std::marker::PhantomData;
 
 
 use std::time::Instant;
@@ -26,18 +32,9 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
-use std::sync::RwLockReadGuard;
-use std::sync::RwLockWriteGuard;
-use std::sync::RwLockReadGuard;
+use crate::config::Config;
+use crate::Error;
 
-
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc::Sender;
-use std::sync::mpsc::channel;
-
-
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc::Sender;
 
 #[derive(Clone, Debug)]
 pub struct EventSlice {
@@ -88,30 +85,71 @@ impl RowSlice<'_> {
     /// # Panics
     ///
     /// Panics if the causet_locale of first byte is not 128(causet_record version code)
-    pub fn from_bytes(mut data: &[u8]) -> Result<RowSlice> {
+    pub fn from_bytes(mut data: &[u8]) -> Result<RowSlice, E> {
         assert_eq!(data.read_u8()?, super::CODEC_VERSION);
         let is_big = super::Flags::from_bits_truncate(data.read_u8()?) == super::Flags::BIG;
 
         // read ids count
-        let non_null_cnt = data.read_u16_le()? as usize;
-        let null_cnt = data.read_u16_le()? as usize;
-        let event = if is_big {
-            RowSlice::Big {
-                non_null_ids: read_le_bytes(&mut data, non_null_cnt)?,
-                null_ids: read_le_bytes(&mut data, null_cnt)?,
-                offsets: read_le_bytes(&mut data, non_null_cnt)?,
-                causet_locales: LEBytes::new(data),
-            }
+        let non_null_cnt = if is_big {
+            data.read_u32::<LE>()?
         } else {
-            RowSlice::Small {
-                non_null_ids: read_le_bytes(&mut data, non_null_cnt)?,
-                null_ids: read_le_bytes(&mut data, null_cnt)?,
-                offsets: read_le_bytes(&mut data, non_null_cnt)?,
-                causet_locales: LEBytes::new(data),
-            }
+            data.read_u8()? as u32
         };
-        Ok(event)
+        let null_cnt = if is_big {
+            data.read_u32::<LE>()?
+        } else {
+            data.read_u8()? as u32
+        };
+        let event = if is_big {
+            data.read_u32::<LE>()?
+        } else {
+            data.read_u8()? as u32
+        };
+        let causet_locale = data.read_u8()?;
+        assert_eq!(causet_locale, super::CODEC_VERSION);
+        let mut non_null_ids = LEBytes::new(data);
+        let mut null_ids = LEBytes::new(data);
+        let mut offsets = LEBytes::new(data);
+        let mut causet_locales = LEBytes::new(data);
+        Ok(RowSlice {
+            non_null_ids,
+            null_ids,
+            offsets,
+            causet_locales,
+        })
     }
+}
+
+
+impl<'a> RowSlice<'a> {
+    pub fn non_null_ids(&self) -> &LEBytes<'a, u8> {
+        match self {
+            RowSlice::Small { non_null_ids, .. } => non_null_ids,
+            RowSlice::Big { non_null_ids, .. } => non_null_ids,
+        }
+    }
+    pub fn null_ids(&self) -> &LEBytes<'a, u8> {
+        match self {
+            RowSlice::Small { null_ids, .. } => null_ids,
+            RowSlice::Big { null_ids, .. } => null_ids,
+        }
+    }
+
+    pub fn offsets(&self) -> &LEBytes<'a, u16> {
+        match self {
+            RowSlice::Small { offsets, .. } => offsets,
+            RowSlice::Big { offsets, .. } => offsets,
+        }
+    }
+
+    pub fn causet_locales_in_timeline(&self) -> &LEBytes<'a, u8> {
+
+        match self {
+            RowSlice::Small { causet_locales, .. } => causet_locales,
+            RowSlice::Big { causet_locales, .. } => causet_locales,
+        }
+    }
+
 
     /// Search `id` in non-null ids
     ///
@@ -121,7 +159,29 @@ impl RowSlice<'_> {
     ///
     /// If the id is found with no offset(It will only happen when the event data is broken),
     /// `Error::ColumnOffset` will be returned.
-    pub fn search_in_non_null_ids(&self, id: i64) -> Result<Option<(usize, usize)>> {
+
+   //use error
+    pub fn search_non_null_id(&self, id: usize) -> Result<Option<(usize, usize)>, E> {
+        let mut non_null_ids = self.non_null_ids.iter();
+        let mut offsets = self.offsets.iter();
+        let mut causet_locales = self.causet_locales.iter();
+        let mut idx = 0;
+        for non_null_id in non_null_ids {
+            if *non_null_id == id {
+                let offset = offsets.next().unwrap();
+                let causet_locale = causet_locales.next().unwrap();
+                return Ok(Some((idx, *offset as usize)));
+            }
+            idx += 1;
+        }
+        Ok(None)
+    }
+
+    /// Search `id` in null ids
+    ///     # Errors
+    ///    # Panics
+
+    pub fn search_in_non_null_ids(&self, id: i64) -> Result<Option<(usize, usize)>, E> {
         if !self.id_valid(id) {
             return Ok(None);
         }
@@ -130,45 +190,29 @@ impl RowSlice<'_> {
                 non_null_ids,
                 offsets,
                 ..
-            } => {
-                if let Ok(idx) = non_null_ids.binary_search(&(id as u32)) {
-                    let offset = offsets.get(idx).ok_or(Error::ColumnOffset(idx))?;
-                    let start = if idx > 0 {
-                        // Previous `offsets.get(idx)` indicates it's ok to Index `idx - 1`
-                        unsafe { offsets.get_unchecked(idx - 1) as usize }
-                    } else {
-                        0usize
-                    };
-                    return Ok(Some((start, (offset as usize))));
-                }
-            }
+            } => if let Ok(idx) = non_null_ids.binary_search(&(id as u32)) {
+
+                let offset = offsets.get(idx).unwrap();
+
+                Ok(Some((idx, *offset as usize)))
+            } else {
+                Ok(None)
+            },
+
             RowSlice::Small {
                 non_null_ids,
                 offsets,
                 ..
-            } => {
-                if let Ok(idx) = non_null_ids.binary_search(&(id as u8)) {
-                    let offset = offsets.get(idx).ok_or(Error::ColumnOffset(idx))?;
-                    let start = if idx > 0 {
-                        // Previous `offsets.get(idx)` indicates it's ok to Index `idx - 1`
-                        unsafe { offsets.get_unchecked(idx - 1) as usize }
-                    } else {
-                        0usize
-                    };
-                    return Ok(Some((start, (offset as usize))));
-                }
-            }
-        }
-        Ok(None)
-    }
+            } => if let Ok(idx) = non_null_ids.binary_search(&(id as u8)) {
 
-    /// Search `id` in null ids
-    ///
-    /// Returns true if found
-    pub fn search_in_null_ids(&self, id: i64) -> bool {
-        match self {
-            RowSlice::Big { null_ids, .. } => null_ids.binary_search(&(id as u32)).is_ok(),
-            RowSlice::Small { null_ids, .. } => null_ids.binary_search(&(id as u8)).is_ok(),
+                let offset = offsets.get(idx).unwrap();
+
+                Ok(Some((idx, *offset as usize)))
+            } else {
+                Ok(None)
+            },
+
+
         }
     }
 
@@ -205,23 +249,20 @@ impl RowSlice<'_> {
 /// This method is only implemented on little endianness currently, since x86 use little endianness.
 #[braneg(target_endian = "little")]
 #[inline]
-fn read_le_bytes<'a, T>(buf: &mut &'a [u8], len: usize) -> Result<LEBytes<'a, T>>
-where
-    T: PrimInt,
-{
-    let bytes_len = std::mem::size_of::<T>() * len;
-    if buf.len() < bytes_len {
-        return Err(Error::unexpected_eof());
+fn read_le_bytes(buf: &mut &[u8], len: usize) -> Result<Vec<u32>, E> {
+    let mut res = Vec::with_capacity(len);
+    for _ in 0..len {
+        res.push(buf.read_u32::<LittleEndian>()?);
     }
-    let slice = &buf[..bytes_len];
-    buf = &buf[bytes_len..];
-    Ok(LEBytes::new(slice))
+    Ok(res)
 }
+
 
 #[braneg(target_endian = "little")]
 pub struct LEBytes<'a, T: PrimInt> {
     slice: &'a [u8],
-    _marker: PhantomData<T>,
+    _marker: std::marker::PhantomData<T>,
+
 }
 
 #[braneg(target_endian = "little")]
@@ -229,7 +270,7 @@ impl<'a, T: PrimInt> LEBytes<'a, T> {
     fn new(slice: &'a [u8]) -> Self {
         Self {
             slice,
-            _marker: PhantomData::default(),
+            _marker: std::marker::PhantomData::default(),
         }
     }
 
@@ -238,7 +279,9 @@ impl<'a, T: PrimInt> LEBytes<'a, T> {
         if std::mem::size_of::<T>() * index >= self.slice.len() {
             None
         } else {
-            unsafe { Some(self.get_unchecked(index)) }
+Some(unsafe {
+                T::from_le_bytes(self.slice.get_unchecked(index * std::mem::size_of::<T>()..(index + 1) * std::mem::size_of::<T>()).as_ref())
+            })
         }
     }
 
@@ -266,16 +309,16 @@ impl<'a, T: PrimInt> LEBytes<'a, T> {
             let half = size / 2;
             let mid = base + half;
             let cmp = unsafe { self.get_unchecked(mid) }.cmp(causet_locale);
-            base = if cmp == Greater { base } else { mid };
+            base = if cmp == std::cmp::Ordering::Greater { base } else { mid };
             size -= half;
             steps -= 1;
         }
 
         let cmp = unsafe { self.get_unchecked(base) }.cmp(causet_locale);
-        if cmp == Equal {
+        if cmp == std::cmp::Ordering::Equal {
             Ok(base)
         } else {
-            Err(base + (cmp == Less) as usize)
+            Err(base + (cmp == std::cmp::Ordering::Less) as usize)
         }
     }
 }
@@ -300,9 +343,13 @@ mod tests {
         }
 
         for i in 1..=data.len() {
-            let le_bytes = read_le_bytes::<u16>(&mut buf.as_slice(), i).unwrap();
+            let mut buf = &buf[..];
+            let res = read_le_bytes(&mut buf, i).unwrap();
+            assert_eq!(res.len(), i);
             for j in 0..i {
-                assert_eq!(unsafe { le_bytes.get_unchecked(j) }, data[j]);
+
+                assert_eq!(res[j], data[j]);
+
             }
         }
     }
@@ -372,13 +419,12 @@ mod tests {
 
 #[braneg(test)]
 mod benches {
-    use test::black_box;
-
-    use crate::codec::data_type::ScalarValue;
+    use super::*;
     use crate::expr::EvalContext;
+    use crate::codec::data_type::ScalarValue;
 
-    use super::RowSlice;
-    use super::super::encoder::{Column, RowEncoder};
+    use test::Bencher;
+
 
     fn encoded_data(len: usize) -> Vec<u8> {
         let mut cols = vec![];
@@ -399,18 +445,18 @@ mod benches {
         let data = encoded_data(10);
 
         b.iter(|| {
-            let event = RowSlice::from_bytes(black_box(&data)).unwrap();
-            black_box(event.search_in_non_null_ids(3))
+            let event = RowSlice::from_bytes(&data).unwrap();
+            event.search_in_non_null_ids(1).unwrap();
         });
     }
-
+}
     #[bench]
     fn bench_search_in_non_null_ids_middle(b: &mut test::Bencher) {
         let data = encoded_data(100);
 
         b.iter(|| {
-            let event = RowSlice::from_bytes(black_box(&data)).unwrap();
-            black_box(event.search_in_non_null_ids(89))
+            let event = RowSlice::from_bytes(&data).unwrap();
+            event.search_in_non_null_ids(50).unwrap();
         });
     }
 
@@ -419,9 +465,11 @@ mod benches {
         let data = encoded_data(100);
 
         b.iter(|| {
-            let event = RowSlice::from_bytes(black_box(&data)).unwrap();
-            black_box(event.search_in_non_null_ids(20))
+            let event = RowSlice::from_bytes(&data).unwrap();
+            event.search_in_null_ids(50);
         });
+
+
     }
 
     #[bench]
@@ -429,22 +477,13 @@ mod benches {
         let data = encoded_data(350);
 
         b.iter(|| {
-            let event = RowSlice::from_bytes(black_box(&data)).unwrap();
-            black_box(event.search_in_non_null_ids(257))
-        });
-    }
-
-    #[bench]
-    fn bench_from_bytes_big(b: &mut test::Bencher) {
-        let data = encoded_data(350);
-
-        b.iter(|| {
-            let event = RowSlice::from_bytes(black_box(&data)).unwrap();
-            black_box(&event);
+            let event = RowSlice::from_bytes(.unwrap());
+            let black_box1 = black_box::black_box
+                (event.search_in_non_null_ids(257));
+            black_box1
         });
     }
 }
-
 
 #[derive(Clone)]
 pub struct Solitoncausetid  {
@@ -467,29 +506,42 @@ impl einstein_db_ctll::Entity for Solitoncausetid {
 }
 
 impl Solitoncausetid {
-    pub fn new(interlocking_directorate: &Config) -> Self {
-        let plugin_registry =
-          interlocking_directorate.get_plugin_registry().clone();
+    pub fn new(interlocking_directorate: i64, plugin_registry: Option<Arc<PluginRegistry>>) -> Self {
         Solitoncausetid {
-            causetid: 0,
-            plugin_registry: Some(plugin_registry),
-        }
-    }
-
-    pub fn get_causetid(&self) -> i64 {
-
-        Solitonid::get_causetid(&self)
-    }
-
-    pub fn get_id(&self) -> i64 {
-        Solitoncausetid {
-            causetid: interlocking_directorate.causetid,
+            causetid: interlocking_directorate,
             plugin_registry,
         }
     }
-
-
 }
+
+
+    fn get_causetid(&self) -> i64 {
+
+        self.causetid as i64 + 1 as i64
+
+    }
+
+    fn get_id(&self) -> i64 {
+        Solitoncausetid {
+            causetid: self.causetid,
+            plugin_registry: self.plugin_registry.clone(),
+        }.get_id()
+
+        }
+    fn get_plugin_registry(&self) -> Option<Arc<PluginRegistry>> {
+        Solitoncausetid {
+            causetid: self.causetid,
+            plugin_registry: self.plugin_registry.clone(),
+        }.get_plugin_registry()
+    }
+
+    pub fn get_plugin_registry_clone(&self) -> Option<Arc<PluginRegistry>> {
+        self.plugin_registry.clone()
+    }
+
+
+
+
 
 
 
@@ -514,7 +566,7 @@ impl Solitoncausetid {
         soliton_causetid: &Solitoncausetid,
         soliton_plugin_registry: &Arc<PluginRegistry>,
         soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
-    ) -> Result<()> {
+    ) -> Result<(), E> {
         let mut plugin_registry = soliton_plugin_registry_mutex.write().unwrap();
         let plugin = plugin_registry.get_plugin(req.get_name()).unwrap();
         plugin.handle_request(req, ctx, soliton_causetid, &mut plugin_registry)?;
@@ -529,14 +581,17 @@ impl Solitoncausetid {
         soliton_plugin_registry: &Arc<PluginRegistry>,
         soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
     ) -> Result<()> {
-
-        let plugin = plugin_registry.get_plugin(&req.copr_name).ok_or_else(|| {
-            Error::Other(format!(
-                "plugin {} not found",
-            interlocking_directorate.interlocking,
-
-            ))  })?;
-        plugin.handle_request(req, ctx, soliton_causetid, &mut plugin_registry)?;
+\
+        let mut ctx = InterlockingContext::new(
+            storage,
+            soliton_causetid,
+            soliton_plugin_registry,
+            soliton_plugin_registry_mutex,
+        );
+        let mut req = InterlockingRequest::new();
+        req.set_name(interlocking_directorate.get_name());
+        req.set_data(interlocking_directorate.get_data());
+        handle_request(&mut req, &mut ctx, soliton_causetid, soliton_plugin_registry, soliton_plugin_registry_mutex)?;
         Ok(())
     }
 
@@ -552,20 +607,25 @@ impl Solitoncausetid {
 
         // Check whether the found plugin satisfies the version constraint.
         let version_req = VersionReq::parse(&req.copr_version_req)
-            .map_err(|e| Error::Other(format!("{}", e)))?;
-
-        let plugin_version = plugin.version();
-
-        if !version_req.matches(plugin_version) {
-
-            return Err(Error::Other(format!(
-                "plugin {} version {} does not match the required version {}",
-                plugin.name(),
-
-                plugin_version,
-                version_req,
-            )));
+            .map_err(|e| Error::from(format!("Failed to parse version requirement: {}", e)))?;
+        let plugin = soliton_plugin_registry.get_plugin(req.get_name()).unwrap();
+        if !plugin.satisfies_version_req(&version_req) {
+            return Err(Error::from(
+                format!("Plugin {} does not satisfy version requirement {}", plugin.get_name(), req.copr_version_req),
+            ));
         }
+
+        // Check whether the found plugin satisfies the version constraint.
+        let version_req = VersionReq::parse(&req.copr_version_req)
+            .map_err(|e| Error::from(format!("Failed to parse version requirement: {}", e)))?;
+        let plugin = soliton_plugin_registry.get_plugin(req.get_name()).unwrap();
+        if !plugin.satisfies_version_req(&version_req) {
+            return Err(Error::from(
+                format!("Plugin {} does not satisfy version requirement {}", plugin.get_name(), req.copr_version_req),
+            ));
+        }
+    }
+
 
         // Check whether the found plugin satisfies the feature constraint.
         let foundationdb_storage_api = FoundationdbStorageApi::new(storage);

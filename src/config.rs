@@ -12,17 +12,15 @@
 
 
 //Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-use crate::config::{Config, ConfigSource, ConfigValue, ConfigValueType};
+use crate::config::{ConfigSource, ConfigValue, ConfigValueType};
 use crate::error::{Error, Result};
 use crate::util::{get_file_content, get_file_content_as_string, get_file_content_as_string_with_default, get_file_content_with_default, get_file_content_with_default_as_string, get_file_content_with_default_as_string_with_default};
-use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
-use std::str::FromStr;
+
 use crate::error::{Error, ErrorKind};
 use gravity::gravity_config::{GravityConfig, GravityConfigBuilder};
-use std::collections::HashMap;
 use gravity::octopus::{OctopusConfig, OctopusConfigBuilder};
 use crate::util::escape;
 use einstein_db_ctl::{
@@ -30,7 +28,7 @@ use einstein_db_ctl::{
     error::Error as CtlError,
     util::escape as ctl_escape,
 };
-use std::collections::HashMap;
+
 use std::path::PathBuf;
 use std::str::FromStr;
 use allegro_poset::{
@@ -38,7 +36,7 @@ use allegro_poset::{
     error::Error as PosetError,
     util::escape as poset_escape,
 };
-use causet as causet;
+use ::{causet as causet, Error};
 use causet::config::{Config as CausetConfig, ConfigSource as CausetConfigSource};
 use causet::error::{Error as CausetError, ErrorKind as CausetErrorKind};
 use causet::util::escape as causet_escape;
@@ -53,6 +51,8 @@ use chrono::NaiveDateTime;
 use futures::channel::oneshot;
 use futures::future::{self, Future};
 use std::collections::HashMap;
+use std::hash::Hash;
+use std::process::Command;
 
 
 ///! This is the main configuration file for the EinsteinDB.
@@ -104,8 +104,8 @@ use einstein_db::*;
 /// let mut config = Config::new();
 /// config.set_value("key", ConfigValue::new(ConfigValueType::String, "value"));
 /// config.set_value("key2", ConfigValue::new(ConfigValueType::String, "value2"));
-/// causetq with berolinasql as driver
 /// ```
+/// # Example
 ///
 /// # Example
 /// ```
@@ -152,22 +152,24 @@ pub struct ConfigKey {
 
 
 impl ConfigKey {
-    pub fn _new(name: &str, source: ConfigSource, einsteindb: Vec<Hash>) -> Self {
+    pub fn _new(name: &str, source: ConfigSource, einsteindb: Vec<dyn Hash>) -> Self {
 
         ConfigKey {
-            key: (),
-            value: (),
-            value_type: (),
-            value_source: (),
-            value_source_path: (),
-            value_source_line: (),
+            key: String::new(),
+            value: String::new(),
+            value_type: String::new(),
+            value_source: String::new(),
+            value_source_path: String::new(),
+            value_source_line: String::new(),
             name: name.to_string(),
+            source: source,
+            einsteindb: einsteindb,
+        }
 
-            source,
-            einsteindb,
+
         }
     }
-}
+
 
 
 ///! This is the main configuration file for the EinsteinDB.
@@ -200,12 +202,12 @@ impl ConfigKey {
             }
             if x.0 == key {
                 return Ok(ConfigKey {
-                    key: (),
-                    value: (),
-                    value_type,
-                    value_source,
-                    value_source_path,
-                    value_source_line: (),
+                    key: key.to_string(),
+                    value: x.1.to_string(),
+                    value_type: value_type.to_string(),
+                    value_source: value_source.to_string(),
+                    value_source_path: value_source_path.to_string(),
+                    value_source_line: "0".to_string(),
                     name: x.0.to_string(),
                     source: ConfigSource::EinsteinDB,
                     einsteindb: x.1.clone(),
@@ -220,37 +222,8 @@ impl ConfigKey {
 
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum ConfigSource {
-    File,
-    Directory,
-    EinsteinDB,
-}
 
 
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum ConfigValueType {
-    String,
-    Integer,
-    Float,
-    Boolean,
-    DateTime,
-
-}
-
-
-
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ConfigValue {
-    pub name: String,
-    pub value: String,
-    pub source: ConfigSource,
-    pub einsteindb: Vec<Hash>,
-    pub value_type: ConfigValueType,
-}
 
 
 
@@ -320,43 +293,64 @@ impl ConfigValue {
         Ok(output)
     }
 
+
+
+
     pub fn deserialize_config_value() -> Result<ConfigValue, CtlError> {
-        for x in EinsteinDB_FOUNDATIONDB_DRIVER.iter() {
-            x.deserialize(input_offsets: &[u32]);
+        let mut key_parts = key.split(".");
+        let name = key_parts.next().unwrap();
+        let value_type = key_parts.next().unwrap();
+        let value_source = key_parts.next().unwrap();
+        let value_source_path = key_parts.next().unwrap();
+        for x in EinsteinDB_FOUNDATIONDB_DRIVER_TOML.iter() {
+            if x.name == value_source {
+                let value_source_line = key_parts.next().unwrap();
+                let value_source_line = value_source_line.parse::<usize>().unwrap();
+                let value = key_parts.next().unwrap();
+                let value = value.to_string();
+                let einsteindb = vec![];
+                let source = ConfigSource::FoundationDB(EinsteinDB_FOUNDATIONDB_DRIVER_TOML.clone());
 
-            [0u8; 32];
-            [0u8; 32];
 
-            if x.0 == key {
                 return Ok(ConfigValue {
+
                     name: x.0.to_string(),
-                    value: x.1.clone(),
+                    value: x.1.to_string(),
                     source: ConfigSource::EinsteinDB,
                     einsteindb: x.1.clone(),
-                    value_type: ConfigValueType::String,
+                    value_type: ConfigValueType::String
                 });
             }
+
         }
+        Err(CtlError::ConfigKeyNotFound(key.to_string()))
     }
+
 
     pub fn einstein_merkle_tree_compress(
-        nodes: &[Hash],
+        nodes: &[dyn Hash],
         einsteindb: &EinsteinDB,
         height: usize,
-    ) -> Result<Hash, MerkleTreeError> {
-        for _ in 0..height {
-            let mut nodes = nodes.to_vec();
-            let mut new_nodes = Vec::new();
-            for i in 0..nodes.len() {
-                let left = nodes[i];
-                let right = nodes[i + 1];
-                let hash = einsteindb.hash_merkle_tree_node(left, right);
-                new_nodes.push(hash);
-            }
-            nodes = new_nodes;
+    index: usize,
+    ) -> Result<Vec<u8>, CtlError> {
+        let mut compressed_nodes = vec![];
+        let mut compressed_nodes_len = 0;
+        let mut compressed_nodes_len_len = 0;
+        let mut compressed_nodes_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len_len_len_len = 0;
+        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len_len_len_len_len = 0;
         }
-    }
-
 
     pub fn einstein_merkle_tree_decompress(
         hash: &Hash,
@@ -385,24 +379,6 @@ impl ConfigValue {
         }
         let root = tree.root();
         Ok(root)
-    }
-
-    pub fn einstein_merkle_tree_compress_with_proof(
-        nodes: &[Hash],
-        einsteindb: &EinsteinDB,
-        height: usize,
-    ) -> Result<(Hash, Vec<Hash>), MerkleTreeError> {
-        for _ in 0..height {
-            let mut nodes = nodes.to_vec();
-            let mut new_nodes = Vec::new();
-            for i in 0..nodes.len() {
-                let left = nodes[i];
-                let right = nodes[i + 1];
-                let hash = einsteindb.hash_merkle_tree_node(left, right);
-                new_nodes.push(hash);
-            }
-            nodes = new_nodes;
-        }
     }
 
 
