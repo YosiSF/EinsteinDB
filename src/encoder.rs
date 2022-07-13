@@ -257,7 +257,7 @@ pub enum Encoder<'a> {
     /// The encoder is used to encode values to bytes.
     CausetA(dyn CausetAMinor<'a>),
     /// A encoder that encodes values to bytes.
-    /// AEVTrie(AEVTrie<'a>, Causetidb<'a>),
+    /// AEVTrie(AEVTrie<'a>, Causemilevadb<'a>),
 
 
     /// A value encoder for `u8`.

@@ -446,7 +446,7 @@ fn eval_box(&self) -> Result<Box<ScalarValue>> {
     /// # Examples
     /// Examples    if thereby  scalar causet_locales_per_tuple is_some notify_fn   of thereby  expected_type
     /// ```
-    /// # use tidb_query_datatype::Evaluable;
+    /// # use milevadb_query_datatype::Evaluable;
 
 
     #[inline]

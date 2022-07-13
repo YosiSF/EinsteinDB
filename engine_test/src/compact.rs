@@ -46,9 +46,9 @@ use fdb_traits::Result;
 
 #[derive(Debug, Clone)]
 pub struct CompactOptions {
-    pub tombstone_threshold: u64,
-    pub tombstone_compaction_interval: u64,
-    pub tombstone_compaction_threshold: u64,
+    pub causetq_upstream_interlock_threshold: u64,
+    pub causetq_upstream_interlock_compaction_interval: u64,
+    pub causetq_upstream_interlock_compaction_threshold: u64,
     pub block_size: u64,
     pub block_cache_size: u64,
     pub block_cache_shard_bits: u8,
@@ -85,9 +85,9 @@ pub struct CompactOptions {
 impl Default for CompactOptions {
     fn default() -> Self {
         CompactOptions {
-            tombstone_threshold: 1,
-            tombstone_compaction_interval: 1,
-            tombstone_compaction_threshold: 1,
+            causetq_upstream_interlock_threshold: 1,
+            causetq_upstream_interlock_compaction_interval: 1,
+            causetq_upstream_interlock_compaction_threshold: 1,
             block_size: 1 << 20,
             block_cache_size: 1 << 20,
             block_cache_shard_bits: 0,

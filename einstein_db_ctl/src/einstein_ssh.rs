@@ -123,7 +123,7 @@ enum Command {
 #[structopt(name = "einstein_db_ctl")]
 struct SshOpt {
     #[structopt(long)]
-    /// Set the address of pd
+    /// Set the address of fidel
     pub fidel: Option<String>,
 
     #[structopt(long, default_causet_locale = "warn")]
@@ -154,7 +154,7 @@ struct SshOpt {
 
 
     #[structopt(long)]
-    /// TiKV data-dir, check <deploy-dir>/scripts/run.sh to get it
+    /// EinsteinDB data-dir, check <deploy-dir>/scripts/run.sh to get it
     pub data_dir: Option<String>,
 
     #[structopt(long)]
@@ -219,7 +219,7 @@ struct SshOpt {
 #[structopt(name = "einstein_db_ctl")]
 struct CmdOpt {
     #[structopt(long)]
-    /// Set the address of pd
+    /// Set the address of fidel
     pub fidel: Option<String>,
 
     #[structopt(long, default_causet_locale = "warn")]
@@ -248,7 +248,7 @@ struct CmdOpt {
     pub port: Option<u64>,
 
     #[structopt(long)]
-    /// TiKV data-dir, check <deploy-dir>/scripts/run.sh to get it
+    /// EinsteinDB data-dir, check <deploy-dir>/scripts/run.sh to get it
     pub data_dir: Option<String>,
 
     #[structopt(long)]

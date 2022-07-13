@@ -473,51 +473,51 @@ pub enum MetricType {
 
 lazy_static::lazy_static! {
     static ref INTERLOCK_EXECUTOR_COUNT: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_interlock_executor_count",
-        "Total number of each executor",
+        "EinsteinDB_interlock_interlocking_directorate_count",
+        "Total number of each interlocking_directorate",
         &["type"]
     )
     .unwrap();
     static ref INTERLOCK_EXECUTOR_DURATION: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_interlock_executor_duration",
-        "Total duration of each executor",
+        "EinsteinDB_interlock_interlocking_directorate_duration",
+        "Total duration of each interlocking_directorate",
         &["type"]
     )
     .unwrap();
     static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM: HistogramVec = register_histogram_vec!(
-        "EinsteinDB_interlock_executor_duration_histogram",
-        "Duration of each executor",
+        "EinsteinDB_interlock_interlocking_directorate_duration_histogram",
+        "Duration of each interlocking_directorate",
         &["type"]
     )
     .unwrap();
     static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_BUCKET: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_interlock_executor_duration_histogram_bucket",
-        "Duration of each executor",
+        "EinsteinDB_interlock_interlocking_directorate_duration_histogram_bucket",
+        "Duration of each interlocking_directorate",
         &["type"]
     )
     .unwrap();
     static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_COUNT: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_interlock_executor_duration_histogram_count",
-        "Duration of each executor",
+        "EinsteinDB_interlock_interlocking_directorate_duration_histogram_count",
+        "Duration of each interlocking_directorate",
         &["type"]
     )
     .unwrap();
     static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_SUM: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_interlock_executor_duration_histogram_sum",
-        "Duration of each executor",
+        "EinsteinDB_interlock_interlocking_directorate_duration_histogram_sum",
+        "Duration of each interlocking_directorate",
         &["type"]
     )
     .unwrap();
 
     static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_BUCKET_LOWER_BOUND: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_interlock_executor_duration_histogram_bucket_lower_bound",
-        "Duration of each executor",
+        "EinsteinDB_interlock_interlocking_directorate_duration_histogram_bucket_lower_bound",
+        "Duration of each interlocking_directorate",
         &["type"]
     )
     .unwrap();
     static ref INTERLOCK_EXECUTOR_DURATION_HISTOGRAM_BUCKET_UPPER_BOUND: IntCounterVec = register_int_counter_vec!(
-        "EinsteinDB_interlock_executor_duration_histogram_bucket_upper_bound",
-        "Duration of each executor",
+        "EinsteinDB_interlock_interlocking_directorate_duration_histogram_bucket_upper_bound",
+        "Duration of each interlocking_directorate",
         &["type"]
     )
     .unwrap();
@@ -560,8 +560,8 @@ impl MetricType {
             impl InterlockExecutorType {
                 pub fn as_str(&self) -> &'static str {
                     match self {
-                        InterlockExecutorType::InterlockExecutor => "interlock_executor",
-                        InterlockExecutorType::InterlockExecutorPool => "interlock_executor_pool",
+                        InterlockExecutorType::InterlockExecutor => "interlock_interlocking_directorate",
+                        InterlockExecutorType::InterlockExecutorPool => "interlock_interlocking_directorate_pool",
                     }
                 }
 
@@ -574,8 +574,8 @@ impl MetricType {
             impl From<&str> for InterlockExecutorType {
                 fn from(s: &str) -> Self {
                     match s {
-                        "interlock_executor" => InterlockExecutorType::InterlockExecutor,
-                        "interlock_executor_pool" => InterlockExecutorType::InterlockExecutorPool,
+                        "interlock_interlocking_directorate" => InterlockExecutorType::InterlockExecutor,
+                        "interlock_interlocking_directorate_pool" => InterlockExecutorType::InterlockExecutorPool,
                         _ => panic!("Unknown InterlockExecutorType: {}", s),
                     }
                 }
@@ -610,7 +610,7 @@ impl MetricType {
             impl InterlockExecutorPoolType {
                 pub fn as_str(&self) -> &'static str {
                     match self {
-                        InterlockExecutorPoolType::InterlockExecutorPool => "interlock_executor_pool",
+                        InterlockExecutorPoolType::InterlockExecutorPool => "interlock_interlocking_directorate_pool",
                     }
 
             }
@@ -624,7 +624,7 @@ impl MetricType {
             impl From<&str> for InterlockExecutorPoolType {
                 fn from(s: &str) -> Self {
                     match s {
-                        "interlock_executor_pool" => InterlockExecutorPoolType::InterlockExecutorPool,
+                        "interlock_interlocking_directorate_pool" => InterlockExecutorPoolType::InterlockExecutorPool,
                         _ => panic!("Unknown InterlockExecutorPoolType: {}", s),
                     }
                 }
@@ -726,7 +726,7 @@ impl MetricType {
             impl InterlockExecutorPoolStatusType {
                 pub fn as_str(&self) -> &'static str {
                     match self {
-                        InterlockExecutorPoolStatusType::InterlockExecutorPoolStatus => "interlock_executor_pool_status",
+                        InterlockExecutorPoolStatusType::InterlockExecutorPoolStatus => "interlock_interlocking_directorate_pool_status",
                     }
                 }
             }
@@ -740,7 +740,7 @@ impl MetricType {
             impl From<&str> for InterlockExecutorPoolStatusType {
                 fn from(s: &str) -> Self {
                     match s {
-                        "interlock_executor_pool_status" => InterlockExecutorPoolStatusType::InterlockExecutorPoolStatus,
+                        "interlock_interlocking_directorate_pool_status" => InterlockExecutorPoolStatusType::InterlockExecutorPoolStatus,
                         _ => panic!("Unknown InterlockExecutorPoolStatusType: {}", s),
                     }
                 }

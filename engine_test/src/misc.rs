@@ -29,9 +29,9 @@ use fdb_traits::Result;
 
 #[derive(Debug, Clone)]
 pub struct CompactOptions {
-    pub tombstone_threshold: u64,
-    pub tombstone_compaction_interval: u64,
-    pub tombstone_compaction_threshold: u64,
+    pub causetq_upstream_interlock_threshold: u64,
+    pub causetq_upstream_interlock_compaction_interval: u64,
+    pub causetq_upstream_interlock_compaction_threshold: u64,
     pub block_size: u64,
     pub block_cache_size: u64,
     pub block_cache_shard_bits: u8,
@@ -78,7 +78,7 @@ pub enum DeleteStrategy {
 
     DeleteIfEmptyOrTombstone,
 
-    /// Delete the key-value pair if the value is empty or a tombstone.
+    /// Delete the key-value pair if the value is empty or a causetq_upstream_interlock.
 
 
     /// Delete the Causet filefs that are fullly fit in range. However, the Causet filefs that are partially

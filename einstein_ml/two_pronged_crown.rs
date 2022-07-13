@@ -234,7 +234,7 @@ pub struct Context {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContextInner {
-    pub(crate) executors: Vec<Executor>,
+    pub(crate) interlocking_directorates: Vec<Executor>,
     pub(crate) sessions: Vec<Session>,
 }
 

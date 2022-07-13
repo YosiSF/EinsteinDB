@@ -570,11 +570,11 @@ fn main() {
 
     let mut poset_x_y = Poset::new();
 
-    for y in 0..fsm.get_states().len() {
+    for y in 0..turing_automata.get_states().len() {
         if x == y {
             continue;
         }
-        if fsm.is_parent(x, y) {
+        if turing_automata.is_parent(x, y) {
             println!("{} is a parent of {}", x, y);
         }
     }
@@ -585,7 +585,7 @@ fn main() {
 // 3. Calculate the age of the event.
 // 4. Subtract the observer's RTS from the age.
 
-    let mut fsm = Fsm::new();
+    let mut turing_automata = Fsm::new();
 
     let mut sec_key = SecKey::new(Hash::default(), Hash::default());
 
@@ -602,7 +602,7 @@ fn main() {
 
     let mut db = einsteindb::Einsteindb::new();
 
-    let mut fsm = Fsm::new();
+    let mut turing_automata = Fsm::new();
 
     let mut db_name = String::from("test_connect");
     db.create_db(&mut db_name);
@@ -772,9 +772,9 @@ fn main() {
                 if let Err(e) = db.get_causet_topology(&mut db_name, &mut causet_topology_index) {
                     println!("{:?}", e);
                 }
-                for x in 0..fsm.get_states().len() {
+                for x in 0..turing_automata.get_states().len() {
                     let mut rng = rand::thread_rng();
-                    for y in 0..fsm.get_states().len() {
+                    for y in 0..turing_automata.get_states().len() {
                         let mut rng = rand::thread_rng();
                         if causet_topology_index.contains(&(x, y)) {
                             continue;

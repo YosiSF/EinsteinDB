@@ -1138,7 +1138,7 @@ pub fn memory_trace_reset_derive(input: TokenStream) -> TokenStream {
                     }
                 });
                 reset_imp = quote! {
-                    use tikv_alloc::trace::TraceEvent;
+                    use einsteindb_alloc::trace::TraceEvent;
                     use std::cmp::Ordering;
 
                     let mut lhs_sum: usize = 0;
@@ -1170,7 +1170,7 @@ pub fn memory_trace_reset_derive(input: TokenStream) -> TokenStream {
     let expanded = quote! {
         impl #name {
             #[inline]
-            pub fn reset(&mut self, rhs: Self) -> Option<tikv_alloc::trace::TraceEvent> {
+            pub fn reset(&mut self, rhs: Self) -> Option<einsteindb_alloc::trace::TraceEvent> {
                 #reset_imp
             }
 

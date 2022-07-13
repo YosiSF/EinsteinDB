@@ -484,14 +484,14 @@ impl Command for TxCommand {
 
 pub struct TxObservationService {
     observers: Arc<IndexMap<String, Arc<TxObserver>>>,
-    executor: Option<Sender<Box<dyn Command + Send>>>,
+    interlocking_directorate: Option<Sender<Box<dyn Command + Send>>>,
 }
 
 impl TxObservationService {
     pub fn new() -> Self {
         TxObservationService {
             observers: Arc::new(IndexMap::new()),
-            executor: None,
+            interlocking_directorate: None,
         }
     }
 
@@ -518,7 +518,7 @@ impl TxObservationService {
             return;
         }
 
-        let executor = self.executor.get_or_insert_with(|| {
+        let interlocking_directorate = self.interlocking_directorate.get_or_insert_with(|| {
             let (tx, rx): (Sender<Box<dyn Command + Send>>, Receiver<Box<dyn Command + Send>>) = channel();
             let mut worker = CommandExecutor::new(rx);
 
@@ -530,13 +530,13 @@ impl TxObservationService {
         });
 
         let cmd = Box::new(TxCommand::new(&self.observers, txes));
-        executor.send(cmd).unwrap();
+        interlocking_directorate.send(cmd).unwrap();
     }
 }
 
 impl Drop for TxObservationService {
     fn drop(&mut self) {
-        self.executor = None;
+        self.interlocking_directorate = None;
     }
 }
 

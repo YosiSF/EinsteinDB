@@ -601,23 +601,23 @@ pub struct RustAlgebrizer;
 
 impl RustAlgebrizer {
     pub fn new() -> Self {
-        for x in 0..fsm.get_states().len() {
-            let mut state = fsm.get_states()[x].clone();
+        for x in 0..turing_automata.get_states().len() {
+            let mut state = turing_automata.get_states()[x].clone();
             state.set_id(x);
-            fsm.get_states_mut()[x] = state;
+            turing_automata.get_states_mut()[x] = state;
         }
 
-        for x in 0..fsm.get_transitions().len() {
-            let mut transition = fsm.get_transitions()[x].clone();
+        for x in 0..turing_automata.get_transitions().len() {
+            let mut transition = turing_automata.get_transitions()[x].clone();
             transition.set_id(x);
-            fsm.get_transitions_mut()[x] = transition;
+            turing_automata.get_transitions_mut()[x] = transition;
         }
         RustAlgebrizer {}
     }
 
-    pub fn algebra(&self, fsm: &mut FSM) {
+    pub fn algebra(&self, turing_automata: &mut FSM) {
         let mut algebrizer = Algebrizer::new();
-        algebrizer.algebrize(fsm);
+        algebrizer.algebrize(turing_automata);
     }
 }
 
@@ -676,9 +676,9 @@ macro_rules! fdb_try {
 }
 
 
-pub fn causet_algebrize(fsm: &mut FSM) {
+pub fn causet_algebrize(turing_automata: &mut FSM) {
     let mut algebrizer = Algebrizer::new();
-    algebrizer.algebrize(fsm);
+    algebrizer.algebrize(turing_automata);
 }
 
 
@@ -737,7 +737,7 @@ impl KV {
     }
 }
 
-/// The abstract storage interface. The table mutant_search and Index mutant_search executor relies on a `Storage`
+/// The abstract storage interface. The table mutant_search and Index mutant_search interlocking_directorate relies on a `Storage`
 /// implementation to provide source data.
 pub trait Storage: Send {
     type Metrics;

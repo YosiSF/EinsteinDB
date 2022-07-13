@@ -497,7 +497,7 @@ impl SolitonEntid {
     /// Handles a request to the interlock framework.
     ///
     /// Each request is dispatched to the corresponding interlock plugin based on it's `copr_name`
-    /// field. A plugin with a matching name must be loaded by TiKV, otherwise an error is returned.
+    /// field. A plugin with a matching name must be loaded by EinsteinDB, otherwise an error is returned.
     ///
     /// # Arguments
     /// * `req` - The request to be handled.

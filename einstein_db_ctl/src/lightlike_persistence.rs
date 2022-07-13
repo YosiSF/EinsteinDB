@@ -225,14 +225,14 @@ pub struct timelike_store {
     cache: Arc<Mutex<HashMap<String, Rc<RefCell<String>>>>>,
     postgresql: Arc<Mutex<PostgreSQL>>,
     fdb: Arc<Mutex<FDB>>,
-    rocksdb: Arc<Mutex<RocksDB>>,
+    foundationdbdb: Arc<Mutex<RocksDB>>,
     sqlite: Arc<Mutex<Sqlite>>,
     mongodb: Arc<Mutex<MongoDB>>,
     redis: Arc<Mutex<Redis>>,
 }
 
 ///CHANGELOG:  
-/// - added rocksdb
+/// - added foundationdbdb
 /// - added mongodb
 /// - added redis
 /// - added sqlite
@@ -261,7 +261,7 @@ impl timelike_store {
             cache: Arc::new(Mutex::new(HashMap::new())),
             postgresql: Arc::new(Mutex::new(PostgreSQL::new())),
             fdb: Arc::new(Mutex::new(FDB::new())),
-            rocksdb: Arc::new(Mutex::new(RocksDB::new())),
+            foundationdbdb: Arc::new(Mutex::new(RocksDB::new())),
             sqlite: Arc::new(Mutex::new(Sqlite::new())),
             mongodb: Arc::new(Mutex::new(MongoDB::new())),
             redis: Arc::new(Mutex::new(Redis::new())),
@@ -277,7 +277,7 @@ pub struct Sqlcipher {
     cache: Arc<Mutex<HashMap<String, Rc<RefCell<String>>>>>,
     postgresql: Arc<Mutex<PostgreSQL>>,
     fdb: Arc<Mutex<FDB>>,
-    rocksdb: Arc<Mutex<RocksDB>>,
+    foundationdbdb: Arc<Mutex<RocksDB>>,
     sqlite: Arc<Mutex<Sqlite>>,
     mongodb: Arc<Mutex<MongoDB>>,
     redis: Arc<Mutex<Redis>>,
@@ -293,7 +293,7 @@ impl Sqlcipher  {
             cache: Arc::new(Mutex::new(HashMap::new())),
             postgresql: Arc::new(Mutex::new(PostgreSQL::new())),
             fdb: Arc::new(Mutex::new(FDB::new())),
-            rocksdb: Arc::new(Mutex::new(RocksDB::new())),
+            foundationdbdb: Arc::new(Mutex::new(RocksDB::new())),
             sqlite: Arc::new(Mutex::new(Sqlite::new())),
             mongodb: Arc::new(Mutex::new(MongoDB::new())),
             redis: Arc::new(Mutex::new(Redis::new())),

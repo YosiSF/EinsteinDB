@@ -31,10 +31,123 @@ ENV BUILD_LC_NAME="$(locale | grep LC_NAME | cut -d= -f2)"
 
 
 
+# #############################################################################
+# #############################################################################
+# #############################################################################
 
+#prepare the build environment
+#changelog= "$(changelog)" #get the changelog
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common \
+    wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
 # Build the image
-docker build -t einsteindb/einsteindb:$VERSION --build-arg VERSION=$VERSION --build-arg BUILD_DATE=$BUILD_DATE --build-arg BUILD_USER=$BUILD_USER --build-arg BUILD_HOST=$BUILD_HOST --build-arg BUILD_PLATFORM=$BUILD_PLATFORM --build-arg BUILD_ARCH=$BUILD_ARCH --build-arg BUILD_OS=$BUILD_OS --build-arg BUILD_KERNEL=$BUILD_KERNEL --build-arg BUILD_MACHINE=$BUILD_MACHINE --build-arg BUILD_PROCESSOR=$BUILD_PROCESSOR --build-arg BUILD_LANGUAGE=$BUILD_LANGUAGE --build-arg BUILD_LANG=$BUILD_LANG --build-arg BUILD_LC_ALL=$BUILD_LC_ALL --build-arg BUILD_LC_CTYPE=$BUILD_LC_CTYPE --build-arg BUILD_LC_MESSAGES=$BUILD_LC_MESSAGES --build-arg BUILD_LC_TIME=$BUILD_LC_TIME --build-arg BUILD_LC_COLLATE=$BUILD_LC_COLLATE --build-arg BUILD_LC_MONETARY=$BUILD_LC_MONETARY --build-arg BUILD_LC_NUMERIC=$BUILD_LC_NUMERIC --build-arg BUILD_LC_PAPER=$BUILD_LC_PAPER --build-arg BUILD_LC_TELEPHONE=$BUILD_LC_TELEPHONE --build-arg BUILD_LC_MEASUREMENT=$BUILD_LC_MEASUREMENT --build-arg BUILD_LC_IDENTIFICATION=$BUILD_LC_IDENTIFICATION --build-arg BUILD_LC_ADDRESS=$BUILD_LC_ADDRESS --build-arg BUILD_LC_NAME=$BUILD_LC_NAME -f docker/Dockerfile .
+FROM alpine:3.6
+# Install the dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    gnupg-agent \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libzip-dev \
+    make \
+    python3-pip \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/cache/apt/archives/* \
+    && rm -rf /var/cache/apt/archives/* \
+    && rm -rf /var/cache/apt/archives/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/*
 
-# Push the image to Docker Hub
-docker push einsteindb/einsteindb:$VERSION
+# Install the dependencies \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/cache/apt/archives/* \
+    && rm -rf /var/cache/apt/archives/* \
+    && rm -rf /var/cache/apt/archives/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/*
+
+# Install the dependencies \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/cache/apt/archives/*
+
+# Google Cloud running Debian Compute Engine and Google Cloud SDK \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/cache/apt/archives/* \
+    && rm -rf /var/cache/apt/archives/* \
+    && rm -rf /var/cache/apt/archives/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/*
+
+
+# Install the dependencies for aws Engine
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/cache/apt/archives/* \
+    && rm -rf /var/cache/apt/archives/* \
+    && rm -rf /var/cache/apt/archives/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
+    && rm -rf /var/cache/apt/archives/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/partial/deb_pkg_list/* \
 

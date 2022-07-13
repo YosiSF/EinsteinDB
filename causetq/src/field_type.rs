@@ -55,9 +55,9 @@ use crate::storage::{
 
 #[derive(Debug, Clone)]
 pub struct CompactOptions {
-    pub tombstone_threshold: u64,
-    pub tombstone_compaction_interval: u64,
-    pub tombstone_compaction_threshold: u64,
+    pub causetq_upstream_interlock_threshold: u64,
+    pub causetq_upstream_interlock_compaction_interval: u64,
+    pub causetq_upstream_interlock_compaction_threshold: u64,
     pub block_size: u64,
     pub block_cache_size: u64,
     pub block_cache_shard_bits: u8,
@@ -73,9 +73,9 @@ pub struct CompactOptions {
 impl CompactOptions {
     pub fn new() -> Self {
         CompactOptions {
-            tombstone_threshold: 0,
-            tombstone_compaction_interval: 0,
-            tombstone_compaction_threshold: 0,
+            causetq_upstream_interlock_threshold: 0,
+            causetq_upstream_interlock_compaction_interval: 0,
+            causetq_upstream_interlock_compaction_threshold: 0,
             block_size: 0,
             block_cache_size: 0,
             block_cache_shard_bits: 0,

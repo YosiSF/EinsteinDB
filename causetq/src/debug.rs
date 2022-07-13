@@ -70,7 +70,7 @@ pub struct Debugger {
     pub gremlin: Gremlin,
     pub gremlin_capnp: GremlinCapnp,
     //RocksDB
-    pub rocksdb: RocksDB,
+    pub foundationdbdb: RocksDB,
 
     pub db_name: String,
     pub db_path: String,

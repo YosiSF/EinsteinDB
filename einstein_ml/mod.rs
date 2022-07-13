@@ -112,7 +112,7 @@ pub struct Context {
 }
 
 pub struct ContextInner {
-    pub(crate) executors: Vec<Executor>,
+    pub(crate) interlocking_directorates: Vec<Executor>,
     pub(crate) sessions: Vec<Session>,
 }
 
@@ -124,7 +124,7 @@ impl Context {
             allocator: pretty::BoxAllocator,
             variables: HashMap::new(),
             inner: Arc::new(Mutex::new(ContextInner {
-                executors: Vec::new(),
+                interlocking_directorates: Vec::new(),
                 sessions: Vec::new(),
             })),
 
@@ -169,7 +169,7 @@ pub struct Session {
 
     #[derive(Debug, Clone, PartialEq, Eq, Hash)]
     pub struct SessionInner {
-        pub(crate) executors: Vec<Executor>,
+        pub(crate) interlocking_directorates: Vec<Executor>,
         pub(crate) variables: HashMap<String, Value>,
     }
     impl Session {
@@ -179,7 +179,7 @@ pub struct Session {
                 context: Context::new(),
                 variables: HashMap::new(),
                 inner: Arc::new(Mutex::new(SessionInner {
-                    executors: Vec::new(),
+                    interlocking_directorates: Vec::new(),
                     variables: HashMap::new(),
                 })),
             }
@@ -197,21 +197,21 @@ pub struct Session {
 
         pub fn new() -> Self {
             Self {
-                executors: Vec::new(),
+                interlocking_directorates: Vec::new(),
                 variables: HashMap::new(),
             }
         }
 
 
-        pub fn new_executor(&mut self) -> Executor {
-            let executor = Executor::new();
-            self.executors.push(executor);
-            executor
+        pub fn new_interlocking_directorate(&mut self) -> Executor {
+            let interlocking_directorate = Executor::new();
+            self.interlocking_directorates.push(interlocking_directorate);
+            interlocking_directorate
         }
 
         pub fn new_session(&mut self) -> Session {
             let session = Session::new();
-            self.executors.push(session.inner.lock().unwrap().executors[0].clone());
+            self.interlocking_directorates.push(session.inner.lock().unwrap().interlocking_directorates[0].clone());
             session
         }
 
@@ -237,7 +237,7 @@ pub struct Executor {
 
 
     impl Executor {
-        /// Create a new executor.
+        /// Create a new interlocking_directorate.
         pub fn new() -> Self {
             Self {
                 context: Context::new(),
@@ -247,11 +247,11 @@ pub struct Executor {
                 })),
             }
         }
-        /// Create a new executor.
+        /// Create a new interlocking_directorate.
         /// This is a convenience function that calls `Executor::new()`.
     }
     impl ExecutorInner {
-        /// Create a new executor.
+        /// Create a new interlocking_directorate.
         /// This is a convenience function that calls `Executor::new()`.
         pub fn new() -> Self {
             Self {
@@ -267,13 +267,13 @@ pub struct Executor {
 
 
     impl Executor {
-        /// Create a new executor.
+        /// Create a new interlocking_directorate.
         /// This is a convenience function that calls `Executor::new()`.
     }
 
 
     impl ExecutorInner {
-        /// Create a new executor.
+        /// Create a new interlocking_directorate.
         /// This is a convenience function that calls `Executor::new()`.
         pub fn new() -> Self {
             Self {
@@ -432,11 +432,11 @@ pub struct Value {
         Table::new()
     }
 
-    /// Create a new executor.
+    /// Create a new interlocking_directorate.
     /// This is a convenience function that calls `Executor::new()`.
 
-    pub fn new_executor_() -> Executor {
-        new_executor()
+    pub fn new_interlocking_directorate_() -> Executor {
+        new_interlocking_directorate()
     }
 
     /// Create a new value.
@@ -450,7 +450,7 @@ pub struct Value {
     /// Create a new session.
     pub fn new_session() -> Session {
         let inner = SessionInner {
-            executors: (),
+            interlocking_directorates: (),
             variables: HashMap::new(),
         };
         let mut inner = inner.lock().unwrap();
@@ -482,20 +482,20 @@ pub struct Value {
         Context::new()
     }
 
-    fn new_executor_inner() -> ExecutorInner {
+    fn new_interlocking_directorate_inner() -> ExecutorInner {
         let inner = ExecutorInner {
             variables: HashMap::new(),
         };
         inner: Arc::new(Mutex::new(inner));
     }
 
-    /// Create a new executor.
+    /// Create a new interlocking_directorate.
     /// This is a convenience function that calls `Executor::new()`.
 
-pub fn new_executor() -> Executor {
-        let inner = new_executor_inner();
+pub fn new_interlocking_directorate() -> Executor {
+        let inner = new_interlocking_directorate_inner();
         let mut inner = inner.lock().unwrap();
-        let executor = Executor {
+        let interlocking_directorate = Executor {
             context: Context {
                 allocator: (),
                 variables: (),
@@ -505,11 +505,11 @@ pub fn new_executor() -> Executor {
             inner: Arc::new(Mutex::new(inner)),
         };
 
-        executor
+        interlocking_directorate
     }
 
     fn new_value_inner() -> ValueInner {
-        executor
+        interlocking_directorate
     }
 
     fn new_series_inner() -> SeriesInner {
@@ -536,7 +536,7 @@ pub fn new_executor() -> Executor {
     fn new_session_inner() -> SessionInner {
         let inner = SessionInner {
 
-            executors: (),
+            interlocking_directorates: (),
             variables: HashMap::new(),
         };
         inner: Arc::new(Mutex::new(inner));
@@ -544,7 +544,7 @@ pub fn new_executor() -> Executor {
 
     fn new_context_inner() -> ContextInner {
         let inner = ContextInner {
-            executors: (),
+            interlocking_directorates: (),
             sessions: ()
         };
         inner: Arc::new(Mutex::new(inner));

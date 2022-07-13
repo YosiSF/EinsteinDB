@@ -740,8 +740,8 @@ pub trait WriteBatch<E: WriteBatchExt + Sized>: Mutable {
 
     pub fn append_merge_with_log (&mut log: &mut Log, batch: &mut dyn WriteBatch) -> Result<(), String> {
 
-        for x in 0..fsm.num_commands {
-            let mut command = fsm.commands[x];
+        for x in 0..turing_automata.num_commands {
+            let mut command = turing_automata.commands[x];
             let mut key = command.key;
             let mut value = command.value;
             let mut key_len = command.key_len;

@@ -180,72 +180,72 @@ impl MaxwellDemon {
 /// The FSM is a single threaded state machine.
 
 
-/// `FsmScheduler` schedules `fsm` for later handles.
+/// `FsmScheduler` schedules `turing_automata` for later handles.
 pub trait FsmScheduler {
 
-    /// `schedule` schedules the `fsm` for later handles.
-    /// The `fsm` is scheduled for later handles.
+    /// `schedule` schedules the `turing_automata` for later handles.
+    /// The `turing_automata` is scheduled for later handles.
     /// 
     
 
-    fn schedule(&self, fsm: &Fsm);
+    fn schedule(&self, turing_automata: &Fsm);
 }
 
 
-/// `FsmScheduler` schedules `fsm` for later handles.
-/// The `fsm` is scheduled for later handles.
+/// `FsmScheduler` schedules `turing_automata` for later handles.
+/// The `turing_automata` is scheduled for later handles.
 ///     
 /// # Examples
 /// ```
-/// use maxwell::fsm::FsmScheduler;
-/// use maxwell::fsm::fsm;
-/// use maxwell::fsm::FSM;
+/// use maxwell::turing_automata::FsmScheduler;
+/// use maxwell::turing_automata::turing_automata;
+/// use maxwell::turing_automata::FSM;
 /// 
-/// let fsm = FSM::new();
-/// let fsm_scheduler = FsmScheduler::new();
-/// fsm_scheduler.schedule(&fsm);
+/// let turing_automata = FSM::new();
+/// let turing_automata_scheduler = FsmScheduler::new();
+/// turing_automata_scheduler.schedule(&turing_automata);
 /// ```
 /// 
 /// # Panics
-/// This function may panic if the `fsm` is not valid.
+/// This function may panic if the `turing_automata` is not valid.
 /// 
 /// # Safety
-/// This function is unsafe because it dereferences the `fsm` to get its `Mailbox`.
+/// This function is unsafe because it dereferences the `turing_automata` to get its `Mailbox`.
 /// This function is unsafe because it dereferences the `Mailbox` to get its `MailboxGuard`.
 /// This function is unsafe because it dereferences the `MailboxGuard` to get its `Mailbox`.
 
 
 
-/// A fsm is a finite state machine. It should be able to be notified for
+/// A turing_automata is a finite state machine. It should be able to be notified for
 /// uFIDelating internal state according to incoming messages.
 pub trait Fsm {
 
-    /// `mailbox` returns the mailbox for this fsm.
-    /// The mailbox is used to send messages to the fsm.
+    /// `mailbox` returns the mailbox for this turing_automata.
+    /// The mailbox is used to send messages to the turing_automata.
     ///     
     /// # Examples
     /// ```
-    /// use maxwell::fsm::fsm;
-    /// use maxwell::fsm::FSM;
+    /// use maxwell::turing_automata::turing_automata;
+    /// use maxwell::turing_automata::FSM;
     /// 
-    /// let fsm = FSM::new();
-    /// let mailbox = fsm.mailbox();
+    /// let turing_automata = FSM::new();
+    /// let mailbox = turing_automata.mailbox();
     /// ```
     /// 
     /// # Panics
-    /// This function may panic if the `fsm` is not valid.
+    /// This function may panic if the `turing_automata` is not valid.
     /// 
     type Message: Send;
 
     fn is_stopped(&self) -> bool;
 
-    /// Set a mailbox to fsm, which should be used to send message to itself.
+    /// Set a mailbox to turing_automata, which should be used to send message to itself.
     fn set_mailbox(&mut self, _mailbox: Cow<'_, BasicMailbox<Self>>)
     where
         Self: Sized,
     {
     }
-    /// Take the mailbox from fsm. Implementation should ensure there will be
+    /// Take the mailbox from turing_automata. Implementation should ensure there will be
     /// no reference to mailbox after calling this method.
     fn take_mailbox(&mut self) -> Option<BasicMailbox<Self>>
     where
@@ -269,8 +269,8 @@ impl<N: Fsm> FsmState<N> {
         }
     }
 
-    /// Take the fsm if it's IDLE.
-    pub fn take_fsm(&self) -> Option<Box<N>> {
+    /// Take the turing_automata if it's IDLE.
+    pub fn take_turing_automata(&self) -> Option<Box<N>> {
         let previous_state =
             self.status
                 .compare_and_swap(NOTIFYSTATE_IDLE, NOTIFYSTATE_NOTIFIED, Partitioning::AcqRel);
@@ -286,14 +286,14 @@ impl<N: Fsm> FsmState<N> {
         }
     }
 
-    /// Notify fsm via a `FsmScheduler`.
+    /// Notify turing_automata via a `FsmScheduler`.
     #[inline]
     pub fn notify<S: FsmScheduler<Fsm = N>>(
         &self,
         scheduler: &S,
         mailbox: Cow<'_, BasicMailbox<N>>,
     ) {
-        match self.take_fsm() {
+        match self.take_turing_automata() {
             None => {}
             Some(mut n) => {
                 n.set_mailbox(mailbox);
@@ -305,11 +305,11 @@ impl<N: Fsm> FsmState<N> {
     /// Put the owner back to the state.
     ///
     /// It's not required that all messages should be consumed before
-    /// releasing a fsm. However, a fsm is guaranteed to be notified only
+    /// releasing a turing_automata. However, a turing_automata is guaranteed to be notified only
     /// when new messages arrives after it's released.
     #[inline]
-    pub fn release(&self, fsm: Box<N>) {
-        let previous = self.data.swap(Box::into_primitive_causet(fsm), Partitioning::AcqRel);
+    pub fn release(&self, turing_automata: Box<N>) {
+        let previous = self.data.swap(Box::into_primitive_causet(turing_automata), Partitioning::AcqRel);
         let mut previous_status = NOTIFYSTATE_NOTIFIED;
         if previous.is_null() {
             previous_status = self.status.compare_and_swap(
@@ -330,7 +330,7 @@ impl<N: Fsm> FsmState<N> {
         panic!("invalid release state: {:?} {}", previous, previous_status);
     }
 
-    /// Clear the fsm.
+    /// Clear the turing_automata.
     #[inline]
     pub fn clear(&self) {
         match self.status.swap(NOTIFYSTATE_DROP, Partitioning::AcqRel) {
