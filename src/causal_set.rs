@@ -14,28 +14,9 @@
 #![allow(unused_mut)]
 #![allow(unused_assignments)]
 #[macro_use]
-extern crate serde_derive;
-extern crate serde;
-extern crate serde_json;
-extern crate serde_yaml;
-extern crate serde_cbor;
-extern crate serde_xml_rs;
-extern crate serde_urlencoded;
-//extern crate serde_bincode;
-use std::collections::HashMap;
-use std::collections::HashSet;
-use std::collections::VecDeque;
-use std::fmt;
-use std::hash::Hash;
-use std::hash::Hasher;
-use std::iter::FromIterator;
-use std::iter::Iterator;
-use std::iter::Peekable;
-use std::ops::Index;
-use std::ops::IndexMut;
-use std::ops::Range;
-use std::ops::RangeFull;
 
+
+use std::collections::HashMap;
 use einstein_ml::{};
 use einstein_db::Causetid;
 use einstein_db::CausetidSet;
@@ -195,13 +176,8 @@ use std::{
     },
     usize,
 };
-
-
-
-
-
-
-
+use std::collections::HashSet;
+use std::iter::Map;
 
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -322,6 +298,7 @@ impl CausetNodeIdSet {
             CausetNodeIdSet::KVNodeIdSet(kv_node_id_set) => {
                 kv_node_id_set.add(node_id.get_kv_node_id());
             },
+            _ => {}
         }
     }
 }
@@ -337,23 +314,27 @@ impl CausetNodeIdSet {
     /// See https://en.wikipedia.org/wiki/String_causal_seting for discussion.
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
     struct CausalSet<T> where T: Eq + Hash {
-        inner: HashSet<ValueRc<T>>,
+        inner: HashSet<ValueRc<T>>
      }
 
+
     impl<T> CausalSet<T> where T: Eq + Hash {
-        pub fn new() -> CausalSet<T> {
-            CausalSet {
-                inner: HashSet::new(),
+        pub fn new() -> Self {
+            Self {
+                inner: std::collections::HashSet::new(),
             }
         }
 
         pub fn add(&mut self, value: T) {
-
             self.inner.insert(ValueRc::new(value));
         }
 
-        pub fn contains(&self, value: &T) -> bool {
-            self.inner.contains(value)
+        pub fn remove(&mut self, value: T) {
+            self.inner.remove(&ValueRc::new(value));
+        }
+
+        pub fn contains(&self, value: T) -> bool {
+            self.inner.contains(&ValueRc::new(value))
         }
 
         pub fn len(&self) -> usize {
@@ -364,80 +345,541 @@ impl CausetNodeIdSet {
             self.inner.is_empty()
         }
 
-        pub fn iter(&self) -> Iter<T> {
-            self.inner.iter().map(|v| v.as_ref())
+        pub fn iter(&self) -> std::collections::hash_set::Iter<ValueRc<T>> {
+            self.inner.iter()
+        }
+
+        pub fn iter_mut(&mut self) -> std::collections::hash_set::IterMut<ValueRc<T>> {
+            self.inner.iter_mut()
         }
     }
-
-
-
-        impl<T> Deref for CausalSet<T> where T: Eq + Hash {
-            type Target = HashSet<ValueRc<T>>;
-
-            fn deref(&self) -> &Self::Target {
-                &self.inner
-            }
-        }
-
-        impl<T> DerefMut for CausalSet<T> where T: Eq + Hash {
-            fn deref_mut(&mut self) -> &mut Self::Target {
-                &mut self.inner
-            }
-        }
-
-        impl<T> CausalSet<T> where T: Eq + Hash {
-            pub fn new() -> CausalSet<T> {
-                CausalSet {
-                    inner: HashSet::new(),
-                }
-            }
-
-            pub fn causal_set<R: Into<ValueRc<T>>>(&mut self, causet_locale: R) -> ValueRc<T> {
-                let soliton_id: ValueRc<T> = causet_locale.into();
-                if self.inner.insert(soliton_id.clone()) {
-                    soliton_id
-                } else {
-                    self.inner.get(&soliton_id).unwrap().clone()
-                }
-            }
-        }
-
 
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
+
+    impl<T> CausalSetManifold<T> where T: Eq + Hash {
+        pub fn new() -> Self {
+            Self {
+                inner: CausalSet::new(),
+            }
+        }
+
+
     #[test]
-    fn test_causet_node_id_set() {
-        let mut causet_node_id_set = CausetNodeIdSet::new();
-        let causet_id = CausetId::new(1);
-        let causet_id_vec = CausetIdVec::new(vec![1, 2, 3]);
-        let causet_q_node_id = CausetQNodeId::new(1);
-        let berolina_sql_node_id = BerolinaSqlNodeId::new(1);
-        let gremlin_node_id = GremlinNodeId::new(1);
-        let fdb_cluster_node_id = FdbClusterNodeId::new(1);
-        let fdb_database_node_id = FdbDatabaseNodeId::new(1);
-        let postgres_node_id = PostgresNodeId::new(1);
+    fn test_causal_set_manifold() {
+        pub fn test_causal_set_manifold() {
+            let mut manifold = CausalSetManifold::new();
+        }
 
-        causet_node_id_set.add(causet_id);
-        causet_node_id_set.add(causet_id_vec);
-        causet_node_id_set.add(causet_q_node_id);
-        causet_node_id_set.add(berolina_sql_node_id);
-        causet_node_id_set.add(gremlin_node_id);
-        causet_node_id_set.add(fdb_cluster_node_id);
-        causet_node_id_set.add(fdb_database_node_id);
-        causet_node_id_set.add(postgres_node_id);
 
-        assert_eq!(causet_node_id_set.len(), 7);
-        assert_eq!(causet_node_id_set.get_causet_id_set().len(), 1);
-        assert_eq!(causet_node_id_set.get_causet_id_vec_set().len(), 1);
-        assert_eq!(causet_node_id_set.get_causet_q_node_id_set().len(), 1);
+    }
 
-        assert_eq!(causet_node_id_set.get_berolina_sql_node_id_set().len(), 1);
-        assert_eq!(causet_node_id_set.get_gremlin_node_id_set().len(), 1);
     }
 }
+
+
+
+
+    #[test]
+    fn test_causal_set_manifold_add() {
+        let mut causal_set_manifold = CausalSetManifold::new();
+
+            let mut causal_set = Self::new();
+            for value in slice {
+                causal_set.add(value);
+            }
+            causal_set
+        }
+//
+// for (key, value) in map.iter() {
+//     impl<T> From<std::collections::HashSet<ValueRc<T>>> for CausalSet<T> where T: Eq + Hash {
+//         fn from(inner: std::collections::HashSet<ValueRc<T>>) -> Self {
+//             Self {
+//                 inner
+//             }
+//         }
+//     }
+    impl<T> From<std::collections::HashSet<T>> for CausalSet<T> where T: Eq + Hash {
+        fn from(inner: std::collections::HashSet<T>) -> Self {
+            Self {
+                inner: inner.into_iter().map(ValueRc::new).collect()
+            }
+        }
+    }
+
+
+
+    impl<T> From<std::collections::HashSet<ValueRc<T>>> for CausalSet<T> where T: Eq + Hash {
+        fn from(inner: std::collections::HashSet<ValueRc<T>>) -> Self {
+            Self {
+                inner
+            }
+        }
+    }
+
+
+
+        fn from_slice(slice: &[T]) -> Self {
+            let mut causal_set = Self::new();
+            for value in slice {
+                causal_set.add(value);
+            }
+            causal_set
+        }
+
+
+
+        fn from_vec(vec: Vec<T>) -> Self {
+            let mut causal_set = Self::new();
+            for value in vec {
+                causal_set.add(value);
+            }
+            causal_set
+        }
+
+
+
+
+
+        impl<T> From<std::collections::HashSet<ValueRc<T>>> for CausalSet<T> where T: Eq + Hash {
+            fn from(inner: std::collections::HashSet<ValueRc<T>>) -> Self {
+                Self {
+                    inner
+                }
+            }
+        }
+
+
+        impl<T> From<std::collections::HashSet<T>> for CausalSet<T> where T: Eq + Hash {
+            fn from(inner: std::collections::HashSet<T>) -> Self {
+                match node_id {
+                    CausetNodeId::CausetId(causet_id) => {
+                        CausalSet::CausetIdSet(causet_id_set)
+                    },
+                    CausetNodeId::CausetIdVec(causet_id_vec) => {
+                        CausalSet::CausetIdVecSet(causet_id_vec_set)
+                    },
+                    CausetNodeId::CausetQNodeId(causet_q_node_id) => {
+                        CausalSet::CausetQNodeIdSet(causet_q_node_id_set)
+                    },
+                    CausetNodeId::BerolinaSqlNodeId(berolina_sql_node_id) => {
+                        CausalSet::BerolinaSqlNodeIdSet(berolina_sql_node_id_set)
+                    },
+                    CausetNodeId::GremlinNodeId(gremlin_node_id) => {
+                        CausalSet::GremlinNodeIdSet(gremlin_node_id_set)
+                    },
+                    CausetNodeId::FdbClusterNodeId(fdb_cluster_node_id) => {
+                        CausalSet::FdbClusterNodeIdSet(fdb_cluster_node_id_set)
+                    },
+                    CausetNodeId::FdbDatabaseNodeId(fdb_database_node_id) => {
+                        CausalSet::FdbDatabaseNodeIdSet(fdb_database_node_id_set)
+                    },
+                    CausetNodeId::PostgresNodeId(postgres_node_id) => {
+                        CausalSet::PostgresNodeIdSet(postgres_node_id_set)
+                    },
+                    CausetNodeId::InnovationDbNodeId(innovation_db_node_id) => {
+                        CausalSet::InnovationDbNodeIdSet(innovation_db_node_id_set)
+                    },
+                    CausetNodeId::KVNodeId(kv_node_id) => {
+                        CausalSet::KVNodeIdSet(kv_node_id_set)
+                    },
+                }
+
+            }
+
+    }
+
+
+
+
+#[cfg(test)]
+mod tests {
+
+                impl<T> CausalSet<T> where T: Eq + Hash {
+                    pub fn remove(&mut self, value: &T) {
+                        self.inner.remove(value);
+                    }
+                }
+
+            }
+
+            fn from(_: HashSet<T>) -> Self {
+                Self {
+                    inner: HashSet::new(),
+                }
+            }
+
+
+
+
+    impl<T> From<HashSet<ValueRc<T>>> for CausalSet<T> where T: Eq + Hash {
+        fn from(_: HashSet<ValueRc<T>>) -> Self {
+            Self {
+                inner: HashSet::new(),
+            }
+        }
+    }
+
+
+
+    impl<T> CausalSet<T> where T: Eq + Hash {
+        pub fn add(&mut self, value: T) {
+            self.inner.insert(value);
+        }
+
+        pub fn remove(&mut self, value: &T) {
+            self.inner.remove(value);
+        }
+
+        pub fn contains(&self, value: &T) -> bool {
+
+
+            self.inner.contains(value)
+        }}
+
+
+
+//
+//
+//     impl<T> CausalSet<T> where T: Eq + Hash {
+//         pub fn remove(&mut self, value: &T) {
+//             self.inner.remove(value);
+//         }
+//     }
+//
+//             self.inner.iter().map(|v| v.as_ref())
+//
+//
+//         }
+//
+//         pub fn len(&self) -> usize {
+//             self.inner.len()
+//         }
+//
+//             fn from(_: HashSet<T>) -> Self {
+//                 todo!()
+//             }
+//         }
+//
+//     impl<T> CausalSet<T> where T: Eq + Hash {
+//         pub fn is_empty(&self) -> bool {
+//             self.inner.is_empty()
+//         }
+//     }
+//
+//     impl<T> CausalSet<T> where T: Eq + Hash {
+//         ////////////////////////////////
+//         trait CausetNodeIdSet {
+//             fn new() -> CausetNodeIdSet;
+//             fn add(&mut self, node_id: CausetNodeId);
+//         }
+//
+//         impl CausetNodeIdSet for CausetIdSet {
+//             pub fn iter(&self) -> std::iter::Map<std::collections::hash_set::Iter<'_, T>, T> {
+//                 self.inner.iter().map(|x| x.clone())
+//             }
+//         }
+//
+//         impl<T> CausalSet<T> where T: Eq + Hash {
+//             pub fn remove(&mut self, value: &T) {
+//                 self.inner.remove(value);
+//             }
+//         }
+//
+//         impl<T> CausalSet<T> where T: Eq + Hash {
+//             pub fn new() -> CausalSet<T> {
+//                 CausalSet {
+//                     inner: HashSet::new(),
+//                 }
+//             }
+//
+//             match ( self .inner.get( & node_id)) {
+//             Some(value) => {
+//             Some(value.clone())
+//             },
+//             None => {
+//             None
+//             }
+//
+//             }
+//         }
+//
+//         pub fn is_empty(&self) -> bool {
+//             self.inner.is_empty()
+//         }
+//
+//         pub fn iter(&self) -> std::iter::Map<std::collections::hash_set::Iter<'_, T>, T> {
+//             self.inner.iter().map(|x| x.clone())
+//         }
+//     }
+//
+//
+//     impl<T> CausalSet<T> where T: Eq + Hash {
+//         pub fn remove(&mut self, value: &T) {
+//             self.inner.remove(value);
+//         }
+//     }
+//
+//     impl<T> CausalSet<T> where T: Eq + Hash {
+//         pub fn new() -> CausalSet<T> {
+//             CausalSet {
+//                 inner: HashSet::new(),
+//             }
+//         }
+//
+//         pub fn add(&mut self, value: T) {
+//             self.inner.insert(ValueRc::new(value));
+//         }
+//
+//         pub fn contains(&self, value: &T) -> bool {
+//             self.inner.contains(value)
+//         }
+//
+//         pub fn len(&self) -> usize {
+//             self.inner.len()
+//         }
+//
+//         pub fn is_empty(&self) -> bool {
+//             self.inner.is_empty()
+//         }
+//
+//         pub fn iter(&self) -> std::iter::Map<std::collections::hash_set::Iter<'_, T>, T> {
+//             self.inner.iter().map(|x| x.clone())
+//         }
+//
+//         pub fn remove(&mut self, value: &T) {
+//             self.inner.remove(value);
+//         }
+//
+//         pub fn get(&self, value: &T) -> Option<T> {
+//             self.inner.get(value).map(|v| v.as_ref().clone())
+//         }
+//
+//         pub fn get_mut(&mut self, value: &T) -> Option<T> {
+//             self.inner.get_mut(value).map(|v| v.as_ref().clone())
+//         }
+//
+//         pub fn insert(&mut self, value: T) -> Option<T> {
+//             self.inner.insert(ValueRc::new(value)).map(|v| v.as_ref().clone())
+//         }
+//
+//         pub fn remove(&mut self, value: &T) -> Option<T> {
+//             self.inner.remove(value).map(|v| v.as_ref().clone())
+//         }
+//
+//         pub fn clear(&mut self) {
+//             self.inner.clear();
+//         }
+//
+//         pub fn contains_key(&self, value: &T) -> bool {
+//             self.inner.contains_key(value)
+//         }
+//
+//         pub fn keys(&self) -> std::iter::Map<std::collections::hash_set::Iter<'_, T>, T> {
+//             self.inner.keys().map(|x| x.clone())
+//         }
+//
+//         pub fn values(&self) -> std::iter::Map<std::collections::hash_set::Iter<'_, T>, T> {
+//             self.inner.values().map(|x| x.clone())
+//         }
+//
+//         pub fn values_mut(&mut self) -> std::iter::Map<std::collections::hash_set::IterMut<'_, T>, T> {
+//             self.inner.values_mut().map(|x| x.as_ref().clone())
+//         }
+//
+//         pub fn drain(&mut self) -> std::collections::hash_set::Drain<T> {
+//             self.inner.drain()
+//         }
+//
+//         pub fn drain_filter(&mut self, predicate: impl FnMut(&T) -> bool) -> std::collections::hash_set::DrainFilter<T> {
+//             self.inner.drain_filter(predicate)
+//         }
+//
+//         pub fn retain(&mut self, predicate: impl FnMut(&T) -> bool) {
+//             self.inner.retain(predicate)
+//         }
+//
+//         pub fn keys_mut(&mut self) -> std::iter::Map<std::collections::hash_set::IterMut<'_, T>, T> {
+//             self.inner.keys_mut().map(|x| x.clone())
+//         }
+//
+//
+//         pub fn iter_mut(&mut self) -> std::iter::Map<std::collections::hash_set::IterMut<'_, T>, T> {
+//             self.inner.iter_mut().map(|x| x.as_ref().clone())
+//         }
+//         if let Some(value) = self .inner.get_mut( & node_id) {
+//         Some(value.clone())
+//         } else {
+//         None
+//         }
+//     }
+//      for node in self.inner.iter_mut() {
+//         if node.node_id == node_id {
+//             return Some(node.clone());
+//         }
+//     }
+//     None
+//
+//
+//     pub fn get_mut(&mut self, node_id: CausetNodeId) -> Option<&mut CausetNode> {
+//         for node in self.inner.iter_mut() {
+//             if node.node_id == node_id {
+//                 return Some(node);
+//             }
+//         }
+//         None
+//     }
+//
+//     pub fn get(&self, node_id: CausetNodeId) -> Option<&CausetNode> {
+//         for node in self.inner.iter() {
+//             if node.node_id == node_id {
+//                 return Some(node);
+//             }
+//         }
+//         None
+//     }
+//
+//     pub fn contains_key(&self, node_id: CausetNodeId) -> bool {
+//         for node in self.inner.iter() {
+//             if node.node_id == node_id {
+//                 return true;
+//             }
+//         }
+//         false
+//     }
+//
+//     pub fn keys(&self) -> std::iter::Map<std::collections::hash_set::Iter<'_, CausetNode>, CausetNodeId> {
+//         self.inner.keys().map(|x| x.node_id)
+//     }
+// }
+//
+//
+//         /// An `CausalSet` allows to "causal_set" some potentially large causet_locales, maintaining a single causet_locale
+//         /// instance owned by the `CausalSet` and leaving consumers with lightweight ref-counted handles to
+//         /// the large owned causet_locale.  This can avoid expensive clone() operations.
+//         /// In EinsteinDB, such large causet_locales might be strings or arbitrary [a v] pairs.
+//         /// See https://en.wikipedia.org/wiki/String_causal_seting for discussion.
+//         /// # Examples
+//         /// ```
+//         /// use EinsteinDB::causet::CausalSet;
+//         /// use EinsteinDB::soliton::{Soliton, CausetId};
+//         /// use EinsteinDB::soliton::CausetIdSet;
+//
+//         let mut causet_locale = CausetIdSet::new();
+//
+//         causet_locale.add(CausetId::new(1));
+//         pub fn add( & mut self, value: T) {
+//         self.inner.insert(ValueRc::new(value));
+//         }
+//
+//         }
+//         pub fn is_timelike(&self) -> bool {
+//             self.inner.is_timelike()
+//         }
+//
+//         pub fn len( & self ) -> usize {
+//         self.inner.len()
+//         })
+//     .into_iter().map(|x| x.clone()).collect()};}
+//
+//        //////////////////////////////////////////////////////////////
+//     impl<T> CausalSet<T> where T: Eq + Hash {
+//         pub fn remove(&mut self, value: &T) {
+//             self.inner.remove(value);
+//         }
+//         for i in 0..10 {
+//             let mut causet_locale = CausetIdSet::new();
+//             causet_locale.add(CausetId::new(i));
+//             causet_locales.push(causet_locale);
+//
+//            if i % 2 == 0 {
+//            causet_locales[i].add(CausetId::new(i));
+//
+//            let mut causet_locale = CausetIdSet::new();
+//            } else {
+//            // modify causet_locale
+//            fn modify_causet_locale(causet_locale: &mut CausetIdSet) {
+//               causet_locale.values.push(CausetId::new(i));
+//            }
+//            }
+//         }
+//            //causet_locale.add(CausetId::new(i));
+//               causet_locales.push(causet_locale);
+//
+//
+//
+//     impl<T> CausalSet<T> where T: Eq + Hash {
+//         pub fn remove(&mut self, value: &T) {
+//             self.inner.remove(value);
+//         }
+//     }
+// }
+//
+//
+//
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//     use crate::causet_locale::CausetLocale;
+//     use crate::causet_node_id::CausetNodeId;
+//     use crate::causet_node_id::CausetNodeIdSet;
+//     use crate::causet_node_id::CausetNodeIdSet::BerolinaSqlNodeIdSet;
+//     use crate::causet_node_id::CausetNodeIdSet::CausetQNodeIdSet;
+//     use crate::causet_node_id::CausetNodeIdSet::GremlinNodeIdSet;
+//     use crate::causet_node_id::CausetNodeIdSet::FdbClusterNodeIdSet;
+//     use crate::causet_node_id::CausetNodeIdSet::FdbDatabaseNodeIdSet;
+//     use crate::causet_node_id::CausetNodeIdSet::InnovationDbNodeIdSet;
+//     use crate::causet_node_id::CausetNodeIdSet::KVNodeIdSet;
+//     use crate::causet_node_id::CausetNodeIdSet::PostgresNodeIdSet;
+//     use crate::causet_node_id::CausetNodeIdSet::ValueRc;
+//     use crate::causet_node_id::CausetNodeIdSet::ValueRc::new;
+//     use crate::causet_node_id::CausetNodeIdSet::ValueRc::clone;
+//     use crate::causet_node_id::CausetNodeIdSet::ValueRc::as_ref;
+//     use crate::causet_node_id::CausetNodeIdSet::ValueRc::as_mut;
+//     use crate::causet_node_id::CausetNodeIdSet::ValueRc::get_causet_q_node_id;
+//     use crate::causet_node_id::CausetNodeIdSet::ValueRc::get_berolina_sql_node_id;
+//     use crate::causet_node_id::CausetNodeIdSet::ValueRc::get_causet_q_node_id;
+// }
+
+//
+//
+// #[cfg(test)]
+// // mod tests {
+// //     use super::*;
+// //
+// //     #[test]
+// //     fn test_causet_node_id_set() {
+//         let mut causet_node_id_set = CausetNodeIdSet::new();
+//         let causet_id = CausetId::new(1);
+//         let causet_id_vec = CausetIdVec::new(vec![1, 2, 3]);
+//         let causet_q_node_id = CausetQNodeId::new(1);
+//         let berolina_sql_node_id = BerolinaSqlNodeId::new(1);
+//         let gremlin_node_id = GremlinNodeId::new(1);
+//         let fdb_cluster_node_id = FdbClusterNodeId::new(1);
+//         let fdb_database_node_id = FdbDatabaseNodeId::new(1);
+//         let postgres_node_id = PostgresNodeId::new(1);
+//
+//         causet_node_id_set.add(causet_id);
+//         causet_node_id_set.add(causet_id_vec);
+//         causet_node_id_set.add(causet_q_node_id);
+//         causet_node_id_set.add(berolina_sql_node_id);
+//         causet_node_id_set.add(gremlin_node_id);
+//         causet_node_id_set.add(fdb_cluster_node_id);
+//         causet_node_id_set.add(fdb_database_node_id);
+//         causet_node_id_set.add(postgres_node_id);
+//
+//         assert_eq!(causet_node_id_set.len(), 7);
+//         assert_eq!(causet_node_id_set.get_causet_id_set().len(), 1);
+//         assert_eq!(causet_node_id_set.get_causet_id_vec_set().len(), 1);
+//         assert_eq!(causet_node_id_set.get_causet_q_node_id_set().len(), 1);
+//
+//         assert_eq!(causet_node_id_set.get_berolina_sql_node_id_set().len(), 1);
+//         assert_eq!(causet_node_id_set.get_gremlin_node_id_set().len(), 1);
+//     }
+// }
 
 
 

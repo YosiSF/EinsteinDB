@@ -1,6 +1,63 @@
 # EinsteinDB
-EinsteinDB addresses being able to reach the full potential of NLIDB by providing a natural language interface to the database ecosystem of Hybrid OLAP/OLTP databases.
-Adopting the architecture of JanusGraph and Galileo, EinsteinDB employs guarantee liveness through locally linearizable relativistically loose coupled removable cumulative window protocol allowing the frame to become consistent across different versions of the application.
+EinsteinDB leaps into taddresses the knowledge gap of factual dialectic completion in the form of a database. EinsteinDB was built as an opinionated loosely coupled embedded graph library with several different implementations of semi-relational BerkeleyBSD ANSI SQL database, providing coarser access to information panes and frames. Unlike recent platforms out there, The Team at EinsteinDB pioneered work into Lamport's original vision for relativistically correct, but not necessarily deterministic, read and write operations.
+
+
+By embedding a Hybrid Key-Value store with bolt-on causal consistency, suspends the need for traditional scheduling, and graduates the endeavor to one of a stochastic foraging ELM (Extreme Learning Model) that is capable of learning from the past. Causets are the key to the future of a cache-miss with an appended timestamp in the form of a poisson bounded random variable.
+
+
+in multi-layered data structures; merkle trees. 
+EinsteinDB also provides document-oriented stores for various kinds of high throughput and low latency environments. EinsteinDB's portable and flexible schema in the form of minkowski quads; is a powerful and efficient unified key model for RDMS and Graphs.
+EinsteinDB introduces VioletaBFT(0.1.0) written originally in a Haskell library with rust-based implementation with compiling
+
+[]: # Language: markdown
+[]: # Path: README.md
+
+
+
+that makes it easy to describe, grow, and reuse your domain schema.
+
+
+
+Data storage is hard
+
+We've observed that data storage is a particular area of difficulty for software development teams:
+
+It's hard to define storage schemas well. A developer must:
+
+Model their domain entities and relationships.
+Encode that model efficiently and correctly using the features available in the database.
+Plan for future extensions and performance tuning.
+
+For the purpose of this project, we will use the following terminology:
+
+`causet`: The cause of a fact.This is the entity that caused the fact to be true.
+`causetq`: a vectorized simd representation of the causet. Invariant: causetq.len() == causet.len() and causetq[i] == causet[i] for all i.
+`causetq_set`: A set of causetq. Queries of conjoining axioms in the form of tokenized sequences with suffix `_set`.
+`EinsteinMerkleTree`: A Merkle tree that is used to store facts.
+`EinsteinDB`: A database that is used to store facts.
+
+
+
+### The EinsteinDB Database
+# The EinsteinDB database is a Merkle tree that is used to store facts: a tuplestore becomes a Merkle tree when
+
+
+
+full potential of NLIDB by providing a natural language interface to the cloud-agnositc ecosystem of Hybrid OLAP/OLTP databases written in rust and go.
+EinsteinDB began as a problem of solving event sourced data processing in the cloud. Since its inception in 2018, by two engineers in San Francisco, EinsteinDB has grown to a community of more than 100 engineers and contributors.
+Adopting the architecture of JanusGraph and Galileo, EinsteinDB employs time-traveling guarantee-prone technology with liveness properties through a system of interlocking SUSE isolated namespaced sandboxes for the deployment of AllegroCL: A Gremlin-Invariant Stochastic Context Free ML 
+which exploits the memory safety of Rust with locally linearizable relativistically loose coupled removable cumulative window semantic of cracked column store. 
+
+EinsteinDB is natively compatible in both DML and UML with Postgres, SQLite, and MySQL.
+EinsteinDB is also compatible with the following relational databases: FoundationDB, TerminusDB, and MilevaDB.
+
+##Introduction to interlocking SUSE with jails, multiplexers, and lock-free transactions
+
+
+
+MilevaDB is a row-switched column store written in go which acts as a scheduler for EinsteinDB's allocation of namespaced DRAM cells to the various namespaced sandboxes -- EinsteinDB is still an Append-Log with a column store, but it has evolved to be a stochastic clock vectorized tuplestore with time-traveling guarantees.
+As a standalone, EinsteinDB embeds a Causet Partitioner in its namespace of isolated frames. From there it is able to route requests to the appropriate merkle suffixed tree.
+
 grow before recomputing the aggregate, it permits removal of rows from the previous aggregate. For the sum, count, and avg aggregates, removing rows from the current aggregate can easily be achieved by subtracting.building a semantic knowledge-base for EAV queries and SQL atop a sparse data structure.
 Causets, short for "causal sets", are a way of representing the causal relationships between entities in a database. For example, for a table scan we use features such as the number of pages of a table or information about the data type and average width in bytes for each column that allows the model to learn the runtime complexity of the scan independent of the concrete database at hand.
 Relativistic linearization tells us that the runtime of a query is a function of the number of entities in the database modulo the number of entities in the database engaged with the cursor and the frame pointer: an interlocking direcorate in SUSE.
