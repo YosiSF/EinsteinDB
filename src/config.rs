@@ -440,7 +440,7 @@ impl InterlockingMultiplexer for Config {
 
  */
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MerkleTreeLSHBuffer {
     pub lsh_buffer: Vec<u8>,
     height: usize,

@@ -1,3 +1,5 @@
+extern crate petgraph;
+
 mod causal_set;
 
 /// Copyright (c) 2022 Whtcorps Inc and EinsteinDB Project contributors

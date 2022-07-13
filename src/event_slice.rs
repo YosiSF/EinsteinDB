@@ -32,6 +32,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
+use petgraph::visit::Walker;
 use crate::config::Config;
 use crate::Error;
 
@@ -483,7 +484,7 @@ mod benches {
             black_box1
         });
     }
-}
+
 
 #[derive(Clone)]
 pub struct Solitoncausetid  {
@@ -627,7 +628,13 @@ impl Solitoncausetid {
     }
 
 
-        // Check whether the found plugin satisfies the feature constraint.
+    #[inline]
+    fn handle_request_impl_impl_impl<S: Snapshot>(x86_64_interlocking_directorate:
+                                                  &mut  InterlockingDirectorateRequest,
+                                                    snapshot: &S,
+                                                    soliton_causetid: &Solitoncausetid,
+                                                    soliton_plugin_registry: &Arc<PluginRegistry>) -> Result<()> {
+        let mut ctx = InterlockingContext::new(cid);
         let foundationdb_storage_api = FoundationdbStorageApi::new(storage);
         let ranges = foundationdb_storage_api.get_ranges(
             &req.get_start_key(),
