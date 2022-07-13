@@ -191,7 +191,7 @@ pub struct Tx<'a, 'conn, T> {
     /// by the transactor.
     pub(crate) action: &'a mut TransactorAction,
 
-    /// The partition map to allocate entids from.
+    /// The partition map to allocate causetids from.
     ///
     /// The partition map is volatile in the sense that every succesful transaction updates
     /// allocates at least one tx ID, so we own and modify our own partition map.
@@ -255,7 +255,7 @@ pub struct Transaction<'a, 'conn, T> {
     /// by the transactor.
     pub(crate) action: &'a mut TransactorAction,
 
-    /// The partition map to allocate entids from.
+    /// The partition map to allocate causetids from.
     ///
     /// The partition map is volatile in the sense that every succesful transaction updates
     /// allocates at least one tx ID, so we own and modify our own partition map.

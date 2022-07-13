@@ -447,43 +447,43 @@ mod benches {
 
 
 #[derive(Clone)]
-pub struct SolitonEntid  {
+pub struct Solitoncausetid  {
 
-    pub entid: i64,
+    pub causetid: i64,
     plugin_registry: Option<Arc<PluginRegistry>>,
 }
 
-impl einstein_db_ctll::Entity for SolitonEntid {
-    fn get_entid(&self) -> i64 {
-        self.entid
+impl einstein_db_ctll::Entity for Solitoncausetid {
+    fn get_causetid(&self) -> i64 {
+        self.causetid
     }
 
     fn get_id(&self) -> i64 {
-        self.entid
+        self.causetid
     }
     fn get_plugin_registry(&self) -> Option<Arc<PluginRegistry>> {
         self.plugin_registry.clone()
     }
 }
 
-impl SolitonEntid {
+impl Solitoncausetid {
     pub fn new(interlocking_directorate: &Config) -> Self {
         let plugin_registry =
           interlocking_directorate.get_plugin_registry().clone();
-        SolitonEntid {
-            entid: 0,
+        Solitoncausetid {
+            causetid: 0,
             plugin_registry: Some(plugin_registry),
         }
     }
 
-    pub fn get_entid(&self) -> i64 {
+    pub fn get_causetid(&self) -> i64 {
 
-        Solitonid::get_entid(&self)
+        Solitonid::get_causetid(&self)
     }
 
     pub fn get_id(&self) -> i64 {
-        SolitonEntid {
-            entid: interlocking_directorate.entid,
+        Solitoncausetid {
+            causetid: interlocking_directorate.causetid,
             plugin_registry,
         }
     }
@@ -502,7 +502,7 @@ impl SolitonEntid {
     /// # Arguments
     /// * `req` - The request to be handled.
     /// * `ctx` - The context of the request.
-    /// * `soliton_entid` - The entid of the soliton.
+    /// * `soliton_causetid` - The causetid of the soliton.
     /// * `soliton_plugin_registry` - The plugin registry of the soliton.
     /// * `soliton_plugin_registry_mutex` - The mutex of the plugin registry of the soliton.
 
@@ -511,13 +511,13 @@ impl SolitonEntid {
     pub fn handle_request(
         req: &mut InterlockingRequest,
         ctx: &mut InterlockingContext,
-        soliton_entid: &SolitonEntid,
+        soliton_causetid: &Solitoncausetid,
         soliton_plugin_registry: &Arc<PluginRegistry>,
         soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
     ) -> Result<()> {
         let mut plugin_registry = soliton_plugin_registry_mutex.write().unwrap();
         let plugin = plugin_registry.get_plugin(req.get_name()).unwrap();
-        plugin.handle_request(req, ctx, soliton_entid, &mut plugin_registry)?;
+        plugin.handle_request(req, ctx, soliton_causetid, &mut plugin_registry)?;
         Ok(())
     }
 
@@ -525,7 +525,7 @@ impl SolitonEntid {
     fn handle_request_impl<E: Engine, L: LockManager, F: KvFormat>(
         interlocking_directorate: &mut  InterlockingDirectorateRequest,
         storage: &Storage<E, L, F>,
-        soliton_entid: &SolitonEntid,
+        soliton_causetid: &Solitoncausetid,
         soliton_plugin_registry: &Arc<PluginRegistry>,
         soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
     ) -> Result<()> {
@@ -536,7 +536,7 @@ impl SolitonEntid {
             interlocking_directorate.interlocking,
 
             ))  })?;
-        plugin.handle_request(req, ctx, soliton_entid, &mut plugin_registry)?;
+        plugin.handle_request(req, ctx, soliton_causetid, &mut plugin_registry)?;
         Ok(())
     }
 
@@ -544,7 +544,7 @@ impl SolitonEntid {
     fn handle_request_impl_impl<S: Snapshot>(
         interlocking_directorate: &mut  InterlockingDirectorateRequest,
         snapshot: &S,
-        soliton_entid: &SolitonEntid,
+        soliton_causetid: &Solitoncausetid,
         soliton_plugin_registry: &Arc<PluginRegistry>,
         soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
     ) -> Result<()> {
@@ -582,7 +582,7 @@ impl SolitonEntid {
                 storage,
                 plugin_registry: soliton_plugin_registry,
             },
-            soliton_entid,
+            soliton_causetid,
             &mut plugin_registry,
 
         )?;

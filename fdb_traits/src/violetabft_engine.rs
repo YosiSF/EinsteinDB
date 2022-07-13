@@ -612,7 +612,7 @@ pub struct CacheStats {
 
 
 /// Map from found [e a v] to expected type.
-pub(crate) type TypeDisagreements = BTreeMap<(Entid, Entid, TypedValue), ValueType>;
+pub(crate) type TypeDisagreements = BTreeMap<(causetid, causetid, TypedValue), ValueType>;
 
 /// Ensure that the given terms type check.
 ///

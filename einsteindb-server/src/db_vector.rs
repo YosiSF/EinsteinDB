@@ -504,7 +504,7 @@ pub fn collect_causet_preorder_relativistic_with_brane_and_timeline_and_brane(co
 }
 
 
-   //.query_and_then(&[&txs_from.start, &timeline], |row: &rusqlite::Row| -> Result<(Entid, Entid)>{
+   //.query_and_then(&[&txs_from.start, &timeline], |row: &rusqlite::Row| -> Result<(causetid, causetid)>{
 fn collect_causet_preorder_relativistic_with_brane_and_timeline_and_brane_and_timeline(connection: &Connection, brane: u64, tx_id: u64) -> Result<()> {
     let brane = match rows.next() {
         Some(t) => {

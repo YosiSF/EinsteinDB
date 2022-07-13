@@ -145,10 +145,10 @@ impl TypeChecker {
 
 
 //solitonid = solitonid + 1
-//entid is usually considered to be solitonid + 1
+//causetid is usually considered to be solitonid + 1
 //but it can be set to a different value
-// in datomic entid is a entity id, which is a number
-// in einsteindb entid is a string, solitonid is a number
+// in datomic causetid is a entity id, which is a number
+// in einsteindb causetid is a string, solitonid is a number
 
 
 //lets clear that out with some code
@@ -179,7 +179,7 @@ impl TypeChecker {
 
 
 pub struct Let {
-    pub entid: String,
+    pub causetid: String,
     pub solitonid: u64,
     pub name: String,
     pub value: Box<Expr>,
@@ -188,9 +188,9 @@ pub struct Let {
 
 
 impl Let {
-    pub fn new(entid: String, solitonid: u64, name: String, value: Box<Expr>, body: Box<Expr>) -> Let {
+    pub fn new(causetid: String, solitonid: u64, name: String, value: Box<Expr>, body: Box<Expr>) -> Let {
         Let {
-            entid,
+            causetid,
             solitonid,
             name,
             value,

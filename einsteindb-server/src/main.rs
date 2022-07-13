@@ -989,22 +989,22 @@ fn main() {
     pub(crate) fn read_ident_map(conn: &rusqlite::Connection) -> Result<IdentMap> {
         let v = read_materialized_view(conn, "idents")?;
         v.into_iter().map(|(e, a, typed_value)| {
-            if a != entids::DB_IDENT {
+            if a != causetids::DB_IDENT {
                 bail!(DbErrorKind::NotYetImplemented(format!("bad idents materialized view: expected :db/ident but got {}", a)));
             }
             if let TypedValue::Keyword(keyword) = typed_value {
                 Ok((keyword.as_ref().clone(), e))
             } else {
-                bail!(DbErrorKind::NotYetImplemented(format!("bad idents materialized view: expected [entid :db/ident keyword] but got [entid :db/ident {:?}]", typed_value)));
+                bail!(DbErrorKind::NotYetImplemented(format!("bad idents materialized view: expected [causetid :db/ident keyword] but got [causetid :db/ident {:?}]", typed_value)));
             }
         }).collect()
     }
 
     /// Read the schema materialized view from the given SQL store.
     pub(crate) fn read_attribute_map(conn: &rusqlite::Connection) -> Result<AttributeMap> {
-        let entid_triples = read_materialized_view(conn, "schema")?;
+        let causetid_triples = read_materialized_view(conn, "schema")?;
         let mut attribute_map = AttributeMap::default();
-        metadata::update_attribute_map_from_entid_triples(&mut attribute_map, entid_triples, vec![])?;
+        metadata::update_attribute_map_from_causetid_triples(&mut attribute_map, causetid_triples, vec![])?;
         Ok(attribute_map)
     }
 
@@ -1019,7 +1019,7 @@ fn main() {
     }
 
     /// Internal representation of an [e a v added] datom, ready to be transacted against the store.
-    pub type ReducedEntity<'a> = (Entid, Entid, &'a Attribute, TypedValue, bool);
+    pub type ReducedEntity<'a> = (causetid, causetid, &'a Attribute, TypedValue, bool);
 
     #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
     pub enum SearchType {
@@ -1040,7 +1040,7 @@ fn main() {
         /// Given a slice of [a v] lookup-refs, look up the corresponding [e a v] triples.
         ///
         /// It is assumed that the attribute `a` in each lookup-ref is `:db/unique`, so that at most one
-        /// matching [e a v] triple exists.  (If this is not true, some matching entid `e` will be
+        /// matching [e a v] triple exists.  (If this is not true, some matching causetid `e` will be
         /// chosen non-deterministically, if one exists.)
         ///
         /// Returns a map &(a, v) -> e, to avoid cloning potentially large values.  The keys of the map
@@ -1095,7 +1095,7 @@ fn main() {
             let resolved_metadata_assertions = self.resolved_metadata_assertions()?;
             let mut map = AVMap::default();
             for (e, a, typed_value, added) in resolved_metadata_assertions {
-                if causet.contains_entid(e) {
+                if causet.contains_causetid(e) {
                     map.insert((a, typed_value), e);
                 }
             }
@@ -1228,7 +1228,7 @@ fn main() {
     /// Insert the new transaction into the `transactions` table.
     ///
     ///
-    fn insert_transaction(conn: &rusqlite::Connection, tx: Entid) -> Result<()> {
+    fn insert_transaction(conn: &rusqlite::Connection, tx: causetid) -> Result<()> {
         // EinsteinDB follows Datomic and Mentat treating its input as a set.  That means it is okay to transact the
         // same [e a v] twice in one transaction.  However, we don't want to represent the transacted
         // datom twice.  Therefore, the transactor unifies repeated datoms, and in addition we add
@@ -1273,7 +1273,7 @@ fn main() {
     /// This is a convenience wrapper around `insert_transaction` that returns a map
 
 
-    fn insert_transaction_map(conn: &rusqlite::Connection, tx: Entid) -> Result<AVMap> {
+    fn insert_transaction_map(conn: &rusqlite::Connection, tx: causetid) -> Result<AVMap> {
         let mut map = AVMap::default();
         let s = r#"
       INSERT INTO transactions

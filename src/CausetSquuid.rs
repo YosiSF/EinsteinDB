@@ -312,7 +312,7 @@ use::{
     CausetQOutputStream,
 };
 
-//Maintains the mapping between string idents and positive integer entids
+//Maintains the mapping between string idents and positive integer causetids
 pub struct CausetSquuidQueryBuilder<'a> {
     //mutable store
     pub causet_store: &'a mut CausetSquuidStore,
