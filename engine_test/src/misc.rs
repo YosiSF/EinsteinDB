@@ -76,7 +76,7 @@ pub enum DeleteStrategy {
     /// This is the same as `DeleteIfEmpty`.
     DeleteIfEmpty,
 
-    DeleteIfEmptyOrTombstone,
+    DeleteIfEmptyOrFlushSemaphore,
 
     /// Delete the key-value pair if the value is empty or a causetq_upstream_interlock.
 
