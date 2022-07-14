@@ -9,6 +9,20 @@
 // specific language governing permissions and limitations under the License.
 
 
+/// Handles a request to the interlock framework.
+///
+/// Each request is dispatched to the corresponding interlock plugin based on it's `copr_name`
+/// field. A plugin with a matching name must be loaded by EinsteinDB, otherwise an error is returned.
+///
+/// # Arguments
+/// * `req` - The request to be handled.
+/// * `ctx` - The context of the request.
+/// * `soliton_causetid` - The causetid of the soliton.
+/// * `soliton_plugin_registry` - The plugin registry of the soliton.
+/// * `soliton_plugin_registry_mutex` - The mutex of the plugin registry of the soliton.
+
+
+
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::collections::HashMap;
@@ -35,6 +49,7 @@ use petgraph::visit::Walker;
 use slog::error;
 use crate::config::Config;
 use crate::Error;
+
 
 
 #[derive(Clone, Debug)]
@@ -186,36 +201,27 @@ impl<'a> RowSlice<'a> {
         if !self.id_valid(id) {
             return Ok(None);
         }
-        match self {
-            RowSlice::Big {
-                non_null_ids,
-                offsets,
-                ..
-            } => if let Ok(idx) = non_null_ids.binary_search(&(id as u32)) {
 
-                let offset = offsets.get(idx).unwrap();
-
-                Ok(Some((idx, *offset as usize)))
-            } else {
-                Ok(None)
-            },
-
-            RowSlice::Small {
-                non_null_ids,
-                offsets,
-                ..
-            } => if let Ok(idx) = non_null_ids.binary_search(&(id as u8)) {
-
-                let offset = offsets.get(idx).unwrap();
-
-                Ok(Some((idx, *offset as usize)))
-            } else {
-                Ok(None)
-            },
-
-
-        }
+        let mut non_null_ids = self.non_null_ids.iter();
+        let mut offsets = self.offsets.iter();
     }
+
+    pub fn id_valid(&self, id: i64) -> bool {
+        let mut causet_locales = self.causet_locales.iter();
+        let mut idx = 0;
+        for non_null_id in non_null_ids {
+            if *non_null_id == id {
+                let offset = offsets.next().unwrap();
+                causet_locales.next().unwrap();
+                return Ok(Some((idx, *offset as usize)));
+            }
+            idx += 1;
+        }
+        Ok(None)
+    }
+}
+
+
 
     #[inline]
     fn id_valid(&self, id: i64) -> bool {
@@ -276,15 +282,13 @@ impl<'a, T: PrimInt> LEBytes<'a, T> {
     }
 
     #[inline]
-    fn get(&self, index: usize) -> Option<T> {
-        if std::mem::size_of::<T>() * index >= self.slice.len() {
-            None
-        } else {
-Some(unsafe {
-                T::from_le_bytes(self.slice.get_unchecked(index * std::mem::size_of::<T>()..(index + 1) * std::mem::size_of::<T>()).as_ref())
-            })
+    pub fn iter(&self) -> LEBytesIter<'a, T> {
+        LEBytesIter {
+            slice: self.slice,
+            _marker: std::marker::PhantomData::default(),
         }
     }
+
 
     #[inline]
     unsafe fn get_unchecked(&self, index: usize) -> T {
@@ -294,35 +298,27 @@ Some(unsafe {
     }
 
     #[inline]
-    fn binary_search(&self, causet_locale: &T) -> std::result::Result<usize, usize> {
-        let mut size = self.slice.len() / std::mem::size_of::<T>();
-        if size == 0 {
-            return Err(0);
+    pub fn get(&self, index: usize) -> Result<T, E> {
+        if index >= self.len() {
+            return Err(E::ColumnOffset);
         }
-        let mut base = 0usize;
-
-        // Note that the count of ids is not greater than `u16::MAX`. The number
-        // of binary search steps will not over 16 unless the data is corrupted.
-        // Let's relex to 20.
-        let mut steps = 20usize;
-
-        while steps > 0 && size > 1 {
-            let half = size / 2;
-            let mid = base + half;
-            let cmp = unsafe { self.get_unchecked(mid) }.cmp(causet_locale);
-            base = if cmp == std::cmp::Ordering::Greater { base } else { mid };
-            size -= half;
-            steps -= 1;
-        }
-
-        let cmp = unsafe { self.get_unchecked(base) }.cmp(causet_locale);
-        if cmp == std::cmp::Ordering::Equal {
-            Ok(base)
-        } else {
-            Err(base + (cmp == std::cmp::Ordering::Less) as usize)
-        }
+        Ok(unsafe { self.get_unchecked(index) })
     }
-}
+
+
+    pub fn len(&self) -> usize {
+        self.slice.len() / size_of::<T>()
+    }
+
+    #[inline]
+    pub fn slice(&self) -> &[u8] {
+        self.slice
+    }
+
+    pub fn as_slice(&self) -> &[u8] {
+        self.slice
+    }
+
 
 #[braneg(test)]
 mod tests {
@@ -367,7 +363,7 @@ mod tests {
         buf
     }
 
-    fn encoded_data() -> Vec<u8> {
+    pub(crate) fn encoded_data(i1: i32) -> Vec<u8> {
         let cols = vec![
             Column::new(1, 1000),
             Column::new(33, ScalarValue::Int(None)),
@@ -426,15 +422,64 @@ mod benches {
     use crate::codec::data_type::ScalarValue;
 
     use test::Bencher;
+    use crate::encoder::Column;
 
 
-    fn encoded_data(len: usize) -> Vec<u8> {
-        let mut cols = vec![];
+    #[bench]
+    fn bench_read_le_bytes(b: &mut Bencher) {
+        let data = vec![1, 128, 512, u16::MAX, 256];
+        let mut buf = vec![];
+        for n in &data {
+            buf.write_u16_le(*n).unwrap();
+        }
+        b.iter(|| {
+            let mut buf = &buf[..];
+            read_le_bytes(&mut buf, data.len()).unwrap();
+        });
+    }
+
+    #[bench]
+    fn bench_write_row(b: &mut Bencher) {
+        let cols = vec![
+            Column::new(1, 1000),
+            Column::new(356, 2),
+            Column::new(33, ScalarValue::Int(None)),
+            Column::new(3, 3),
+        ];
+        b.iter(|| {
+            let mut buf = vec![];
+            buf.write_row(&mut EvalContext::default(), cols).unwrap();
+        });
+    }}
+
+pub fn encoded_data(len: usize) -> Vec<u8> {
+    let cols = vec![
+        Column::new(1, 1000),
+        Column::new(33, ScalarValue::Int(None)),
+        Column::new(3, 3),
+    ];
+    let mut buf = vec![];
+    buf.write_row(&mut EvalContext::default(), cols).unwrap();
+    buf
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::expr::EvalContext;
+    use crate::codec::data_type::ScalarValue;
+
+    #[test]
+    fn test_encoded_data() {
+        let data = encoded_data(100);
+        let event = RowSlice::from_bytes(&data).unwrap();
         for i in 0..(len as i64) {
+            assert_eq!(event.get_int(i).unwrap(), i);
             if i % 10 == 0 {
-                cols.push(Column::new(i, ScalarValue::Int(None)))
+                assert_eq!(event.get_int(i).unwrap(), i);
             } else {
-                cols.push(Column::new(i, i))
+                assert_eq!(event.get_int(i).unwrap(), 0);
             }
         }
         let mut buf = vec![];
@@ -486,25 +531,27 @@ mod benches {
         });
     }
 
+    #[bench]
+    fn bench_search_in_null_ids_big(b: &mut test::Bencher) {
+        let data = encoded_data(350);
+
+        b.iter(|| {
+            let event = RowSlice::from_bytes(&data).unwrap();
+            let black_box1 = black_box::black_box
+                (event.search_in_null_ids(257));
+            black_box1
+        });
+    }
+}
+
+
+
 
 #[derive(Clone)]
 pub struct Solitoncausetid  {
 
     pub causetid: i64,
     plugin_registry: Option<Arc<PluginRegistry>>,
-}
-
-impl einstein_db_ctll::Entity for Solitoncausetid {
-    fn get_causetid(&self) -> i64 {
-        self.causetid
-    }
-
-    fn get_id(&self) -> i64 {
-        self.causetid
-    }
-    fn get_plugin_registry(&self) -> Option<Arc<PluginRegistry>> {
-        self.plugin_registry.clone()
-    }
 }
 
 impl Solitoncausetid {
@@ -514,33 +561,6 @@ impl Solitoncausetid {
             plugin_registry,
         }
     }
-
-
-
-    pub fn get_causetid(&self) -> i64 {
-
-        self.causetid as i64 + 1 as i64
-
-    }
-
-
-    
-
-
-
-
-
-    /// Handles a request to the interlock framework.
-    ///
-    /// Each request is dispatched to the corresponding interlock plugin based on it's `copr_name`
-    /// field. A plugin with a matching name must be loaded by EinsteinDB, otherwise an error is returned.
-    ///
-    /// # Arguments
-    /// * `req` - The request to be handled.
-    /// * `ctx` - The context of the request.
-    /// * `soliton_causetid` - The causetid of the soliton.
-    /// * `soliton_plugin_registry` - The plugin registry of the soliton.
-    /// * `soliton_plugin_registry_mutex` - The mutex of the plugin registry of the soliton.
 
 
 
@@ -660,3 +680,161 @@ impl Solitoncausetid {
         })
     }
 }
+
+
+#[derive(Clone)]
+pub struct Solitoncausetid {
+    pub causetid: i64,
+    plugin_registry: Option<Arc<PluginRegistry>>,
+}
+
+
+impl Solitoncausetid {
+    pub fn new(interlocking_directorate: i64, plugin_registry: Option<Arc<PluginRegistry>>) -> Self {
+        Solitoncausetid {
+            causetid: interlocking_directorate,
+            plugin_registry,
+        }
+    }
+
+    pub fn handle_request(
+        req: &mut InterlockingRequest,
+        ctx: &mut InterlockingContext,
+        soliton_causetid: &Solitoncausetid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<(), E> {
+        let mut plugin_registry = soliton_plugin_registry_mutex.write().unwrap();
+        let plugin = plugin_registry.get_plugin(req.get_name()).unwrap();
+        plugin.handle_request(req, ctx, soliton_causetid, &mut plugin_registry)?;
+        Ok(())
+    }
+
+    pub fn handle_request_impl<E: Engine, L: LockManager, F: KvFormat>(
+        interlocking_directorate: &mut  InterlockingDirectorateRequest,
+        storage: &Storage<E, L, F>,
+        soliton_causetid: &Solitoncausetid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<(), E> {
+
+        let mut ctx = InterlockingContext::new(
+            storage,
+            soliton_causetid,
+            soliton_plugin_registry,
+            soliton_plugin_registry_mutex,
+        );
+        let mut req = InterlockingRequest::new();
+        req.set_name(interlocking_directorate.get_name());
+        req.set_data(interlocking_directorate.get_data());
+        handle_request(&mut req, &mut ctx, soliton_causetid, soliton_plugin_registry, soliton_plugin_registry_mutex)?;
+        Ok(())
+    }
+
+    pub fn handle_request_impl_impl<E: Engine, L: LockManager, F: KvFormat>(
+        interlocking_directorate: &mut  InterlockingDirectorateRequest,
+        storage: &Storage<E, L, F>,
+        soliton_causetid: &Solitoncausetid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<(), E> {
+
+        let mut ctx = InterlockingContext::new(
+            storage,
+            soliton_causetid,
+            soliton_plugin_registry,
+            soliton_plugin_registry_mutex,
+        );
+        let mut req = InterlockingRequest::new();
+        req.set_name(interlocking_directorate.get_name());
+        req.set_data(interlocking_directorate.get_data());
+        handle_request(&mut req, &mut ctx, soliton_causetid, soliton_plugin_registry, soliton_plugin_registry_mutex)?;
+        Ok(())
+    }
+
+    pub fn handle_request_impl_impl_impl<E: Engine, L: LockManager, F: KvFormat>(
+        interlocking_directorate: &mut  InterlockingDirectorateRequest,
+        storage: &Storage<E, L, F>,
+        soliton_causetid: &Solitoncausetid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<(), E> {
+
+        let mut ctx = InterlockingContext::new(
+            storage,
+            soliton_causetid,
+            soliton_plugin_registry,
+            soliton_plugin_registry_mutex,
+        );
+        let mut req = InterlockingRequest::new();
+        req.set_name(interlocking_directorate.get_name());
+        req.set_data(interlocking_directorate.get_data());
+        handle_request(&mut req, &mut ctx, soliton_causetid, soliton_plugin_registry, soliton_plugin_registry_mutex)?;
+        Ok(())
+    }
+
+    pub fn handle_request_impl_impl_impl_impl<E: Engine, L: LockManager, F: KvFormat>(
+        interlocking_directorate: &mut  InterlockingDirectorateRequest,
+        storage: &Storage<E, L, F>,
+        soliton_causetid: &Solitoncausetid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<(), E> {
+
+        let mut ctx = InterlockingContext::new(
+            storage,
+            soliton_causetid,
+            soliton_plugin_registry,
+            soliton_plugin_registry_mutex,
+        );
+        let mut req = InterlockingRequest::new();
+        req.set_name(interlocking_directorate.get_name());
+        req.set_data(interlocking_directorate.get_data());
+        handle_request(&mut req, &mut ctx, soliton_causetid, soliton_plugin_registry, soliton_plugin_registry_mutex)?;
+        Ok(())
+    }
+
+    pub fn handle_request_impl_impl_impl_impl_impl<E: Engine, L: LockManager, F: KvFormat>(
+        interlocking_directorate: &mut  InterlockingDirectorateRequest,
+        storage: &Storage<E, L, F>,
+        soliton_causetid: &Solitoncausetid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<(), E> {
+
+        let mut ctx = InterlockingContext::new(
+            storage,
+            soliton_causetid,
+            soliton_plugin_registry,
+            soliton_plugin_registry_mutex,
+        );
+        let mut req = InterlockingRequest::new();
+        req.set_name(interlocking_directorate.get_name());
+        req.set_data(interlocking_directorate.get_data());
+        handle_request(&mut req, &mut ctx, soliton_causetid, soliton_plugin_registry, soliton_plugin_registry_mutex)?;
+        Ok(())
+    }
+
+
+
+    pub fn handle_request_impl_impl_impl_impl_impl_impl<E: Engine, L: LockManager, F: KvFormat>(
+        interlocking_directorate: &mut  InterlockingDirectorateRequest,
+        storage: &Storage<E, L, F>,
+        soliton_causetid: &Solitoncausetid,
+        soliton_plugin_registry: &Arc<PluginRegistry>,
+        soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+    ) -> Result<(), E> {
+
+        let mut ctx = InterlockingContext::new(
+            storage,
+            soliton_causetid,
+            soliton_plugin_registry,
+            soliton_plugin_registry_mutex,
+        );
+        let mut req = InterlockingRequest::new();
+        req.set_name(interlocking_directorate.get_name());
+        req.set_data(interlocking_directorate.get_data());
+        handle_request(&mut req, &mut ctx, soliton_causetid, soliton_plugin_registry, soliton_plugin_registry_mutex)?;
+        Ok(())
+    }
+

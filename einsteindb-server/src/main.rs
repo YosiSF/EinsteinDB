@@ -116,7 +116,7 @@ impl EinsteinDB {
             allegro_causets: AllegroCausets::new(),
             einsteindb_ctl: EinsteindbCtl::new(),
             berolina_sql: BerolinaSql::new(),
-            fdb: Database::new(),
+            fdb: Database::new(""),
             fdb_guard: DatabaseGuard::new(),
             fdb_future: DatabaseFuture::new(),
             fdb_result: FdbResult::new(),
@@ -226,35 +226,36 @@ impl SecKey {
             sec_key: String::new(),
         }
     }
-
-    pub fn get_seed(&self) -> &dyn Hash {
-        self.seed.clone()
-    }
-
-    pub fn get_salt(&self) -> &dyn Hash {
-        self.salt.clone()
-    }
-
-    pub fn get_cache(&self) -> merkle::MerkleTree {
-        self.cache.clone()
-    }
-
-    pub fn set_cache(&mut self, cache: merkle::MerkleTree) {
-        self.cache = cache;
-    }
 }
 
 
 impl PubKey {
-    pub fn new_from_seed(_pub_key: String, seed: Box<dyn Hash>) -> SecKey {
-        SecKey {
-            sec_key: String::new(),
+    pub fn new() -> PubKey {
+        PubKey {
             seed,
             salt,
             cache: merkle::MerkleTree::new(),
-
+            sec_key: SecKey::new(),
+            pub_key: String::new(),
+            h: Hash::new(),
         }
     }
+}
+
+
+
+impl PubKey {
+    pub fn new_from_seed(pub_key: String, _seed: Box<Hash>) -> PubKey {
+        PubKey {
+            pub_key,
+            seed: Hash::new(),
+            salt: Hash::new(),
+            cache: merkle::MerkleTree::new(),
+            sec_key: SecKey::new(),
+            h: Hash::new(),
+        }
+    }
+
     fn new() -> Box<PubKey> {
         let pub_key = PubKey {
             pub_key: String::new(),
@@ -289,33 +290,59 @@ pub fn genpk() -> Box<Box<PubKey>> {
     pk.set_cache(pk_hash.get_cache());
     pk.set_pub_key(pk_hash.get_hash());
     pk_hash.set_cache(pk.get_cache());
-    h: pk_hash.get_hash(),
+    h: pk_hash.get_hash();
     Box::new(pk)    // Box::new(pk)
 }
 
 
 pub fn gen() -> Box<SecKey> {
-        pub_key: pk.get_pub_key(),
-        sec_key: pk.get_sec_key(),
-        h: pk.get_h(),
-        sig_hash: pk.get_sig_hash(),
-        sig_hash_cache: pk.get_sig_hash_cache(),
-        sig_hash_cache_root: pk.get_sig_hash_cache_root(),
-        sig_hash_cache_root_hash: pk.get_sig_hash_cache_root_hash(),
+    let mut sk = SecKey::new();
+    let mut sk_hash = Hash::new();
+    sk_hash.hash(&sk.get_seed().to_hex());
+    sk.set_cache(sk_hash.get_cache());
+    sk.set_sec_key(sk_hash.get_hash());
+    sk_hash.set_cache(sk.get_cache());
+    h: sk_hash.get_hash();
+
+    Box::new(sk)
+}
+
+
+pub fn gen_sig() -> Box<Signature> {
     let x = sig_hash: Hash::new();
     let y = sig_hash_cache: merkle::MerkleTree::new();
     let z = sig_hash_cache_root: Hash::new();
-    let w = sig_hash_cache_root_hash: Hash::new();,
+    let w = sig_hash_cache_root_hash: Hash::new();
     GRAVITY_D: GRAVITY_D;
     GRAVITY_CONFIG.get_cache_root_hash_size();
-    let v = pors_sign: pors::Signature::new();
     GRAVITY_CONFIG.get_pors_sign_size();
 
     let u = subtrees: [subtree::Signature::new(); GRAVITY_D];
-        sig_hash_cache: merkle::MerkleTree::new(); GRAVITY_CONFIG_VALUE_TYPE_HASH_SIZE);
-    }
+        sig_hash_cache: merkle::MerkleTree::new(); GRAVITY_CONFIG_VALUE_TYPE_HASH_SIZE;
 
-    pub fn genpk_from_seed(seed: Box<dyn Hash>) -> Box<Box<PubKey>> {
+    let v = auth_c: [Hash::new(); GRAVITY_C];
+
+    let w = auth_c_cache: [merkle::MerkleTree::new(); GRAVITY_C];
+
+    let x = auth_c_cache_root: [Hash::new(); GRAVITY_C];
+
+    let y = auth_c_cache_root_hash: [Hash::new(); GRAVITY_C];
+
+    let z = pors_sign: pors::Signature::new();
+
+    let a = subtrees: [subtree::Signature::new(); GRAVITY_D];
+
+    let b = auth_c: [Hash::new(); GRAVITY_C];
+
+    let c = auth_c_cache: [merkle::MerkleTree::new(); GRAVITY_C];
+
+    let d = auth_c_cache_root: [Hash::new(); GRAVITY_C];
+
+
+}
+
+
+    pub fn genpk_from_seed() -> Box<Box<PubKey>> {
         rand::thread_rng();
         let mut sk = SecKey::new();
         let mut sk_hash = Hash::new();
@@ -323,13 +350,11 @@ pub fn gen() -> Box<SecKey> {
         sk.set_cache(sk_hash.get_cache());
         sk.set_sec_key(sk_hash.get_hash());
         sk_hash.set_cache(sk.get_cache());
-        h: self.cache.root();
-        pub_key: self.pub_key.clone();
-        sec_key: self.sec_key.clone();
-        sig_hash: self.sig_hash.clone();
-        sig_hash_cache: self.sig_hash_cache.clone()
+        h: sk_hash.get_hash();
+        Box::new(sk)
+
     }
-    pub fn gensig(&self) -> Box<Signature> {
+    pub fn gensig() -> Box<Sig> {
         rand::thread_rng();
         let mut sig = Signature::new();
         let mut sig_hash = Hash::new();
@@ -337,11 +362,9 @@ pub fn gen() -> Box<SecKey> {
         sig.set_cache(sig_hash.get_cache());
         sig.set_sig_hash(sig_hash.get_hash());
         sig_hash.set_cache(sig.get_cache());
-        h: self.cache.root();
-        pub_key: self.pub_key.clone();
-        sec_key: self.sec_key.clone();
-        sig_hash: self.sig_hash.clone();
-        sig_hash_cache: self.sig_hash_cache.clone()
+        h: sig_hash.get_hash();
+        Box::new(sig)
+
     }
 impl Signature {
 
@@ -684,6 +707,7 @@ fn main() {
 
         pub ts_rel: u64, //relativistic timestamp
     }
+    }
 
 
     ///! Test Connect
@@ -693,11 +717,12 @@ fn main() {
     /// FoundationDB with EinsteinDB Wrapper via Allegro
     ///
 
-    let mut db = einsteindb::Einsteindb::new();
 
-    let mut db_name = String::from("test_connect");
+//db = einsteindb::Einsteindb::new();
 
-    db.create_db(&mut db_name);
+    // mut db_name = String::from("test_connect");
+    //
+    // db.create_db(&mut db_name);
 
     impl Timestamp {
         pub fn new(
@@ -717,33 +742,31 @@ fn main() {
                 ts_rel
             }
         }
-
-        pub fn get_ts(&self) -> u64 {
-            self.ts
-        }
-
-        pub fn get_ts_rel(&self) -> u64 {
-            self.ts_rel
-        }
-
-        pub fn get_timelike_bucket_id(&self) -> u64 {
-            self.timelike_bucket_id
-        }
     }
 
-    let mut timestamp = Timestamp::new(
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-    );
+    //
+    //     pub fn get_ts(&self) -> u64 {
+    //         self.ts
+    //     }
+    //
+    //     pub fn get_ts_rel(&self) -> u64 {
+    //         self.ts_rel
+    //     }
+    //
+    //     pub fn get_timelike_bucket_id(&self) -> u64 {
+    //         self.timelike_bucket_id
+    //     }
+    // }
+    //
+    // let mut timestamp = Timestamp::new(
+    //     0,
+    //     0,
+    //     0,
+    //     0,
+    //     0,
+    //     0
+    // );
 
-
-    if let Err(e) = db.set_timestamp(&mut db_name, &mut timestamp) {
-        println!("{:?}", e);
-    }
 
     /// If a timestamp is a distance measure, then it can be converted to
     /// a relativistic timestamp. For example, a timestamp of 0.5 seconds
@@ -757,8 +780,7 @@ fn main() {
     ///a relativistic timestamp. For example, a timestamp of 0.5 seconds
 
 
-    let rel_tuple_ts = timestamp.get_ts_rel();
-#[allow(unused_variables)]
+
 
 
     #[derive(Debug, Clone, PartialEq, Eq)]
@@ -774,197 +796,97 @@ fn main() {
         pub ts: u64,
 
         pub ts_rel: u64, //relativistic timestamp
+
+
+
+
+
+
+        ///! Test Connect
+        /// FoundationDB with EinsteinDB Wrapper via AllegroPoset
+        /// Use Gremlin to test Connect
+        /// Test Connect
+        /// FoundationDB with EinsteinDB Wrapper via AllegroPosetResult
+        /// Test Connection to FoundationDB with EinsteinDB Wrapper via AllegroPoset
+        /// Use Gremlin to test Connection
+        /// Test Connection to FoundationDB with EinsteinDB Wrapper via AllegroPoset
+
+
+
+        ///is 0.5 seconds. A timestamp of 1 second is 1 second. A timestamp
+        /// of 0 seconds is 0 seconds. A timestamp of -1 second? We can't
+        /// say it's -1 second. We can say that it's -0.5 seconds, but
+        /// -0.5 seconds is not a timestamp.
+        ///
+        ///
+        ///
+        /// If a timestamp is a distance measure, then it can be converted to a distance
+        /// measure relative to the observer. For example, a timestamp of 0.5 seconds is 0.5 seconds.
+        /// A timestamp of 1 second is 1 second. A timestamp of 0 seconds is 0 seconds. A timestamp of -1 second
+        /// is -1 second. We can't say it's -0.5 seconds, but -0.5 seconds is not a timestamp.
+        /// This is a relativistic timestamp.
+
+        /// If a timestamp is a distance measure, then it can be converted to a distance
+        /// measure relative to the observer. For example, a timestamp of 0.5 seconds is 0.5 seconds.
+        /// A timestamp of 1 second is 1 second. A timestamp of 0 seconds is 0 seconds. A timestamp of -1 second
+        /// is -1 second. We can't say it's -0.5 seconds, but -0.5 seconds is not a timestamp.
+        /// This is a relativistic timestamp.
+        // ///
+        //
+        // let mut rts = 0;
+        //
+        // let mut rts_rel = 0;
+        //
+        // let mut rts_rel_ts = 0;
+        //
+        // if let Err(e) = db.set_rts(&mut db_name, &mut rts) {
+        //     println!("{:?}", e);
+        // }
+
+        // if let Err(e) = db.set_rts_rel(&mut db_name, &mut rts_rel) {
+        //     println!("{:?}", e);
+        // }
+
+        // if let Err(e) = db.set_rts_rel_ts(&mut db_name, &mut rts_rel_ts) {
+        //     println!("{:?}", e);
+        // }
     }
 
 
-    ///is 0.5 seconds. A timestamp of 1 second is 1 second. A timestamp
-    /// of 0 seconds is 0 seconds. A timestamp of -1 second? We can't
-    /// say it's -1 second. We can say that it's -0.5 seconds, but
-    /// -0.5 seconds is not a timestamp.
-    let mut rts = 0;
-
-    let mut rts_rel = 0;
-
-    let mut rts_rel_ts = 0;
-
-    if let Err(e) = db.set_rts(&mut db_name, &mut rts) {
-        println!("{:?}", e);
-    }
-
-    while timestamp < 100 {
-        let mut rng = rand::thread_rng();
-
-        let mut sec_key = SecKey::new();
-
-        let mut pub_key = sec_key.genpk();
-
-        let mut sign = sec_key.sign_hash(&Hash::default());
-
-        let mut causet_topology = Vec::new();
-
-        let mut causet_topology_index = Vec::new();
-
-        let mut causet_topology_index_u64 = Vec::new();
-
-        let mut causet_topology_index_u64_rev = Vec::new();
-
-        timestamp += 1;
-
-        rts += 1;
-
-        rts_rel += 1;
-
-        rts_rel_ts += 1;
-
-        if let Err(e) = db.set_timestamp(&mut db_name, &mut timestamp) {
-            //println!("{:?}", e);
-            println!("{:?}", e);
-
-            // println!("{:?}", e);
-
-            while causet_topology_index.len() < 10 {
-                let mut rng = rand::thread_rng();
-                if let Err(e) = db.get_causet_topology(&mut db_name, &mut causet_topology_index) {
-                    println!("{:?}", e);
-                }
-                for x in 0..turing_automata.get_states().len() {
-                    let mut rng = rand::thread_rng();
-                    for y in 0..turing_automata.get_states().len() {
-                        let mut rng = rand::thread_rng();
-                        if causet_topology_index.contains(&(x, y)) {
-                            continue;
-                        }
-                        causet_topology_index.push((x, y));
-
-                        causet_topology_index_u64.push(x as u64);
-                        causet_topology_index_u64.push(y as u64);
-                    }
-                }
-            }
-            causet_topology_index.push(x);
-
-            causet_topology_index_u64.push(x as u64);
-
-            causet_topology_index_u64_rev.push(x as u64);
-        }
-
-        causet_topology_index.push(y);
-
-        causet_topology_index_u64.push(y as u64);
-
-        causet_topology_index_u64_rev.push(y as u64);
-    }
-
-    if let Err(e) = db.set_causet_topology(&mut db_name, &mut causet_topology_index) {
-        if causet_topology_index.len() > 10 {
-            causet_topology_index.truncate(10);
-
-            if let Err(e) = db.set_causet_topology_index(&mut db_name, &mut causet_topology_index) {
-                println!("{:?}", e);
+    impl RelTimestamp {
+        pub fn new(
+            timelike_bucket_id: u64,
+            timelike_bucket_offset: u64,
+            spacelike_bucket_id: u64,
+            spacelike_bucket_offset: u64,
+            ts: u64,
+            ts_rel: u64
+        ) -> RelTimestamp {
+            RelTimestamp {
+                timelike_bucket_id,
+                timelike_bucket_offset,
+                spacelike_bucket_id,
+                spacelike_bucket_offset,
+                ts,
+                ts_rel
             }
         }
     }
-    println!("{:?}", e);
 
-
-    if let Err(e) = db.set_causet_topology_index(&mut db_name, &mut causet_topology_index) {
-        println!("{:?}", e);
-    }
-
-    if let Err(e) = db.set_causet_topology_index_u64(&mut db_name, &mut causet_topology_index_u64) {
-        println!("{:?}", e);
-    }
-
-    timestamp += 1;
-    if let Err(e) = db.set_timestamp(&mut db_name, &mut timestamp) {    //set timestamp
-        println!("{:?}", e);
-    }
-
-    if let Err(e) = db.set_rts(&mut db_name, &mut rts) {
-        println!("{:?}", e);
-    }
-
-    if let Err(e) = db.set_rts_rel(&mut db_name, &mut rts_rel) {
-        println!("{:?}", e);
-    }
-    //A causet is a causet topology that is a directed acyclic graph.
-    // The causet topology is a graph that is a directed acyclic graph.
-
-    let age = rt_str_vec_2[0].parse::<i32>().unwrap();
-
-    let age = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i32;
-
-    let mut config = Config::new();
-
-    let matches = process_matches();
-
-    let mut rts = SystemTime::now();
-    let offset = 0.5; // seconds
-
-    let mut rt = rts.elapsed().unwrap().as_secs() as f64 + offset;
-
-    println!("This Causetid marks the beginning of the transaction relative to the current time: {:?}", age, rt, rt_str_vec_2[0]);
-    let mut causetid = Causetid::new(age, rt);
-
-
-    let mut rt_str = format!("{}", rt);
-
-    let mut rt_str_vec: Vec<&str> = rt_str.split(".").collect();
-
-    rts = rts.add(offset * 1_000_000_000 as u64); //  nanoseconds or microseconds
-
-    let mut rt_str_vec_2: Vec<&str> = rts.elapsed().unwrap().as_secs().to_string().split(".").collect();
+    /// If a timestamp is a distance measure, then it can be converted topology
+    /// to a distance measure relative to the observer. For example, a timestamp of 0.5 seconds is 0.5 seconds.
+    /// A timestamp of 1 second is 1 second. A timestamp of 0 seconds is 0 seconds. A timestamp of -1 second
+    /// is -1 second. We can't say it's -0.5 seconds, but -0.5 seconds is not a timestamp.
 
 
 
+    /// If a timestamp is a distance measure, then it can be converted to a distance measure relative to the observer.
+    /// For example, a timestamp of 0.5 seconds is 0.5 seconds. A timestamp of 1 second is 1 second. A timestamp of 0 seconds is 0 seconds. A timestamp of -1 seconds is -1 second.
+    /// We can't say it's -0.5 seconds, but -0.5 seconds is not a timestamp.
+    /// This is a relativistic timestamp. For example, a timestamp of 0.5 seconds is 0.5 seconds. A timestamp of 1 second is 1 second. A timestamp of 0 seconds is 0 seconds. A timestamp of -1 second
+    /// is -1 second. We can't say it's -0.5 seconds, but -0.5 seconds is not a timestamp.
 
-    fn process_matches() -> clap::ArgMatches<'static> {
-        let matches = App::new("EinsteinDB")
-            .version("0.1")
-            .author("EinsteinDB")
-            .about("EinsteinDB")
-            .arg(Arg::with_name("config")
-                .short("c")
-                .long("config")
-                .value_name("FILE")
-                .help("Sets a custom config file")
-                .takes_value(true))
-            .get_matches();
 
-        return matches;
-    }
-
-    fn persistence() -> clap::ArgMatches<'static> {
-        let matches = App::new("EinsteinDB")
-            .version("0.1")
-            .author("EinsteinDB")
-            .about("EinsteinDB")
-            .arg(Arg::with_name("persistence")
-                .short("p")
-                .long("persistence")
-                .value_name("FILE")
-                .help("Sets a custom persistence file")
-                .takes_value(true))
-            .get_matches();
-
-        return matches;
-        ///! TODO: Implement persistence
-
-        trait Persistance {
-            fn get_persistence_file(&self) -> String;
-            fn set_persistence_file(&mut self, persistence_file: String);
-            fn persist(&self);
-        }
-
-        impl Persistance for Config {
-            fn persist(&self) {
-                println!("{:?}", self);
-            }
-        }
-        if matches != None {
-            let _matches = process_matches();
-        }
-    }
 
     #[derive(Debug)]
     struct Config {
@@ -1603,4 +1525,3 @@ fn main() {
             response.json::<Document>().unwrap().id
         }
     }
-}

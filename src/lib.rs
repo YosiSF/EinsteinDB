@@ -1,7 +1,3 @@
-extern crate petgraph;
-extern crate slog;
-
-mod causal_set;
 
 /// Copyright (c) 2022 Whtcorps Inc and EinsteinDB Project contributors
 ///
@@ -23,7 +19,7 @@ mod causal_set;
 /// "EinsteinDB: A Scalable, High-Performance, Distributed Database")
 
 //import serde
-
+mod causal_set;
 mod config;
 mod encoder;
 mod event_slice;

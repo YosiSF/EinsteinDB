@@ -432,19 +432,20 @@ impl ConfigValue {
 
 
 
-    impl InterlockingDirectorate for InterlockingDirectorateImpl {
-        fn get_interlocked_nodes(&self) -> Vec<String> {
-            self.nodes.clone()
-        }
-        fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String> {
-            self.nodes.clone()
-        }
-
-    }
-
     pub struct InterlockingDirectorateImpl2 {
         pub nodes: Vec<String>,
     }
+
+
+
+    pub struct InterlockingDirectorateImpl3 {
+        pub nodes: Vec<String>,
+    }
+
+    pub struct InterlockingDirectorateImpl4 {
+        pub nodes: Vec<String>,
+    }
+
 
     impl InterlockingDirectorate for InterlockingDirectorateImpl2 {
         fn get_interlocked_nodes(&self) -> Vec<String> {
@@ -514,18 +515,6 @@ pub struct MerkleTreeLSHConfig {
     pub lsh_buffer_size: usize, // in bytes
 }
 
-
-fn new(lsh_buffer: Vec<u8>, height: usize, allegro_poset_uuid: String, causet_poset_uuid::< einstein_db::causet_squuid_store::locale >: String, lsh_buffer_size: usize) -> Self {
-        g {
-
-            lsh_buffer,
-            height,
-            allegro_poset_uuid,
-            lsh_buffer_size, // in bytes
-        }
-    }
-
-
 //slice and fill causet locale buffer
 fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_locale: <EinsteinDB::CausetSquuidStore as merkle_store_fdb_2_einstein_db>::Locale) {
 
@@ -535,33 +524,10 @@ fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_loc
     let mut lsh_buffer_size_bytes_remainder_2 = 0;
     let mut lsh_buffer_size_bytes_remainder_3 = 0;
     let mut lsh_buffer_size_bytes_remainder_4 = 0;
-    let mut lsh_buffer_size_bytes_remainder_5 = 0;
-    let mut lsh_buffer_size_bytes_remainder_6 = 0;
-    let mut lsh_buffer_size_bytes_remainder_7 = 0;
-    let mut lsh_buffer_size_bytes_remainder_8 = 0;
-    let mut lsh_buffer_size_bytes_remainder_9 = 0;
-    let mut lsh_buffer_size_bytes_remainder_10 = 0;
-    let mut lsh_buffer_size_bytes_remainder_11 = 0;
-    let mut lsh_buffer_size_bytes_remainder_12 = 0;
-    let mut lsh_buffer_size_bytes_remainder_13 = 0;
-    let mut lsh_buffer_size_bytes_remainder_14 = 0;
-    let mut lsh_buffer_size_bytes_remainder_15 = 0;
-    let mut lsh_buffer_size_bytes_remainder_16 = 0;
-    let mut lsh_buffer_size_bytes_remainder_17 = 0;
-    let mut lsh_buffer_size_bytes_remainder_18 = 0;
-    let mut lsh_buffer_size_bytes_remainder_19 = 0;
-    let mut lsh_buffer_size_bytes_remainder_20 = 0;
-    let mut lsh_buffer_size_bytes_remainder_21 = 0;
-    let mut lsh_buffer_size_bytes_remainder_22 = 0;
-    let mut lsh_buffer_size_bytes_remainder_23 = 0;
 
 }
 
 
-
-
-
-     //merkle tree height of btree
     fn merkle_tree_height(merkle_tree_height: usize) {
         let mut merkle_tree_height = merkle_tree_height;
         let mut merkle_tree_height_bytes = 0;
@@ -605,17 +571,7 @@ fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_loc
             lsh_buffer_size_bytes = lsh_buffer_size_bytes + lsh_buffer.len();
             lsh_buffer_size_bytes_bytes = lsh_buffer_size_bytes_bytes + lsh_buffer.len();
             lsh_buffer_size_bytes = lsh_buffer_size_bytes + lsh_buffer.len();
-            lsh_buffer_size_bytes_bytes = lsh_buffer_size_bytes_bytes + lsh_buffer.len();
-
-        }
-
-
-
-        //Primary API to access causet_locales
-        pub fn get_config(config_path: &str) -> Result<Config, Error> {
-            let mut config = Config::new();
-            config.load_from_file(config_path)?;
-            Ok(config)
+            lsh_buffer_size_bytes_bytes = lsh_buffer_size_bytes_bytes + lsh_buffer.len()
         }
 
         pub fn get_config_from_toml(config_toml: &str) -> Result<Config, Error> {
@@ -643,7 +599,54 @@ fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_loc
                     import_mode_timeout: ReadableDuration::minutes(10),
                 }
             }
+        }
 
+        impl Default for Config {
+            fn default() -> Self {
+                Config::new()
+            }
+
+
+            fn load_from_file(&mut self, path: &str) -> Result<(), Error> {
+                let mut file = File::open(path)?;
+                let mut contents = String::new();
+                file.read_to_string(&mut contents)?;
+                self.load_from_toml(&contents)
+            }
+
+             fn load_from_toml(&mut self, toml: &str) -> Result<(), Error> {
+                let value = toml::from_str(toml)?;
+                self.merge_from(value)
+            }
+
+             fn merge_from(&mut self, value: toml::Value) -> Result<(), Error> {
+                let value = value.as_table().ok_or(Error::InvalidConfigFormat)?;
+                self.merge_from_toml(value)
+            }
+
+            fn merge_from_toml(&mut self, value: &toml::value::Table) -> Result<(), Error> {
+                if let Some(num_threads) = value.get("num_threads") {
+                    self.num_threads = num_threads.as_integer().ok_or(Error::InvalidConfigFormat)? as usize;
+                }
+if let Some(stream_channel_window) = value.get("stream_channel_window") {
+                    self.stream_channel_window = stream_channel_window.as_integer().ok_or(Error::InvalidConfigFormat)? as usize;
+                }
+
+                if let Some(import_mode_timeout) = value.get("import_mode_timeout") {
+                    self.import_mode_timeout = ReadableDuration::parse(import_mode_timeout.as_str().ok_or(Error::InvalidConfigFormat)?)?;
+                }
+
+                Ok(())
+            }
+        }
+
+        impl Default for Config {
+            fn default() -> Self {
+                Config::new()
+            }
+        }
+
+        impl Config {
             pub fn load_from_file(&mut self, path: &str) -> Result<(), Error> {
                 let mut file = File::open(path)?;
                 let mut contents = String::new();
@@ -655,27 +658,171 @@ fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_loc
                 let value = toml::from_str(toml)?;
                 self.merge_from(value)
             }
+        }
 
-            pub fn merge_from(&mut self, value: toml::Value) -> Result<(), Error> {
-                let value = value.as_table().ok_or(Error::InvalidConfigFormat)?;
-                self.merge_from_toml(value)
-            }
-
-            pub fn merge_from_toml(&mut self, value: &toml::value::Table) -> Result<(), Error> {
-                if let Some(num_threads) = value.get("num_threads") {
-                    self.num_threads = num_threads.as_integer().ok_or(Error::InvalidConfigFormat)? as usize;
-                }
-                if let Some(stream_channel_window) = value.get("stream_channel_window") {
-                    self.stream_channel_window = stream_channel_window.as_integer().ok_or(Error::InvalidConfigFormat)? as usize;
-                }
-                if let Some(import_mode_timeout) = value.get("import_mode_timeout") {
-                    self.import_mode_timeout = ReadableDuration::from_str(import_mode_timeout.as_str().ok_or(Error::InvalidConfigFormat)?)?;
-                }
-                Ok(())
+        impl Default for Config {
+            fn default() -> Self {
+                Config::new()
             }
         }
 
-        pub fn get_config_from_toml_file(config_toml_file: &str) -> Result<Config, Error> {
+        impl Config {
+            pub fn load_from_file(&mut self, path: &str) -> Result<(), Error> {
+                let mut file = File::open(path)?;
+                let mut contents = String::new();
+                file.read_to_string(&mut contents)?;
+                self.load_from_toml(&contents)
+            }
+        }
+
+
+        impl Default for Config {
+
+             fn load_from_toml(&mut self, toml: &str) -> Result<(), Error> {
+                let value = toml::from_str(toml)?;
+                self.merge_from(value)
+            }
+        }
+
+        impl Default for Config {
+            fn default() -> Self {
+                Config::new()
+            }
+        }
+
+     //get num threads from config_toml_file_with_default
+
+        pub fn get_num_threads_from_config_toml_file_with_default(config_toml_file_with_default: &str) -> Result<usize, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.num_threads)
+        }
+
+
+         fn get_stream_channel_window_from_config_toml_file_with_default(config_toml_file_with_default: &str) -> Result<usize, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.stream_channel_window)
+        }
+
+        pub fn get_import_mode_timeout_from_config_toml_file_with_default(config_toml_file_with_default: &str) -> Result<ReadableDuration, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout)
+        }
+
+         fn get_import_mode_timeout_secs_from_config_toml_file_with_default(config_toml_file_with_default: &str) -> Result<u64, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout.as_secs())
+        }
+
+        pub fn get_import_mode_timeout_millis_from_config_toml_file_with_default(config_toml_file_with_default: &str) -> Result<u64, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout.as_millis())
+        }
+
+        pub fn get_import_mode_timeout_micros(config_toml_file_with_default: &str) -> Result<u64, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout.as_micros())
+        }
+
+        pub fn get_import_mode_timeout_nanos(config_toml_file_with_default: &str) -> Result<u64, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout.as_nanos())
+        }
+
+        pub fn get_import_mode_timeout_secs_f32(config_toml_file_with_default: &str) -> Result<f32, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout.as_secs_f32())
+        }
+
+        pub fn get_import_mode_timeout_millis_f32(config_toml_file_with_default: &str) -> Result<f32, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout.as_millis_f32())
+        }
+
+        pub fn get_import_mode_timeout_micros_f32(config_toml_file_with_default: &str) -> Result<f32, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout.as_micros_f32())
+        }
+
+        pub fn get_import_mode_timeout_nanos_f32(config_toml_file_with_default: &str) -> Result<f32, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout.as_nanos_f32())
+        }
+
+        pub fn get_import_mode_timeout_secs_f64(config_toml_file_with_default: &str) -> Result<f64, Error> {
+            let mut config = Config::new();
+            config.load_from_toml(config_toml_file_with_default)?;
+            Ok(config.import_mode_timeout.as_secs_f64())
+        }
+
+
+    fn get_config(config_path: &str) -> Result<Config, Error> {
+        if let Some(num_threads) = value.get("num_threads") {
+            if let Some(num_threads_value) = num_threads.as_u64() {
+                config.num_threads = num_threads_value as usize;
+            }
+        }
+        if let Some(stream_channel_window) = value.get("stream_channel_window") {
+            if let Some(stream_channel_window_value) = stream_channel_window.as_u64() {
+                config.stream_channel_window = stream_channel_window_value as usize;
+            }
+        }
+        if let Some(import_mode_timeout) = value.get("import_mode_timeout") {
+            if let Some(import_mode_timeout_value) = import_mode_timeout.as_str() {
+                config.import_mode_timeout = ReadableDuration::parse(import_mode_timeout_value).unwrap();
+            }
+        }
+        if let Some(import_mode_timeout_secs) = value.get("import_mode_timeout_secs") {
+            if let Some(import_mode_timeout_secs_value) = import_mode_timeout_secs.as_u64() {
+                config.import_mode_timeout = ReadableDuration::from_secs(import_mode_timeout_secs_value);
+            }
+        }
+        if let Some(import_mode_timeout_millis) = value.get("import_mode_timeout_millis") {
+            if let Some(import_mode_timeout_millis_value) = import_mode_timeout_millis.as_u64() {
+                config.import_mode_timeout = ReadableDuration::from_millis(import_mode_timeout_millis_value);
+            }
+        }
+
+        if let Some(import_mode_timeout_micros) = value.get("import_mode_timeout_micros") {
+            if let Some(import_mode_timeout_micros_value) = import_mode_timeout_micros.as_u64() {
+                config.import_mode_timeout = ReadableDuration::from_micros(import_mode_timeout_micros_value);
+            }
+        }
+
+        if let Some(import_mode_timeout_nanos) = value.get("import_mode_timeout_nanos") {
+            if let Some(import_mode_timeout_nanos_value) = import_mode_timeout_nanos.as_u64() {
+                config.import_mode_timeout = ReadableDuration::from_nanos(import_mode_timeout_nanos_value);
+            }
+        }
+
+        if let Some(import_mode_timeout_secs_f32) = value.get("import_mode_timeout_secs_f32") {
+            if let Some(import_mode_timeout_secs_f32_value) = import_mode_timeout_secs_f32.as_f64() {
+                config.import_mode_timeout = ReadableDuration::from_secs_f32(import_mode_timeout_secs_f32_value)
+            }
+
+        }
+    }
+
+        pub fn get_num_threads_from_config_toml_file() -> Result<usize, Error> {
+            let mut file = File::open(path)?;
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)?;
+            let value = toml::from_str(&contents)?;
+            get_num_threads_from_config_toml_file_with_default(&contents)
+
+        }
+
+        pub fn get_config_from_tom_file(config_toml_file: &str) -> Result<Config, Error> {
             let mut config = Config::new();
             config.load_from_toml_file(config_toml_file)?;
             Ok(config)
@@ -687,221 +834,833 @@ fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_loc
             Ok(config)
         }
 
+        pub fn get_config_from_toml_file_with_default_and_override(config_toml_file: &str, default_config: &Config, override_config: &Config) -> Result<Config, Error> {
+            let mut config = Config::new();
+            config.load_from_toml_file_with_default_and_override(config_toml_file, default_config, override_config)?;
+            Ok(config)
+        }
+
+        pub fn get_config_from_toml_file_with_default_and_override_and_override_with_default(config_toml_file: &str, default_config: &Config, override_config: &Config, override_with_default_config: &Config) -> Result<Config, Error> {
+            let mut config = Config::new();
+            config.load_from_toml_file_with_default_and_override_and_override_with_default(config_toml_file, default_config, override_config, override_with_default_config)?;
+            Ok(config)
+        }
 
 
 
-/// Scheduler which schedules the execution of `storage::Command`s.
-pub struct Scheduler {
-    engine: Box<Engine>,
 
-    // cid -> context
-    cmd_ctxs: HashMap<u64, RunningCtx>,
 
-    schedule: SendCh<Msg>,
 
-    // Cmd id generator
-    id_alloc: u64,
-
-    // write concurrency control
-    latches: Latches,
-
-    sched_too_busy_threshold: usize,
-
-    // worker pool
-    worker_pool: ThreadPool,
-}
 
 impl Scheduler {
-    /// Creates a scheduler.
-    pub fn new(engine: Box<Engine>, config: &Config) -> Scheduler {
-        let (schedule, precache) = mio::channel::channel();
-        let mut worker_pool = ThreadPool::new(config.num_threads);
-        let mut schedule = SendCh::new(schedule);
-        SendCh::new(precache);
-        SendCh::new(mio::channel::channel());
-        Latches::new();
-        let mut id_alloc = 0;
-        let sched_too_busy_threshold = config.sched_too_busy_threshold;
-        let engine = engine;
-
+    pub fn new(engine: Box<Engine>, sched_too_busy_threshold: usize) -> Self {
         Scheduler {
-            engine,
-            cmd_ctxs: HashMap::new(),
-            schedule,
-            id_alloc: 0,
-            latches: Latches::new(concurrency),
-            sched_too_busy_threshold,
-            worker_pool,
 
+            id_alloc: 0,
+            ch: (),
+            cmd: (),
+            snapshot: (),
+            cid: 0,
+            latches: Latches::new(),
+            worker_pool: ThreadPool::new(num_cpus::get()),
+
+            sched_too_busy_threshold: 0
         }
     }
 }
 
-/// Processes a read command within a worker thread, then posts `ReadFinished` message back to the
-/// event loop.
-fn process_read(cid: u64, mut cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) {
-    let mut ctx = RunningCtx::new(cid, cmd, ch, snapshot);
-    let mut cmd = ctx.cmd.take().unwrap();
-    let mut snapshot = ctx.snapshot.take().unwrap();
-    let res = cmd.read(&mut snapshot);
-    let mut cmd = ctx.cmd.take().unwrap();
-    cmd.finish(res);
-    ctx.cmd = Some(cmd);
-    ctx.snapshot = Some(snapshot);
 
 
-    let mut cmd = ctx.cmd.take().unwrap();
 
-    let res = cmd.read(&mut snapshot);
+impl Scheduler {
+    pub fn schedule(&mut self, cmd: Command) {
+        self.schedule.push(cmd);
+    }
+}
 
-        // Gets from the snapshot.
-        Command::finish(res);
 
-      /*
-        // Batch get from the snapshot.
-        Command::BatchGet { ref keys, start_ts, .. } => {
-                let res = snapshot.batch_get(keys, start_ts);
-                Cmd.finish(res);
+impl Scheduler {
+    pub fn run(&mut self) {
+        let mut schedule = self.schedule.clone();
+        self.schedule.clear();
+        self.worker_pool.execute(move || {
+            for cmd in schedule {
+                self.run_cmd(cmd);
+            }
+        });
+    }
+}
+
+
+impl Scheduler {
+    pub fn schedule(&mut self, cmd: Command) {
+        self.schedule.push(cmd);
+    }
+
+    pub fn schedule_with_ctx(&mut self, cmd: Command, ctx: CommandContext) {
+        self.schedule.push(cmd);
+        self.cmd_ctx.insert(ctx.get_id(), ctx);
+    }
+
+    pub fn schedule_with_ctx_and_id(&mut self, cmd: Command, ctx: CommandContext, id: u64) {
+        self.schedule.push(cmd);
+        self.cmd_ctx.insert(id, ctx);
+    }
+
+    pub fn run_cmd(&mut self, cmd: Command) {
+        let ctx = CommandContext::new(cmd, self);
+        self.cmd_ctx.insert(ctx.get_id(), ctx);
+        self.run_cmd_ctx(ctx);
+    }
+
+    pub fn schedule_with_ctx_and_id_and_latch(&mut self, cmd: Command, ctx: CommandContext, id: u64, latch: Latch) {
+        /// The name of the metric.
+        const METRIC_NAME: &str = "scheduler_too_busy";
+
+        /// The label for the metric.
+        /// The label is the name of the scheduler.
+        /// The value is the number of times the scheduler was too busy.
+        /// The value is 0 if the scheduler was not too busy.
+
+        let mut labels = HashMap::new();
+        labels.insert("scheduler", self.get_name());
+        labels.insert("scheduler_too_busy", "0");
+        let mut counter = Counter::new(METRIC_NAME, "The number of times the scheduler was too busy.", labels).unwrap();
+        counter.inc();
+
+
+        let mut too_busy = false;
+        if self.latches.len() > self.sched_too_busy_threshold {
+            too_busy = true;
         }
-*/
 
-    // Sends the result back to the event loop.
-    ctx.send_read_finished();
+        if too_busy {
+            let mut counter = self.latches.get_counter(METRIC_NAME);
+            counter.inc();
+        }
+
+        if too_busy {
+            return;
+        }
+
+        self.run_cmd_ctx(ctx);
+    }
+
+    pub fn run_cmd_ctx(&mut self, cmd_ctx: CommandContext) {
+        let cmd = cmd_ctx.get_cmd();
+        let id = cmd_ctx.get_id();
+        let ctx = cmd_ctx.get_ctx();
+        let mut latch = Latch::new();
+        latch.set_id(id);
+        self.latches.insert(latch);
+        let res = cmd.run(ctx);
+        self.latches.remove(id);
+    }
+
+    pub fn get_name(&self) -> String {
+        "scheduler".to_string()
+    }
+
+    pub fn get_name_mut(&mut self) -> &mut String {
+        &mut self.name_mut
+    }
+
+    pub fn get_name_ref(&self) -> &String {
+        &self.name_ref
+    }
+
+    pub fn get_name_ref_mut(&mut self) -> &mut String {
+        &mut self.name_ref_mut
+    }
+
+    pub fn get_name_ref_ref(&self) -> &String {
+        &self.name_ref_ref
+    }
+
+    pub fn get_name_ref_ref_mut(&mut self) -> &mut String {
+        &mut self.name_ref_ref_mut
+    }
+
+
+    pub fn get_name_ref_ref_ref(&self) -> &String {
+        self.worker_pool.execute(move || {
+            let mut counter = self.latches.get_counter("scheduler_too_busy");
+            counter.inc();
+        })
+            & self.name_ref_ref_ref
+    }
+
+    pub fn get_name_ref_ref_ref_mut(&mut self) -> &mut String {
+        &mut self.name_ref_ref_ref_mut
+    }
+}
 
 
 
+
+impl Scheduler {
+    pub fn run_cmd_ctx_impl(&mut self, ctx: CommandContext) {
+        let cmd = ctx.get_cmd();
+        let id = ctx.get_id();
+        let mut latch = ctx.get_latch();
+        let mut too_busy = false;
+        if self.latches.len() > self.sched_too_busy_threshold {
+            too_busy = true;
+        }
+
+        if too_busy {
+            let mut counter = self.latches.get_counter(METRIC_NAME);
+            counter.inc();
+        }
+
+        if too_busy {
+            return;
+        }
+
+        let res = cmd.execute(self.engine.as_mut());
+        if res.is_ok() {
+            latch.set_result(res.unwrap());
+        } else {
+            latch.set_error(res.unwrap_err());
+        }
+        self.latches.remove(id);
+    }
+}
+
+
+impl Scheduler {
+    pub fn get_cmd_ctx(&self, id: u64) -> Option<CommandContext> {
+        self.cmd_ctx.get(&id).cloned()
+    }
+
+    pub fn get_cmd_ctx_mut(&mut self, id: u64) -> Option<CommandContext> {
+        self.cmd_ctx.get_mut(&id).cloned()
+    }
+
+    pub fn remove_cmd_ctx(&mut self, id: u64) {
+        self.cmd_ctx.remove(&id);
+    }
+
+    pub fn get_latch(&self, id: u64) -> Option<Latch> {
+        self.latches.get(&id).cloned()
+    }
+
+    pub fn get_latch_mut(&mut self, id: u64) -> Option<Latch> {
+        self.latches.get_mut(&id).cloned()
+    }
+
+    pub fn remove_latch(&mut self, id: u64) {
+        self.latches.remove(&id);
+    }
+
+    pub fn get_latch_counter(&self, name: &str) -> Counter {
+        self.latches.get_counter(name)
+    }
+
+    pub fn get_latch_counter_mut(&mut self, name: &str) -> Counter {
+        self.latches.get_counter_mut(name)
+    }
+
+    pub fn get_latch_gauge(&self, name: &str) -> Gauge {
+        self.latches.get_gauge(name)
+    }
+
+    pub fn get_latch_gauge_mut(&mut self, name: &str) -> Gauge {
+        self.latches.get_gauge_mut(name)
+    }
+
+    pub fn get_latch_histogram(&self, name: &str) -> Histogram {
+        self.latches.get_histogram(name)
+    }
+}
+
+
+impl Scheduler {
+    pub fn get_engine(&self) -> &Engine {
+        &self.engine
+    }
+
+    pub fn get_engine_mut(&mut self) -> &mut Engine {
+        &mut self.engine
+    }
 
 
 }
 
 
-/// Processes a write command within a worker thread, then posts `WriteFinished` message back to the
-/// event loop.
-///
+impl Scheduler {
+    pub fn schedule_with_ctx_and_id_and_latch_and_latch(&mut self, cmd: Command, ctx: CommandContext, id: u64, latch: Latch, latch2: Latch) {
+        /// The name of the metric.
 
+        const METRIC_NAME: &str = "scheduler_too_busy";
 
-fn process_write(cid: u64, mut cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) {
-    let mut ctx = RunningCtx::new(cid, cmd, ch, snapshot);
-    let mut cmd = ctx.cmd.take().unwrap();
-    let mut snapshot = ctx.snapshot.take().unwrap();
-    let res = cmd.write(&mut snapshot);
-    let mut cmd = ctx.cmd.take().unwrap();
-    cmd.finish(res);
-    ctx.cmd = Some(cmd);
-    ctx.snapshot = Some(snapshot);
-
-
-    let mut cmd = ctx.cmd.take().unwrap();
-
-    let res = cmd.write(&mut snapshot);
-
-        // Puts into the snapshot.
-        Command::finish(res);
-
-
-    // Sends the result back to the event loop.
-    ctx.send_write_finished();
-
-
-
+        self.schedule.push(cmd);
+        self.cmd_ctx.insert(id, ctx);
+        self.latches.insert(latch);
+        self.latches.insert(latch2);
+    }
 }
 
+
+impl Scheduler {
+    pub fn schedule_with_ctx_and_id_and_latch_and_latch_and_latch(&mut self, cmd: Command, ctx: CommandContext, id: u64, latch: Latch) {
+        /// The name of the metric.
+
+        const METRIC_NAME: &str = "scheduler_too_busy";
+
+        self.schedule.push(cmd);
+        self.cmd_ctx.insert(id, ctx);
+        self.latches.insert(latch);
+    }
+}
+
+
+impl Scheduler {
+    pub fn schedule_with_ctx_and_id_and_latch_and_latch_and_latch_and_latch(&mut self) {
+/// The name of the metric.
+/// The name of the metric.
+
+        const METRIC_NAME: &str = "scheduler_too_busy";
+
+        let mut too_busy = false;
+        if self.latches.len() > self.sched_too_busy_threshold {
+            too_busy = true;
+        }
+
+        if too_busy {
+            let mut counter = self.latches.get_counter(METRIC_NAME);
+            counter.inc();
+        }
+
+        if too_busy {
+            return;
+        }
+
+    }
+
+    pub fn schedule_with_ctx_and_id_and_latch_and_latch_and_latch_and_latch_and_latch(&mut self) {
+/// The name of the metric.
+/// The name of the metric.
+
+        const METRIC_NAME: &str = "scheduler_too_busy";
+
+        let mut too_busy = false;
+        if self.latches.len() > self.sched_too_busy_threshold {
+            too_busy = true;
+        }
+
+        if too_busy {
+            let mut counter = self.latches.get_counter(METRIC_NAME);
+            counter.inc();
+        }
+
+        if too_busy {
+            return;
+        }
+
+    }
+}
+
+
+
+pub fn get_scheduler() {
+    let mut scheduler = Scheduler::new(Box::new(Engine::new()), config.get_sched_too_busy_threshold());
+    scheduler.get_engine_mut();
+    let mut cmd_ctx = scheduler.get_cmd_ctx_mut();
+    scheduler.get_schedule_mut();
+    scheduler.get_id_alloc_mut();
+    scheduler.get_latches_mut();
+    scheduler.get_sched_too_busy_threshold_mut();
+    let mut worker_pool = scheduler.get_worker_pool_mut();
+
+    worker_pool.execute(());
+    let mut msg = Msg::default();
+    loop {
+        msg = recv.recv().unwrap();
+        match msg.ty {
+            MsgType::Schedule => {
+                let cmd = msg.cmd.clone();
+                let cid = msg.cid;
+                let ctx = RunningCtx {
+                    cmd,
+                    ch: (),
+                    cid,
+                    snapshot: (),
+                    latches: Latches {
+                        pending: 0,
+                        running: 0,
+                        finished: 0,
+                        failed: 0,
+                        cancelled: 0,
+                        timeout: 0,
+                        panic: 0,
+                        concurrency: 0
+                    },
+                    id_alloc: 0
+                };
+                cmd_ctx.insert(cid, ctx);
+                let ctx = cmd_ctx.get(&cid).unwrap();
+                let ctx = ctx.clone();
+                worker_pool();
+                worker_pool.execute(move || {
+                    let res = cmd.execute(scheduler.get_engine_mut());
+                    if res.is_ok() {
+                        ctx.latches.set_result(res.unwrap());
+                    } else {
+                        ctx.latches.set_error(res.unwrap_err());
+                    }
+                });
+            }
+            MsgType::Cancel => {
+                let cid = msg.cid;
+                let ctx = cmd_ctx.get(&cid).unwrap();
+                ctx.cancel();
+            }
+            MsgType::Stop => {
+                break;
+            }
+        }
+    }
+}
+
+
+
+
+
+pub fn get_scheduler_with_ctx_and_id_and_latch() {
+    fn get_scheduler() {
+        cmd_ctx.insert(cid, ctx);
+        let ctx = cmd_ctx.get(&cid).unwrap();
+        let ctx = ctx.clone();
+        worker_pool();
+        let x = worker_pool.execute(move || {
+            let res = cmd.execute(scheduler.get_engine_mut());
+            if res.is_ok() {
+                ctx.latches.set_result(res.unwrap());
+            } else {
+                ctx.latches.set_error(res.unwrap_err());
+            }
+        });
+
+            let res = cmd.execute(scheduler.get_engine_mut());
+            if res.is_ok() {
+                ctx.latches.set_result(res.unwrap());
+            } else {
+                ctx.latches.set_error(res.unwrap_err());
+            }
+
+        }
+    }
+
+pub fn start_ts_with_config(config: &Config, recv: Receiver<Msg>) {
+    let mut scheduler = Scheduler::new(Box::new(Engine::new()), config.get_sched_too_busy_threshold());
+    scheduler.get_engine_mut();
+    let mut cmd_ctx = scheduler.get_cmd_ctx_mut();
+    scheduler.get_schedule_mut();
+    scheduler.get_id_alloc_mut();
+    scheduler.get_latches_mut();
+    scheduler.get_sched_too_busy_threshold_mut();
+    scheduler.get_worker_pool_mut();
+    let cid = msg.cid;
+    let ctx = cmd_ctx.get(&cid).unwrap();
+    ctx.cancel();
+    fn start_ts() {
+        // let mut worker_pool = ThreadPool::new(num_cpus::get());
+        // let mut schedule = Vec::new();
+        // let mut latches = Latches::new();
+        // let mut cmd_ctx = HashMap::new();
+        Box::new(Engine::new());
+    }
+
+    pub fn start_ts_with_config_and_recv() {
+        loop {
+            let msg = schedule.recv().unwrap();
+            match msg.ty {
+                MsgType::Schedule => {
+                    msg.cmd.clone();
+                    let cid = msg.cid;
+                    cmd_ctx.insert(cid, ctx);
+                    let ctx = cmd_ctx.get(&cid).unwrap();
+                    let ctx = ctx.clone();
+                    worker_pool.execute(move || {
+                        ctx.run();
+                    });
+                }
+                MsgType::Cancel => {
+                    let cid = msg.cid;
+                    let ctx = cmd_ctx.get(&cid).unwrap();
+                    ctx.cancel();
+                }
+                MsgType::Stop => {
+                    break;
+                }
+            }
+        }
+    }
+
+    impl RunningCtx {
+        pub fn get_sched_too_busy_threshold(&self) -> usize {
+            self.sched_too_busy_threshold_mut
+        }
+
+        pub fn get_sched_too_busy_threshold_mut(&mut self) -> &mut usize {
+            &mut self.sched_too_busy_threshold_mut
+        }
+    }
+
+    impl Scheduler {
+        pub fn get_engine(&self) -> &Box<Engine> {
+            &self.engine
+        }
+
+        pub fn get_engine_mut(&mut self) -> &mut Box<Engine> {
+            &mut self.engine
+        }
+
+        pub fn get_schedule(&self) -> &Vec<Msg> {
+            &self.schedule
+        }
+
+        pub fn get_schedule_mut(&mut self) -> &mut SendCh<Msg> {
+            &mut self.schedule
+        }
+
+        pub fn get_latches(&self) -> &crate::config::Latches {
+            &self.latches
+        }
+
+        pub fn get_latches_mut(&mut self) -> &mut crate::config::Latches {
+            &mut self.latches
+        }
+
+        pub fn get_cmd_ctx(&self) -> &HashMap<u64, RunningCtx> {
+            &self.cmd_ctx
+        }
+
+        pub fn get_cmd_ctx_mut(&mut self) -> &mut HashMap<u64, RunningCtx> {
+            &mut self.cmd_ctx
+        }
+
+        pub fn get_id_alloc(&self) -> u64 {
+            self.id_alloc_mut
+        }
+    }
+
+        pub fn new(engine: Box<Engine>, config: &Config) -> Scheduler {
+            Scheduler {
+                id_alloc: 0,
+                ch: (),
+                cmd: (),
+                snapshot: (),
+                latches: Latches::new(),
+                sched_too_busy_threshold: config.get_sched_too_busy_threshold(),
+
+                worker_pool: (|| {
+                    let mut worker_pool = ThreadPool::new(num_cpus::get());
+                    worker_pool
+                })(),
+                cid: 0
+            }
+        }
+
+
+    impl RunningCtx {
+        pub fn new(cmd: storage::Command, cid: u64, engine: Box<Engine>, latches: Latches) -> Self {
+            RunningCtx {
+                cmd,
+                ch: (),
+                cid,
+                latches,
+                id_alloc: 0,
+                snapshot: ()
+            }
+        }
+
+        pub fn get_cmd(&self) -> &storage::Command {
+            &self.cmd
+        }
+    }
+
+    impl CommandContext {
+        pub fn new(cmd: storage::Command, cid: u64, engine: Box<Engine>, latches: Latches) -> Self {
+            CommandContext {
+                cmd,
+                cid,
+                engine,
+                latches,
+                scheduler: Scheduler::new(),
+                snapshot: Snapshot::new(),
+                id_alloc: 0,
+
+            }
+        }
+    }
+
+    impl CommandContext {
+        pub fn get_scheduler(&self) -> &Scheduler {
+            &self.scheduler_too_busy_threshold_mut
+        }
+        pub fn get_scheduler_mut(&mut self) -> &mut Scheduler {
+            &mut self.scheduler_too_busy_threshold_mut
+        }
+        pub fn get_snapshot(&self) -> &Snapshot {
+            match &self.snapshot {
+                Snapshot::Snapshot(snapshot) => snapshot,
+                Snapshot::NoSnapshot => panic!("snapshot is not set"),
+            }
+        }
+        pub fn get_snapshot_mut(&mut self) -> &mut Snapshot {
+            match &mut self.snapshot {
+                Snapshot::Snapshot(snapshot) => snapshot,
+                Snapshot::NoSnapshot => panic!("snapshot is not set"),
+            }
+        }
+        pub fn get_running_ctx(&self) -> &RunningCtx {
+            &self.running_ctx
+        }
+        pub fn get_running_ctx_mut(&mut self) -> &mut RunningCtx {
+            &mut self.running_ctx
+        }
+        pub fn get_cid(&self) -> u64 {
+            self.cid
+        }
+        pub fn get_cmd(&self) -> &storage::Command {
+            &self.cmd
+        }
+    }
+}
 
 
 
 #[derive(Debug)]
-pub struct RunningCtx {
-    cid: u64,
-    cmd: Option<Command>,
-    ch: SendCh<Msg>,
-    snapshot: Option<Box<Snapshot>>,
+pub enum RunningState {
+    Pending,
+    Running,
+    Finished,
+    Failed,
+    Cancelled,
+    Timeout,
 }
 
 
-impl RunningCtx {
-    fn new(cid: u64, cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) -> RunningCtx {
-        RunningCtx {
-            cid,
-            cmd: Some(cmd),
-            ch,
-            snapshot: Some(snapshot),
+
+impl Scheduler {
+    pub fn new() -> Scheduler {
+        Scheduler {
+            latches: HashMap::new(),
+            id_alloc: 0,
+            ch: (),
+            cmd: (),
+            snapshot: (),
+            cid: 0,
+            sched_too_busy_threshold: 0,
+            worker_pool: WorkerPool::new(),
 
         }
     }
+}
 
-    fn send_read_finished(&mut self) {
-        let mut cmd = self.cmd.take().unwrap();
-        let res = cmd.read(&mut self.snapshot.take().unwrap());
-        cmd.finish(res);
-        self.cmd = Some(cmd);
-        self.ch.send(Msg::ReadFinished {
-            cid: self.cid,
-            cmd: self.cmd.take().unwrap(),
-        });
-    }
+pub fn run(engine: Engine, scheduler: Scheduler) -> Scheduler {
+        let mut scheduler = scheduler;
+        let mut engine = engine;
+        let mut scheduler = Scheduler {
+            latches: HashMap::new(),
+            id_alloc: 0,
+            ch: (),
+            cmd: (),
+            snapshot: (),
+            cid: 0,
+            sched_too_busy_threshold: 0,
+            worker_pool: WorkerPool::new(),
+        };
+        let mut engine = engine;
+        let mut scheduler = scheduler;
+    let mut cmd_ctx = HashMap::new();
+        let mut id_alloc = 0;
+        let mut latches = Latches::new();
+        let mut sched_too_busy_threshold = scheduler.sched_too_busy_threshold;
+        let mut worker_pool = scheduler.worker_pool.clone();
+    scheduler.engine.clone();
 
-    fn send_write_finished(&mut self) {
-        // Batch gets from the snapshot.
-        fn command(cid: u64, cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) {
-            let mut ctx = RunningCtx::new(cid, cmd, ch, snapshot);
-            let mut cmd = ctx.cmd.take().unwrap();
-            let mut snapshot = ctx.snapshot.take().unwrap();
-            let res = cmd.write(&mut snapshot);
-            let mut cmd = ctx.cmd.take().unwrap();
-            cmd.finish(res);
-            ctx.cmd = Some(cmd);
-            ctx.snapshot = Some(snapshot);
+        loop {
 
-            let mut cmd = ctx.cmd.take().unwrap();
-
-            let res = cmd.write(&mut snapshot);
-
-            // Puts into the snapshot.
-            Command::finish(res);
-        }
-    }
-
-    fn handle_read_finished<SolitonId>(c: Causetid, msg: Msg, s: &mut Soliton<SolitonId>) {
-        match msg {
-            Msg::ReadFinished { cid, cmd } => {
-                let ctx = s.get_ctx(cid).unwrap();
-                ctx.send_read_finished();
-                s.set_ctx(cid, ctx);
+            let msg = recv.recv().unwrap();
+            match msg {
+                Msg::Command(cmd) => {
+                    let cid = cmd.cid;
+                    let ctx = cmd_ctx.entry(cid).or_insert_with(|| {
+                        let ctx = RunningCtx::new(cid, &mut latches, &mut sched_too_busy_threshold);
+                        id_alloc += 1;
+                        ctx
+                    });
+                    ctx.push_command(cmd);
+                }
+                Msg::CommandFinished(cid) => {
+                    let ctx = cmd_ctx.remove(&cid).unwrap();
+                    ctx.finished();
+                }
+                Msg::CommandFailed(cid) => {
+                    let ctx = cmd_ctx.remove(&cid).unwrap();
+                    ctx.failed();
+                }
+                Msg::CommandCancelled(cid) => {
+                    let ctx = cmd_ctx.remove(&cid).unwrap();
+                    ctx.cancelled();
+                }
+                Msg::CommandTimeout(cid) => {
+                    let ctx = cmd_ctx.remove(&cid).unwrap();
+                    ctx.timeout();
+                }
+                Msg::CommandPanic(cid, panic_msg) => {
+                    let ctx = cmd_ctx.remove(&cid).unwrap();
+                    ctx.panic(panic_msg);
+                }
+                Msg::CommandTooBusy => {
+                    sched_too_busy_threshold += 1;
+                }
+                Msg::Stop => {
+                    break;
+                }
             }
-            _ => unreachable!(),
         }
-    }
 
-    #[inline]
-    fn handle_write_finished<SolitonId>(c: Causetid, msg: Msg, s: &mut Soliton<SolitonId>) {
-        match msg {
-            Msg::WriteFinished { cid, cmd } => {
-                let ctx = s.get_ctx(cid).unwrap();
-                ctx.send_write_finished();
-                s.set_ctx(cid, ctx);
+        scheduler_too_busy_threshold += 1;
+
+
+        scheduler_too_busy_threshold_mut = sched_too_busy_threshold;
+        worker_pool_mut = worker_pool;
+        cmd_ctx_mut = cmd_ctx;
+        id_alloc_mut = id_alloc;
+        latches_mut = latches;
+        engine_mut = engine;
+        scheduler_mut = scheduler;
+        recv_mut = recv;
+        return scheduler;
+}
+
+
+pub fn run_scheduler(engine: Engine, scheduler: Scheduler) -> Scheduler {
+    let mut scheduler = scheduler;
+    let mut engine = engine;
+    let mut scheduler = Scheduler {
+        latches: HashMap::new(),
+        id_alloc: 0,
+        ch: (),
+        cmd: (),
+        snapshot: (),
+        cid: 0,
+        sched_too_busy_threshold: 0,
+        worker_pool: WorkerPool::new(),
+    };
+    let mut engine = engine;
+    let mut scheduler = scheduler;
+    let mut cmd_ctx = HashMap::new();
+    let mut id_alloc = 0;
+
+    let mut sched_too_busy_threshold = scheduler.sched_too_busy_threshold;
+    let mut worker_pool = scheduler.worker_pool.clone();
+    scheduler.engine.clone();
+
+    loop {
+        impl RunningCtx {
+            fn new(cid: u64, cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) -> RunningCtx {
+                RunningCtx {
+                    cid,
+                    cmd: Some(cmd),
+                    ch,
+                    snapshot: Some(snapshot),
+
+                    latches: Latches {
+                        pending: 0,
+                        running: 0,
+                        finished: 0,
+                        failed: 0,
+                        cancelled: 0,
+                        timeout: 0,
+                        panic: 0,
+                        concurrency: 0
+                    },
+                    id_alloc: 0
+                }
             }
-            _ => unreachable!(),
         }
-    }
+        let mut cmd_ctx = cmd_ctx;
+        let mut id_alloc = id_alloc;
+        let mut sched_too_busy_threshold = sched_too_busy_threshold;
+        let mut worker_pool = worker_pool;
+        let mut engine = engine;
+        let mut scheduler = scheduler;
+        let mut recv = recv;
+        let mut latches = Latches::new();
+        let mut scheduler = scheduler;
+        let mut engine = engine;
+        let mut recv = recv;
+        let mut cmd_ctx = cmd_ctx;
 
-    #[inline]
-    fn handle_read_write_finished<SolitonId>(c: Causetid, msg: Msg, s: &mut Soliton<SolitonId>) {
-        // Scans keys with timestamp <= `max_ts`
-        // and returns the latest version of each key.
-        //
-        // If `max_ts` is 0, then all versions are returned.
-        //
-        // If `max_ts` is `u64::MAX`, then all versions are returned.
-        //
-        // If `max_ts` is `u64::MAX - 1`, then all versions are returned.
 
-        match msg {
-            Msg::ReadWriteFinished { cid, cmd } => {
-                let ctx = s.get_ctx(cid).unwrap();
-                ctx.send_read_finished();
-                s.set_ctx(cid, ctx);
+        let msg = recv.recv().unwrap();
+match msg {
+            Msg::Command(cmd) => {
+                let cid = cmd.cid;
+                let ctx = cmd_ctx.entry(cid).or_insert_with(|| {
+                    let ctx = RunningCtx::new(cid, cmd, ch, snapshot);
+                    id_alloc += 1;
+                    ctx
+                });
+                ctx.push_command(cmd);
             }
-            _ => unreachable!(),
+            Msg::CommandFinished(cid) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.finished();
+            }
+            Msg::CommandFailed(cid) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.failed();
+            }
+            Msg::CommandCancelled(cid) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.cancelled();
+            }
+            Msg::CommandTimeout(cid) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.timeout();
+            }
+            Msg::CommandPanic(cid, panic_msg) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.panic(panic_msg);
+            }
+            Msg::CommandTooBusy => {
+                sched_too_busy_threshold += 1;
+            }
+            Msg::Stop => {
+                break;
+            }
         }
+
+        scheduler_too_busy_threshold += 1;
+
+        scheduler_too_busy_threshold_mut = sched_too_busy_threshold;
+
+        worker_pool_mut = worker_pool;
+        cmd_ctx_mut = cmd_ctx;
+        id_alloc_mut = id_alloc;
+        latches_mut = latches;
+        engine_mut = engine;
+        scheduler_mut = scheduler;
+        recv_mut = recv;
+
+        return scheduler;
+
     }
+
+scheduler_too_busy_threshold_mut = sched_too_busy_threshold;
+worker_pool_mut = worker_pool;
+cmd_ctx_mut = cmd_ctx;
+id_alloc_mut = id_alloc;
+latches_mut = latches;
+engine_mut = engine;
+scheduler_mut = scheduler;
+recv_mut = recv;
+
+    return scheduler;
 }
