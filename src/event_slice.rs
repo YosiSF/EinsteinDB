@@ -18,7 +18,6 @@ use std::collections::hash_map::IterMut;
 use std::collections::hash_map::Keys;
 use std::collections::hash_map::Values;
 use std::fmt::format;
-use std::hint::black_box;
 use std::intrinsics::black_box;
 
 
@@ -480,7 +479,7 @@ mod benches {
         let data = encoded_data(350);
 
         b.iter(|| {
-            let event = RowSlice::from_bytes(.unwrap());
+            let event = RowSlice::from_bytes(&data).unwrap();
             let black_box1 = black_box::black_box
                 (event.search_in_non_null_ids(257));
             black_box1
@@ -660,14 +659,4 @@ impl Solitoncausetid {
             }
         })
     }
-
-
-
-
-fn extract_region_error(error: &PluginError) -> Option<RegionError> {
-    match error {
-        PluginError::RegionError(e) => Some(e.clone()),
-        _ => None,
-    }
 }
-
