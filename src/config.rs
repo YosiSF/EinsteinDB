@@ -52,7 +52,7 @@ use futures::channel::oneshot;
 use futures::future::{self, Future};
 use std::collections::HashMap;
 use std::hash::Hash;
-use std::process::Command;
+
 
 
 ///! This is the main configuration file for the EinsteinDB.
@@ -280,19 +280,13 @@ impl ConfigValue {
         Err(CtlError::ConfigKeyNotFound(key.to_string()))
     }
 
-
-
-
-    pub fn serialize() -> Result<String, CtlError> {
+pub fn serialize() -> Result<String, CtlError> {
          let mut output = String::new();
         for x in EinsteinDB_FOUNDATIONDB_DRIVER_TOML.iter() {
             output.push_str(&format!("{} = {}\n", x.0, x.1));
         }
         Ok(output)
     }
-
-
-
 
     pub fn deserialize_config_value() -> Result<ConfigValue, CtlError> {
         let mut key_parts = key.split(".");
@@ -329,28 +323,15 @@ impl ConfigValue {
         nodes: &[dyn Hash],
         einsteindb: &EinsteinDB,
         height: usize,
-    index: usize,
-    ) -> Result<Vec<u8>, CtlError> {
-        let mut compressed_nodes = vec![];
-        let mut compressed_nodes_len = 0;
-        let mut compressed_nodes_len_bytes = [0u8; 4];
-        let mut compressed_nodes_len_bytes_len = 0;
-
-        let mut compressed_nodes_len_bytes_len = 0;
+        index: usize,
+    ) -> [u8; 4] {
+        vec![];
+        [0u8; 4]
     }
 
-    pub fn einstein_merkle_tree_decompress(
-        nodes: &[dyn Hash],
-        einsteindb: &EinsteinDB,
-        height: usize,
-        index: usize,
-    ) -> Result<Vec<u8>, CtlError> {
-        let mut compressed_nodes = vec![];
-        let mut compressed_nodes_len = 0;
-        let mut compressed_nodes_len_bytes = [0u8; 4];
-        let mut compressed_nodes_len_bytes_len = 0;
-
-        let mut compressed_nodes_len_bytes_len = 0;
+    pub fn einstein_merkle_tree_decompress() -> [u8; 4] {
+        vec![];
+        [0u8; 4]
     }
 
     pub fn einstein_merkle_tree_compress_node(
@@ -358,13 +339,9 @@ impl ConfigValue {
         einsteindb: &EinsteinDB,
         height: usize,
         index: usize,
-    ) -> Result<Vec<u8>, CtlError> {
-        let mut compressed_node = vec![];
-        let mut compressed_node_len = 0;
-        let mut compressed_node_len_bytes = [0u8; 4];
-        let mut compressed_node_len_bytes_len = 0;
-
-        let mut compressed_node_len_bytes_len = 0;
+    ) -> [u8; 4] {
+        vec![];
+        [0u8; 4]
     }
 
     pub fn einstein_merkle_tree_decompress_node(
@@ -372,13 +349,9 @@ impl ConfigValue {
         einsteindb: &EinsteinDB,
         height: usize,
         index: usize,
-    ) -> Result<Vec<u8>, CtlError> {
-        let mut compressed_node = vec![];
-        let mut compressed_node_len = 0;
-        let mut compressed_node_len_bytes = [0u8; 4];
-        let mut compressed_node_len_bytes_len = 0;
-
-        let mut compressed_node_len_bytes_len = 0;
+    ) -> [u8; 4] {
+        vec![];
+        [0u8; 4]
     }
 
     pub fn einstein_merkle_tree_compress_leaf(
@@ -387,12 +360,8 @@ impl ConfigValue {
         height: usize,
         index: usize,
     ) -> Result<Vec<u8>, CtlError> {
-        let mut compressed_leaf = vec![];
-        let mut compressed_leaf_len = 0;
-        let mut compressed_leaf_len_bytes = [0u8; 4];
-        let mut compressed_leaf_len_bytes_len = 0;
-
-        let mut compressed_leaf_len_bytes_len = 0;
+        vec![];
+        [0u8; 4];
     }
 
 
@@ -605,6 +574,9 @@ fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_loc
             fn default() -> Self {
                 Config::new()
             }
+        }
+
+        impl Config {
 
 
             fn load_from_file(&mut self, path: &str) -> Result<(), Error> {
@@ -677,10 +649,9 @@ if let Some(stream_channel_window) = value.get("stream_channel_window") {
 
 
         impl Default for Config {
+fn default() -> Self {
+                Config::new()
 
-             fn load_from_toml(&mut self, toml: &str) -> Result<(), Error> {
-                let value = toml::from_str(toml)?;
-                self.merge_from(value)
             }
         }
 
@@ -766,53 +737,13 @@ if let Some(stream_channel_window) = value.get("stream_channel_window") {
         }
 
 
-    fn get_config(config_path: &str) -> Result<Config, Error> {
+    fn get_config(config_path: &str) {
         if let Some(num_threads) = value.get("num_threads") {
             if let Some(num_threads_value) = num_threads.as_u64() {
                 config.num_threads = num_threads_value as usize;
             }
         }
-        if let Some(stream_channel_window) = value.get("stream_channel_window") {
-            if let Some(stream_channel_window_value) = stream_channel_window.as_u64() {
-                config.stream_channel_window = stream_channel_window_value as usize;
-            }
-        }
-        if let Some(import_mode_timeout) = value.get("import_mode_timeout") {
-            if let Some(import_mode_timeout_value) = import_mode_timeout.as_str() {
-                config.import_mode_timeout = ReadableDuration::parse(import_mode_timeout_value).unwrap();
-            }
-        }
-        if let Some(import_mode_timeout_secs) = value.get("import_mode_timeout_secs") {
-            if let Some(import_mode_timeout_secs_value) = import_mode_timeout_secs.as_u64() {
-                config.import_mode_timeout = ReadableDuration::from_secs(import_mode_timeout_secs_value);
-            }
-        }
-        if let Some(import_mode_timeout_millis) = value.get("import_mode_timeout_millis") {
-            if let Some(import_mode_timeout_millis_value) = import_mode_timeout_millis.as_u64() {
-                config.import_mode_timeout = ReadableDuration::from_millis(import_mode_timeout_millis_value);
-            }
-        }
-
-        if let Some(import_mode_timeout_micros) = value.get("import_mode_timeout_micros") {
-            if let Some(import_mode_timeout_micros_value) = import_mode_timeout_micros.as_u64() {
-                config.import_mode_timeout = ReadableDuration::from_micros(import_mode_timeout_micros_value);
-            }
-        }
-
-        if let Some(import_mode_timeout_nanos) = value.get("import_mode_timeout_nanos") {
-            if let Some(import_mode_timeout_nanos_value) = import_mode_timeout_nanos.as_u64() {
-                config.import_mode_timeout = ReadableDuration::from_nanos(import_mode_timeout_nanos_value);
-            }
-        }
-
-        if let Some(import_mode_timeout_secs_f32) = value.get("import_mode_timeout_secs_f32") {
-            if let Some(import_mode_timeout_secs_f32_value) = import_mode_timeout_secs_f32.as_f64() {
-                config.import_mode_timeout = ReadableDuration::from_secs_f32(import_mode_timeout_secs_f32_value)
-            }
-
-        }
     }
-
         pub fn get_num_threads_from_config_toml_file() -> Result<usize, Error> {
             let mut file = File::open(path)?;
             let mut contents = String::new();
@@ -1137,29 +1068,9 @@ impl Scheduler {
         }
 
     }
-
-    pub fn schedule_with_ctx_and_id_and_latch_and_latch_and_latch_and_latch_and_latch(&mut self) {
-/// The name of the metric.
-/// The name of the metric.
-
-        const METRIC_NAME: &str = "scheduler_too_busy";
-
-        let mut too_busy = false;
-        if self.latches.len() > self.sched_too_busy_threshold {
-            too_busy = true;
-        }
-
-        if too_busy {
-            let mut counter = self.latches.get_counter(METRIC_NAME);
-            counter.inc();
-        }
-
-        if too_busy {
-            return;
-        }
-
-    }
 }
+
+
 
 
 
@@ -1252,7 +1163,9 @@ pub fn get_scheduler_with_ctx_and_id_and_latch() {
         }
     }
 
-pub fn start_ts_with_config(config: &Config, recv: Receiver<Msg>) {
+
+pub fn start_ts_with_config () {
+
     let mut scheduler = Scheduler::new(Box::new(Engine::new()), config.get_sched_too_busy_threshold());
     scheduler.get_engine_mut();
     let mut cmd_ctx = scheduler.get_cmd_ctx_mut();
@@ -1271,6 +1184,7 @@ pub fn start_ts_with_config(config: &Config, recv: Receiver<Msg>) {
         // let mut cmd_ctx = HashMap::new();
         Box::new(Engine::new());
     }
+}
 
     pub fn start_ts_with_config_and_recv() {
         loop {
@@ -1409,6 +1323,7 @@ pub fn start_ts_with_config(config: &Config, recv: Receiver<Msg>) {
                 Snapshot::NoSnapshot => panic!("snapshot is not set"),
             }
         }
+
         pub fn get_snapshot_mut(&mut self) -> &mut Snapshot {
             match &mut self.snapshot {
                 Snapshot::Snapshot(snapshot) => snapshot,
@@ -1428,7 +1343,7 @@ pub fn start_ts_with_config(config: &Config, recv: Receiver<Msg>) {
             &self.cmd
         }
     }
-}
+
 
 
 
@@ -1652,15 +1567,4 @@ match msg {
         return scheduler;
 
     }
-
-scheduler_too_busy_threshold_mut = sched_too_busy_threshold;
-worker_pool_mut = worker_pool;
-cmd_ctx_mut = cmd_ctx;
-id_alloc_mut = id_alloc;
-latches_mut = latches;
-engine_mut = engine;
-scheduler_mut = scheduler;
-recv_mut = recv;
-
-    return scheduler;
 }
