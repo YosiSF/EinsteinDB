@@ -145,7 +145,7 @@ pub struct ConfigKey {
     pub value_source_line: String,
     pub name: String,
     pub source: ConfigSource,
-    pub einsteindb: Vec<Hash>,
+    pub einsteindb: Vec<dyn Hash>,
 }
 
 
@@ -162,11 +162,9 @@ impl ConfigKey {
             value_source_path: String::new(),
             value_source_line: String::new(),
             name: name.to_string(),
-            source: source,
-            einsteindb: einsteindb,
+            source,
+            einsteindb,
         }
-
-
         }
     }
 
@@ -229,7 +227,7 @@ impl ConfigKey {
 
 
 impl ConfigValue {
-    pub fn _new(name: &str, value: &str, source: ConfigSource, einsteindb: Vec<Hash>, value_type: ConfigValueType) -> Self {
+    pub fn _new(name: &str, value: &str, source: ConfigSource, einsteindb: Vec<dyn Hash>, value_type: ConfigValueType) -> Self {
         x.deserialize(input_offsets: &[u32]);
 
         [0u8; 32];
@@ -335,53 +333,67 @@ impl ConfigValue {
     ) -> Result<Vec<u8>, CtlError> {
         let mut compressed_nodes = vec![];
         let mut compressed_nodes_len = 0;
-        let mut compressed_nodes_len_len = 0;
-        let mut compressed_nodes_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len_len_len_len = 0;
-        let mut compressed_nodes_len_len_len_len_len_len_len_len_len_len_len_len_len_len_len_len = 0;
-        }
+        let mut compressed_nodes_len_bytes = [0u8; 4];
+        let mut compressed_nodes_len_bytes_len = 0;
 
-    pub fn einstein_merkle_tree_decompress(
-        hash: &Hash,
-        einsteindb: &EinsteinDB,
-        height: usize,
-    ) -> Result<Vec<Hash>, MerkleTreeError> {
-        let mut nodes = Vec::new();
-        nodes.push(hash.clone());
-        for _ in 0..height {
-            if index & 1 == 0 {
-                let left = nodes[index / 2];
-                let right = nodes[index / 2 + 1];
-                let hash = einsteindb.hash_merkle_tree_node(left, right);
-                nodes.push(hash);
-            } else {
-                let left = nodes[index / 2];
-                let right = nodes[index / 2 + 1];
-                let hash = einsteindb.hash_merkle_tree_node(left, right);
-                nodes.push(hash);
-            }
-            nodes = new_nodes;
-        }
-        let mut tree = MerkleTree::new(height, nodes.len(), einsteindb)?;
-        for (i, node) in nodes.iter().enumerate() {
-            tree.insert(i, node)?;
-        }
-        let root = tree.root();
-        Ok(root)
+        let mut compressed_nodes_len_bytes_len = 0;
     }
 
+    pub fn einstein_merkle_tree_decompress(
+        nodes: &[dyn Hash],
+        einsteindb: &EinsteinDB,
+        height: usize,
+        index: usize,
+    ) -> Result<Vec<u8>, CtlError> {
+        let mut compressed_nodes = vec![];
+        let mut compressed_nodes_len = 0;
+        let mut compressed_nodes_len_bytes = [0u8; 4];
+        let mut compressed_nodes_len_bytes_len = 0;
 
+        let mut compressed_nodes_len_bytes_len = 0;
+    }
+
+    pub fn einstein_merkle_tree_compress_node(
+        node: &dyn Hash,
+        einsteindb: &EinsteinDB,
+        height: usize,
+        index: usize,
+    ) -> Result<Vec<u8>, CtlError> {
+        let mut compressed_node = vec![];
+        let mut compressed_node_len = 0;
+        let mut compressed_node_len_bytes = [0u8; 4];
+        let mut compressed_node_len_bytes_len = 0;
+
+        let mut compressed_node_len_bytes_len = 0;
+    }
+
+    pub fn einstein_merkle_tree_decompress_node(
+        node: &dyn Hash,
+        einsteindb: &EinsteinDB,
+        height: usize,
+        index: usize,
+    ) -> Result<Vec<u8>, CtlError> {
+        let mut compressed_node = vec![];
+        let mut compressed_node_len = 0;
+        let mut compressed_node_len_bytes = [0u8; 4];
+        let mut compressed_node_len_bytes_len = 0;
+
+        let mut compressed_node_len_bytes_len = 0;
+    }
+
+    pub fn einstein_merkle_tree_compress_leaf(
+        leaf: &dyn Hash,
+        einsteindb: &EinsteinDB,
+        height: usize,
+        index: usize,
+    ) -> Result<Vec<u8>, CtlError> {
+        let mut compressed_leaf = vec![];
+        let mut compressed_leaf_len = 0;
+        let mut compressed_leaf_len_bytes = [0u8; 4];
+        let mut compressed_leaf_len_bytes_len = 0;
+
+        let mut compressed_leaf_len_bytes_len = 0;
+    }
 
 
     pub trait InterlockingDirectorate {
@@ -414,33 +426,47 @@ impl ConfigValue {
     }
 
 
-impl InterlockingMultiplexer for Config {
-    fn syncer(&self) -> &str {
-        height: self.get_value("interlocking.syncer").unwrap().as_str().unwrap();
-        self.get_str("interlocking.syncer").unwrap_or(EINSTEINDB_INTERLOCKING_MULTIPLEXER_SYNC)
+    pub struct InterlockingDirectorateImpl {
+        pub nodes: Vec<String>,
     }
 
-    fn interlocking_tau(&self) -> usize {
-        height: self.get_value("interlocking.tau").unwrap().as_usize().unwrap();
-        self.get_usize("interlocking.tau").unwrap_or(EINSTEINDB_INTERLOCKING_TAU)
+
+
+    impl InterlockingDirectorate for InterlockingDirectorateImpl {
+        fn get_interlocked_nodes(&self) -> Vec<String> {
+            self.nodes.clone()
+        }
+        fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String> {
+            self.nodes.clone()
+        }
+
     }
-}
 
-/*
- fn syncer_mut(&mut self) -> &mut str {
-     height: self.get_value("interlocking.syncer").unwrap().as_str().unwrap();
-     self.get_str_mut("interlocking.syncer").unwrap_or(EINSTEINDB_INTERLOCKING_MULTIPLEXER_SYNC)
- }
+    pub struct InterlockingDirectorateImpl2 {
+        pub nodes: Vec<String>,
+    }
+
+    impl InterlockingDirectorate for InterlockingDirectorateImpl2 {
+        fn get_interlocked_nodes(&self) -> Vec<String> {
+            self.nodes.clone()
+        }
+        fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String> {
+            self.nodes.clone()
+        }
+    }
 
 
- pub fn interlocking_tau_mut(&mut self) -> &mut usize {
-    height: self.get_value("interlocking.tau").unwrap().as_usize().unwrap();
-    self.get_usize_mut("interlocking.tau").unwrap_or(EINSTEINDB_INTERLOCKING_TAU)
-}
 
- */
+
+
+
+
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InterlockingMultiplexer {
+    pub syncer: String,
+    pub tau: usize,
+}
 pub struct MerkleTreeLSHBuffer {
     pub lsh_buffer: Vec<u8>,
     height: usize,
@@ -834,7 +860,6 @@ impl RunningCtx {
             Command::finish(res);
         }
     }
-
 
     fn handle_read_finished<SolitonId>(c: Causetid, msg: Msg, s: &mut Soliton<SolitonId>) {
         match msg {
