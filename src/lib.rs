@@ -900,3 +900,46 @@ pub struct ConsistencyEntry {
 
 
 
+
+#[derive(Serialize, Deserialize)]
+pub struct ChangelogEntry {
+    pub term: u64,
+    pub index: u64,
+    pub command: String,
+}
+
+
+impl ChangelogEntry {
+    pub fn new() -> ChangelogEntry {
+        ChangelogEntry {
+            term: 0,
+            index: 0,
+            command: String::new(),
+        }
+    }
+
+    pub fn get_term(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+
+#[derive(Serialize, Deserialize)]
+pub struct Changelog {
+    pub entries: Vec<ChangelogEntry>,
+}
+
+
+impl Changelog {
+    pub fn new() -> Changelog {
+        Changelog {
+            entries: Vec::new(),
+        }
+    }
+
+    pub fn get_term(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+

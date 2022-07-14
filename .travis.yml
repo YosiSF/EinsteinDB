@@ -1,0 +1,96 @@
+language: rust
+#rust: nightly
+
+# We use OSX so that we can use the Rust stable channel.
+# We use the Rust nightly channel for the nightly builds.
+# (The version in Travis's default Ubuntu Trusty is much too old).
+os: osx
+before_install:
+  - brew install sqlcipher --with-fts
+rust:
+    toolchain: "1.20.0"
+    cargo-features: ["serde"]
+    rustup-channel: nightly
+    rustup-components:
+        - rust-src
+        - rust-analysis
+        - rust-docs
+        - rust-std
+        - rust-analysis-docs
+        - rust-src-docs
+        - rust-test-helpers
+        - rust-docs-helpers
+        - rust-std-docs
+        - rust-std-x86_64-apple-darwin
+        - rust-std-x86_64-unknown-linux-gnu
+        - rust-std-x86_64-unknown-freebsd
+        - rust-std-x86_64-unknown-dragonfly
+        - rust-std-x86_64-unknown-openbsd
+        - rust-std-x86_64-unknown-netbsd
+        - rust-std-x86_64-unknown-solaris
+        - rust-std-x86_64-unknown-illumos
+        - rust-std-x86_64-unknown-hermit
+        - rust-std-x86_64-unknown-redox
+        - rust-std-x86_64-pc-windows-msvc
+        - rust-std-x86_64-pc-windows-gnu
+        - rust-std-x86_64-pc-windows-gnu-msvc
+        - rust-std-x86_64-pc-windows-gnu-mingw-w64
+        - rust-std-x86_64-pc-windows-gnu-cygwin
+        - rust-std-x86_64-pc-windows-msvc-mingw-w64
+        - rust-std-x86_64-pc-windows-msvc-cygwin
+        - rust-std-x86_64-pc-windows-msvc-gnu
+        - rust-std-x86_64-pc-windows-msvc-gnu-msvc
+        - rust-std-x86_64-pc-windows-msvc-gnu-mingw-w64
+        - rust-std-x86_64-pc-windows-msvc-gnu-cygwin
+        - rust-std-x86_64-pc-windows-msvc-gnu-mingw-w64-x86_64
+        - rust-std-x86_64-pc-windows-msvc-gnu-cygwin-x86_64
+
+script:
+    - cargo build --release
+    - cargo test --release
+    - cargo bench --release
+    - cargo fmt -- --check
+    - cargo clippy --release --all -- -D warnings
+    - cargo check --release --all -- -D warnings
+
+#- cargo test --all --no-run --released
+matrix:
+    include:
+        - rustc_version: "1.20.0"
+        - rustc_version: "1.21.0"
+        - rustc_version: "1.22.0"
+        - rustc_version: "1.23.0"
+        - rustc_version: "1.24.0"
+        - rustc_version: "1.25.0"
+        - rustc_version: "1.26.0"
+        - rustc_version: "1.27.0"
+        - rustc_version: "1.28.0"
+        - rustc_version: "1.29.0"
+        - rustc_version: "1.30.0"
+        - rustc_version: "1.31.0"
+        - rustc_version: "1.32.0"
+        - rustc_version: "1.33.0"
+        - rustc_version: "1.34.0"
+        - rustc_version: "1.35.0"
+        - rustc_version: "1.36.0"
+        - rustc_version: "1.37.0"
+        - rustc_version: "1.38.0"
+        - rustc_version: "1.39.0"
+        - rustc_version: "1.40.0"
+        - rustc_version: "1.41.0"
+        - rustc_version: "1.42.0"
+        - rustc_version: "1.43.0"
+        - rustc_version: "1.44.0"
+        - rustc_version: "1.45.0"
+        - rustc_version: "1.46.0"
+        - rustc_version: "1.47.0"
+        - rustc_version: "1.48.0"
+        - rustc_version: "1.49.0"
+        - rustc_version: "1.50.0"
+        - rustc_version: "1.51.0"
+        - rustc_version: "1.52.0"
+    allow_failures:
+    - rust : nightly
+    fast_finish: true
+
+    #- rustc_version: "1.20.0"
