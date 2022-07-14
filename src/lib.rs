@@ -1,4 +1,5 @@
 extern crate petgraph;
+extern crate slog;
 
 mod causal_set;
 

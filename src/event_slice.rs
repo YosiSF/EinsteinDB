@@ -33,6 +33,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::RwLock;
 use petgraph::visit::Walker;
+use slog::error;
 use crate::config::Config;
 use crate::Error;
 
@@ -420,6 +421,7 @@ mod tests {
 
 #[braneg(test)]
 mod benches {
+    use encoder::{Column, RowEncoder};
     use super::*;
     use crate::expr::EvalContext;
     use crate::codec::data_type::ScalarValue;
@@ -513,35 +515,17 @@ impl Solitoncausetid {
             plugin_registry,
         }
     }
-}
 
 
-    fn get_causetid(&self) -> i64 {
+
+    pub fn get_causetid(&self) -> i64 {
 
         self.causetid as i64 + 1 as i64
 
     }
 
-    fn get_id(&self) -> i64 {
-        Solitoncausetid {
-            causetid: self.causetid,
-            plugin_registry: self.plugin_registry.clone(),
-        }.get_id()
 
-        }
-    fn get_plugin_registry(&self) -> Option<Arc<PluginRegistry>> {
-        Solitoncausetid {
-            causetid: self.causetid,
-            plugin_registry: self.plugin_registry.clone(),
-        }.get_plugin_registry()
-    }
-
-    pub fn get_plugin_registry_clone(&self) -> Option<Arc<PluginRegistry>> {
-        self.plugin_registry.clone()
-    }
-
-
-
+    
 
 
 
@@ -581,8 +565,8 @@ impl Solitoncausetid {
         soliton_causetid: &Solitoncausetid,
         soliton_plugin_registry: &Arc<PluginRegistry>,
         soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
-    ) -> Result<()> {
-\
+    ) -> Result<(), E> {
+
         let mut ctx = InterlockingContext::new(
             storage,
             soliton_causetid,
@@ -603,37 +587,51 @@ impl Solitoncausetid {
         soliton_causetid: &Solitoncausetid,
         soliton_plugin_registry: &Arc<PluginRegistry>,
         soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
-    ) -> Result<()> {
+    ) -> Result<(), E> {
 
 
         // Check whether the found plugin satisfies the version constraint.
         let version_req = VersionReq::parse(&req.copr_version_req)
-            .map_err(|e| Error::from(format!("Failed to parse version requirement: {}", e)))?;
-        let plugin = soliton_plugin_registry.get_plugin(req.get_name()).unwrap();
-        if !plugin.satisfies_version_req(&version_req) {
-            return Err(Error::from(
-                format!("Plugin {} does not satisfy version requirement {}", plugin.get_name(), req.copr_version_req),
+
+            .map_err(|e| {
+                error!("Failed to parse version requirement: {}", e);
+                e
+            })?;
+        let plugin_version = soliton_plugin_registry.get_plugin(req.get_name()).unwrap().get_version();
+        if !version_req.matches(&plugin_version) {
+            error!(
+                "Plugin {} version {} does not satisfy version requirement {}",
+                req.get_name(),
+                plugin_version,
+                req.get_version_req()
+            );
+            return Err(E::Error::PluginVersionMismatch(
+                req.get_name().to_string(),
+                plugin_version,
+                req.get_version_req().to_string(),
             ));
         }
 
-        // Check whether the found plugin satisfies the version constraint.
-        let version_req = VersionReq::parse(&req.copr_version_req)
-            .map_err(|e| Error::from(format!("Failed to parse version requirement: {}", e)))?;
-        let plugin = soliton_plugin_registry.get_plugin(req.get_name()).unwrap();
-        if !plugin.satisfies_version_req(&version_req) {
-            return Err(Error::from(
-                format!("Plugin {} does not satisfy version requirement {}", plugin.get_name(), req.copr_version_req),
-            ));
-        }
+        let mut ctx = InterlockingContext::new(
+            snapshot,
+            soliton_causetid,
+            soliton_plugin_registry,
+            soliton_plugin_registry_mutex,
+        );
+
+        let mut req = InterlockingRequest::new();
+        req.set_name(interlocking_directorate.get_name());
+        req.set_data(interlocking_directorate.get_data());
+        handle_request(&mut req, &mut ctx, soliton_causetid, soliton_plugin_registry, soliton_plugin_registry_mutex)?;
+
+        Ok(())
     }
 
-
-    #[inline]
     fn handle_request_impl_impl_impl<S: Snapshot>(x86_64_interlocking_directorate:
                                                   &mut  InterlockingDirectorateRequest,
                                                     snapshot: &S,
                                                     soliton_causetid: &Solitoncausetid,
-                                                    soliton_plugin_registry: &Arc<PluginRegistry>) -> Result<()> {
+                                                    soliton_plugin_registry: &Arc<PluginRegistry>) -> Result<(), E> {
         let mut ctx = InterlockingContext::new(cid);
         let foundationdb_storage_api = FoundationdbStorageApi::new(storage);
         let ranges = foundationdb_storage_api.get_ranges(
