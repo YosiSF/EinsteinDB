@@ -39,14 +39,80 @@ which means that it is not a Byzantine Fault Tolerance protocol, but a Byzantine
 In fact, the consensus protocol is embedded in the time stamp versioning of the Merkle Tree.
 
 ### Theory
-Rust Semantics obey q phase distinction between compile time and runtime time. Because of this, EinsteinDB is a hybrid database which uses a unifying consensus and shared registers for both compile time and runtime time.
-Egalitarian Paxos, or Epaxos, allows EinsteinDB to leverage Write optimized Paxos to achieve a  high degree of consistency.
-A crown-graph with pacified nodes is thus used to label the edges as compact and main-memory efficient. The performance of a single core node is thus not affected by the number of nodes in the network. A stability factor of 1/n is used to ensure that the network is stable.
+Rust Semantics obey a phase distinction between the phase of consensus at compile time and the transition phase at \
+runtime time. Because of this, EinsteinDB written in Rust is able to distinguish between cache miss and cache hit at compile time which is useful for optimization.
+
+As a consequence of this approach, the consensus protocol is embedded in the time stamp versioning of the MerkleTreeLSHBuffer which makes EinsteinDB a hybrid database, which uses a unifying consensus and shared register set for the time stamp versioning of concurrent transactions.
+Egalitarian Paxos, or Epaxos, allows EinsteinDB to leverage Write optimized concurrency controls which is a key component of the consensus protocol.\
+The consensus protocol is implemented as a Paxos algorithm, which is a consensus protocol which is not strictly a Byzantine Fault Tolerance protocol.
+
+
+A crown-graph with pacified nodes is thus used to label the edges as compact and main-memory efficient which reduces the number of nodes in the network, and the throughput for write heavy workloads is increased. While Read heavy workloads are not affected.
+
+### Examples
+
+The performance of a single core node is thus not affected by the number of nodes in the network. A stability factor of 1/n is used to ensure that the network is stable.
 Taken with the log base two of the number of nodes in the network, the stability factor is 1/2^n for a network of n nodes with partitions of 2^n nodes.
 
 Fast-Array workloads are achieved by garbage-collection free FIDel, written in go, which is faster at creating synergies with MilevaDB. The performance of FIDel is also faster than MilevaDB.
 Which is why we use it as a platform for EinsteinDB. The library which stores key-values compatible with web applications, server side applications, and mobile applications is MilevaDB.
 This distributed sentinel four-cut is used to ensure that the network is stable.
+
+```
+#[macro_use]
+extern crate einstein_db;
+
+
+use einstein_db::violetabft;
+use einstein_db::einsteindb;
+
+
+fn einsteindb_replication_test() {
+    let mut db = einsteindb::EinsteinDB::new();
+    if let Err(e) = db.init() {
+        println!("{}", e);
+        return;
+       
+    }
+    
+    let mut db = db.get_db();
+    //interlock 
+    let mut interlock = violetabft::VioletaBFT::new();
+    
+    while let Err(e) = interlock.init() {
+        println!("{}", e);
+        return;
+    }
+    
+    let mut interlock = interlock.get_db();
+    
+    let mut key = String::new();
+    let mut value = String::new();
+    let mut key_value = String::new();
+    let mut key_value_pair = String::new();
+    
+   ::std::io::stdin().read_line(&mut key).unwrap();
+    ::std::io::stdin().read_line(&mut value).unwrap();
+    
+    key_value.push_str(&key);
+    key_value.push_str(&value);
+    
+    key_value_pair.push_str(&key_value);
+    key_value_pair.push_str(&"\n");
+    
+    let mut key_value_pair = key_value_pair.as_bytes();
+    
+    let mut key_value_pair_len = key_value_pair.len();
+    
+    if key_value_pair_len > 0 {
+        key_value_pair_len = key_value_pair_len - 1;
+    }
+    return if key_value_pair_len == 0 {
+        println!("{}", "key_value_pair_len is 0");
+        return;
+    }
+```rust
+
 
 ##Causets are Content-addressable hash-based merkle trees with a four-cut.
 
