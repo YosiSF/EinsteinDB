@@ -304,7 +304,6 @@ impl CausetNodeIdSet {
 }
 
 
-
     /// An `CausalSet` allows to "causal_set" some potentially large causet_locales, maintaining a single causet_locale
     /// instance owned by the `CausalSet` and leaving consumers with lightweight ref-counted handles to
     /// the large owned causet_locale.  This can avoid expensive clone() operations.
@@ -317,11 +316,12 @@ impl CausetNodeIdSet {
         inner: HashSet<ValueRc<T>>
      }
 
+// This is a hack to make the type checker happy.
 
     impl<T> CausalSet<T> where T: Eq + Hash {
         pub fn new() -> Self {
             Self {
-                inner: std::collections::HashSet::new(),
+                inner: HashSet::new(),
             }
         }
 
@@ -381,8 +381,6 @@ mod tests {
 }
 
 
-
-
     #[test]
     fn test_causal_set_manifold_add() {
         let mut causal_set_manifold = CausalSetManifold::new();
@@ -393,15 +391,7 @@ mod tests {
             }
             causal_set
         }
-//
-// for (key, value) in map.iter() {
-//     impl<T> From<std::collections::HashSet<ValueRc<T>>> for CausalSet<T> where T: Eq + Hash {
-//         fn from(inner: std::collections::HashSet<ValueRc<T>>) -> Self {
-//             Self {
-//                 inner
-//             }
-//         }
-//     }
+
     impl<T> From<std::collections::HashSet<T>> for CausalSet<T> where T: Eq + Hash {
         fn from(inner: std::collections::HashSet<T>) -> Self {
             Self {

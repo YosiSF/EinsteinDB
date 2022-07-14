@@ -47,6 +47,16 @@ use std::io::Read;
 use std::io::BufRead;
 use std::sync::{Arc, Mutex};
 
+///constants for the library
+pub const EINSTEIN_DB_VERSION: u32 = 0x0101;
+
+pub const EINSTEIN_DB_VERSION_STR: &str = "0.1.1";
+pub const EINSTEIN_ML_VERSION: u32 = 0x0101;
+pub const EINSTEIN_DB_VERSION_STR_LEN: usize = 16;
+pub const EINSTEIN_DB_VERSION_STR_LEN_MAX: usize = 16;
+pub const EINSTEIN_DB_VERSION_STR_LEN_MIN: usize = 16;
+
+
 
 #[derive(Debug)]
 pub enum Error {
@@ -485,14 +495,6 @@ impl AppendEntries {
     }
 }
 
-///constants for the library
-pub const EINSTEIN_DB_VERSION: u32 = 0x0101;
-
-pub const EINSTEIN_DB_VERSION_STR: &str = "0.1.1";
-pub const EINSTEIN_ML_VERSION: u32 = 0x0101;
-pub const EINSTEIN_DB_VERSION_STR_LEN: usize = 16;
-pub const EINSTEIN_DB_VERSION_STR_LEN_MAX: usize = 16;
-pub const EINSTEIN_DB_VERSION_STR_LEN_MIN: usize = 16;
 
 
 //import serde
@@ -562,11 +564,11 @@ mod event_slice;
 ///
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sync {
-    pub poset: std::sync::Arc<Mutex<AllegroPoset>>,
-    pub config: std::sync::Arc<Mutex<config::Config>>,
-    pub db: std::sync::Arc<Mutex<BerolinASQL>>,
-    pub event_slice: Arc<std::sync::Mutex<event_slice::EventSlice>>,
-    pub causal_set: std::sync::Arc<std::sync::Mutex<causal_set::CausalSet<T>>>,
+    pub poset: Arc<Mutex<AllegroPoset>>,
+    pub config: Arc<Mutex<config::Config>>,
+    pub db: Arc<Mutex<BerolinASQL>>,
+    pub event_slice: Arc<Mutex<event_slice::EventSlice>>,
+    pub causal_set: Arc<std::sync::Mutex<causal_set::CausalSet<T>>>,
 
 }
 
