@@ -313,7 +313,7 @@ impl CausetNodeIdSet {
     ///
     /// See https://en.wikipedia.org/wiki/String_causal_seting for discussion.
     #[derive(Clone, Debug, Default, Eq, PartialEq)]
-    struct CausalSet<T> where T: Eq + Hash {
+    pub(crate) struct CausalSet<T> where T: Eq + Hash {
         inner: HashSet<ValueRc<T>>
      }
 
