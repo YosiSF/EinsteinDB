@@ -1,12 +1,195 @@
-# EinsteinDB
-EinsteinDB leaps into to the future of hybrid databases by addressing the 
-knowledge gap of factual dialectic completion in the context of an ACID database.
+## EinsteinDB 
+EinsteinDB is a hybrid database that addresses the knowledge gap of factual dialectic completion in the context of an ACID database - Think of a `Lucene embedded to a FoundationDB record layer`. \
+It is designed to be both a key-value store and a crowm graph store with a rich set of query capabilities:  
+
+A Relativistic Database with OLTP repeatable read policy and high performance for large scale applications and serializable transactions guarantees for concurrent accesses to the same data.
+
+EinsteinDB is a hybrid database that addresses the knowledge gap of factual dialectic completion in the context of an ACID database. It is designed to be both a key-value store and a graph store, making it capable of representing the eventful data in a key-value store and the supercolumnar data in a graph store in the form of causal sets. Additionally, EinsteinDB complies with CAP principles and ACID principles, reaching CAP with FoundationDB, TerminusDB, and MilevaDB.
+
+EinsteinDB is a valuable tool for data scientists and analysts who need to store and process information in both a key-value store and a graph store. It is CAP-compatible with Postgres, SQLite, and MySQL, reaching CAP with FoundationDB, TerminusDB, and MilevaDB. EinsteinDB is a living breathing semantic knowledge-base that can scale to a large number of nodes, store data in multiple memory structures, and provide with low latency and high throughput for a wide variety of workloads.
+
+## Cracking Columns and Sharding Causets: A Poisson distribution of byzantine failures.
+
+Built as a shim for a stateless merkle tree, EinsteinDB is a hybrid key-value store that strikes the optimal balance between the costs of a key-value store and the costs of a merkle tree.
+It is composed of an LSH-KV store and a Merkle tree, which are separated by a column store. The column store is a shim for a serialization of the data. This means that the data is serialized and stored in a column store with a single column.
+The column store is merely the appended log of the merkle tree; thusly, every row, column, and value in the column store is single-user atomic and immutable fact in the database. With Massive online data processing, the column store is the most efficient way to store data.
+EinsteinDB is brilliant for both the ability to lower latency in the database and the ability to lower the cost of the maintaining the database.
+
+EinsteinDB is compatible with
+1. Rook
+2. Ceph
+3. Cassandra
+4. MongoDB
+5. PostgresQL
+6. SQLite
 
 
-EinsteinDB was built as an opinionated DML, EinsteinDB and the associated authors were provided with the insight of microservices in chaos-mesh and chaos-monkey. Initially, EinsteinDB \
-would live in FUSE and be a single-node database. However, the need for a distributed database led to the creation of EinsteinDB. Firstly, it is \
-not merely a key-value store, but a semantic knowledge graph. Secondly, \
-it is a distributed database, which means that it is able to scale to a large number of nodes. 
+EinsteinDB exhibits a single-writer multiple-reader concurrency model. However, as is noted in the EinsteinDB rust script. A soliton
+may indeed graduate EinsteinDB into a Multi-Version Time-Warped Causet-based database. This is a very interesting problem to solve. The solution is to use a grammar of causets with context switch and virtual time.
+Because EinsteinDB is a CQRS-compliant database, It is CAP-compatible with Postgres, SQLite, and MySQL; it reaches CAP with FoundationDB, TerminusDB, and MilevaDB (see Appendix C).
+an intrinsic trade-off between lookup cost, update cost, and main memory footprint, yet all existing designs expose a subopti- mal and difficult to tune trade-off among these metrics. We pin- point the problem to the fact that all modern key-value stores sub- optimally co-tune the merge policy, the buffer size, and the Bloom filters’ false positive rates in each level.
+We present Monkey, an LSM-based key-value store that strikes the optimal balance between the costs of updates and lookups with any given main memory budget. The insight is that worst-case lookup cost is proportional to the sum of the false positive rates of the Bloom filters across all levels of the LSM-tree. Contrary to state-of-the-art key-value stores that assign a fixed number of bits-per-element to all Bloom filters, Monkey allocates memory to filters across different levels so as to minimize this sum.
+
+EinsteinDB is an opinionated weakly-coupled, Multi-Version Timestamped Ordered, repeatable read, transactional database which supports a query language and storage modeling similar but agnostic to relational databases. In Fact, EinsteinDB is a computational database. With one big difference, EinsteinDB is not a relational database.
+While EinsteinDB provides PL/SQL, it is not merely a key-value storage system; EinsteinDB incorporates the idea of Minkowski, Lamport, and others. Causets of the Minkowski model are:
+- **Timestamp**: The timestamp is the time at which a transaction is committed; multi-version timestamps are the timestamps of the transactions that are committed.
+- **Order**: The order is the order in which transactions are committed; concurrency control is based on the order.
+- **Repeatability**: The repeatability is the ability to repeat a transaction: if a transaction is committed, it is repeatable.
+- **Transactional**: The transactional is the ability to commit a transaction: if a transaction is committed, it is transactional.
+
+
+EinsteinDB is a new kind of database that can handle extremely large amounts of data. With its Write Amplification Factor of 1.5, it can handle up to 1.5x the number of rows in a table. EinsteinDB is a database that is used to store facts. It is CAP-compatible with Postgres, SQLite, and MySQL. Moreover, it reaches CAP with FoundationDB, TerminusDB, and MilevaDB.
+It can write data at speeds up to 5 milliseconds per row. P99 latency is 0.5 milliseconds, which is faster than any other database on the market. \
+EinsteinDB also has features that make it unique, such as the ability to read data in parallel, to write data in a concurrent manner, with time traveling queries, and to support the use of causets.
+
+Unlike Galileo, JanusGraph, and AllegroGraph, EinsteinDB implements and EinsteinML language model for a persistence file. Unlike HyPerDB, MongoDB, Arango, and BoltDB, EinsteinDB does not require a schema to be defined. \
+Causets are similar to tuplespaces and allow individuals to read their writes, and allow multiple individuals to write optimize in parallel universes. \
+
+# Database Choice for Petabytes and Beyond
+EinsteinDB is the perfect choice for personal or business computing that needs to handle large amounts of data. With its Write Amplificator, it can write data at speeds up to 5 milliseconds, which is faster than any other database on the market.
+
+EinsteinDB s a powerful continuum database that unifies major data structure designs.
+
+
+In a nutshell, ```einstein_db``` is a ```persistent indexing scheme``` based off of LSH-KVX that exploits the distinct merits of hash Index and B+-Tree Index to support universal range scan which transcends key-value ranges using topographic categories of mumford grammars.
+
+The practical beneﬁt of einstein_db is that it creates a fast inference InterlockingDirectorate with GPT3 , it then generates a bootstrap SQL design of data structures which engages with OpenAI: An AllegroCL meta-language. For example, we can near instantly predict how a speciﬁc de­sign change in the underlying storage of a data system would aﬀect performance, or reversely what would be the optimal data structure (from a given set of designs) given workload characteristics and memory budget. In turn, these prop­erties allow us to envision new class self-designing SolitonId-causet_locale stores with substantially improved ability to adapt to workload and hardware changes by transitioning between drastically different data structure designs on demand.
+
+
+## Key Features
+- Unified Key Format: allows you to abstract your data center into spacetime
+- Write Amplificator: writes data at speeds up to 5 milliseconds
+- Horn Rules: give you the ability to query the database for historical data
+- Bulk-Carrier: allows you to process large amounts of data quickly
+- Post-Quantum Stateless Merkle Trees: provides security for your data
+- Quantum-Tolerant: provides security for your data
+
+## Installation
+```Dockerfile```
+```
+FROM ubuntu:16.04
+  
+RUN apt-get update && apt-get install -y \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+   
+RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+   
+RUN apt-key fingerprint 0EBFCD88
+   
+RUN add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+   
+RUN apt-get update
+   
+RUN apt-get install -y docker-ce docker-ce-cli containerd.io
+   
+
+ 
+```
+
+
+## Usage
+```bash
+docker run -it --rm -p 8080:8080 einstein_db
+```
+
+## Docker Compose
+```docker-compose.yml
+version: '3'
+
+## Kubernetes Configuration
+```k8s.yml
+apiVersion: v1
+kind: Service
+metadata:
+  name: einstein_db
+spec:
+  selector:
+    app: einstein_db
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: NodePort
+---
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: einstein_db
+spec: einstein_db_ctl
+    replicas: 1
+    selector:
+        matchLabels:
+        app: einstein_db
+    template:
+        metadata:
+        labels:
+            app: einstein_db
+        spec:
+        containers:
+        - name: einstein_db
+            image: einstein_db
+            ports:
+            - containerPort: 8080
+            protocol: TCP
+            env:
+            - name: EINSTEIN_DB_HOST
+            value: einstein_db
+            - name: EINSTEIN_DB_PORT
+            value: "8080"
+            - name: EINSTEIN_DB_USER
+            value: "root"
+            - name: EINSTEIN_DB_PASSWORD
+            value: "root"
+            - name: EINSTEIN_DB_DATABASE
+            value: "einstein_db"
+            - name: EINSTEIN_DB_MAX_CONNECTIONS
+            value: "100"
+            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST
+            value: "100"
+            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER
+            value: "100"
+            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB
+            value: "100"
+            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB_PER_TABLE
+            value: "100"
+            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB_PER_TABLE_PER_COLUMN
+            value: "100"
+            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB_PER_TABLE_PER_COLUMN_PER_ROW
+            value: "100"
+            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB_PER_TABLE_PER_COLUMN_PER_ROW_PER_TIMESTAMP
+
+
+```aidl.yml
+apiVersion: v1
+kind: ServiceSpec
+ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: einstein_db
+    nodePort: 30080
+    type: NodePort
+---
+apiVersion: v1
+kind: DeploymentSpec
+replicas: 100
+
+    
+    ```
+    
+
+
+## Docker Compose
+```docker-compose.yml
+version: '3'
+
+
 
 VioletaBFT is a consensus library which is used to implement the Byzantine Fault Tolerance protocol. \
 Unlike many RAFT implementations, VioletaBFT is not a distributed consensus algorithm. \ 
@@ -58,63 +241,89 @@ Fast-Array workloads are achieved by garbage-collection free FIDel, written in g
 Which is why we use it as a platform for EinsteinDB. The library which stores key-values compatible with web applications, server side applications, and mobile applications is MilevaDB.
 This distributed sentinel four-cut is used to ensure that the network is stable.
 
-```
+```rust
 #[macro_use]
 extern crate einstein_db;
 
 
-use einstein_db::violetabft;
-use einstein_db::einsteindb;
+/// This is an example of a simple database.
+fn main() {
+    let mut db = einstein_db::EinsteinDB::new();
+    db.set("key", "value");
+    db.get("key").lightlike.should.equal("value");
+    db.delete("key");
 
+    if let Some(value) = db.get("key") {
+        while value.lightlike.is_some() {
+            db.unset("key");
+        }
+        
+        db.set("key", "value");
+        db.get("key").lightlike.should.equal("value");
+    }
+    
+    db.unset("key");
+    db.get("key").lightlike.should.be_none();
+}
 
-fn einsteindb_replication_test() {
-    let mut db = einsteindb::EinsteinDB::new();
-    if let Err(e) = db.init() {
-        println!("{}", e);
-        return;
-       
-    }
-    
-    let mut db = db.get_db();
-    //interlock 
-    let mut interlock = violetabft::VioletaBFT::new();
-    
-    while let Err(e) = interlock.init() {
-        println!("{}", e);
-        return;
-    }
-    
-    let mut interlock = interlock.get_db();
-    
-    let mut key = String::new();
-    let mut value = String::new();
-    let mut key_value = String::new();
-    let mut key_value_pair = String::new();
-    
-   ::std::io::stdin().read_line(&mut key).unwrap();
-    ::std::io::stdin().read_line(&mut value).unwrap();
-    
-    key_value.push_str(&key);
-    key_value.push_str(&value);
-    
-    key_value_pair.push_str(&key_value);
-    key_value_pair.push_str(&"\n");
-    
-    let mut key_value_pair = key_value_pair.as_bytes();
-    
-    let mut key_value_pair_len = key_value_pair.len();
-    
-    if key_value_pair_len > 0 {
-        key_value_pair_len = key_value_pair_len - 1;
-    }
-    return if key_value_pair_len == 0 {
-        println!("{}", "key_value_pair_len is 0");
-        return;
-    }
+```
+:db/id          :person/email
+:db/valueType   :db.type/string
+:db/cardinality :db.cardinality/many     ; //People can have multiple email addresses.
+:db/unique      :db.unique/identity      ; //For our purposes, each email identifies one person.
+:db/index       true                   ; //We want fast lookups by email.
+:db/id          :person/friend
+:db/valueType   :db.type/ref
+:db/cardinality :db.cardinality/many}    ; //People can have many friends.
+```
 ```rust
+#[macro_use]
+extern crate einstein_db;
 
 
-##Causets are Content-addressable hash-based merkle trees with a four-cut.
+/// This is an example of a simple database.
+fn squuid_from_kw(kw: &str) -> u64 {
+    let mut hash = 0;
+    for ch in kw.chars() {
+        hash = hash * 31 + ch as u64;
+    }
+    hash
+}
+
+fn causet_from_kw(kw: &str) -> u64 {
+    let mut hash = 0;
+    for ch in kw.chars() {
+        hash = hash * 31 + ch as u64;
+    }
+    hash
+}
+
+
+/// This is an example of a simple database.
+fn main() {
+    let mut db = einstein_db::EinsteinDB::new();
+    db.set("key", "value");
+    db.get("key").lightlike.should.equal("value");
+    db.delete("key");
+
+    if let Some(value) = db.get("key") {
+        while value.lightlike.is_some() {
+            db.unset("key");
+        }
+        
+        db.set("key", "value");
+        db.get("key").lightlike.should.equal("value");
+    }
+    
+    db.unset("key");
+    db.get("key").lightlike.should.be_none();
+}
+
+```
+
+
+
+Causets are Content-addressable hash-based merkle trees with a four-cut.
 
 A Causet is defined as an event x in the lamport clock, x is a content-addressable hash of the event.
 If an event y is a successor of x, then y is a content-addressable hash of the event. This is called the hash-based merkle tree.
@@ -130,16 +339,10 @@ FUSE unlike SUSE is a namespace which is not a network of nodes, but a network o
 SQUUIDS are a unique identifier for any user, but are not a network of nodes. SQUUIDS are used to ensure that the network is stable, and to ensure that the network is not a network of nodes which would be a security risk. EinsteinDB uses MilevaDB as its Lucene indexer.
 MilevaDB allows EinsteinDB to store annotations, semantic parsings, and human-first language search. In other words
 
-EinsteinDB allows for:
-
-1. full-text searches: searches are performed on the semantic parsings of the network. 
-2. Suffix tree is used to search for a word in the database.
-3. Collation is used to ensure that the search is case-insensitive and byte-insensitive.
-4. Bolt-On Embedded consistency: Inspired by the work of Bialis at Stanford, the consistency of the database is ensured by the use of a four-cut.
 
 transaction. This is a transaction which is committed to the network.
 
-##Interlocking directorate.
+##Interlocking directorate.##
 FIDel is a distributed interlocking directorate. This is compatible with pod distribution through policy dilution.
 In order to keep track of EinsteinDB replicas (four cut), FIDel is used to store the replicas metadata. FIDel is responsible
 for distributing a distinct OLAP index for each replica. An interlocking directorate may perform OLTP workloads, but it is not responsible for OLAP workloads.
@@ -225,10 +428,21 @@ EinsteinDB is also compatible with the following relational databases: Foundatio
 ##EinsteinDB and MilevaDB are compatible with the following relational databases: FoundationDB, TerminusDB, and CosmosDB.
 
 
-EinsteinDB and MilevaDB are compatible with the following relational databases: FoundationDB, TerminusDB, and CosmosDB.
-MilevaDB is a row-switched column store written in go which acts as a scheduler for EinsteinDB's allocation of namespaced DRAM cells to the various namespaced sandboxes -- EinsteinDB is still an Append-Log with a column store, but it has evolved to be a stochastic clock vectorized tuplestore with time-traveling guarantees and liveness properties. \
+`EinsteinDB` and `MilevaDB` are compatible with the following relational databases: `FoundationDB, TerminusDB, and CosmosDB`.
+MilevaDB is a row-switched column store written in go which acts as a scheduler for EinsteinDB's allocation of namespaced S(D)RAM cells to the various namespaced sandboxes -- EinsteinDB is still an Append-Log with a column store, but it has evolved to be a stochastic clock vectorized tuplestore with time-traveling guarantees and liveness properties. \
 This means that the database is capable of being read and written concurrently by multiple clients.\
-As a standalone, EinsteinDB embeds a Causet Partitioner which is a partitioning scheme that is designed to partition the database into a set of causet partitions.\
+As a standalone, EinsteinDB embeds a Causet Partitioner which is a partitioning scheme that is designed to partition the database onto  and into a set of namespaced sandboxes. \
+The partitioner is a stateless hashmap with a time stamp. \
+Causets are identities, with attributes that are either lightlike asserted or timelike retractive; which means, data is never deleted. \
+You can think of a causet as a vector of time stamps. \ with a vector of domain values. \ and a persistence mechanism. \ which is a vector of time stamps. \
+
+of partial ordered atomic causets. \
+The Causet Partitioner is a stateless hashmap with a time stamp. \
+
+
+EinsteinDB is a distributed database that is designed to be accessed by multiple clients from different machines.
+With Append-Log functionality, and Hybrid Logical clock mechanisms in the form of a stateless hashmap with a time stamp and a value, it is possible to achieve the Byzantine Fault Tolerance protocol that adapts to the network topology.
+
 These are immutable replicas of the database that are stored in the cloud.\
 The suffix of the database name is the number of causet partitions.\
 
@@ -241,191 +455,11 @@ Relativistic linearization tells us that the runtime of a query is a function of
 
 EinsteinDB stateless hash-trees span everything between a write-optimized log to a read-optimized sorted array. The hash-tree is a data structure that allows us to store a large number of entities in a single contiguous memory space, while still being able to efficiently access them.
 For example, the hash-tree of a table scan is a tree of hash-trees, each of which is a tree of hash-trees, and so on.The difference is with a causet you now have a virtualized and vectorized stochastic clock
-which issues partially ordered timestamps to the causet. In order to compute an aggregate for a given range, the Seg- ment Tree is traversed bottom up starting from both window frame bounds. Both traversals are performed in parallel.
-done simultaneously until the traversals arrive at the same node. As a result, this procedure stops early for small ranges and always aggregates the minimum number of nodes. 
+which issues partially ordered timestamps to the causet. In order to compute an aggregate for a given range, the Segment Tree is traversed bottom up, starting from both window frame bounds. Both traversals are performed in parallel until the traversals arrive at the same node. \ 
+As a result, this procedure stops early for small ranges and always aggregates the minimum number of nodes. 
+Time travel querying is a technique that allows us to query the database in the past. Causets are a way of representing the causal relationships between entities in a database. For example, for a table scan we use features such as the number of pages of\
+a table or information about the data type and average width in bytes for each column that allows the model to learn the runtime complexity of the scan independent of the concrete database at hand.
+Relativistic linearization tells us that the runtime of a query is a function of the number of entities in the database modulo the number of entities in the database engaged with the cursor and the frame pointer: an interlocking direcorate in SUSE.
 
-The details of the traversal algorithm can be found in Appendix C.
-In addition to improving worst-case efficiency, another important benefit of the Segment 
+In addition to improving worst-case efficiency, another important benefit of the Segment \
 Tree is that it allows to parallelize arbitrary aggregates, even for running sum queries like sum(b) over (order by a rows between unbounded preceding and current row)
-
-## Theory
-
-It has been shown that CAP theorem can be used to compute the aggregate functionality for a given range. This is equivalent to some global linearizability property.
-
-SQLite_mut in EinsteinDB is equivalent to reading your writes before your reads. This is a linearizability property.  It is also equivalent to the following property: the aggregate function is a function of the number of entities in the database modulo the number of entities in the database engaged with the cursor and the frame pointer.
-EinsteinDB is a database that is used to store facts. It is CAP-compatible with Postgres, SQLite, and MySQL. Moreover, it reaches CAP with FoundationDB, TerminusDB, and MilevaDB.
-
-On its own, EinsteinDB is CQRS-compliant. In other words, it is a database that is used to store facts. It is CAP-compatible with Postgres, SQLite, and MySQL. Moreover, it reaches CAP with FoundationDB, TerminusDB, and MilevaDB.
-
-## Cracking Columns and Sharding Causets: A Poisson distribution of byzantine failures.
-
-Built as a shim for a stateless merkle tree, EinsteinDB is a hybrid key-value store that strikes the optimal balance between the costs of a key-value store and the costs of a merkle tree.
-It is composed of an LSH-KV store and a Merkle tree, which are separated by a column store. The column store is a shim for a serialization of the data. This means that the data is serialized and stored in a column store with a single column.
-The column store is merely the appended log of the merkle tree; thusly, every row, column, and value in the column store is single-user atomic and immutable fact in the database. With Massive online data processing, the column store is the most efficient way to store data.
-EinsteinDB is brilliant for both the ability to lower latency in the database and the ability to lower the cost of the maintaining the database.
-
-EinsteinDB is compatible with 
-1. Rook
-2. Ceph
-3. Cassandra
-4. MongoDB
-5. PostgresQL
-6. SQLite
-
-
-EinsteinDB exhibits a single-writer multiple-reader concurrency model. However, as is noted in the EinsteinDB rust script. A soliton
-may indeed graduate EinsteinDB into a Multi-Version Time-Warped Causet-based database. This is a very interesting problem to solve. The solution is to use a grammar of causets with context switch and virtual time. 
-Because EinsteinDB is a CQRS-compliant database, It is CAP-compatible with Postgres, SQLite, and MySQL; it reaches CAP with FoundationDB, TerminusDB, and MilevaDB (see Appendix C).
-an intrinsic trade-off between lookup cost, update cost, and main memory footprint, yet all existing designs expose a subopti- mal and difficult to tune trade-off among these metrics. We pin- point the problem to the fact that all modern key-value stores sub- optimally co-tune the merge policy, the buffer size, and the Bloom filters’ false positive rates in each level.
-We present Monkey, an LSM-based key-value store that strikes the optimal balance between the costs of updates and lookups with any given main memory budget. The insight is that worst-case lookup cost is proportional to the sum of the false positive rates of the Bloom filters across all levels of the LSM-tree. Contrary to state-of-the-art key-value stores that assign a fixed number of bits-per-element to all Bloom filters, Monkey allocates memory to filters across different levels so as to minimize this sum.
-
-EinsteinDB is an opinionated weakly-coupled, Multi-Version Timestamped Ordered, repeatable read, transactional database which supports a query language and storage modeling similar but agnostic to relational databases. In Fact, EinsteinDB is a computational database. With one big difference, EinsteinDB is not a relational database.
-While EinsteinDB provides PL/SQL, it is not merely a key-value storage system; EinsteinDB incorporates the idea of Minkowski, Lamport, and others. Causets of the Minkowski model are:
-- **Timestamp**: The timestamp is the time at which a transaction is committed; multi-version timestamps are the timestamps of the transactions that are committed.
-- **Order**: The order is the order in which transactions are committed; concurrency control is based on the order.
-- **Repeatability**: The repeatability is the ability to repeat a transaction: if a transaction is committed, it is repeatable.
-- **Transactional**: The transactional is the ability to commit a transaction: if a transaction is committed, it is transactional.
-
-
-EinsteinDB is a new kind of database that can handle extremely large amounts of data. With its Write Amplification Factor of 1.5, it can handle up to 1.5x the number of rows in a table. EinsteinDB is a database that is used to store facts. It is CAP-compatible with Postgres, SQLite, and MySQL. Moreover, it reaches CAP with FoundationDB, TerminusDB, and MilevaDB.
-It can write data at speeds up to 5 milliseconds per row. P99 latency is 0.5 milliseconds, which is faster than any other database on the market. \
-EinsteinDB also has features that make it unique, such as the ability to read data in parallel, to write data in a concurrent manner, with time traveling queries, and to support the use of causets.
-
-Unlike Galileo, JanusGraph, and AllegroGraph, EinsteinDB implements and EinsteinML language model for a persistence file. Unlike HyPerDB, MongoDB, Arango, and BoltDB, EinsteinDB does not require a schema to be defined. \
-Causets are similar to tuplespaces and allow individuals to read their writes, and allow multiple individuals to write optimize in parallel universes. \
-
-# Database Choice for Petabytes and Beyond
-EinsteinDB is the perfect choice for personal or business computing that needs to handle large amounts of data. With its Write Amplificator, it can write data at speeds up to 5 milliseconds, which is faster than any other database on the market.
-
-EinsteinDB s a powerful continuum database that unifies major data structure designs. 
-
-
-In a nutshell, ```einstein_db``` is a ```persistent indexing scheme``` based off of LSH-KVX that exploits the distinct merits of hash Index and B+-Tree Index to support universal range scan which transcends key-value ranges using topographic categories of mumford grammars. 
-
-The practical beneﬁt of einstein_db is that it creates a fast inference InterlockingDirectorate with GPT3 , it then generates a bootstrap SQL design of data structures which engages with OpenAI: An AllegroCL meta-language. For example, we can near instantly predict how a speciﬁc de­sign change in the underlying storage of a data system would aﬀect performance, or reversely what would be the optimal data structure (from a given set of designs) given workload characteristics and memory budget. In turn, these prop­erties allow us to envision new class self-designing SolitonId-causet_locale stores with substantially improved ability to adapt to workload and hardware changes by transitioning between drastically different data structure designs on demand.
-
-
-## Key Features
-- Unified Key Format: allows you to abstract your data center into spacetime
-- Write Amplificator: writes data at speeds up to 5 milliseconds
-- Horn Rules: give you the ability to query the database for historical data
-- Bulk-Carrier: allows you to process large amounts of data quickly
-- Post-Quantum Stateless Merkle Trees: provides security for your data
-- Quantum-Tolerant: provides security for your data
-
-## Installation
-```Dockerfile```
-```
-FROM ubuntu:16.04
-  
-RUN apt-get update && apt-get install -y \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg-agent \
-    software-properties-common
-   
-RUN curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-   
-RUN apt-key fingerprint 0EBFCD88
-   
-RUN add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-   $(lsb_release -cs) \
-   stable"
-   
-RUN apt-get update
-   
-RUN apt-get install -y docker-ce docker-ce-cli containerd.io
-   
-
- 
-```
-
-
-## Usage
-```bash
-docker run -it --rm -p 8080:8080 einstein_db
-```
-  
-## Docker Compose
-```docker-compose.yml
-version: '3'
-
-## Kubernetes Configuration
-```k8s.yml
-apiVersion: v1
-kind: Service
-metadata:
-  name: einstein_db
-spec:
-  selector:
-    app: einstein_db
-  ports:
-    - port: 8080
-      targetPort: 8080
-  type: NodePort
----
-apiVersion: v1
-kind: Deployment
-metadata:
-  name: einstein_db
-spec: einstein_db_ctl
-    replicas: 1
-    selector:
-        matchLabels:
-        app: einstein_db
-    template:
-        metadata:
-        labels:
-            app: einstein_db
-        spec:
-        containers:
-        - name: einstein_db
-            image: einstein_db
-            ports:
-            - containerPort: 8080
-            protocol: TCP
-            env:
-            - name: EINSTEIN_DB_HOST
-            value: einstein_db
-            - name: EINSTEIN_DB_PORT
-            value: "8080"
-            - name: EINSTEIN_DB_USER
-            value: "root"
-            - name: EINSTEIN_DB_PASSWORD
-            value: "root"
-            - name: EINSTEIN_DB_DATABASE
-            value: "einstein_db"
-            - name: EINSTEIN_DB_MAX_CONNECTIONS
-            value: "100"
-            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST
-            value: "100"
-            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER
-            value: "100"
-            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB
-            value: "100"
-            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB_PER_TABLE
-            value: "100"
-            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB_PER_TABLE_PER_COLUMN
-            value: "100"
-            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB_PER_TABLE_PER_COLUMN_PER_ROW
-            value: "100"
-            - name: EINSTEIN_DB_MAX_CONNECTIONS_PER_HOST_PER_USER_PER_DB_PER_TABLE_PER_COLUMN_PER_ROW_PER_TIMESTAMP
-
-
-```aidl.yml
-apiVersion: v1
-kind: ServiceSpec
-ports:
-  - port: 8080
-    targetPort: 8080
-    protocol: TCP
-    name: einstein_db
-    nodePort: 30080
-    type: NodePort
----
-apiVersion: v1
-kind: DeploymentSpec
-replicas: 100
-

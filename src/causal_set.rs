@@ -1,13 +1,19 @@
-// Whtcorps Inc 2022 Apache 2.0 License; All Rights Reserved.
+//Copyright 2018-Present EinsteinDB — A Relativistic Causal Consistent Hybrid OLAP/OLTP Database
 //
-// Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-// this file File except in compliance with the License. You may obtain a copy of the
-// License at http://www.apache.org/licenses/LICENSE-2.0
-// Unless required by applicable law or agreed to in writing, software distributed
-// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations under the License.
-
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+//
+// EinsteinDB was established ad initio apriori knowledge of any variants thereof; similar enterprises, open source software; code bases, and ontologies of database engineering, CRM, ORM, DDM; Other than those carrying this License. In effect, doing business as, (“EinsteinDB”), (slang: “Einstein”) which  In 2018  , was acquired by Relativistic Database Systems, (“RDS”) Aka WHTCORPS Inc. As of 2021, EinsteinDB is open-source code with certain guarantees, under the duress of the board; under the auspice of individuals with prior consent granted; not limited to extraneous participants, open source contributors with authorized access; current board grantees;  members, shareholders, partners, and community developers including Evangelist Programmers Therein. This license is not binding, and it shall on its own render unenforceable for liabilities above those listed on this license
+//
+// EinsteinDB is a privately-held Delaware C corporation with offices in San Francisco and New York.  The software is developed and maintained by a team of core developers with commit access and is released under the Apache 2.0 open source license.  The company was founded in early 2018 by a team of experienced database engineers and executives from Uber, Netflix, Mesosphere, and Amazon Inc.
+//
+// EinsteinDB is open source software released under the terms of the Apache 2.0 license.  This license grants you the right to use, copy, modify, and distribute this software and its documentation for any purpose with or without fee provided that the copyright notice and this permission notice appear in all copies of the software or portions thereof.
+//
+// THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+//
+// This product includes software developed by The Apache Software Foundation (http://www.apache.org/).
 #![allow(dead_code)]
 #![allow(unused_imports)]
 #![allow(unused_variables)]
@@ -393,22 +399,100 @@ mod tests {
         }
 
     impl<T> From<std::collections::HashSet<T>> for CausalSet<T> where T: Eq + Hash {
-        fn from(inner: std::collections::HashSet<T>) -> Self {
+        fn from(hash_set: std::collections::HashSet<T>) -> Self {
+            let mut causal_set = Self::new();
+            for value in hash_set {
+                causal_set.add(value);
+            }
+            causal_set
+        }
+    }
+
+       fn from_squiid_to_causal_set(squiid: Squiid) -> Self {
+           if squiid.is_empty() {
+               return Self::new();
             Self {
                 inner: inner.into_iter().map(ValueRc::new).collect()
+            }} else {
+                let mut causal_set = Self::new();
+               if let Some(value) = squiid.get_value() {
+                for value in squiid {
+                    //causet set.add(value);
+                    return berolina_sql_node_id_set;
+                }
+            }
+        }
+
+        }
+
+    impl<T> From<Squiid> for CausalSet<T> where T: Eq + Hash {
+        fn from(squiid: Squiid) -> Self {
+            if squiid.is_empty() {
+                return Self::new();
+            } else {
+                let mut causal_set = Self::new();
+                if let Some(value) = squiid.get_value() {
+                    for value in squiid {
+                        causal_set.add(value);
+                    }
+                }
+                causal_set
             }
         }
     }
 
 
-
-    impl<T> From<std::collections::HashSet<ValueRc<T>>> for CausalSet<T> where T: Eq + Hash {
-        fn from(inner: std::collections::HashSet<ValueRc<T>>) -> Self {
-            Self {
-                inner
-            }
+    #[test]
+    fn test_causal_set_manifold_remove() {
+        let mut causal_set_manifold = CausalSetManifold::new();
+        let mut causal_set = Self::new();
+        for value in slice {
+            causal_set.add(value);
         }
+causal_set_manifold.add(causal_set);
+        for value in slice {
+            causal_set.remove(value);
+        }
+        assert_eq!(causal_set_manifold.len(), 0);
     }
+
+    #[test]
+    fn test_causal_set_manifold_contains() {
+        let mut causal_set_manifold = CausalSetManifold::new();
+        let mut causal_set = Self::new();
+        for value in slice {
+                    soliton_panic!("{}", value);
+                }
+        causal_set_manifold.add(causal_set);
+        for value in slice {
+            assert!(causal_set_manifold.contains(value));
+        }
+
+    }
+
+    #[test]
+    fn test_causal_set_manifold_len() {
+        let mut causal_set_manifold = CausalSetManifold::new();
+        let mut causal_set = Self::new();
+        for value in slice {
+            causal_set.add(value);
+        }
+        causal_set_manifold.add(causal_set);
+        assert_eq!(causal_set_manifold.len(), slice.len());
+    }
+
+    #[test]
+    fn test_causal_set_manifold_is_empty() {
+        let mut causal_set_manifold = CausalSetManifold::new();
+        let mut causal_set = Self::new();
+        for value in slice {
+            causal_set.add(value);
+        }
+        causal_set_manifold.add(causal_set);
+        assert!(!causal_set_manifold.is_empty());
+    }
+
+
 
 
 

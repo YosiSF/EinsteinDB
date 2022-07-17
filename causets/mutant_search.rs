@@ -1,9 +1,19 @@
-//Copyright (c) 2019, EinsteinDB Project, Apache v2.0 License, MIT License
-//mod mutant_search;
-
-
-// Language: rust
-// Path: causet/src/mutant_search.rs
+// Copyright 2018-Present EinsteinDB — A Relativistic Causal Consistent Hybrid OLAP/OLTP Database
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+//
+// EinsteinDB was established ad initio apriori knowledge of any variants thereof; similar enterprises, open source software; code bases, and ontologies of database engineering, CRM, ORM, DDM; Other than those carrying this License. In effect, doing business as, (“EinsteinDB”), (slang: “Einstein”) which  In 2018  , was acquired by Relativistic Database Systems, (“RDS”) Aka WHTCORPS Inc. As of 2021, EinsteinDB is open-source code with certain guarantees, under the duress of the board; under the auspice of individuals with prior consent granted; not limited to extraneous participants, open source contributors with authorized access; current board grantees;  members, shareholders, partners, and community developers including Evangelist Programmers Therein. This license is not binding, and it shall on its own render unenforceable for liabilities above those listed on this license
+//
+// EinsteinDB is a privately-held Delaware C corporation with offices in San Francisco and New York.  The software is developed and maintained by a team of core developers with commit access and is released under the Apache 2.0 open source license.  The company was founded in early 2018 by a team of experienced database engineers and executives from Uber, Netflix, Mesosphere, and Amazon Inc.
+//
+// EinsteinDB is open source software released under the terms of the Apache 2.0 license.  This license grants you the right to use, copy, modify, and distribute this software and its documentation for any purpose with or without fee provided that the copyright notice and this permission notice appear in all copies of the software or portions thereof.
+//
+// THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+//
+// This product includes software developed by The Apache Software Foundation (http://www.apache.org/).
 
 ///Semantic Search
 /// # Examples
@@ -78,27 +88,6 @@ pub use causet::causet_core::causet::{CausetReaderMut, CausetWriterMut};
 use causet_of_causets::causet_of_causets::*;
 
 
-
-
-use crate as causet;
-//EinsteinDB
-
-//define causet and inherit
-pub mod causet;
-//ca causet of causets
-//makes a tuplespace with semantics
-pub mod causet_of_causets;
-
-
-//define causet and inherit
-pub mod causet_core;
-//ca causet of causets
-//makes a tuplespace with semantics
-pub mod causet_of_causets_core;
-
-
-//define causet and inherit
-pub mod causet_core_mut;
 
 
 const MAX_DOCS_PER_SLICE: i32 = 250_000;
@@ -374,7 +363,7 @@ pub enum SubspaceIteratorMutant {
 }
 
 /// here we focus on origin as a subspace of borrowed mutant search memory space
-
+/*
 pub enum SubspaceRowSlice {
     SubspaceRowSlice(Vec<u8>),
     SubspaceRowSliceMutant(Vec<u8>),
@@ -391,6 +380,7 @@ pub enum SubspaceRowSlice {
         sql: &'a str,
         sql_mutant: &'a str,
         sql_mutant_list: Vec<String>,
+
         sql_mutant_list_len: usize,
 
 }
@@ -481,4 +471,71 @@ fn parse_level(input: &str) -> IResult<&str, &str> {
 /// ```
 /// use log_parser::parse_log_line;
 ///         
-/// 
+///
+*/
+
+
+
+#[derive(Debug)]
+pub struct SubspaceRowSlice {
+    pub origin: Vec<u8>,
+    pub non_null_ids: LEBytes<u32>,
+    pub null_ids: LEBytes<u32>,
+    pub offsets: LEBytes<u32>,
+    pub values: LEBytes<u8>,
+    pub doc_freq: i32,
+    pub total_term_freq: i64,
+    pub term_freq: i64,
+    pub term: String,
+    pub term_type: TermType,
+    pub sql: String,
+    pub sql_mutant: String,
+    pub sql_mutant_list: Vec<String>,
+    pub sql_mutant_list_len: usize,
+}
+
+
+impl SubspaceRowSlice {
+    pub fn new(origin: Vec<u8>, non_null_ids: LEBytes<u32>, null_ids: LEBytes<u32>, offsets: LEBytes<u32>, values: LEBytes<u8>, doc_freq: i32, total_term_freq: i64, term_freq: i64, term: String, term_type: TermType, sql: String, sql_mutant: String, sql_mutant_list: Vec<String>, sql_mutant_list_len: usize) -> SubspaceRowSlice {
+        SubspaceRowSlice {
+            origin: origin,
+            non_null_ids: non_null_ids,
+            null_ids: null_ids,
+            offsets: offsets,
+            values: values,
+            doc_freq: doc_freq,
+            total_term_freq: total_term_freq,
+            term_freq: term_freq,
+            term: term,
+            term_type: term_type,
+            sql: sql,
+            sql_mutant: sql_mutant,
+            sql_mutant_list: sql_mutant_list,
+            sql_mutant_list_len: sql_mutant_list_len,
+        }
+    }
+}
+
+
+impl<'a> From<&'a SubspaceRowSlice> for SubspaceRowSlice {
+    fn from(slice: &'a SubspaceRowSlice) -> Self {
+        SubspaceRowSlice {
+            origin: slice.origin.clone(),
+            non_null_ids: slice.non_null_ids.clone(),
+            null_ids: slice.null_ids.clone(),
+            offsets: slice.offsets.clone(),
+            values: slice.values.clone(),
+            doc_freq: slice.doc_freq,
+            total_term_freq: slice.total_term_freq,
+            term_freq: slice.term_freq,
+            term: slice.term.clone(),
+            term_type: slice.term_type,
+            sql: slice.sql.clone(),
+            sql_mutant: slice.sql_mutant.clone(),
+            sql_mutant_list: slice.sql_mutant_list.clone(),
+            sql_mutant_list_len: slice.sql_mutant_list_len,
+        }
+    }
+}
+
+
