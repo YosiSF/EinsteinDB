@@ -115,7 +115,7 @@ struct CausetSearch {
     //causet_of_causets_core::CausetOfCausets
     causet_of_causets_mutant: CausetOfCausets,
     search_files: Vec<(i64, File)>,
-    currrent_lines: Option<std::io::Lines<BufReader<File>>>,
+    current_lines: Option<std::io::Lines<BufReader<File>>>,
 
     // filter conditions
     begin_time: i64,
@@ -128,6 +128,85 @@ struct CausetSearch {
 
     pre_log: LogMessage,
     pre_log_mutant: LogMessage,
+
+    dispatched_lines: Vec<String>,
+    dispatched_lines_mutant: Vec<String>,
+    dispatched_lines_mutant_list: Vec<String>,
+    dispatched_lines_mutant_list_mutant: Vec<String>,
+    dispatched_lines_mutant_list_mutant_list: Vec<String>,
+
+}
+///!#[APPEND_LOG_g(test)]
+/// #[test]
+/// fn test_mutant_search() {
+///    println!("{:?}", "test_mutant_search"); you
+/// }
+impl CausetSearch {
+    pub fn new() -> CausetSearch {
+        CausetSearch {
+            causet_of_causets: CausetOfCausets::new(),
+            causet_of_causets_mutant: CausetOfCausets::new(),
+            search_files: Vec::new(),
+            current_lines: None,
+            begin_time: 0,
+            end_time: 0,
+            begin_time_mutant: 0,
+            end_time_mutant: 0,
+            level_flag: 0,
+            patterns: Vec::new(),
+            patterns_mutant: Vec::new(),
+            pre_log: LogMessage::new(),
+            pre_log_mutant: LogMessage::new(),
+            dispatched_lines: Vec::new(),
+            dispatched_lines_mutant: Vec::new(),
+            dispatched_lines_mutant_list: Vec::new(),
+            dispatched_lines_mutant_list_mutant: Vec::new(),
+            dispatched_lines_mutant_list_mutant_list: Vec::new(),
+        }
+    }
+    pub fn set_begin_time(&mut self, begin_time: i64) {
+        self.begin_time = begin_time;
+    }
+    pub fn set_end_time(&mut self, end_time: i64) {
+        self.end_time = end_time;
+    }
+    pub fn set_begin_time_mutant(&mut self, begin_time_mutant: i64) {
+        self.begin_time_mutant = begin_time_mutant;
+    }
+    pub fn set_end_time_mutant(&mut self, end_time_mutant: i64) {
+        self.end_time_mutant = end_time_mutant;
+    }
+    pub fn set_level_flag(&mut self, level_flag: usize) {
+        self.level_flag = level_flag;
+    }
+    pub fn set_patterns(&mut self, patterns: Vec<regex::Regex>) {
+        self.patterns = patterns;
+    }
+
+    pub fn set_patterns_mutant(&mut self, patterns_mutant: Vec<regex::Regex>) {
+        self.patterns_mutant = patterns_mutant;
+    }
+
+    pub fn set_pre_log(&mut self, pre_log: LogMessage) {
+        self.pre_log = pre_log;
+    }
+
+    pub fn set_pre_log_mutant(&mut self, pre_log_mutant: LogMessage) {
+        self.pre_log_mutant = pre_log_mutant;
+    }
+
+    pub fn set_dispatched_lines(&mut self, dispatched_lines: Vec<String>) {
+        self.dispatched_lines = dispatched_lines;
+    }
+
+
+    pub fn set_dispatched_lines_mutant(&mut self, dispatched_lines_mutant: Vec<String>) {
+        self.dispatched_lines_mutant = dispatched_lines_mutant;
+    }
+
+    pub fn set_dispatched_lines_mutant_list(&mut self, dispatched_lines_mutant_list: Vec<String>) {
+        self.dispatched_lines_mutant_list = dispatched_lines_mutant_list;
+    }
 }
 
 /// # Examples
@@ -153,10 +232,65 @@ struct CausetSearch {
 /// assert_eq!(sql_mutant_list.len(), 1);
 /// }
 
+#[cfg(test)]
+mod testofmutantsearch {
+    use super::*;
+    #[test]
+    fn test_mutant_search() {
+        let mut sql = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 26"; //sql   //sql_mutant        //sql_mutant_list     //sql_mutant_list_len
+        let mut sql_mutant = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 27";
+        let mut sql_mutant_list = mutant_search(&sql, &sql_mutant);
+        assert_eq!(sql_mutant_list.len(), 1);
+    }
+}
+
+
+/// # Examples
+/// ```
+/// use causet::mutant_search::mutant_search;
+/// let mut sql = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 26";
+/// let mut sql_mutant = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 27";
+/// let mut sql_mutant_list = mutant_search(&sql, &sql_mutant);
+/// assert_eq!(sql_mutant_list.len(), 1);
+/// ```
+///  #[APPEND_LOG_g(test)]
+/// mod tests {
+///    use super::*;
+///   #[test]
+/// fn test_mutant_search() {
+///    println!("{}", "test_mutant_search");
+///   let mut sql = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 26"; //sql   //sql_mutant        //sql_mutant_list     //sql_mutant_list_len
+///  let mut sql_mutant = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 27";
+/// let mut sql_mutant_list = mutant_search(&sql, &sql_mutant);
+///
+/// assert_eq!(sql_mutant_list.len(), 1);
+/// }
+
+
+
+#[macro_use(APPEND_LOG_g)]
+extern crate log;
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_mutant_search() {
+        let mut sql = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 26"; //sql   //sql_mutant        //sql_mutant_list     //sql_mutant_list_len
+        let mut sql_mutant = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 27";
+        let mut sql_mutant_list = mutant_search(&sql, &sql_mutant);
+        assert_eq!(sql_mutant_list.len(), 1);
+    } //test_mutant_searchned_rows
+
+}
+
+
 
 
 
 pub struct MutantSearch {
+
     pub sql: String,
     pub sql_mutant: String,
     pub sql_mutant_list: Vec<String>,
@@ -287,8 +421,160 @@ impl <'a> term_causet <'a> {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TermCauset {
+    pub term_causet: Vec<term_causet>,
+    pub term_causet_len: usize,
+}
 
-//SearcherManager 
+
+//Predicate
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Predicate {
+    pub term: String,
+    pub term_type: TermType,
+    pub operator: Operator,
+    pub value: String,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Operator {
+    //Predicate in the SQL query
+    Equal,
+    NotEqual,
+    LessThan,
+    LessThanOrEqual,
+    GreaterThan,
+    GreaterThanOrEqual,
+}
+
+
+//Term in the SQL query_inputs
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TSQLTerm {
+    pub term: String,
+    pub term_type: TermType,
+    pub operator: Operator,
+    pub value: String,
+}
+
+
+//Term in the SQL query_inputs
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TSQLTermList {
+    pub term_list: Vec<TSQLTerm>,
+    pub term_list_len: usize,
+}
+
+
+//Term in the SQL query_inputs
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TSQLTermListMutant {
+    pub term_list: Vec<TSQLTerm>,
+    pub term_list_len: usize,
+}
+
+
+//Term in the SQL query_inputs
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TSQLTermListMutantList {
+    pub term_list: Vec<TSQLTermListMutant>,
+    pub term_list_len: usize,
+}
+
+
+//Term in the SQL query_inputs
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TSQLTermListMutantListLen {
+    pub term_list: Vec<TSQLTermListMutantList>,
+    pub term_list_len: usize,
+}
+
+///!#[APPEND_LOG_g(test)]
+/// mod tests {
+///   use super::*;
+///  #[test]
+/// fn test_mutant_search() {
+///    println!("{}", "test_mutant_search");
+///   let mutant_search = mutant_search();
+///  assert_eq!(mutant_search.len(), 1);
+///  }
+///  }
+/// /////////////////////////////
+/// /////////////////////////////
+/// Fixture for FoundationDB's Record Layer with Error Handling
+/// /////////////////////////////
+///
+/// let mut db = FoundationDB::new();
+/// let mut db_mutant = FoundationDB::new();
+/// let mut db_mutant_list = FoundationDB::new();
+/// let mut db_mutant_list_len = FoundationDB::new();
+/// let mut db_mutant_list_len_mutant = FoundationDB::new();
+///
+/// fn mutant_search() {
+/// if db.open("/tmp/foundationdb_test_mutant_search") {
+/// for c in 'a'..'z' {
+/// let mut sql = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 27";
+/// let mut sql_mutant = "select * from t1 where a = 1 and b = 2 and c = 3 and d = 4 and e = 5 and f = 6 and g = 7 and h = 8 and i = 9 and j = 10 and k = 11 and l = 12 and m = 13 and n = 14 and o = 15 and p = 16 and q = 17 and r = 18 and s = 19 and t = 20 and u = 21 and v = 22 and w = 23 and x = 24 and y = 25 and z = 27";
+/// let mut sql_mutant_list = vec![];
+/// let mut sql_mutant_list_len = 0;
+/// let mut sql_mutant_list_len_mutant = 0;
+/// let mut doc_freq = 0;
+///
+///
+/// if db.open("/tmp/foundationdb_test_mutant_search") {
+/// if (db.execute(&sql)) {
+/// for row in db.rows() {
+/// doc_freq = row.get(0);
+/// if (doc_freq > 0) {
+/// let mut total_term_freq = 0;
+/// for c in 'a'..'z' {
+/// let mut term = "";
+/// let mut term_type = TermType::None;
+/// let mut term_freq = 0;
+/// let mut operator = Operator::None;
+/// let mut value = "";
+/// let mut sql = "";
+/// let mut sql_mutant = "";
+/// for c in 'a'..'z' {
+/// term = &term + &c.to_string();
+/// term_type = TermType::None;
+///
+///
+///
+///
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+
+pub struct TermCausedWithPredicatedOmicron {
+    pub term_caused_with_predicated_omicron: Vec<term_caused_with_predicated_omicron>,
+    pub term_caused_with_predicated_omicron_len: usize,
+}
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub struct TermCausedWithPredicatedOmicronMutant {
+    pub term_caused_with_predicated_omicron: Vec<term_caused_with_predicated_omicron>,
+    pub term_caused_with_predicated_omicron_len: usize,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
+pub struct TermCausedWithPredicatedOmicronMutantList {
+    pub term_causet: Vec<term_causet>,
+    pub term_causet_len: usize,
+    pub predicate: Predicate,
+    pub omicron: Omicron,
+}
+
+
+
+
+//SearcherManager
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SearcherManager {
     pub searcher: Box<dyn Searcher>,
@@ -303,11 +589,11 @@ pub struct SearcherManager {
 impl SearcherManager {
     pub fn new(searcher: Box<dyn Searcher>, searcher_mutant: Box<dyn Searcher>, searcher_mutant_list: Vec<Box<dyn Searcher>>, searcher_mutant_list_len: usize, searcher_mutant_list_len_mutant: usize) -> SearcherManager {
         SearcherManager {
-            searcher: searcher,
-            searcher_mutant: searcher_mutant,
-            searcher_mutant_list: searcher_mutant_list,
-            searcher_mutant_list_len: searcher_mutant_list_len,
-            searcher_mutant_list_len_mutant: searcher_mutant_list_len_mutant,
+            searcher,
+            searcher_mutant,
+            searcher_mutant_list,
+            searcher_mutant_list_len,
+            searcher_mutant_list_len_mutant,
         }
     }
 }   
@@ -384,6 +670,14 @@ pub enum SubspaceRowSlice {
         sql_mutant_list_len: usize,
 
 }
+
+
+
+
+
+
+
+
 
         pub fn new(origin: &'a [u8], non_null_ids: LEBytes<'a, u32>, null_ids: LEBytes<'a, u32>, offsets: LEBytes<'a, u32>, values: LEBytes<'a, u8>, doc_freq: i32, total_term_freq: i64, term_freq: i64, term: &'a str, term_type: TermType, sql: &'a str, sql_mutant: &'a str, sql_mutant_list: Vec<String>, sql_mutant_list_len: usize) -> SubspaceRowSlice {
         SubspaceRowSlice {
@@ -537,5 +831,72 @@ impl<'a> From<&'a SubspaceRowSlice> for SubspaceRowSlice {
         }
     }
 }
+
+
+#[derive(Debug)]
+pub struct SubspaceRow {
+    pub origin: Vec<u8>,
+    pub non_null_ids: LEBytes<u32>,
+    pub null_ids: LEBytes<u32>,
+    pub offsets: LEBytes<u32>,
+    pub values: LEBytes<u8>,
+    pub doc_freq: i32,
+    pub total_term_freq: i64,
+    pub term_freq: i64,
+    pub term: String,
+    pub term_type: TermType,
+    pub sql: String,
+    pub sql_mutant: String,
+    pub sql_mutant_list: Vec<String>,
+    pub sql_mutant_list_len: usize,
+}
+
+
+
+
+impl SubspaceRow {
+    pub fn new(origin: Vec<u8>, non_null_ids: LEBytes<u32>, null_ids: LEBytes<u32>, offsets: LEBytes<u32>, values: LEBytes<u8>, doc_freq: i32, total_term_freq: i64, term_freq: i64, term: String, term_type: TermType, sql: String, sql_mutant: String, sql_mutant_list: Vec<String>, sql_mutant_list_len: usize) -> SubspaceRow {
+        SubspaceRow {
+            origin: origin,
+            non_null_ids: non_null_ids,
+            null_ids: null_ids,
+            offsets: offsets,
+            values: values,
+            doc_freq: doc_freq,
+            total_term_freq: total_term_freq,
+            term_freq: term_freq,
+            term: term,
+            term_type: term_type,
+            sql: sql,
+            sql_mutant: sql_mutant,
+            sql_mutant_list: sql_mutant_list,
+            sql_mutant_list_len: sql_mutant_list_len,
+        }
+    }
+}
+
+
+impl<'a> From<&'a SubspaceRow> for SubspaceRow {
+    fn from(row: &'a SubspaceRow) -> Self {
+        SubspaceRow {
+            origin: row.origin.clone(),
+            non_null_ids: row.non_null_ids.clone(),
+            null_ids: row.null_ids.clone(),
+            offsets: row.offsets.clone(),
+            values: row.values.clone(),
+            doc_freq: row.doc_freq,
+            total_term_freq: row.total_term_freq,
+            term_freq: row.term_freq,
+            term: row.term.clone(),
+            term_type: row.term_type,
+            sql: row.sql.clone(),
+            sql_mutant: row.sql_mutant.clone(),
+            sql_mutant_list: row.sql_mutant_list.clone(),
+            sql_mutant_list_len: row.sql_mutant_list_len,
+        }
+    }
+}
+
+
 
 
