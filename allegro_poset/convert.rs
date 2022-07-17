@@ -2126,9 +2126,31 @@ mod tests {
                         "k".to_string(),
                           Datum::Bytes(b"k".to_vec()),
                     ),
-
                 ],
-                &[],// no row to filter switch to filter_row_with_expr
+
+            if is_ok {
+                Ok(Some(Datum::Bytes(b"a".to_vec())))
+            } else {
+                panic!("sql: {} should be failed", sql);
+            },
+        );
+
+        let mut row = exec_result.unwrap().unwrap();
+        let mut causetid = causetid;
+        let mut solitonid = solitonid;
+        let mut causetid_and_solitonid = get_causetid_and_solitonid(&mut row);
+
+        if is_ok {
+            assert_eq!(causetid, causetid_and_solitonid.0);
+            assert_eq!(solitonid, causetid_and_solitonid.1);
+        } else {
+            assert!(causetid_and_solitonid.0 == 0 && causetid_and_solitonid.1 == 0);
+        }
+    }
+
+
+
+
 
                 #[test]
     fn test_bytes_to_uint_without_context() {
