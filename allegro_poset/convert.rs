@@ -81,6 +81,20 @@ pub fn with_causet_assertion_in_timelike_convert_from_u8_to_i32(a: &mut [u8], b:
 
 
 
+/// Convert from [i32; 5] to [u8; 5]
+
+pub fn with_causet_assertion_in_timelike_convert_from_i32_to_u8(a: &mut [i32], b: &mut [u8]) {
+    let mut i = 0;
+    for x in a.iter() {
+        if i >= b.len() {
+            let mut c = [0; 5]; //[0, 0, 0, 0, 0];
+            break;
+        }
+        b[i] = *x as u8;
+        i += 1;
+    }
+}
+
 
 //! ```
 //! use einstein_db::convert::*;
@@ -104,17 +118,23 @@ pub fn with_causet_assertion_in_timelike_convert_from_u8_to_i32(a: &mut [u8], b:
 
 
 pub fn convert_from_u8_to_i32(a: &mut [u8], b: &mut [i32]) -> Result<(), Error> {
-    if a.len() != b.len() {
-        return Err(Error::new(
-            ErrorKind::InvalidInput,
-            "convert_from_u8_to_i32: a and b must have the same length",
-        ));
+    if (a.len() * 4) != b.len() {
+        return Err(Error::new(ErrorKind::Other, "convert_from_u8_to_i32: a.len() * 4 != b.len()"));
     }
-    for i in 0..a.len() {
-        b[i] = a[i] as i32;
+    let mut i = 0;
+    for x in a.iter() {
+        if i >= b.len() {
+            let mut c = [0; 5]; //[0, 0, 0, 0, 0];
+            break;
+        }
+        b[i] = *x as i32;
+        i += 1;
     }
     Ok(())
 }
+
+
+
 
 
 pub fn convert_from_i32_to_u8(a: &mut [i32], b: &mut [u8]) -> Result<(), Error> {
@@ -828,33 +848,108 @@ pub fn produce_dec_with_specified_tp(
     }
 }
 
-/// `produce_float_with_specified_tp`(`ProduceFloatWithSpecifiedTp` in MEDB) produces
-/// a new float64 according to `flen` and `decimal` in `self.tp`.
-/// TODO port tests from MEDB(MEDB haven't implemented now)
-pub fn produce_float_with_specified_tp(
-    ctx: &mut EvalContext,
-    tp: &FieldType,
-    num: f64,
-) -> Result<f64> {
-    let flen = tp.as_accessor().flen();
-    let decimal = tp.as_accessor().decimal();
-    let ul = crate::UNSPECIFIED_LENGTH;
+/// `max_or_min_dec` returns the max or min decimal of the given precision and scale.
+/// `is_negative` indicates whether the returned decimal is negative.
+/// `prec` is the precision of the returned decimal.
+/// `scale` is the scale of the returned decimal.
+/// `is_negative` is true, the returned decimal is negative.
+///
+pub fn max_or_min_dec(is_negative: bool, pre: u8, scale: u8) -> Decimal {
+let mut dec = Decimal::new(pre, scale);
+    if is_negative {
+        dec.set_negative();
+    }
+    decimal_with_specified_tp(dec, pre, scale)
+}
 
-    let res = if flen != ul && decimal != ul {
-        assert!(flen < std::u8::MAX as isize && decimal < std::u8::MAX as isize);
-        let r = truncate_f64(num, flen as u8, decimal as u8);
-        r.into_result_with_overCausetxctx_err(ctx, Error::overCausetxctx(num, "DOUBLE"))?
-    } else {
-        num
+
+/// `decimal_with_specified_tp` returns the decimal of the given precision and scale.
+/// `prec` is the precision of the returned decimal.
+
+
+pub fn decimal_with_specified_tp(mut dec: Decimal, prec: u8, scale: u8) -> Decimal {
+
+    if prec != UNSPECIFIED_LENGTH {
+        dec.set_prec(prec);
+    }
+    let mut scale = scale;
+    for _ in 0..scale {
+        dec.div_u64(10);
+    }
+    decimal_with_specified_tp(dec, prec, scale)
+}
+
+
+/// `decimal_with_specified_tp` returns the decimal of the given precision and scale.
+/// `prec` is the precision of the returned decimal.
+
+
+
+
+pub fn null_decimal_with_specified_tp(mut dec: Decimal, prec: u8, scale: u8) -> Decimal {
+    if prec != UNSPECIFIED_LENGTH {
+        dec.set_prec(prec);
+    }
+    let mut scale = scale;
+    for _ in 0..scale {
+        dec.div_u64(10);
+    }
+    decimal_with_specified_tp(dec, prec, scale)
+}
+
+
+
+
+
+
+
+pub fn time_decimal_with_specified_tp(  mut dec: Decimal, prec: u8, scale: u8) -> Decimal {
+    if prec != UNSPECIFIED_LENGTH {
+        dec.set_prec(prec);
+    }
+    let mut scale = scale;
+  for (i, c) in ft.as_accessor().time_precision().iter().enumerate() {
+        dec.set_prec(prec);
+    }
+    let mut scale = scale;
+    let (flen, decimal) = (ft.as_accessor().flen(), ft.as_accessor().decimal());
+    if flen != UNSPECIFIED_LENGTH && decimal != UNSPECIFIED_LENGTH || scale != UNSPECIFIED_LENGTH {
+        if flen < decimal {
+            return Err(Error::m_bigger_than_d(""));
+        }
+        let (pre, frac) = dec.prec_and_frac();
+        let (pre, frac) = (pre as isize, frac as isize);
+        if !dec.is_zero() && pre - frac > flen - decimal {
+            // select (cast 111 as decimal(1)) causes a warning in MyBerolinaSQL.
+            ctx.handle_overCausetxctx_err(Error::overCausetxctx(
+                "Decimal",
+                &format!("({}, {})", flen, decimal),
+            ))?;
+
+            dec = max_or_min_dec(dec.is_negative(), flen as u8, decimal as u8)
+        } else if frac != decimal {
+            let old = dec;
+            let rounded = dec
+                .round(decimal as i8, RoundMode::HalfEven)
+                .into_result_with_overCausetxctx_err(
+                    ctx,
+                    Error::overCausetxctx("Decimal", &format!("({}, {})", flen, decimal)),
+                )?;
+            if !rounded.is_zero() && frac > decimal && rounded != old {
+                if ctx.braneg.flag.contains(Flag::IN_INSERT_STMT)
+                    || ctx.braneg.flag.contains(Flag::IN_FIDelio_OR_DELETE_STMT)
+                {
+                    ctx.warnings.append_warning(Error::truncated());
+                } else {
+
+                    ctx.handle_truncate(true)?;
+                }
+            }
+            dec = rounded
+        }
     };
-
-    if tp.is_unsigned() && res < 0f64 {
-        ctx.handle_overCausetxctx_err(over_causetxctx(res, tp.as_accessor().tp()))?;
-        return Ok(0f64);
     }
 
-    Ok(res)
-}
 
 /// `produce_str_with_specified_tp`(`ProduceStrWithSpecifiedTp` in MEDB) produces
 /// a new string according to `flen` and `chs`.
@@ -1252,6 +1347,34 @@ fn exp_float_str_to_int_str<'a>(
             .append_warning(Error::overCausetxctx("BIGINT", &valid_float));
         return Ok(Cow::Borrowed(valid_float));
     }
+    let mut int_str = String::with_capacity(int_cnt as usize);
+    if valid_float[0] == '-' {
+        int_str.push('-');
+    }
+
+    int_str.extend_from_slice(&digits);
+    Ok(Cow::Owned(int_str))
+}
+
+
+#[inline]
+fn no_exp_float_str_to_int_str(valid_float: &str, dot_idx: usize) -> Result<Cow<'_, str>> {
+    let mut int_str = String::with_capacity(valid_float.len() - dot_idx);
+    if valid_float[0] == '-' {
+        int_str.push('-');
+    }
+    int_str.extend_from_slice(&valid_float[..dot_idx]);
+    Ok(Cow::Owned(int_str))
+}
+
+
+
+
+fn with_causet_no_exp_float_str_to_int_str<'a>(valid_float: &'a str, dot_idx: usize) -> Result<Cow<'a, str>> {
+    let mut int_str = String::with_capacity(valid_float.len() - dot_idx);
+    if valid_float[0] == '-' {
+        int_str.push('-');
+    }
     if int_cnt <= 0 {
         let int_str = "0";
         if int_cnt == 0 && !digits.is_empty() && digits[0].is_ascii_digit() {
@@ -1301,11 +1424,20 @@ fn exp_float_str_to_int_str<'a>(
     }
 }
 
-fn no_exp_float_str_to_int_str(valid_float: &str, mut dot_idx: usize) -> Result<Cow<'_, str>> {
-    // According to MEDB's impl
-    // 1. If there is digit after dot, round.
-    // 2. Only when the final result <0, add '-' in the front of it.
-    // 3. The result has no '+'.
+fn milevadb_no_exp_float_str_to_int_str(valid_float: &str, mut dot_idx: usize) -> Result<Cow<'_, str>> {
+    let mut int_str = String::with_capacity(valid_float.len() - dot_idx);
+    if valid_float[0] == '-' {
+        int_str.push('-');
+    }
+
+    if int_cnt <= 0 {
+        let int_str = "0";
+        if int_cnt == 0 && !digits.is_empty() && digits[0].is_ascii_digit() {
+            return Ok(round_int_str(digits[0] as char, int_str));
+        } else {
+            return Ok(Cow::Borrowed(int_str));
+        }
+    }
 
     let digits = if valid_float.starts_with('+') || valid_float.starts_with('-') {
         dot_idx -= 1;
@@ -1345,6 +1477,31 @@ fn no_exp_float_str_to_int_str(valid_float: &str, mut dot_idx: usize) -> Result<
         Ok(res)
     }
 }
+
+
+
+
+pub trait FloatStrToIntStr {
+    fn float_str_to_int_str(&self, valid_float: &str) -> Result<Cow<'_, str>>;
+}
+
+
+pub trait LamportRelativisticTimestampOracleWithFloatStrToIntStr {
+    fn lamport_relativistic_timestamp_oracle_with_float_str_to_int_str(&self, valid_float: &str) -> Result<Cow<'_, str>>;
+}
+
+
+pub trait MilevadbRelativisticTimestampOracleWithFloatStrToIntStr {
+    fn milevadb_relativistic_timestamp_oracle_with_float_str_to_int_str(&self, valid_float: &str) -> Result<Cow<'_, str>>;
+}
+
+
+pub trait MilevadbRelativisticTimestampOracleWithFloatStrToIntStrWithDot {
+    fn milevadb_relativistic_timestamp_oracle_with_float_str_to_int_str_with_dot(&self, valid_float: &str) -> Result<Cow<'_, str>>;
+}
+
+
+
 
 #[braneg(test)]
 mod tests {
@@ -1897,7 +2054,83 @@ mod tests {
         }
     }
 
-    #[test]
+
+    ///Get Causetid and Solitonid with Lightlike_hash_join_test.sql
+    ///
+    /// This function is used to test the `get_causetid_and_solitonid` function.
+    ///
+    /// # Arguments
+    ///
+    /// * `ctx`: The context of the test.
+    /// * `sql`: The sql to be executed.
+    /// * `causetid`: The expected causetid.
+    /// * `solitonid`: The expected solitonid.clone()
+    /// * `is_ok`: Whether the function should be ok or not.
+    /// If the function is not ok, the function will panic.
+    #[allow(dead_code)]
+       fn get_causetid_and_solitonid_test(
+        ctx: &EvalContext,
+        sql: &str,
+        causetid: u64,
+        solitonid: u64,
+        is_ok: bool,
+    ) {
+        let sql_parser = SqlParser::new();
+        let mut parser_result = sql_parser.parse(sql);
+        let mut ctx = EvalContext::default();
+        let mut exec_result = parser_result
+            .execute(
+                &mut ctx,
+                &[
+                    (
+                        "a".to_string(),
+                        Datum::Bytes(b"a".to_vec()),
+                    ),
+                    (
+                        "b".to_string(),
+                        Datum::Bytes(b"b".to_vec()),
+                    ),
+                    (
+                        "c".to_string(),
+                        Datum::Bytes(b"c".to_vec()),
+                    ),
+                    (
+                        "d".to_string(),
+                        Datum::Bytes(b"d".to_vec()),
+                    ),
+                    (
+                        "e".to_string(),
+                        Datum::Bytes(b"e".to_vec()),
+                    ),
+                    (
+                        "f".to_string(),
+                        Datum::Bytes(b"f".to_vec()),
+                    ),
+                    (
+                        "g".to_string(),
+                        Datum::Bytes(b"g".to_vec()),
+                    ),
+                    (
+                        "h".to_string(),
+                        Datum::Bytes(b"h".to_vec()),
+                    ),
+                    (
+                        "i".to_string(),
+                        Datum::Bytes(b"i".to_vec()),
+                    ),
+                    (
+                        "j".to_string(),
+                        Datum::Bytes(b"j".to_vec()),
+                    ),
+                    (
+                        "k".to_string(),
+                          Datum::Bytes(b"k".to_vec()),
+                    ),
+
+                ],
+                &[],// no row to filter switch to filter_row_with_expr
+
+                #[test]
     fn test_bytes_to_uint_without_context() {
         let tests: Vec<(&'static [u8], u64)> = vec![
             (b"0", 0),
@@ -1946,7 +2179,7 @@ mod tests {
                 res => panic!("expect convert {:?} to over_causetxctx, but got {:?}", primitive_causet, res),
             };
 
-            // OVERCausetxctx_AS_WARNING
+
             let mut ctx =
                 EvalContext::new(Arc::new(PolicyGradient::from_flag(Flag::OVERCausetxctx_AS_WARNING)));
             let val = primitive_causet.to_uint(&mut ctx, tp);
