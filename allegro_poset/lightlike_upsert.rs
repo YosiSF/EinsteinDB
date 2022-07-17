@@ -1,4 +1,95 @@
 ///Copyright (c) 2022 EinsteinDB contributors
+///
+
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::collections::hash_map::Iter;
+use std::collections::hash_map::IterMut;
+use std::collections::hash_map::Keys;
+use std::collections::hash_map::Values;
+use std::collections::BTreeMap;
+
+use std::collections::btree_map::Entry as BTreeEntry;
+use std::collections::btree_map::Iter as BTreeIter;
+use std::collections::btree_map::IterMut as BTreeIterMut;
+use std::collections::btree_map::Keys as BTreeKeys;
+
+/// A map from keys to values.
+///
+/// This is a thin wrapper around `HashMap` that provides a few extra methods.
+///
+/// # Examples
+///
+/// ```
+/// use std::collections::HashMap;
+/// use std::collections::hash_map::Entry;
+/// use std::collections::hash_map::Iter;
+/// use std::collections::hash_map::IterMut;
+/// use std::collections::hash_map::Keys;
+///
+/// use allegro_poset::lightlike_upsert::LightlikeUpsert;
+///
+///
+/// let mut map = LightlikeUpsert::new();
+///
+/// // Insert a value.
+/// map.insert(1, 2);
+///
+/// // Check if a key exists.
+/// assert_eq!(map.contains_key(&1), true);
+///
+/// // Remove a key.
+/// map.remove(&1);
+///
+/// // Check if a key exists.
+/// assert_eq!(map.contains_key(&1), false);
+///
+/// we consider relativistic time to be a lightlike assertion, and a space like retraction.
+/// this is a lightlike assertion, and a space like retraction.
+///
+/// // Insert a value.
+/// map.insert(1, 2);
+///
+/// // Check if a key exists.
+/// assert_eq!(map.contains_key(&1), true);
+///
+/// // Remove a key.
+/// map.remove(&1);
+///
+/// // Check if a key exists.
+/// assert_eq!(map.contains_key(&1), false);
+///
+/// // Insert a value.
+/// map.insert(1, 2);
+///
+///
+///
+use std::collections::HashSet;
+use std::collections::hash_set::Iter as HashSetIter;
+use std::collections::hash_set::IterMut as HashSetIterMut;
+
+
+use std::collections::BTreeSet;
+use std::collections::btree_set::Iter as BTreeSetIter;
+use std::collections::btree_set::IterMut as BTreeSetIterMut;
+use std::collections::btree_set::Keys as BTreeSetKeys;
+use std::collections::btree_set::Values as BTreeSetValues;
+
+
+use std::collections::BTreeMap;
+use std::collections::btree_map::Entry as BTreeEntry;
+
+
+use std::collections::BTreeSet;
+
+
+use std::collections::btree_set::Iter as BTreeSetIter;
+use std::collections::btree_set::IterMut as BTreeSetIterMut;
+
+
+use std::collections::btree_set::Keys as BTreeSetKeys;
+use std::collections::btree_set::Values as BTreeSetValues;
+
 /// # Poset
 ///     Poset is a library for building and querying a [Poset](https://en.wikipedia.org/wiki/Poset)
 ///    of [`Block`](../block/struct.Block.html)s.
@@ -39,6 +130,83 @@
 /// assert_eq!(block.get_signature()[0], block.get_signature()[1]);
 
 
+
+
+// #############################################################################
+// #############################################################################
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Block {
+    pub data: Vec<u8>,
+    pub parent: Option<Arc<Block>>,
+    pub timestamp: u64,
+    pub signature: Vec<u8>,
+}
+
+
+impl Block {
+    pub fn new() -> Block {
+        Block {
+            data: vec![],
+            parent: None,
+            timestamp: 0,
+            signature: vec![],
+        }
+    }
+    pub fn set_data(&mut self, data: Vec<u8>) {
+        self.data = data;
+    }
+    pub fn set_parent(&mut self, parent: Option<Arc<Block>>) {
+        self.parent = parent;
+    }
+    pub fn set_timestamp(&mut self, timestamp: u64) {
+        self.timestamp = timestamp;
+    }
+    pub fn set_signature(&mut self, signature: Vec<u8>) {
+        self.signature = signature;
+    }
+    pub fn get_data(&self) -> Vec<u8> {
+        self.data.clone()
+    }
+    pub fn get_parent(&self) -> Option<Arc<Block>> {
+        self.parent.clone()
+    }
+    pub fn get_timestamp(&self) -> u64 {
+        self.timestamp
+    }
+    pub fn get_signature(&self) -> Vec<u8> {
+        self.signature.clone()
+    }
+}
+
+
+// #############################################################################
+// #############################################################################
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Poset {
+    pub blocks: HashMap<Arc<Block>, Arc<Block>>,
+    pub block_count: AtomicUsize,
+    pub block_count_total: AtomicUsize,
+    pub block_count_total_unique: AtomicUsize,
+    pub block_count_total_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique: AtomicUsize,
+    pub block_count_total_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique_unique: AtomicUsize,
+}
 
 
 
@@ -196,96 +364,6 @@
     use crate::block::BlockHeaderBodyParentHash;
 }
 
-
-
-    use std::collections::HashMap;
-    use std::collections::hash_map::Entry;
-    use std::collections::hash_map::Iter;
-    use std::collections::hash_map::IterMut;
-    use std::collections::hash_map::Keys;
-    use std::collections::hash_map::Values;
-    use std::collections::BTreeMap;
-
-    use std::collections::btree_map::Entry as BTreeEntry;
-    use std::collections::btree_map::Iter as BTreeIter;
-    use std::collections::btree_map::IterMut as BTreeIterMut;
-    use std::collections::btree_map::Keys as BTreeKeys;
-
-    /// A map from keys to values.
-    ///
-    /// This is a thin wrapper around `HashMap` that provides a few extra methods.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use std::collections::HashMap;
-    /// use std::collections::hash_map::Entry;
-    /// use std::collections::hash_map::Iter;
-    /// use std::collections::hash_map::IterMut;
-    /// use std::collections::hash_map::Keys;
-    ///
-    /// use allegro_poset::lightlike_upsert::LightlikeUpsert;
-    ///
-    ///
-    /// let mut map = LightlikeUpsert::new();
-    ///
-    /// // Insert a value.
-    /// map.insert(1, 2);
-    ///
-    /// // Check if a key exists.
-    /// assert_eq!(map.contains_key(&1), true);
-    ///
-    /// // Remove a key.
-    /// map.remove(&1);
-    ///
-    /// // Check if a key exists.
-    /// assert_eq!(map.contains_key(&1), false);
-    ///
-    /// we consider relativistic time to be a lightlike assertion, and a space like retraction.
-    /// this is a lightlike assertion, and a space like retraction.
-    ///
-    /// // Insert a value.
-    /// map.insert(1, 2);
-    ///
-    /// // Check if a key exists.
-    /// assert_eq!(map.contains_key(&1), true);
-    ///
-    /// // Remove a key.
-    /// map.remove(&1);
-    ///
-    /// // Check if a key exists.
-    /// assert_eq!(map.contains_key(&1), false);
-    ///
-    /// // Insert a value.
-    /// map.insert(1, 2);
-    ///
-    ///
-    ///
-    use std::collections::HashSet;
-    use std::collections::hash_set::Iter as HashSetIter;
-    use std::collections::hash_set::IterMut as HashSetIterMut;
-
-
-    use std::collections::BTreeSet;
-    use std::collections::btree_set::Iter as BTreeSetIter;
-    use std::collections::btree_set::IterMut as BTreeSetIterMut;
-    use std::collections::btree_set::Keys as BTreeSetKeys;
-    use std::collections::btree_set::Values as BTreeSetValues;
-
-
-    use std::collections::BTreeMap;
-    use std::collections::btree_map::Entry as BTreeEntry;
-
-
-    use std::collections::BTreeSet;
-
-
-    use std::collections::btree_set::Iter as BTreeSetIter;
-    use std::collections::btree_set::IterMut as BTreeSetIterMut;
-
-
-    use std::collections::btree_set::Keys as BTreeSetKeys;
-    use std::collections::btree_set::Values as BTreeSetValues;
 
 
 

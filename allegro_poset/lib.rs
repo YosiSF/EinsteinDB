@@ -77,47 +77,10 @@
 //! // Set the block's round_elapsed_time
 //! block.set_round_elapsed_time(0);
 //! 
-//! 
-pub use self::block::Block;
-pub use self::poset::Poset;
-pub use self::poset::PosetError;
-
-
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Partitioning};
-
-
-use std::time::{SystemTime, UNIX_EPOCH};
-use std::thread;
-use std::time::Duration;
-
-
-use std::sync::mpsc::channel;
-
-
-use std::sync::mpsc::Receiver;
-
-use ::block::Block;
-use ::poset::Poset;
-use ::poset::PosetError;
+//!
 
 
 
-
-
-
-
-
-
-//! // Set the block's round_elapsed_time
-//! block.set_round_elapsed_time(0);
-//! 
-//! 
-//! 
-//! // Add the block to the Poset
-//! poset.add_block(Arc::new(block));
-//! 
 extern crate enum_set;
 extern crate ordered_float;
 extern crate uuid;
@@ -168,7 +131,7 @@ use crate::datum::{DatumType, DatumTypeType};
 use crate::error::{Error, Result};
 use crate::hash::{Hashable, HashableDatumType};
 
-
+use crate::block::{Block, BlockType};
 use crate::block::{Block, BlockType};
 use crate::block::{BlockHeader, BlockHeaderType};
 use crate::block::{BlockBody, BlockBodyType};
@@ -190,6 +153,93 @@ use crate::causet::{CausetError, CausetResult};
 //causetq is a crate for creating causet graphs
 use crate::causetq::{Causetq, CausetqType};
 use crate::causetq::{CausetqError, CausetqResult};
+
+pub use self::block::Block;
+pub use self::poset::Poset;
+pub use self::poset::PosetError;
+
+
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Partitioning};
+
+
+use std::time::{SystemTime, UNIX_EPOCH};
+use std::thread;
+use std::time::Duration;
+
+
+use std::sync::mpsc::channel;
+
+
+use std::sync::mpsc::Receiver;
+
+use ::block::Block;
+use ::poset::Poset;
+use ::poset::PosetError;
+
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct CausalBlockId {
+    pub block_id: Arc<Block>,
+    pub parent_id: Arc<Block>,
+    pub id: usize,
+    pub spacelike: bool,
+    pub timestamp: u64,
+    pub signature: Vec<u8>,
+    pub hash: Vec<u8>,
+    pub height: usize,
+    pub round: usize,
+    pub round_index: usize,
+    pub round_start_time: u64,
+    pub round_elapsed_time: u64,
+
+}
+
+
+
+///! # BlockHeader
+// The BlockHeader struct is used to represent a block header.
+// ## Example
+// ```
+// use allegro_poset::{BlockHeader, Block};
+// use std::collections::HashMap;
+// use std::sync::Arc;
+// use std::sync::atomic::{AtomicUsize, Partitioning};
+//
+// Create a new BlockHeader
+// let mut block_header = BlockHeader::new();
+// use std::time::{SystemTime, UNIX_EPOCH};
+//
+//  Set the block header's database_id_set
+
+
+#[derive(Eq, PartialEq, Debug)]
+pub struct BlockHeader {
+    pub database_id_set: HashMap<String, Arc<Block>>,
+    pub database_id_set_size: usize,
+    pub database_id_set_capacity: usize,
+    pub database_id_set_load_factor: f32,
+    pub database_id_set_load_factor_threshold: f32,
+    pub database_id_set_load_factor_resize_multiplier: f32,
+    pub database_id_set_load_factor_resize_threshold: f32,
+    pub database_id_set_load_factor_resize_threshold_max: f32,
+    pub database_id_set_load_factor_resize_threshold_min: f32,
+    pub database_id_set_load_factor_resize_threshold_step: f32,
+    pub database_id_set_load_factor_resize_threshold_step_max: f32,
+    pub database_id_set_load_factor_resize_threshold_step_min: f32,
+    pub database_id_set_load_factor_resize_threshold_step_step: f32,
+    pub database_id_set_load_factor_resize_threshold_step_step_max: f32,
+    pub database_id_set_load_factor_resize_threshold_step_step_min: f32,
+    pub database_id_set_load_factor_resize_threshold_step_step_step: f32,
+    pub database_id_set_load_factor_resize_threshold_step_step_step_max: f32,
+    pub database_id_set_load_factor_resize_threshold_step_step_step_min: f32,
+    pub database_id_set_load_factor_resize_threshold_step_step_step_step: f32,
+    pub database_id_set_load_factor_resize_threshold_step_step_step_step_max: f32,
+}
+
+
+
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

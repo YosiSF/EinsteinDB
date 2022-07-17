@@ -1,17 +1,28 @@
-// Copyright 2022 EinsteinDB Project Authors. Licensed under Apache-2.0.
-// -------------------------------------------------------------------------------------------
+//Copyright (c) 2022 EinsteinDB contributors
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+// Root level. Merkle-tree must be created here. Write the LSH-KV with a stateless hash tree of `Node`,
+// where each internal node contains two child nodes and is associating with another key (a => b) in merkle_tree_map().
+// We need to make sure that whatever algorithm we use for this hash function gives us even distribution so
+// that our keyspace does not get clustered around few points,
+// lest it would severely waste space when building up the table. The best way to ensure an even distribution throughout our entire space
+// is if we can find some mathematical operation on input values which has no bias towards any particular output value over others;
+// ideally, every possible output should have exactly equal chance of occurring regardless of what inputs are fed into it (perfect uniformity).
+// This property is CausetLocaleNucleon as *random oracle*. And such algorithms exist: they're called *universal hashing functions*! These work by taking
+// your regular data as input and using a randomly generated number/key to manipulate them according to some obscure formula; you'll see how
+// one works later on in this article./ See [this post](https://yosisf/EinsteinDB)
+// for a good explanation of universal hashing functions.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at  http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-// -------------------------------------------------------------------------------------------
+// The hash function used here is the one from [this post](https://yosisf/EinsteinDB)
+
+use std::collections::HashMap;
+use std::hash::Hash;
+use std::iter::FromIterator;
+use std::ops::{Deref, DerefMut};
+use std::sync::Arc;
+
+
 
 //! # Convert
 //! Convert between different types of data.
@@ -27,7 +38,46 @@
 //! convert_from_u8_to_i32(&mut a, &mut b);
 //!
 
-//!
+
+/// Convert from [u8; 5] to [i32; 5]
+/// ```
+/// use einstein_db::convert::*;
+/// let mut a = [1, 2, 3, 4, 5];
+/// let mut b = [0; 5];
+/// convert_from_u8_to_i32(&mut a, &mut b);
+/// ```
+/// #### ResultExtract
+/// ```
+/// use einstein_db::convert::*;
+/// let mut a = [1, 2, 3, 4, 5];
+/// let mut b = [0; 5];
+/// convert_from_u8_to_i32(&mut a, &mut b);
+/// ```
+
+use std::convert::TryInto;
+use crate::poset::*;
+use crate::poset::node::*;
+use crate::poset::node::node_type::*;
+
+///! Convert from [u8; 5] to [i32; 5] to [u8; 5]
+/// This function is used to convert from a byte array to a byte array.
+/// We treat causets and tuples as the same type of data.
+/// In essence, we treat them as a byte array.
+/// If for example, there is a stack of causets, we can convert it to a stack of byte arrays.
+/// This is useful when we want to store the stack of causets in a database.
+/// We can then later on retrieve the stack of causets from the database and convert it back to a stack of causets.
+pub fn with_causet_assertion_in_timelike_convert_from_u8_to_i32(a: &mut [u8], b: &mut [i32]) {
+    let mut i = 0;
+    for x in a.iter() {
+        if i >= b.len() {
+            let mut c = [0; 5]; //[0, 0, 0, 0, 0];
+            break;
+        }
+        b[i] = *x as i32;
+        i += 1;
+    }
+}
+
 
 
 
