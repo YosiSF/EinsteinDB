@@ -87,7 +87,7 @@ pub fn with_causet_assertion_in_timelike_convert_from_i32_to_u8(a: &mut [i32], b
     let mut i = 0;
     for x in a.iter() {
         if i >= b.len() {
-            let mut c = [0; 5]; //[0, 0, 0, 0, 0];
+            [0; 5]; //[0, 0, 0, 0, 0];
             break;
         }
         b[i] = *x as u8;
@@ -505,11 +505,11 @@ impl ToInt for f64 {
         let val = (*self).round();
         if val < 0f64 {
             ctx.handle_overCausetxctx_err(over_causetxctx(val, tp))?;
-            if ctx.should_clip_to_zero() {
-                return Ok(0);
+            return if ctx.should_clip_to_zero() {
+                Ok(0)
             } else {
                 // recall that, `f64 as u64` is different from `f64 as i64 as u64`
-                return Ok(val as i64 as u64);
+                Ok(val as i64 as u64)
             }
         }
         let upper_bound = integer_unsigned_upper_bound(tp);
@@ -1301,9 +1301,64 @@ fn float_str_to_int_string_with_warn(ctx: &mut EvalContext, s: &str) -> Result<C
     }
 
     match (dot_idx, e_idx) {
-        (None, _None) => Ok(Cow::Borrowed(valid_float)),
-        (Some(di), None) => no_exp_float_str_to_int_str(valid_float, di),
-        (_, Some(ei)) => exp_float_str_to_int_str(ctx, valid_float, ei, dot_idx),
+(Some(dot_idx), Some(e_idx)) => {
+            if dot_idx > e_idx {
+                return Ok(Cow::Borrowed(valid_float));
+            }
+        }
+(Some(dot_idx), None) => {
+            if dot_idx > valid_len {
+                return Ok(Cow::Borrowed(valid_float));
+            }
+        }
+(None, Some(e_idx)) => {
+            if e_idx > valid_len {
+                return Ok(Cow::Borrowed(valid_float));
+            }
+        }
+_ => (),
+}
+
+
+    let mut int_str = String::with_capacity(valid_len);
+    let mut num_next_dot = '0';
+    let mut saw_digit = false;
+    let mut e_idx = 0;
+    for (i, c) in valid_float.chars().enumerate() {
+        if c == '+' || c == '-' {
+            if i != 0 && (e_idx == 0 || i != e_idx + 1) {
+                // "1e+1" is valid.
+                break;
+            }
+        } else if c == '.' {
+            if e_idx > 0 {
+                // "1e1.1"
+                break;
+            }
+            if saw_digit {
+                // "123." is valid.
+                num_next_dot = c;
+            }
+        } else if c == 'e' || c == 'E' {
+            if !saw_digit {
+                // "+.e"
+                break;
+            }
+            if e_idx != 0 {
+                // "1e5e"
+                break;
+            }
+            e_idx = i
+        } else if c < '0' || c > '9' {
+            break;
+        } else {
+            saw_digit = true;
+            int_str.push(c);
+        }
+    }
+    if !saw_digit {
+        return Ok(Cow::Borrowed("0"));
+
     }
 }
 
