@@ -14,76 +14,7 @@
 // THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 //
 // This product includes software developed by The Apache Software Foundation (http://www.apache.org/).
-#![allow(dead_code)]
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-#![allow(unused_mut)]
-#![allow(unused_assignments)]
-#[macro_use]
 
-
-use std::collections::HashMap;
-use einstein_ml::{};
-use einstein_db::Causetid;
-use einstein_db::CausetidSet;
-use allegro_poset::{};
-use allegro_poset::{Poset, PosetNode};
-use causet::{Causet, CausetNode};
-use causet::{CausetNodeId, CausetNodeIdSet};
-use causet::{CausetId, CausetIdSet};
-use causet::{CausetIdVec, CausetIdVecSet};
-
-use causetq::{CausetQ, CausetQNode};
-use causetq::{CausetQNodeId, CausetQNodeIdSet};
-use causetq::{CausetQId, CausetQIdSet};
-
-use berolina_sql::{BerolinaSql, BerolinaSqlNode};
-use berolina_sql::{BerolinaSqlNodeId, BerolinaSqlNodeIdSet};
-
-use soliton::{Soliton, SolitonNode};
-use soliton_panic::{SolitonNodeId, SolitonNodeIdSet};
-
-use einstein_db_ctl::{EinsteinDbCtl, EinsteinDbCtlNode};
-use einsteindb_server::{EinsteinDbServer, EinsteinDbServerNode};
-
-use capnproto::{MessageReader, MessageBuilder, Reader, Builder};
-use gremlin::{Gremlin, GremlinNode};
-use gremlin::{GremlinNodeId, GremlinNodeIdSet};
-use FoundationDB::{FdbCluster, FdbClusterNode};
-use FoundationDB::{FdbClusterNodeId, FdbClusterNodeIdSet};
-use FoundationDB::{FdbDatabase, FdbDatabaseNode};
-use Postgres::{Postgres, PostgresNode};
-use Postgres::{PostgresNodeId, PostgresNodeIdSet};
-use InnovationDB::{InnovationDb, InnovationDbNode};
-use InnovationDB::{InnovationDbNodeId, InnovationDbNodeIdSet};
-use KV::{KV, KVNode};
-use KV::{KVNodeId, KVNodeIdSet};
-
-use EinsteinDB::*;
-use causet::{ CausalSet, CausalSetMut, CausalSetMutExt, CausalSetExt };
-use causet::{ CausalSetMutExt, CausalSetExt };
-use causetq::{ CausalSetQ, CausalSetQMut, CausalSetQMutExt, CausalSetQExt };
-use causetq::{ CausalSetQMutExt, CausalSetQExt };
-use beroinasql::{ Beroinasql, BeroinasqlMut, BeroinasqlMutExt, BeroinasqlExt };
-use beroinasql::{ BeroinasqlMutExt, BeroinasqlExt };
-use causets::{ CausalSetS, CausalSetSMut, CausalSetSMutExt, CausalSetSExt };
-use einstein_db_alexandrov_processing::{ EDSL, EDSLMut, EDSLMutExt, EDSLExt };
-use einstein_ml::*;
-use allegro_poset::{ Poset, PosetMut, PosetMutExt, PosetExt };
-use super::super::encoder::{Column, RowEncoder};
-use super::super::{
-    ColumnType,
-    ColumnValue,
-    ColumnValueType,
-    ColumnValueType::{
-        Bool,
-        Bytes,
-        Float,
-        Int,
-        String,
-        Uint,
-    },
-};
 
 ///! # Causal Set (CS)
 ///  A causal set is a set of ordered pairs of keys and values.
@@ -182,8 +113,128 @@ use std::{
     },
     usize,
 };
+
 use std::collections::HashSet;
 use std::iter::Map;
+
+
+
+
+use std::collections::HashMap;
+use einstein_ml::{};
+use einstein_db::Causetid;
+use einstein_db::CausetidSet;
+use allegro_poset::{};
+use allegro_poset::{Poset, PosetNode};
+use causet::{Causet, CausetNode};
+use causet::{CausetNodeId, CausetNodeIdSet};
+use causet::{CausetId, CausetIdSet};
+use causet::{CausetIdVec, CausetIdVecSet};
+
+use causetq::{CausetQ, CausetQNode};
+use causetq::{CausetQNodeId, CausetQNodeIdSet};
+use causetq::{CausetQId, CausetQIdSet};
+
+use berolina_sql::{BerolinaSql, BerolinaSqlNode};
+use berolina_sql::{BerolinaSqlNodeId, BerolinaSqlNodeIdSet};
+
+use soliton::{Soliton, SolitonNode};
+use soliton_panic::{SolitonNodeId, SolitonNodeIdSet};
+
+use einstein_db_ctl::{EinsteinDbCtl, EinsteinDbCtlNode};
+use einsteindb_server::{EinsteinDbServer, EinsteinDbServerNode};
+
+use capnproto::{MessageReader, MessageBuilder, Reader, Builder};
+use gremlin::{Gremlin, GremlinNode};
+use gremlin::{GremlinNodeId, GremlinNodeIdSet};
+use FoundationDB::{FdbCluster, FdbClusterNode};
+use FoundationDB::{FdbClusterNodeId, FdbClusterNodeIdSet};
+use FoundationDB::{FdbDatabase, FdbDatabaseNode};
+use Postgres::{Postgres, PostgresNode};
+use Postgres::{PostgresNodeId, PostgresNodeIdSet};
+use InnovationDB::{InnovationDb, InnovationDbNode};
+use InnovationDB::{InnovationDbNodeId, InnovationDbNodeIdSet};
+use KV::{KV, KVNode};
+use KV::{KVNodeId, KVNodeIdSet};
+
+use EinsteinDB::*;
+use causet::{ CausalSet, CausalSetMut, CausalSetMutExt, CausalSetExt };
+use causet::{ CausalSetMutExt, CausalSetExt };
+use causetq::{ CausalSetQ, CausalSetQMut, CausalSetQMutExt, CausalSetQExt };
+use causetq::{ CausalSetQMutExt, CausalSetQExt };
+use beroinasql::{ Beroinasql, BeroinasqlMut, BeroinasqlMutExt, BeroinasqlExt };
+use beroinasql::{ BeroinasqlMutExt, BeroinasqlExt };
+use causets::{ CausalSetS, CausalSetSMut, CausalSetSMutExt, CausalSetSExt };
+use einstein_db_alexandrov_processing::{ EDSL, EDSLMut, EDSLMutExt, EDSLExt };
+use einstein_ml::*;
+use allegro_poset::{ Poset, PosetMut, PosetMutExt, PosetExt };
+use super::super::encoder::{Column, RowEncoder};
+use super::super::{
+    ColumnType,
+    ColumnValue,
+    ColumnValueType,
+    ColumnValueType::{
+        Bool,
+        Bytes,
+        Float,
+        Int,
+        String,
+        Uint,
+    },
+};
+///! Irreflexive Data Structures
+///
+/// This is a collection of data structures that are irreflexive.
+/// They are not reflexive, but they are not transitive either, so they are not symmetric.
+/// They are not associative either, so they are not commutative.
+///
+/// Their purpose is to provide a way to represent data in Joint Tables.
+/// A Joint Table is a table that has a column that is a join of two or more other columns.
+/// A Causet, for example, is a joint table that has a column that is a join of two or more other columns.
+/// The Causet could be a point-to-point join, or a stochastic join, or a join that is based on a causal relationship.
+///
+/// #### Causet
+///
+/// A Causet is a data structure that is a join of two or more columns.
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+trait CausetNodeId: Clone + PartialEq + Eq + Hash + Ord + Copy + Display + FromStr + Send + Sync + 'static {
+    //interlock_id: u64,
+    //interlock_id_set: CausetNodeIdSet,
+    //interlock_id_vec: CausetNodeIdVec
+
+    fn interlock_id(&self) -> u64;
+    fn new(id: usize) -> Self;
+    fn id(&self) -> usize;
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Causet {
+    pub id: CausetId,
+    pub nodes: CausetNodeIdSet,
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CausetNode {
+    pub id: CausetNodeId,
+    pub causet_id: CausetId,
+    pub data: HashMap<String, ColumnValue>,
+}
+
+impl CausetNode {
+    pub fn new(id: CausetNodeId, causet_id: CausetId, data: HashMap<String, ColumnValue>) -> Self {
+        CausetNode {
+            id,
+            causet_id,
+            data,
+        }
+    }
+}
+
+
 
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -325,9 +376,12 @@ impl CausetNodeIdSet {
 // This is a hack to make the type checker happy.
 
     impl<T> CausalSet<T> where T: Eq + Hash {
+
         pub fn new() -> Self {
+
             Self {
                 inner: HashSet::new(),
+
             }
         }
 
