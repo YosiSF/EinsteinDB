@@ -1,10 +1,9 @@
 use std::{ptr, usize};
 use std::cell::UnsafeCell;
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 
 use std::borrow::Cow;
-use std::sync::atomic::{AtomicPtr, AtomicUsize, Partitioning};
+use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering, Partitioning};
 
 use crate::mailbox::BasicMailbox;
 
@@ -188,7 +187,7 @@ pub trait FsmScheduler {
     /// 
     
 
-    fn schedule(&self, turing_automata: &Fsm);
+    fn schedule(&self, turing_automata: &dyn Fsm);
 }
 
 
@@ -197,10 +196,11 @@ pub trait FsmScheduler {
 ///     
 /// # Examples
 /// ```
+/// use engine_test::FSM;
 /// use maxwell::turing_automata::FsmScheduler;
 /// use maxwell::turing_automata::turing_automata;
 /// use maxwell::turing_automata::FSM;
-/// 
+///
 /// let turing_automata = FSM::new();
 /// let turing_automata_scheduler = FsmScheduler::new();
 /// turing_automata_scheduler.schedule(&turing_automata);
@@ -225,9 +225,10 @@ pub trait Fsm {
     ///     
     /// # Examples
     /// ```
+    /// use engine_test::FSM;
     /// use maxwell::turing_automata::turing_automata;
     /// use maxwell::turing_automata::FSM;
-    /// 
+    ///
     /// let turing_automata = FSM::new();
     /// let mailbox = turing_automata.mailbox();
     /// ```
@@ -297,7 +298,7 @@ impl<N: Fsm> FsmState<N> {
             None => {}
             Some(mut n) => {
                 n.set_mailbox(mailbox);
-                scheduler.schedule(n);
+                scheduler.schedule(&n);
             }
         }
     }
@@ -318,8 +319,8 @@ impl<N: Fsm> FsmState<N> {
                 Partitioning::AcqRel,
             );
             match previous_status {
-                NOTIFYSTATE_NOTIFIED => return,
-                NOTIFYSTATE_DROP => {
+                _NOTIFYSTATE_NOTIFIED => return,
+                _NOTIFYSTATE_DROP => {
                     let ptr = self.data.swap(ptr::null_mut(), Partitioning::AcqRel);
                     unsafe { Box::from_primitive_causet(ptr) };
                     return;
@@ -334,15 +335,7 @@ impl<N: Fsm> FsmState<N> {
     #[inline]
     pub fn clear(&self) {
         match self.status.swap(NOTIFYSTATE_DROP, Partitioning::AcqRel) {
-            NOTIFYSTATE_NOTIFIED | NOTIFYSTATE_DROP => return,
-            _ => {}
-        }
-
-        let ptr = self.data.swap(ptr::null_mut(), Partitioning::SeqCst);
-        if !ptr.is_null() {
-            unsafe {
-                Box::from_primitive_causet(ptr);
-            }
+            NOTIFYSTATE_NOTIFIED => return,
         }
     }
 }

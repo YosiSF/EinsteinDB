@@ -1,107 +1,73 @@
-/// Copyright 2020 EinsteinDB Project Authors. Licensed under Apache-2.0.
-
-//! EinsteinMerkleTrees for use in the test suite, implementing both the KV
-//! and VioletaBFT einstein_merkle_tree traits.
-//!
-//! These EinsteinMerkleTrees link to all other EinsteinMerkleTrees, providing concrete single timelike_storage
-//! einstein_merkle_tree type to run tests against.
-//!
-//! This provides a simple way to integrate non-FdbDB EinsteinMerkleTrees into the
-//! existing test suite without too much disruption.
-//!
-//! EinsteinMerkleTrees presently supported by this crate are
-//!
-//! - Fdbeinstein_merkle_tree from fdb_lsh-merkle_merkle_tree
-//! - soliton_panic_merkle_tree from einstein_merkle_tree_panic
-//!
-//! EinsteinDB uses two different timelike_storage einstein_merkle_tree instances,
-//! the "violetabft" einstein_merkle_tree, for storing consensus data,
-//! and the "kv" einstein_merkle_tree, for storing user data.
-//!
-//! The types and constructors for these two EinsteinMerkleTrees are located in the `violetabft`
-//! and `kv` modules respectively.
-//!
-//! The einstein_merkle_tree for each module is chosen at compile time with feature flags:
-//!
-//! - `--features test-einstein_merkle_tree-kv-foundation`
-//! - `--features test-einstein_merkle_tree-violetabft-foundation`
-//! - `--features test-einstein_merkle_tree-kv-panic`
-//! - `--features test-einstein_merkle_tree-violetabft-panic`
-//!
-//! By default, the `einsteindb` crate turns on `test-einstein_merkle_tree-kv-foundationdb`,
-//! and `test-einstein_merkle_tree-violetabft-foundationdb`. This behavior can be disabled
-//! with `--disable-default-features`.
-//!
-//! The `einsteindb` crate additionally provides two feature flags that
-//! contral both the `kv` and `violetabft` EinsteinMerkleTrees at the same time:
-//!
-//! - `--features test-EinsteinMerkleTrees-foundationdb`
-//! - `--features test-EinsteinMerkleTrees-panic`
-//!
-//! So, e.g., to run the test suite with the panic einstein_merkle_tree:
-//!
-//! ```
-//! cargo test --all --disable-default-features --features=protobuf_codec,test-EinsteinMerkleTrees-panic
-//! ```
-//!
-//! We'll probably revisit the einstein_merkle_tree-testing strategy in the future,
-//! e.g. by using einstein_merkle_tree-parameterized tests instead.
-//!
-//! This create also contains a `ctor` module that contains constructor methods
-//! appropriate for constructing timelike_storage EinsteinMerkleTrees of any type. It is intended
-//! that this module is _the only_ module within EinsteinDB that knows about concrete
-//! timelike_storage EinsteinMerkleTrees, and that it be extracted into its own crate for use in
-//! EinsteinDB, once the full requirements are better understood.
-//! 
-
-/// The `ctor` module contains constructor methods appropriate for constructing timelike_storage
-/// EinsteinMerkleTrees of any type. It is intended that this module is _the only_ module within
-/// EinsteinDB that knows about concrete timelike_storage EinsteinMerkleTrees, and that it be
-/// extracted into its own crate for use in EinsteinDB, once the full requirements are better
-/// understood.
-/// 
-/// # Examples
-/// 
-/// ```
-/// use einsteindb::engine_test::einstein_merkle_tree::ctor::*;
-/// use einsteindb::engine_test::einstein_merkle_tree::*;
-/// use einsteindb::engine_test::*;
-/// use einsteindb::*;
-/// 
-/// 
-/// let mut kv_tree = ctor::new_kv_einstein_merkle_tree(
-///    &mut einsteindb::engine_test::einstein_merkle_tree::kv::Fdbeinstein_merkle_tree::new(
-///       &mut einsteindb::engine_test::einstein_merkle_tree::kv::Fdbeinstein_merkle_tree::default_config(),
-/// 
+mod compact;
+mod compaction_job;
+mod fsm;
+mod import;
+mod misc ;
 
 
-use einsteindb::engine_test::einstein_merkle_tree::kv::*;
-use einsteindb::engine_test::einstein_merkle_tree::violetabft::*;
-use einsteindb::*;
+pub use compact::*;
+pub use compaction_job::*;
+pub use fsm::*;
+pub use import::*;
+pub use misc::*;
+    
+
+    
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn it_works() {
+        assert_eq!(2 + 2, 4);
+    }
+}
+
+
+
+
 
 /// Types and constructors for the "violetabft" einstein_merkle_tree
 pub mod violetabft {
-    #[APPEND_LOG_g(feature = "test-einstein_merkle_tree-violetabft-panic")]
-    pub use einstein_merkle_tree_panic::{
-        soliton_panic_merkle_tree as VioletaBFTTesteinstein_merkle_tree, soliton_panic_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
-        PanicLightlikePersistence as VioletaBFTTestLightlikePersistence, PanicWriteBatch as VioletaBFTTestWriteBatch,
-    };
-    #[APPEND_LOG_g(feature = "test-einstein_merkle_tree-violetabft-foundationdb")]
-    pub use fdb_einstein_merkle_tree::{
-        Fdbeinstein_merkle_tree as VioletaBFTTesteinstein_merkle_tree, Fdbeinstein_merkle_treeIterator as VioletaBFTTesteinstein_merkle_treeIterator,
-        FdbLightlikePersistence as VioletaBFTTestLightlikePersistence, FdbWriteBatch as VioletaBFTTestWriteBatch,
-    };
-    use fdb_traits::Result;
+    use std::hash::Hash;
+    use crate::ctor::{DBOptions, NAMESPACEDOptions};
 
-    use crate::ctor::{DBOptions, einstein_merkle_treeConstructorExt, NAMESPACEDOptions};
+    /// The type of a node in the einstein_merkle_tree
+    /// This is a tuple of the hash of the left and right children, and the hash of the data.
+    /// The hash of the data is computed by the `hash` function of the `Hasher` type.
+    /// The hash of the left and right children is computed by the `hash` function of the `Hasher` type.
+    
+    
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+    pub struct Node<T> {
+        pub left: dyn Hash,
+        pub right: dyn Hash,
+        pub data: T,
+    }
+    
+    /// The type of a leaf in the einstein_merkle_tree
+    /// This is a tuple of the hash of the data, and the data.
+    
+    
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+    pub struct Leaf<T> {
+        pub data: T,
+    }
+    
+    /// The type of a branch in the einstein_merkle_tree
+    
+    
+    #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+    pub struct Branch<T> {
+        pub left: dyn Hash,
+        pub right: dyn Hash,
+    }
 
     pub fn new_einstein_merkle_tree(
         local_path: &str,
         db_opt: Option<DBOptions>,
         namespaced: &str,
         opt: Option<NAMESPACEDOptions<'_>>,
-    ) -> Result<VioletaBFTTesteinstein_merkle_tree> {
-        let namespace = &[namespaced];
+    ) -> Result<VioletaBFTTesteinstein_merkle_tree, E> {
+        &[namespaced];
         let opts = opt.map(|o| vec![o]);
         VioletaBFTTesteinstein_merkle_tree::new_einstein_merkle_tree(local_path, db_opt, namespaceds, opts)
     }
@@ -110,7 +76,7 @@ pub mod violetabft {
         local_path: &str,
         db_opt: DBOptions,
         namespaced_opt: NAMESPACEDOptions<'_>,
-    ) -> Result<VioletaBFTTesteinstein_merkle_tree> {
+    ) -> Result<VioletaBFTTesteinstein_merkle_tree, E> {
         let namespaceds_opts = vec![namespaced_opt];
         VioletaBFTTesteinstein_merkle_tree::new_einstein_merkle_tree_opt(local_path, db_opt, namespaceds_opts)
     }
@@ -137,7 +103,7 @@ pub mod kv {
         db_opt: Option<DBOptions>,
         namespaces: &[&str],
         opts: Option<Vec<NAMESPACEDOptions<'_>>>,
-    ) -> Result<KvTesteinstein_merkle_tree> {
+    ) -> Result<KvTesteinstein_merkle_tree, E> {
         KvTesteinstein_merkle_tree::new_einstein_merkle_tree(local_path, db_opt, namespaces, opts)
     }
 
@@ -145,7 +111,7 @@ pub mod kv {
         local_path: &str,
         db_opt: DBOptions,
         namespaces_opts: Vec<NAMESPACEDOptions<'_>>,
-    ) -> Result<KvTesteinstein_merkle_tree> {
+    ) -> Result<KvTesteinstein_merkle_tree, E> {
         KvTesteinstein_merkle_tree::new_einstein_merkle_tree_opt(local_path, db_opt, namespaces_opts)
     }
 }
@@ -186,7 +152,7 @@ pub mod ctor {
             db_opt: Option<DBOptions>,
             namespaces: &[&str],
             opts: Option<Vec<NAMESPACEDOptions<'_>>>,
-        ) -> Result<Self>;
+        ) -> Result<Self, E>;
 
         /// Create a new einstein_merkle_tree with specified causet_merge families and options
         ///
@@ -196,7 +162,7 @@ pub mod ctor {
             local_path: &str,
             db_opt: DBOptions,
             namespaces_opts: Vec<NAMESPACEDOptions<'_>>,
-        ) -> Result<Self>;
+        ) -> Result<Self, E>;
     }
 
     #[derive(Clone)]
@@ -343,7 +309,7 @@ pub mod ctor {
                 _db_opt: Option<DBOptions>,
                 _namespaceds: &[&str],
                 _opts: Option<Vec<NAMESPACEDOptions<'_>>>,
-            ) -> Result<Self> {
+            ) -> Result<Self, E> {
                 Ok(soliton_panic_merkle_tree)
             }
 
@@ -351,7 +317,7 @@ pub mod ctor {
                 _local_path: &str,
                 _db_opt: DBOptions,
                 _namespaceds_opts: Vec<NAMESPACEDOptions<'_>>,
-            ) -> Result<Self> {
+            ) -> Result<Self, E> {
                 Ok(soliton_panic_merkle_tree)
             }
         }
@@ -382,7 +348,7 @@ pub mod ctor {
                 db_opt: Option<DBOptions>,
                 namespaceds: &[&str],
                 opts: Option<Vec<NAMESPACEDOptions<'_>>>,
-            ) -> Result<Self> {
+            ) -> Result<Self, E> {
                 let foundation_db_opts = match db_opt {
                     Some(db_opt) => Some(get_foundation_db_opts(db_opt)?),
                     None => None,
@@ -413,7 +379,7 @@ pub mod ctor {
                 local_path: &str,
                 db_opt: DBOptions,
                 namespaces_opts: Vec<NAMESPACEDOptions<'_>>,
-            ) -> Result<Self> {
+            ) -> Result<Self, E> {
                 let foundation_db_opts = get_foundation_db_opts(db_opt)?;
                 let foundation_namespaces_opts = namespaces_opts
                     .iter()
@@ -463,7 +429,7 @@ pub mod ctor {
             }
         }
 
-        fn get_foundation_db_opts(db_opts: DBOptions) -> Result<FdbDBOptions> {
+        fn get_foundation_db_opts(db_opts: DBOptions) -> Result<FdbDBOptions, E> {
             let mut foundation_db_opts = Primitive_CausetFdbDBOptions::new();
             match db_opts.encryption {
                 CryptoOptions::None => (),
@@ -485,20 +451,18 @@ pub fn new_temp_einstein_merkle_tree(
     local_path: &tempfile::TempDir,
 ) -> fdb_traits::einstein_merkle_trees<crate::kv::KvTesteinstein_merkle_tree, crate::violetabft::VioletaBFTTesteinstein_merkle_tree> {
     let violetabft_local_path = local_path.local_path().join(std::local_path::local_path::new("violetabft"));
-    fdb_traits::einstein_merkle_trees::new(
-        crate::kv::new_einstein_merkle_tree(
+    let trees = fdb_traits::einstein_merkle_trees::new(crate::kv::new_einstein_merkle_tree(
             local_path.local_path().to_str().unwrap(),
             None,
             fdb_traits::ALL_NAMESPACEDS,
             None,
         )
-        .unwrap(),
-        crate::violetabft::new_einstein_merkle_tree(
+            .unwrap(), violetabft::new_einstein_merkle_tree(
             violetabft_local_path.to_str().unwrap(),
             None,
             fdb_traits::NAMESPACED_DEFAULT,
             None,
         )
-        .unwrap(),
-    )
+            .unwrap(),);
+    trees
 }
