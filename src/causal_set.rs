@@ -331,6 +331,8 @@ impl CausetNodeIdSet {
             }
         }
 
+
+
         pub fn add(&mut self, value: T) {
             self.inner.insert(ValueRc::new(value));
         }
@@ -338,6 +340,8 @@ impl CausetNodeIdSet {
         pub fn remove(&mut self, value: T) {
             self.inner.remove(&ValueRc::new(value));
         }
+
+
 
         pub fn contains(&self, value: T) -> bool {
             self.inner.contains(&ValueRc::new(value))
@@ -408,6 +412,40 @@ mod tests {
         }
     }
 
+       ///
+       ///
+       /// # Arguments
+       ///  * `causal_set` - The causal set to convert to a `HashSet` of `T` values
+       ///
+       /// # Returns
+       /// * `HashSet<T>` - The converted causal set
+       ///
+       /// * `squiid`:  The squiid to be added to the causal set.
+       ///
+       /// returns: <unknown>
+       ///
+       /// # Examples
+       ///
+       /// ```
+       /// use crate::*;
+       ///
+       /// let mut causal_set_manifold = CausalSetManifold::new();
+       ///
+       /// let mut causal_set = CausalSet::new();
+       ///
+       /// for Some(value) in slice {
+       /// if value.is_some() {
+       /// causal_set.add(value.unwrap());
+       /// }
+       /// }
+       ///
+       /// for value in slice {
+       /// if value.is_some() {
+       /// // Add the value to the causal set.
+       /// // This will add the value to the causal set manifold.
+       /// // once in the causal set manifold, we can add the value to the index map.
+       /// causal_set_manifold.add(value.unwrap());
+       /// ```
        fn from_squiid_to_causal_set(squiid: Squiid) -> Self {
            if squiid.is_empty() {
                return Self::new();
@@ -422,9 +460,18 @@ mod tests {
                 }
             }
         }
-
         }
 
+///!#[cfg(test)]
+/// mod tests {
+/// use super::*;
+/// use crate::*;
+/// use crate::squiid::*;
+/// use crate::squiid::Squiid;
+///
+///
+/// #[test]
+///
     impl<T> From<Squiid> for CausalSet<T> where T: Eq + Hash {
         fn from(squiid: Squiid) -> Self {
             if squiid.is_empty() {
@@ -954,6 +1001,9 @@ mod tests {
 //         assert_eq!(causet_node_id_set.get_gremlin_node_id_set().len(), 1);
 //     }
 // }
+
+
+
 
 
 
