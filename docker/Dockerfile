@@ -175,3 +175,8 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get update && apt-get install -y
 
 RUN git clone https://github.com/YosiSF/EinsteinDB.git
+
+
+
+
+# Install the dependencies for aws Engine
