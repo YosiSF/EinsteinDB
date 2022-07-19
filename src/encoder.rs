@@ -9,8 +9,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::io::{self, Write};
-use std::fmt;
+
+use std::{error, fmt, io};
 use std::str::FromStr;
 use std::cmp::Ordering;
 use std::collections::HashMap;
@@ -67,20 +67,20 @@ impl error::Error for EncoderError {
 }
 
 
-impl From<io::Error> for EncoderError {
-    fn from(err: io::Error) -> Self {
+impl From<Error> for EncoderError {
+    fn from(err: Error) -> Self {
         EncoderError(format!("{}", err))
     }
 }
 
 
-impl From<encoder::EncoderError> for EncoderError {
+impl From<EncoderError> for EncoderError {
     fn from(err: encoder::EncoderError) -> Self {
         EncoderError(format!("{}", err))
     }
 }
 
-
+///! The encoder is the main component of the HoneybadgerBFT. It is responsible for encoding the
 impl From<parquet::Error> for EncoderError {
     fn from(err: parquet::Error) -> Self {
         EncoderError(format!("{}", err))
@@ -124,18 +124,18 @@ pub const HASH_SIZE: usize = 32; //256 bits
 
 use std::io::{Read, Write};
 use std::io::{Error, ErrorKind};
-use std::fs::File;
 use std::path::Path;
-use std::fs::OpenOptions;
 use std::fs::create_dir_all;
 use std::fs::remove_file;
 use std::fs::metadata;
 use std::fs::OpenOptions;
 use std::fs::File;
+use std::hash::Hasher;
 use std::io::Seek;
 use std::io::SeekFrom;
 use std::io::Cursor;
 use std::io::BufReader;
+use petgraph::visit::Time;
 use soliton_panic::{self, soliton_panic};
 use einstein_ml::{ML_OPEN_FLAG_CREATE, ML_OPEN_FLAG_RDONLY, ML_OPEN_FLAG_RDWR, ML_OPEN_FLAG_TRUNCATE, ML_OPEN_FLAG_WRITE_EMPTY, ML_OPEN_FLAG_WRITE_PREVENT, ML_OPEN_FLAG_WRITE_SAME};
 use einsteindb_server::{EinsteinDB, EinsteinDB_OPEN_FLAG_CREATE, EinsteinDB_OPEN_FLAG_RDONLY, EinsteinDB_OPEN_FLAG_RDWR, EinsteinDB_OPEN_FLAG_TRUNCATE, EinsteinDB_OPEN_FLAG_WRITE_EMPTY, EinsteinDB_OPEN_FLAG_WRITE_PREVENT, EinsteinDB_OPEN_FLAG_WRITE_SAME};
@@ -151,7 +151,7 @@ use soliton_panic::{SolitonPanic, SolitonPanicOptions};
 use einstein_db_ctl::{EinsteinDB, EinsteinDBOptions, EinsteinDBType, EinsteinDBTypeOptions};
 use gremlin_capnp::{gremlin_capnp, message};
 use gremlin_capnp::message::{Message, MessageReader, MessageBuilder};
-use gremlin as g;
+use ::{encoder, gremlin as g};
 
 
 
@@ -285,6 +285,7 @@ impl<'a> Encoder<'a> {
             Encoder::I64(value) => value.encode(),
             Encoder::AEVTrie(value) => value.encode(),
             Encoder::CausetA(value) => value.encode(),
+            _ => {}
         }
     }
 }
@@ -347,7 +348,7 @@ impl<'a> EncoderBytes<'a> {
 trait CausetAMinor<'a> {
 
 
-    fn encode(&self, key: &[u8], value: &[u8]) -> Result<Vec<u8>, Error> {
+    fn encode(&self, value: &[u8]) -> Result<Vec<u8>, Error> {
         unimplemented!()
 
 
@@ -417,7 +418,7 @@ pub struct Column {
 impl Column {
     pub fn new(id: i64, causet_locale: impl Into<ScalarValue>) -> Self {
         Column {
-            name: (),
+            name: "".to_string(),
             field_type: (),
             id,
             ft: FieldType::default(),
@@ -458,7 +459,7 @@ pub trait CausetEncoder {
 }
 
 pub trait RowEncoder: NumberEncoder {
-    fn write_row(&mut self, ctx: &mut EvalContext, columns: Vec<Column>) -> Result<()> {
+    fn write_row(&mut self, ctx: &mut EvalContext, columns: Vec<Column>) -> Result<(), E> {
         let mut is_big = false;
         let mut null_ids = Vec::with_capacity(columns.len());
         let mut non_null_ids = Vec::with_capacity(columns.len());
@@ -518,7 +519,7 @@ pub trait RowEncoder: NumberEncoder {
 pub trait RowDecoder: NumberDecoder {
     #[inline]
     ///! `is_big` is true if the row is encoded with big-endian.
-    fn read_row(&mut self, ctx: &mut EvalContext, columns: &mut Vec<Column>) -> Result<()> {
+    fn read_row(&mut self, ctx: &mut EvalContext, columns: &mut Vec<Column>) {
         let flag = if is_big {
             super::Flags::BIG
         } else {
@@ -552,7 +553,7 @@ impl<T: BufferWriter> RowEncoder for T {}
 
 pub trait ScalarValueEncoder: NumberEncoder + DecimalEncoder + JsonEncoder {
     #[inline]
-    fn write_causet_locale(&mut self, ctx: &mut EvalContext, col: &Column) -> Result<()> {
+    fn write_causet_locale(&mut self, ctx: &mut EvalContext, col: &Column) -> Result<(), E> {
         match &col.causet_locale {
             ScalarValue::Int(Some(v)) if col.is_unsigned() => {
                 self.encode_u64(*v as u64).map_err(Error::from)
@@ -659,7 +660,7 @@ pub trait ScalarValueEncoder: NumberEncoder + DecimalEncoder + JsonEncoder {
                 ),
                 Column::new(14, Decimal::from(1i64)),
                 Column::new(15, Json::from_str(r#"{"soliton_id":"causet_locale"}"#).unwrap()),
-                Column::new(16, Duration::from_nanos(NANOS_PER_SEC, 0).unwrap()),
+                Column::new(16, Duration::from_nanos(NANOS_PER_SEC).unwrap()),
             ];
 
             let exp = vec![

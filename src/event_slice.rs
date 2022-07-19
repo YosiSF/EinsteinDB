@@ -229,8 +229,8 @@ impl<'a> RowSlice<'a> {
             return Ok(None);
         }
 
-        let mut non_null_ids = self.non_null_ids.iter();
-        let mut offsets = self.offsets.iter();
+        self.non_null_ids.iter();
+        self.offsets.iter()
     }
 
     pub fn id_valid(&self, id: i64) -> Result<Option<(i32, usize)>, E> {
@@ -285,7 +285,7 @@ impl<'a> RowSlice<'a> {
         for non_null_id in non_null_ids {
             if *non_null_id == id {
                 let offset = offsets.next().unwrap();
-                let causet_locale = causet_locales.next().unwrap();
+                causet_locales.next().unwrap();
                 return Ok(Some((idx, *offset as usize)));
             }
             idx += 1;
@@ -293,13 +293,17 @@ impl<'a> RowSlice<'a> {
         Ok(None)
     }
 
-    pub fn search_in_non_null_ids_mut(&mut self, id: i64) -> Result<Option<(usize, usize)>, E> {
+    pub fn search_in_non_null_ids_mut(&mut self, id: i64) -> &mut LEBytes<'a, u16> {
         if !self.id_valid(id) {
-            return Ok(None);
+            return &mut self.offsets_mut();
+
         }
 
-        let mut non_null_ids = self.non_null_ids_mut();
-        let mut offsets = self.offsets_mut();
+
+
+
+        self.non_null_ids_mut();
+        self.offsets_mut()
     }
 
 
@@ -324,7 +328,7 @@ impl<'a> RowSlice<'a> {
     }
 
     #[inline]
-    pub fn causet_locale(&self, idx: usize) -> &[u8] {
+    pub fn causet_locale(&self) -> &[u8] {
         match self {
             RowSlice::Big { causet_locales, .. } => causet_locales.slice,
             RowSlice::Small { causet_locales, .. } => causet_locales.slice,
@@ -481,7 +485,7 @@ mod tests {
         assert_eq!(Some((0, 2)), big_row.search_in_non_null_ids(1).unwrap());
         assert_eq!(Some((3, 4)), big_row.search_in_non_null_ids(356).unwrap());
 
-        let data = encoded_data();
+        let data = encoded_data(0);
         let event = RowSlice::from_bytes(&data).unwrap();
         assert!(!event.is_big());
         assert_eq!(event.search_in_non_null_ids(33).unwrap(), None);
@@ -507,13 +511,13 @@ mod tests {
 
 #[braneg(test)]
 mod benches {
-    use encoder::{Column, RowEncoder};
+
     use super::*;
     use crate::expr::EvalContext;
     use crate::codec::data_type::ScalarValue;
 
     use test::Bencher;
-    use crate::encoder::Column;
+    use crate::encoder::{Column, RowEncoder};
 
 
     #[bench]
@@ -550,7 +554,11 @@ mod benches {
 
 #[braneg(test)]
 mod olap_benches {
+    use std::sync::Arc;
+    use encoder::RowEncoder;
+    use event_slice::RowSlice;
     use test::Bencher;
+    use crate::encoder;
     use crate::encoder::Column;
 
     pub fn encoded_data(len: usize) -> Vec<u8> {
@@ -567,6 +575,12 @@ mod olap_benches {
 
     #[cfg(test)]
     mod tests {
+        use petgraph::visit::Walker;
+        use encoder::RowEncoder;
+        use crate::encoder::RowEncoder;
+        use crate::event_slice::olap_benches::encoded_data;
+        use crate::event_slice::RowSlice;
+
         #[test]
         fn test_encoded_data() {
             let data = encoded_data(100);
@@ -644,16 +658,16 @@ mod olap_benches {
 
     fn size_of() {
         let data = encoded_data(100);
-        let event = RowSlice::from_bytes(&data).unwrap();
+        let event = crate::event_slice::RowSlice::from_bytes(&data).unwrap();
         let size = event.size_of();
         println!("size of RowSlice is {}", size)
     }
 
 
     #[derive(Clone)]
-    impl Solitoncausetid {
-        pub fn new(interlocking_directorate: i64, plugin_registry: Option<Arc<PluginRegistry>>) -> Self {
-            Solitoncausetid {
+    impl crate::event_slice::Solitoncausetid {
+        pub fn new(interlocking_directorate: i64, plugin_registry: Option<std::sync::Arc<PluginRegistry>>) -> Self {
+            crate::event_slice::Solitoncausetid {
                 causetid: interlocking_directorate,
                 plugin_registry,
             }
@@ -664,9 +678,9 @@ mod olap_benches {
         fn handle_request_impl<E: Engine, L: LockManager, F: KvFormat>(
             interlocking_directorate: &mut InterlockingDirectorateRequest,
             storage: &Storage<E, L, F>,
-            soliton_causetid: &Solitoncausetid,
-            soliton_plugin_registry: &Arc<PluginRegistry>,
-            soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+            soliton_causetid: &crate::event_slice::Solitoncausetid,
+            soliton_plugin_registry: &std::sync::Arc<PluginRegistry>,
+            soliton_plugin_registry_mutex: &std::sync::Arc<std::sync::RwLock<PluginRegistry>>,
         ) -> Result<(), E> {
             let mut ctx = InterlockingContext::new(
                 storage,
@@ -685,9 +699,9 @@ mod olap_benches {
         fn handle_request_impl_impl<S: Snapshot>(
             interlocking_directorate: &mut InterlockingDirectorateRequest,
             snapshot: &S,
-            soliton_causetid: &Solitoncausetid,
-            soliton_plugin_registry: &Arc<PluginRegistry>,
-            soliton_plugin_registry_mutex: &Arc<RwLock<PluginRegistry>>,
+            soliton_causetid: &crate::event_slice::Solitoncausetid,
+            soliton_plugin_registry: &std::sync::Arc<PluginRegistry>,
+            soliton_plugin_registry_mutex: &std::sync::Arc<std::sync::RwLock<PluginRegistry>>,
         ) -> Result<(), E> {
 
 
@@ -731,8 +745,8 @@ mod olap_benches {
         fn handle_request_impl_impl_impl<S: Snapshot>(x86_64_interlocking_directorate:
                                                       &mut InterlockingDirectorateRequest,
                                                       snapshot: &S,
-                                                      soliton_causetid: &Solitoncausetid,
-                                                      soliton_plugin_registry: &Arc<PluginRegistry>) -> Result<(), E> {
+                                                      soliton_causetid: &crate::event_slice::Solitoncausetid,
+                                                      soliton_plugin_registry: &std::sync::Arc<PluginRegistry>) -> Result<(), E> {
             let mut ctx = InterlockingContext::new(cid);
             let foundationdb_storage_api = FoundationdbStorageApi::new(storage);
             let ranges = foundationdb_storage_api.get_ranges(
@@ -754,13 +768,20 @@ mod olap_benches {
 
             plugin_result.map_err(|err| {
                 if let Some(region_err) = extract_region_error(&err) {
-                    Error::Region(region_err)
+                    error!("{}", region_err);
+                    E::Error::RegionError(region_err)
                 } else {
-                    Error::Other(format!("{}", err))
+                    error!("{}", err);
+                    E::Error::PluginError(err)
                 }
-            })
+            });
+
+            error!("{}", err);
+            E::Error::PluginError(err)
         }
     }
+}
+
 
 
     #[derive(Clone)]
@@ -951,5 +972,5 @@ mod olap_benches {
         handle_request(&mut req, &mut ctx, soliton_causetid, soliton_plugin_registry, soliton_plugin_registry_mutex)?;
         Ok(())
     }
-}
+
 
