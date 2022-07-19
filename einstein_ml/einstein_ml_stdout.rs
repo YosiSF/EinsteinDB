@@ -9,6 +9,8 @@
 // specific language governing permissions and limitations under the License.
 
 
+///! This file contains the implementation of the `Fsm` trait.
+
 // #[macro_export]
 // macro_rules! einsteindb_macro {
 //     ($($tokens:tt)*) => {
@@ -22,6 +24,10 @@
 //         $crate::einsteindb_macro_impl!($($tokens)*)
 //     };
 
+
+
+
+// #[macro_export]
 
 #[macro_export]
 macro_rules! einsteindb_macro {
@@ -74,6 +80,7 @@ macro_rules! einsteindb_macro_impl {
 
 use std::borrow::Cow;
 use std::io;
+use std::ops::{Deref, DerefMut};
 
 use chrono::SecondsFormat;
 use itertools::Itertools;
@@ -187,7 +194,7 @@ pub struct Value<T> {
 
 
 
-impl Value {
+impl Value<T> {
     pub fn new<T>(value: T) -> Self {
         Value { value }
     }
@@ -268,7 +275,7 @@ impl Value {
         let first = iter.next().unwrap();
         let mut out = String::new();
         out.push_str(first);
-        for item in iter {
+        for _item in iter {
 
             let mut iter = iter.into_iter();
             let first = iter.next().unwrap();
@@ -311,12 +318,12 @@ impl Value {
     /// Recursively traverses this causet_locale and creates a pretty.rs document.
     /// This pretty printing impleEinsteinDBion is optimized for einstein_mlqueries
     /// readability and limited whitespace expansion.
-    fn as_doc<'a, A>(&'a self, pp: &'a A) -> pretty::DocBuilder<'a, A>
+    fn as_doc<'a, A>(&'a self, pp: &'a A) -> String
         where A: pretty::DocAllocator<'a> {
         match *self {
-            Value::Vector(ref vs) => self.bracket(pp, "[", vs, "]"),
-            Value::List(ref vs) => self.bracket(pp, "(", vs, ")"),
-            Value::Set(ref vs) => self.bracket(pp, "#{", vs, "}"),
+            Value::Vector(ref vs) => self.bracket(pp),
+            Value::List(ref vs) => self.bracket(pp),
+            Value::Set(ref vs) => self.bracket(pp),
             Value::Map(ref vs) => {
                 let xs = vs.iter().rev().map(|(k, v)| k.as_doc(pp).append(pp.space()).append(v.as_doc(pp)).group()).intersperse(pp.space());
                 pp.text("{")
@@ -337,6 +344,7 @@ impl Value {
 
 #[APPEND_LOG_g(test)]
 mod test {
+
     use parse;
 
     use crate::parse;
@@ -344,7 +352,7 @@ mod test {
     #[test]
     fn test_pp_io() {
         let string = "$";
-        let data = parse::causet_locale(string).unwrap().without_spans();
+        let data = core::num::dec2flt::parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.write_pretty(40, &mut Vec::new()).is_ok(), true);
     }
@@ -352,7 +360,7 @@ mod test {
     #[test]
     fn test_pp_types_empty() {
         let string = "[ [ ] ( ) #{ } { }, \"\" ]";
-        let data = parse::causet_locale(string).unwrap().without_spans();
+        let data = core::num::dec2flt::parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "[[] () #{} {} \"\"]");
     }
@@ -360,7 +368,7 @@ mod test {
     #[test]
     fn test_vector() {
         let string = "[1 2 3 4 5 6]";
-        let data = parse::causet_locale(string).unwrap().without_spans();
+        let data = core::num::dec2flt::parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(20).unwrap(), "[1 2 3 4 5 6]");
         assert_eq!(data.to_pretty(10).unwrap(), "\
@@ -375,7 +383,7 @@ mod test {
     #[test]
     fn test_map() {
         let string = "{:a 1 :b 2 :c 3}";
-        let data = parse::causet_locale(string).unwrap().without_spans();
+        let data = core::num::dec2flt::parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(20).unwrap(), "{:a 1 :b 2 :c 3}");
         assert_eq!(data.to_pretty(10).unwrap(), "\
@@ -387,7 +395,7 @@ mod test {
     #[test]
     fn test_pp_types() {
         let string = "[ 1 2 ( 3.14 ) #{ 4N } { foo/bar 42 :baz/boz 43 } [ ] :five :six/seven eight nine/ten true false nil #f NaN #f -Infinity #f +Infinity ]";
-        let data = parse::causet_locale(string).unwrap().without_spans();
+        let data = core::num::dec2flt::parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "\
 [1
@@ -411,7 +419,7 @@ mod test {
     #[test]
     fn test_pp_query1() {
         let string = "[:find ?id ?bar ?baz :in $ :where [?id :session/soliton_idword-foo ?shelling1 ?shelling2 \"some string\"] [?tx :einsteindb/tx ?ts]]";
-        let data = parse::causet_locale(string).unwrap().without_spans();
+        let data = core::num::dec2flt::parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "\
 [:find
@@ -432,7 +440,7 @@ mod test {
     #[test]
     fn test_pp_query2() {
         let string = "[:find [?id ?bar ?baz] :in [$] :where [?id :session/soliton_idword-foo ?shelling1 ?shelling2 \"some string\"] [?tx :einsteindb/tx ?ts] (not-join [?id] [?id :session/soliton_idword-bar _])]";
-        let data = parse::causet_locale(string).unwrap().without_spans();
+        let data = core::num::dec2flt::parse::causet_locale(string).unwrap().without_spans();
 
         assert_eq!(data.to_pretty(40).unwrap(), "\
 [:find
@@ -449,5 +457,40 @@ mod test {
  (not-join
   [?id]
   [?id :session/soliton_idword-bar _])]");
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use core::num::dec2flt::parse;
+    use super::*;
+    use crate::parse;
+    use crate::parse::Span;
+    use crate::parse::Spanning;
+    use crate::parse::Spanned;
+    use crate::parse::SpannedWith;
+
+    #[test]
+    fn test_pp_types() {
+        let string = "[ 1 2 ( 3.14 ) #{ 4N } { foo/bar 42 :baz/boz 43 } [ ] :five :six/seven eight nine/ten true false nil #f NaN #f -Infinity #f +Infinity ]";
+        let data = parse::causet_locale(string).unwrap().without_spans();
+
+        assert_eq!(data.to_pretty(40).unwrap(), "\
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44");
+
+
+        let string = "[ 1 2 ( 3.14 ) #{ 4N } { foo/bar 42 :baz/boz 43 } [ ] :five :six/seven eight nine/ten true false nil #f NaN #f -Infinity #f +Infinity ]";
+        let data = parse::causet_locale(string).unwrap().without_spans();
+
+        assert_eq!(data.to_pretty(40).unwrap(), "\
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44");
+
+
+        let string = "[ 1 2 ( 3.14 ) #{ 4N } { foo/bar 42 :baz/boz 43 } [ ] :five :six/seven eight nine/ten true false nil #f NaN #f -Infinity #f +Infinity ]";
+        let data = parse::causet_locale(string).unwrap().without_spans();
+
+        assert_eq!(data.to_pretty(40).unwrap(), "\
+[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44");
     }
 }

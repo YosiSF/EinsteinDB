@@ -10,6 +10,16 @@
 //
 
 
+extern crate core;
+extern crate core;
+extern crate core;
+extern crate core;
+extern crate core;
+extern crate core;
+extern crate core;
+extern crate core;
+extern crate core;
+
 mod constant;
 mod ast;
 mod einstein_ml_stdout;
