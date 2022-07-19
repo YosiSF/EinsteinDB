@@ -10,66 +10,47 @@
 //
 
 
+mod constant;
+mod ast;
+mod einstein_ml_stdout;
+mod isolated_namespace;
+mod query;
+mod two_pronged_crown;
+mod value_rc;
+
 use super::*;
 use crate::error::{Error, Result};
 use crate::parser::{Parser, ParserError};
 use crate::value::{Value, ValueType};
 use crate::{ValueRef, ValueRefMut};
 
-#[macro_use] extern crate causetq;
-extern crate einstein_ml;
-extern crate einsteindb_core;
-extern crate einsteindb_traits;
-#[APPEND_LOG_g(feature = "syncable")]
-#[macro_use] extern crate serde_derive;
-extern crate time;
 
-// Export these for reference from sync code and tests.
-pub use bootstrap::{
-    TX0,
-    USER0,
-    EINSTEIN_DB__PARTS,
-};
-pub use bootstrap::CORE_SCHEMA_VERSION;
-pub use causetids::einsteindb_SCHEMA_CORE;
-use einstein_ml::shellings;
-pub use einsteindb::{
-    new_connection,
-    TypedBerolinaSQLValue,
-};
-#[APPEND_LOG_g(feature = "BerolinaSQLcipher")]
-pub use einsteindb::{
-    change_encryption_soliton_id,
-    new_connection_with_soliton_id,
-};
-use einsteindb_traits::errors::{
-    einsteindbErrorKind,
-    Result,
-};
-use itertools::Itertools;
-use std::iter::repeat;
-pub use topograph::{
-    AttributeBuilder,
-    AttributeValidation,
-};
-pub use tx::{
-    transact,
-    transact_terms,
-};
-pub use tx_observer::{
-    InProgressObserverTransactWatcher,
-    TxObservationService,
-    TxObserver,
-};
-pub use types::{
-    AttributeSet,
-    einsteindb,
-    Partition,
-    PartitionMap,
-    TransactableValue,
-};
-pub use watcher::TransactWatcher;
 
+
+
+
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::{fmt, io};
+use std::{str, string};
+use std::{error, result};
+use std::{fmt::{Debug, Display, Formatter, Result as FmtResult}};
+use std::{fmt::{Error as FmtError, Write as FmtWrite}};
+use std::{fmt::{Formatter as FmtFormatter}};
+
+
+use std::{fmt::{Display as DisplayTrait}};
+use std::{fmt::{Formatter as FormatterTrait}};
+use std::io::repeat;
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ErrorImpl {
+
+    pub message: String,
+    pub cause: Option<Box<dyn Error + Send + Sync>>,
+}
 #[macro_use]
 pub mod mvrsi
 {
@@ -114,44 +95,60 @@ pub mod causetids
 
 
 pub static DISCRETE_MORSE_MAIN: i64 = 0;
+pub static DISCRETE_MORSE_MAIN_0: i64 = 0;
+pub static DISCRETE_MORSE_MAIN_1: i64 = 1;
+pub static DISCRETE_MORSE_MAIN_2: i64 = 2;
+pub static DISCRETE_MORSE_MAIN_3: i64 = 3;
+pub static DISCRETE_MORSE_MAIN_4: i64 = 4;
 
-pub fn to_rsplitn_namespace_solid_dword(s: &str) -> Result<shellings::Keyword> {
-    let mut s = s.to_string();
-    s.push_str("_");
-    s.push_str(&MVRSI_SCHEMA_VERSION.to_string());
 
-    let splits = [':', '/'];
-    let mut i = s.split(&splits[..]);
-    let nsk = match (i.next(), i.next(), i.next(), i.next()) {
-        (Some(""), Some(isolate_namespace_file), Some(name), None) => Some(shellings::Keyword::isoliton_namespaceable(isolate_namespace_file, name)),
-        _ => None,
-    };
+pub static DISCRETE_MORSE_MAIN_0_0: i64 = 0;
+pub static DISCRETE_MORSE_MAIN_0_1: i64 = 1;
+pub static DISCRETE_MORSE_MAIN_0_2: i64 = 2;
+pub static DISCRETE_MORSE_MAIN_0_3: i64 = 3;
+pub static DISCRETE_MORSE_MAIN_0_4: i64 = 4;
 
-    nsk.ok_or(einsteindbErrorKind::NotYetImplemented(format!("InvalidKeyword: {}", s)).into())
-}
+
+pub static DISCRETE_MORSE_MAIN_1_0: i64 = 0;
+pub static DISCRETE_MORSE_MAIN_1_1: i64 = 1;
+pub static DISCRETE_MORSE_MAIN_1_2: i64 = 2;
+pub static DISCRETE_MORSE_MAIN_1_3: i64 = 3;
+pub static DISCRETE_MORSE_MAIN_1_4: i64 = 4;
 
 /// Prepare an BerolinaSQL `VALUES` block, like (?, ?, ?), (?, ?, ?).
 ///
 /// The number of causet_locales per tuple determines  `(?, ?, ?)`.  The number of tuples determines `(...), (...)`.
 ///
-/// # Examples
-///
-/// ```rust
-/// # use einstein_db::{repeat_causet_locales};
-/// assert_eq!(repeat_causet_locales(1, 3), "(?), (?), (?)".to_string());
-/// assert_eq!(repeat_causet_locales(3, 1), "(?, ?, ?)".to_string());
-/// assert_eq!(repeat_causet_locales(2, 2), "(?, ?), (?, ?)".to_string());
-/// ```
-pub fn repeat_causet_locales(causet_locales_per_tuple: usize, tuples: usize) -> String {
-    assert!(causet_locales_per_tuple >= 1);
-    assert!(tuples >= 1);
-    // Like "(?, ?, ?)".
-    let inner = format!("({})", repeat("?").take(causet_locales_per_tuple).join(", "));
-    // Like "(?, ?, ?), (?, ?, ?)".
-    let causet_locales: String = repeat(inner).take(tuples).join(", ");
-    causet_locales
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+
+
+
+
+pub fn repeat_causet_locales(causet_locales_per_tuple: usize, tuples: usize) -> Option<char> {
+    let mut s = String::new();
+    for _ in 0..tuples {
+        for _ in 0..causet_locales_per_tuple {
+            s.push_str("(?, ?, ?)");
+        }
+        s.push_str(", ");
+    }
+    s.pop()
 }
 
+
+pub fn repeat_causet_locales_with_separator(causet_locales_per_tuple: usize, tuples: usize, separator: char) -> Option<char> {
+    let mut s = String::new();
+    for _ in 0..tuples {
+        for _ in 0..causet_locales_per_tuple {
+            s.push_str("(?, ?, ?)");
+        }
+        s.push(separator);
+    }
+    s.pop()
+}
 
 /// Prepare an BerolinaSQL `VALUES` block, like (?, ?, ?), (?, ?, ?).
 /// The number of causet_locales per tuple determines  `(?, ?, ?)`.  The number of tuples determines `(...), (...)`.
@@ -168,9 +165,9 @@ pub fn repeat_causet_locales_with_values(causet_locales_per_tuple: usize, tuples
     assert!(causet_locales_per_tuple >= 1);
     assert!(tuples >= 1);
     // Like "(?, ?, ?)".
-    let inner = format!("({})", repeat("?").take(causet_locales_per_tuple).join(", "));
+    let inner = format!("({})", repeat("?".parse().unwrap()).take(causet_locales_per_tuple).join(", "));
     // Like "(?, ?, ?), (?, ?, ?)".
-    let causet_locales: String = repeat(inner).take(tuples).join(", ");
+    let causet_locales: String = repeat(inner.parse().unwrap()).take(tuples).join(", ");
     causet_locales
 }
 ///The following Prolog predicates are predefined in Allegro Prolog and generally implement the standard Prolog functionality. The set of defined predicates may be extended in the future. A few predicates in this implementation accept varying arity and are indicated with a *, as in or/*.

@@ -28,7 +28,7 @@ use ::std::ops::RangeFrom;
 use ::std::ops::RangeFull;
 use ::std::ops::RangeTo;
 use ::std::ops::RangeToInclusive;
-use ::std::ops::IndexMut;
+use ::std::ops::{ Mul, MulAssign, Sub, SubAssign};
 
 
 use ::std::ops::Add;
@@ -41,179 +41,20 @@ use ::std::ops::BitXor;
 use ::std::ops::BitXorAssign;
 use ::std::ops::Div;
 use ::std::ops::DivAssign;
+use std::error;
+use std::marker::PhantomData;
 
 use ::EinsteinDB::einstein_ml::value::Value;
 use ::EinsteinDB::einstein_ml::value::ValueType;
 use ::EinsteinDB::einstein_ml::value::ValueType::*;
 
-impl<T> ValueRc<T> {
-    pub fn new(value: T) -> Self {
-        ValueRc {
 
-            value: Rc::new(RefCell::new(value)),
-        }
+use ::EinsteinDB::einstein_ml::value::ValueRef;
+use ::EinsteinDB::einstein_ml::value::ValueRefMut;
+use ::EinsteinDB::einstein_ml::value::ValueRefMut::*;
+use crate::ast::Solitonid;
+use crate::einstein_ml_stdout::Value;
 
-
-    }
-
-    pub fn get_value(&self) -> Rc<RefCell<T>> {
-        self.value.clone()
-    }
-
-    pub fn get_value_mut(&mut self) -> Rc<RefCell<T>> {
-        self.value.clone()
-    }
-
-    pub fn get_value_ref(&self) -> &T {
-        self.value.borrow()
-    }
-
-    pub fn get_value_ref_mut(&mut self) -> &mut T {
-        self.value.borrow_mut()
-    }
-
-
-}
-
-
-impl<T> Deref for ValueRc<T> {
-
-    type Target = T;
-
-    fn deref(&self) -> &T {
-        &self.value.borrow()
-    }
-
-
-}
-
-
-impl<T> DerefMut for ValueRc<T> {
-    fn deref_mut(&mut self) -> &mut T {
-        &mut self.value.borrow_mut()
-    }
-}
-
-
-impl<T> Drop for ValueRc<T> {
-    fn drop(&mut self) {
-        self.value.borrow_mut().drop();
-    }
-}
-
-
-impl<T> Display for ValueRc<T>
-where
-    T: Display,
-{
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        self.value.borrow().fmt(f)
-    }
-}
-
-
-impl<T> Debug for ValueRc<T>
-where
-    T: Debug,
-{
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        self.value.borrow().fmt(f)
-    }
-}
-
-
-impl<T> Error for ValueRc<T>
-where
-    T: Error,
-{
-    fn description(&self) -> &str {
-        self.value.borrow().description()
-    }
-
-    fn cause(&self) -> Option<&Error> {
-        self.value.borrow().cause()
-    }
-}
-
-
-impl<T> FmtError for ValueRc<T>
-where
-    T: FmtError,
-{
-    fn fmt(&self, f: &mut Formatter) -> Result {
-        self.value.borrow().fmt(f)
-    }
-}
-
-
-impl<T> Index<usize> for ValueRc<T> {
-    type Output = T;
-
-    fn index(&self, index: usize) -> &T {
-        &self.value.borrow()[index]
-    }
-}
-
-
-impl<T> IndexMut<usize> for ValueRc<T> {
-    fn index_mut(&mut self, index: usize) -> &mut T {
-        &mut self.value.borrow_mut()[index]
-    }
-}
-
-
-impl<T> Index<Range<usize>> for ValueRc<T> {
-    type Output = [T];
-
-    fn index(&self, index: Range<usize>) -> &[T] {
-        &self.value.borrow()[index]
-    }
-}
-
-
-impl<T> IndexMut<Range<usize>> for ValueRc<T> {
-    fn index_mut(&mut self, index: Range<usize>) -> &mut [T] {
-        &mut self.value.borrow_mut()[index]
-    }
-}
-
-
-impl<T> Index<RangeTo<usize>> for ValueRc<T> {
-    type Output = [T];
-
-    fn index(&self, index: RangeTo<usize>) -> &[T] {
-        &self.value.borrow()[index]
-    }
-}
-
-
-impl<T> IndexMut<RangeTo<usize>> for ValueRc<T> {
-    fn index_mut(&mut self, index: RangeTo<usize>) -> &mut [T] {
-        &mut self.value.borrow_mut()[index]
-    }
-}
-
-
-impl<T> Index<RangeFrom<usize>> for ValueRc<T> {
-    type Output = [T];
-
-    fn index(&self, index: RangeFrom<usize>) -> &[T] {
-        &self.value.borrow()[index]
-    }
-}
-
-
-impl<T> IndexMut<RangeFrom<usize>> for ValueRc<T> {
-    fn index_mut(&mut self, index: RangeFrom<usize>) -> &mut [T] {
-        &mut self.value.borrow_mut()[index]
-    }
-}
-
-
-
-use crate::einstein_db::value::Value;
-use crate::einstein_db::value::ValueType;
-use crate::einstein_db::causetq::Causetq;
 
 ///! # Rc Value
 ///
@@ -250,12 +91,14 @@ impl<T> FromRc<T> for Rc<T> where T: Sized + Clone {
         val.clone()
     }
 
-
+    fn from_arc(val: Arc<T>) -> Self {
+        Rc::new(val.deref().clone())
+    }
 }
 
 impl<T> FromRc<T> for Arc<T> where T: Sized + Clone {
     fn from_rc(val: Rc<T>) -> Self {
-        match ::std::rc::Rc::<T>::try_unwrap(val) {
+        match Rc::<T>::try_unwrap(val) {
             Ok(v) => Self::new(v),
             Err(r) => Self::new(r.cloned()),
         }
@@ -268,27 +111,127 @@ impl<T> FromRc<T> for Arc<T> where T: Sized + Clone {
 
 impl<T> FromRc<T> for Box<T> where T: Sized + Clone {
     fn from_rc(val: Rc<T>) -> Self {
-        match ::std::rc::Rc::<T>::try_unwrap(val) {
+        match Rc::<T>::try_unwrap(val) {
             Ok(v) => Self::new(v),
             Err(r) => Self::new(r.cloned()),
         }
     }
 
     fn from_arc(val: Arc<T>) -> Self {
-        match ::std::sync::Arc::<T>::try_unwrap(val) {
+        match Arc::<T>::try_unwrap(val) {
             Ok(v) => Self::new(v),
             Err(r) => Self::new(r.cloned()),
         }
     }
 }
 
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct ErrorImpl {
+
+
+    pub message: String,
+    pub cause: Option<Box<dyn error::Error + Send + Sync>>,
+}
+
+#[macro_use]
+pub mod mvrsi
+{
+    pub use EinsteinDB::einstein_ml::value::mvrsi::{
+        MVRSI,
+        MVRSI_SCHEMA_VERSION,
+    };
+}
+
+
+pub mod db_
+{
+    pub use EinsteinDB::einstein_ml::value::db_::{
+        DB,
+        DB_SCHEMA_VERSION,
+    };
+}
+
+
+pub mod cache
+{
+    pub use EinsteinDB::einstein_ml::value::cache::{
+        Cache,
+        Cache_SCHEMA_VERSION,
+    };
+}
+
+
+pub mod bootstrap
+{
+    pub use EinsteinDB::einstein_ml::value::bootstrap::{
+        CORE_SCHEMA_VERSION,
+    };
+}
+
+
+
+
+pub mod causetids
+{
+    pub use EinsteinDB::einstein_ml::value::causetids::einsteindb_SCHEMA_CORE;
+}
+
+/// add sized type to the value type
+/// this is used to add the size of the value to the value type
+
+
+
+pub trait ValueSized {
+    fn size(&self) -> usize;
+}
+
+
+
+
+
+
+
 // We do this a lot for errors.
 pub trait Cloned<T> {
+
+
     fn cloned(&self) -> T;
     fn to_causet_locale_rc(&self) -> ValueRc<T>;
 }
 
+
+impl<T> Cloned<T> for T {
+
+    fn cloned(&self) -> T {
+        self.clone()
+    }
+    fn to_causet_locale_rc(&self) -> ValueRc<T> {
+        ValueRc::new(self.clone())
+    }
+
+
+}
+
+
+impl<T> Cloned<T> for Rc<T> {
+    fn cloned(&self) -> T {
+        self.clone().deref().clone()
+    }
+    fn to_causet_locale_rc(&self) -> ValueRc<T> {
+        ValueRc::new(self.clone())
+    }
+
+
+}
+
+
+
+
+
 impl<T: Clone> Cloned<T> for Rc<T> where T: Sized + Clone {
+
     fn cloned(&self) -> T {
         (*self.as_ref()).clone()
     }
@@ -318,9 +261,427 @@ impl<T: Clone> Cloned<T> for Box<T> where T: Sized + Clone {
     }
 }
 
-///
-/// This type alias exists to allow us to use different boxing mechanisms for causet_locales.
-/// This type must implement `FromRc` and `Cloned`, and a `From` impleEinsteinDBion must exist for
-/// `causetq_TV`.
-///
-pub type ValueRc<T> = Arc<T>;
+pub trait TimeStamp {
+    fn timestamp(&self) -> u64;
+}
+
+
+
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct ValueRc<T> {
+    pub value: Rc<T>,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct ValueArc<T> {
+    pub value: Arc<T>,
+    pub timestamp: u64,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct ValueBox<T> {
+    pub value: Box<T>,
+    pub timestamp: u64,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct ValueRef<T> {
+    pub value: T,
+    pub timestamp: u64,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct ValueRefMut<T> {
+    pub value: T,
+    pub timestamp: u64,
+}
+
+
+pub static DISCRETE_MORSE_MAIN: i64 = 0;
+pub static DISCRETE_MORSE_MAIN_0: i64 = 0;
+pub static DISCRETE_MORSE_MAIN_1: i64 = 1;
+pub static DISCRETE_MORSE_MAIN_2: i64 = 2;
+pub static DISCRETE_MORSE_MAIN_3: i64 = 3;
+pub static DISCRETE_MORSE_MAIN_4: i64 = 4;
+pub static DISCRETE_MORSE_MAIN_5: i64 = 5;
+pub static DISCRETE_MORSE_MAIN_6: i64 = 6;
+pub static DISCRETE_MORSE_MAIN_7: i64 = 7;
+
+
+pub static DISCRETE_MORSE_MAIN_8: i64 = 8;
+
+
+
+///! The Value class is the base class for all values in EinsteinDB.
+/// ! It is a reference counted object.
+/// ! It is a wrapper around a pointer to a ValueImpl object.
+/// ! It is a wrapper around a pointer to a ValueImpl object.
+/// ! IF
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct ValueImpl {
+    pub value_type: ValueType,
+    pub value: Box<dyn ValueSized + Send + Sync>, // Values are Send + Sync.
+    pub value_ref: Rc<RefCell<ValueImpl>>,
+    pub value_ref_mut: Rc<RefCell<ValueImpl>>,
+    pub value_ref_mut_ptr: Rc<RefCell<ValueImpl>>,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct ValueImplRef {
+    pub value_type: ValueType,
+    pub value: Value<T>,
+    pub value_ref: Rc<RefCell<ValueImpl>>,
+    pub value_ref_mut: Rc<RefCell<ValueImpl>>,
+    pub value_ref_mut_ptr: Rc<RefCell<ValueImpl>>,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct ValueImplRefMut {
+    pub value_type: ValueType,
+    pub value: Value<T>,
+    pub value_ref: Rc<RefCell<ValueImpl>>,
+    pub value_ref_mut: Rc<RefCell<ValueImpl>>,
+    pub value_ref_mut_ptr: Rc<RefCell<ValueImpl>>,
+}
+
+
+impl ValueImpl {
+    fn clone(&self) -> Self {
+        match self {
+            WaLValueRc::ValueRc(v) => WaLValueRc::ValueRc(v.clone()),
+            WaLValueRc::CausetidRc(v) => WaLValueRc::CausetidRc(v.clone()),
+            WaLValueRc::SolitonidRc(v) => WaLValueRc::SolitonidRc(v.clone()),
+        }
+    }
+}
+
+struct ValueImplRefRef {
+    value_type: ValueType,
+    value: Value<T>,
+    value_ref: Rc<RefCell<ValueImpl>>,
+    value_ref_mut: Rc<RefCell<ValueImpl>>,
+    value_ref_mut_ptr: Rc<RefCell<ValueImpl>>,
+}
+
+impl ValueImplRef {
+
+    fn clone(&self) -> Self {
+        ValueImplRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+
+
+    }
+}
+
+
+impl ValueImplRefMut {
+
+    fn clone(&self) -> Self {
+        ValueImplRefMut {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone()
+        }
+    }
+}
+
+
+
+
+impl ValueImplRefRef {
+    fn clone(&self) -> Self {
+        ValueImplRefRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone()
+
+        }
+
+    }
+
+}
+
+
+
+
+impl ValueImplRefMut {
+
+    fn clone(&self) -> Self {
+        ValueImplRefMut {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+}
+
+
+impl ValueImplRefRef {
+    fn clone(&self) -> Self {
+        ValueImplRefRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+}
+
+
+
+impl ValueImplRefRef {
+    fn clone(&self) -> Self {
+        ValueImplRefRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone()
+
+        }
+
+    }
+
+}
+
+
+impl ValueImplRef {
+    fn clone(&self) -> Self {
+        ValueImplRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+
+    }
+
+}
+
+
+impl ValueImplRefMut {
+    fn clone(&self) -> Self {
+        ValueImplRefMut {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+}
+
+
+
+impl ValueImplRefRef {
+    fn clone(&self) -> Self {
+        ValueImplRefRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone()
+
+        }
+
+    }
+
+}
+
+
+impl ValueImplRefMut {
+    fn clone(&self) -> Self {
+        ValueImplRefMut {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+}
+
+
+
+
+impl ValueImplRefRef {
+    fn drop(&mut self) {
+        match self {
+            WaLValueRc::ValueRc(v) => v.drop(),
+            WaLValueRc::CausetidRc(v) => v.drop(),
+            WaLValueRc::SolitonidRc(v) => v.drop(),
+        }
+    }
+}
+
+
+
+
+impl ValueImplRefMut {
+    fn drop(&mut self) {
+        match self {
+            WaLValueRc::ValueRc(v) => v.drop(),
+            WaLValueRc::CausetidRc(v) => v.drop(),
+            WaLValueRc::SolitonidRc(v) => v.drop(),
+        }
+    }
+}
+
+pub trait WaLValueRc {
+    fn clone(&self) -> Self;
+    fn drop(&mut self);
+}
+
+
+impl WaLValueRc for ValueImplRef {
+    fn clone(&self) -> Self {
+        ValueImplRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+
+    fn drop(&mut self) {
+        match self {
+            WaLValueRc::ValueRc(v) => v.drop(),
+            WaLValueRc::CausetidRc(v) => v.drop(),
+            WaLValueRc::SolitonidRc(v) => v.drop(),
+        }
+    }
+}
+
+
+impl WaLValueRc for ValueImplRefMut {
+    fn clone(&self) -> Self {
+        ValueImplRefMut {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+
+    fn drop(&mut self) {
+        match self {
+            WaLValueRc::ValueRc(v) => v.drop(),
+            WaLValueRc::CausetidRc(v) => v.drop(),
+            WaLValueRc::SolitonidRc(v) => v.drop(),
+        }
+    }
+}
+
+
+impl WaLValueRc for ValueImplRefRef {
+    fn clone(&self) -> Self {
+        ValueImplRefRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+
+    fn drop(&mut self) {
+        match self {
+            WaLValueRc::ValueRc(v) => v.drop(),
+            WaLValueRc::CausetidRc(v) => v.drop(),
+            WaLValueRc::SolitonidRc(v) => v.drop(),
+        }
+    }
+}
+
+
+impl WaLValueRc for ValueImplRefRef {
+    fn clone(&self) -> Self {
+        ValueImplRefRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+
+    fn drop(&mut self) {
+        match self {
+            WaLValueRc::ValueRc(v) => v.drop(),
+            WaLValueRc::CausetidRc(v) => v.drop(),
+            WaLValueRc::SolitonidRc(v) => v.drop(),
+        }
+    }
+}
+
+
+impl WaLValueRc for ValueImplRefMut {
+    fn clone(&self) -> Self {
+        ValueImplRefMut {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+
+    fn drop(&mut self) {
+        match self {
+            WaLValueRc::ValueRc(v) => v.drop(),
+            WaLValueRc::CausetidRc(v) => v.drop(),
+            WaLValueRc::SolitonidRc(v) => v.drop(),
+        }
+    }
+
+}
+
+
+impl WaLValueRc for ValueImplRefRef {
+    fn clone(&self) -> Self {
+        ValueImplRefRef {
+            value_type: self.value_type.clone(),
+            value: self.value.clone(),
+            value_ref: self.value_ref.clone(),
+            value_ref_mut: self.value_ref_mut.clone(),
+            value_ref_mut_ptr: self.value_ref_mut_ptr.clone(),
+        }
+    }
+
+    fn drop(&mut self) {
+        match self {
+            WaLValueRc::ValueRc(v) => v.drop(),
+            WaLValueRc::CausetidRc(v) => v.drop(),
+            WaLValueRc::SolitonidRc(v) => v.drop(),
+        }
+    }
+
+}
+

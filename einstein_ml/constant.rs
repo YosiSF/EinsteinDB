@@ -12,6 +12,18 @@
 /// 
 
 
+// use std::collections::HashMap;
+// use std::sync::Arc;
+// use std::sync::atomic::{AtomicUsize, Ordering};
+
+
+
+
+use std::collections::HashMap;
+use std::borrow::{BorrowMut, Cow};
+use std::rc::Rc;
+
+
 use std::fmt::{self, Display, Formatter};
 use std::io;
 use std::result;
@@ -22,9 +34,9 @@ use std::str;
 use std::string::FromUtf8Error;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use std::{fmt, io, mem, ptr, str, sync, time};
 use std::{fmt::Debug, io::Write, mem::size_of};
 use std::{result::Result as StdResult};
+use std::io::Bytes;
 
 
 pub use einsteindb_traits::errors::{
@@ -101,10 +113,8 @@ pub use causetids::{
 pub use einsteindb_traits::{
     einsteindb_SCHEMA_CORE,
 };
-
-
-
-
+use crate::query::FindSpec;
+use crate::two_pronged_crown::Timestamp;
 
 
 #[allow(non_camel_case_types)]
@@ -149,6 +159,8 @@ pub(crate) struct U128x1(pub u128);
 
 
 impl U64x2 {
+
+
     pub fn new(a: u64, b: u64) -> Self {
         U64x2(a, b)
     }
@@ -159,22 +171,15 @@ impl U64x2 {
 
     /// Reads U64x2 from array pointer (potentially unaligned)
     #[inline(always)]
-    pub fn read(src: &[u8; 16]) -> Self {
-        unsafe {
-            let mut dst = mem::uninitialized();
-            copy_nonoverlapping(src.as_ptr(), &mut dst as *mut _ as *mut u8, 16);
-            dst
-        }
-
-        // let mut dst = mem::uninitialized();
-        // unsafe {
-        //     copy_nonoverlapping(src.as_ptr(), &mut dst as *mut _ as *mut u8, 16);
-        let mut tmp = mem::MaybeUninit::<Self>::uninit();
-        unsafe {
-            copy_nonoverlapping(src.as_ptr(), tmp.as_mut_ptr(), 16);
-            tmp.assume_init()
-        }
+    pub unsafe fn read(src: &[u8; 16]) -> Self {
+        let src = src.as_ptr();
+        let a = *(src as *const u64);
+        let b = *((src as *const u64).add(1));
+        U64x2(a, b)
     }
+
+
+
 
     /// Writes U64x2 to array pointer (potentially unaligned)
     /// # Safety
@@ -200,6 +205,9 @@ impl U64x2 {
             copy_nonoverlapping(&self as *const Self as *const u8, dst.as_mut_ptr(), 16);
         }
     }
+
+
+
 }
 
 
@@ -239,34 +247,6 @@ pub enum Error {
 }
 
 
-use ::{
-    berolina_sql,
-    Element,
-    FindSpec,
-    QueryOutput,
-    QueryResults,
-    Rows,
-    Topograph,
-};
-use allegroeinstein_prolog_causet_projector::errors::Result;
-use causet_algebrizer::MEDB_query_datatype::codec::DatumType;
-use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::{Decimal, Duration, Json, Time};
-use causet_algebrizer::MEDB_query_datatype::expr::Result;
-use std::borrow::Cow;
-use std::rc::Rc;
-
-/// A wrapper around a `Result` that provides more context about the error.
-/// This is useful for reporting errors to a user.
-/// # Examples
-/// ```
-/// 
-/// use einsteindb_gremlin::error::Error;
-/// use einsteindb_gremlin::error::ErrorKind;
-/// 
-/// let err = Error::new(ErrorKind::Other, "oh no!");
-/// println!("{}", err);
-/// ```
-
 
 /// A projector that produces a `QueryResult` containing fixed data.
 /// Takes a boxed function that should return an empty result set of the desired type.
@@ -295,14 +275,14 @@ impl QueryOutput for FixedProjector {
 
 
 impl FixedProjector {
-    pub fn new(spec: Rc<FindSpec>, results_factory: Box<Fn() -> QueryResults>) -> ConstantProjector {
+    pub fn new(spec: Rc<FindSpec>, results_factory: Box<dyn Fn() -> QueryResults>) -> ConstantProjector {
         ConstantProjector {
             spec: spec,
             results_factory: results_factory,
         }
     }
 
-    pub fn project_without_rows<'stmt>(&self) -> Result<QueryOutput> {
+    pub fn project_without_rows<'stmt>(&self) -> Result<QueryOutput, E> {
         let results = (self.results_factory)();
         let spec = self.spec.clone();
         let topograph = Topograph::new(spec.clone());
@@ -312,53 +292,15 @@ impl FixedProjector {
 }
 
 impl Projector for ConstantProjector {
-    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput> {
+    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput, E> {
         self.project_without_rows()
     }
 }
 
 
-/// A projector that produces a `QueryResult` containing fixed data.
-/// Takes a boxed function that should return an empty result set of the desired type.
-/// This version is for use with the `berolina_sql` crate.
-/// It is used to create a constant result set for a query that has no rows.
-///
-/// # Example
-/// ```
-/// use causet_algebrizer::MEDB_query_datatype::codec::myBerolinaSQL::{Decimal, Duration, Json, Time};
-/// use causet_algebrizer::MEDB_query_datatype::codec::DatumType;
-/// use causet_algebrizer::MEDB_query_datatype::expr::Result;
-/// use causet_algebrizer::MEDB_query_datatype::query_output::{
-///    QueryOutput,
-///   Projector,
-/// };
-/// use causet_algebrizer::MEDB_query_datatype::query_results::{
-///   QueryResults,
-///  Rows,
-/// };
-/// use causet_algebrizer::MEDB_query_datatype::topograph::{
-///  Topograph,
-/// };
-///
-/// use std::rc::Rc;
-///
-/// use ::{
-///   Element,
-///  FindSpec,
-/// };
-///
-///
-/// fn main() {
-///    let spec = Rc::new(FindSpec::new(
-///
-//
-///
-///
-///
-
 
 impl Projector for ConstantProjector {
-    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput> {
+    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput, E> {
         self.project_without_rows()
     }
 }
@@ -409,7 +351,7 @@ impl ConstantProjector {
         });
         ConstantProjector::new(spec, results_factory)
     }
-    pub fn new_with_result(spec: Rc<FindSpec>, result: Result) -> ConstantProjector {
+    pub fn new_with_result(spec: Rc<FindSpec>, result: Result<T, E>) -> ConstantProjector {
         let results_factory = Box::new(move || {
             let mut results = QueryResults::new(
                 Rows::new(vec![]),
@@ -464,7 +406,7 @@ impl ConstantProjector {
         });
         ConstantProjector::new(spec, results_factory)
     }
-    pub fn new_with_bytes(spec: Rc<FindSpec>, bytes: Bytes) -> ConstantProjector {
+    pub fn new_with_bytes(spec: Rc<FindSpec>, bytes: Bytes<R>) -> ConstantProjector {
         let results_factory = Box::new(move || {
             let mut results = QueryResults::new(
                 Rows::new(vec![]),
@@ -490,7 +432,7 @@ impl ConstantProjector {
 
 
 impl Projector for TopographProjector {
-    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput> {
+    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput, E> {
         self.project_without_rows()
     }
 }
@@ -512,7 +454,7 @@ impl TopographProjector {
 
 
 impl Projector for TopographProjector {
-    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput> {
+    fn project(&self, _: &berolina_sql::Statement) -> Result<QueryOutput, E> {
         self.project_without_rows()
     }
 }
@@ -553,7 +495,7 @@ pub fn new_with_time(spec: Rc<FindSpec>, time: Time) -> ConstantProjector {
     ConstantProjector::new(spec, results_factory)
 }
 
-pub fn new_with_timestamp(spec: Rc<FindSpec>, timestamp: Timestamp) -> ConstantProjector {
+pub fn new_with_timestamp(spec: Rc<FindSpec>, timestamp: Timestamp<T>) -> ConstantProjector {
     let results_factory = Box::new(move || {
         let mut results = QueryResults::new(
             Rows::new(vec![]),
@@ -873,7 +815,7 @@ impl HARAKA_REG_TYPE for DatumType {
 
 
 impl ConstantProjector {
-    pub fn new(spec: Rc<FindSpec>, results_factory: Box<Fn() -> QueryResults>) -> ConstantProjector {
+    pub fn new(spec: Rc<FindSpec>, results_factory: Box<dyn Fn() -> QueryResults>) -> ConstantProjector {
         ConstantProjector {
             spec: spec,
             results_factory: results_factory,
@@ -890,7 +832,7 @@ impl Projector for ConstantProjector {
         (self.results_factory)() // HARAKA: This is a hack to get around the fact that we don't have a way to create a `RegType` from a `DatumType`.
     }
 
-    fn get_column_names(&self) -> Vec<String> {
+    fn get_column_names(&self) {
             [ U64x2(0xb2c5fef075817b9d, 0x0684704ce620c00a),
             U64x2(0x640f6ba42f08f717, 0x8b66b4e188f3a06b),
             U64x2(0xcf029d609f029114, 0x3402de2d53f28498),
