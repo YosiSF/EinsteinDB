@@ -29,11 +29,6 @@ extern crate soliton_panic;
 
 
 
-
-
-#[macro_use]
-extern crate soliton_panic;
-
 extern crate soliton;
 
 //mods

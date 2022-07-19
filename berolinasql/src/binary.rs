@@ -9,14 +9,99 @@
  // specific language governing permissions and limitations under the License.
 
 
-use std::io::{self, Read, Write};
-use std::mem;
-use std::cmp;
-use std::fmt;
+// use std::io::{self, Read, Write};
+// use std::mem;
+// use std::cmp;
+// use std::fmt;
+//
+// use byteorder::{ByteOrder, BigEndian, ReadBytesExt, WriteBytesExt};
+// use byteorder::{LittleEndian, WriteBytesExt};
+// use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
 
-use byteorder::{ByteOrder, BigEndian, ReadBytesExt, WriteBytesExt};
-use byteorder::{LittleEndian, WriteBytesExt};
-use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
+    use std::io::{self, Read, Write};
+    use std::mem;
+    use std::cmp;
+    use std::fmt;
+    use std::io::{Error, ErrorKind};
+    use std::io::{Cursor};
+    use std::io::{Seek, SeekFrom};
+
+
+    use byteorder::{ByteOrder, BigEndian, ReadBytesExt, WriteBytesExt};
+    use byteorder::{LittleEndian, WriteBytesExt};
+    use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
+
+
+    use super::{Binary};
+    use super::{BinaryReader};
+
+
+    pub struct BinaryWriter {
+        pub buffer: Vec<u8>,
+        pub position: usize,
+    }
+
+
+    impl BinaryWriter {
+        pub fn new() -> BinaryWriter {
+            BinaryWriter {
+                buffer: Vec::new(),
+                position: 0,
+            }
+        }
+
+        pub fn write_u8(&mut self, value: u8) {
+            self.buffer.push(value);
+            self.position += 1;
+        }
+
+        pub fn write_u16(&mut self, value: u16) {
+            self.buffer.write_u16::<BigEndian>(value).unwrap();
+            self.position += 2;
+        }
+
+        pub fn write_u32(&mut self, value: u32) {
+            self.buffer.write_u32::<BigEndian>(value).unwrap();
+            self.position += 4;
+        }
+
+        pub fn write_u64(&mut self, value: u64) {
+            self.buffer.write_u64::<BigEndian>(value).unwrap();
+            self.position += 8;
+        }
+
+        pub fn write_i8(&mut self, value: i8) {
+            self.buffer.write_i8(value).unwrap();
+            self.position += 1;
+        }
+
+        pub fn write_i16(&mut self, value: i16) {
+            self.buffer.write_i16::<BigEndian>(value).unwrap();
+            self.position += 2;
+        }
+
+        pub fn write_i32(&mut self, value: i32) {
+            self.buffer.write_i32::<BigEndian>(value).unwrap();
+            self.position += 4;
+        }
+
+        pub fn write_i64(&mut self, value: i64) {
+            self.buffer.write_i64::<BigEndian>(value).unwrap();
+            self.position += 8;
+        }
+
+        pub fn write_f32(&mut self, value: f32) {
+            self.buffer.write_f32::<BigEndian>(value).unwrap();
+            self.position += 4;
+        }
+
+        pub fn write_f64(&mut self, value: f64) {
+            self.buffer.write_f64::<BigEndian>(value).unwrap();
+            self.position += 8;
+        }
+    }
+
+
 
 
  //JsonRef
@@ -26,18 +111,18 @@ use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
      fn as_i64(&self) -> Option<i64>;
      fn as_f64(&self) -> Option<f64>;
      fn as_bool(&self) -> Option<bool>;
-     fn as_array(&self) -> Option<&[JsonRef]>;
+     fn as_array(&self) -> Option<&[dyn JsonRef]>;
      fn as_object(&self) -> Option<&JsonObject>;
  }
 
  #[derive(Debug, Clone, PartialEq)]
  pub struct JsonObject {
-     pub(crate) map: Vec<(String, JsonRef)>,
+     pub(crate) map: Vec<(String, dyn JsonRef)>,
  }
 
  #[derive(Debug, Clone, PartialEq)]
  pub struct JsonArray {
-     pub(crate) vec: Vec<JsonRef>,
+     pub(crate) vec: Vec<dyn JsonRef>,
  }
 
 
@@ -46,7 +131,7 @@ use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
     /// Gets the ith element in JsonRef
     ///
     /// See `arrayGetElem()` in MEDB `json/binary.go`
-    pub fn array_get_elem(&self, idx: usize) -> Result<JsonRef<'a>> {
+    pub fn array_get_elem(&self, idx: usize) -> Result<dyn JsonRef<'a>> {
         self.val_causet_get(HEADER_LEN + idx * VALUE_ENTRY_LEN)
     }
 
@@ -64,7 +149,7 @@ use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
     /// Returns the JsonRef of `i`th causet_locale in current Object json
     ///
     /// See `arrayGetElem()` in MEDB `json/binary.go`
-    pub fn object_get_val(&self, i: usize) -> Result<JsonRef<'a>> {
+    pub fn object_get_val(&self, i: usize) -> Result<dyn JsonRef<'a>> {
         let ele_count = self.get_elem_count();
         let val_causet_off = HEADER_LEN + ele_count * KEY_ENTRY_LEN + i * VALUE_ENTRY_LEN;
         self.val_causet_get(val_causet_off)
@@ -91,10 +176,8 @@ use byteorder::{NativeEndian, ReadBytesExt, WriteBytesExt};
         None
     }
 
-    /// Gets the causet_locale (JsonRef) by the given offset of the causet_locale causet
-    ///
-    /// See `arrayGetElem()` in MEDB `json/binary.go`
-    pub fn val_causet_get(&self, val_causet_off: usize) -> Result<JsonRef<'a>> {
+
+    pub fn val_causet_get(&self, val_causet_off: usize) -> Result<dyn JsonRef<'a>> {
         let val_type: JsonType = self.causet_locale()[val_causet_off].try_into()?;
         let val_offset =
             NumberCodec::decode_u32_le(&self.causet_locale()[val_causet_off + TYPE_LEN as usize..]) as usize;
