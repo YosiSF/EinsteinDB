@@ -1,31 +1,31 @@
 mod parser;
 
 mod table;
+mod decimal;
+mod error;
+mod binary;
+mod comparison;
+mod json_type;
+mod json_modify;
+mod overflow;
 
 
 
-use crate::table::Table;
 
-use std::collections::HashMap;
+
+
+
+
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
-use std::path::Path;
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::thread;
+
+
+
+
 use std::time::Instant;
 
-fn main() -> String {
-    let start = Instant::now();
-    let mut table = Table::new();
-    let mut file = File::open("/home/berolina/Desktop/test.txt")?;
-    BufReader::new(file);
-    let _ = String::new();
-    String::new();
-    String::new()
-}
 
-    ///! Copyright (c)2018 WHTCORPS INC. All Rights Reserved.
+///! Copyright (c)2018 WHTCORPS INC. All Rights Reserved.
 ///! Licensed under the Apache License, Version 2.0 (the "License");
 ///! you may not use this file except in compliance with the License.
 ///! You may obtain a copy of the License at
@@ -55,6 +55,9 @@ use std::fmt;
 use std::result;
 use std::string::FromUtf8Error;
 use std::str::Utf8Error;
+
+
+
 
 
 
@@ -92,6 +95,55 @@ pub struct Error {
     pub kind: ErrorKind,
 }
 
+
+
+
+
+
+pub enum Sql {
+    Select(Sql),
+    Insert(Sql),
+    Update(Sql),
+    Delete(Sql),
+    Create(Sql),
+    Drop(Sql),
+    Alter(Sql),
+    Rename(Sql),
+    Copy(Sql),
+
+    /// A SQL statement that does not return a result set.
+    /// This includes UPDATE, DELETE, CREATE, DROP, and ALTER statements.
+    /// The return value is the number of rows affected.
+    /// The number of rows affected is returned in the form of an integer.
+    /// If no rows are affected, then 0 is returned.
+    /// If the query fails, then -1 is returned.
+    /// If the query succeeds but no rows are affected, then 0 is returned.
+    /// If the query succeeds and rows are affected, then the number of rows affected is returned.
+    /// If the query succeeds and no rows are affected, then 1 is returned.
+    /// If the query succeeds and multiple rows are affected, then the number of rows affected is returned.
+    /// If the query succeeds and multiple rows are affected, then the number of rows affected is returned.
+
+
+
+
+
+
+    AlterTable(crate::Sql),
+    RenameTable(crate::Sql),
+    TruncateTable(crate::Sql),
+
+    Use(crate::Sql),
+
+
+
+
+}
+
+
+
+
+
+#[allow(dead_code)]
 
 
 
@@ -256,4 +308,25 @@ pub trait ContextFreeGrammar {
 
 
     fn parse(&self, input: &str) -> Result<CausalSet>;
+}
+
+
+
+
+fn main() -> String {
+    let start = Instant::now();
+    let mut table = Table::new();
+    let mut file = File::open("/home/berolina/Desktop/test.txt")?;
+    BufReader::new(file);
+    let _ = String::new();
+    String::new();
+    String::new()
+}
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Table {
+    pub table: Vec<CausalSet>,
 }
