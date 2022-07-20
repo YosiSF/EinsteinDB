@@ -85,6 +85,53 @@ use super::*;
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SolitonPanic {
+    pub config: Config,
+    pub db: FdbTrait,
+    pub poset: Poset,
+    pub poset_engine: PosetEngine,
+    pub poset_engine_mutex: Arc<Mutex<PosetEngine>>,
+    pub poset_engine_thread: Arc<Mutex<Option<JoinHandle<()>>>>,
+    pub poset_engine_thread_id: Arc<Mutex<Option<ThreadId>>>,
+    pub poset_engine_thread_id_range: Arc<Mutex<Option<ThreadIdRange>>>,
+    pub poset_engine_thread_id_range_inner: Arc<Mutex<Option<ThreadIdRangeInner>>>,
+    pub poset_engine_thread_id_inner: Arc<Mutex<Option<ThreadId>>>,
+    pub poset_engine_thread_id_inner_range: Arc<Mutex<Option<ThreadIdRange>>>,
+    pub poset_engine_thread_id_inner_range_inner: Arc<Mutex<Option<ThreadIdRangeInner>>>,
+    pub poset_engine_thread_id_inner_range_inner_inner: Arc<Mutex<Option<ThreadIdRangeInner>>>,
+    pub poset_engine_thread_id_inner_range_inner_inner_inner: Arc<Mutex<Option<ThreadIdRangeInner>>>,
+    pub poset_engine_thread_id_inner_range_inner_inner_inner_inner: Arc<Mutex<Option<ThreadIdRangeInner>>>,
+    pub poset_engine_thread_id_inner_range_inner_inner_inner_inner_inner: Arc<Mutex<Option<ThreadIdRangeInner>>>,
+    pub poset_engine_thread_id_inner_range_inner_inner_inner_inner_inner_inner: Arc<Mutex<Option<ThreadIdRangeInner>>>,
+    pub poset_engine_thread_id_inner_range_inner_inner_inner_inner_inner_inner_inner: Arc<Mutex<Option<ThreadIdRangeInner>>>,
+}
+
+
+impl SolitonPanic {
+    pub fn new(config: Config) -> Self {
+        let db = FdbTraitImpl::new(config.fdb_config.clone());
+        let poset = Poset::new(config.poset_config.clone());
+        let poset_engine = PosetEngine::new(config.poset_engine_config.clone());
+        let poset_engine_mutex = Arc::new(Mutex::new(poset_engine));
+        let poset_engine_thread = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_range = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_range_inner = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_inner = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_inner_range = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_inner_range_inner = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_inner_range_inner_inner = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_inner_range_inner_inner_inner = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_inner_range_inner_inner_inner_inner = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_inner_range_inner_inner_inner_inner_inner = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_inner_range_inner_inner_inner_inner_inner_inner = Arc::new(Mutex::new(None));
+        let poset_engine_thread_id_inner_range_inner_inner_inner_inner_inner_inner_inner = Arc::new(Mutex::new(None));
+    }
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TableName {
     pub name: String,
 }
@@ -108,6 +155,25 @@ pub struct ThreadInfo {
     pub thread_name_file_name: String,
     pub thread_name_file_content: String,
 }
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ThreadName {
+    pub name: String,
+}
+
+
+impl ThreadName {
+    pub fn new(name: String) -> Self {
+        Self {
+            name,
+        }
+    }
+}
+
+
 
 #[derive(Debug, Clone)]
 pub struct PoissonThreadInfo {
@@ -211,6 +277,30 @@ pub struct PanicReceipt {
     pub hash: [u8; 32],
     pub timestamp: u64,
 }
+
+
+//! # Panic
+//!  - [`panic_runtime`](./struct.panic_runtime.html)
+//! - [`panic_runtime_thread`](./struct.panic_runtime_thread.html)
+//! - [`panic_runtime_thread_info`](./struct.panic_runtime_thread_info.html)
+//!
+
+/// # Panic Runtime
+/// - [`panic_runtime`](./struct.panic_runtime.html)
+/// - [`panic_runtime_thread`](./struct.panic_runtime_thread.html)
+/// - [`panic_runtime_thread_info`](./struct.panic_runtime_thread_info.html)
+///
+///
+
+
+
+
+
+
+
+
+
+
 
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -344,7 +434,7 @@ impl PanicReceipt {
 
         let mut error = [0u8; 32];
 
-        if (state_root.len() == 32 || state_root.len() == 0 || state_root.len() == 32) {
+        if state_root.len() == 32 || state_root.len() == 0 || state_root.len() == 32 {
             for i in 0..32 {
                 state_root[i] = state_root[i];
             }
@@ -352,7 +442,8 @@ impl PanicReceipt {
             panic!("state_root is not 32 bytes");
         }
 
-        if (logs.len() == 32 || logs.len() == 0 || logs.len() == 32) {
+        if logs.len() == 32 || logs.len() == 0 || logs.len() == 32 {
+
             for i in 0..32 {
                 logs[i] = logs[i];
             }
@@ -360,12 +451,12 @@ impl PanicReceipt {
             panic!("logs is not 32 bytes");
         }
 
-        if bloom.len() == 32 || bloom.len() == 0 || bloom.len() == 32 {
+        if bloom.len() != 32 && bloom.len() != 0 && bloom.len() != 32 {
+            panic!("bloom is not 32 bytes");
+        } else {
             for i in 0..32 {
                 bloom[i] = bloom[i];
             }
-        } else {
-            panic!("bloom is not 32 bytes");
         }
 
         if error.len() == 32 || error.len() == 0 || error.len() == 32 {
