@@ -121,7 +121,7 @@ use std::iter::Map;
 
 
 use std::collections::HashMap;
-use einstein_ml::{};
+pub use einstein_ml::{};
 use einstein_db::Causetid;
 use einstein_db::CausetidSet;
 use allegro_poset::{};
@@ -130,8 +130,8 @@ use causet::{CausetNodeId, CausetNodeIdSet};
 use causet::{CausetId, CausetIdSet};
 use causet::{CausetIdVec, CausetIdVecSet};
 
-use causetq::{CausetQ, CausetQNode};
-use causetq::{CausetQNodeId, CausetQNodeIdSet};
+pub use causetq::{CausetQ, CausetQNode};
+pub use causetq::{CausetQNodeId, CausetQNodeIdSet};
 use causetq::{CausetQId, CausetQIdSet};
 
 use berolina_sql::{BerolinaSql, BerolinaSqlNode};
@@ -282,25 +282,6 @@ pub const LOCK_FREE_GC_NODE_COUNT: usize = 100;
 pub const LOCK_FREE_GC_NODE_COUNT_MAX: usize = 100;
 
 
-///! A Causet is a collection of causet nodes.
-///
-/// # Examples
-///
-/// ```
-/// use EinsteinDB::{Causet, CausetNode};
-///  use EinsteinDB::{CausetId, CausetIdSet};
-///  use EinsteinDB::{CausetNodeId, CausetNodeIdSet};
-///
-/// let mut causet = Causet::new();
-///  let mut causet_node = CausetNode::new();
-///
-/// causet_node.set_id(CausetNodeId::new(1));
-/// causet_node.set_causet_id(CausetId::new(1));
-///
-/// causet.add_node(causet_node);
-///
-/// assert_eq!(causet.get_node(CausetNodeId::new(1)).unwrap().get_id(), CausetNodeId::new(1));
-/// ```
 pub enum CausetNodeIdSet {
     CausetIdSet(CausetIdSet),
     CausetIdVecSet(CausetIdVecSet),
@@ -561,8 +542,10 @@ causal_set_manifold.add(causal_set);
         let mut causal_set_manifold = CausalSetManifold::new();
         let mut causal_set = Self::new();
         for value in slice {
-                    soliton_panic!("{}", value);
+            causal_set.add(value);
+
                 }
+
         causal_set_manifold.add(causal_set);
         for value in slice {
             assert!(causal_set_manifold.contains(value));

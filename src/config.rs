@@ -21,7 +21,7 @@
 ///! This module contains the configuration for the application.
 /// It is used to configure the application.
 use std::fs::File;
-use std::io::{BufRead, BufReader, Read};
+use std::io::{BufRead, BufReader, ErrorKind, Read};
 use std::path::Path;
 
 
@@ -37,6 +37,8 @@ use futures::channel::oneshot;
 use futures::future::{self, Future};
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::process::Command;
+use causet_def::Error;
 
 use crate::berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind};
 
@@ -65,49 +67,6 @@ const EINSTEINDB_DAGGER_M: usize = 16;
 
 use EinsteinDB::{EinsteinDB_FOUNDATIONDB_DRIVER, EinsteinDB_FOUNDATIONDB_DRIVER_TOML};
 use einstein_db::*;
-
-///! This is the main configuration file for the EinsteinDB.
-/// It is used to configure the EinsteinDB.
-///
-/// # Example
-/// ```
-/// use einstein_db::config::Config;
-/// use einstein_db::config::ConfigSource;
-/// use einstein_db::config::ConfigValue;
-/// use einstein_db::config::ConfigValueType;
-///
-///
-/// let mut config = Config::new();
-/// config.set_value("key", ConfigValue::new(ConfigValueType::String, "value"));
-/// config.set_value("key2", ConfigValue::new(ConfigValueType::String, "value2"));
-/// ```
-/// # Example
-///
-/// # Example
-/// ```
-/// use einstein_db::config::Config;
-/// use einstein_db::config::ConfigSource;
-/// use einstein_db::config::ConfigValue;
-///
-///
-/// let mut config = Config::new();
-/// config.set_value("key", ConfigValue::new(ConfigValueType::String, "value"));
-/// config.set_value("key2", ConfigValue::new(ConfigValueType::String, "value2"));
-///
-/// let mut config_source = ConfigSource::new();
-/// config_source.set_value("key", ConfigValue::new(ConfigValueType::String, "value"));
-///
-/// let mut config_source2 = ConfigSource::new();
-///
-/// config_source2.set_value("key", ConfigValue::new(ConfigValueType::String, "value"));
-///
-/// config.merge_config_source(&config_source);
-/// config.merge_config_source(&config_source2);
-///
-/// ```
-///
-/// # Example
-/// ```
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -280,8 +239,11 @@ pub fn serialize() -> Result<String, CtlError> {
                 let source = ConfigSource::FoundationDB(EinsteinDB_FOUNDATIONDB_DRIVER_TOML.clone());
 
 
-                return Ok(ConfigValue {
 
+            }
+
+            if x.0 == key {
+                return Ok(ConfigValue {
                     name: x.0.to_string(),
                     value: x.1.to_string(),
                     source: ConfigSource::EinsteinDB,
@@ -290,17 +252,39 @@ pub fn serialize() -> Result<String, CtlError> {
                 });
             }
 
+
+
         }
+
+
+
+
         Err(CtlError::ConfigKeyNotFound(key.to_string()))
     }
 
 
-    pub fn einstein_merkle_tree_compress(
-        nodes: &[dyn Hash],
-        einsteindb: &EinsteinDB,
-        height: usize,
-        index: usize,
-    ) -> [u8; 4] {
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ConfigValueType {
+    String,
+    Boolean,
+    Integer,
+    Float,
+    Array,
+    Object,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ConfigSource {
+
+    FoundationDB(Vec<(String, String)>),
+    EinsteinDB,
+}
+
+
+    pub fn einstein_merkle_tree_compress() -> [u8; 4] {
         vec![];
         [0u8; 4]
     }
@@ -310,34 +294,19 @@ pub fn serialize() -> Result<String, CtlError> {
         [0u8; 4]
     }
 
-    pub fn einstein_merkle_tree_compress_node(
-        node: &dyn Hash,
-        einsteindb: &EinsteinDB,
-        height: usize,
-        index: usize,
-    ) -> [u8; 4] {
+    pub fn einstein_merkle_tree_compress_node() -> [u8; 4] {
         vec![];
         [0u8; 4]
     }
 
-    pub fn einstein_merkle_tree_decompress_node(
-        node: &dyn Hash,
-        einsteindb: &EinsteinDB,
-        height: usize,
-        index: usize,
-    ) -> [u8; 4] {
+    pub fn einstein_merkle_tree_decompress_node<'a, 'b>() -> [u8; 4] {
         vec![];
         [0u8; 4]
     }
 
-    pub fn einstein_merkle_tree_compress_leaf(
-        leaf: &dyn Hash,
-        einsteindb: &EinsteinDB,
-        height: usize,
-        index: usize,
-    ) -> Result<Vec<u8>, CtlError> {
+    pub fn einstein_merkle_tree_compress_leaf() -> [u8; 4] {
         vec![];
-        [0u8; 4];
+        [0u8; 4]
     }
 
 
@@ -347,6 +316,10 @@ pub fn serialize() -> Result<String, CtlError> {
         //nodes that are interlocked with this node.
         fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String>;
     }
+
+
+
+
 
 
     pub trait InterlockingDirectorateTrait<'a> {
@@ -368,17 +341,20 @@ pub fn serialize() -> Result<String, CtlError> {
         fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String> {
             self.nodes.clone()
         }
+
     }
 
 
     pub struct InterlockingDirectorateImpl {
         pub nodes: Vec<String>,
+        pub config: Config,
     }
 
 
 
     pub struct InterlockingDirectorateImpl2 {
         pub nodes: Vec<String>,
+        pub config: Config,
     }
 
 
@@ -389,6 +365,7 @@ pub fn serialize() -> Result<String, CtlError> {
 
     pub struct InterlockingDirectorateImpl4 {
         pub nodes: Vec<String>,
+
     }
 
 
@@ -402,23 +379,32 @@ pub fn serialize() -> Result<String, CtlError> {
     }
 
 
-
-
-
+    impl InterlockingDirectorate for InterlockingDirectorateImpl3 {
+        fn get_interlocked_nodes(&self) -> Vec<String> {
+            self.nodes.clone()
+        }
+        fn get_interlocked_nodes_with_config(&self, config: &Config) -> Vec<String> {
+            self.nodes.clone()
+        }
+    }
 
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InterlockingMultiplexer {
+    pub nodes: Vec<String>,
     pub syncer: String,
     pub tau: usize,
 }
 pub struct MerkleTreeLSHBuffer {
+    pub nodes: Vec<String>,
     pub lsh_buffer: Vec<u8>,
     height: usize,
 
     causet_locale: <EinsteinDB::CausetSquuidStore as merkle_store_fdb_2_einstein_db>::Locale,
     pub lsh_buffer_size: usize, // in bytes
+    pub lsh_buffer_height: usize, // in bytes
+    pub lsh_buffer_width: usize, // in bytes
 }
 
 ///! `Config` represents the configuration of einstein_db.
@@ -431,10 +417,13 @@ pub struct MerkleTreeLSHBuffer {
 impl MerkleTreeLSHBuffer {
     pub fn new(lsh_buffer: Vec<u8>, height: usize, causet_locale: <EinsteinDB::CausetSquuidStore as merkle_store_fdb_2_einstein_db>::Locale) -> Self {
         MerkleTreeLSHBuffer {
+            nodes: vec![],
             lsh_buffer,
             height,
             causet_locale, // in bytes
             lsh_buffer_size: lsh_buffer.len(), // in bytes
+            lsh_buffer_height: 0,
+            lsh_buffer_width: 0
         }
     }
 }
@@ -461,16 +450,7 @@ pub struct MerkleTreeLSHConfig {
 }
 
 //slice and fill causet locale buffer
-fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_locale: <EinsteinDB::CausetSquuidStore as merkle_store_fdb_2_einstein_db>::Locale) {
-
-    let mut lsh_buffer_size = 0;
-    let mut lsh_buffer_size_bytes = 0;
-    let mut lsh_buffer_size_bytes_remainder = 0;
-    let mut lsh_buffer_size_bytes_remainder_2 = 0;
-    let mut lsh_buffer_size_bytes_remainder_3 = 0;
-    let mut lsh_buffer_size_bytes_remainder_4 = 0;
-
-}
+fn fill_causet_locale_buffer(causet_locale: <EinsteinDB::CausetSquuidStore as merkle_store_fdb_2_einstein_db>::Locale) {}
 
 
     fn merkle_tree_height(merkle_tree_height: usize) {
@@ -494,13 +474,9 @@ fn fill_causet_locale_buffer(lsh_buffer: &mut Vec<u8>, height: usize, causet_loc
      }
 
 
-        pub fn lsh_buffer<T>(lsh_buffer: Vec<u8>, height: usize, allegro_poset_uuid: String, causet_poset_uuid::< einstein_db::causet_squuid_store::locale >: String, lsh_buffer_size: usize) -> Self {
+        pub fn lsh_buffer<T>(lsh_buffer: Vec<u8>, causet_poset_uuid::< einstein_db::causet_squuid_store::locale >: String) -> Self {
 
             let mut lsh_buffer = lsh_buffer;
-            let mut height = height;
-            let mut allegro_poset_uuid = allegro_poset_uuid;
-            let mut causet_poset_uuid = causet_poset_uuid;
-            let mut lsh_buffer_size = lsh_buffer_size;
             let mut lsh_buffer_size_bytes = 0;
             let mut lsh_buffer_size_bytes_bytes = 0;
             lsh_buffer_size_bytes = lsh_buffer_size_bytes + lsh_buffer.len();
@@ -595,11 +571,16 @@ if let Some(stream_channel_window) = value.get("stream_channel_window") {
         }
 
         impl Config {
-            pub fn load_from_file(&mut self, path: &str) -> Result<(), Error> {
-                let mut file = File::open(path)?;
-                let mut contents = String::new();
-                file.read_to_string(&mut contents)?;
-                self.load_from_toml(&contents)
+            pub fn num_threads(&self) -> usize {
+                self.num_threads
+            }
+
+            pub fn stream_channel_window(&self) -> usize {
+                self.stream_channel_window
+            }
+
+            pub fn import_mode_timeout(&self) -> ReadableDuration {
+                self.import_mode_timeout
             }
 
             pub fn load_from_toml(&mut self, toml: &str) -> Result<(), Error> {
@@ -624,12 +605,21 @@ if let Some(stream_channel_window) = value.get("stream_channel_window") {
         }
 
 
-        impl Default for Config {
-fn default() -> Self {
-                Config::new()
-
+        impl Config {
+            pub fn load_from_toml(&mut self, toml: &str) -> Result<(), Error> {
+                let value = toml::from_str(toml)?;
+                self.merge_from(value)
             }
         }
+
+        impl Default for Config {
+            fn default() -> Self {
+                Config::new()
+            }
+        }
+
+
+
 
         impl Default for Config {
             fn default() -> Self {
@@ -713,7 +703,7 @@ fn default() -> Self {
         }
 
 
-    fn get_config(config_path: &str) {
+    fn get_config() {
         if let Some(num_threads) = value.get("num_threads") {
             if let Some(num_threads_value) = num_threads.as_u64() {
                 config.num_threads = num_threads_value as usize;
@@ -724,16 +714,23 @@ fn default() -> Self {
             let mut file = File::open(path)?;
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
-            let value = toml::from_str(&contents)?;
+            toml::from_str(&contents)?;
             get_num_threads_from_config_toml_file_with_default(&contents)
 
         }
 
         pub fn get_config_from_tom_file(config_toml_file: &str) -> Result<Config, Error> {
-            let mut config = Config::new();
-            config.load_from_toml_file(config_toml_file)?;
-            Ok(config)
+
+            if let Ok(mut file) = File::open(config_toml_file) {
+                let mut contents = String::new();
+                file.read_to_string(&mut contents)?;
+                toml::from_str(&contents)?;
+                Ok(Config::new())
+            } else {
+                Err(Error::new(ErrorKind::Other, "Could not open config file"))
+            }
         }
+
 
         pub fn get_config_from_toml_file_with_default(config_toml_file: &str, default_config: &Config) -> Result<Config, Error> {
             let mut config = Config::new();
@@ -800,6 +797,68 @@ impl Scheduler {
 
 
 impl Scheduler {
+    pub fn run_cmd(&mut self, cmd: Command) {
+        match cmd {
+            Command::Snapshot => {
+                self.snapshot();
+            }
+            Command::Cmd(cmd) => {
+                self.cmd(cmd);
+            }
+            Command::Ch(ch) => {
+                self.ch(ch);
+            }
+        }
+    }
+}
+
+
+impl Scheduler {
+    pub fn snapshot(&mut self) {
+        self.snapshot = self.latches.clone();
+    }
+}
+
+
+impl Scheduler {
+    pub fn ch(&mut self, ch: ()) {
+        self.ch = ch;
+    }
+}
+
+
+impl Scheduler {
+    pub fn cmd(&mut self, cmd: ()) {
+        self.cmd = cmd;
+    }
+}
+
+
+impl Scheduler {
+    pub fn cid(&mut self) -> u64 {
+        self.cid += 1;
+        self.cid
+    }
+}
+
+
+impl Scheduler {
+    pub fn latches(&mut self) -> &mut Latches {
+        &mut self.latches
+    }
+}
+
+
+impl Scheduler {
+    pub fn sched_too_busy_threshold(&mut self) -> usize {
+        self.sched_too_busy_threshold
+    }
+}
+
+
+
+
+impl Scheduler {
     pub fn schedule(&mut self, cmd: Command) {
         self.schedule.push(cmd);
     }
@@ -809,7 +868,7 @@ impl Scheduler {
         self.cmd_ctx.insert(ctx.get_id(), ctx);
     }
 
-    pub fn schedule_with_ctx_and_id(&mut self, cmd: Command, ctx: CommandContext, id: u64) {
+    pub fn schedule_with_ctx_and_id(&mut self, cmd: std::process::Command, ctx: CommandContext, id: u64) {
         self.schedule.push(cmd);
         self.cmd_ctx.insert(id, ctx);
     }
@@ -820,7 +879,7 @@ impl Scheduler {
         self.run_cmd_ctx(ctx);
     }
 
-    pub fn schedule_with_ctx_and_id_and_latch(&mut self, cmd: Command, ctx: CommandContext, id: u64, latch: Latch) {
+    pub fn schedule_with_ctx_and_id_and_latch(&mut self, ctx: CommandContext) {
         /// The name of the metric.
         const METRIC_NAME: &str = "scheduler_too_busy";
 
@@ -901,6 +960,10 @@ impl Scheduler {
         &mut self.name_ref_ref_ref_mut
     }
 }
+
+
+
+
 
 
 
@@ -1138,6 +1201,9 @@ pub fn get_scheduler_with_ctx_and_id_and_latch() {
 
         }
     }
+
+
+
 
 
 pub fn start_ts_with_config () {
@@ -1535,6 +1601,125 @@ match msg {
         worker_pool_mut = worker_pool;
         cmd_ctx_mut = cmd_ctx;
         id_alloc_mut = id_alloc;
+        latches_mut = latches;
+        engine_mut = engine;
+        scheduler_mut = scheduler;
+        recv_mut = recv;
+
+        return scheduler;
+
+    }
+}
+
+
+
+
+pub fn run_scheduler_with_engine(engine: Engine, scheduler: Scheduler) -> Scheduler {
+    let mut scheduler = scheduler;
+    let mut engine = engine;
+    let mut scheduler = Scheduler {
+        latches: HashMap::new(),
+        id_alloc: 0,
+        ch: (),
+        cmd: (),
+        snapshot: (),
+        cid: 0,
+        sched_too_busy_threshold: 0,
+        worker_pool: WorkerPool::new(),
+    };
+    let mut engine = engine;
+    let mut scheduler = scheduler;
+    let mut cmd_ctx = HashMap::new();
+    let mut id_alloc = 0;
+
+    let mut sched_too_busy_threshold = scheduler.sched_too_busy_threshold;
+    let mut worker_pool = scheduler.worker_pool.clone();
+    scheduler.engine.clone();
+
+    loop {
+        impl RunningCtx {
+            fn new(cid: u64, cmd: Command, ch: SendCh<Msg>, snapshot: Box<Snapshot>) -> RunningCtx {
+                RunningCtx {
+                    cid,
+                    cmd: Some(cmd),
+                    ch,
+                    snapshot: Some(snapshot),
+
+                    latches: Latches {
+                        pending: 0,
+                        running: 0,
+                        finished: 0,
+                        failed: 0,
+                        cancelled: 0,
+                        timeout: 0,
+                        panic: 0,
+                        concurrency: 0
+                    },
+                    id_alloc: 0
+                }
+            }
+        }
+        let mut cmd_ctx = cmd_ctx;
+        let mut id_alloc = id_alloc;
+        let mut sched_too_busy_threshold = sched_too_busy_threshold;
+        let mut worker_pool = worker_pool;
+        let mut engine = engine;
+        let mut scheduler = scheduler;
+        let mut recv = recv;
+        let mut latches = Latches::new();
+        let mut scheduler = scheduler;
+        let mut engine = engine;
+        let mut recv = recv;
+        let mut cmd_ctx = cmd_ctx;
+
+        let msg = recv.recv().unwrap();
+
+        match msg {
+            Msg::Command(cmd) => {
+                let cid = cmd.cid;
+                let ctx = cmd_ctx.entry(cid).or_insert_with(|| {
+                    let ctx = RunningCtx::new(cid, cmd, ch, snapshot);
+                    id_alloc += 1;
+                    ctx
+                });
+                ctx.push_command(cmd);
+            }
+            Msg::CommandFinished(cid) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.finished();
+            }
+            Msg::CommandFailed(cid) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.failed();
+            }
+            Msg::CommandCancelled(cid) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.cancelled();
+            }
+            Msg::CommandTimeout(cid) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.timeout();
+            }
+            Msg::CommandPanic(cid, panic_msg) => {
+                let ctx = cmd_ctx.remove(&cid).unwrap();
+                ctx.panic(panic_msg);
+            }
+            Msg::CommandTooBusy => {
+                sched_too_busy_threshold += 1;
+            }
+            Msg::Stop => {
+                break;
+            }
+        }
+
+        scheduler_too_busy_threshold += 1;
+
+        scheduler_too_busy_threshold_mut = sched_too_busy_threshold ;
+
+        worker_pool_mut = worker_pool;
+        cmd_ctx_mut = cmd_ctx;
+        id_alloc_mut = id_alloc;
+
         latches_mut = latches;
         engine_mut = engine;
         scheduler_mut = scheduler;

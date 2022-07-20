@@ -24,6 +24,10 @@ use std::sync::mpsc::RecvTimeoutError;
 use std::sync::mpsc::TrySendError;
 use std::sync::mpsc::SendError;
 
+use einsteindb::causetq::sync::{CausalContext, CausalContextMut};
+use einsteindb::causetq::sync::{CausalContextMutRef, CausalContextRef};
+use einsteindb::causetq::sync::{CausalContextRefMut, CausalContextRefMutRef};
+
 use crate::{
     berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind},
     berolinasql::{ErrorImpl as BerolinaSqlErrorImpl},
@@ -35,6 +39,8 @@ use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::collections::HashSet;
 use std::collections::hash_map::Entry;
+
+
 
 
 
@@ -63,8 +69,8 @@ pub struct PegMuxSingleton {
 impl PegMuxSingleton {
     pub fn new(id: usize, name: String) -> PegMuxSingleton {
         PegMuxSingleton {
-            id: id,
-            name: name,
+            id,
+            name,
         }
     }
 }
