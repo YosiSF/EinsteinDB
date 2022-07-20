@@ -6,11 +6,10 @@ author = "EinsteinDB Team"
 license = "MIT"
 
 [lib]
-path = "./src/lib.rs"
+path = "../einsteindb/src/lib.rs"
 
 [dependencies]
 soliton_panic= {path="./soliton_panic"}
-berolinasql = { path = "./berolinasql", version = "0.1.0" }
 causet = { path = "./causet"}
 causetq = { path = "./causetq"}
 einstein_ml = { path = "./einstein_ml"}

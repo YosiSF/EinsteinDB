@@ -4,12 +4,17 @@ version = "0.1.0"
 edition = "2021"
 description = "BerolinaSQL is a SQL engine that is based on the BerolinaDB database system."
 
+
 [[bin]]
 name = "berolinasql"
-path = "./src/main.rs"
-
+path = "../berolinasql/src/main.rs"
 
 [dependencies]
 rusty-peg = "0.4.0"
+causetq = {path = "../causetq"}
+einstein_ml = {path = "../einstein_ml"}
+
+
+
 
 

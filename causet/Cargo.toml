@@ -7,7 +7,7 @@ license = "MIT"
 
 
 [lib]
-path = "./src/lib.rs"
+path = "../causet/src/lib.rs"
 
 [dependencies]
 
