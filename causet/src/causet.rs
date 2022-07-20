@@ -495,6 +495,44 @@ impl<T> RelResult<T> {
         }
     }
 
+    pub fn from_tuples(tuples: BoltOnTuples) -> RelResult<T> {
+        let mut values = Vec::new();
+        for (primary_key, secondary_key) in tuples {
+            values.push(BoltOnTuple::new(primary_key, secondary_key));
+        }
+        RelResult {
+            width: 2,
+            values: values,
+        }
+    }
+
+    pub fn from_tuples_with_width(tuples: BoltOnTuples, width: usize) -> RelResult<T> {
+        let mut values = Vec::new();
+        for (primary_key, secondary_key) in tuples {
+            values.push(BoltOnTuple::new(primary_key, secondary_key));
+        }
+        RelResult {
+            width: width,
+            values: values,
+        }
+    }
+
+    pub fn from_tuples_with_width_and_values(width: usize, values: Vec<T>) -> RelResult<T> {
+        RelResult {
+            width: width,
+            values: values,
+        }
+    }
+
+    pub fn from_tuples_with_width_and_values_and_lamport_clock(width: usize, values: Vec<T>, lamport_clock: Arc<Mutex<LamportClock>>) -> RelResult<T> {
+        let rel_result = RelResult {
+            width: width,
+            values: values,
+
+        };
+        rel_result
+    }
+
     pub fn is_empty(&self) -> bool {
         self.values.is_empty()
     }
@@ -596,6 +634,62 @@ impl<T> Causetq<T> {
     }
 }
 
+
+impl<T> Causetq<T> {
+    pub fn new_with_lamport_clock(primary_key: T, secondary_key: T, lamport_clock: Arc<Mutex<LamportClock>>, value: T) -> Causetq<T> {
+        Causetq {
+            primary_key,
+            secondary_key,
+            lamport_clock,
+            last_update: Arc::new(Mutex::new(Instant::now())),
+            value: Arc::new(Mutex::new(value)),
+        }
+    }
+}
+
+
+impl<T> Causetq<T> {
+    pub fn new_with_lamport_clock_and_last_update(primary_key: T, secondary_key: T, lamport_clock: Arc<Mutex<LamportClock>>, last_update: Arc<Mutex<Instant>>, value: T) -> Causetq<T> {
+        Causetq {
+            primary_key,
+            secondary_key,
+            lamport_clock,
+            last_update,
+            value: Arc::new(Mutex::new(value)),
+        }
+    }
+}
+
+
+impl<T> Causetq<T> {
+    pub fn new_with_lamport_clock_and_last_update_and_value(primary_key: T, secondary_key: T, lamport_clock: Arc<Mutex<LamportClock>>, last_update: Arc<Mutex<Instant>>, value: Arc<Mutex<T>>) -> Causetq<T> {
+        Causetq {
+            primary_key,
+            secondary_key,
+            lamport_clock,
+            last_update,
+            value,
+        }
+    }
+}
+
+
+impl<T> Causetq<T> {
+    pub fn new_with_lamport_clock_and_value(primary_key: T, secondary_key: T, lamport_clock: Arc<Mutex<LamportClock>>, value: Arc<Mutex<T>>) -> Causetq<T> {
+        Causetq {
+            primary_key,
+            secondary_key,
+            lamport_clock,
+            last_update: Arc::new(Mutex::new(Instant::now())),
+            value,
+        }
+    }
+}
+
+
+
+
+
 #[allow(dead_code)]
 
 pub struct Causetq_<T> {
@@ -608,7 +702,8 @@ pub struct Causetq_<T> {
 
 pub fn causetq_<T>(primary_key: T, secondary_key: T, value: T) -> Causetq<T> {
     Causetq {
-        primary_key _.secondary_key: (),
+        primary_key,
+        secondary_key: (),
         lamport_clock: Arc::new(Mutex::new(LamportClock::new())),
         last_update: Arc::new(Mutex::new(Instant::now())),
         value: Arc::new(Mutex::new(value)),
@@ -637,7 +732,14 @@ impl<T> Causetq<T> {
 
 impl<T> Causetq<T> {
     pub fn get_primary_key(&self) -> T {
-        self.primary_key.clone()
+        self.primary_key.clone() as Then<T>()
+    }
+}
+
+
+
+impl<T> Causetq<T> {
+    pub fn get_secondary_key(&self) -> T {
         let mutex = self.lamport_clock.lock().unwrap();
         if mutex.is_lightlike() {
             self.primary_key.clone()
@@ -649,18 +751,135 @@ impl<T> Causetq<T> {
 
 
 impl<T> Causetq<T> {
+    pub fn get_lamport_clock(&self) -> LamportClock {
+        self.lamport_clock.lock().unwrap().clone()
+    }
 
-    fn  spacelike_mux(primary_key: StringRef, secondary_key: StringRef, value: StringRef) -> Causetq_<StringRef, String> {
-        Causetq_ {
-            primary_key,
-            secondary_key,
-            lamport_clock: Arc::new(Mutex::new(LamportClock::new())),
-            last_update: Arc::new(Mutex::new(Instant::now())),
-            value: Arc::new(Mutex::new(value)),
+    pub fn get_last_update(&self) -> Instant {
+        self.last_update.lock().unwrap().clone()
+    }
+
+    pub fn get_value(&self) -> T {
+        self.value.lock().unwrap().clone()
+    }
+
+    pub fn set_value(&self, value: T) {
+        self.value.lock().unwrap().clone_from(&value);
+    }
+
+    pub fn set_lamport_clock(&self, lamport_clock: LamportClock) {
+        self.lamport_clock.lock().unwrap().clone_from(&lamport_clock);
+    }
+
+    pub fn set_last_update(&self, last_update: Instant) {
+        self.last_update.lock().unwrap().clone_from(&last_update);
+    }
+
+    pub fn set_primary_key(&self, primary_key: T) {
+        self.primary_key.clone_from(&primary_key);
+    }
+
+    pub fn set_secondary_key(&self, secondary_key: T) {
+        self.secondary_key.clone_from(&secondary_key);
+    }
+
+    pub fn set_value_and_lamport_clock(&self, value: T, lamport_clock: LamportClock) {
+        self.value.lock().unwrap().clone_from(&value);
+        self.lamport_clock.lock().unwrap().clone_from(&lamport_clock);
+    }
+
+    pub fn set_value_and_last_update(&self, value: T, last_update: Instant) {
+        self.value.lock().unwrap().clone_from(&value);
+        self.last_update.lock().unwrap().clone_from(&last_update);
+    }
+
+    pub fn set_lamport_clock_and_last_update(&self, lamport_clock: LamportClock, last_update: Instant) {
+        self.lamport_clock.lock().unwrap().clone_from(&lamport_clock);
+        self.last_update.lock().unwrap().clone_from(&last_update);
+    }
+
+
+    pub fn set_value_and_lamport_clock_and_last_update(&self, value: T, lamport_clock: LamportClock, last_update: Instant) {
+        self.value.lock().unwrap().clone_from(&value);
+        self.lamport_clock.lock().unwrap().clone_from(&lamport_clock);
+        self.last_update.lock().unwrap().clone_from(&last_update);
+    }
+
+
+    pub fn set_value_and_lamport_clock_and_last_update_and_primary_key(&self, value: T, lamport_clock: LamportClock, last_update: Instant, primary_key: T) {
+        self.value.lock().unwrap().clone_from(&value);
+        self.lamport_clock.lock().unwrap().clone_from(&lamport_clock);
+        self.last_update.lock().unwrap().clone_from(&last_update);
+        self.primary_key.clone_from(&primary_key);
+    }
+
+    pub fn set_value_and_lamport_clock_and_last_update_and_primary_key_and_secondary_key(&self, value: T, lamport_clock: LamportClock, last_update: Instant, primary_key: T, secondary_key: T) {
+        self.value.lock().unwrap().clone_from(&value);
+        self.lamport_clock.lock().unwrap().clone_from(&lamport_clock);
+        self.last_update.lock().unwrap().clone_from(&last_update);
+        self.primary_key.clone_from(&primary_key);
+        self.secondary_key.clone_from(&secondary_key);
+
+        for event in self.lamport_clock.lock().unwrap().get_events() {
+            println!("{:?}", event);
+        }
+
+        println!("{:?}", self.lamport_clock.lock().unwrap().get_events());
+
+
+        #[allow(dead_code)]
+        fn spacelike_mux(primary_key: StringRef, secondary_key: StringRef, value: StringRef) -> Causetq_<StringRef, String> {
+            Causetq_ {
+                primary_key,
+                secondary_key,
+                lamport_clock: Arc::new(Mutex::new(LamportClock::new())),
+                last_update: Arc::new(Mutex::new(Instant::now())),
+                value: Arc::new(Mutex::new(value)),
+            }
+        }
+
+        #[allow(dead_code)]
+        fn spacelike_demux(primary_key: StringRef, secondary_key: StringRef, value: StringRef) -> Causetq_<StringRef, String> {
+            Causetq_ {
+                primary_key,
+                secondary_key,
+                lamport_clock: Arc::new(Mutex::new(LamportClock::new())),
+                last_update: Arc::new(Mutex::new(Instant::now())),
+                value: Arc::new(Mutex::new(value)),
+            }
+        }
+
+        #[allow(dead_code)]
+        fn spacelike_mux_<T>(primary_key: T, secondary_key: T, value: T) -> Causetq_<T, T> {
+            Causetq_ {
+                primary_key,
+                secondary_key,
+                lamport_clock: Arc::new(Mutex::new(LamportClock::new())),
+                last_update: Arc::new(Mutex::new(Instant::now())),
+                value: Arc::new(Mutex::new(value)),
+            }
+        }
+
+        #[allow(dead_code)]
+        fn spacelike_demux_<T>(primary_key: T, secondary_key: T, value: T) -> Causetq_<T, T> {
+            Causetq_ {
+                primary_key,
+                secondary_key,
+                lamport_clock: Arc::new(Mutex::new(LamportClock::new())),
+                last_update: Arc::new(Mutex::new(Instant::now())),
+                value: Arc::new(Mutex::new(value)),
+            }
         }
     }
-}
 
+    pub fn get_primary_key(&self) -> T {
+        self.primary_key.clone()
+    }
+
+    pub fn get_secondary_key(&self) -> T {
+        self.secondary_key.clone()
+    }
+}
 /// We shall use the following naming convention for causet:
 /// causet_<lightlike or timelike>_<primary key>_<secondary key>
 /// The primary key is the primary key of the underlying database table. The secondary key is the secondary key of the underlying database table.

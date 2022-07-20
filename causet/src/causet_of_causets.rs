@@ -221,8 +221,11 @@ impl Causet<String> {
             causet.causets.push(causet_of_causets_of_causets);
         }
         Causet {
+            causet: (),
             elements: elements,
             planar_graph: vec![],
+            causet_of_causets,
+            causet_of_causets_of_causets: (),
             causets: causet_of_causets.causets,
             fdb_connection: FdbConnection {
                 fdb: Fdb::new(),
@@ -260,36 +263,60 @@ impl Causet<String> {
 
         if k8s_solitonid_fetch.len() == 0 {
             struct K8sCauset {
-                pub fn new_k8s_causet() -> Causet < String > {
-                let k8s_causet = Causet::new(vec ! ["k8s".to_string()]);
-                k8s_causet
+                solitonid: i32,
+                elements: Vec<String>,
 
-                }
+            }
 
-                match k8s_solitonid_fetch.iter().map(get_solitonid_from_row).next() {
+            match k8s_solitonid_fetch.iter().map(get_solitonid_from_row).next() {
                 Some(solitonid) => {
-                let k8s_causet = Causet::new(vec ! ["k8s".to_string()]);
-                k8s_causet
+                    let k8s_causet = Causet::new(vec!["k8s".to_string()]);
+                    k8s_causet
                 },
                 None => {
-                let k8s_causet = Causet::new(vec ! ["k8s".to_string()]);
-                k8s_causet
+                    let k8s_causet = Causet::new(vec!["k8s".to_string()]);
+                    k8s_causet
                 },
-                }   //end of match
-            }   //end of fnamespaced_opts
-            if k8s_solitonid_fetch.len() == 0 {
-                let k8s_causet = Causet::new(vec!["k8s".to_string()]);
-                self.causets.push(k8s_causet);
-            } else {
-                let k8s_causet = Causet::new(vec!["k8s".to_string()]);
-                self.causets.push(k8s_causet);
-                for causet in self.causets.iter() {
-                    if causet.elements[0] == "k8s" {
-                        self.causets.push(causet_of_causets_of_causets_of_causets);
-                    }
+            }   //end of match
+        }   //end of fnamespaced_opts
+        if k8s_solitonid_fetch.len() == 0 {
+            let k8s_causet = Causet::new(vec!["k8s".to_string()]);
+            self.causets.push(k8s_causet);
+        } else {
+            let k8s_causet = Causet::new(vec!["k8s".to_string()]);
+            self.causets.push(k8s_causet);
+            for causet in self.causets.iter() {
+                if causet.elements[0] == "k8s" {
+                    self.causets.push(causet_of_causets_of_causets_of_causets);
                 }
             }
         }
+
+        for causet in self.causets.iter() {
+            if causet.elements[0] == "k8s" {
+                self.causets.push(causet_of_causets_of_causets_of_causets);
+            }
+        }
+        for causet in self.causets.iter() {
+            if causet.elements[0] == "k8s" {
+                self.causets.push(causet_of_causets_of_causets_of_causets);
+            }
+        }
+        for causet in self.causets.iter() {
+            if causet.elements[0] == "k8s" {
+                self.causets.push(causet_of_causets_of_causets_of_causets);
+            }
+        }
+        for causet in self.causets.iter() {
+            if causet.elements[0] == "k8s" {
+                self.causets.push(causet_of_causets_of_causets_of_causets);
+            }
+        }
+        for causet in self.causets.iter() {
+            if causet.elements[0] == "k8s" {
+                self.causets.push(causet_of_causets_of_causets_of_causets);
+            }
+        }
         for causet in self.causets.iter() {
             if causet.elements[0] == "k8s" {
                 self.causets.push(causet_of_causets_of_causets_of_causets);
@@ -303,173 +330,331 @@ impl Causet<String> {
     }
 }
 
-///changelog: we are ready to k8s solitonid_range
-    let k8s_solitonid = k8s_solitonid_fetch.iter().map( | row| get_solitonid_from_row(row)).collect::<Vec<i32> > ();
-        let k8s_solitonid = k8s_solitonid.iter().cloned().collect::<Vec<i32> > (){
-    //mspc with lock free interlock
-    //      (see https://en.wikipedia.org/wiki/MSPC_with_lock-free_interlock)
-    //      (see https://en.wikipedia.org/wiki/Lock-free_interlocked_queue)
-    match self.fdb_connection.fdb_connection.unwrap().query("SELECT solitonid FROM causet WHERE elements = 'k8s'", &[]).unwrap() {
-        Ok(k8s_solitonid_fetch) => {
-            let k8s_solitonid = k8s_solitonid_fetch.iter().map( | row| get_solitonid_from_row(row)).collect::<Vec<i32> > ();
-            let k8s_solitonid = k8s_solitonid.iter().cloned().collect::<Vec<i32> > ()
-        },
-        Err(e) => {
-            println!("{:?}", e);
-        }
+//
+// #[cfg(test)]
+// mod tests {
+//
+//         ///changelog: we are ready to k8s solitonid_range
+//         ///! we need to add the causet of causets to the causet of causets of causets index in the database
+//         ///     (see https://en.wikipedia.org/wiki/Relativistic_time)
+//         ///    (see https://en.wikipedia.org/wiki/Relativistic_time)
+//         ///   (see https://en.wikipedia.org/wiki/Relativistic_time)
+//         //mspc with lock free interlock
+//         //      (see https://en.wikipedia.org/wiki/MSPC_with_lock-free_interlock)
+//         //      (see https://en.wikipedia.org/wiki/Lock-free_interlocked_queue)
+//     }
+//     pub fn add_causet_of_causets_of_causets_of_causets(&mut self, causet_of_causets_of_causets_of_causets: Causet<String>) {
+//         self.causets.push(causet_of_causets_of_causets_of_causets);
+//     }
+//
+//     pub fn add_causet_of_causets_of_causets_of_causets_of_causets(&mut self, causet_of_causets_of_causets_of_causets_of_causets: Causet<String>) {
+//         self.causets.push(causet_of_causets_of_causets_of_causets_of_causets);
+//     }
+//
+//
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+//
+//     #[test]
+//     fn test_causet_of_causets_of_causets_of_causets() {
+//         let mut causet = Causet::new(vec!["causet_of_causets_of_causets_of_causets".to_string()]);
+//         let mut causet_of_causets_of_causets_of_causets = Causet::new(vec!["causet_of_causets_of_causets_of_causets".to_string()]);
+//         let mut causet_of_causets_of_causets_of_causets_of_causets = Causet::new(vec!["causet_of_causets_of_causets_of_causets_of_causets".to_string()]);
+//         causet.add_causet_of_causets_of_causets_of_causets(causet_of_causets_of_causets_of_causets);
+//         causet.add_causet_of_causets_of_causets_of_causets_of_causets(causet_of_causets_of_causets_of_causets_of_causets);
+//         assert_eq!(causet.causets.len(), 2);
+//
+//         match {
+//             let x = fdb_connection.fdb_connection.unwrap().query("SELECT solitonid FROM causet WHERE elements = 'k8s'", &[]).unwrap();
+//             x.len();
+//
+//             for causet in causet.causets.iter() {
+//                 if causet.elements[0] == "k8s" {
+//                     causet.add_causet_of_causets_of_causets_of_causets(causet_of_causets_of_causets_of_causets);
+//
+//                 }
+//             }
+//
+//     } //end of match
+//     } //end of test_causet_of_causets_of_causets_of_causets
+// }
+//
+//
+//
+//
+// #[cfg(test)]
+// mod tests {
+//
+//     use super::*;
+//
+//     #[test]
+//     fn test_causet_of_causets_of_causets_of_causets() {
+//         let mut causet = Causet::new(vec!["causet_of_causets_of_causets_of_causets".to_string()]);
+//         let mut causet_of_causets_of_causets_of_causets = Causet::new(vec!["causet_of_causets_of_causets_of_causets".to_string()]);
+//         let k8s_solitonid = k8s_solitonid_fetch.iter().map(|row| get_solitonid_from_row(row)).collect::<Vec<i32>>();
+//         let k8s_solitonid = k8s_solitonid.iter().cloned().collect::<Vec<i32>>();
+//
+//
+//         let mut causet_of_causets_of_causets_of_causets_of_causets = Causet::new(vec!["causet_of_causets_of_causets_of_causets_of_causets".to_string()]);
+//         causet.add_causet_of_causets_of_causets_of_causets(causet_of_causets_of_causets_of_causets);
+//         causet.add_causet_of_causets_of_causets_of_causets_of_causets(causet_of_causets_of_causets_of_causets_of_causets);
+//
+//
+//         assert_eq!(causet.causets.len(), 2);
+//
+//         match {
+//             let x = fdb_connection.fdb_connection.unwrap().query("SELECT solitonid FROM causet WHERE elements = 'k8s'", &[]).unwrap();
+//             x.len();
+//
+//             for causet in causet.causets.iter() {
+//                 if causet.elements[0] == "k8s" {
+//                     causet.add_causet_of_causets_of_causets_of_causets(causet_of_causets_of_causets_of_causets);
+//                 }
+//             }
+//
+//
+//
+//         let k8s_solitonid = k8s_solitonid_fetch.iter().map(|row| get_solitonid_from_row(row)).collect::<Vec<i32>>();
+//         let k8s_solitonid = k8s_solitonid.iter().cloned().collect::<Vec<i32>>();
+//
+//         let mut causet_of_causets_of_causets_of_causets_of_causets = Causet::new(vec!["causet_of_causets_of_causets_of_causets_of_causets".to_string()]);
+//      for causet in causet.causets.iter() {
+//         Err(e) => {
+//             println!("{:?}", e);
+//         }
+//
+//     fn get_solitonid_from_row(row: &Row) -> i32 {
+//
+//         //connect with wait and suspend
+//         //      (see https://en.wikipedia.org/wiki/Connect_and_wait)
+//         //      (see https://en.wikipedia.org/wiki/Suspend_and_resume)
+//         //connect with wait and suspend
+//         //      (see https://en.wikipedia.org/wiki/Connect_and_wait)
+//
+//         let solitonid: i32 = row.get(0);
+//         solitonid += row.get(1) as uint;
+//         solitonid += row.get(2) as uint;
+//
+//
+//         trait Solitonid {
+//             fn solitonid(&self) -> i32;
+//         }
+//
+//         impl Solitonid for Row {
+//             fn solitonid(&self) -> i32 {
+//                 let solitonid: i32 = row.get(0);
+//                 solitonid += row.get(1) as uint;
+//                 solitonid += row.get(2) as uint;
+//                 solitonid
+//             }
+//         }
+//
+//         impl Solitonid for i32 {
+//             fn solitonid(&self) -> i32 {
+//                 *self
+//             }
+//         }
+//
+//         trait causetidcolumn {
+//             fn causetidcolumn(&self) -> i32;
+//         }
+//
+//         impl causetidcolumn for Row {
+//             fn causetidcolumn(&self) -> i32 {
+//                 let causetidcolumn: i32 = row.get(0);
+//                 causetidcolumn
+//             }
+//         }
+//
+//         impl causetidcolumn for i32 {
+//             fn causetidcolumn(&self) -> i32 {
+//                 *self
+//             }
+//         }
+//
+//         trait causetid {
+//             fn causetid(&self) -> i32;
+//         }
+//
+//         impl causetid for Row {
+//             fn causetid(&self) -> i32 {
+//                 let causetid: i32 = row.get(0);
+//                 causetid
+//             }
+//         }
+//
+//         impl causetid for i32 {
+//             fn causetid(&self) -> i32 {
+//                 *self
+//             }
+//         }
+//
+//         //hybrid clock
+//         //      (see https://en.wikipedia.org/wiki/Hybrid_clock)
+//
+//         pub trait HybridClock {
+//             fn hybrid_clock(&self) -> i32;
+//         }
+//
+//         impl HybridClock for Row {
+//             fn hybrid_clock(&self) -> i32 {
+//                 let hybrid_clock: i32 = row.get(0);
+//                 hybrid_clock
+//             }
+//         }
+//
+//         impl HybridClock for i32 {
+//             fn hybrid_clock(&self) -> i32 {
+//                 *self
+//             }
+//         }
+//
+//         //hybrid clock
+//     }
+//     } //end of match
+//     } //end of test_causet_of_causets_of_causets_of_causets
+// }
+//
+//
 
-    fn get_solitonid_from_row(row: &Row) -> i32 {
-        row.get(0)
-
-for i in 0..k8s_causet.causets.len() {
-    k8s_causet.causets[i].solutionid = k8s_solitonid;
-        wait_for_k8s_to_be_ready();
-    match self.fdb_connection.fdb_connection.unwrap().query("SELECT solitonid FROM causet WHERE elements = 'k8s'", &[]).unwrap() {
-    let k8s_solitonid = k8s_solitonid_fetch.iter().map( | row| get_solitonid_from_row(row)).collect::<Vec<i32> > ();
-    for i in 0..k8s_causet.causets.len() {
-        k8s_causet.causets[i].solutionid = k8s_solitonid;
-    }
-        let k8s_causet_of_causets = Causet::new(vec!["k8s".to_string()]);
-        let k8s_solitonid = k8s_solitonid as usize;
-        for causet in k8s_causet.causets.iter() // iterate over the causets in the causet of causets
-        {
-            ///! we need to add the causet of causets to the causet of causets of causets index in the database
-            let causet_of_causets_of_causets = Causet::new(causet.elements.clone());
-            ///! now we instantiate the causet of causets of causets
-            self.causets[k8s_solitonid].causets.push(causet_of_causets_of_causets);
-        while self.causets[k8s_solitonid].causets.len() < 1 {
-            self.causets[k8s_solitonid].causets.push(causet_of_causets_of_causets).unwrap();
-            //connect with wait and suspend
-            //      (see https://en.wikipedia.org/wiki/Connect_and_wait)
-            //      (see https://en.wikipedia.org/wiki/Suspend_and_resume)
-
-            //connect with wait and suspend
-            //      (see https://en.wikipedia.org/wiki/Connect_and_wait)
-            //      (see https://en.wikipedia.org/wiki/Suspend_and_resume)
-
-            //connect with wait and suspend
-
-
-            fn get_solitonid_from_row(row: &Row) -> i32 {
-                row.get(0)
-            }
-
-            //
-            // elements,
-            // planar_graph: (),
-            // causets: (),
-            // fdb_connection: FdbConnection {
-            //     //enter kubernetes cluster
-            //     fdb: Fdb::new(),
-            //     fdb_connection: FdbResult::Ok(PostgresConnection::new("foundationdb://
-            //     ").unwrap()),
-            // }, //enter kubernetes cluster
-        }
-    }
-
-
-    pub fn new_from_vec(elements: Vec<&str>) -> Causet<String> {
-        let mut new_elements = Vec::new();
-        for element in elements {
-            new_elements.push(element.to_string());
-        }
-        Causet {
-            elements: new_elements,
-            planar_graph: (),
-            causets: (),
-            fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
-        }
-    }
-}
-    pub fn new_from_vec_ref(elements: Vec<&str>) -> Causet<String> {
-        let mut new_elements = Vec::new();
-        for element in elements {
-            new_elements.push(element.to_string());
-        }
-        Causet {
-            elements: new_elements,
-            planar_graph: (),
-            causets: (),
-            fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
-        }
-    }
-
-    pub fn new_from_vec_ref_mut(elements: Vec<&str>) -> Causet<String> {
-        let mut new_elements = Vec::new();
-        for element in elements {
-            new_elements.push(element.to_string());
-        }
-        Causet {
-            elements: new_elements,
-            planar_graph: (),
-            causets: (),
-            fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
-        }
-    }
-
-
-    pub fn new_from_vec_ref_mut_mut_mut(elements: Vec<&str>) -> Causet<String> {
-        let mut new_elements = Vec::new();
-        for element in elements {
-            new_elements.push(element.to_string());
-        }
-        Causet {
-            elements: new_elements,
-            planar_graph: (),
-            causets: (),
-            fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
-        }
-    }
-
-
-    ///! TODO: implement this with_capacity method to bin the elements in the causet
-    pub fn with_capacity(capacity: usize) -> Causet<T> {
-        Causet {
-            elements: Vec::with_capacity(capacity),
-            planar_graph: (),
-            causets: (),
-            fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
-        }
-    }
-
-    //constructor
-    pub fn with_elements(elements: Vec<T>) -> Causet<T> {
-        Causet {
-            elements,
-            planar_graph: (),
-            causets: (),
-            fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
-        }
-    }
-
-    //constructor
-    pub fn with_element(element: T) -> Causet<T> {
-        Causet {
-            elements: vec![element],
-            planar_graph: (),
-            causets: (),
-            fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
-        }
-    }
-
-    //constructor
-    pub fn with_elements_and_capacity(elements: Vec<T>, capacity: usize) -> Causet<T> {
-        Causet {
-            elements,
-            planar_graph: (),
-            causets: (),
-            fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
-        }
-    }
 
 
 
 
-
-
-
-
-
-
-
-
+//
+//
+//
+//         pub fn add_causet_of_causets_of_causets_of_causets(&mut self, causet_of_causets_of_causets: Causet) {
+//             let mut new_elements = Vec::new();
+//             for element in elements {
+//                 new_elements.push(element.to_string());
+//             }
+//             let mut new_causet_of_causets_of_causets = Causet::new(new_elements);
+//             new_causet_of_causets_of_causets.add_causet_of_causets_of_causets_of_causets(causet_of_causets_of_causets);
+//             self.causets.push(new_causet_of_causets_of_causets);
+//         }
+//
+//         //connect with wait and suspend
+//
+//         pub fn wait_for_k8s_to_be_ready() {
+//             //connect with wait and suspend
+//             //      (see https://en.wikipedia.org/wiki/Connect_and_wait
+//
+//
+//             pub fn connect(&mut self, connection_string: &str) {
+//                 self.fdb_connection = FdbConnection::new(connection_string);
+//             }
+//         }
+//     }
+//
+//         pub fn new_from_vec_ref(elements: Vec<&str>) -> Causet<String> {
+//             let mut new_elements = Vec::new();
+//             for element in elements {
+//                 new_elements.push(element.to_string());
+//             }
+//             Causet {
+//                 causet: (),
+//                 elements: new_elements,
+//                 planar_graph: (),
+//                 causet_of_causets: (),
+//                 causet_of_causets_of_causets: (),
+//                 causets: (),
+//                 fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
+//             }
+//         }
+//
+//         pub fn new_from_vec_ref_mut(elements: Vec<&str>) -> Causet<String> {
+//             let mut new_elements = Vec::new();
+//             for element in elements {
+//                 new_elements.push(element.to_string());
+//             }
+//             Causet {
+//                 causet: (),
+//                 elements: new_elements,
+//                 planar_graph: (),
+//                 causet_of_causets: (),
+//                 causet_of_causets_of_causets: (),
+//                 causets: (),
+//                 fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
+//             }
+//         }
+//
+//         pub fn new_from_vec_ref_mut_mut_mut(elements: Vec<&str>) -> Causet<String> {
+//             let mut new_elements = Vec::new();
+//             for element in elements {
+//                 new_elements.push(element.to_string());
+//             }
+//             Causet {
+//                 causet: (),
+//                 elements: new_elements,
+//                 planar_graph: (),
+//                 causet_of_causets: (),
+//                 causet_of_causets_of_causets: (),
+//                 causets: (),
+//                 fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
+//             }
+//         }
+//
+//
+//         ///! TODO: implement this with_capacity method to bin the elements in the causet
+//         pub fn with_capacity(capacity: usize) -> Causet<T> {
+//             Causet {
+//                 causet: (),
+//                 elements: Vec::with_capacity(capacity),
+//                 planar_graph: (),
+//                 causet_of_causets: (),
+//                 causet_of_causets_of_causets: (),
+//                 causets: (),
+//                 fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
+//             }
+//         }
+//
+//         //constructor
+//         pub fn with_elements(elements: Vec<T>) -> Causet<T> {
+//             Causet {
+//                 causet: (),
+//                 elements,
+//                 planar_graph: (),
+//                 causet_of_causets: (),
+//                 causet_of_causets_of_causets: (),
+//                 causets: (),
+//                 fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
+//             }
+//         }
+//
+//         //constructor
+//         pub fn with_element(element: T) -> Causet<T> {
+//             Causet {
+//                 causet: (),
+//                 elements: vec![element],
+//                 planar_graph: (),
+//                 causet_of_causets: (),
+//                 causet_of_causets_of_causets: (),
+//                 causets: (),
+//                 fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
+//             }
+//         }
+//
+//         //constructor
+//         pub fn with_elements_and_capacity(elements: Vec<T>, capacity: usize) -> Causet<T> {
+//             Causet {
+//                 causet: (),
+//                 elements,
+//                 planar_graph: (),
+//                 causet_of_causets: (),
+//                 causet_of_causets_of_causets: (),
+//                 causets: (),
+//                 fdb_connection: FdbConnection { fdb: (), fdb_connection: () }
+//             }
+//         }
+//     }
+// }}"#,
+//         );
+//     }
+// }   // end of mod causet"
+//
+//
+//
+//
+//
