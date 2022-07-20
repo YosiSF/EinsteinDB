@@ -12,57 +12,33 @@
 
 
 //Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-use crate::config::{ConfigSource, ConfigValue, ConfigValueType};
-use crate::error::{Error, Result};
-use crate::util::{get_file_content, get_file_content_as_string, get_file_content_as_string_with_default, get_file_content_with_default, get_file_content_with_default_as_string, get_file_content_with_default_as_string_with_default};
+//1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+//2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+//3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+
+
+///! This module contains the configuration for the application.
+/// It is used to configure the application.
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
 
-use crate::error::{Error, ErrorKind};
-use gravity::gravity_config::{GravityConfig, GravityConfigBuilder};
-use gravity::octopus::{OctopusConfig, OctopusConfigBuilder};
+
 use crate::util::escape;
-use einstein_db_ctl::{
-    config::{Config as CtlConfig, ConfigSource as CtlConfigSource},
-    error::Error as CtlError,
-    util::escape as ctl_escape,
-};
+use einstein_db_ctl::*;
 
 use std::path::PathBuf;
 use std::str::FromStr;
-use allegro_poset::{
-    config::{Config as PosetConfig, ConfigSource as PosetConfigSource},
-    error::Error as PosetError,
-    util::escape as poset_escape,
-};
-use ::{causet as causet, Error};
-use causet::config::{Config as CausetConfig, ConfigSource as CausetConfigSource};
-use causet::error::{Error as CausetError, ErrorKind as CausetErrorKind};
-use causet::util::escape as causet_escape;
-use causetq::config::{Config as CausetQConfig, ConfigSource as CausetQConfigSource};
-//merkle_tree
-use merkle_tree::config::{Config as MerkleTreeConfig, ConfigSource as MerkleTreeConfigSource};
-use merkle_tree::error::{Error as MerkleTreeError, ErrorKind as MerkleTreeErrorKind};
-//Merkle tree
-use crate::EinsteinDB::MerkleTree;
-use crate::{EinsteinDB, EinsteinDB_FOUNDATIONDB_DRIVER, EinsteinDB_FOUNDATIONDB_DRIVER_TOML};
+use allegro_poset::*;
+use causet::*;
 use chrono::NaiveDateTime;
 use futures::channel::oneshot;
 use futures::future::{self, Future};
 use std::collections::HashMap;
 use std::hash::Hash;
 
-
-
-///! This is the main configuration file for the EinsteinDB.
-/// It is used to configure the EinsteinDB.
-use crate::util::escape::escape_key;
-use crate::util::escape::escape_value;
-use crate::util::escape::unescape_key;
-use crate::util::escape::unescape_value;
-use crate::gravity::src::config::{Config as GravityConfig, ConfigSource as GravityConfigSource};
-use crate::gravity::src::config::{ConfigValue as GravityConfigValue, ConfigValueType as GravityConfigValueType};
+use crate::berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind};
 
 pub const DEFAULT_CONFIG_FILE: &str = "config.toml";
 pub const DEFAULT_CONFIG_DIR: &str = "./config";

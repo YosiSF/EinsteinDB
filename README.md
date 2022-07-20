@@ -42,7 +42,7 @@ EinsteinDB is a new kind of database that can handle extremely large amounts of 
 It can write data at speeds up to 5 milliseconds per row. P99 latency is 0.5 milliseconds, which is faster than any other database on the market. \
 EinsteinDB also has features that make it unique, such as the ability to read data in parallel, to write data in a concurrent manner, with time traveling queries, and to support the use of causets.
 
-Unlike Galileo, JanusGraph, and AllegroGraph, EinsteinDB implements and EinsteinML language model for a persistence file. Unlike HyPerDB, MongoDB, Arango, and BoltDB, EinsteinDB does not require a schema to be defined. \
+Unlike Galileo, JanusGraph, and AllegroGraph, EinsteinDB implements and EinsteinML language model for a persistence file. Unlike HyPerDB, MongoDB, Arango, and BoltDB, EinsteinDB does not require a Schema to be defined. \
 Causets are similar to tuplespaces and allow individuals to read their writes, and allow multiple individuals to write optimize in parallel universes. \
 
 # Database Choice for Petabytes and Beyond
@@ -394,7 +394,7 @@ By embedding a Hybrid Key-Value store with bolt-on causal consistency, suspends 
 
 
 in multi-layered data structures; merkle trees. 
-EinsteinDB also provides document-oriented stores for various kinds of high throughput and low latency environments. EinsteinDB's portable and flexible schema in the form of minkowski quads; is a powerful and efficient unified key model for RDMS and Graphs.
+EinsteinDB also provides document-oriented stores for various kinds of high throughput and low latency environments. EinsteinDB's portable and flexible Schema in the form of minkowski quads; is a powerful and efficient unified key model for RDMS and Graphs.
 EinsteinDB introduces VioletaBFT(0.1.0) written originally in a Haskell library with rust-based implementation with compiling support for multiple platforms.
 
 

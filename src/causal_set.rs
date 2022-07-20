@@ -126,7 +126,6 @@ use einstein_db::Causetid;
 use einstein_db::CausetidSet;
 use allegro_poset::{};
 use allegro_poset::{Poset, PosetNode};
-use causet::{Causet, CausetNode};
 use causet::{CausetNodeId, CausetNodeIdSet};
 use causet::{CausetId, CausetIdSet};
 use causet::{CausetIdVec, CausetIdVecSet};
@@ -225,7 +224,7 @@ pub struct CausetNode {
 }
 
 impl CausetNode {
-    pub fn new(id: CausetNodeId, causet_id: CausetId, data: HashMap<String, ColumnValue>) -> Self {
+    pub fn new(id: Box<CausetNodeId>, causet_id: CausetId, data: HashMap<String, ColumnValue>) -> Self {
         CausetNode {
             id,
             causet_id,
@@ -323,7 +322,7 @@ impl CausetNodeIdSet {
         CausetNodeIdSet::CausetIdSet(CausetIdSet::new())
     }
 
-    pub fn add(&mut self, node_id: CausetNodeId) {
+    pub fn add(&mut self, node_id: Box<CausetNodeId>) {
         match self {
             CausetNodeIdSet::CausetIdSet(causet_id_set) => {
                 causet_id_set.add(node_id.get_causet_id());

@@ -8,3 +8,8 @@ license = "MIT"
 
 [lib]
 path = "./src/lib.rs"
+
+[dependencies]
+
+causetq= {path = "../causetq"}
+einstein_db_ctl = { path = "../einstein_db_ctl" }

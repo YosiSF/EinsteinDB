@@ -8,30 +8,7 @@
 // CONDITIONS OF ANY KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations under the License.
 
-//mod for soliton_panic
 
-
-//mod for soliton_panic
-
-#![crate_type= "lib"]
-#![crate_name= "einsteindb"]
-#![recursion_limit = "1024"]
-#![feature(proc_macro_hygiene)]
-#![feature(proc_macro_non_items)]
-#![feature(proc_macro_def_site_meta)]
-#![feature(proc_macro_derive)]
-#![feature(proc_macro_expr)]
-
-
-#[macro_use]
-extern crate soliton_panic;
-
-
-
-
-extern crate soliton;
-
-//mods
 use causal_set::CausalSet;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -47,6 +24,12 @@ use std::sync::mpsc::RecvTimeoutError;
 use std::sync::mpsc::TrySendError;
 use std::sync::mpsc::SendError;
 
+use crate::{
+    berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind},
+    berolinasql::{ErrorImpl as BerolinaSqlErrorImpl},
+    berolinasql::{Error as BerolinaSqlError, ErrorKind as BerolinaSqlErrorKind},
+    causetq::*
+};
 
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -66,6 +49,133 @@ use std::sync::atomic::AtomicBool;
 
 
 use std::sync::atomic::AtomicUsize;
+
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct PegMuxSingleton {
+    pub id: usize,
+    pub name: String,
+}
+
+
+impl PegMuxSingleton {
+    pub fn new(id: usize, name: String) -> PegMuxSingleton {
+        PegMuxSingleton {
+            id: id,
+            name: name,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct PegMux {
+    pub id: usize,
+    pub name: String,
+}
+
+
+impl PegMux {
+    pub fn new(id: usize, name: String) -> PegMux {
+        PegMux {
+            id: id,
+            name: name,
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+//rust peg mux implementation
+pub struct PegMuxImpl {
+    pub id: usize,
+    pub name: String,
+    pub state: Arc<Mutex<PegMuxState>>,
+}
+
+
+impl PegMuxImpl {
+    pub fn new(id: usize, name: String) -> PegMuxImpl {
+        PegMuxImpl {
+            id: id,
+            name: name,
+            state: Arc::new(Mutex::new(PegMuxState::new(id, name))),
+        }
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct PegMuxState {
+    pub id: usize,
+    pub name: String,
+    pub state: Arc<Mutex<PegMuxStateImpl>>,
+}
+
+
+impl PegMuxState {
+    pub fn new(id: usize, name: String) -> PegMuxState {
+        PegMuxState {
+            id: id,
+            name: name,
+            state: Arc::new(Mutex::new(PegMuxStateImpl::new(id, name))),
+        }
+    }
+}
+
+
+pub fn from_context_grammar_peg_mux_impl(context_grammar_peg_mux_impl: &ContextGrammarPegMuxImpl) -> PegMuxImpl {
+    PegMuxImpl::new(
+        context_grammar_peg_mux_impl.id,
+        context_grammar_peg_mux_impl.name.clone(),
+    )
+
+
+}
+pub struct PegMuxInstance {
+    pub id: usize,
+    /// The id of the PegMux that this instance belongs to.
+    pub name: String,
+}
+
+
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct NodeId(pub usize);
+
+trait NodeIdTrait {
+    fn id(&self) -> usize;
+}
+
+
+impl NodeIdTrait for NodeId {
+    fn get_id(&self) -> usize {
+        self.0
+    }
+}
+
+
+impl NodeIdTrait for NodeId {
+    fn get_id(&self) -> usize {
+        self.0
+    }
+}
+
+pub fn get_node_id() -> NodeId {
+    NodeId(thread::current().id())
+}
+
+
+impl NodeId {
+    pub fn new(id: usize) -> NodeId {
+        NodeId(id)
+    }
+}
+
+
+
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PosetNodeId(pub usize);
@@ -134,3 +244,92 @@ pub mod causal_set;
 
 
 
+
+
+
+
+use std::error::Error;
+use std::fmt;
+use std::io;
+use std::result;
+
+use causet::*;
+
+#[derive(Debug)]
+pub enum ErrorKind {
+    Io(io::Error),
+    BerolinaSql(BerolinaSqlError),
+    Utf8(Utf8Error),
+    FromUtf8(FromUtf8Error),
+    Other(String),
+}
+
+
+#[derive(Debug)]
+pub struct ErrorImpl {
+    pub kind: ErrorKind,
+}
+
+
+#[derive(Debug)]
+pub enum BerolinaSqlError {
+    IoError(io::Error),
+    SqlError(String),
+}
+
+
+impl fmt::Display for BerolinaSqlError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            BerolinaSqlError::IoError(ref err) => write!(f, "IO error: {}", err),
+            BerolinaSqlError::SqlError(ref err) => write!(f, "SQL error: {}", err),
+        }
+    }
+
+    fn cause(&self) -> Option<&dyn Error> {
+        match *self {
+            BerolinaSqlError::IoError(ref err) => Some(err),
+            BerolinaSqlError::SqlError(_) => None,
+        }
+    }
+
+    fn description(&self) -> &str {
+        match *self {
+            BerolinaSqlError::IoError(_) => "IO error",
+            BerolinaSqlError::SqlError(_) => "SQL error",
+        }
+    }
+}
+
+
+impl From<BerolinaSqlError> for ErrorImpl {
+    fn from(err: BerolinaSqlError) -> ErrorImpl {
+        ErrorImpl {
+            kind: ErrorKind::BerolinaSql(err),
+        }
+    }
+}
+
+
+impl From<io::Error> for ErrorImpl {
+    fn from(err: io::Error) -> ErrorImpl {
+        ErrorImpl {
+            kind: ErrorKind::Io(err),
+        }
+    }
+}
+
+
+impl From<Utf8Error> for ErrorImpl {
+    fn from(err: Utf8Error) -> ErrorImpl {
+        ErrorImpl {
+            kind: ErrorKind::Utf8(err),
+        }
+    }
+}
+
+
+
+
+
+//mods

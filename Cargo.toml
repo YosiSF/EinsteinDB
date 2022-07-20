@@ -9,6 +9,12 @@ license = "MIT"
 path = "./src/lib.rs"
 
 [dependencies]
+soliton_panic= {path="./soliton_panic"}
+berolinasql = { path = "./berolinasql"}
+causet = { path = "./causet"}
+causetq = { path = "./causetq"}
+einstein_ml = { path = "./einstein_ml"}
+einstein_db = { path = "./einstein_db"}
 log = "0.4"
 ordered-float = "3.0.0"
 petgraph = "0.6.0"
@@ -17,3 +23,5 @@ failure = "0.1.8"
 lazy_static = "1.4.0"
 time = "0.3.11"
 serde = "1.0.138"
+chrono= "0.4.0"
+futures= "0.1.25"
