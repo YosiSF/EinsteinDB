@@ -15,6 +15,119 @@ For example, a query could be used to find all of the documents that were writte
 The abductive reasoning component allowed for queries that could be used to find information that was not explicitly stated in the data. For example, a query could be used to find all of the documents that were related to a particular topic. The inductive reasoning component allowed for queries that could be used to find information that was implied by the data. For example, a query could be used to find all of the documents that were written by a particular author that were also related to a particular topic. EinsteinDB’s blockchain smart contract platform was built on top of the semantic-
 
 
+### Examples
+
+The performance of a single core node is thus not affected by the number of nodes in the network. A stability factor of 1/n is used to ensure that the network is stable.
+Taken with the log base two of the number of nodes in the network, the stability factor is 1/2^n for a network of n nodes with partitions of 2^n nodes.
+
+Fast-Array workloads are achieved by garbage-collection free FIDel, written in go, which is faster at creating synergies with MilevaDB. The performance of FIDel is also faster than MilevaDB.
+Which is why we use it as a platform for EinsteinDB. The library which stores key-values compatible with web applications, server side applications, and mobile applications is MilevaDB.
+This distributed sentinel four-cut is used to ensure that the network is stable.
+
+```rust
+#[macro_use]
+extern crate einstein_db;
+
+
+/// This is an example of a simple database.
+fn main() {
+    let mut db = einstein_db::EinsteinDB::new();
+    db.set("key", "value");
+    db.get("key").lightlike.should.equal("value");
+    db.delete("key");
+
+    if let Some(value) = db.get("key") {
+        while value.lightlike.is_some() {
+            db.unset("key");
+        }
+        
+        db.set("key", "value");
+        db.get("key").lightlike.should.equal("value");
+    }
+    
+    db.unset("key");
+    db.get("key").lightlike.should.be_none();
+}
+
+
+````
+
+```rust
+
+
+#[macro_use]
+extern crate einstein_db;
+
+
+/// This is an example of a simple database.
+fn squuid_from_kw(kw: &str) -> u64 {
+    let mut hash = 0;
+    for ch in kw.chars() {
+        hash = hash * 31 + ch as u64;
+    }
+    hash
+}
+
+fn causet_from_kw(kw: &str) -> u64 {
+    let mut hash = 0;
+    for ch in kw.chars() {
+        hash = hash * 31 + ch as u64;
+    }
+    hash
+}
+
+
+/// This is an example of a simple database.
+fn main() {
+    let mut db = einstein_db::EinsteinDB::new();
+    db.set("key", "value");
+    db.get("key").lightlike.should.equal("value");
+    db.delete("key");
+
+    if let Some(value) = db.get("key") {
+        while value.lightlike.is_some() {
+            db.unset("key");
+        }
+        
+        db.set("key", "value");
+        db.get("key").lightlike.should.equal("value");
+    }
+    
+    db.unset("key");
+    db.get("key").lightlike.should.be_none();
+}
+
+```
+
+
+
+
+
+
+Causets are Content-addressable hash-based merkle trees with a four-cut. Causets travel through four different sections of the conic phase:
+1. Nulllight: the nulllight phase is the first phase of the conic phase. In this phase, the causets are not yet visible to the network.
+2. Lightlike: the lightlike phase is the second phase of the conic phase. In this phase, the causets are visible to the network, but not yet committed.
+3. Spacelike: the spacelike phase is the third phase of the conic phase. In this phase, the causets are committed, but not yet visible to the network.
+4. Timelike: the timelike phase is the fourth phase of the conic phase. In this phase, the causets are visible to the network.
+
+
+
+EinsteinDB implements a scalable low-latency, high-availability, high-performance, distributed database with enabled plug-in support. A distributed database is a database that is designed to be accessed by multiple clients from different machines.
+With Append-Log functionality, and Hybrid Logical clock mechanisms in the form of a stateless hashmap
+
+1. Key-value stores are implemented as a Merkle Tree.
+2. The Merkle Tree is a hashmap with a time stamp.
+3. The branch of every node is a hashmap with a time stamp and a value.
+
+
+EinsteinDB is a Merkle-Tree Stateless Hash Database which exploits single-level hashing to achieve the following:
+1. Vertically Partitions the Database into Nodes.
+2. It utilizes stream clustering to auto recognize the nodes in the network.
+3. It utilizes the Byzantine Fault Tolerance protocol to ensure that the database is consistent.
+4. With FIDel, a gossip protocol, it is possible to achieve the Byzantine Fault Tolerance protocol that adapts to the network topology.
+5. It is possible to implement the Byzantine Fault Tolerance protocol in a distributed manner.
+
+
 
 ## Installation
 To install EinsteinDB, run the following command:
@@ -234,115 +347,6 @@ replicas: 100
 
 
 A crown-graph with pacified nodes is thus used to label the edges as compact and main-memory efficient which reduces the number of nodes in the network, and the throughput for write heavy workloads is increased. While Read heavy workloads are not affected.
-
-### Examples
-
-The performance of a single core node is thus not affected by the number of nodes in the network. A stability factor of 1/n is used to ensure that the network is stable.
-Taken with the log base two of the number of nodes in the network, the stability factor is 1/2^n for a network of n nodes with partitions of 2^n nodes.
-
-Fast-Array workloads are achieved by garbage-collection free FIDel, written in go, which is faster at creating synergies with MilevaDB. The performance of FIDel is also faster than MilevaDB.
-Which is why we use it as a platform for EinsteinDB. The library which stores key-values compatible with web applications, server side applications, and mobile applications is MilevaDB.
-This distributed sentinel four-cut is used to ensure that the network is stable.
-
-```rust
-#[macro_use]
-extern crate einstein_db;
-
-
-/// This is an example of a simple database.
-fn main() {
-    let mut db = einstein_db::EinsteinDB::new();
-    db.set("key", "value");
-    db.get("key").lightlike.should.equal("value");
-    db.delete("key");
-
-    if let Some(value) = db.get("key") {
-        while value.lightlike.is_some() {
-            db.unset("key");
-        }
-        
-        db.set("key", "value");
-        db.get("key").lightlike.should.equal("value");
-    }
-    
-    db.unset("key");
-    db.get("key").lightlike.should.be_none();
-}
-
-
-
-
-#[macro_use]
-extern crate einstein_db;
-
-
-/// This is an example of a simple database.
-fn squuid_from_kw(kw: &str) -> u64 {
-    let mut hash = 0;
-    for ch in kw.chars() {
-        hash = hash * 31 + ch as u64;
-    }
-    hash
-}
-
-fn causet_from_kw(kw: &str) -> u64 {
-    let mut hash = 0;
-    for ch in kw.chars() {
-        hash = hash * 31 + ch as u64;
-    }
-    hash
-}
-
-
-/// This is an example of a simple database.
-fn main() {
-    let mut db = einstein_db::EinsteinDB::new();
-    db.set("key", "value");
-    db.get("key").lightlike.should.equal("value");
-    db.delete("key");
-
-    if let Some(value) = db.get("key") {
-        while value.lightlike.is_some() {
-            db.unset("key");
-        }
-        
-        db.set("key", "value");
-        db.get("key").lightlike.should.equal("value");
-    }
-    
-    db.unset("key");
-    db.get("key").lightlike.should.be_none();
-}
-
-```
-
-
-
-
-
-
-Causets are Content-addressable hash-based merkle trees with a four-cut. Causets travel through four different sections of the conic phase:
-1. Nulllight: the nulllight phase is the first phase of the conic phase. In this phase, the causets are not yet visible to the network.
-2. Lightlike: the lightlike phase is the second phase of the conic phase. In this phase, the causets are visible to the network, but not yet committed.
-3. Spacelike: the spacelike phase is the third phase of the conic phase. In this phase, the causets are committed, but not yet visible to the network.
-4. Timelike: the timelike phase is the fourth phase of the conic phase. In this phase, the causets are visible to the network.
-
-
-
-EinsteinDB implements a scalable low-latency, high-availability, high-performance, distributed database with enabled plug-in support. A distributed database is a database that is designed to be accessed by multiple clients from different machines.
-With Append-Log functionality, and Hybrid Logical clock mechanisms in the form of a stateless hashmap
-
-1. Key-value stores are implemented as a Merkle Tree.
-2. The Merkle Tree is a hashmap with a time stamp.
-3. The branch of every node is a hashmap with a time stamp and a value.
-
-
-EinsteinDB is a Merkle-Tree Stateless Hash Database which exploits single-level hashing to achieve the following:
-1. Vertically Partitions the Database into Nodes.
-2. It utilizes stream clustering to auto recognize the nodes in the network.
-3. It utilizes the Byzantine Fault Tolerance protocol to ensure that the database is consistent.
-4. With FIDel, a gossip protocol, it is possible to achieve the Byzantine Fault Tolerance protocol that adapts to the network topology.
-5. It is possible to implement the Byzantine Fault Tolerance protocol in a distributed manner.
 
 
 
