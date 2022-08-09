@@ -7,6 +7,120 @@
 EinsteinDB is a Relativistic Causal Consistent Key-Value Store with a Semantic-Knowledge CQRS/EventSourcing engine, a modern implementation of NewSQL, and a powerful Blockchain Smart Contract Platform. 
 
 
+### NewSQL
+
+
+
+Our content addressable approach deploys an IPFS-style content addressable infrastructure for peer-to-peer sharing of state information. This contrasts with existing decentralized systems which often deploy a single data structure that is replicated across all peers and updated by consensus. Instead, we propose to use an IPFS-style content addressable architecture where each peer stores its own data in the form of Merkle roots stored on filtrons (a new type of filter). These filters can be merged together using a merge function so they provide both storage and indexing capabilities without having to rely on any consensus algorithm or hashing scheme such as SHA256.
+
+
+
+
+Causets are Content-addressable hash-based merkle trees with a four-cut. Causets travel through four different sections of the conic phase:
+1. Nulllight: the nulllight phase is the first phase of the conic phase. In this phase, the causets are not yet visible to the network.
+2. Lightlike: the lightlike phase is the second phase of the conic phase. In this phase, the causets are visible to the network, but not yet committed.
+3. Spacelike: the spacelike phase is the third phase of the conic phase. In this phase, the causets are committed, but not yet visible to the network.
+4. Timelike: the timelike phase is the fourth phase of the conic phase. In this phase, the causets are visible to the network.
+
+
+
+### EventSourcing
+
+EinsteinDB uses a EventSourcing engine to allow for the storage of events to the network. The EventSourcing engine was built on top of the new SQL language to allow for the storage of events to the network.
+
+### Bolt-on Relativistic Causal Consistency
+
+
+
+two events that happen at the same time can be ordered differently depending on your location.
+This is similar to how two events that happen at different times can be ordered differently depending on your frame of reference. With IPFS and Ethereum, events can be ordered in different ways depending on your perspective. EinsteinDB uses a novel technique called bolt-on relativistic causal consistency which is a form of Serialization scheme which distinguishes between global and temporal network states.
+EinsteinDB with IPFS can be used in a distributed system where each node has its own set of filters, and they need to be merged together to form a single filter that can be used to order events from off-chain transactions:
+
+```
+einstein-db
+```
+
+
+
+
+## Installation
+
+
+IPFS and Ethereum are required to run EinsteinDB as a Permissionless Storage System.
+
+
+## IPFS Installation
+
+``` 
+brew install ipfs
+```
+
+
+## Ethereum Installation
+
+```
+brew install ethereum
+```
+
+
+
+```bash
+cargo install einstein-db
+```
+
+
+
+    
+```rust
+    #[macro_use]    
+    extern crate einstein_db;
+    
+```
+
+Relativistic Causal Consistency is a way of thinking about distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system.
+
+
+
+EinsteinDB uses a bolt-on relativistic causal consistency to allow for the storage of events to the network. The bolt-on relativistic causal consistency was built on top of the EventSourcing engine to allow for the storage of events to the network.
+
+### Merge-Append as a form of Eventual Consistency
+
+EinsteinDB uses a merge-append as a form of eventual consistency to allow for the storage of events to the network. The merge-append as a form
+
+
+
+A Relativistic Database with OLTP repeatable read policy and high performance for large scale applications and serializable transactions guarantees for concurrent accesses to the same data.
+
+
+
+#  Database Choice for Petabytes and Beyond
+
+
+EinsteinDB is a Novel Content Addressable distributed database that uses a novel technique called bolt-on relativistic causal consistency which is a form of Serialization scheme which distinguishes between global and temporal network states. Merge-Append as a form of Eventual Consistency is provably equivalent to Causal Consistency. Relativistic Causal Consistency is a new way of looking at distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system. This means that events can be ordered in different ways depending on your perspective. For example, two events that happen at the same time can be ordered differently depending on your location. This is similar to how two events that happen at different times can be ordered differently depending on your frame of reference. Relativistic Causal Consistency is a way of thinking about distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system.
+
+## Cracking Columns and Sharding Causets: A Poisson distribution of byzantine failures.
+
+We’re not happy with charging individuals above and beyond $0.01 per Gbps on a FLOPS basis for their use of the internet for its resources worldwide. EinsteinDB is an immutable append-log, but it does have a byte string identifier (FoundationDB’s Record Layer exposes channel privileges and rate of burn per piping) which is where the “immutable” part comes in. Records are stored in Merkle Trees but with stateless replicas, due to the fact that there is no upper limit on the size of the data store, and the data is stored in a columnar format — It allowed us to play with the bit masked merge-append of suffix hash ids in the immutable append-log, but not with data.
+
+## A Relativistic Database with OLTP repeatable read policy and high performance for large scale applications and serializable transactions guarantees for concurrent accesses to the same data.
+
+
+Causets travel through four different sections of the conic phase:
+1. Nulllight: the nulllight phase is the first phase of the conic phase. In this phase, the causets are not yet visible to the network.
+2. Lightlike: the lightlike phase is the second phase of the conic phase. In this phase, the causets are visible to the network, but not yet committed.
+3. Spacelike: the spacelike phase is the third phase of the conic phase. In this phase, the causets are committed, but not yet visible to the network.
+4. Timelike: the timelike phase is the fourth phase of the conic phase. In this phase, the causets are visible to the network.
+
+
+
+
+## Key Features
+- Unified Key Format: allows you to abstract your data center into spacetime
+- Write Amplificator: writes data at speeds up to 5 milliseconds
+- Horn Rules: give you the ability to query the database for historical data
+- Bulk-Carrier: allows you to process large amounts of data quickly
+- Post-Quantum Stateless Merkle Trees: provides security for your data
+- Quantum-Tolerant: provides security for your data
 
 EinsteinDB’s semantic-knowledge engine was built on top of the key-value store to provide a powerful way to query and update the data. 
 The engine used a combination of deductive reasoning, abduction, and inductive reasoning to allow for complex queries that could be used to find new information. The deductive reasoning component allowed for queries that could be used to find information that was explicitly stated in the data.
@@ -104,14 +218,6 @@ fn main() {
 
 
 
-Causets are Content-addressable hash-based merkle trees with a four-cut. Causets travel through four different sections of the conic phase:
-1. Nulllight: the nulllight phase is the first phase of the conic phase. In this phase, the causets are not yet visible to the network.
-2. Lightlike: the lightlike phase is the second phase of the conic phase. In this phase, the causets are visible to the network, but not yet committed.
-3. Spacelike: the spacelike phase is the third phase of the conic phase. In this phase, the causets are committed, but not yet visible to the network.
-4. Timelike: the timelike phase is the fourth phase of the conic phase. In this phase, the causets are visible to the network.
-
-
-
 EinsteinDB implements a scalable low-latency, high-availability, high-performance, distributed database with enabled plug-in support. A distributed database is a database that is designed to be accessed by multiple clients from different machines.
 With Append-Log functionality, and Hybrid Logical clock mechanisms in the form of a stateless hashmap
 
@@ -175,54 +281,6 @@ EinsteinDB stores data on a Stateless Hash Merkle Tree which does not require a 
 
 EinsteinDB uses a blockchain smart contract platform to allow for the deployment of smart contracts to the network. The blockchain smart contract platform was built on top of the semantic-knowledge engine to allow for the deployment of smart contracts to the network.
 
-### NewSQL
-
-
-### EventSourcing
-
-EinsteinDB uses a EventSourcing engine to allow for the storage of events to the network. The EventSourcing engine was built on top of the new SQL language to allow for the storage of events to the network.
-
-### Bolt-on Relativistic Causal Consistency
-
-
-
-two events that happen at the same time can be ordered differently depending on your location.
-This is similar to how two events that happen at different times can be ordered differently depending on your frame of reference. With IPFS and Ethereum, events can be ordered in different ways depending on your perspective. EinsteinDB uses a novel technique called bolt-on relativistic causal consistency which is a form of Serialization scheme which distinguishes between global and temporal network states. 
-EinsteinDB with IPFS can be used in a distributed system where each node has its own set of filters, and they need to be merged together to form a single filter that can be used to order events from off-chain transactions: 
-
-```
-einstein-db
-```
-
-Relativistic Causal Consistency is a way of thinking about distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system.
-
-
-We’re not happy with charging individuals above and beyond $0.01 per Gbps on a FLOPS basis for their use of the internet for its resources worldwide. EinsteinDB is an immutable append-log, but it does have a byte string identifier (FoundationDB’s Record Layer exposes channel privileges and rate of burn per piping) which is where the “immutable” part comes in. Records are stored in Merkle Trees but with stateless replicas, due to the fact that there is no upper limit on the size of the data store, and the data is stored in a columnar format — It allowed us to play with the bit masked merge-append of suffix hash ids in the immutable append-log, but not with data.
-
-EinsteinDB uses a bolt-on relativistic causal consistency to allow for the storage of events to the network. The bolt-on relativistic causal consistency was built on top of the EventSourcing engine to allow for the storage of events to the network.
-
-### Merge-Append as a form of Eventual Consistency
-
-EinsteinDB uses a merge-append as a form of eventual consistency to allow for the storage of events to the network. The merge-append as a form
-
-
-
-A Relativistic Database with OLTP repeatable read policy and high performance for large scale applications and serializable transactions guarantees for concurrent accesses to the same data.
-
-
-## Database Choice for Petabytes and Beyond
-## Cracking Columns and Sharding Causets: A Poisson distribution of byzantine failures.
-## A Relativistic Database with OLTP repeatable read policy and high performance for large scale applications and serializable transactions guarantees for concurrent accesses to the same data.
-
-
-
-## Key Features
-- Unified Key Format: allows you to abstract your data center into spacetime
-- Write Amplificator: writes data at speeds up to 5 milliseconds
-- Horn Rules: give you the ability to query the database for historical data
-- Bulk-Carrier: allows you to process large amounts of data quickly
-- Post-Quantum Stateless Merkle Trees: provides security for your data
-- Quantum-Tolerant: provides security for your data
 
 ## Installation
 ```Dockerfile```
@@ -395,13 +453,6 @@ transaction. This is a transaction which is committed to the network.
     ```
     
     ```rust
-
-
-Causets travel through four different sections of the conic phase:
-1. Nulllight: the nulllight phase is the first phase of the conic phase. In this phase, the causets are not yet visible to the network.
-2. Lightlike: the lightlike phase is the second phase of the conic phase. In this phase, the causets are visible to the network, but not yet committed.
-3. Spacelike: the spacelike phase is the third phase of the conic phase. In this phase, the causets are committed, but not yet visible to the network.
-4. Timelike: the timelike phase is the fourth phase of the conic phase. In this phase, the causets are visible to the network.
 
 
 
