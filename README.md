@@ -1,6 +1,46 @@
 ## EinsteinDB 
-EinsteinDB is a hybrid database that addresses the knowledge gap of factual dialectic completion in the context of an ACID database - Think of a `Lucene embedded to a FoundationDB record layer`. \
-It is designed to be both a key-value store and a crowm graph store with a rich set of query capabilities:  
+[https://www.github.com/YosiSF/EinsteinDB/logo/logo.svg](https://www.github.com/YosiSF/EinsteinDB/logo/logo.svg)
+EinsteinDB is a Relativistic Causal Consistent Key-Value Store with a Semantic-Knowledge CQRS/EventSourcing engine, a modern implementation of NewSQL, and a powerful Blockchain Smart Contract Platform. EinsteinDB’s semantic-knowledge engine was built on top of the key-value store to provide a powerful way to query and update the data. The engine used a combination of deductive reasoning, abduction, and inductive reasoning to allow for complex queries that could be used to find new information. The deductive reasoning component allowed for queries that could be used to find information that was explicitly stated in the data. For example, a query could be used to find all of the documents that were written by a particular author. The abductive reasoning component allowed for queries that could be used to find information that was not explicitly stated in the data. For example, a query could be used to find all of the documents that were related to a particular topic. The inductive reasoning component allowed for queries that could be used to find information that was implied by the data. For example, a query could be used to find all of the documents that were written by a particular author that were also related to a particular topic. EinsteinDB’s blockchain smart contract platform was built on top of the semantic-
+
+
+EinsteinDB is a Novel Content Addressable distributed database that uses a novel technique called bolt-on relativistic causal consistency which is a form of Serialization scheme which distinguishes between global and temporal network states. Merge-Append as a form of Eventual Consistency is provably equivalent to Causal Consistency.
+Relativistic Causal Consistency is a new way of looking at distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system. 
+This means that events can be ordered in different ways depending on your perspective. 
+
+For example, two events that happen at the same time can be ordered differently depending on your location. 
+This is similar to how two events that happen at different times can be ordered differently depending on your frame of reference. 
+
+Relativistic Causal Consistency is a way of thinking about distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system.
+
+
+
+## Features
+
+### Semantic-Knowledge Engine
+
+EinsteinDB uses a semantic-knowledge engine to allow for complex queries to be used to find new information. The engine used a combination of deductive reasoning, abduction, and inductive reasoning to allow for complex queries that could be used to find new information. The deductive reasoning component allowed for queries that could be used to find information that was explicitly stated in the data. For example, a query could be used to find all of the documents that were written by a particular author. The abductive reasoning component allowed for queries that could be used to find information that was not explicitly stated in the data. For example, a query could be used to find all of the documents that were related to a particular topic. The inductive reasoning component allowed for queries that could be used to find information that was implied by the data. For example, a query could be used to find all of the documents that were written by a particular author that were also related to a particular topic.
+
+### Blockchain Smart Contract Platform
+
+EinsteinDB uses a blockchain smart contract platform to allow for the deployment of smart contracts to the network. The blockchain smart contract platform was built on top of the semantic-knowledge engine to allow for the deployment of smart contracts to the network.
+
+### NewSQL
+
+EinsteinDB uses a new SQL language to allow for the creation of new tables and the insertion of new data. The new SQL language was built on top of the semantic-knowledge engine to allow for the creation of new tables and the insertion of new data.
+
+### EventSourcing
+
+EinsteinDB uses a EventSourcing engine to allow for the storage of events to the network. The EventSourcing engine was built on top of the new SQL language to allow for the storage of events to the network.
+
+### Bolt-on Relativistic Causal Consistency
+
+EinsteinDB uses a bolt-on relativistic causal consistency to allow for the storage of events to the network. The bolt-on relativistic causal consistency was built on top of the EventSourcing engine to allow for the storage of events to the network.
+
+### Merge-Append as a form of Eventual Consistency
+
+EinsteinDB uses a merge-append as a form of eventual consistency to allow for the storage of events to the network. The merge-append as a form
+
+
 
 A Relativistic Database with OLTP repeatable read policy and high performance for large scale applications and serializable transactions guarantees for concurrent accesses to the same data.
 
