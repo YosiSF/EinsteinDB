@@ -413,5 +413,3 @@ EinsteinDB is licensed under the MIT license and is copyright (c) 2018-2023 by E
 ## Authors
 EinsteinDB was written by [YosiSF](https://www.github.com/YosiSF). and [Slushie](https://www.github.com/SlushieSlush).
 
-which means that it is not a Byzantine Fault Tolerance protocol, but a Byzantine Fault Tolerance protocol which is not strictly a Byzantine Fault Tolerance protocol.
-In fact, the consensus protocol is embedded in the time stamp versioning of the Merkle Tree.
