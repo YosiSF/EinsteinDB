@@ -1,11 +1,20 @@
-## EinsteinDB 
-[https://www.github.com/YosiSF/EinsteinDB/logo/logo.svg](https://www.github.com/YosiSF/EinsteinDB/logo/logo.svg)
-EinsteinDB is a Relativistic Causal Consistent Key-Value Store with a Semantic-Knowledge CQRS/EventSourcing engine, a modern implementation of NewSQL, and a powerful Blockchain Smart Contract Platform. EinsteinDB’s semantic-knowledge engine was built on top of the key-value store to provide a powerful way to query and update the data. The engine used a combination of deductive reasoning, abduction, and inductive reasoning to allow for complex queries that could be used to find new information. The deductive reasoning component allowed for queries that could be used to find information that was explicitly stated in the data. For example, a query could be used to find all of the documents that were written by a particular author. The abductive reasoning component allowed for queries that could be used to find information that was not explicitly stated in the data. For example, a query could be used to find all of the documents that were related to a particular topic. The inductive reasoning component allowed for queries that could be used to find information that was implied by the data. For example, a query could be used to find all of the documents that were written by a particular author that were also related to a particular topic. EinsteinDB’s blockchain smart contract platform was built on top of the semantic-
 
 
-EinsteinDB is a Novel Content Addressable distributed database that uses a novel technique called bolt-on relativistic causal consistency which is a form of Serialization scheme which distinguishes between global and temporal network states. Merge-Append as a form of Eventual Consistency is provably equivalent to Causal Consistency.
-Relativistic Causal Consistency is a new way of looking at distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system. 
-This means that events can be ordered in different ways depending on your perspective. 
+![](/Users/karlwhitfordpollard/Desktop/EinsteinDB/logo/logo.svg)
+
+
+### Theory
+EinsteinDB is a Relativistic Causal Consistent Key-Value Store with a Semantic-Knowledge CQRS/EventSourcing engine, a modern implementation of NewSQL, and a powerful Blockchain Smart Contract Platform. 
+
+
+
+EinsteinDB’s semantic-knowledge engine was built on top of the key-value store to provide a powerful way to query and update the data. 
+The engine used a combination of deductive reasoning, abduction, and inductive reasoning to allow for complex queries that could be used to find new information. The deductive reasoning component allowed for queries that could be used to find information that was explicitly stated in the data.
+
+For example, a query could be used to find all of the documents that were written by a particular author. 
+The abductive reasoning component allowed for queries that could be used to find information that was not explicitly stated in the data. For example, a query could be used to find all of the documents that were related to a particular topic. The inductive reasoning component allowed for queries that could be used to find information that was implied by the data. For example, a query could be used to find all of the documents that were written by a particular author that were also related to a particular topic. EinsteinDB’s blockchain smart contract platform was built on top of the semantic-
+
+
 
 For example, two events that happen at the same time can be ordered differently depending on your location. 
 This is similar to how two events that happen at different times can be ordered differently depending on your frame of reference. 
@@ -13,14 +22,46 @@ This is similar to how two events that happen at different times can be ordered 
 Relativistic Causal Consistency is a way of thinking about distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system.
 
 
+## Installation
+To install EinsteinDB, run the following command:
+```
+curl -sL https://raw.githubusercontent.com/einstein-db/einstein-db/master/install.sh | bash
+```
+## Usage
+To use EinsteinDB, run the following command:
+```
+einstein-db
+```
+
 
 ## Features
 
+
+Merge-Append as a form of Eventual Consistency is provably equivalent to Causal Consistency.
+Relativistic Causal Consistency is a new way of looking at distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system.
+This means that events can be ordered in different ways depending on your perspective.
+
 ### Semantic-Knowledge Engine
+
+
+EinsteinDB is a Novel Content Addressable distributed database based on the Memristor as an sRDMA SmartNIC WAVE IPFS
+that uses a novel technique called bolt-on relativistic causal consistency which is a form of Serialization scheme which distinguishes between
+global and temporal network states.
+
 
 EinsteinDB uses a semantic-knowledge engine to allow for complex queries to be used to find new information. The engine used a combination of deductive reasoning, abduction, and inductive reasoning to allow for complex queries that could be used to find new information. The deductive reasoning component allowed for queries that could be used to find information that was explicitly stated in the data. For example, a query could be used to find all of the documents that were written by a particular author. The abductive reasoning component allowed for queries that could be used to find information that was not explicitly stated in the data. For example, a query could be used to find all of the documents that were related to a particular topic. The inductive reasoning component allowed for queries that could be used to find information that was implied by the data. For example, a query could be used to find all of the documents that were written by a particular author that were also related to a particular topic.
 
 ### Blockchain Smart Contract Platform
+
+
+Our content addressable approach deploys an IPFS-style content addressable infrastructure for peer-to-peer sharing of state information. This contrasts with existing decentralized systems which often deploy a single data structure that is replicated across all peers and updated by consensus. Instead, we propose to use an IPFS-style content addressable architecture where each peer stores its own data in the form of Merkle roots stored on filtrons (a new type of filter). These filters can be merged together using a merge function so they provide both storage and indexing capabilities without having to rely on any consensus algorithm or hashing scheme such as SHA256.
+
+The upper levels of the trees, accessed frequently, are implemented in software using conventional processors and caching methods and serve to distribute requests over the less frequently accessed remaining data⎯a technique we call interlocking Directorate. 
+
+For our Future builds we'll introduce Noether and Filtrons which are a new self-organizing type of data structure that is designed to be self-annealing in a trustless environment.
+They are similar to Bloom filters, but they have the additional property that they can be merged together. This allows EinsteinDB to be used in a distributed system where each node has its own set of filters, and they need to be merged together to form a single filter.
+EinsteinDB stores data on a Stateless Hash Merkle Tree which does not require a uniform and order-preserving hash function to improve lifetime of memristor-based storage. 
+
 
 EinsteinDB uses a blockchain smart contract platform to allow for the deployment of smart contracts to the network. The blockchain smart contract platform was built on top of the semantic-knowledge engine to allow for the deployment of smart contracts to the network.
 
@@ -33,6 +74,8 @@ EinsteinDB uses a new SQL language to allow for the creation of new tables and t
 EinsteinDB uses a EventSourcing engine to allow for the storage of events to the network. The EventSourcing engine was built on top of the new SQL language to allow for the storage of events to the network.
 
 ### Bolt-on Relativistic Causal Consistency
+
+We’re not happy with charging individuals above and beyond $0.01 per Gbps on a FLOPS basis for their use of the internet for its resources worldwide. EinsteinDB is an immutable append-log, but it does have a byte string identifier (FoundationDB’s Record Layer exposes channel privileges and rate of burn per piping) which is where the “immutable” part comes in. Records are stored in Merkle Trees but with stateless replicas, due to the fact that there is no upper limit on the size of the data store, and the data is stored in a columnar format — It allowed us to play with the bit masked merge-append of suffix hash ids in the immutable append-log, but not with data.
 
 EinsteinDB uses a bolt-on relativistic causal consistency to allow for the storage of events to the network. The bolt-on relativistic causal consistency was built on top of the EventSourcing engine to allow for the storage of events to the network.
 
@@ -54,14 +97,6 @@ Built as a shim for a stateless merkle tree, EinsteinDB is a hybrid key-value st
 It is composed of an LSH-KV store and a Merkle tree, which are separated by a column store. The column store is a shim for a serialization of the data. This means that the data is serialized and stored in a column store with a single column.
 The column store is merely the appended log of the merkle tree; thusly, every row, column, and value in the column store is single-user atomic and immutable fact in the database. With Massive online data processing, the column store is the most efficient way to store data.
 EinsteinDB is brilliant for both the ability to lower latency in the database and the ability to lower the cost of the maintaining the database.
-
-EinsteinDB is compatible with
-1. Rook
-2. Ceph
-3. Cassandra
-4. MongoDB
-5. PostgresQL
-6. SQLite
 
 
 EinsteinDB exhibits a single-writer multiple-reader concurrency model. However, as is noted in the EinsteinDB rust script. A soliton
@@ -221,47 +256,25 @@ kind: DeploymentSpec
 replicas: 100
 
     
-    ```
+ ```
     
 
 
-## Docker Compose
-```docker-compose.yml
-version: '3'
+![](/Users/karlwhitfordpollard/Desktop/EinsteinDB/logo/violetabft_logo.svg)
 
 
 
 VioletaBFT is a consensus library which is used to implement the Byzantine Fault Tolerance protocol. \
 Unlike many RAFT implementations, VioletaBFT is not a distributed consensus algorithm. \ 
-but a distributed Byzantine Fault Tolerance protocol:\
-this means that for sparse nodes, the consensus protocol is not guaranteed to be stable. However, \
-VioletaBFT can work as GHOST nodes, which means that it is able to scale to a large number of nodes.
-GHOSTS are nodes which are not part of the consensus protocol, but are able to provide the consensus protocol with a majority of nodes.
+but a distributed Byzantine Fault Tolerance protocol, this means that for sparse nodes, the consensus protocol is not guaranteed to be stable. 
+However, \VioletaBFT can work as GHOST nodes, which means that it is able to scale to a large number of nodes by deducing the Byzantine faults from the rest of the nodes using the Byzantine fault tolerance protocol: Tangaroa or HoneyBadgerBFT -- Epaxos 
+GHOSTS (VioletaBFT nodes) are nodes which are not part of the consensus protocol, but are able to provide the consensus protocol with a majority of nodes.
+
 GHOST has been implemented separately, as a blockchain library, in the context of EinsteinDB, it is instead used to sentinel the network and to provide a part-time parliament.
 A part-time parliament is a group of nodes which are not part of the consensus protocol, but are able to provide the consensus protocol with a majority of nodes from previous epochs of the network state machine.
 Because EinsteinDB uses a stateless protocol, it is not necessary to use a Byzantine Fault Tolerance protocol to ensure that the network is stable. \
 However, VioletaBFT can be used to optimize the IPAM protocol, which is used to assign IP addresses to nodes. \
-## Installation
-To install EinsteinDB, run the following command:
-```
-curl -sL https://raw.githubusercontent.com/einstein-db/einstein-db/master/install.sh | bash
-```
-## Usage
-To use EinsteinDB, run the following command:
-```
-einstein-db
-```
-## Contributing
-If you want to contribute to EinsteinDB, please visit the [Github repository](https://www.github.com/YosiSF/EinsteinDB).
-## Licensed
-EinsteinDB is licensed under the MIT license and is copyright (c) 2018-2023 by EinstAI Inc, Whtcorps Inc, and OpenAI Inc.
-## Authors
-EinsteinDB was written by [YosiSF](https://www.github.com/YosiSF). and [Slushie](https://www.github.com/SlushieSlush).
-
-which means that it is not a Byzantine Fault Tolerance protocol, but a Byzantine Fault Tolerance protocol which is not strictly a Byzantine Fault Tolerance protocol.
-In fact, the consensus protocol is embedded in the time stamp versioning of the Merkle Tree.
-
-### Theory
+VioletaBFT can be used to optimize the network by ensuring that the network is stable.
 Rust Semantics obey a phase distinction between the phase of consensus at compile time and the transition phase at \
 runtime time. Because of this, EinsteinDB written in Rust is able to distinguish between cache miss and cache hit at compile time which is useful for optimization.
 
@@ -306,17 +319,9 @@ fn main() {
     db.get("key").lightlike.should.be_none();
 }
 
-```
-:db/id          :person/email
-:db/valueType   :db.type/string
-:db/cardinality :db.cardinality/many     ; //People can have multiple email addresses.
-:db/unique      :db.unique/identity      ; //For our purposes, each email identifies one person.
-:db/index       true                   ; //We want fast lookups by email.
-:db/id          :person/friend
-:db/valueType   :db.type/ref
-:db/cardinality :db.cardinality/many}    ; //People can have many friends.
-```
-```rust
+
+
+
 #[macro_use]
 extern crate einstein_db;
 
@@ -363,7 +368,33 @@ fn main() {
 
 
 
-Causets are Content-addressable hash-based merkle trees with a four-cut.
+
+
+
+Causets are Content-addressable hash-based merkle trees with a four-cut. Causets travel through four different sections of the conic phase:
+1. Nulllight: the nulllight phase is the first phase of the conic phase. In this phase, the causets are not yet visible to the network.
+2. Lightlike: the lightlike phase is the second phase of the conic phase. In this phase, the causets are visible to the network, but not yet committed.
+3. Spacelike: the spacelike phase is the third phase of the conic phase. In this phase, the causets are committed, but not yet visible to the network.
+4. Timelike: the timelike phase is the fourth phase of the conic phase. In this phase, the causets are visible to the network.
+
+
+
+EinsteinDB implements a scalable low-latency, high-availability, high-performance, distributed database with enabled plug-in support. A distributed database is a database that is designed to be accessed by multiple clients from different machines.
+With Append-Log functionality, and Hybrid Logical clock mechanisms in the form of a stateless hashmap
+
+1. Key-value stores are implemented as a Merkle Tree.
+2. The Merkle Tree is a hashmap with a time stamp.
+3. The branch of every node is a hashmap with a time stamp and a value.
+
+
+EinsteinDB is a Merkle-Tree Stateless Hash Database which exploits single-level hashing to achieve the following:
+1. Vertically Partitions the Database into Nodes.
+2. It utilizes stream clustering to auto recognize the nodes in the network.
+3. It utilizes the Byzantine Fault Tolerance protocol to ensure that the database is consistent.
+4. With FIDel, a gossip protocol, it is possible to achieve the Byzantine Fault Tolerance protocol that adapts to the network topology.
+5. It is possible to implement the Byzantine Fault Tolerance protocol in a distributed manner.
+
+
 
 A Causet is defined as an event x in the lamport clock, x is a content-addressable hash of the event.
 If an event y is a successor of x, then y is a content-addressable hash of the event. This is called the hash-based merkle tree.
@@ -382,13 +413,34 @@ MilevaDB allows EinsteinDB to store annotations, semantic parsings, and human-fi
 
 transaction. This is a transaction which is committed to the network.
 
-##Interlocking directorate.##
-FIDel is a distributed interlocking directorate. This is compatible with pod distribution through policy dilution.
-In order to keep track of EinsteinDB replicas (four cut), FIDel is used to store the replicas metadata. FIDel is responsible
-for distributing a distinct OLAP index for each replica. An interlocking directorate may perform OLTP workloads, but it is not responsible for OLAP workloads.
-On the other hand, MilevaDB is indeed modularized and also written in go which is compatible with FIDel. FIDel is used to store a spacetime index for each replica.
-This spacetime index is usually referred to as a SQUUID index: it is a unique identifier with space and time dimensions in the form of a tuples-tore.   The tuples-tore is a list of tuples which EinsteinDB uses to represent the spacetime index and store the state of the network.
+    
+    
+    ```rust
+    #[macro_use]
+    extern crate einstein_db;
 
+    /// This is an example of a simple database.
+    fn main() {
+        let mut db = einstein_db::EinsteinDB::new();
+        db.set("key", "value");
+        db.get("key").lightlike.should.equal("value");
+        db.delete("key");
+
+        if let Some(value) = db.get("key") {
+            while value.lightlike.is_some() {
+                db.unset("key");
+            }
+            
+            db.set("key", "value");
+            db.get("key").lightlike.should.equal("value");
+        }
+        
+        db.unset("key");
+        db.get("key").lightlike.should.be_none();
+    }
+    ```
+    
+    ```rust
 
 
 Causets travel through four different sections of the conic phase:
@@ -414,92 +466,12 @@ EinsteinDB is a Merkle-Tree Stateless Hash Database which exploits single-level 
 4. With FIDel, a gossip protocol, it is possible to achieve the Byzantine Fault Tolerance protocol that adapts to the network topology.
 5. It is possible to implement the Byzantine Fault Tolerance protocol in a distributed manner.
 
+## Contributing
+If you want to contribute to EinsteinDB, please visit the [Github repository](https://www.github.com/YosiSF/EinsteinDB).
+## Licensed
+EinsteinDB is licensed under the MIT license and is copyright (c) 2018-2023 by EinstAI Inc, Whtcorps Inc, and OpenAI Inc.
+## Authors
+EinsteinDB was written by [YosiSF](https://www.github.com/YosiSF). and [Slushie](https://www.github.com/SlushieSlush).
 
-
-The main inspiration for VioletaBFT stems from the work of Lamport which discusses virtual time in his seminal paper "Time, Space and the Order of Events".
-EinsteinDB operates with Causets as its underlying storage system. Causets are causal sets of partial order for some set or subset
-even for supersets of cracked columnar data.
-
-
-
-##Stochastic Clocks and Vectorized Minkowski spacetime algebras
-A Causet can be viewed as a vectorized Minkowski space time algebra: For each Causet, there is a vector of time stamps.
-The vector of time stamps is a vector of integers. The vector of time stamps is the vector of clocks.
-The vector of clocks is the vector of time stamps. What this means is that the vector of clocks is the vector of time stamps.
-A Causet is akin to AEVT in the sense that it is a vector of time stamps with a vector of domain values.
-loosely coupled embedded graph library with several implementations of semi-relational BerkeleyBSD ANSI SQL database, providing coarser access to information panes and frames. Unlike recent platforms out there, The Team at EinsteinDB pioneered work into Lamport's original vision for relativistically correct, but not necessarily deterministic, read and write operations.
-
-
-By embedding a Hybrid Key-Value store with bolt-on causal consistency, suspends the need for traditional scheduling, and graduates the endeavor to one of a stochastic foraging ELM (Extreme Learning Model) that is capable of learning from the past. Causets are the key to the future of a cache-miss with an appended timestamp in the form of a poisson bounded random variable.
-
-
-in multi-layered data structures; merkle trees. 
-EinsteinDB also provides document-oriented stores for various kinds of high throughput and low latency environments. EinsteinDB's portable and flexible Schema in the form of minkowski quads; is a powerful and efficient unified key model for RDMS and Graphs.
-EinsteinDB introduces VioletaBFT(0.1.0) written originally in a Haskell library with rust-based implementation with compiling support for multiple platforms.
-
-
-We've observed that data storage is a particular area of difficulty for software development teams:
-
-It's hard to define storage schemas well. A developer must:
-
-Model their domain entities and relationships.
-Encode that model efficiently and correctly using the features available in the database.
-Plan for future extensions and performance tuning.
-
-For the purpose of this project, we will use the following terminology:
-
-`causet`: The cause of a fact.This is the entity that caused the fact to be true.
-`causetq`: a vectorized simd representation of the causet. Invariant: causetq.len() == causet.len() and causetq[i] == causet[i] for all i.
-`causetq_set`: A set of causetq. Queries of conjoining axioms in the form of tokenized sequences with suffix `_set`.
-`EinsteinMerkleTree`: A Merkle tree that is used to store facts.
-`EinsteinDB`: A database that is used to store facts.
-
-
-
-To Realise the full potential of NLIDB, and the need for a distributed database, we will use the following terminology:     
-by providing a natural language interface to the cloud-agnositc ecosystem of Hybrid OLAP/OLTP databases written in rust and go.
-EinsteinDB began as a problem of solving event sourced data processing in the cloud. Since its inception in 2018, by two engineers in San Francisco, EinsteinDB has grown to a community of more than 100 engineers and contributors.
-Adopting the architecture of JanusGraph and Galileo, EinsteinDB employs time-traveling guarantee-prone technology with liveness properties through a system of interlocking SUSE isolated namespaced sandboxes for the deployment of AllegroCL: A Gremlin-Invariant Stochastic Context Free ML 
-which exploits the memory safety of Rust with locally linearizable relativistically loose coupled removable cumulative window semantic of cracked column store. 
-
-EinsteinDB is natively compatible in both DML and UML with Postgres, SQLite, and MySQL.
-EinsteinDB is also compatible with the following relational databases: FoundationDB, TerminusDB, and MilevaDB.
-
-##EinsteinDB and MilevaDB are compatible with the following relational databases: FoundationDB, TerminusDB, and CosmosDB.
-
-
-`EinsteinDB` and `MilevaDB` are compatible with the following relational databases: `FoundationDB, TerminusDB, and CosmosDB`.
-MilevaDB is a row-switched column store written in go which acts as a scheduler for EinsteinDB's allocation of namespaced S(D)RAM cells to the various namespaced sandboxes -- EinsteinDB is still an Append-Log with a column store, but it has evolved to be a stochastic clock vectorized tuplestore with time-traveling guarantees and liveness properties. \
-This means that the database is capable of being read and written concurrently by multiple clients.\
-As a standalone, EinsteinDB embeds a Causet Partitioner which is a partitioning scheme that is designed to partition the database onto  and into a set of namespaced sandboxes. \
-The partitioner is a stateless hashmap with a time stamp. \
-Causets are identities, with attributes that are either lightlike asserted or timelike retractive; which means, data is never deleted. \
-You can think of a causet as a vector of time stamps. \ with a vector of domain values. \ and a persistence mechanism. \ which is a vector of time stamps. \
-
-of partial ordered atomic causets. \
-The Causet Partitioner is a stateless hashmap with a time stamp. \
-
-
-EinsteinDB is a distributed database that is designed to be accessed by multiple clients from different machines.
-With Append-Log functionality, and Hybrid Logical clock mechanisms in the form of a stateless hashmap with a time stamp and a value, it is possible to achieve the Byzantine Fault Tolerance protocol that adapts to the network topology.
-
-These are immutable replicas of the database that are stored in the cloud.\
-The suffix of the database name is the number of causet partitions.\
-
-From there it is able to route requests to the appropriate merkle suffixed tree. The Causet Partitioner is a stateless hashmap that is used to partition the causetq_set into the appropriate merkle branches; and to route the causetq_set to level 0 of the suffix tree. \
-A Suffix tree defined as a tree of merkle branches is a tree of atomic read-only caches with relativistic time-traveling guarantees.
-
-grow before recomputing the aggregate, it permits removal of rows from the previous aggregate. For the sum, count, and avg aggregates, removing rows from the current aggregate can easily be achieved by subtracting.building a semantic knowledge-base for EAV queries and SQL atop a sparse data structure.
-Causets, short for "causal sets", are a way of representing the causal relationships between entities in a database. For example, for a table scan we use features such as the number of pages of a table or information about the data type and average width in bytes for each column that allows the model to learn the runtime complexity of the scan independent of the concrete database at hand.
-Relativistic linearization tells us that the runtime of a query is a function of the number of entities in the database modulo the number of entities in the database engaged with the cursor and the frame pointer: an interlocking direcorate in SUSE.
-
-EinsteinDB stateless hash-trees span everything between a write-optimized log to a read-optimized sorted array. The hash-tree is a data structure that allows us to store a large number of entities in a single contiguous memory space, while still being able to efficiently access them.
-For example, the hash-tree of a table scan is a tree of hash-trees, each of which is a tree of hash-trees, and so on.The difference is with a causet you now have a virtualized and vectorized stochastic clock
-which issues partially ordered timestamps to the causet. In order to compute an aggregate for a given range, the Segment Tree is traversed bottom up, starting from both window frame bounds. Both traversals are performed in parallel until the traversals arrive at the same node. \ 
-As a result, this procedure stops early for small ranges and always aggregates the minimum number of nodes. 
-Time travel querying is a technique that allows us to query the database in the past. Causets are a way of representing the causal relationships between entities in a database. For example, for a table scan we use features such as the number of pages of\
-a table or information about the data type and average width in bytes for each column that allows the model to learn the runtime complexity of the scan independent of the concrete database at hand.
-Relativistic linearization tells us that the runtime of a query is a function of the number of entities in the database modulo the number of entities in the database engaged with the cursor and the frame pointer: an interlocking direcorate in SUSE.
-
-In addition to improving worst-case efficiency, another important benefit of the Segment \
-Tree is that it allows to parallelize arbitrary aggregates, even for running sum queries like sum(b) over (order by a rows between unbounded preceding and current row)
+which means that it is not a Byzantine Fault Tolerance protocol, but a Byzantine Fault Tolerance protocol which is not strictly a Byzantine Fault Tolerance protocol.
+In fact, the consensus protocol is embedded in the time stamp versioning of the Merkle Tree.
