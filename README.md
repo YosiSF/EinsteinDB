@@ -16,12 +16,6 @@ The abductive reasoning component allowed for queries that could be used to find
 
 
 
-For example, two events that happen at the same time can be ordered differently depending on your location. 
-This is similar to how two events that happen at different times can be ordered differently depending on your frame of reference. 
-
-Relativistic Causal Consistency is a way of thinking about distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system.
-
-
 ## Installation
 To install EinsteinDB, run the following command:
 ```
@@ -54,13 +48,16 @@ EinsteinDB uses a semantic-knowledge engine to allow for complex queries to be u
 ### Blockchain Smart Contract Platform
 
 
+
 Our content addressable approach deploys an IPFS-style content addressable infrastructure for peer-to-peer sharing of state information. This contrasts with existing decentralized systems which often deploy a single data structure that is replicated across all peers and updated by consensus. Instead, we propose to use an IPFS-style content addressable architecture where each peer stores its own data in the form of Merkle roots stored on filtrons (a new type of filter). These filters can be merged together using a merge function so they provide both storage and indexing capabilities without having to rely on any consensus algorithm or hashing scheme such as SHA256.
+
 
 The upper levels of the trees, accessed frequently, are implemented in software using conventional processors and caching methods and serve to distribute requests over the less frequently accessed remaining data⎯a technique we call interlocking Directorate. 
 
 For our Future builds we'll introduce Noether and Filtrons which are a new self-organizing type of data structure that is designed to be self-annealing in a trustless environment.
 They are similar to Bloom filters, but they have the additional property that they can be merged together. This allows EinsteinDB to be used in a distributed system where each node has its own set of filters, and they need to be merged together to form a single filter.
 EinsteinDB stores data on a Stateless Hash Merkle Tree which does not require a uniform and order-preserving hash function to improve lifetime of memristor-based storage. 
+
 
 
 EinsteinDB uses a blockchain smart contract platform to allow for the deployment of smart contracts to the network. The blockchain smart contract platform was built on top of the semantic-knowledge engine to allow for the deployment of smart contracts to the network.
@@ -73,6 +70,19 @@ EinsteinDB uses a blockchain smart contract platform to allow for the deployment
 EinsteinDB uses a EventSourcing engine to allow for the storage of events to the network. The EventSourcing engine was built on top of the new SQL language to allow for the storage of events to the network.
 
 ### Bolt-on Relativistic Causal Consistency
+
+
+
+two events that happen at the same time can be ordered differently depending on your location.
+This is similar to how two events that happen at different times can be ordered differently depending on your frame of reference. With IPFS and Ethereum, events can be ordered in different ways depending on your perspective. EinsteinDB uses a novel technique called bolt-on relativistic causal consistency which is a form of Serialization scheme which distinguishes between global and temporal network states. 
+EinsteinDB with IPFS can be used in a distributed system where each node has its own set of filters, and they need to be merged together to form a single filter that can be used to order events from off-chain transactions: 
+
+```
+einstein-db
+```
+
+Relativistic Causal Consistency is a way of thinking about distributed systems that is inspired by Einstein's theory of relativity. In the same way that Einstein's theory of relativity showed that there is no such thing as absolute time, Relativistic Causal Consistency shows that there is no such thing as absolute ordering of events in a distributed system.
+
 
 We’re not happy with charging individuals above and beyond $0.01 per Gbps on a FLOPS basis for their use of the internet for its resources worldwide. EinsteinDB is an immutable append-log, but it does have a byte string identifier (FoundationDB’s Record Layer exposes channel privileges and rate of burn per piping) which is where the “immutable” part comes in. Records are stored in Merkle Trees but with stateless replicas, due to the fact that there is no upper limit on the size of the data store, and the data is stored in a columnar format — It allowed us to play with the bit masked merge-append of suffix hash ids in the immutable append-log, but not with data.
 
